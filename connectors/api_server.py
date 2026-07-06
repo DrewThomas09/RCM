@@ -2,7 +2,7 @@
 
 Each connector already ships its own standalone ``/v1`` server. This module
 mounts them all behind a *single* endpoint so a caller hits one base URL and
-transparently reaches any of the ~two-dozen datasets, plus every connector's
+transparently reaches any of the ~150 registered datasets, plus every connector's
 lookups, without knowing which connector owns what.
 
 Routing is uniform where the contract is uniform, and delegated where it is

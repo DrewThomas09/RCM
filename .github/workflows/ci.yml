@@ -103,37 +103,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run the connector estate test suite (openFDA + CMS + NPI + ICD-10 + unified)
+      - name: Run the connector estate test suite (all connectors + unified)
+        # Discovery instead of an explicit module list so a newly mounted
+        # connector's tests cannot be silently skipped in CI. No pipe here:
+        # GitHub's default shell has no pipefail, so `| tail` would mask a
+        # failing exit code and the job could never fail.
         run: |
-          python -m unittest \
-            connectors.openfda.tests.test_transport \
-            connectors.openfda.tests.test_connector \
-            connectors.openfda.tests.test_normalize \
-            connectors.openfda.tests.test_tables_query_lookup \
-            connectors.openfda.tests.test_api_server \
-            connectors.openfda.tests.test_company \
-            connectors.openfda.tests.test_dq_pipeline \
-            connectors.openfda.tests.test_market_map_rxnorm \
-            connectors.cms_coverage.tests.test_transport \
-            connectors.cms_coverage.tests.test_connector \
-            connectors.cms_coverage.tests.test_normalize \
-            connectors.cms_coverage.tests.test_tables \
-            connectors.cms_coverage.tests.test_query \
-            connectors.cms_coverage.tests.test_api_server \
-            connectors.npi_registry.tests.test_transport \
-            connectors.npi_registry.tests.test_connector \
-            connectors.npi_registry.tests.test_normalize \
-            connectors.npi_registry.tests.test_validate \
-            connectors.npi_registry.tests.test_tables_query_lookup \
-            connectors.npi_registry.tests.test_api_server \
-            connectors.icd10.tests.test_transport \
-            connectors.icd10.tests.test_connector \
-            connectors.icd10.tests.test_normalize \
-            connectors.icd10.tests.test_tables_query_lookup \
-            connectors.icd10.tests.test_api_server \
-            connectors.tests.test_registry \
-            connectors.tests.test_spi \
-            connectors.tests.test_api_server
+          python -m unittest discover -s connectors -t . -p "test_*.py"
 
       - name: Smoke-test the unified /v1 estate surface
         run: |
@@ -147,7 +123,10 @@ jobs:
           t.start()
           time.sleep(0.3)
           body = json.loads(urllib.request.urlopen(f'http://127.0.0.1:{port}/v1/datasets', timeout=5).read())
-          assert len(body['datasets']) == 26, len(body['datasets'])
+          from connectors import registry as estate
+          expected = len(estate.all_registry_rows())
+          assert len(body['datasets']) == expected, (len(body['datasets']), expected)
+          assert expected >= 146, expected
           server.shutdown()
           print('ESTATE SMOKE OK', len(body['datasets']), 'datasets')
           "

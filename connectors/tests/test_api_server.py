@@ -10,6 +10,7 @@ import unittest
 import urllib.error
 import urllib.request
 
+from .._spi import CONNECTOR_NAMES
 from ..api_server import make_server, open_stores
 
 
@@ -66,7 +67,10 @@ class UnifiedServerTests(unittest.TestCase):
         status, body = self._get("/v1/connectors")
         self.assertEqual(status, 200)
         names = {c["connector"] for c in body["connectors"]}
-        self.assertEqual(names, {"openfda", "cms_coverage", "npi_registry", "icd10"})
+        # Derive from the SPI registration order rather than a literal set so
+        # mounting a new connector cannot silently diverge from this surface.
+        self.assertEqual(names, set(CONNECTOR_NAMES))
+        self.assertGreaterEqual(len(names), 13)
 
     def test_datasets_merges_every_registry(self):
         status, body = self._get("/v1/datasets")

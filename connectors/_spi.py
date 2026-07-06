@@ -28,6 +28,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 # Registration order = display order everywhere (registry, /v1/connectors, CLI).
 CONNECTOR_NAMES: Tuple[str, ...] = (
     "openfda", "cms_coverage", "npi_registry", "icd10",
+    "cms_open_data", "provider_data", "open_payments", "medicaid_data",
+    "healthcare_gov", "cdc_data", "hrsa_data", "nih_reporter", "census_acs",
+    "oig_leie", "bls_qcew", "healthdata_gov",
 )
 
 # Human labels for the estate view. Descriptive only.
@@ -36,6 +39,18 @@ CONNECTOR_LABELS: Dict[str, str] = {
     "cms_coverage": "CMS Medicare Coverage Database",
     "npi_registry": "NPI Registry (NPPES v2.1)",
     "icd10": "ICD-10-CM + ICD-10-PCS (NLM Clinical Tables)",
+    "cms_open_data": "CMS Open Data (data.cms.gov data-api)",
+    "provider_data": "CMS Provider Data Catalog (Care Compare)",
+    "open_payments": "CMS Open Payments (Sunshine Act)",
+    "medicaid_data": "Medicaid Open Data (data.medicaid.gov)",
+    "healthcare_gov": "Healthcare.gov Marketplace (QHP PUFs)",
+    "cdc_data": "CDC Open Data (data.cdc.gov / Socrata)",
+    "hrsa_data": "HRSA (HPSA shortage areas + health centers)",
+    "nih_reporter": "NIH RePORTER (grants + publications)",
+    "census_acs": "US Census ACS 5-year (demographics)",
+    "oig_leie": "HHS OIG LEIE (exclusion list)",
+    "bls_qcew": "BLS QCEW (healthcare employment + wages)",
+    "healthdata_gov": "healthdata.gov (HHS-wide meta-catalog)",
 }
 
 # Query-string key aliases: a lookup handler parameter name that is exposed

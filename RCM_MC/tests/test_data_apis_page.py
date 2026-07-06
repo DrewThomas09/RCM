@@ -50,8 +50,14 @@ class PageRenderTests(unittest.TestCase):
         self.assertTrue(wired_with_route)
         for s in wired_with_route:
             self.assertIn(s.explore_route, h)
-            # The route points at a real explorer dataset.
-            self.assertIn("/further-analysis?dataset=", s.explore_route)
+            # The route points at a real in-repo explorer: either a
+            # Further Analysis dataset chart or the connector-estate
+            # browser (estate-backed sources).
+            self.assertTrue(
+                s.explore_route.startswith("/further-analysis?dataset=")
+                or s.explore_route.startswith("/connector-estate?connector="),
+                f"{s.id} explore route {s.explore_route!r} not an "
+                f"in-repo explorer")
 
     def test_ready_strip_maps_to_real_explorer_datasets(self):
         from rcm_mc.diligence import further_analysis as fa
@@ -71,10 +77,26 @@ class PageRenderTests(unittest.TestCase):
         from rcm_mc.diligence import further_analysis as fa
         ids = {d.id for d in fa.list_datasets()}
         for s in cat.all_sources():
-            if not s.explore_route:
+            if not s.explore_route or "dataset=" not in s.explore_route:
                 continue
             ds = s.explore_route.split("dataset=", 1)[1].split("&", 1)[0]
             self.assertIn(ds, ids, f"{s.id} explore route -> unknown {ds}")
+
+    def test_estate_explore_routes_name_real_connectors(self):
+        # Estate-backed sources link the connector-estate browser; when
+        # the repo-root estate is present the ?connector= value must be a
+        # registered connector name (skip cleanly on wheel installs).
+        from rcm_mc.data_public import connector_estate as est
+        if not est.estate_available():
+            self.skipTest("repo-root connector estate not present")
+        names = {s["connector"] for s in est.connectors_summary()}
+        estate_sources = [s for s in cat.all_sources()
+                          if s.explore_route.startswith(
+                              "/connector-estate?connector=")]
+        self.assertGreaterEqual(len(estate_sources), 13)
+        for s in estate_sources:
+            conn = s.explore_route.split("connector=", 1)[1].split("&", 1)[0]
+            self.assertIn(conn, names, f"{s.id} -> unknown connector {conn}")
 
 
 class JsonApiTests(unittest.TestCase):
