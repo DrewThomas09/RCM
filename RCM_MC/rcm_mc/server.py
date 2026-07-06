@@ -4810,6 +4810,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.connector_estate_page import render_connector_estate
             return self._send_html(render_connector_estate(_qp))
+        if path == "/market-scan":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.market_scan_page import render_market_scan
+            return self._send_html(render_market_scan(_qp))
         if path == "/radiology-imaging":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
