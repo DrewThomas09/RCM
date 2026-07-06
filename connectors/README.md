@@ -25,19 +25,19 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | CMS Coverage | `connectors/cms_coverage` | Medicare Coverage Database — NCD/NCA/CAL/MEDCAC/TA, LCD/Proposed-LCD/Article, MAC contractors | `api.coverage.cms.gov` | 9 |
 | NPI Registry | `connectors/npi_registry` | NPPES v2.1 — provider search/lookup, taxonomies, addresses, NPI validation | `npiregistry.cms.hhs.gov/api` | 3 |
 | ICD-10 | `connectors/icd10` | ICD-10-CM diagnoses + ICD-10-PCS procedures (NLM Clinical Tables) | `clinicaltables.nlm.nih.gov/api` | 2 |
-| CMS Open Data | `connectors/cms_open_data` | data.cms.gov data-api — full DCAT catalog (158 datasets) + 43 curated: Medicare utilization & payment (physician/Part D/inpatient/outpatient/DMEPOS), drug spending, geographic variation, market saturation, enrollment, HCRIS cost reports, PECOS ownership, PBJ staffing, telehealth, post-acute, ACOs | `data.cms.gov` | 45 |
-| Provider Data Catalog | `connectors/provider_data` | Care Compare DKAN — full catalog (234 datasets) + hospital stars/HCAHPS/outcomes, nursing-home 5-star/penalties/MDS, SNF QRP, home health, hospice, dialysis, IRF, LTCH, Doctors & Clinicians national file | `data.cms.gov/provider-data` | 20 |
+| CMS Open Data | `connectors/cms_open_data` | data.cms.gov data-api — full DCAT catalog (158 datasets) + 53 curated: Medicare utilization & payment (physician/Part D/inpatient/outpatient/DMEPOS), drug spending, geographic variation, market saturation, enrollment, HCRIS cost reports, PECOS ownership, PBJ staffing, telehealth, post-acute, ACOs, Provider-of-Services facility universe (QIES + iQIES + clinical labs), dialysis facilities, ESRD models, home infusion, PSPS, RBCS crosswalk | `data.cms.gov` | 55 |
+| Provider Data Catalog | `connectors/provider_data` | Care Compare DKAN — full catalog (234 datasets) + hospital stars/HCAHPS/outcomes, nursing-home 5-star/penalties/MDS, SNF QRP, home health, hospice, dialysis (facility/state/national + ICH-CAHPS + ESRD QIP), ASC quality + OAS CAHPS, imaging efficiency, medical equipment suppliers, Doctors & Clinicians national file | `data.cms.gov/provider-data` | 36 |
 | Open Payments | `connectors/open_payments` | Sunshine Act DKAN — full catalog (74 datasets) + PY2024 general/research/ownership payments, profiles, summaries, state totals | `openpaymentsdata.cms.gov` | 11 |
 | Medicaid Open Data | `connectors/medicaid_data` | data.medicaid.gov DKAN — full catalog (541 datasets) + NADAC, State Drug Utilization, rebate products, enrollment, managed care, FULs, CMS-64, quality measures | `data.medicaid.gov` | 15 |
 | Healthcare.gov | `connectors/healthcare_gov` | Marketplace DKAN — full catalog (337 datasets) + PY2026 QHP PUFs (plan attributes, benefits & cost sharing, rates, quality, service areas) | `data.healthcare.gov` | 7 |
-| CDC Open Data | `connectors/cdc_data` | data.cdc.gov Socrata/SODA — full catalog (~1,500 datasets) + PLACES county health, mortality (provisional/weekly/leading causes), drug overdose, BRFSS, chronic disease, life expectancy | `data.cdc.gov` | 12 |
+| CDC Open Data | `connectors/cdc_data` | data.cdc.gov Socrata/SODA — full catalog (~1,500 datasets) + PLACES county health (incl. pinned 2023 CKD prevalence), mortality (provisional/weekly/monthly/leading causes), drug overdose, BRFSS, chronic disease, life expectancy | `data.cdc.gov` | 14 |
 | HRSA | `connectors/hrsa_data` | HRSA data downloads — HPSA shortage areas (primary care/dental/mental health), MUA/P, health-center sites | `data.hrsa.gov` | 5 |
 | NIH RePORTER | `connectors/nih_reporter` | NIH RePORTER v2 (POST JSON) — funded projects + linked publications | `api.reporter.nih.gov` | 2 |
 | Census ACS | `connectors/census_acs` | ACS 5-year — county/state/CBSA demographic profiles (population, 65+, income, poverty, uninsured); requires free `CENSUS_API_KEY` | `api.census.gov/data` | 3 |
 | OIG LEIE | `connectors/oig_leie` | HHS OIG exclusion list — full database + monthly supplements + reinstatements, NPI-joinable compliance screening | `oig.hhs.gov` | 3 |
 | BLS QCEW | `connectors/bls_qcew` | Quarterly Census of Employment & Wages — healthcare employment, wages, location quotients by county/MSA x NAICS | `data.bls.gov/cew` | 2 |
 
-**151 registered datasets across 15 connectors** — plus five full open-data
+**179 registered datasets across 15 connectors** — plus five full open-data
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
 data.cdc.gov ~1,500), each with a generic fetched-rows slot so **any**
