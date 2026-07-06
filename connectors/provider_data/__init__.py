@@ -2,7 +2,7 @@
 
 This package is the self-contained Care Compare / Provider Data Catalog
 workstream: connector, declarative registry rows, normalized canonical
-tables (the full DKAN catalog, 18 curated flagship datasets, and a
+tables (the full DKAN catalog, 34 curated flagship datasets, and a
 generic rows table covering all 234 catalog datasets), a ``/v1/query``
 engine + seven ``/v1/lookup`` handlers, and a standalone stdlib HTTP
 surface.

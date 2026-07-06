@@ -17,9 +17,9 @@ class SchemaTests(unittest.TestCase):
             self.assertEqual(tdef.columns[-2:], ("source_endpoint", "ingested_at"),
                              tdef.name)
 
-    def test_twenty_tables_registered(self):
-        # catalog + 18 curated + generic rows
-        self.assertEqual(len(TABLES), 20)
+    def test_thirty_six_tables_registered(self):
+        # catalog + 34 curated + generic rows
+        self.assertEqual(len(TABLES), 36)
 
     def test_pk_is_first_column_everywhere(self):
         for tdef in TABLES.values():

@@ -37,11 +37,13 @@ class QueryTests(unittest.TestCase):
     def tearDown(self):
         self.store.close()
 
-    def test_registry_exposes_twenty_datasets(self):
+    def test_registry_exposes_thirty_six_datasets(self):
         ids = dataset_ids()
-        self.assertEqual(len(ids), 20)
+        self.assertEqual(len(ids), 36)
         self.assertIn("provider_data_catalog", ids)
         self.assertIn("provider_data_hospital_general", ids)
+        self.assertIn("provider_data_esrd_qip_tps", ids)
+        self.assertIn("provider_data_medical_equipment_suppliers", ids)
         self.assertIn("provider_data_fetched_rows", ids)
 
     def test_equality_filter(self):

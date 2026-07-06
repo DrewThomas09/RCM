@@ -4,7 +4,7 @@ Three mappers, one per dataset kind:
 
   * ``catalog``  — DKAN metastore items (dataset metadata) →
     ``provider_data_catalog`` rows;
-  * ``curated``  — datastore result rows for the 18 flagship Care
+  * ``curated``  — datastore result rows for the 34 flagship Care
     Compare datasets → their canonical tables;
   * ``generic``  — datastore result rows for *any* catalog dataset →
     ``provider_data_rows`` (one JSON blob per row).

@@ -3,7 +3,7 @@
 Self-contained, **stdlib-only** connector for the CMS Provider Data
 Catalog (`data.cms.gov/provider-data`) — the DKAN open-data catalog
 behind Medicare Care Compare. It ingests the full catalog (234 datasets
-live on 2026-07-06), 18 curated flagship datasets into canonical SQLite
+live on 2026-07-06), 34 curated flagship datasets into canonical SQLite
 tables, and any other catalog dataset on demand into a generic rows
 table, then re-exposes everything behind the estate's uniform `/v1`
 query surface.
@@ -41,8 +41,14 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch()/refresh() ─▶ 
 - An unknown identifier is a 404 with a JSON message; the transport
   folds it into an empty envelope so stale catalog ids degrade
   gracefully.
+- **Identifier shapes**: most datasets use 4x4 identifiers, but the
+  ESRD QIP payment-year files use bare **slugs** (`complete_qip_data`,
+  `tps`, `pppw`) — verified live that the datastore serves them at the
+  same query path with the same envelope. Slugs are only reachable
+  through their curated keys (the generic fall-through accepts 4x4s
+  only, so a typo'd name stays an error, not a speculative fetch).
 
-## Datasets (20 registry rows)
+## Datasets (36 registry rows)
 
 | dataset_id (`provider_data_` +) | identifier | target table | natural key |
 |---|---|---|---|
@@ -65,10 +71,45 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch()/refresh() ─▶ 
 | `irf_general` | 7t8x-u3ir | `irf_general` | ccn |
 | `ltch_general` | azum-44iv | `ltch_general` | ccn |
 | `dac_national` | mj5m-pzi6 | `dac_national` | npi + ind_enrl_id + org_pac_id + adrs_id |
+| `dialysis_state_averages` | 2fpu-cgbb | `dialysis_state_averages` | state |
+| `dialysis_national_averages` | 2rkq-ygai | `dialysis_national_averages` | country |
+| `ich_cahps_facility` | 59mq-zhts | `ich_cahps_facility` | ccn |
+| `ich_cahps_state` | hanv-ru8h | `ich_cahps_state` | state |
+| `ich_cahps_national` | utgq-v46w | `ich_cahps_national` | country |
+| `esrd_qip_complete` | `complete_qip_data` (slug) | `esrd_qip_complete` | ccn |
+| `esrd_qip_tps` | `tps` (slug) | `esrd_qip_tps` | ccn |
+| `esrd_qip_pppw` | `pppw` (slug) | `esrd_qip_pppw` | ccn |
+| `asc_quality_facility` | 4jcv-atw7 | `asc_quality_facility` | npi + facility_id + year |
+| `asc_quality_state` | axe7-s95e | `asc_quality_state` | state + year |
+| `asc_quality_national` | wue8-3vwe | `asc_quality_national` | year |
+| `oas_cahps_asc_facility` | 48nr-hqxx | `oas_cahps_asc_facility` | facility_id |
+| `oas_cahps_asc_national` | tf3h-mrrs | `oas_cahps_asc_national` | start_date + end_date |
+| `imaging_efficiency_state` | if5v-4x48 | `imaging_efficiency_state` | state + measure_id |
+| `imaging_efficiency_national` | di9i-zzrc | `imaging_efficiency_national` | measure_id |
+| `medical_equipment_suppliers` | ct36-nrcq | `medical_equipment_suppliers` | provider_id |
 | `fetched_rows` | any | `provider_data_rows` | dataset_key + row_idx |
 
 ("ccn" above is the live column `cms_certification_number_ccn`; the
-composed key lands in each table's `record_key` primary key.)
+composed key lands in each table's `record_key` primary key. Every key
+was verified unique against a FULL live pull of its dataset on
+2026-07-06.)
+
+Dataset-selection notes:
+
+- **OAS CAHPS**: the catalog carries six OAS CAHPS files (ASC + hospital
+  outpatient departments, each at facility/state/national grain). We
+  curate the ASC pair the estate asked for — 48nr-hqxx *is* the ASC
+  facility-level file and tf3h-mrrs its national companion (titles
+  verified in the live catalog; distinguishable, not duplicates). The
+  HOPD trio (yizn-abxn / 6pfg-whmx / s5pj-hua3) and ASC state file
+  (x663-bwbj) stay reachable via the generic `fetched_rows` path.
+- **ASC quality facility key**: `(facility_id, year)` alone is NOT
+  unique live — 98 shared-CCN pairs report under two NPIs, and 3 rows
+  carry an empty facility_id (their NPI is populated). Leading with
+  `npi` keeps all 5711 live rows: `(npi, facility_id, year)` is
+  5711/5711 unique.
+- **OAS CAHPS national** has no id column at all — one row per survey
+  window, keyed `(start_date, end_date)`.
 
 Curated column tuples were locked from a **live sample** of each
 dataset's datastore and snake-cased with `normalize._snake` (which also
@@ -86,7 +127,7 @@ numerically.
 ## Usage
 
 ```bash
-# The registry (20 datasets)
+# The registry (36 datasets)
 python -m connectors.provider_data.cli datasets
 
 # Sync the full catalog (~234 rows) into a real db
@@ -118,6 +159,7 @@ store = ProviderDataStore("./provider_data.db")
 conn = ProviderDataConnector()
 conn.refresh(store, "catalog")                                  # 234 rows
 conn.refresh(store, "hospital_general", max_pages=20)           # full file
+conn.refresh(store, "esrd_qip_tps", max_pages=16)               # slug-identified QIP file
 conn.refresh(store, "g62h-syeh", max_pages=1)                   # any dataset
 ```
 

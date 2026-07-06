@@ -59,7 +59,7 @@ class ApiServerTests(unittest.TestCase):
         ids = {d["dataset_id"] for d in body["datasets"]}
         self.assertIn("provider_data_catalog", ids)
         self.assertIn("provider_data_dac_national", ids)
-        self.assertEqual(len(body["datasets"]), 20)
+        self.assertEqual(len(body["datasets"]), 36)
         self.assertTrue(all(d["source"] == "provider_data"
                             for d in body["datasets"]))
 

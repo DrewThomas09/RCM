@@ -17,12 +17,22 @@ open-data catalog of 234 Care Compare datasets (verified live
 
   * ``catalog`` — the full metastore catalog itself (every dataset's id,
     title, theme, modified date, CSV url …), synced by ``discover()``;
-  * 18 CURATED flagship Care Compare datasets — each a first-class
+  * 34 CURATED flagship Care Compare datasets — each a first-class
     canonical table whose columns were locked from a live sample of the
     real datastore (see ``tables._CURATED_COLUMNS``);
   * ``fetched_rows`` — a generic rows table so *any* of the 234 catalog
     datasets can be pulled on demand by its 4x4 identifier and still be
     queryable through the uniform engine.
+
+Identifier shapes: most datasets use DKAN 4x4 identifiers
+(``xubh-q36u``), but the ESRD QIP payment-year files use bare SLUGS
+(``complete_qip_data``, ``tps``, ``pppw``) — verified live 2026-07-06
+that the datastore accepts them at the same query path
+(``/api/1/datastore/query/tps/0`` returns rows and a count exactly like
+a 4x4). Slug-identified datasets are only reachable through their
+curated endpoint keys: the generic 4x4 fall-through in
+``connector.resolve`` deliberately rejects arbitrary strings so a typo'd
+dataset name stays a KeyError instead of a speculative fetch.
 """
 from __future__ import annotations
 
@@ -54,8 +64,10 @@ class EndpointSpec:
         Short dataset id, also the ``/v1/query/{dataset}`` slug suffix and
         the value written into each row's ``source_endpoint`` column.
     identifier:
-        The DKAN 4x4 dataset identifier (e.g. ``xubh-q36u``). Empty for
-        the two meta datasets (``catalog`` / ``fetched_rows``).
+        The DKAN dataset identifier — a 4x4 (e.g. ``xubh-q36u``) or, for
+        the ESRD QIP payment-year files, a bare slug (e.g. ``tps``; see
+        module docstring). Empty for the two meta datasets (``catalog``
+        / ``fetched_rows``).
     kind:
         ``catalog`` | ``curated`` | ``generic``. Drives which normalizer
         mapper runs and how the connector fetches.
@@ -284,6 +296,155 @@ _CURATED: List[EndpointSpec] = [
         join_keys=("npi",),
         refresh_cadence="monthly",
         page_size=100,           # huge file: keep accidental pulls cheap
+    ),
+    # ── kidney / dialysis deep set (all keys verified unique against a
+    # FULL live pull per dataset, 2026-07-06) ─────────────────────────
+    EndpointSpec(
+        key="dialysis_state_averages", identifier="2fpu-cgbb",
+        kind="curated", target_table="dialysis_state_averages",
+        title="Dialysis Facility - State Averages",
+        pk_fields=("state",),           # 56/56 unique live
+        join_keys=("state",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="dialysis_national_averages", identifier="2rkq-ygai",
+        kind="curated", target_table="dialysis_national_averages",
+        title="Dialysis Facility - National Averages",
+        pk_fields=("country",),         # single live row, country="NATION"
+        join_keys=("country",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="ich_cahps_facility", identifier="59mq-zhts", kind="curated",
+        target_table="ich_cahps_facility",
+        title="Patient survey (ICH CAHPS) - Facility",
+        pk_fields=("cms_certification_number_ccn",),   # 7557/7557 unique
+        date_field="ichcahps_date",
+        join_keys=("cms_certification_number_ccn",),
+        refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="ich_cahps_state", identifier="hanv-ru8h", kind="curated",
+        target_table="ich_cahps_state",
+        title="Patient survey (ICH CAHPS) - State",
+        pk_fields=("state",),           # 56/56 unique live
+        join_keys=("state",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="ich_cahps_national", identifier="utgq-v46w", kind="curated",
+        target_table="ich_cahps_national",
+        title="Patient survey (ICH CAHPS) - National",
+        pk_fields=("country",),         # single live row, country="NATION"
+        join_keys=("country",), refresh_cadence="quarterly",
+    ),
+    # The three ESRD QIP files below are the catalog's slug-identified
+    # datasets (not 4x4s) — see the module docstring. One row per
+    # facility CCN (7558/7558 unique on the full live files).
+    EndpointSpec(
+        key="esrd_qip_complete", identifier="complete_qip_data",
+        kind="curated", target_table="esrd_qip_complete",
+        title="ESRD QIP - Complete QIP Data - Payment Year 2026",
+        pk_fields=("cms_certification_number_ccn",),
+        date_field="cms_certification_date",
+        join_keys=("cms_certification_number_ccn",),
+        refresh_cadence="annual",
+    ),
+    EndpointSpec(
+        key="esrd_qip_tps", identifier="tps", kind="curated",
+        target_table="esrd_qip_tps",
+        title="ESRD QIP - Total Performance Scores - Payment Year 2026",
+        pk_fields=("cms_certification_number_ccn",),
+        join_keys=("cms_certification_number_ccn",),
+        refresh_cadence="annual",
+    ),
+    EndpointSpec(
+        key="esrd_qip_pppw", identifier="pppw", kind="curated",
+        target_table="esrd_qip_pppw",
+        title="ESRD QIP - Percentage of Prevalent Patients Waitlisted - "
+              "Payment Year 2026",
+        pk_fields=("cms_certification_number_ccn",),
+        join_keys=("cms_certification_number_ccn",),
+        refresh_cadence="annual",
+    ),
+    # ── outpatient / ASC set ──────────────────────────────────────────
+    EndpointSpec(
+        key="asc_quality_facility", identifier="4jcv-atw7", kind="curated",
+        target_table="asc_quality_facility",
+        title="Ambulatory Surgical Center Quality Measures - Facility",
+        # npi leads: 3 of 5711 live rows have an empty facility_id (their
+        # npi is populated), and (facility_id, year) alone duplicates for
+        # 98 shared-CCN pairs. (npi, facility_id, year) is 5711/5711
+        # unique on the full live file.
+        pk_fields=("npi", "facility_id", "year"),
+        date_field="year",
+        join_keys=("facility_id",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="asc_quality_state", identifier="axe7-s95e", kind="curated",
+        target_table="asc_quality_state",
+        title="Ambulatory Surgical Center Quality Measures - State",
+        pk_fields=("state", "year"),    # 54/54 unique live
+        date_field="year",
+        join_keys=("state",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="asc_quality_national", identifier="wue8-3vwe", kind="curated",
+        target_table="asc_quality_national",
+        title="Ambulatory Surgical Center Quality Measures - National",
+        pk_fields=("year",),            # single live row per year
+        date_field="year",
+        join_keys=("year",), refresh_cadence="quarterly",
+    ),
+    # OAS CAHPS: the catalog carries six files (ASC + HOPD, each at
+    # facility/state/national grain). We curate the two the estate asked
+    # for — 48nr-hqxx IS the ASC facility-level file and tf3h-mrrs its
+    # national companion (titles verified in the live catalog, so they
+    # are distinguishable, not duplicates).
+    EndpointSpec(
+        key="oas_cahps_asc_facility", identifier="48nr-hqxx",
+        kind="curated", target_table="oas_cahps_asc_facility",
+        title="Outpatient and Ambulatory Surgery Consumer Assessment of "
+              "Healthcare Providers and Systems (OAS CAHPS) survey for "
+              "ambulatory surgical centers - Facility",
+        pk_fields=("facility_id",),     # 4633/4633 unique live
+        date_field="end_date",
+        join_keys=("facility_id",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="oas_cahps_asc_national", identifier="tf3h-mrrs",
+        kind="curated", target_table="oas_cahps_asc_national",
+        title="Outpatient and Ambulatory Surgery Consumer Assessment of "
+              "Healthcare Providers and Systems (OAS CAHPS) survey for "
+              "ambulatory surgical centers - National",
+        # No id column on the live file — one row per survey window.
+        pk_fields=("start_date", "end_date"),
+        date_field="end_date",
+        join_keys=("start_date", "end_date"),
+        refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="imaging_efficiency_state", identifier="if5v-4x48",
+        kind="curated", target_table="imaging_efficiency_state",
+        title="Outpatient Imaging Efficiency - State",
+        pk_fields=("state", "measure_id"),   # 224/224 unique live
+        date_field="end_date",
+        join_keys=("state",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="imaging_efficiency_national", identifier="di9i-zzrc",
+        kind="curated", target_table="imaging_efficiency_national",
+        title="Outpatient Imaging Efficiency - National",
+        pk_fields=("measure_id",),      # 4/4 unique live
+        date_field="end_date",
+        join_keys=("measure_id",), refresh_cadence="quarterly",
+    ),
+    EndpointSpec(
+        key="medical_equipment_suppliers", identifier="ct36-nrcq",
+        kind="curated", target_table="medical_equipment_suppliers",
+        title="Medical Equipment Suppliers",
+        pk_fields=("provider_id",),     # 57298/57298 unique live
+        date_field="participationbegindate",
+        join_keys=("provider_id",),
+        refresh_cadence="weekly",       # catalog modified daily-ish live
     ),
 ]
 

@@ -3,7 +3,9 @@ import unittest
 
 from ..endpoints import get_endpoint
 from ..normalize import _snake, normalize
-from .fakes import catalog_items, clinician_rows, generic_hai_rows, hcahps_rows
+from .fakes import (asc_facility_rows, catalog_items, clinician_rows,
+                    generic_hai_rows, hcahps_rows, ich_cahps_facility_rows,
+                    qip_tps_rows)
 
 
 class SnakeTests(unittest.TestCase):
@@ -73,6 +75,43 @@ class CuratedNormalizeTests(unittest.TestCase):
         res = normalize(get_endpoint("hospital_general"),
                         [{"facility_name": "orphan"}])
         self.assertEqual(res.rows.get("hospital_general", []), [])
+
+    def test_ich_cahps_doubled_underscore_headers_map_cleanly(self):
+        # The live 59mq-zhts file serves doubled-underscore headers
+        # (…communication_and__205e); _snake collapses them onto the
+        # frozen schema columns, so nothing lands in the unmapped audit.
+        res = normalize(get_endpoint("ich_cahps_facility"),
+                        ich_cahps_facility_rows())
+        rows = res.rows["ich_cahps_facility"]
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[0]["record_key"], "012300")
+        self.assertEqual(
+            rows[0]["top_box_percent_of_patientsnephrologists_communication_and_205e"],
+            "75")
+        self.assertEqual(res.unmapped, {})
+
+    def test_slug_identified_qip_rows_key_by_ccn(self):
+        res = normalize(get_endpoint("esrd_qip_tps"), qip_tps_rows())
+        rows = res.rows["esrd_qip_tps"]
+        self.assertEqual([r["record_key"] for r in rows],
+                         ["032300", "032301", "032302"])
+        self.assertEqual(rows[0]["source_endpoint"], "esrd_qip_tps")
+        self.assertEqual(res.unmapped, {})
+
+    def test_asc_facility_npi_led_key_survives_live_hazards(self):
+        # (npi, facility_id, year): shared-CCN pairs stay distinct and a
+        # row with an empty facility_id (npi populated) is kept, not
+        # skipped — both hazards exist in the live 4jcv-atw7 file.
+        res = normalize(get_endpoint("asc_quality_facility"),
+                        asc_facility_rows())
+        keys = [r["record_key"] for r in res.rows["asc_quality_facility"]]
+        self.assertEqual(keys, [
+            "1023420577:45C0001277:2024",
+            "1184976797:34C0001142:2024",
+            "1306005343:34C0001142:2024",
+            "1134590912::2024",
+        ])
+        self.assertEqual(res.unmapped, {})
 
 
 class GenericNormalizeTests(unittest.TestCase):

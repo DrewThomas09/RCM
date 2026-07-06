@@ -27,7 +27,9 @@ from urllib.parse import parse_qs, urlparse
 from ..transport import RawResponse
 
 CATALOG_PATH = "/api/1/metastore/schemas/dataset/items"
-_DATASTORE_RE = re.compile(r"/api/1/datastore/query/([0-9a-z-]+)/0$")
+# Identifiers are 4x4s (xubh-q36u) or ESRD QIP slugs (complete_qip_data,
+# tps, pppw) — the live datastore serves both shapes at the same path.
+_DATASTORE_RE = re.compile(r"/api/1/datastore/query/([0-9a-z_-]+)/0$")
 
 
 class FakeProviderData:
@@ -246,6 +248,108 @@ def clinician_rows() -> List[Dict[str, Any]]:
     b = dict(base, facility_name="CENTRAL TEXAS RADIOLOGICAL ASSOCIATES PA",
              org_pac_id="4385740141", adrs_id="VI00840XXXXSTXXXXXXXXXX00")
     return [a, b]
+
+
+def ich_cahps_facility_rows() -> List[Dict[str, Any]]:
+    """ich_cahps_facility (59mq-zhts) rows with the live column names.
+
+    Carries the doubled-underscore raw headers the live file really
+    serves (``…communication_and__205e``) so the ``_snake`` hazard path
+    is exercised end-to-end.
+    """
+    return [{
+        "cms_certification_number_ccn": f"01230{i}",
+        "network": "8",
+        "facility_name": f"TEST DIALYSIS CENTER {i}",
+        "address_line_1": "1600 7TH AVENUE SOUTH",
+        "address_line_2": "",
+        "citytown": "BIRMINGHAM",
+        "state": "AL",
+        "zip_code": "35233",
+        "countyparish": "Jefferson",
+        "telephone_number": "(205) 638-9275",
+        "profit_or_nonprofit": "Non-profit",
+        "chain_owned": "No",
+        "chain_organization": "Independent",
+        "ichcahps_date": "18Oct2024-11Jul2025",
+        "ichcahps_data_availability_code": "001",
+        "top_box_percent_of_patientsnephrologists_communication_and__205e": "75",
+        "top_box_percent_of_patientsquality_of_dialysis_center_care__0710": "69",
+        "star_rating_of_the_dialysis_facility": str((i % 5) + 1),
+        "ich_cahps_survey_of_patients_experiences_star_rating": "4",
+        "survey_response_rate": "22",
+    } for i in range(3)]
+
+
+def qip_tps_rows() -> List[Dict[str, Any]]:
+    """esrd_qip_tps (slug identifier ``tps``) rows, live column names."""
+    return [{
+        "facility_name": f"03230{i} TEST DIALYSIS - {i}",
+        "cms_certification_number_ccn": f"03230{i}",
+        "alternate_ccn": f"03002{i}",
+        "address": "2525 E ROOSEVELT ST",
+        "city": "PHOENIX",
+        "state": "AZ",
+        "zip_code": "85008",
+        "network": "Network 15",
+        "total_performance_score": str(60 + i),
+        "state_average_total_performance_score": "54",
+        "national_average_total_performance_score": "54",
+        "payment_reduction_percentage": "0.0%",
+    } for i in range(3)]
+
+
+def asc_facility_rows() -> List[Dict[str, Any]]:
+    """asc_quality_facility (4jcv-atw7) rows with the live column names.
+
+    Mirrors the two live key hazards: a row with an EMPTY facility_id
+    (npi still populated — 3 such rows exist live) and two rows sharing
+    one facility_id at different NPIs (98 such pairs live) — both must
+    survive the npi-led composed key.
+    """
+    base = {
+        "citytown": "PLANO", "state": "TX", "zip_code": "75093",
+        "year": "2024", "asc1_rate": "N/A", "asc1_footnote": "5",
+        "asc2_rate": "0.033", "asc2_footnote": "",
+        "asc9_rate": "85.64", "asc9_footnote": "",
+        "asc12_total_cases": "1343",
+        "asc12_performance_category": "No Different Than the National Rate",
+        "asc12_rshv_rate": "11.9", "asc12_interval_lower_limit": "9",
+        "asc12_interval_upper_limit": "15.8", "asc12_footnote": "",
+    }
+    return [
+        dict(base, facility_name="TEXAS ENDOSCOPY PLANO",
+             facility_id="45C0001277", npi="1023420577"),
+        dict(base, facility_name="DIGESTIVE HEALTH SPECIALISTS PA",
+             facility_id="34C0001142", npi="1184976797"),
+        dict(base, facility_name="DIGESTIVE HEALTH SPECIALISTS PA",
+             facility_id="34C0001142", npi="1306005343"),
+        dict(base, facility_name="SLENT SURGERY CENTER",
+             facility_id="", npi="1134590912"),
+    ]
+
+
+def supplier_rows(n: int = 4) -> List[Dict[str, Any]]:
+    """medical_equipment_suppliers (ct36-nrcq) rows, live column names."""
+    return [{
+        "provider_id": f"3436341{i}",
+        "acceptsassignement": "True",
+        "participationbegindate": "2026-02-27",
+        "businessname": f"TEST SUPPLIER {i} INC",
+        "practicename": f"TEST PHARMACY {i}",
+        "practiceaddress1": f"{i} GRAND PKWY S",
+        "practiceaddress2": "",
+        "practicecity": "RICHMOND",
+        "practicestate": "TX",
+        "practicezip9code": "774078710",
+        "telephonenumber": "3465704749",
+        "specialitieslist": "Pharmacy",
+        "providertypelist": "",
+        "supplieslist": "Epoetin|Infusion Drugs",
+        "latitude": "29.65170077032",
+        "longitude": "-95.706947816399",
+        "is_contracted_for_cba": "False",
+    } for i in range(n)]
 
 
 def generic_hai_rows(n: int = 4) -> List[Dict[str, Any]]:
