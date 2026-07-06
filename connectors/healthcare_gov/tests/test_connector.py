@@ -139,27 +139,26 @@ class ConnectorTests(unittest.TestCase):
         # Two refreshes of one dataset under different conditions must
         # coexist — the params are forwarded to generic_rows as the
         # slice signature (same contract as the other DKAN connectors).
+        # The fake datastore applies equality conditions like live DKAN, so
+        # filter on age bands that actually exist in the fixture rows.
         fake = FakeHealthcareGov().add_datastore("e4rr-zk4i", _rates(2))
         store = HealthcareGovStore(":memory:")
         conn = _connector()
         conn.refresh_dataset(store, "e4rr-zk4i", opener=fake)
-        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "AK"},
-                             opener=fake)
-        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "TX"},
-                             opener=fake)
-        self.assertEqual(store.count("healthcare_gov_rows"), 6)
+        conn.refresh_dataset(store, "e4rr-zk4i", {"age": "15"}, opener=fake)
+        conn.refresh_dataset(store, "e4rr-zk4i", {"age": "16"}, opener=fake)
+        self.assertEqual(store.count("healthcare_gov_rows"), 4)
         keys = [r["row_key"] for r in store.fetchall(
             "SELECT row_key FROM healthcare_gov_rows ORDER BY row_key")]
         # One unfiltered slice (no signature segment) + two signed slices.
         unsigned = [k for k in keys if k.count(":") == 1]
         signed = [k for k in keys if k.count(":") == 2]
         self.assertEqual(len(unsigned), 2)
-        self.assertEqual(len(signed), 4)
+        self.assertEqual(len(signed), 2)
         self.assertEqual(len({k.split(":")[1] for k in signed}), 2)
         # Re-running a filtered slice stays idempotent.
-        conn.refresh_dataset(store, "e4rr-zk4i", {"statecode": "TX"},
-                             opener=fake)
-        self.assertEqual(store.count("healthcare_gov_rows"), 6)
+        conn.refresh_dataset(store, "e4rr-zk4i", {"age": "16"}, opener=fake)
+        self.assertEqual(store.count("healthcare_gov_rows"), 4)
         store.close()
 
 
