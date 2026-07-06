@@ -128,7 +128,7 @@ class ConnectorTests(unittest.TestCase):
         rows = store.fetchall(
             "SELECT row_key, dataset_key, row_idx FROM healthcare_gov_rows "
             "ORDER BY CAST(row_idx AS INTEGER)")
-        self.assertEqual(rows[0]["row_key"], "e4rr-zk4i:1")
+        self.assertEqual(rows[0]["row_key"], "e4rr-zk4i:00000001")
         self.assertEqual(rows[0]["dataset_key"], "e4rr-zk4i")
         # Re-run is idempotent (same record_numbers → same keys).
         _connector().refresh_dataset(store, "e4rr-zk4i", opener=fake)

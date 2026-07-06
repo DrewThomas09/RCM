@@ -1,6 +1,7 @@
 import unittest
 
 from ..connector import MAX_PAGES_CAP, OpenPaymentsConnector, conditions_params
+from ..normalize import normalize_generic
 from ..tables import OpenPaymentsStore
 from ..transport import OpenPaymentsTransport
 from .fakes import (GENERAL_UUID, OLD_YEAR_UUID, FakeOpenPayments,
@@ -126,6 +127,58 @@ class ConnectorTests(unittest.TestCase):
                             (OLD_YEAR_UUID,)), 2)
         finally:
             store.close()
+
+    def test_refresh_generic_unfiltered_keys_unchanged(self):
+        # The unfiltered full-crawl key shape is a compatibility contract.
+        fake = FakeOpenPayments().add(OLD_YEAR_UUID, _general(2))
+        store = OpenPaymentsStore(":memory:")
+        try:
+            _connector().refresh(store, "fetched_rows",
+                                 dataset_key=OLD_YEAR_UUID, opener=fake)
+            keys = {r["row_key"] for r in store.fetchall(
+                "SELECT row_key FROM open_payments_rows")}
+            self.assertEqual(keys, {f"{OLD_YEAR_UUID}:00000000",
+                                    f"{OLD_YEAR_UUID}:00000001"})
+        finally:
+            store.close()
+
+    def test_refresh_generic_different_filters_coexist(self):
+        # Regression: row_idx is positional within the FILTERED result
+        # set, so refreshes of the same dataset with different filters
+        # used to silently overwrite each other at row_key {key}:00000000.
+        recs = _general(2, state="VT") + _general(2, state="CA")
+        for i, r in enumerate(recs):
+            r["record_id"] = str(3000 + i)
+        fake = FakeOpenPayments().add(OLD_YEAR_UUID, recs)
+        store = OpenPaymentsStore(":memory:")
+        try:
+            conn = _connector()
+            conn.refresh(store, "fetched_rows", {"recipient_state": "VT"},
+                         dataset_key=OLD_YEAR_UUID, opener=fake)
+            conn.refresh(store, "fetched_rows", {"recipient_state": "CA"},
+                         dataset_key=OLD_YEAR_UUID, opener=fake)
+            keys = {r["row_key"] for r in store.fetchall(
+                "SELECT row_key FROM open_payments_rows")}
+            self.assertEqual(len(keys), 4)          # nothing overwritten
+            # Re-running one filtered refresh upserts in place.
+            conn.refresh(store, "fetched_rows", {"recipient_state": "CA"},
+                         dataset_key=OLD_YEAR_UUID, opener=fake)
+            self.assertEqual(store.count("open_payments_rows"), 4)
+        finally:
+            store.close()
+
+    def test_fetch_dataset_reports_start_offset_for_stable_keys(self):
+        # Regression: a fetch resumed mid-dataset must key rows by the
+        # absolute datastore offset, never re-key them as 0..N.
+        fake = FakeOpenPayments().add(OLD_YEAR_UUID, _general(5))
+        res = _connector().fetch_dataset(OLD_YEAR_UUID, params={"offset": 3},
+                                         opener=fake)
+        self.assertEqual(res.start_offset, 3)
+        norm = normalize_generic(OLD_YEAR_UUID, res.rows,
+                                 row_offset=res.start_offset)
+        keys = [r["row_key"] for r in norm.rows["open_payments_rows"]]
+        self.assertEqual(keys, [f"{OLD_YEAR_UUID}:00000003",
+                                f"{OLD_YEAR_UUID}:00000004"])
 
     def test_refresh_generic_without_dataset_key_is_an_error(self):
         store = OpenPaymentsStore(":memory:")

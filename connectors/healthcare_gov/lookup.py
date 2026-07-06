@@ -26,7 +26,22 @@ from .tables import HealthcareGovStore
 _RATES_LIMIT = 100
 _BENEFITS_LIMIT = 200
 _PLANS_LIMIT = 200
+_MAX_LIMIT = 1000        # hard ceiling on any caller-supplied limit
 _MAX_AREA_PAIRS = 100    # cap the issuer/service-area OR fan-out
+
+
+def _clamp_limit(limit: Any, default: int) -> int:
+    """Coerce a caller-supplied ``limit`` into [1, _MAX_LIMIT].
+
+    ``limit`` arrives straight from the query string, so garbage
+    (``?limit=abc``) must fall back to ``default`` instead of raising —
+    the same defensive pattern the other connectors' lookups use.
+    """
+    try:
+        n = int(limit)
+    except (TypeError, ValueError):
+        return default
+    return max(1, min(n, _MAX_LIMIT))
 
 
 def lookup_marketplace_plan(store: HealthcareGovStore, plan_id: str,
@@ -40,7 +55,7 @@ def lookup_marketplace_plan(store: HealthcareGovStore, plan_id: str,
     """
     pid = str(plan_id).strip()
     std = pid.split("-", 1)[0]
-    lim = max(1, min(int(limit), 1000))
+    lim = _clamp_limit(limit, _RATES_LIMIT)
     variants = _rows(
         store,
         "SELECT * FROM healthcare_gov_plan_attributes "
@@ -88,7 +103,7 @@ def lookup_county_plans(store: HealthcareGovStore, fips: str,
     ``(statecode, issuerid, serviceareaid)``.
     """
     county = str(fips).strip()
-    lim = max(1, min(int(limit), 1000))
+    lim = _clamp_limit(limit, _PLANS_LIMIT)
     county_areas = _rows(
         store,
         "SELECT * FROM healthcare_gov_service_areas WHERE county = ? "

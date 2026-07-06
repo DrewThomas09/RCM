@@ -25,6 +25,7 @@ log schema drift.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -39,6 +40,13 @@ from .tables import TABLES
 # datastore row; it is not part of any PUF schema, so mappers treat it
 # as known (used for generic row ids, dropped from curated rows).
 _ROW_ID_FIELD = "record_number"
+
+# Generic ``row_idx`` values are zero-padded to this width (matching the
+# open_payments connector) because the column is TEXT: unpadded values
+# sort lexicographically ("10" < "9"), which broke ORDER BY row_idx.
+# NOTE: databases written by pre-padding versions hold unpadded keys —
+# re-fetch the dataset (or DROP healthcare_gov_rows) to re-key.
+_ROW_IDX_WIDTH = 8
 
 
 def _snake(name: str) -> str:
@@ -174,19 +182,76 @@ def normalize(spec: EndpointSpec, raw_rows: List[Dict[str, Any]]
     return res
 
 
+# First N hex chars of the sha1 over the canonicalized slice params —
+# short enough to keep keys readable, long enough to never collide for
+# the handful of filter combinations a dataset realistically sees.
+_SLICE_SIG_LEN = 10
+
+
+def _canonical_slice_params(slice_params: Optional[Dict[str, Any]]
+                            ) -> Optional[Dict[str, Any]]:
+    """A JSON-safe, deterministically ordered copy of the slice params.
+
+    Returns ``None`` when there is no *effective* filter: an absent/empty
+    dict, or one whose values are all empty (``None``/``""``/``{}``/
+    ``[]``), degrades to the unfiltered key shape.
+    """
+    if not slice_params:
+        return None
+    kept = {str(k): v for k, v in slice_params.items()
+            if v is not None and v != "" and v != {} and v != []}
+    if not kept:
+        return None
+    return json.loads(
+        json.dumps(kept, ensure_ascii=False, sort_keys=True, default=str))
+
+
+def slice_signature(slice_params: Optional[Dict[str, Any]] = None) -> str:
+    """Short stable signature of the filter params that scoped a fetch.
+
+    ``""`` for an unfiltered fetch (keys stay ``{dataset_key}:{row_idx}``).
+    Otherwise the first :data:`_SLICE_SIG_LEN` hex chars of the sha1 over
+    the canonicalized (sorted-keys JSON, values coerced via ``str``)
+    params. The signature becomes a key segment
+    (``{dataset_key}:{sig}:{row_idx}``) so two fetches of the same
+    dataset with different filters can never overwrite each other's rows
+    in the shared table — a positional ``row_idx`` is only meaningful
+    *within* one filter slice.
+    """
+    canon = _canonical_slice_params(slice_params)
+    if canon is None:
+        return ""
+    blob = json.dumps(canon, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:_SLICE_SIG_LEN]
+
+
 def generic_rows(dataset_key: str, raw_rows: List[Dict[str, Any]],
                  start_idx: int = 0, *,
-                 fetched_at: Optional[str] = None) -> List[Dict[str, Any]]:
+                 fetched_at: Optional[str] = None,
+                 slice_params: Optional[Dict[str, Any]] = None
+                 ) -> List[Dict[str, Any]]:
     """Any dataset's raw rows → ``healthcare_gov_rows`` records.
 
     ``row_idx`` prefers DKAN's ``record_number`` (stable across partial
     fetches of one import) and falls back to ``start_idx + position``
-    (the absolute fetch offset). The composed pk
+    (the absolute fetch offset). Values are zero-padded to
+    :data:`_ROW_IDX_WIDTH` digits so the TEXT column sorts numerically
+    (matching open_payments; see the note at :data:`_ROW_IDX_WIDTH` for
+    the migration implication). The composed pk
     ``{dataset_key}:{row_idx}`` keeps re-fetches idempotent, and
     ``dataset_key`` doubles as ``source_endpoint`` so the query engine's
     slice-pinning convention keeps working on this shared table.
+
+    ``slice_params`` are the filter params that scoped the fetch, if
+    any: they add a :func:`slice_signature` segment to the key
+    (``{dataset_key}:{sig}:{row_idx}``) so differently-filtered fetches
+    whose rows fall back to positional indexes can never overwrite each
+    other, and the human-readable params are carried in the row's JSON
+    under the reserved ``_slice_params`` key.
     """
     now = fetched_at or _utc_now()
+    sig = slice_signature(slice_params)
+    canon = _canonical_slice_params(slice_params)
     out: List[Dict[str, Any]] = []
     for i, rec in enumerate(raw_rows):
         if not isinstance(rec, dict):
@@ -195,10 +260,16 @@ def generic_rows(dataset_key: str, raw_rows: List[Dict[str, Any]],
         row_idx = body.pop(_ROW_ID_FIELD, None)
         if row_idx in (None, ""):
             row_idx = start_idx + i
+        padded = str(row_idx).zfill(_ROW_IDX_WIDTH)
+        if sig:
+            body["_slice_params"] = canon
+            key = f"{dataset_key}:{sig}:{padded}"
+        else:
+            key = f"{dataset_key}:{padded}"
         out.append({
-            "row_key": f"{dataset_key}:{row_idx}",
+            "row_key": key,
             "dataset_key": dataset_key,
-            "row_idx": str(row_idx),
+            "row_idx": padded,
             "row_json": json.dumps(body, ensure_ascii=False, sort_keys=True),
             "fetched_at": now,
             "source_endpoint": dataset_key,

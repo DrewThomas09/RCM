@@ -67,6 +67,7 @@ class FetchResult:
     pages: int = 0
     truncated: bool = False       # stopped by max_pages with a full last page
     requests: int = 0
+    start_offset: int = 0         # dataset offset of rows[0] (absolute row_idx)
 
     @property
     def done(self) -> bool:
@@ -254,7 +255,16 @@ class CmsOpenDataConnector:
         dataset_key, res = self.fetch_dataset(
             dataset, params, opener=opener, max_pages=max_pages,
             page_size=page_size, store=store)
-        rows = normalize_generic(dataset_key, res.rows)
+        # Key integrity for the shared rows table: start_idx is the
+        # fetch's absolute start offset (a mid-dataset resume must not
+        # re-key its rows as 0..N) and the non-paging params sign the
+        # key so differently-filtered fetches coexist instead of
+        # silently overwriting each other.
+        slice_params = {k: v for k, v in (params or {}).items()
+                        if str(k) not in ("size", "offset")}
+        rows = normalize_generic(dataset_key, res.rows,
+                                 start_idx=res.start_offset,
+                                 slice_params=slice_params)
         n = store.upsert(GENERIC_TABLE, rows)
         return {"dataset": dataset_key, "table": GENERIC_TABLE,
                 "uuid": res.uuid, "fetched": len(res.rows), "upserted": n,
@@ -281,6 +291,7 @@ class CmsOpenDataConnector:
                    else native.pop("size", self.page_size))
         size = max(1, min(size, MAX_PAGE_SIZE))
         offset = int(native.pop("offset", 0))
+        start_offset = offset
         cap = self.max_pages if max_pages is None else max(1, int(max_pages))
 
         path = f"/data-api/v1/dataset/{uuid}/data"
@@ -303,7 +314,8 @@ class CmsOpenDataConnector:
             truncated = True
         return FetchResult(rows=rows, endpoint=endpoint_key, uuid=uuid,
                            pages=pages, truncated=truncated,
-                           requests=self.transport.requests_made - start_requests)
+                           requests=self.transport.requests_made - start_requests,
+                           start_offset=start_offset)
 
     @staticmethod
     def _native_params(params: Dict[str, Any]) -> Dict[str, Any]:

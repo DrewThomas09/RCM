@@ -148,6 +148,34 @@ class GenericNormalizeTests(unittest.TestCase):
         self.assertEqual(rows[0]["row_key"], "x:1000")
         self.assertEqual(rows[0]["row_idx"], 1000)
 
+    def test_slice_params_sign_the_key_and_land_in_json(self):
+        # Regression: differently-filtered fetches of one dataset must
+        # never share row keys (row_idx is per-slice positional).
+        stamp = "2026-07-06T00:00:00+00:00"
+        plain = normalize_generic("x", [{"a": 1}], fetched_at=stamp)
+        ga = normalize_generic("x", [{"a": 1}], fetched_at=stamp,
+                               slice_params={"State Code": "GA"})
+        md = normalize_generic("x", [{"a": 1}], fetched_at=stamp,
+                               slice_params={"State Code": "MD"})
+        keys = {plain[0]["row_key"], ga[0]["row_key"], md[0]["row_key"]}
+        self.assertEqual(len(keys), 3)
+        self.assertEqual(plain[0]["row_key"], "x:0")   # unchanged contract
+        self.assertEqual(json.loads(ga[0]["row_json"])["_slice_params"],
+                         {"State Code": "GA"})
+        # Same filters → same deterministic key (idempotent re-fetch).
+        again = normalize_generic("x", [{"a": 1}], fetched_at=stamp,
+                                  slice_params={"State Code": "GA"})
+        self.assertEqual(ga, again)
+
+    def test_empty_slice_params_keep_unfiltered_output_identical(self):
+        stamp = "2026-07-06T00:00:00+00:00"
+        plain = normalize_generic("x", [{"a": 1}], fetched_at=stamp)
+        self.assertEqual(normalize_generic("x", [{"a": 1}], fetched_at=stamp,
+                                           slice_params={}), plain)
+        self.assertEqual(normalize_generic("x", [{"a": 1}], fetched_at=stamp,
+                                           slice_params={"keyword": ""}),
+                         plain)
+
 
 if __name__ == "__main__":
     unittest.main()

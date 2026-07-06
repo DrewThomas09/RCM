@@ -2,6 +2,7 @@ import unittest
 
 from ..connector import MedicaidDataConnector
 from ..endpoints import get_endpoint
+from ..normalize import normalize_generic
 from ..tables import MedicaidDataStore
 from ..transport import MedicaidDataTransport
 from .fakes import (NADAC_2026_ID, SDUD_2025_ID, FakeMedicaidData,
@@ -131,6 +132,50 @@ class ConnectorTests(unittest.TestCase):
         keys = {r["row_key"] for r in store.fetchall(
             "SELECT row_key FROM medicaid_data_rows")}
         self.assertEqual(keys, {"uuid-xyz:0", "uuid-xyz:1", "uuid-xyz:2"})
+        store.close()
+
+    def test_refresh_generic_different_filters_coexist(self):
+        # Regression: row_idx is positional within the FILTERED result
+        # set, so refreshes of the same dataset with different filters
+        # used to silently overwrite each other at row_key {key}:0.
+        fake = FakeMedicaidData().add_datastore(
+            "uuid-xyz", [{"state": "AK", "a": "1"},
+                         {"state": "AL", "a": "2"}])
+        store = MedicaidDataStore(":memory:")
+        conn = _connector(page_limit=10)
+        conn.refresh(store, "uuid-xyz", {"filters": {"state": "AK"}},
+                     opener=fake, max_pages=5)
+        conn.refresh(store, "uuid-xyz", {"filters": {"state": "AL"}},
+                     opener=fake, max_pages=5)
+        keys = {r["row_key"] for r in store.fetchall(
+            "SELECT row_key FROM medicaid_data_rows")}
+        self.assertEqual(len(keys), 2)              # nothing overwritten
+        # Re-running one filtered refresh upserts in place (idempotent).
+        conn.refresh(store, "uuid-xyz", {"filters": {"state": "AL"}},
+                     opener=fake, max_pages=5)
+        self.assertEqual(store.count("medicaid_data_rows"), 2)
+        store.close()
+
+    def test_resumed_fetch_mid_dataset_does_not_overwrite_earlier_rows(self):
+        # Regression scenario: a capped refresh, then a manual resume
+        # from its cursor — absolute row_idx keeps keys 0..N intact.
+        fake = FakeMedicaidData().add_datastore(
+            "uuid-xyz", [{"a": "1"}, {"a": "2"}, {"a": "3"}])
+        store = MedicaidDataStore(":memory:")
+        conn = _connector(page_limit=2)
+        conn.refresh(store, "uuid-xyz", opener=fake, max_pages=1)  # rows 0..1
+        step = conn.fetch_dataset("uuid-xyz", cursor={"offset": 2},
+                                  opener=fake)
+        res = normalize_generic("uuid-xyz", step.rows, start_idx=2)
+        for table, rows in res.rows.items():
+            store.upsert(table, rows)
+        keys = {r["row_key"] for r in store.fetchall(
+            "SELECT row_key FROM medicaid_data_rows")}
+        self.assertEqual(keys, {"uuid-xyz:0", "uuid-xyz:1", "uuid-xyz:2"})
+        row0 = store.fetchall(
+            "SELECT row_json FROM medicaid_data_rows WHERE row_key = ?",
+            ("uuid-xyz:0",))[0]
+        self.assertIn('"a": "1"', row0["row_json"])  # untouched by resume
         store.close()
 
 

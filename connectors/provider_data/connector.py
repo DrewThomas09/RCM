@@ -252,8 +252,17 @@ class ProviderDataConnector:
         if spec.kind == "curated":
             norm = normalize(spec, result.rows)
         else:
+            # Key integrity for the shared rows table: start_idx is the
+            # fetch's absolute start offset (a mid-dataset resume must
+            # not re-key its rows as 0..N) and the non-paging params +
+            # conditions sign the key so differently-filtered fetches
+            # coexist instead of silently overwriting each other.
+            slice_params = {k: v for k, v in (params or {}).items()
+                            if str(k) not in ("limit", "offset")}
+            slice_params.update(conditions or {})
             norm = normalize(spec, result.rows, dataset_key=identifier,
-                             start_idx=result.start_offset)
+                             start_idx=result.start_offset,
+                             slice_params=slice_params)
         written = store.upsert(spec.target_table,
                                norm.rows.get(spec.target_table, []))
         return {"dataset_id": spec.dataset_id, "table": spec.target_table,

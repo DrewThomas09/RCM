@@ -211,11 +211,19 @@ class MedicaidDataConnector:
         fetched = written = 0
         cursor: Optional[Dict[str, Any]] = None
         fetched_at = _utc_now()
+        # Key integrity for the shared rows table: the non-paging params
+        # (filters and passthrough conditions) sign the row keys so
+        # refreshes of the same dataset with different filters coexist
+        # instead of silently overwriting each other (row_idx is only
+        # meaningful within one filter slice).
+        slice_params = {k: v for k, v in (params or {}).items()
+                        if str(k) not in ("limit", "offset")}
         for _ in range(max(pages, 1)):
             step = self.fetch_dataset(key, params, cursor, opener=opener)
             start_idx = int((cursor or {}).get("offset", 0))
             res = normalize_generic(key, step.rows, start_idx=start_idx,
-                                    fetched_at=fetched_at)
+                                    fetched_at=fetched_at,
+                                    slice_params=slice_params)
             for t, rows in res.rows.items():
                 written += store.upsert(t, rows)
             fetched += len(step.rows)

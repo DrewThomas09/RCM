@@ -125,6 +125,43 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(row["row_key"], "77hc-ibv8:0")
         self.assertEqual(row["source_endpoint"], "77hc-ibv8")
 
+    def test_refresh_generic_mid_dataset_offset_keeps_absolute_keys(self):
+        # Regression guard: a refresh resumed mid-dataset (offset>0)
+        # must key rows by absolute offset, never re-key them as 0..N.
+        conn = _connector()
+        fake = FakeProviderData().add("77hc-ibv8", generic_hai_rows(4))
+        conn.refresh(self.store, "77hc-ibv8", opener=fake)
+        fake2 = FakeProviderData().add("77hc-ibv8", generic_hai_rows(4))
+        conn.refresh(self.store, "77hc-ibv8", {"offset": 2}, opener=fake2)
+        keys = {r["row_key"] for r in self.store.fetchall(
+            "SELECT row_key FROM provider_data_rows")}
+        self.assertEqual(keys, {f"77hc-ibv8:{i}" for i in range(4)})
+        row0 = self.store.fetchall(
+            "SELECT row_json FROM provider_data_rows WHERE row_key = ?",
+            ("77hc-ibv8:0",))[0]
+        self.assertIn("010000", row0["row_json"])   # first record intact
+
+    def test_refresh_generic_different_conditions_coexist(self):
+        # Regression: row_idx is positional within the FILTERED result
+        # set, so refreshes of the same dataset with different conditions
+        # used to silently overwrite each other at row_key {key}:0.
+        conn = _connector()
+        fake = FakeProviderData().add("77hc-ibv8", generic_hai_rows(4))
+        conn.refresh(self.store, "77hc-ibv8", opener=fake,
+                     conditions={"facility_id": "010001"})
+        conn.refresh(self.store, "77hc-ibv8", opener=fake,
+                     conditions={"facility_id": "010002"})
+        rows = self.store.fetchall(
+            "SELECT row_key, row_json FROM provider_data_rows")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len({r["row_key"] for r in rows}), 2)
+        # The human-readable filter params ride along in the row JSON.
+        self.assertIn('"_slice_params"', rows[0]["row_json"])
+        # Re-running one filtered refresh upserts in place (idempotent).
+        conn.refresh(self.store, "77hc-ibv8", opener=fake,
+                     conditions={"facility_id": "010002"})
+        self.assertEqual(self.store.count("provider_data_rows"), 2)
+
     def test_refresh_is_idempotent(self):
         fake = FakeProviderData().add("xubh-q36u", hospital_rows(3))
         conn = _connector()

@@ -25,10 +25,13 @@ Cross-cutting normalizations done here:
     datasets stays queryable through the uniform engine. ``row_idx`` is
     zero-padded (8 digits) so TEXT ordering matches numeric order, and
     ``dataset_key`` doubles as ``source_endpoint`` so slice-pinning
-    works.
+    works. A fetch scoped by filters gains a :func:`slice_signature`
+    key segment (``{dataset_key}:{sig}:{row_idx}``) so differently
+    filtered fetches of one dataset never overwrite each other.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -150,9 +153,56 @@ def normalize(spec: EndpointSpec, raw_rows: List[Dict[str, Any]]
     return res
 
 
+# First N hex chars of the sha1 over the canonicalized slice params —
+# short enough to keep keys readable, long enough to never collide for
+# the handful of filter combinations a dataset realistically sees.
+_SLICE_SIG_LEN = 10
+
+
+def _canonical_slice_params(slice_params: Optional[Dict[str, Any]]
+                            ) -> Optional[Dict[str, Any]]:
+    """A JSON-safe, deterministically ordered copy of the slice params.
+
+    Returns ``None`` when there is no *effective* filter: an absent/empty
+    dict, or one whose values are all empty (``None``/``""``/``{}``/
+    ``[]``), degrades to the unfiltered key shape so the common
+    full-crawl case keeps its historical keys byte-identical.
+    """
+    if not slice_params:
+        return None
+    kept = {str(k): v for k, v in slice_params.items()
+            if v is not None and v != "" and v != {} and v != []}
+    if not kept:
+        return None
+    return json.loads(
+        json.dumps(kept, ensure_ascii=False, sort_keys=True, default=str))
+
+
+def slice_signature(slice_params: Optional[Dict[str, Any]] = None) -> str:
+    """Short stable signature of the filter params that scoped a fetch.
+
+    ``""`` for an unfiltered fetch (the historical, common case — keys
+    stay ``{dataset_key}:{row_idx}``, byte-identical with what earlier
+    versions wrote). Otherwise the first :data:`_SLICE_SIG_LEN` hex chars
+    of the sha1 over the canonicalized (sorted-keys JSON, values coerced
+    via ``str``) params. The signature becomes a key segment
+    (``{dataset_key}:{sig}:{row_idx}``) so two fetches of the same
+    dataset with different filters can never overwrite each other's rows
+    in the shared table — ``row_idx`` is only meaningful *within* one
+    filter slice.
+    """
+    canon = _canonical_slice_params(slice_params)
+    if canon is None:
+        return ""
+    blob = json.dumps(canon, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:_SLICE_SIG_LEN]
+
+
 def normalize_generic(dataset_key: str, raw_rows: List[Dict[str, Any]],
                       *, row_offset: int = 0,
-                      fetched_at: Optional[str] = None) -> NormalizeResult:
+                      fetched_at: Optional[str] = None,
+                      slice_params: Optional[Dict[str, Any]] = None
+                      ) -> NormalizeResult:
     """Wrap arbitrary datastore rows as JSON for ``open_payments_rows``.
 
     ``row_offset`` is the datastore offset the page started at, so the
@@ -160,20 +210,36 @@ def normalize_generic(dataset_key: str, raw_rows: List[Dict[str, Any]],
     fetches and a re-fetch of the same slice upserts in place instead of
     appending. ``dataset_key`` is also written to ``source_endpoint`` so
     the query engine's slice pinning works on the shared table.
+
+    ``slice_params`` are the DKAN conditions/filters that scoped the
+    fetch, if any: they add a :func:`slice_signature` segment to the key
+    (``{dataset_key}:{sig}:{row_idx}``) so differently-filtered fetches
+    of one dataset coexist, and the human-readable params are carried in
+    the row's JSON under the reserved ``_slice_params`` key. Unfiltered
+    fetches produce byte-identical output to earlier versions.
     """
     res = NormalizeResult()
     stamp = fetched_at or datetime.now(timezone.utc).strftime(
         "%Y-%m-%dT%H:%M:%S+00:00")
+    sig = slice_signature(slice_params)
+    canon = _canonical_slice_params(slice_params)
     for i, rec in enumerate(raw_rows):
         if not isinstance(rec, dict):
             continue
         idx = row_offset + i
         padded = str(idx).zfill(_ROW_IDX_WIDTH)
+        if sig:
+            body: Dict[str, Any] = dict(rec)
+            body["_slice_params"] = canon
+            key = f"{dataset_key}:{sig}:{padded}"
+        else:
+            body = rec
+            key = f"{dataset_key}:{padded}"
         res.add("open_payments_rows", {
-            "row_key": f"{dataset_key}:{padded}",
+            "row_key": key,
             "dataset_key": dataset_key,
             "row_idx": padded,
-            "row_json": json.dumps(rec, ensure_ascii=False, sort_keys=True),
+            "row_json": json.dumps(body, ensure_ascii=False, sort_keys=True),
             "fetched_at": stamp,
             "source_endpoint": dataset_key,
         })

@@ -33,6 +33,7 @@ Cross-cutting normalizations done here:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import dataclass, field
@@ -147,13 +148,69 @@ def _curated_row(rec: Dict[str, Any], res: NormalizeResult,
 
 
 # ── generic rows (any catalog dataset) ────────────────────────────────
+# First N hex chars of the sha1 over the canonicalized slice params —
+# short enough to keep keys readable, long enough to never collide for
+# the handful of filter combinations a dataset realistically sees.
+_SLICE_SIG_LEN = 10
+
+
+def _canonical_slice_params(slice_params: Optional[Dict[str, Any]]
+                            ) -> Optional[Dict[str, Any]]:
+    """A JSON-safe, deterministically ordered copy of the slice params.
+
+    Returns ``None`` when there is no *effective* filter: an absent/empty
+    dict, or one whose values are all empty (``None``/``""``/``{}``/
+    ``[]``), degrades to the unfiltered key shape so the common
+    full-crawl case keeps its historical keys byte-identical.
+    """
+    if not slice_params:
+        return None
+    kept = {str(k): v for k, v in slice_params.items()
+            if v is not None and v != "" and v != {} and v != []}
+    if not kept:
+        return None
+    return json.loads(
+        json.dumps(kept, ensure_ascii=False, sort_keys=True, default=str))
+
+
+def slice_signature(slice_params: Optional[Dict[str, Any]] = None) -> str:
+    """Short stable signature of the filter params that scoped a fetch.
+
+    ``""`` for an unfiltered fetch (the historical, common case — keys
+    stay ``{dataset_key}:{row_idx}``, byte-identical with what earlier
+    versions wrote). Otherwise the first :data:`_SLICE_SIG_LEN` hex chars
+    of the sha1 over the canonicalized (sorted-keys JSON, values coerced
+    via ``str``) params. The signature becomes a key segment
+    (``{dataset_key}:{sig}:{row_idx}``) so two fetches of the same
+    dataset with different filters can never overwrite each other's rows
+    in the shared table — ``row_idx`` is only meaningful *within* one
+    filter slice.
+    """
+    canon = _canonical_slice_params(slice_params)
+    if canon is None:
+        return ""
+    blob = json.dumps(canon, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:_SLICE_SIG_LEN]
+
+
 def _generic_row(rec: Dict[str, Any], res: NormalizeResult,
-                 dataset_key: str, row_idx: int, fetched_at: str) -> None:
+                 dataset_key: str, row_idx: int, fetched_at: str,
+                 sig: str = "",
+                 canon_params: Optional[Dict[str, Any]] = None) -> None:
+    if sig:
+        body: Dict[str, Any] = dict(rec)
+        # Human-readable record of the filters that scoped this row's
+        # fetch (the reserved _slice_params key mirrors the sig segment).
+        body["_slice_params"] = canon_params
+        key = f"{dataset_key}:{sig}:{row_idx}"
+    else:
+        body = rec
+        key = f"{dataset_key}:{row_idx}"
     res.add("provider_data_rows", {
-        "row_key": f"{dataset_key}:{row_idx}",
+        "row_key": key,
         "dataset_key": dataset_key,
         "row_idx": row_idx,
-        "row_json": json.dumps(rec, ensure_ascii=False, sort_keys=True),
+        "row_json": json.dumps(body, ensure_ascii=False, sort_keys=True),
         "fetched_at": fetched_at,
         # dataset_key doubles as the slice value so a per-dataset view of
         # the shared table stays pinnable by the query engine.
@@ -168,14 +225,22 @@ def normalize(
     dataset_key: Optional[str] = None,
     start_idx: int = 0,
     fetched_at: Optional[str] = None,
+    slice_params: Optional[Dict[str, Any]] = None,
 ) -> NormalizeResult:
     """Normalize a batch of raw rows for one endpoint into canonical rows.
 
-    ``dataset_key``/``start_idx``/``fetched_at`` only apply to the
-    generic kind: ``dataset_key`` names which catalog dataset the rows
-    came from (defaults to the 4x4 identifier is required), and
-    ``start_idx`` is the datastore offset of the first row so paged
-    fetches compose stable ``row_idx`` values instead of colliding at 0.
+    ``dataset_key``/``start_idx``/``fetched_at``/``slice_params`` only
+    apply to the generic kind: ``dataset_key`` names which catalog
+    dataset the rows came from (defaults to the 4x4 identifier is
+    required), and ``start_idx`` is the datastore offset of the first row
+    so paged/resumed fetches compose stable absolute ``row_idx`` values
+    instead of colliding at 0. ``slice_params`` are the conditions/filter
+    params that scoped the fetch, if any — they add a
+    :func:`slice_signature` segment to the key
+    (``{dataset_key}:{sig}:{row_idx}``) so differently-filtered fetches
+    of one dataset coexist, and the human-readable params are carried in
+    the row's JSON under the reserved ``_slice_params`` key. Unfiltered
+    fetches produce byte-identical output to earlier versions.
     """
     res = NormalizeResult()
     if spec.kind == "catalog":
@@ -193,10 +258,12 @@ def normalize(
         if not key:
             raise ValueError("generic normalize requires dataset_key")
         stamp = fetched_at or _utc_now()
+        sig = slice_signature(slice_params)
+        canon = _canonical_slice_params(slice_params)
         idx = start_idx
         for rec in raw_rows:
             if isinstance(rec, dict):
-                _generic_row(rec, res, key, idx, stamp)
+                _generic_row(rec, res, key, idx, stamp, sig, canon)
                 idx += 1
         return res
     raise KeyError(f"no normalizer for kind {spec.kind!r} (endpoint {spec.key!r})")

@@ -55,7 +55,7 @@ class TablesTests(unittest.TestCase):
         self.assertEqual(self.store.count("healthcare_gov_rows"), 1)
         row = self.store.fetchall(
             "SELECT row_json FROM healthcare_gov_rows WHERE row_key = ?",
-            ("e4rr-zk4i:1",))[0]
+            ("e4rr-zk4i:00000001",))[0]
         self.assertIn('"npn": "123"', row["row_json"])
 
     def test_coercion_lists_bools_to_text(self):

@@ -104,20 +104,58 @@ class GenericRowsTests(unittest.TestCase):
         raw = [{"record_number": 41, "a": "1"},
                {"record_number": 42, "a": "2"}]
         rows = generic_rows("e4rr-zk4i", raw)
-        self.assertEqual(rows[0]["row_key"], "e4rr-zk4i:41")
-        self.assertEqual(rows[1]["row_idx"], "42")
+        self.assertEqual(rows[0]["row_key"], "e4rr-zk4i:00000041")
+        self.assertEqual(rows[1]["row_idx"], "00000042")
         self.assertEqual(json.loads(rows[0]["row_json"]), {"a": "1"})
         self.assertEqual(rows[0]["source_endpoint"], "e4rr-zk4i")
         self.assertTrue(rows[0]["fetched_at"])
 
     def test_falls_back_to_absolute_offset(self):
         rows = generic_rows("some-id", [{"a": "1"}, {"a": "2"}], start_idx=500)
-        self.assertEqual(rows[0]["row_key"], "some-id:500")
-        self.assertEqual(rows[1]["row_key"], "some-id:501")
+        self.assertEqual(rows[0]["row_key"], "some-id:00000500")
+        self.assertEqual(rows[1]["row_key"], "some-id:00000501")
+
+    def test_row_idx_zero_padded_so_text_order_is_numeric(self):
+        # Regression: unpadded TEXT indexes sorted "10" < "9".
+        rows = generic_rows("some-id", [{"a": str(i)} for i in range(11)])
+        idxs = [r["row_idx"] for r in rows]
+        self.assertEqual(idxs, sorted(idxs))          # lexicographic == numeric
+        self.assertEqual(idxs[9], "00000009")
+        self.assertEqual(idxs[10], "00000010")
+        self.assertGreater(idxs[10], idxs[9])
 
     def test_non_dict_rows_are_skipped(self):
         rows = generic_rows("some-id", [{"a": "1"}, "junk", None])
         self.assertEqual(len(rows), 1)
+
+    def test_slice_params_sign_the_key_and_land_in_json(self):
+        # Regression: two differently-filtered fetches whose rows fall
+        # back to positional indexes must not overwrite each other.
+        ak = generic_rows("some-id", [{"a": "1"}],
+                          slice_params={"statecode": "AK"})
+        tx = generic_rows("some-id", [{"a": "2"}],
+                          slice_params={"statecode": "TX"})
+        self.assertNotEqual(ak[0]["row_key"], tx[0]["row_key"])
+        self.assertTrue(ak[0]["row_key"].startswith("some-id:"))
+        self.assertTrue(ak[0]["row_key"].endswith(":00000000"))
+        self.assertEqual(json.loads(ak[0]["row_json"])["_slice_params"],
+                         {"statecode": "AK"})
+        # The signature is deterministic: same filters → same key.
+        again = generic_rows("some-id", [{"a": "9"}],
+                             slice_params={"statecode": "AK"})
+        self.assertEqual(ak[0]["row_key"], again[0]["row_key"])
+
+    def test_empty_slice_params_keep_unfiltered_key_shape(self):
+        plain = generic_rows("some-id", [{"a": "1"}],
+                             fetched_at="2026-07-06T00:00:00+00:00")
+        empt = generic_rows("some-id", [{"a": "1"}], slice_params={},
+                            fetched_at="2026-07-06T00:00:00+00:00")
+        blank = generic_rows("some-id", [{"a": "1"}],
+                             slice_params={"keyword": ""},
+                             fetched_at="2026-07-06T00:00:00+00:00")
+        self.assertEqual(plain, empt)
+        self.assertEqual(plain, blank)
+        self.assertEqual(plain[0]["row_key"], "some-id:00000000")
 
 
 if __name__ == "__main__":

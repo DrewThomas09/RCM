@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from ..connector import CmsOpenDataConnector
@@ -193,6 +194,51 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(
             self.store.count("cms_open_data_rows", "dataset_key = ?",
                              ("hospital_provider_cost_report",)), 2)
+        # The unfiltered full-crawl key shape is a compatibility contract.
+        keys = {r["row_key"] for r in self.store.fetchall(
+            "SELECT row_key FROM cms_open_data_rows")}
+        self.assertEqual(keys, {"hospital_provider_cost_report:0",
+                                "hospital_provider_cost_report:1"})
+
+    def test_refresh_generic_mid_dataset_offset_keeps_absolute_keys(self):
+        # Regression: a fetch resumed mid-dataset (offset>0) used to
+        # re-key its rows as 0..N, overwriting the earlier window.
+        self.conn.sync_catalog(self.store, opener=self.fake)
+        self.conn.refresh(self.store, "hospital_provider_cost_report",
+                          opener=self.fake)
+        self.conn.refresh(self.store, "hospital_provider_cost_report",
+                          {"offset": 1}, opener=self.fake)
+        rows = self.store.fetchall(
+            "SELECT row_key, row_json FROM cms_open_data_rows "
+            "ORDER BY row_idx")
+        self.assertEqual([r["row_key"] for r in rows],
+                         ["hospital_provider_cost_report:0",
+                          "hospital_provider_cost_report:1"])
+        # Row 0 still holds the FIRST record, not the resumed window's.
+        self.assertIn("747534", rows[0]["row_json"])
+
+    def test_refresh_generic_different_filters_coexist(self):
+        # Regression: row_idx is positional within the FILTERED result
+        # set, so refreshes of the same dataset with different filters
+        # used to silently overwrite each other at row_key {key}:0.
+        self.conn.sync_catalog(self.store, opener=self.fake)
+        self.conn.refresh(self.store, "hospital_provider_cost_report",
+                          {"rpt_rec_num": "747534"}, opener=self.fake)
+        self.conn.refresh(self.store, "hospital_provider_cost_report",
+                          {"rpt_rec_num": "747999"}, opener=self.fake)
+        rows = self.store.fetchall(
+            "SELECT row_key, row_json FROM cms_open_data_rows")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len({r["row_key"] for r in rows}), 2)
+        # The human-readable filter params ride along in the row JSON.
+        slice_params = sorted(
+            str(json.loads(r["row_json"])["_slice_params"]) for r in rows)
+        self.assertEqual(slice_params, ["{'rpt_rec_num': '747534'}",
+                                        "{'rpt_rec_num': '747999'}"])
+        # Re-running one filtered refresh upserts in place (idempotent).
+        self.conn.refresh(self.store, "hospital_provider_cost_report",
+                          {"rpt_rec_num": "747999"}, opener=self.fake)
+        self.assertEqual(self.store.count("cms_open_data_rows"), 2)
 
 
 class StatsTests(unittest.TestCase):

@@ -22,10 +22,11 @@ Cross-cutting normalizations done here:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .endpoints import EndpointSpec
 from .flatten import coalesce, dig, to_column, to_snake, unmapped_keys
@@ -128,26 +129,90 @@ def normalize(spec: EndpointSpec, raw_rows: List[Dict[str, Any]]
 
 
 # ── generic rows (any 4x4 on the domain) ──────────────────────────────
+# First N hex chars of the sha1 over the canonicalized slice params —
+# short enough to keep keys readable, long enough to never collide for
+# the handful of filter combinations a dataset realistically sees.
+_SLICE_SIG_LEN = 10
+
+
+def _canonical_slice_params(slice_params: Optional[Dict[str, Any]]
+                            ) -> Optional[Dict[str, Any]]:
+    """A JSON-safe, deterministically ordered copy of the slice params.
+
+    Returns ``None`` when there is no *effective* filter: an absent/empty
+    dict, or one whose values are all empty (``None``/``""``/``{}``/
+    ``[]``), degrades to the unfiltered key shape so the common
+    full-crawl case keeps its historical keys byte-identical.
+    """
+    if not slice_params:
+        return None
+    kept = {str(k): v for k, v in slice_params.items()
+            if v is not None and v != "" and v != {} and v != []}
+    if not kept:
+        return None
+    return json.loads(
+        json.dumps(kept, ensure_ascii=False, sort_keys=True, default=str))
+
+
+def slice_signature(slice_params: Optional[Dict[str, Any]] = None) -> str:
+    """Short stable signature of the filter params that scoped a fetch.
+
+    ``""`` for an unfiltered fetch (the historical, common case — keys
+    stay ``{dataset_key}:{row_idx}``, byte-identical with what earlier
+    versions wrote). Otherwise the first :data:`_SLICE_SIG_LEN` hex chars
+    of the sha1 over the canonicalized (sorted-keys JSON, values coerced
+    via ``str``) params. The signature becomes a key segment
+    (``{dataset_key}:{sig}:{row_idx}``) so two fetches of the same
+    dataset with different ``$where``/column filters can never overwrite
+    each other's rows in the shared table — ``row_idx`` is only
+    meaningful *within* one filter slice.
+    """
+    canon = _canonical_slice_params(slice_params)
+    if canon is None:
+        return ""
+    blob = json.dumps(canon, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha1(blob.encode("utf-8")).hexdigest()[:_SLICE_SIG_LEN]
+
+
 def normalize_generic(dataset_key: str, raw_rows: List[Dict[str, Any]],
-                      *, start_idx: int = 0) -> List[Dict[str, Any]]:
+                      *, start_idx: int = 0,
+                      slice_params: Optional[Dict[str, Any]] = None
+                      ) -> List[Dict[str, Any]]:
     """Raw rows from an arbitrary 4x4 → ``cdc_data_rows`` records.
 
     ``row_idx`` continues from ``start_idx`` so multi-page pulls keep a
     stable, gap-free ordering; the same (dataset, page window) re-fetch
     overwrites in place, which is the idempotency the JSON-blob table
     can honestly promise without a native key.
+
+    ``slice_params`` are the SoQL filter params (plain column equalities,
+    ``$where``, a caller-supplied ``$order``, ...) that scoped the fetch,
+    if any: they add a :func:`slice_signature` segment to the key
+    (``{dataset_key}:{sig}:{row_idx}``) so differently-filtered fetches
+    of one dataset coexist, and the human-readable params are carried in
+    the row's JSON under the reserved ``_slice_params`` key. Unfiltered
+    fetches produce byte-identical output to earlier versions.
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+    sig = slice_signature(slice_params)
+    canon = _canonical_slice_params(slice_params)
     out: List[Dict[str, Any]] = []
     for i, rec in enumerate(raw_rows):
         if not isinstance(rec, dict):
             continue
         idx = start_idx + i
+        if sig:
+            body: Dict[str, Any] = dict(rec)
+            body["_slice_params"] = canon
+            key = f"{dataset_key}:{sig}:{idx}"
+        else:
+            body = rec
+            key = f"{dataset_key}:{idx}"
         out.append({
-            "row_key": f"{dataset_key}:{idx}",
+            "row_key": key,
             "dataset_key": dataset_key,
             "row_idx": idx,
-            "row_json": json.dumps(rec, ensure_ascii=False, sort_keys=True),
+            "row_json": json.dumps(body, ensure_ascii=False, sort_keys=True),
             "fetched_at": now,
             # dataset_key doubles as the slice value so the uniform query
             # engine can pin/filter generic pulls per dataset.

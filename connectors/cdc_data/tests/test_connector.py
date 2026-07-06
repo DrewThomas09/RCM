@@ -133,6 +133,42 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(
             self.store.count("cdc_data_rows", "dataset_key = ?", ("zzzz-9999",)),
             2)
+        # The unfiltered full-crawl key shape is a compatibility contract.
+        keys = {r["row_key"] for r in self.store.fetchall(
+            "SELECT row_key FROM cdc_data_rows")}
+        self.assertEqual(keys, {"zzzz-9999:0", "zzzz-9999:1"})
+
+    def test_refresh_generic_different_filters_coexist(self):
+        # Regression: row_idx is positional within the FILTERED result
+        # set, so refreshes of the same dataset with different filters
+        # used to silently overwrite each other at row_key {key}:0.
+        fake = FakeCdcData().add("/resource/zzzz-9999.json", generic_rows(3))
+        conn = _connector()
+        conn.refresh(self.store, "zzzz-9999", {"some_col": "v1"}, opener=fake)
+        conn.refresh(self.store, "zzzz-9999", {"some_col": "v2"}, opener=fake)
+        rows = self.store.fetchall(
+            "SELECT row_key, row_json FROM cdc_data_rows")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len({r["row_key"] for r in rows}), 2)
+        # The human-readable filter params ride along in the row JSON.
+        self.assertIn('"_slice_params"', rows[0]["row_json"])
+        # Re-running one filtered refresh upserts in place (idempotent).
+        conn.refresh(self.store, "zzzz-9999", {"some_col": "v2"}, opener=fake)
+        self.assertEqual(self.store.count("cdc_data_rows"), 2)
+
+    def test_refresh_generic_where_clauses_get_distinct_slices(self):
+        # $where is opaque to the fake (returns everything), but the key
+        # signature must still keep the two slices apart in the store.
+        fake = FakeCdcData().add("/resource/zzzz-9999.json", generic_rows(2))
+        conn = _connector()
+        conn.refresh(self.store, "zzzz-9999", {"$where": "other > 0"},
+                     opener=fake)
+        conn.refresh(self.store, "zzzz-9999", {"$where": "other > 1"},
+                     opener=fake)
+        self.assertEqual(self.store.count("cdc_data_rows"), 4)
+        self.assertEqual(
+            len({r["row_key"] for r in self.store.fetchall(
+                "SELECT row_key FROM cdc_data_rows")}), 4)
 
 
 if __name__ == "__main__":

@@ -70,6 +70,7 @@ class FetchResult:
     truncated: bool = False           # stopped at max_pages with more left
     requests: int = 0
     filters: Dict[str, Any] = dc_field(default_factory=dict)
+    start_offset: int = 0             # datastore offset of rows[0]
 
     @property
     def done(self) -> bool:
@@ -192,7 +193,14 @@ class OpenPaymentsConnector:
             result = self.fetch_dataset(dataset_key, filters, opener=opener,
                                         max_pages=max_pages,
                                         page_size=page_size)
-            norm = normalize_generic(dataset_key, result.rows)
+            # Key integrity for the shared rows table: row_offset is the
+            # fetch's absolute start offset (a mid-dataset resume must
+            # not re-key its rows as 0..N) and the filters sign the key
+            # so differently-filtered fetches coexist instead of
+            # silently overwriting each other.
+            norm = normalize_generic(dataset_key, result.rows,
+                                     row_offset=result.start_offset,
+                                     slice_params=dict(filters or {}))
         elif spec.kind == "catalog":
             rows = self.discover(opener=opener)
             norm = NormalizeResult(rows={spec.target_table: rows})
@@ -229,6 +237,7 @@ class OpenPaymentsConnector:
         cond = conditions_params(filters or {})
         base_params: Dict[str, Any] = dict(params or {})
         offset = int(base_params.pop("offset", 0))
+        start_offset = offset
         start_requests = self.transport.requests_made
 
         rows: List[Dict[str, Any]] = []
@@ -267,6 +276,7 @@ class OpenPaymentsConnector:
             truncated=truncated,
             requests=self.transport.requests_made - start_requests,
             filters=dict(filters or {}),
+            start_offset=start_offset,
         )
 
     def _fetch_catalog_raw(self, opener: Optional[Opener]

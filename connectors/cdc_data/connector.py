@@ -254,7 +254,14 @@ class CdcDataConnector:
                     "refresh('fetched_rows') needs params={'dataset_key': <4x4>}")
         result = self.fetch_dataset(key, params, opener=opener,
                                     max_pages=max_pages, page_size=page_size)
-        rows = normalize_generic(key, result.rows)
+        # Key integrity for the shared rows table: the caller's non-paging
+        # SoQL params sign the row keys so refreshes of the same dataset
+        # with different $where/column filters coexist instead of silently
+        # overwriting each other (row_idx is only meaningful within one
+        # filter slice; refresh itself always starts at offset 0).
+        slice_params = {k: v for k, v in (params or {}).items()
+                        if str(k) not in ("$limit", "$offset")}
+        rows = normalize_generic(key, result.rows, slice_params=slice_params)
         n = store.upsert("cdc_data_rows", rows)
         return {"dataset": "cdc_data_fetched_rows", "endpoint": key,
                 "fetched": len(result.rows), "exhausted": result.exhausted,

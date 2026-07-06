@@ -109,6 +109,18 @@ class ApiServerTests(unittest.TestCase):
         self.assertEqual(planids,
                          {"21989AK0030001-00", "21989AK0030001-01"})
 
+    def test_lookup_garbage_limit_falls_back_to_default(self):
+        # Regression: int("abc") used to escape as a 500; garbage limits
+        # must clamp to the handler's default instead.
+        status, body = self._get(
+            "/v1/lookup/marketplace-plan/21989AK0030001?limit=abc")
+        self.assertEqual(status, 200)
+        self.assertTrue(body["found"])
+        self.assertEqual(body["rates"]["count"], 2)
+        status, body = self._get("/v1/lookup/county-plans/02170?limit=abc")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["plans"]["count"], 2)
+
     def test_bad_filter_field_returns_400(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self._get("/v1/query/healthcare_gov_plan_attributes_py2026?nope=1")
