@@ -19,8 +19,10 @@ genuinely requires probing.
 ``fetch`` keeps the estate's step shape (rows + ``next_cursor``) for
 uniformity with the paging connectors; for a single-file source the
 cursor is always ``None`` — one step is the whole (possibly capped)
-file. ``refresh`` is the fetch → normalize → upsert convenience the CLI
-drives.
+file. ``refresh`` is the fetch → normalize → store convenience the CLI
+drives; a complete (uncapped) pull of the full-replacement file
+atomically REPLACES the exclusions table, while capped/supplement pulls
+merge (see :meth:`OigLeieConnector.refresh` for the exact rules).
 """
 from __future__ import annotations
 
@@ -217,17 +219,65 @@ class OigLeieConnector:
     ) -> Dict[str, Any]:
         """Ingest one dataset end-to-end; returns counts for reporting.
 
-        ``store`` is duck-typed (needs ``upsert(table, rows)``) so this
+        ``store`` is duck-typed (needs ``upsert(table, rows)``; the
+        full-replacement path below additionally uses
+        ``replace_all(table, rows)`` when the store provides it) so this
         module never imports :mod:`tables` — normalize and storage stay
         independently testable.
+
+        Write semantics per dataset kind:
+
+          * ``full`` (``UPDATED.csv``) — the published file is the
+            complete cumulative list and *supersedes* the previous full
+            pull plus every monthly supplement merged since. When the
+            fetch covered the whole file (the stream was NOT truncated
+            by ``max_rows``; a mid-download drop raises in the transport
+            and never reaches this point) the exclusions table is
+            REPLACED atomically: one transaction deletes the prior
+            full+supplement rows and writes the fresh snapshot, so
+            reinstated providers (absent from the new file) disappear
+            (``mode="replace"``). When the fetch was row-capped, the
+            partial file merges only and the report carries an explicit
+            ``warning`` (``mode="merge"``) — deleting on a partial
+            snapshot could silently drop live exclusions.
+          * ``supplement``/``reinstatements`` — monthly deltas always
+            merge (``mode="merge"``, no warning).
         """
         spec = get_endpoint(endpoint) if isinstance(endpoint, str) else endpoint
         step = self.fetch(spec, max_rows=max_rows, year=year, month=month,
                           opener=opener)
         res = normalize(spec, step.rows, month_tag=step.month_tag)
+
+        mode = "merge"
+        warning: Optional[str] = None
+        replace_all = getattr(store, "replace_all", None)
+        if spec.dataset_kind == "full":
+            if step.truncated:
+                warning = (
+                    f"partial merge: the full-replacement file was "
+                    f"row-capped at max_rows={max_rows}, so rows were "
+                    f"merged WITHOUT deleting the previous snapshot — "
+                    f"reinstated providers may still be flagged. Re-run "
+                    f"with --full (or a covering --max-rows) to replace "
+                    f"the exclusions table atomically.")
+            elif not any(res.rows.values()):
+                warning = (
+                    "full-replacement file parsed to 0 usable rows; "
+                    "refusing to delete the existing snapshot (merge-only)")
+            elif not callable(replace_all):
+                warning = (
+                    "store lacks replace_all(); the full-replacement file "
+                    "was merged WITHOUT deleting the previous snapshot — "
+                    "reinstated providers may still be flagged")
+            else:
+                mode = "replace"
+
         upserted: Dict[str, int] = {}
         for table, rows in res.rows.items():
-            upserted[table] = store.upsert(table, rows)
+            if mode == "replace":
+                upserted[table] = replace_all(table, rows)
+            else:
+                upserted[table] = store.upsert(table, rows)
         return {
             "dataset_id": spec.dataset_id,
             "endpoint": spec.key,
@@ -236,6 +286,8 @@ class OigLeieConnector:
             "month": step.month,
             "fetched": len(step.rows),
             "truncated": step.truncated,
+            "mode": mode,
+            "warning": warning,
             "upserted": upserted,
             "unmapped_fields": dict(res.unmapped),
             "requests": step.requests,

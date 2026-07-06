@@ -14,7 +14,12 @@ way it shaped the HRSA connector's:
     or it doesn't; there is no page to resume. HTTP 429/5xx and
     transport errors (including a mid-stream drop while parsing) retry
     the whole request with exponential backoff + full jitter, honouring
-    ``Retry-After``.
+    ``Retry-After`` (clamped to ``[0, backoff cap]`` — a hostile or
+    buggy negative value must not abort the loop). Download integrity
+    is verified: an uncapped parse that consumes fewer bytes than the
+    response's ``Content-Length`` declared, or a chunked-body
+    ``http.client.IncompleteRead``, is a *retryable* failure — a
+    silently truncated slice is never treated as complete.
   * **404 is a signal, not a transient** — QCEW answers 404 for any
     year/quarter/code outside the published window, so the error names
     the live-verified window (2014 Q1 - 2025 Q4 as of 2026-07-06) and
@@ -35,6 +40,7 @@ import io
 import random
 import time
 from dataclasses import dataclass, field
+from http.client import IncompleteRead
 from typing import Any, BinaryIO, Callable, Dict, List, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -58,6 +64,66 @@ _DEFAULT_TIMEOUT_S = 30.0
 
 class QcewApiError(RuntimeError):
     """Raised when QCEW is unreachable or returns an unrecoverable error."""
+
+
+class _TruncatedBodyError(OSError):
+    """The body ended before the declared ``Content-Length`` was delivered.
+
+    A connection dropped mid-body must never yield a silently partial
+    slice. ``OSError`` so the mid-stream retry handler in
+    :meth:`QcewTransport.get_csv` treats it as a transient and re-pulls;
+    on exhaustion it surfaces wrapped in :class:`QcewApiError` like
+    every other transport failure.
+    """
+
+
+class _CountingStream(io.RawIOBase):
+    """Counts bytes consumed from a wrapped binary stream.
+
+    Lets the parser verify, once it reaches EOF, that the number of
+    bytes actually delivered matches the response's ``Content-Length``
+    — ``http.client`` returns a short read (not an error) when a
+    non-chunked connection drops mid-body.
+    """
+
+    def __init__(self, raw: BinaryIO) -> None:
+        super().__init__()
+        self._raw = raw
+        self.bytes_read = 0
+
+    def readable(self) -> bool:  # pragma: no cover - io protocol
+        return True
+
+    def readinto(self, b) -> int:
+        chunk = self._raw.read(len(b))
+        n = len(chunk)
+        b[:n] = chunk
+        self.bytes_read += n
+        return n
+
+
+def _declared_content_length(resp: "RawResponse") -> Optional[int]:
+    """The response's ``Content-Length`` as an int, or ``None`` when the
+    header is absent/malformed (nothing to verify against)."""
+    raw = resp.header("content-length")
+    if raw is None:
+        return None
+    try:
+        value = int(raw.strip())
+    except (ValueError, AttributeError):
+        return None
+    return value if value >= 0 else None
+
+
+def _verify_body_complete(resp: "RawResponse", counting: _CountingStream,
+                          url: str) -> None:
+    """Raise :class:`_TruncatedBodyError` when fewer bytes arrived than
+    ``Content-Length`` declared (connection dropped mid-body)."""
+    expected = _declared_content_length(resp)
+    if expected is not None and counting.bytes_read < expected:
+        raise _TruncatedBodyError(
+            f"{url}: truncated body: read {counting.bytes_read} of "
+            f"{expected} bytes (Content-Length)")
 
 
 @dataclass(frozen=True)
@@ -189,9 +255,14 @@ class QcewTransport:
             ra = resp.header("retry-after")
             if ra:
                 try:
-                    return min(float(ra), self.backoff_cap_s)
+                    parsed = float(ra)
                 except ValueError:
-                    pass  # HTTP-date form is rare here; fall through
+                    pass  # HTTP-date / garbage form; fall through to backoff
+                else:
+                    # Clamp to [0, cap]: a negative (or NaN) Retry-After
+                    # must never reach time.sleep(), which raises
+                    # ValueError and would abort the retry loop.
+                    return max(0.0, min(parsed, self.backoff_cap_s))
         ceiling = min(self.backoff_cap_s, self.backoff_base_s * (2 ** attempt))
         return ceiling * rand()  # full jitter in [0, ceiling)
 
@@ -232,10 +303,12 @@ class QcewTransport:
             if status == 200:
                 try:
                     return self._parse_csv(resp, max_rows, url)
-                except (OSError, TimeoutError, csv.Error,
+                except (OSError, TimeoutError, IncompleteRead, csv.Error,
                         UnicodeDecodeError) as exc:
-                    # Mid-stream failure: treat like a transient and
-                    # re-pull the file (bounded by max_retries).
+                    # Mid-stream failure (incl. a chunked-body
+                    # IncompleteRead or a Content-Length shortfall):
+                    # treat like a transient and re-pull the file
+                    # (bounded by max_retries).
                     last_status, last_detail = 200, f"mid-stream: {exc}"
                     if attempt < self.max_retries:
                         sleep(self._backoff_seconds(attempt, None, rand))
@@ -283,14 +356,24 @@ class QcewTransport:
           * empty header cells are dropped and the matching value
             ignored;
           * rows shorter than the header are padded with ``""`` so the
-            dict shape is stable for the normalizer.
+            dict shape is stable for the normalizer;
+          * when the response declares ``Content-Length`` and the parse
+            reaches end-of-stream (i.e. was not cut short by
+            ``max_rows``), the bytes actually consumed are verified
+            against it — ``http.client`` returns a short read, not an
+            error, when a non-chunked connection drops mid-body, and a
+            silently truncated slice must never be treated as complete.
+            A shortfall raises (retryable) so the whole file is
+            re-pulled.
         """
-        text = io.TextIOWrapper(resp.reader(), encoding="utf-8-sig",
-                                newline="")
+        counting = _CountingStream(resp.reader())
+        text = io.TextIOWrapper(io.BufferedReader(counting),
+                                encoding="utf-8-sig", newline="")
         reader = csv.reader(text)
         try:
             header_row = next(reader)
         except StopIteration:
+            _verify_body_complete(resp, counting, url)
             raise QcewApiError(f"{url}: empty CSV (no header row)") from None
         keep = [(i, h.strip()) for i, h in enumerate(header_row) if h.strip()]
         if not keep:
@@ -306,6 +389,11 @@ class QcewTransport:
                 truncated = True
                 break
             rows.append({h: (row[i] if i < len(row) else "") for i, h in keep})
+        if not truncated:
+            # EOF reached: every delivered byte was consumed, so the
+            # count is comparable to Content-Length. A max_rows-capped
+            # parse stops early by design and cannot be verified.
+            _verify_body_complete(resp, counting, url)
         return CsvResult(fieldnames=fieldnames, rows=rows, truncated=truncated)
 
 

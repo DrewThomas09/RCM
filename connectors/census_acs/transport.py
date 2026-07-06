@@ -12,6 +12,9 @@ This transport:
     without one it still runs (metadata probes work) but data queries
     fail with a *clear, actionable* error naming the env var instead of a
     cryptic JSON-parse failure,
+  * never leaks the key value: error messages embed the request URL
+    (which carries ``key=<value>``), so every raised message has the key
+    value replaced with the placeholder ``<CENSUS_API_KEY>``,
   * keeps a minimum inter-request interval so a tight ingest loop stays
     polite (each profile refresh is only two requests anyway),
   * handles HTTP 429 and 5xx with exponential backoff + full jitter and
@@ -165,9 +168,14 @@ class CensusAcsTransport:
             ra = resp.header("retry-after")
             if ra:
                 try:
-                    return min(float(ra), self.backoff_cap_s)
+                    parsed = float(ra)
                 except ValueError:
-                    pass  # HTTP-date form is rare here; fall through
+                    pass  # HTTP-date / garbage form; fall through to backoff
+                else:
+                    # Clamp to [0, cap]: a negative (or NaN) Retry-After
+                    # must never reach time.sleep(), which raises
+                    # ValueError and would abort the retry loop.
+                    return max(0.0, min(parsed, self.backoff_cap_s))
         ceiling = min(self.backoff_cap_s, self.backoff_base_s * (2 ** attempt))
         return ceiling * rand()  # full jitter in [0, ceiling)
 
@@ -218,14 +226,15 @@ class CensusAcsTransport:
                     continue
                 break
             # Other 4xx (400 unknown variable, 404 unknown vintage/dataset)
-            # won't fix on retry — surface the API's message verbatim.
-            raise CensusAcsApiError(
+            # won't fix on retry — surface the API's message (key value
+            # redacted; the URL and echoed bodies may carry it).
+            raise CensusAcsApiError(self._redact(
                 f"{url}: HTTP {status} {_short_body(resp.body)}"
-            )
-        raise CensusAcsApiError(
+            ))
+        raise CensusAcsApiError(self._redact(
             f"{url}: failed after {self.max_retries + 1} attempts "
             f"(last status {last_status}: {last_detail})"
-        )
+        ))
 
     def _parse(self, body: bytes, url: str) -> List[List[Any]]:
         try:
@@ -236,19 +245,31 @@ class CensusAcsTransport:
             text = body.decode("utf-8", "replace").lower()
             if "missing key" in text or "invalid key" in text or "a valid <em>key</em>" in text:
                 raise CensusAcsApiError(self._key_message(url)) from exc
-            raise CensusAcsApiError(
+            raise CensusAcsApiError(self._redact(
                 f"{url}: non-JSON response ({len(body)} bytes)"
-            ) from exc
+            )) from exc
         if not isinstance(doc, list):
-            raise CensusAcsApiError(
+            raise CensusAcsApiError(self._redact(
                 f"{url}: unexpected JSON shape {type(doc).__name__} "
-                "(expected the ACS array-of-arrays)")
+                "(expected the ACS array-of-arrays)"))
         return doc
+
+    def _redact(self, text: str) -> str:
+        """Strip the API key value from any outbound message.
+
+        Error messages embed the request URL (and sometimes an echoed
+        body), which carries ``key=<value>`` — those messages end up in
+        logs, CLI output and bug reports, so the secret value is
+        replaced with the placeholder ``<CENSUS_API_KEY>`` everywhere.
+        """
+        if not self.api_key:
+            return text
+        return text.replace(self.api_key, "<CENSUS_API_KEY>")
 
     def _key_message(self, url: str) -> str:
         state = ("the configured key was rejected" if self.has_key
                  else "no key is configured")
-        return (
+        return self._redact(
             f"{url}: api.census.gov requires an API key on every data "
             f"request and {state}. Set $CENSUS_API_KEY (free signup: "
             f"{KEY_SIGNUP_URL})."

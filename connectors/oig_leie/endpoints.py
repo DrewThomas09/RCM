@@ -15,7 +15,15 @@ URLs were verified live on 2026-07-06:
     LEIE database (~83k rows, ~15 MB, refreshed monthly; header row
     LASTNAME,FIRSTNAME,MIDNAME,BUSNAME,GENERAL,SPECIALTY,UPIN,NPI,DOB,
     ADDRESS,CITY,STATE,ZIP,EXCLTYPE,EXCLDATE,REINDATE,WAIVERDATE,
-    WVRSTATE).
+    WVRSTATE). **Full-replacement means exactly that**: the published
+    file is the complete current list, so a provider reinstated since
+    the last pull is *absent* from it. A complete (uncapped) refresh of
+    this dataset therefore atomically REPLACES the ``oig_exclusions``
+    table — one transaction deletes the previous full+supplement rows
+    and writes the fresh snapshot — instead of merging; a row-capped
+    (partial) refresh merges only and reports an explicit warning, and
+    a failed/truncated download raises in the transport and never
+    touches the table.
   * ``/exclusions/downloadables/{yyyy}/{yy}{mm}excl.csv`` — the monthly
     exclusions supplement (new exclusions added that month; usually
     14-70 KB). Same 18-column header as the full file.
@@ -137,6 +145,10 @@ ENDPOINTS: Dict[str, EndpointSpec] = {
     s.key: s for s in (
         EndpointSpec(
             key="exclusions",
+            # dataset_kind="full" ⇒ a complete (uncapped) refresh
+            # REPLACES the whole oig_exclusions table atomically; a
+            # row-capped refresh degrades to merge + warning. See the
+            # module docstring and OigLeieConnector.refresh.
             target_table="oig_exclusions",
             dataset_kind="full",
             file_kind="excl",
@@ -147,7 +159,9 @@ ENDPOINTS: Dict[str, EndpointSpec] = {
             key="supplement",
             # Incremental adds merge into the SAME cumulative table as
             # the full file (same natural key), so a compliance screen
-            # of oig_exclusions always sees the freshest union.
+            # of oig_exclusions always sees the freshest union. The
+            # next complete full-file refresh supersedes (replaces)
+            # these merged rows.
             target_table="oig_exclusions",
             dataset_kind="supplement",
             file_kind="excl",

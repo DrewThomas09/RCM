@@ -348,4 +348,9 @@ class FakeHrsa:
         path = url.split("data.hrsa.gov", 1)[-1].split("?", 1)[0]
         if path not in self.files:
             return RawResponse(status=404, body=b"Not Found")
-        return RawResponse(status=200, body=self.files[path].encode("utf-8"))
+        body = self.files[path].encode("utf-8")
+        # The live server declares Content-Length; mirroring it makes
+        # every test exercise the transport's byte-count integrity check.
+        return RawResponse(status=200,
+                           headers={"content-length": str(len(body))},
+                           body=body)

@@ -2,13 +2,17 @@
 
 Two normalization targets:
 
-  oig_exclusions     — the cumulative exclusion list. Both the
-                       full-replacement UPDATED.csv *and* the monthly
-                       ``{yy}{mm}excl.csv`` supplements upsert here
-                       under the same composed natural key, so a
-                       compliance screen of this table always sees the
-                       freshest union (``source_endpoint`` records which
-                       pull last touched each row).
+  oig_exclusions     — the cumulative exclusion list. The monthly
+                       ``{yy}{mm}excl.csv`` supplements upsert (merge)
+                       here; a *complete* pull of the full-replacement
+                       UPDATED.csv atomically REPLACES the whole table
+                       via :meth:`OigLeieStore.replace_all` (the full
+                       file is cumulative and supersedes the previous
+                       full pull plus every supplement — a merge would
+                       keep reinstated providers flagged forever). A
+                       row-capped/partial full pull falls back to
+                       merge-only with a warning. ``source_endpoint``
+                       records which pull last touched each row.
   oig_reinstatements — monthly reinstatement rows (providers removed
                        from the LEIE; ``reindate`` populated). Kept in
                        their own table because a reinstated provider is
@@ -145,16 +149,48 @@ class OigLeieStore:
         if not rows:
             return 0
         tdef = TABLES[table]
-        now = _utc_now()
         sql = tdef.upsert_sql()
+        params = self._row_params(tdef, rows)
+        with self.conn:  # implicit BEGIN/COMMIT, atomic
+            self.conn.executemany(sql, params)
+        return len(params)
+
+    def replace_all(self, table: str, rows: Sequence[Dict[str, Any]]) -> int:
+        """Atomically replace the ENTIRE contents of ``table`` with ``rows``.
+
+        One transaction: DELETE every existing row, then write the fresh
+        snapshot (rolled back wholly on any error, so a reader never
+        observes an empty or half-written table). Used by the connector
+        when a *complete* full-replacement file (``UPDATED.csv``) was
+        ingested: the full LEIE is cumulative and supersedes both the
+        previous full pull and every monthly supplement merged since, so
+        rows absent from the new snapshot (reinstated providers) must
+        disappear — a merge-only write would flag them excluded forever.
+
+        The snapshot insert still uses the upsert statement so the
+        couple dozen byte-identical duplicate source lines in the live
+        file collapse exactly as they do on the merge path. Returns the
+        number of rows written (before duplicate-key collapse).
+        """
+        tdef = TABLES[table]
+        sql = tdef.upsert_sql()
+        params = self._row_params(tdef, rows)
+        with self.conn:  # implicit BEGIN/COMMIT, atomic
+            self.conn.execute(f"DELETE FROM {tdef.name}")  # noqa: S608 (module-constant name)
+            if params:
+                self.conn.executemany(sql, params)
+        return len(params)
+
+    @staticmethod
+    def _row_params(tdef: TableDef, rows: Sequence[Dict[str, Any]]
+                    ) -> List[Tuple[Any, ...]]:
+        now = _utc_now()
         params: List[Tuple[Any, ...]] = []
         for r in rows:
             r = dict(r)
             r.setdefault("ingested_at", now)
             params.append(tuple(_coerce(r.get(c)) for c in tdef.columns))
-        with self.conn:  # implicit BEGIN/COMMIT, atomic
-            self.conn.executemany(sql, params)
-        return len(params)
+        return params
 
     def count(self, table: str, where: str = "", args: Sequence[Any] = ()) -> int:
         sql = f"SELECT COUNT(*) AS n FROM {table}"

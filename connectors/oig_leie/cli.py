@@ -90,6 +90,10 @@ def cmd_fetch(args: argparse.Namespace) -> int:
                           year=args.year, month=args.month)
     counts["table_totals"] = {
         t: store.count(t) for t in sorted({ENDPOINTS[key].target_table})}
+    if counts.get("warning"):
+        # e.g. a row-capped pull of the full-replacement file merged
+        # without deleting the previous snapshot — make it unmissable.
+        print(f"WARNING: {counts['warning']}", file=sys.stderr)
     _print(counts)
     store.close()
     return 0

@@ -60,6 +60,24 @@ Supplement quirks confirmed against the live index
 
 Design notes:
 
+* **The full file REPLACES; supplements merge.** `UPDATED.csv` is a
+  *full-replacement* publication: it is the complete current list, so a
+  provider reinstated since the last pull is **absent** from it. A
+  complete (uncapped) `fetch --dataset exclusions` therefore atomically
+  replaces the `oig_exclusions` table — one transaction deletes the
+  previous full+supplement rows and writes the fresh snapshot
+  (`"mode": "replace"` in the fetch report). Merging it instead would
+  keep reinstated providers flagged excluded forever. Deletion only
+  happens when the download demonstrably covered the whole file:
+  * a **row-capped** pull (`--max-rows` smaller than the file) merges
+    only and reports/prints an explicit partial-merge `warning`
+    (`"mode": "merge"`);
+  * a **failed or truncated download** (connection drop mid-body —
+    detected via `Content-Length` byte accounting in the transport)
+    raises and never touches the table;
+  * a full file that parses to **0 usable rows** is refused as a
+    replacement (merge-only + warning) — an empty compliance list is
+    upstream breakage, not mass reinstatement.
 * **Shared cumulative table, no `source_filter` pinning.** The full file
   and the supplement are one logical dataset (the supplement is
   incremental adds), so unlike the estate's usual shared-table slicing,
@@ -147,3 +165,16 @@ cd /home/user/RCM && python3 -m unittest discover -s connectors/oig_leie/tests -
 No network: every fixture in `tests/fakes.py` mirrors the real 18-column
 shape and sentinel quirks sampled live on 2026-07-06. Live smoke is
 manual-only via the CLI (see above).
+
+## Changelog
+
+* **2026-07-06** — a complete (uncapped) refresh of
+  `oig_leie_exclusions` now atomically **replaces** the
+  `oig_exclusions` table instead of merging, so providers reinstated
+  since the previous pull stop being flagged (no schema change; run
+  `fetch --dataset exclusions --full` once on an existing db to purge
+  stale rows). Row-capped pulls still merge and now report an explicit
+  partial-merge warning. The transport also verifies downloads against
+  `Content-Length` and retries `IncompleteRead`, so a mid-body
+  connection drop can never ingest (or replace with) a truncated file,
+  and defends against negative/garbage `Retry-After` headers.
