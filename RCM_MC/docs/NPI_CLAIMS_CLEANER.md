@@ -45,8 +45,8 @@ diligence or RCM ops team actually needs first.
 |---|---|
 | Cleaned file (all deterministic repairs applied) | `⤓ Download cleaned CSV` |
 | Report workbook — opens on an **executive Summary tab** (grade, top findings + remediation, credential/specialty mix), plus Scorecard, Quality, NPI health, per-rule **WL worklist tabs**, cleaned data | `?fmt=xlsx` |
-| Cell-level change log (every original → cleaned value; recorded before de-identification so PHI never leaks into it) | `?fmt=changelog` |
-| Per-rule worklist CSVs (just the flagged rows, with row numbers) | `?fmt=worklist&rule=<id>` |
+| Cell-level change log (every original → cleaned value; recorded before de-identification so PHI never leaks into it). **Complete at any scale** — entries past the 20k in-memory preview spill to disk during the run (in-memory path) or stream to the master file per chunk (10 GB path), so a 10M-row run gets its full audit trail | `?fmt=changelog` |
+| Per-rule worklist CSVs (just the flagged rows, with row numbers; up to 50,000 rows captured per rule — the sanity counters always report the true totals) | `?fmt=worklist&rule=<id>` |
 | Per-payer worklist CSVs (one payer family's flagged rows) | `?fmt=worklist&payer=<FAMILY>` |
 | Data dictionary (per-column role, fill %, distinct, PHI-safe samples) | `?fmt=dictionary` |
 | Printable executive one-pager | `?fmt=exec` |

@@ -1584,11 +1584,15 @@ class TestReviewFixes(unittest.TestCase):
     def test_worklist_captures_late_first_firing_rule(self):
         # Old _wl_open shut off capture globally once every rule seen so
         # far was full; a rule first firing later got zero worklist rows.
+        # The cap is patched down so the cap-full path is exercised
+        # without a 50k-row fixture (the production cap is 50,000).
         rows = ["ClaimID,DateOfService,HCPCS"]
-        for i in range(520):                        # fills date-stale's 500 cap
+        for i in range(520):                     # fills date-stale's cap
             rows.append(f"{i},1990-01-01,99213")
-        rows.append("bad,2024-01-01,BAD!!")         # first hcpcs hit, row 521
-        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(), "wl.csv")
+        rows.append("bad,2024-01-01,BAD!!")      # first hcpcs hit, row 521
+        with patch.object(engine, "_WORKLIST_CAP", 500):
+            res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                     "wl.csv")
         self.assertEqual(len(res.flag_rows["date-stale"]), 500)
         self.assertEqual(res.flag_rows.get("hcpcs-malformed"), [521])
 
@@ -3979,7 +3983,222 @@ class TestMultiSheetWorkbooks(unittest.TestCase):
         self.assertFalse([w for w in res.warnings if "Workbook has" in w])
 
 
+class TestUncappedOutputs(unittest.TestCase):
+    """The audit-trail FILE and the worklists must scale with the data.
+    The old design capped the changelog CSV at 20,000 entries and every
+    worklist at 500 rows — a 10M-row run got a silently truncated audit
+    trail. Now: the in-memory preview stays capped, entries past it
+    spill to disk (in-memory path) or stream through the master-file
+    sink (chunked path), and the CSV is complete at any scale."""
+
+    def _dirty(self, n):
+        rows = ["ClaimID,BillingProviderNPI,ChargeAmt"]
+        rows += [f"{i}, {GOOD_A} ,420" for i in range(1, n + 1)]
+        return ("\n".join(rows) + "\n").encode()
+
+    def test_changelog_file_is_complete_past_the_preview(self):
+        # 2 changes per row (NPI trim + money normalize) with a tiny
+        # preview → the file must still carry every entry, in order.
+        data = self._dirty(300)
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 50):
+            res = engine.clean_bytes(data, "spill.csv")
+        self.assertEqual(res.n_changes, 600)
+        self.assertEqual(len(res.changelog), 50)
+        self.assertFalse(res.changelog_truncated)
+        self.assertIsNone(res.changelog_spill)  # consumed + discarded
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        self.assertEqual(len(lines) - 1, 600)
+        # Ordering survives the spill boundary: row indices ascend.
+        idxs = [int(ln.split(",")[0]) for ln in lines[1:]]
+        self.assertEqual(idxs, sorted(idxs))
+        self.assertEqual(idxs[-1], 300)
+
+    def test_streamed_changelog_file_is_complete_across_chunks(self):
+        from rcm_mc.npi_cleaner import bigfile
+        data = self._dirty(400)
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 512), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 2048), \
+                    patch.object(engine, "_CHANGELOG_PREVIEW", 50):
+                res = bigfile.clean_path(p, "s.csv")
+        self.assertEqual(res.n_changes, 800)
+        self.assertFalse(res.changelog_truncated)
+        with open(res.changelog_path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        self.assertEqual(len(lines) - 1, 800)
+        # Row indices are file-global (max == rows in), not chunk-local.
+        idxs = [int(ln.split(",")[0]) for ln in lines[1:]]
+        self.assertEqual(max(idxs), 400)
+        self.assertEqual(len(res.changelog), 50)  # preview stays bounded
+
+    def test_worklists_capture_past_the_old_500_cap(self):
+        rows = ["ClaimID,DateOfService"]
+        rows += [f"{i},2099-01-01" for i in range(1, 1201)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "wl.csv")
+        self.assertEqual(res.sanity["date-in-future"], 1200)
+        self.assertEqual(len(res.flag_rows["date-in-future"]), 1200)
+        self.assertEqual(engine._WORKLIST_CAP, 50_000)
+
+    def test_cleaned_csv_has_no_row_cap(self):
+        # The primary artifact was never capped — pin that with a run
+        # bigger than every preview/list bound in one pass.
+        data = self._dirty(25_000)
+        res = engine.clean_bytes(data, "big.csv")
+        with open(res.out_path, encoding="utf-8") as fh:
+            n = sum(1 for _ in fh)
+        self.assertEqual(n - 1, 25_000)
+        self.assertEqual(res.n_rows_out, 25_000)
+
+
+class TestSpillGuard(unittest.TestCase):
+    """Adversarial-review regressions for the changelog spill: the temp
+    file holds PRE-de-id values, so it must never be orphaned by a
+    cancelled/failed run, and the stitched CSV must be byte-exact."""
+
+    def _dirty(self, extra_last=None, n=400):
+        rows = ["ClaimID,Note,BillingProviderNPI"]
+        rows += [f"{i},x, {GOOD_A} " for i in range(1, n)]
+        if extra_last:
+            rows.append(extra_last)
+        return ("\n".join(rows) + "\n").encode()
+
+    def test_cancel_mid_run_orphans_no_spill_files(self):
+        import gc
+        import glob
+        before = set(glob.glob("/tmp/npi_cleaner_web/spill_*.csv"))
+
+        class Boom(Exception):
+            pass
+
+        def cb(msg, frac):
+            if frac > 0.86:  # after the row loop, before _write_output
+                raise Boom()
+
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 10):
+            with self.assertRaises(Boom):
+                engine.clean_bytes(self._dirty(), "cancel.csv",
+                                   progress=cb)
+        gc.collect()
+        after = set(glob.glob("/tmp/npi_cleaner_web/spill_*.csv"))
+        self.assertEqual(sorted(after - before), [])
+
+    def test_multiline_cell_survives_spill_byte_for_byte(self):
+        # Universal-newline reads rewrote CR/LF inside quoted cells when
+        # the spill was stitched back; the append is binary now.
+        last = '400,"123 Main St\r\nSuite 4, rear   ", ' + GOOD_A + " "
+        with patch.object(engine, "_CHANGELOG_PREVIEW", 10):
+            res = engine.clean_bytes(self._dirty(extra_last=last),
+                                     "crlf.csv")
+        raw = open(res.changelog_path, "rb").read()
+        self.assertIn(b"St\r\nSuite", raw)
+        import csv as _csv
+        import io as _io
+        recs = list(_csv.reader(_io.StringIO(raw.decode("utf-8"),
+                                             newline="")))
+        self.assertEqual(len(recs) - 1, res.n_changes)
+        self.assertTrue(any("\r\n" in (r[2] if len(r) > 2 else "")
+                            for r in recs[1:]))
+
+    def test_spill_write_failure_discards_partial_and_flags(self):
+        g = engine._ChangelogSpill()
+        g.write([1, "c", "b", "a", "trim"])
+        self.assertIsNotNone(g.path)
+        p = g.path
+        # Sabotage the handle so the next write raises OSError.
+        g.fh.close()
+        g.fh = None
+
+        class _BoomWriter:
+            def writerow(self, row):
+                raise OSError("disk full")
+        g.writer = _BoomWriter()
+        g.write([2, "c", "b", "a", "trim"])
+        self.assertTrue(g.failed)
+        self.assertIsNone(g.path)
+        self.assertFalse(p.exists())
+
+
+class TestPhiSafeChangelog(unittest.TestCase):
+    """On a de-identified run the changelog artifact must not carry the
+    raw patient identifiers the user asked to remove — previously the
+    before-values landed in the file (bounded only by the old 20k cap)."""
+
+    def test_deid_changelog_carries_no_raw_phi(self):
+        rows = ["ClaimID,PatientName,PatientDOB,BillingProviderNPI"]
+        rows += [f"{i}, John Q Secret ,1961-04-0{1 + i % 9}, {GOOD_A} "
+                 for i in range(1, 120)]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "phi.csv", deid=True)
+        self.assertTrue(res.deid_applied)
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertNotIn("Secret", log)      # raw name never logged
+        self.assertNotIn("1961-04", log)     # raw DOB never logged
+        self.assertIn(GOOD_A, log)           # provider trims still audited
+        self.assertTrue(any("omitted from the change log" in w
+                            for w in res.warnings))
+        # And the cleaned output is masked, as before.
+        out = open(res.out_path, encoding="utf-8").read()
+        self.assertNotIn("Secret", out)
+
+    def test_non_deid_runs_log_everything(self):
+        rows = ["ClaimID,PatientName,BillingProviderNPI",
+                f"1, John Q Public , {GOOD_A} "]
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "nophi.csv")
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("John Q Public", log)  # trim logged with before-value
+        self.assertFalse(any("omitted from the change log" in w
+                             for w in res.warnings))
+
+
+class TestDeterministicFills(unittest.TestCase):
+    """Filling, not just flagging: blanks the engine can close from truth
+    it already trusts get closed, audited, and graded as repairs."""
+
+    def test_blank_state_filled_from_zip(self):
+        rows = ["ClaimID,ProviderZip,ProviderState,BillingProviderNPI",
+                f"1,75201,,{GOOD_A}",     # blank + Dallas ZIP → TX
+                f"2,75201,TX,{GOOD_A}",   # already present → untouched
+                f"3,10001,CA,{GOOD_A}",   # mismatch → flagged, NOT rewritten
+                f"4,,,{GOOD_A}"]          # nothing to fill from
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "fill.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 1)
+        self.assertEqual(res.sanity.get("zip-state-mismatch"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertEqual(out[1].split(",")[2], "TX")
+        self.assertEqual(out[3].split(",")[2], "CA")  # never overwritten
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("state-from-zip", log)
+
+    def test_fill_survives_streaming_path(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,ProviderZip,ProviderState"]
+        rows += [f"{i},75201," for i in range(1, 301)]
+        data = ("\n".join(rows) + "\n").encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 256), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 1024):
+                res = bigfile.clean_path(p, "s.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 300)
+        with open(res.out_path, encoding="utf-8") as fh:
+            body = fh.read()
+        self.assertEqual(body.count(",TX"), 300)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+
+
 
 

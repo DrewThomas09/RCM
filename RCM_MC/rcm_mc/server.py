@@ -3048,69 +3048,104 @@ class RCMHandler(BaseHTTPRequestHandler):
             import csv as _csv
             import io as _io
             import json as _bjson
+            import uuid as _buuid
             import zipfile as _zf
             from datetime import datetime as _bdt, timezone as _btz
+            from .npi_cleaner.engine import WORKDIR as _bwd
             from .npi_cleaner.exec_report import build_exec_report
             r = job.result
-            buf = _io.BytesIO()
-            with _zf.ZipFile(buf, "w", _zf.ZIP_DEFLATED) as z:
-                for p, n in ((r.out_path, r.out_name),
-                             (r.workbook_path, r.workbook_name),
-                             (r.changelog_path, r.changelog_name),
-                             (r.companion_path, r.companion_name)):
-                    if p:
+            # Build the zip ON DISK and stream it out: the bundle embeds
+            # the cleaned file itself, which on a streamed run is multi-GB
+            # — a BytesIO bundle would hold all of it in RAM per request.
+            # Bundle worklists carry the first rows per rule with a
+            # truncation note; the complete per-rule lists stay one
+            # request away (?fmt=worklist&rule=…).
+            _BUNDLE_WL_ROWS = 5000
+            _bwd.mkdir(parents=True, exist_ok=True)
+            zpath = _bwd / f"bundle_{_buuid.uuid4().hex}.zip"
+            try:
+                with _zf.ZipFile(zpath, "w", _zf.ZIP_DEFLATED) as z:
+                    for p, n in ((r.out_path, r.out_name),
+                                 (r.workbook_path, r.workbook_name),
+                                 (r.changelog_path, r.changelog_name),
+                                 (r.companion_path, r.companion_name)):
+                        if p:
+                            try:
+                                z.write(p, n)
+                            except OSError:
+                                pass
+                    sc_b = r.as_scorecard()
+                    z.writestr("exec_report.html", build_exec_report(
+                        sc_b, job.name,
+                        _bdt.now(_btz.utc).strftime("%Y-%m-%d %H:%M UTC")))
+                    z.writestr("scorecard.json",
+                               _bjson.dumps(sc_b, indent=2, default=str))
+                    if r.dictionary:
+                        z.writestr("data_dictionary.csv",
+                                   engine.dictionary_csv(r))
+                    if r.population:
+                        from .npi_cleaner import analytics as _nc_an
+                        _enc_csv = _nc_an.encounters_csv(r.population)
+                        if _enc_csv:
+                            z.writestr("encounters.csv", _enc_csv)
+                    # Worklists: one pass over the cleaned file, split by
+                    # rule, bounded per rule inside the bundle.
+                    if r.flag_rows and r.out_path:
+                        _want = {}      # row index → rules that flagged it
+                        for rule, idxs in r.flag_rows.items():
+                            for i in idxs[:_BUNDLE_WL_ROWS]:
+                                _want.setdefault(i, []).append(rule)
+                        _sinks = {rule: _io.StringIO()
+                                  for rule in r.flag_rows
+                                  if r.flag_rows[rule]}
+                        _writers = {k: _csv.writer(v)
+                                    for k, v in _sinks.items()}
                         try:
-                            z.write(p, n)
+                            with open(r.out_path, encoding="utf-8") as fh:
+                                rd = _csv.reader(fh)
+                                hdr = next(rd, None)
+                                if hdr:
+                                    for w in _writers.values():
+                                        w.writerow(["_row"] + hdr)
+                                for i, row in enumerate(rd, start=1):
+                                    for rule in _want.get(i, ()):
+                                        _writers[rule].writerow([i] + row)
+                            for rule, sink in _sinks.items():
+                                safe = "".join(c for c in rule
+                                               if c.isalnum() or c == "-")
+                                _txt = sink.getvalue()
+                                if len(r.flag_rows[rule]) > _BUNDLE_WL_ROWS:
+                                    _txt += (
+                                        f"# bundle carries the first "
+                                        f"{_BUNDLE_WL_ROWS:,} of "
+                                        f"{len(r.flag_rows[rule]):,} rows —"
+                                        " download ?fmt=worklist&rule="
+                                        f"{rule} for the full list\r\n")
+                                z.writestr(f"worklists/{safe}.csv", _txt)
                         except OSError:
                             pass
-                sc_b = r.as_scorecard()
-                z.writestr("exec_report.html", build_exec_report(
-                    sc_b, job.name,
-                    _bdt.now(_btz.utc).strftime("%Y-%m-%d %H:%M UTC")))
-                z.writestr("scorecard.json",
-                           _bjson.dumps(sc_b, indent=2, default=str))
-                if r.dictionary:
-                    z.writestr("data_dictionary.csv",
-                               engine.dictionary_csv(r))
-                if r.population:
-                    from .npi_cleaner import analytics as _nc_an
-                    _enc_csv = _nc_an.encounters_csv(r.population)
-                    if _enc_csv:
-                        z.writestr("encounters.csv", _enc_csv)
-                # Worklists: one pass over the cleaned file, split by rule.
-                if r.flag_rows and r.out_path:
-                    _want = {}          # row index → rules that flagged it
-                    for rule, idxs in r.flag_rows.items():
-                        for i in idxs:
-                            _want.setdefault(i, []).append(rule)
-                    _sinks = {rule: _io.StringIO()
-                              for rule in r.flag_rows if r.flag_rows[rule]}
-                    _writers = {k: _csv.writer(v) for k, v in _sinks.items()}
-                    try:
-                        with open(r.out_path, encoding="utf-8") as fh:
-                            rd = _csv.reader(fh)
-                            hdr = next(rd, None)
-                            if hdr:
-                                for w in _writers.values():
-                                    w.writerow(["_row"] + hdr)
-                            for i, row in enumerate(rd, start=1):
-                                for rule in _want.get(i, ()):
-                                    _writers[rule].writerow([i] + row)
-                        for rule, sink in _sinks.items():
-                            safe = "".join(c for c in rule
-                                           if c.isalnum() or c == "-")
-                            z.writestr(f"worklists/{safe}.csv",
-                                       sink.getvalue())
-                    except OSError:
-                        pass
-            data = buf.getvalue()
-            self.send_response(HTTPStatus.OK)
-            self.send_header("Content-Type", "application/zip")
-            self.send_header("Content-Disposition",
-                             'attachment; filename="npi_clean_bundle.zip"')
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
+                size = os.path.getsize(zpath)
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header(
+                    "Content-Disposition",
+                    'attachment; filename="npi_clean_bundle.zip"')
+                self.send_header("Content-Length", str(size))
+                self.end_headers()
+                try:
+                    with open(zpath, "rb") as zfh:
+                        while True:
+                            block = zfh.read(1 << 20)
+                            if not block:
+                                break
+                            self.wfile.write(block)
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    pass
+            finally:
+                try:
+                    zpath.unlink(missing_ok=True)
+                except OSError:
+                    pass
             return
         if fmt == "xlsx":
             src_path = job.result.workbook_path
@@ -3141,20 +3176,32 @@ class RCMHandler(BaseHTTPRequestHandler):
         if not src_path:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
+        # Stream from disk in 1 MB blocks — a 10 GB cleaned CSV (or its
+        # multi-GB change log) must never be materialized in RAM per
+        # download request.
         try:
-            with open(src_path, "rb") as fh:
-                data = fh.read()
+            size = os.path.getsize(src_path)
+            fh = open(src_path, "rb")
         except OSError:
             self.send_error(HTTPStatus.NOT_FOUND)
             return
         safe_name = fname.replace('"', "")
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Content-Length", str(size))
         self.send_header(
             "Content-Disposition", f'attachment; filename="{safe_name}"')
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            with fh:
+                while True:
+                    block = fh.read(1 << 20)
+                    if not block:
+                        break
+                    self.wfile.write(block)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            # Client hung up mid-download — nothing to clean up server-side.
+            pass
 
     def _route_npi_cleaner_analyze(self, job_id: str) -> None:
         """Render the pivot/analysis page for a finished cleaning job."""
@@ -3183,21 +3230,33 @@ class RCMHandler(BaseHTTPRequestHandler):
                 {"error": "Job not found (server may have restarted)."},
                 status=HTTPStatus.NOT_FOUND)
         cap = 20000
+        # Read incrementally: the pivot only ever shows `cap` rows, so a
+        # 10 GB cleaned file must not be materialized just to slice its
+        # head. Rows past the cap are counted, not kept.
+        columns: list = []
+        body: list = []
+        total = 0
         try:
-            with open(job.result.out_path, newline="", encoding="utf-8") as fh:
+            with open(job.result.out_path, newline="",
+                      encoding="utf-8") as fh:
                 reader = _csv.reader(fh)
-                rows = list(reader)
+                for i, row in enumerate(reader):
+                    if i == 0:
+                        columns = row
+                        continue
+                    total += 1
+                    if len(body) < cap:
+                        body.append(row)
         except (OSError, UnicodeDecodeError, _csv.Error):
             return self._send_json({"error": "cleaned data unavailable"},
                                    status=HTTPStatus.NOT_FOUND)
-        if not rows:
-            return self._send_json({"columns": [], "rows": [], "truncated": False})
-        columns = rows[0]
-        body = rows[1:cap + 1]
+        if not columns and not body:
+            return self._send_json({"columns": [], "rows": [],
+                                    "truncated": False})
         return self._send_json({
             "columns": columns, "rows": body,
-            "truncated": len(rows) - 1 > cap,
-            "total_rows": len(rows) - 1,
+            "truncated": total > cap,
+            "total_rows": total,
         })
 
     def _route_npi_cleaner_sample(self) -> None:

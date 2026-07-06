@@ -19,16 +19,19 @@ runs in a background thread and the page polls progress.
 
 Scope notes, deliberately explicit (all surfaced as warnings on the run):
 
-  * Exact-duplicate removal runs WITHIN each chunk. A global seen-set over
-    ~50M rows would defeat the bounded-memory guarantee; adjacent
-    duplicates — the overwhelmingly common real case — still die.
+  * Exact duplicates die across the WHOLE file: chunks share one bounded
+    digest set (engine._STREAM_SEEN_CAP); saturation is warned, never
+    silent.
+  * The change-log FILE is complete at any scale: chunks write entries
+    straight to the master CSV via a sink with file-global row indices;
+    only the in-memory preview (engine._CHANGELOG_PREVIEW) is capped.
   * Online modes (NPPES verify, deep recovery) and the pandas suggestions
     companion are off, same as zip-batch mode: one upload must not fan out
     into N network sweeps or N DataFrame parses.
   * Report-only extras that need the whole table at once (payer variant
     clusters, charge outliers, claim rollup, data dictionary, xlsx
-    workbook) are skipped. The quality grade is exact — all five score
-    dimensions come from summed counters.
+    workbook, population marts) are skipped. The quality grade is exact —
+    all five score dimensions come from summed counters.
 
 Only delimited text streams. An .xlsx / .zip / X12 file above the
 threshold is rejected with instructions to export CSV — those formats
@@ -63,10 +66,12 @@ CHUNK_TARGET_BYTES = 48 * 1024 * 1024
 # ceiling — matches the old NPI_UPLOAD_MAX_BYTES so nothing that worked
 # before stops working.
 _FORMAT_INMEM_MAX_BYTES = 200_000_000
-# Caps mirrored from the single-file pipeline so the merged result honours
-# the same bounds the UI expects.
-_CHANGELOG_CAP = 20_000
-_WORKLIST_CAP = 500
+# Caps come from the single-file pipeline so the merged result honours
+# the same bounds the UI expects: the preview list is capped, the master
+# change-log FILE is not (chunks write to it directly via the sink).
+# Read as module attributes (engine._CHANGELOG_PREVIEW) at use sites so
+# there is exactly one source of truth and tests can patch it.
+from . import engine as _engine  # noqa: E402
 
 
 def _iter_records(fh: BinaryIO) -> Iterator[bytes]:
@@ -206,6 +211,10 @@ def _clean_csv_stream(
         # chunk boundaries too. Growth is capped inside the engine
         # (_STREAM_SEEN_CAP); saturation is surfaced as a warning below.
         stream_seen: set = set()
+        # Master-changelog sink health: once a write fails, the sink goes
+        # quiet and the run finishes with changelog_truncated instead of
+        # dying mid-flight.
+        sink_state = {"failed": False}
 
         while header is not None:
             chunk: List[bytes] = []
@@ -223,11 +232,35 @@ def _clean_csv_stream(
             cb(f"Cleaning chunk {chunk_i} — {pct:.0f}% of file",
                min(0.95, bytes_done / max(size, 1) * 0.95))
 
+            # Chunks write change-log entries straight to the master file
+            # (with the input-row offset applied) — the audit CSV stays
+            # complete no matter how many cells a 10M-row run changes,
+            # and no chunk ever holds more than the preview in memory.
+            # The sink MUST NOT raise: a disk error on the audit log
+            # would otherwise abort an hours-long cleaning run — the
+            # right outcome is a truncated-log flag, not a dead job.
+            _off = rows_in_offset
+            _sunk = [0]
+
+            def _sink(entry, _off=_off, _sunk=_sunk):
+                if sink_state["failed"]:
+                    return
+                try:
+                    ri0, col0, before0, after0, rule0 = entry
+                    log_writer.writerow(
+                        [ri0 + _off, _defang_cell(col0),
+                         _defang_cell(before0), _defang_cell(after0),
+                         rule0])
+                    _sunk[0] += 1
+                except OSError:
+                    sink_state["failed"] = True
+
             sub = clean_bytes(
                 header + b"".join(chunk), src_name,
                 drop_duplicates=drop_duplicates, deid=deid,
                 profile=profile, overrides=overrides, _stream_chunk=True,
-                _stream_seen=(stream_seen if drop_duplicates else None))
+                _stream_seen=(stream_seen if drop_duplicates else None),
+                _changelog_sink=_sink)
             payload = sub.chunk_payload
             if payload is None:
                 # The chunk took an error path inside clean_bytes (garbage
@@ -284,18 +317,15 @@ def _clean_csv_stream(
                     if _dc not in res.deid_columns:
                         res.deid_columns.append(_dc)
 
-            # Change log: stream every chunk entry to the master CSV with
-            # input-row offsets; keep only the first cap in memory for the
-            # UI preview.
+            # The sink already streamed every entry to the master CSV;
+            # here we only top up the in-memory preview for the UI.
+            n_log_rows += _sunk[0]
             for ri, col, before, after, rule in sub.changelog:
-                log_writer.writerow([ri + rows_in_offset, _defang_cell(col),
-                                     _defang_cell(before),
-                                     _defang_cell(after), rule])
-                n_log_rows += 1
-                if len(res.changelog) < _CHANGELOG_CAP:
-                    res.changelog.append((ri + rows_in_offset, col,
-                                          before, after, rule))
-            if sub.changelog_truncated or len(res.changelog) >= _CHANGELOG_CAP:
+                if len(res.changelog) >= _engine._CHANGELOG_PREVIEW:
+                    break
+                res.changelog.append((ri + rows_in_offset, col,
+                                      before, after, rule))
+            if sub.changelog_truncated or sink_state["failed"]:
                 res.changelog_truncated = True
 
             # Worklists: chunk indices are 1-based OUTPUT rows — offset by
@@ -304,13 +334,13 @@ def _clean_csv_stream(
             for rule, idxs in sub.flag_rows.items():
                 lst = res.flag_rows.setdefault(rule, [])
                 for i in idxs:
-                    if len(lst) >= _WORKLIST_CAP:
+                    if len(lst) >= _engine._WORKLIST_CAP:
                         break
                     lst.append(i + rows_out_offset)
             for fam, idxs in sub.payer_flag_rows.items():
                 lst = res.payer_flag_rows.setdefault(fam, [])
                 for i in idxs:
-                    if len(lst) >= _WORKLIST_CAP:
+                    if len(lst) >= _engine._WORKLIST_CAP:
                         break
                     lst.append(i + rows_out_offset)
 

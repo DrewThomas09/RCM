@@ -99,6 +99,14 @@ _RULES: List[Rule] = [
          "Excel strips leading zeros; 1234 restored to 01234.",
          "Format ZIP columns as text before opening extracts in Excel.",
          "validity"),
+    Rule("state-from-zip", "repair", "info", "Geography",
+         "Blank state filled from ZIP",
+         "A blank state cell next to a resolvable ZIP is filled from the "
+         "ZIP3→state map — the same deterministic truth the "
+         "zip-state-mismatch flag trusts (military/territory prefixes "
+         "excluded). Fully audited in the change log.",
+         "Capture state at intake; the fill closes the gap downstream.",
+         "completeness"),
     Rule("zip5+4", "repair", "info", "Geography",
          "ZIP+4 formatted", "9-digit ZIPs formatted 12345-6789.",
          "None needed.", "conformity"),
