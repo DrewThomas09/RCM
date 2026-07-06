@@ -59,9 +59,19 @@ def _cmd_serve(args: argparse.Namespace) -> int:  # pragma: no cover
 def _cmd_refresh(args: argparse.Namespace) -> int:
     from . import refresh as refresh_mod
     names = args.connector or None
+    try:
+        planned = refresh_mod.plan(quick=not args.full, connectors=names)
+    except KeyError:
+        # Manual-only connectors (openfda, cms_coverage, npi_registry, icd10)
+        # and typos both land here — a traceback would read as a crash.
+        plannable = ", ".join(refresh_mod.plan())
+        manual = ", ".join(refresh_mod.UNPLANNED)
+        print(f"no refresh plan for: {names}\n"
+              f"plannable: {plannable}\n"
+              f"manual-only (use their own CLIs): {manual}", file=sys.stderr)
+        return 2
     if args.dry_run:
-        for name, steps in refresh_mod.plan(quick=not args.full,
-                                            connectors=names).items():
+        for name, steps in planned.items():
             for argv in steps:
                 print(f"{name:16} {' '.join(argv)}")
         return 0

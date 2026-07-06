@@ -100,6 +100,31 @@ class RefreshRunTests(unittest.TestCase):
         self.assertTrue(all(s.ok for s in report.steps[1:]))
         self.assertIn("FAIL", report.summary())
 
+    def test_injected_runner_never_touches_the_filesystem(self):
+        import os
+        target = "var/__test_refresh_no_mkdir__"
+        self.assertFalse(os.path.exists(target))
+        refresh_mod.refresh(target, connectors=["cdc_data"],
+                            runner=lambda argv, **kw: _FakeProc())
+        self.assertFalse(os.path.exists(target),
+                         "injected-runner refresh must not mkdir in the cwd")
+
+    def test_cli_refresh_rejects_manual_only_connector_gracefully(self):
+        import io
+        import sys as _sys
+        from .. import cli as estate_cli
+        err = io.StringIO()
+        old = _sys.stderr
+        _sys.stderr = err
+        try:
+            rc = estate_cli.main(
+                ["refresh", "--db", "var/__nope__", "--connector", "openfda",
+                 "--dry-run"])
+        finally:
+            _sys.stderr = old
+        self.assertEqual(rc, 2)
+        self.assertIn("manual-only", err.getvalue())
+
     def test_runner_exception_is_isolated(self):
         def runner(argv, **kw):
             raise OSError("spawn failed")

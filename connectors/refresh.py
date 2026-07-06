@@ -223,9 +223,12 @@ def refresh(db_dir: str, *, quick: bool = True,
     ``runner`` is injectable for tests (same signature as
     ``subprocess.run``); default is the real thing.
     """
-    import os
     run = runner or subprocess.run
-    os.makedirs(db_dir, exist_ok=True)  # sqlite cannot create parent dirs
+    if runner is None:
+        # Only touch the filesystem for a real run — injected-runner tests
+        # must not leave stray directories in the caller's cwd.
+        import os
+        os.makedirs(db_dir, exist_ok=True)  # sqlite cannot create parent dirs
     report = RefreshReport(db_dir=db_dir)
     for name, steps in plan(quick=quick, connectors=connectors).items():
         storage = _storage_argv(name, db_dir)
