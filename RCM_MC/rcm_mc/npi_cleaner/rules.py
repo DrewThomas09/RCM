@@ -265,6 +265,39 @@ _RULES: List[Rule] = [
          "Stop billing immediately and escalate to compliance counsel; "
          "verify the match on the OIG site (NPI-level match).",
          "validity"),
+    Rule("admission-source-invalid", "flag", "warning", "Coding",
+         "Invalid admission source",
+         "Admission source / point-of-origin (UB-04 FL15) isn't in the "
+         "NUBC domain (1,2,4,5,6,8,9,D,E,F).",
+         "Map the source system's local point-of-origin codes.",
+         "validity"),
+    Rule("ndc-malformed", "flag", "warning", "Drugs",
+         "Malformed NDC",
+         "A drug code that can't be a valid NDC — not 10 or 11 digits "
+         "after stripping separators, or a hyphenated form with segment "
+         "lengths outside the known 5-4-2 / 4-4-2 / 5-3-2 / 5-4-1 layouts.",
+         "Re-export the NDC column as text; verify against the drug file.",
+         "validity"),
+    Rule("taxonomy-unknown-code", "flag", "warning", "Provider",
+         "Taxonomy not in the NUCC set",
+         "A 10-character taxonomy code that isn't in the NUCC taxonomy "
+         "code set. Runs only when the taxonomy reference pack is "
+         "installed (pull it under Reference data packs).",
+         "Verify against the current NUCC taxonomy release.", "validity"),
+    Rule("service-date-order", "flag", "warning", "Dates",
+         "Service from-date after thru-date",
+         "The service (statement) from-date is later than its thru-date — "
+         "an impossible span, usually a column swap or keying error.",
+         "Check the extract's date column order at source.",
+         "consistency"),
+    Rule("discharge-status-final-bill", "flag", "warning", "Coding",
+         "“Still a patient” on a final bill",
+         "Discharge status 30 (still a patient) on a bill whose Type-of-"
+         "Bill frequency digit says the stay is closed (1 admit-through-"
+         "discharge, or 4 last interim) — the patient can't still be "
+         "admitted on a final claim.",
+         "Correct the discharge status or the bill frequency at source.",
+         "consistency"),
 
     # --------------------------------------------------- flags: consistency --
     Rule("allowed-exceeds-billed", "flag", "critical", "Amounts",

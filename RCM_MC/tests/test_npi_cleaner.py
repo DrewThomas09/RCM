@@ -4371,8 +4371,106 @@ class TestStdlibPecos(unittest.TestCase):
         self.assertIsInstance(client, CmsPecosClient)
 
 
+class TestBacklogCleaningChecks(unittest.TestCase):
+    """New scrubber checks from the gap-sweep cleaning lens."""
+
+    def test_service_date_order(self):
+        rows = ["ClaimID,DateOfService,ServiceToDate",
+                "1,2024-03-10,2024-03-05",   # from > thru
+                "2,2024-03-01,2024-03-05"]   # ok
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "d.csv")
+        self.assertEqual(res.sanity.get("service-date-order"), 1)
+
+    def test_ndc_malformed(self):
+        rows = ["ClaimID,NDC11",
+                "1,ABC",              # junk
+                "2,00093-1234-56",    # valid 5-4-2
+                "3,00093123456",      # valid 11-digit
+                "4,123"]              # too short
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "n.csv")
+        self.assertEqual(res.sanity.get("ndc-malformed"), 2)
+
+    def test_admission_source_invalid(self):
+        rows = ["ClaimID,AdmissionSource", "1,7", "2,1"]  # 7 not in domain
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "a.csv")
+        self.assertEqual(res.sanity.get("admission-source-invalid"), 1)
+
+    def test_discharge_status_final_bill(self):
+        rows = ["ClaimID,TypeOfBill,DischargeStatus",
+                "1,0111,30",   # freq 1 (final) + still-a-patient → flag
+                "2,0113,30",   # freq 3 (interim) + 30 → OK, still admitted
+                "3,0111,01"]   # discharged home → OK
+        res = engine.clean_bytes(("\n".join(rows)+"\n").encode(), "s.csv")
+        self.assertEqual(res.sanity.get("discharge-status-final-bill"), 1)
+
+    def test_taxonomy_unknown_code_pack_gated(self):
+        from rcm_mc.npi_cleaner import refdata_packs
+        rows = ["ClaimID,TaxonomyCode", "1,207Q00000X", "2,999X99999X"]
+        # Off without the pack.
+        with patch.object(refdata_packs, "taxonomy_codes", lambda: None):
+            res = engine.clean_bytes(("\n".join(rows)+"\n").encode(),
+                                     "t.csv")
+        self.assertNotIn("taxonomy-unknown-code", res.sanity)
+        # On with a pack that knows only the real code.
+        with patch.object(refdata_packs, "taxonomy_codes",
+                          lambda: frozenset({"207Q00000X"})):
+            res2 = engine.clean_bytes(("\n".join(rows)+"\n").encode(),
+                                      "t.csv")
+        self.assertEqual(res2.sanity.get("taxonomy-unknown-code"), 1)
+
+
+class TestBacklogAnalyticsSurfacing(unittest.TestCase):
+    """Population marts now reach the workbook, the exec one-pager, and
+    the run-history record (so they trend)."""
+
+    def _pop_data(self):
+        rows = ["ClaimID,PatientID,BillingProviderNPI,TypeOfBill,HCPCS,"
+                "DiagnosisCode,ChargeAmt,DateOfService"]
+        rows += [f"{i},P{i%20},{GOOD_A},0131,99215,E11.65,200,"
+                 f"2024-0{1+i%6}-10" for i in range(1, 60)]
+        return ("\n".join(rows)+"\n").encode()
+
+    def test_workbook_has_population_sheet(self):
+        from rcm_mc.npi_cleaner import report
+        res = engine.clean_bytes(self._pop_data(), "p.csv")
+        self.assertIsNotNone(res.population)
+        wb = report.build_workbook(res, res.headers, [])
+        self.assertGreater(len(wb), 0)  # builds without error
+        # openpyxl can read the sheet names back.
+        import io as _io
+        try:
+            from openpyxl import load_workbook
+        except Exception:
+            self.skipTest("openpyxl unavailable")
+        names = load_workbook(_io.BytesIO(wb)).sheetnames
+        self.assertIn("Population", names)
+
+    def test_exec_report_has_coding_intensity(self):
+        from rcm_mc.npi_cleaner.exec_report import build_exec_report
+        # 59 established visits by one NPI → coding_intensity present.
+        res = engine.clean_bytes(self._pop_data(), "p.csv")
+        self.assertIsNotNone(res.population.get("coding_intensity"))
+        html = build_exec_report(res.as_scorecard(), "p.csv", "now")
+        self.assertIn("coding intensity", html)
+
+    def test_history_records_population_metrics(self):
+        import rcm_mc.npi_cleaner.history as h
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(h, "_DB_PATH", Path(tmp) / "hist.sqlite3"):
+                res = engine.clean_bytes(self._pop_data(), "p.csv")
+                h.record_run(res.as_scorecard(), "p.csv")
+                run = h.list_runs()[0]
+        pop = run["population"]
+        self.assertIn("n_encounters", pop)
+        self.assertIn("median_observed_pmpm", pop)
+        self.assertIn("em_avg_level", pop)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
 
 
 

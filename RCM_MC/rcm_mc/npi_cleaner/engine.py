@@ -767,6 +767,27 @@ def _clean_ndc_cell(v: str) -> Tuple[str, List[str]]:
     return v, []
 
 
+def _ndc_malformed(v: str) -> bool:
+    """True when a present NDC can't be a valid drug code: not 10 or 11
+    digits after stripping separators, or a 3-part hyphenated form whose
+    segment lengths aren't a known NDC layout. 10-digit is valid (just
+    segmentation-ambiguous, flagged separately); blank passes."""
+    s = v.strip()
+    if not s:
+        return False
+    if "-" in s:
+        segs = s.split("-")
+        if len(segs) == 3 and all(seg.isdigit() for seg in segs):
+            lens = tuple(len(seg) for seg in segs)
+            return lens != (5, 4, 2) and lens not in _NDC_PAD_MAP
+        # A hyphenated value that isn't a clean 3-part numeric NDC.
+        digits = "".join(c for c in s if c.isdigit())
+        return len(digits) not in (10, 11)
+    digits = "".join(c for c in s if c.isdigit())
+    # A pure-digit NDC must be 10 or 11; anything else is keying damage.
+    return (not s.replace(" ", "").isdigit()) or len(digits) not in (10, 11)
+
+
 import hashlib
 
 # Distinct-row digests tracked for cross-chunk dedupe on a streamed run
@@ -1153,7 +1174,8 @@ class CleanResult:
                        "drg-malformed", "tob-malformed",
                        "discharge-status-invalid", "admission-type-invalid",
                        "modifier-unknown", "icd10-unknown-code",
-                       "hcpcs-unknown-code")
+                       "hcpcs-unknown-code", "admission-source-invalid",
+                       "ndc-malformed", "taxonomy-unknown-code")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1163,7 +1185,8 @@ class CleanResult:
                           "charge-outlier", "jw-zero-units", "bilateral-units",
                           "conflicting-amount-claim",
                           "anesthesia-units-implausible",
-                          "revenue-tob-mismatch", "timely-filing-risk")
+                          "revenue-tob-mismatch", "timely-filing-risk",
+                          "service-date-order", "discharge-status-final-bill")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1771,6 +1794,16 @@ def clean_bytes(
     if dstat_i is not None:
         money_set.discard(dstat_i)
     atype_i = _detect_one(headers, _ADMIT_TYPE_HINTS)
+    asrc_i = _detect_one(headers, ("admissionsource", "admitsource",
+                                   "pointoforigin", "sourceofadmission",
+                                   "admsrc", "priorityvisittype"))
+    # Service thru / to date — pairs with dos_i (from date) for the
+    # from>thru ordering screen. Exact/suffix hints only so it never
+    # steals the from-date column.
+    todate_i = _detect_one(headers, ("servicetodate", "thrudate",
+                                     "todate", "servicethrudate",
+                                     "dateofservicethru", "dosthru",
+                                     "statementthrudate"))
     submit_i = _detect_one(headers, _SUBMIT_HINTS)
     member_i = _detect_one(headers, _MEMBER_HINTS)
     cond_i = _detect_one(headers, _COND_HINTS)
@@ -1784,12 +1817,13 @@ def clean_bytes(
     # loaded once per run when the user has pulled them. None → the
     # corresponding pack-gated checks simply stay off; nothing about the
     # zero-setup path changes.
-    _icd_pack = _hcpcs_pack = _leie_pack = None
+    _icd_pack = _hcpcs_pack = _leie_pack = _taxo_pack = None
     try:
         from . import refdata_packs as _packs
         _icd_pack = _packs.icd10_codes()
         _hcpcs_pack = _packs.hcpcs_codes()
         _leie_pack = _packs.leie_npis()
+        _taxo_pack = _packs.taxonomy_codes()
     except Exception:  # noqa: BLE001 — packs never block cleaning
         pass
     from datetime import datetime as _dt, timezone as _tz
@@ -2148,6 +2182,23 @@ def clean_bytes(
                     and _rd.admission_type_invalid(new_row[atype_i])):
                 res.sanity["admission-type-invalid"] = \
                     res.sanity.get("admission-type-invalid", 0) + 1
+            if (asrc_i is not None and asrc_i < len(new_row)
+                    and _rd.admission_source_invalid(new_row[asrc_i])):
+                res.sanity["admission-source-invalid"] = \
+                    res.sanity.get("admission-source-invalid", 0) + 1
+            # Discharge status 30 ("still a patient") on a FINAL bill — the
+            # TOB frequency digit 1 (admit-through-discharge) or 4 (last
+            # interim) says the stay is closed, so the patient can't still
+            # be admitted. Classic NUBC contradiction.
+            if (tob_i is not None and dstat_i is not None
+                    and tob_i < len(new_row) and dstat_i < len(new_row)):
+                _fc2 = _rd.tob_facility_class(new_row[tob_i])
+                _ds = new_row[dstat_i].strip().lstrip("0") or "0"
+                _tob_raw = new_row[tob_i].strip()
+                _freq = _tob_raw[-1] if len(_tob_raw) >= 3 else ""
+                if _fc2 is not None and _ds == "30" and _freq in ("1", "4"):
+                    res.sanity["discharge-status-final-bill"] = \
+                        res.sanity.get("discharge-status-final-bill", 0) + 1
             # Accommodation (room & board / ICU, revenue 0100-0219) revenue
             # on an OUTPATIENT bill type — hospital outpatient 013x/014x,
             # clinic 07xx, ASC 083x. Inpatient room charges can't ride an
@@ -2176,6 +2227,34 @@ def clean_bytes(
                         res.sanity["modifier-unknown"] = \
                             res.sanity.get("modifier-unknown", 0) + 1
                         break
+        # Malformed NDC — a drug code that can't be 10/11 digits (keying
+        # damage the normalizer couldn't fix). Uses the engine's own helper,
+        # so it runs independent of the refdata (_rd) guard.
+        if ndc_norm_set:
+            for _ni in ndc_norm_set:
+                if _ni < len(new_row) and _ndc_malformed(new_row[_ni]):
+                    res.sanity["ndc-malformed"] = \
+                        res.sanity.get("ndc-malformed", 0) + 1
+                    break
+        # Service from-date after thru-date — an impossible span.
+        if (dos_i is not None and todate_i is not None
+                and dos_i < len(new_row) and todate_i < len(new_row)):
+            _fd, _td = new_row[dos_i], new_row[todate_i]
+            if (_DATE_ISO_RE.match(_fd) and _DATE_ISO_RE.match(_td)
+                    and _fd[:10] > _td[:10]):
+                res.sanity["service-date-order"] = \
+                    res.sanity.get("service-date-order", 0) + 1
+        # Taxonomy code not in the full NUCC set — pack-gated, same as
+        # icd10/hcpcs unknown-code (off until the taxonomy pack is pulled).
+        if _taxo_pack is not None and taxo_set:
+            for _txi in taxo_set:
+                _txu = (new_row[_txi] if _txi < len(new_row)
+                        else "").strip().upper()
+                if (len(_txu) == 10 and _txu.isalnum()
+                        and _txu not in _taxo_pack):
+                    res.sanity["taxonomy-unknown-code"] = \
+                        res.sanity.get("taxonomy-unknown-code", 0) + 1
+                    break
         # Timely-filing risk: days between service and received dates over
         # the limit. When the row names a payer with a published limit
         # (Medicare 365, most commercial 90-180 — see refdata), that limit

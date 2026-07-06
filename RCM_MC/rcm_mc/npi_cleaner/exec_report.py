@@ -201,6 +201,17 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                 f"{_esc(p['condition'])} {p['pct']}%" for p in prev[:6])
             parts.append(f"<p class='small'><strong>Chronic conditions "
                          f"(prevalence):</strong> {top_c}</p>")
+        ci = pop.get("coding_intensity") or {}
+        if ci:
+            _line = (f"E&amp;M coding intensity: "
+                     f"{int(ci.get('established_visits') or 0):,} "
+                     f"established visits, file average level "
+                     f"{ci.get('file_avg_level')}")
+            outs = ci.get("outliers") or []
+            if outs:
+                _line += (f" — {len(outs)} provider(s) code materially "
+                          "hotter than the file")
+            parts.append(f"<p class='small'>{_esc(_line)}</p>")
 
     # Who is in this file — credential + specialty mix (report-only).
     creds: Dict[str, int] = dict(sc.get("credentials") or {})
