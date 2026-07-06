@@ -4156,8 +4156,47 @@ class TestPhiSafeChangelog(unittest.TestCase):
                              for w in res.warnings))
 
 
+class TestDeterministicFills(unittest.TestCase):
+    """Filling, not just flagging: blanks the engine can close from truth
+    it already trusts get closed, audited, and graded as repairs."""
+
+    def test_blank_state_filled_from_zip(self):
+        rows = ["ClaimID,ProviderZip,ProviderState,BillingProviderNPI",
+                f"1,75201,,{GOOD_A}",     # blank + Dallas ZIP → TX
+                f"2,75201,TX,{GOOD_A}",   # already present → untouched
+                f"3,10001,CA,{GOOD_A}",   # mismatch → flagged, NOT rewritten
+                f"4,,,{GOOD_A}"]          # nothing to fill from
+        res = engine.clean_bytes(("\n".join(rows) + "\n").encode(),
+                                 "fill.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 1)
+        self.assertEqual(res.sanity.get("zip-state-mismatch"), 1)
+        out = open(res.out_path, encoding="utf-8").read().splitlines()
+        self.assertEqual(out[1].split(",")[2], "TX")
+        self.assertEqual(out[3].split(",")[2], "CA")  # never overwritten
+        log = open(res.changelog_path, encoding="utf-8").read()
+        self.assertIn("state-from-zip", log)
+
+    def test_fill_survives_streaming_path(self):
+        from rcm_mc.npi_cleaner import bigfile
+        rows = ["ClaimID,ProviderZip,ProviderState"]
+        rows += [f"{i},75201," for i in range(1, 301)]
+        data = ("\n".join(rows) + "\n").encode()
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "s.csv")
+            with open(p, "wb") as fh:
+                fh.write(data)
+            with patch.object(bigfile, "STREAM_THRESHOLD_BYTES", 256), \
+                    patch.object(bigfile, "CHUNK_TARGET_BYTES", 1024):
+                res = bigfile.clean_path(p, "s.csv")
+        self.assertEqual(res.repairs.get("state-from-zip"), 300)
+        with open(res.out_path, encoding="utf-8") as fh:
+            body = fh.read()
+        self.assertEqual(body.count(",TX"), 300)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 

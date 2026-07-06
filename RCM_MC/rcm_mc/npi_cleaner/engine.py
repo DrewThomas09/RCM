@@ -2013,12 +2013,39 @@ def clean_bytes(
         if any(ci < len(new_row) and _date_after(new_row[ci], _today)
                for ci in past_date_cols):
             res.sanity["date-in-future"] = res.sanity.get("date-in-future", 0) + 1
-        # ZIP prefix disagrees with the same-entity state cell (counted once).
+        # ZIP prefix disagrees with the same-entity state cell (counted
+        # once) — and a BLANK state next to a resolvable ZIP is FILLED:
+        # ZIP3→state is deterministic (military/territory prefixes
+        # excluded), the same truth the mismatch flag already trusts, so
+        # filling is safe by construction and fully audited.
         for si, zi in zs_pairs:
             if si >= len(new_row) or zi >= len(new_row):
                 continue
             sv = new_row[si].strip().upper()
             zdig = "".join(c for c in new_row[zi] if c.isdigit())
+            if not sv and len(zdig) >= 3:
+                exp = zs_map.get(zdig[:3])
+                if exp and exp not in _ZIP_STATE_SKIP:
+                    res.repairs["state-from-zip"] = \
+                        res.repairs.get("state-from-zip", 0) + 1
+                    res.n_changes += 1
+                    _fill_entry = (ri + 1,
+                                   headers[si] if si < ncols else str(si),
+                                   "", exp, "state-from-zip")
+                    if _changelog_sink is not None:
+                        _changelog_sink(_fill_entry)
+                        if len(res.changelog) < _CHANGELOG_PREVIEW:
+                            res.changelog.append(_fill_entry)
+                    elif len(res.changelog) < _CHANGELOG_PREVIEW:
+                        res.changelog.append(_fill_entry)
+                    elif not _stream_chunk:
+                        _spill.write([_fill_entry[0],
+                                      _defang_cell(_fill_entry[1]), "",
+                                      exp, "state-from-zip"])
+                    new_row[si] = exp
+                    res.n_cells_filled += 1
+                    _col_filled[si] += 1
+                continue
             if len(sv) == 2 and sv in _STATE_CODES and len(zdig) >= 3:
                 exp = zs_map.get(zdig[:3])
                 if (exp and exp != sv
