@@ -10,9 +10,10 @@ Driven entirely by the query string so a configured chart is a
 shareable URL.
 
 Layout is the v5 chartis editorial idiom: ck_editorial_head masthead,
-two ck_panel cards (composer + rendered chart), ck_section_intro
-section heads, and one page-scoped ``.cb-*`` stylesheet (no inline
-style attributes) built on the kit's CSS custom properties.
+two ck_panel cards (composer + rendered chart), ck_section_header
+section heads (matching the sibling tool pages), and one page-scoped
+``.cb-*`` stylesheet (no inline style attributes) built on the kit's
+CSS custom properties.
 """
 from __future__ import annotations
 
@@ -22,7 +23,7 @@ from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_arrow_link, ck_editorial_head, ck_fmt_number,
-    ck_page_actions, ck_panel, ck_section_intro, ck_source_purpose,
+    ck_page_actions, ck_panel, ck_section_header, ck_source_purpose,
 )
 from .saved_charts_page import save_chart_form as _save_chart_form
 from .cdd_chart_kit import (
@@ -165,7 +166,7 @@ _FORMAT_NOTES: list[tuple[str, str]] = [
 # ad-hoc hexes, and every interactive control gets :hover +
 # :focus-visible states the old inline style attributes couldn't carry.
 _PAGE_CSS = """
-.cb-wrap{max-width:1040px;}
+.cb-wrap{max-width:1040px;margin:0 auto;}
 .cb-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
 @media(max-width:900px){.cb-grid{grid-template-columns:1fr;}}
 .cb-kicker{display:flex;align-items:center;gap:8px;font-family:var(--sc-mono,monospace);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-text-dim,#465366);margin:0 0 3px;}
@@ -206,6 +207,8 @@ _PAGE_CSS = """
 .cb-btn:hover{background:var(--sc-navy-2,#132e53);border-color:var(--sc-navy-2,#132e53);}
 .cb-reset{font-family:var(--sc-mono,monospace);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sc-teal,#155752);text-decoration:none;}
 .cb-reset:hover{color:var(--sc-navy,#0b2341);text-decoration:underline;}
+.cb-section-lede{font-family:var(--sc-serif,Georgia,serif);font-size:14px;line-height:1.55;color:var(--sc-text-dim,#465366);max-width:64ch;margin:0 0 var(--sc-s-6,28px);}
+.cb-section-lede em{font-style:italic;color:var(--green-deep,#154e36);}
 .cb-ds-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 var(--sc-s-6,28px);}
 .cb-ds-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);color:var(--sc-teal-ink,#0f3d39);font-family:var(--sc-sans,sans-serif);font-size:12px;font-weight:600;text-decoration:none;}
 .cb-ds-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sc-teal,#155752);}
@@ -517,12 +520,13 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
             f'<a href="{html.escape(href, quote=True)}" '
             f'class="cb-ds-chip">{html.escape(d["label"])}</a>')
     datasets_strip = (
-        ck_section_intro(
-            "PLATFORM DATA", "Real CMS aggregates, one click away.",
-            italic_word="one",
-            body="Load a finished table from the platform's public-data "
-                 "layer, then shape and restyle it freely — the configured "
-                 "chart stays a shareable URL.")
+        ck_section_header(
+            "Real CMS aggregates, one click away.",
+            eyebrow="PLATFORM DATA")
+        + '<p class="cb-section-lede">Load a finished table from the '
+          "platform's public-data layer, then shape and restyle it "
+          "freely — the configured chart stays <em>a shareable "
+          "URL</em>.</p>"
         + f'<div class="cb-ds-chips">{ds_chips}</div>')
 
     # Gallery — the same data across a few chart types.
@@ -612,11 +616,11 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
                    code="GET /chart-builder")
         + datasets_strip
         + ck_panel(canvas_body, title="Rendered chart", code=ctype)
-        + ck_section_intro(
-            "GALLERY", "Your data in every chart.",
-            italic_word="every",
-            body="The same table rendered across the deck family — click "
-                 "a card to switch the builder to that type.")
+        + ck_section_header(
+            "Your data in every chart.", eyebrow="GALLERY")
+        + '<p class="cb-section-lede">The same table rendered across the '
+          "deck family — click a card to switch the builder to that "
+          "type.</p>"
         + f'<div class="cb-gallery">{gallery}</div>'
         + notes
         + ck_page_actions()

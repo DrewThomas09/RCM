@@ -38,8 +38,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from ._chartis_kit import (
     chartis_shell, ck_copy_share_link_button, ck_editorial_head,
     ck_empty_state, ck_eyebrow, ck_fmt_number, ck_kpi_block,
-    ck_print_view_button, ck_provenance_tooltip, ck_section_header,
-    ck_signal_badge,
+    ck_page_actions, ck_provenance_tooltip,
+    ck_section_header, ck_signal_badge,
 )
 from ._us_geo_paths import US_STATE_PATHS
 from .cdd_chart_kit import chart_export_toolbar
@@ -843,7 +843,7 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
             "exports straight into a deck."),
         source_note=("User-supplied values · the defaults are "
                      "illustrative placeholders"),
-        actions_html=ck_copy_share_link_button() + ck_print_view_button(),
+        actions_html=ck_copy_share_link_button(),
         show_legend=False,
     )
     if zero_parsed:
@@ -921,7 +921,12 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
         + _map_css_js()
         + stats_block
         + f'<div class="em-grid2">{table_section}{help_section}</div>'
-        + '</div>')
+        + '</div>'
+        # Tools-family footer: copy-share lives in the masthead, the
+        # standard action row (print / shortcuts / palette / glossary /
+        # methodology / back-to-top) matches chart-builder, pie-chart,
+        # saved-charts and visuals-hub.
+        + ck_page_actions())
     return chartis_shell(
         body, "Excel Mapping", active_nav="/research",
         subtitle="State choropleth utility")

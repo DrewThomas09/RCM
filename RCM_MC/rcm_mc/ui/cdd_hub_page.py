@@ -31,7 +31,6 @@ from __future__ import annotations
 
 import html as _html
 from collections import Counter
-from collections.abc import Mapping
 
 # (module title, blurb, [(label, href, one-liner), ...])
 _MODULES = [
