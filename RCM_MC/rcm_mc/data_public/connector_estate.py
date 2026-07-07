@@ -625,12 +625,17 @@ def ingest_hint(connector_name: str) -> dict[str, Any]:
     (their ingest verbs need domain arguments), so the copy-ready command
     could never work for them. The manual set comes from the estate's own
     ``_spi`` declaration, not a hardcoded copy here. ``{}`` when the
-    estate is absent.
+    estate is absent — or when *connector_name* is not a connector at
+    all: advertising a refresh command for an unknown name would hand
+    the caller an instruction that exits 2 ("no refresh plan for …").
     """
     h = _load()
     if h is None:
         return {}
     try:
+        known = getattr(h[2], "CONNECTOR_NAMES", ())
+        if known and connector_name not in known:
+            return {}
         manual = set(getattr(h[2], "MANUAL_INGEST_CLIS", ()))
         if connector_name in manual:
             return {

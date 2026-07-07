@@ -1,14 +1,18 @@
-"""Peer Transaction Database / Comparable Deals Library.
+"""ILLUSTRATIVE — Peer Transaction Database over a curated synthetic panel.
 
-Tracks completed healthcare M&A transactions with valuation multiples,
-structure details, and transaction characteristics — diligence support
-for pricing and comparables.
+Do not quote these outputs in IC documents: the deal rows pair real
+target/sponsor names with UNVERIFIED size/multiple figures, and the
+sector multiples, deal-type breakdowns, and advisor league tables are
+curated illustrations — not a tracked M&A database. The deliverable is
+the comparable-deals methodology (pricing off sector multiple bands,
+deal-type structure norms). For the sourced multiple bands used in the
+peer snapshot see :mod:`rcm_mc.market_intel.transaction_multiples`.
 """
 from __future__ import annotations
 
-import importlib
+import statistics
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 
 @dataclass
@@ -44,8 +48,12 @@ class DealTypeBreakdown:
     deal_type: str
     transactions: int
     median_size_m: float
-    median_ev_ebitda_x: float
-    typical_holding_period: float
+    # None where the concept doesn't apply (a dividend recap has no
+    # entry multiple; strategic M&A has no holding period). Previously
+    # the literal string "n/a" was stuffed into these float-declared
+    # fields, so any consumer formatting with :.2f crashed on two rows.
+    median_ev_ebitda_x: Optional[float]
+    typical_holding_period: Optional[float]
     typical_leverage: float
     typical_exit: str
 
@@ -95,17 +103,24 @@ class PeerResult:
     trends: List[RecentTrend]
     advisors: List[AdvisorLeague]
     corpus_deal_count: int
+    # Machine-readable honesty flag: real firm names, curated numbers —
+    # any consumer beyond the labelled UI page (exports, assistant
+    # context, future APIs) inherits the caveat instead of unlabelled
+    # numbers.
+    is_illustrative: bool = True
 
 
 def _load_corpus() -> List[dict]:
-    deals: List[dict] = []
-    for i in range(2, 122):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
-        except ImportError:
-            pass
-    return deals
+    """Delegate to the canonical registry-driven loader.
+
+    Five sibling market models each hand-rolled an ``importlib`` loop
+    over divergent ``range()``s, so the same corpus read as five
+    different "Corpus Deals" counts depending on the page and silently
+    drifted stale as seed files were added. The registry enumerates
+    every seed group, so all five now agree and track new seeds.
+    """
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _build_deals() -> List[PeerDeal]:
@@ -179,9 +194,9 @@ def _build_deal_types() -> List[DealTypeBreakdown]:
         DealTypeBreakdown("PE Buyout (platform)", 85, 685.0, 14.25, 5.5, 2.25, "secondary buyout / strategic"),
         DealTypeBreakdown("Secondary Buyout", 48, 1250.0, 14.85, 4.8, 2.10, "secondary buyout / strategic"),
         DealTypeBreakdown("Continuation Vehicle", 28, 985.0, 14.50, 3.5, 1.85, "CV roll / strategic"),
-        DealTypeBreakdown("Strategic M&A", 32, 1850.0, 16.25, "n/a", 0.85, "permanent"),
+        DealTypeBreakdown("Strategic M&A", 32, 1850.0, 16.25, None, 0.85, "permanent"),
         DealTypeBreakdown("Take-Private", 12, 2850.0, 11.50, 5.0, 3.25, "public re-list / strategic"),
-        DealTypeBreakdown("Dividend Recap", 18, 1250.0, "n/a", 6.5, 3.85, "continued hold"),
+        DealTypeBreakdown("Dividend Recap", 18, 1250.0, None, 6.5, 3.85, "continued hold"),
         DealTypeBreakdown("Bolt-On / Tuck-In", 185, 85.0, 9.50, 3.5, 2.25, "absorbed into platform"),
         DealTypeBreakdown("Partial Exit / Recap", 22, 1850.0, 15.75, 4.5, 1.45, "secondary / IPO"),
     ]
@@ -245,10 +260,13 @@ def compute_peer_transactions() -> PeerResult:
     advisors = _build_advisors()
 
     total_vol = sum(d.deal_size_m for d in deals) / 1000.0
-    sorted_ebitda = sorted([d.ev_ebitda_x for d in deals])
-    med_ebitda = sorted_ebitda[len(sorted_ebitda) // 2] if sorted_ebitda else 0
-    sorted_rev = sorted([d.ev_revenue_x for d in deals])
-    med_rev = sorted_rev[len(sorted_rev) // 2] if sorted_rev else 0
+    # statistics.median averages the two central values on even n — the
+    # previous upper-element pick read 12.0x on an 8.0x/12.0x pair,
+    # overstating the median on exactly the tiny samples this panel has.
+    ebitda_mults = [d.ev_ebitda_x for d in deals]
+    med_ebitda = statistics.median(ebitda_mults) if ebitda_mults else 0
+    rev_mults = [d.ev_revenue_x for d in deals]
+    med_rev = statistics.median(rev_mults) if rev_mults else 0
 
     return PeerResult(
         total_transactions=len(deals),

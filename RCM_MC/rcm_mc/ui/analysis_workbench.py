@@ -42,9 +42,12 @@ from ..analysis.packet import (
 # where a function-scope import would re-resolve on every row.
 from ._chartis_kit import (
     ck_aggregate,
+    ck_arrow_link,
     ck_empty_state,
+    ck_eyebrow,
     ck_fmt_percent,
     ck_json_for_script,
+    ck_kpi_block,
     ck_prediction_chip,
     ck_provenance_tooltip,
     ck_signal_badge,
@@ -457,6 +460,26 @@ body.analysis-workbench {{
   max-width: 1720px; margin: 0 auto;
 }}
 .analysis-workbench .wb-tab-panel.active {{ display: block; }}
+
+/* Per-tab section head — the v5 editorial cadence applied at tab
+   level: kit mono eyebrow (.ck-eyebrow), serif headline whose first
+   phrase is italic in the page accent, one-line dim lede. Gives each
+   of the eight panels a masthead instead of jumping straight into
+   card chrome. */
+.analysis-workbench .wb-tab-intro {{ margin: 2px 0 16px; }}
+.analysis-workbench .wb-tab-intro .ck-eyebrow {{ margin-bottom: .4rem; }}
+.analysis-workbench .wb-tab-head {{
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 1.35rem; font-weight: 500; line-height: 1.2;
+  letter-spacing: -0.012em; margin: 0 0 .3rem; color: var(--wb-text);
+}}
+.analysis-workbench .wb-tab-head em {{
+  color: var(--wb-accent); font-style: italic;
+}}
+.analysis-workbench .wb-tab-lede {{
+  font-size: 12.5px; color: var(--wb-text-dim);
+  margin: 0; max-width: 78ch;
+}}
 
 /* Cards / panels */
 .analysis-workbench .wb-card {{
@@ -1431,10 +1454,45 @@ def _render_tab_nav(override_count: int = 0) -> str:
     ]
     buttons = "\n".join(
         f'<button class="wb-tab{" active" if i == 0 else ""}" data-tab="{k}"'
+        f' id="wb-tab-{k}" aria-controls="wb-panel-{k}"'
         f' role="tab" aria-selected="{"true" if i == 0 else "false"}">{v}</button>'
         for i, (k, v) in enumerate(tabs)
     )
     return f'<div class="wb-tabs" role="tablist" aria-label="Workbench sections">{buttons}</div>'
+
+
+def _panel_attrs(key: str) -> str:
+    """ARIA plumbing shared by every tab panel — pairs each panel with
+    its ``role=tab`` button (``aria-controls`` ↔ ``aria-labelledby``).
+    The JS keeps keying off ``data-panel``; these are additive."""
+    return (f'id="wb-panel-{key}" role="tabpanel" '
+            f'aria-labelledby="wb-tab-{key}"')
+
+
+def _tab_intro(eyebrow: str, headline: str, italic_phrase: str,
+               lede: str = "") -> str:
+    """Per-tab editorial section head.
+
+    The house cadence (mono eyebrow → serif headline with an italic
+    first phrase → dim one-line lede) applied at tab level, so each
+    panel opens with a masthead instead of jumping straight into card
+    chrome. Composes the kit's ``ck_eyebrow`` for the caps-and-rule
+    anchor; the italic phrase takes the workbench accent (this page's
+    token layer — not ``--green-deep``, which would introduce a second
+    green family next to the teal accent).
+    """
+    h = _esc(headline)
+    ip = _esc(italic_phrase)
+    if ip and ip in h:
+        h = h.replace(ip, f"<em>{ip}</em>", 1)
+    lede_html = f'<p class="wb-tab-lede">{_esc(lede)}</p>' if lede else ""
+    return (
+        '<div class="wb-tab-intro">'
+        f'{ck_eyebrow(eyebrow)}'
+        f'<h2 class="wb-tab-head">{h}</h2>'
+        f'{lede_html}'
+        '</div>'
+    )
 
 
 # Overview --------------------------------------------------------------
@@ -1704,15 +1762,22 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         for k, v in list(ev_at_multiple.items())[:3]
     ) or '<span class="dim">No EV computed yet.</span>'
 
-    # Returns distribution (MOIC) mini-summary if MC available.
+    # Returns distribution (MOIC) mini-summary if MC available —
+    # rendered through the kit's stat-tile primitive so the Returns
+    # card matches the house KPI anatomy (rule / label / mono value).
     mc = packet.simulation
-    moic_block = '<span class="dim">Monte Carlo not run</span>'
     if mc is not None and mc.status == SectionStatus.OK:
-        moic_block = (
-            f'<div><span class="kpi-label">MOIC P10 / P50 / P90</span></div>'
-            f'<div class="num">'
-            f'{_fmt_moic(mc.moic.p10)} · {_fmt_moic(mc.moic.p50)} · {_fmt_moic(mc.moic.p90)}'
-            f'</div>'
+        moic_block = ck_kpi_block(
+            "MOIC · P10 / P50 / P90",
+            f'<span class="num">{_fmt_moic(mc.moic.p10)} · '
+            f'{_fmt_moic(mc.moic.p50)} · {_fmt_moic(mc.moic.p90)}</span>',
+            sub="Monte Carlo, 5-year hold",
+        )
+    else:
+        moic_block = ck_kpi_block(
+            "MOIC · P10 / P50 / P90",
+            '<span class="dim">—</span>',
+            sub="Monte Carlo not run",
         )
 
     # Risk summary badges.
@@ -1741,8 +1806,14 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
     radial_label = f'<div class="radial-label">{int(cov_pct*100)}%</div>'
 
     hero_kpi = _hero_kpi_strip(packet)
+    intro = _tab_intro(
+        "OVERVIEW", "One screen, every headline number.", "One screen",
+        "Entry economics, the returns band, risk posture and data "
+        "coverage — each figure on this tab traces back to the packet.",
+    )
     return f"""
-    <div class="wb-tab-panel active" data-panel="overview">
+    <div class="wb-tab-panel active" data-panel="overview" {_panel_attrs("overview")}>
+      {intro}
       {hero_kpi}
       <div class="wb-grid">
         <div>
@@ -1775,7 +1846,6 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
             <div class="wb-ev-line">{ev_bits}</div>
           </div>
           <div class="wb-card">
-            <div class="wb-card-title">Returns</div>
             {moic_block}
           </div>
           <div class="wb-card">
@@ -1820,15 +1890,18 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
     Associates see this and know exactly what to click — no guessing.
     """
     actions: List[str] = []
-    deal_id = _esc(packet.deal_id)
 
-    # Low completeness → upload data.
+    # Low completeness → upload data. CTAs render via ck_arrow_link —
+    # the house editorial CTA — with the endpoints byte-identical to
+    # the pre-facelift hrefs.
     grade = getattr(packet.completeness, "grade", "") or ""
     if grade in ("C", "D") or not grade:
         actions.append(
             f'<div><strong>Upload more data</strong>: completeness is '
             f'{grade or "?"}, which limits prediction accuracy. '
-            f'<a href="/new-deal/step3?deal_id={deal_id}">Upload files →</a></div>'
+            + ck_arrow_link("Upload files",
+                            f"/new-deal/step3?deal_id={packet.deal_id}")
+            + '</div>'
         )
 
     # Critical risks → review.
@@ -1853,7 +1926,9 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
         actions.append(
             f'<div><strong>Run Monte Carlo</strong>: no simulation on '
             f'this analysis yet. '
-            f'<a href="/api/analysis/{deal_id}/simulate/v2">Run now →</a></div>'
+            + ck_arrow_link("Run now",
+                            f"/api/analysis/{packet.deal_id}/simulate/v2")
+            + '</div>'
         )
 
     # Missing diligence questions answered → export package.
@@ -1861,7 +1936,10 @@ def _render_next_actions(packet: DealAnalysisPacket) -> str:
         actions.append(
             f'<div><strong>Generate IC package</strong>: analysis is '
             f'complete. '
-            f'<a href="/api/analysis/{deal_id}/export?format=package">Export →</a></div>'
+            + ck_arrow_link(
+                "Export",
+                f"/api/analysis/{packet.deal_id}/export?format=package")
+            + '</div>'
         )
 
     if not actions:
@@ -2083,8 +2161,15 @@ def _render_rcm_profile(packet: DealAnalysisPacket) -> str:
     # Payer-performance heatmap (simple grid).
     heatmap_html = _render_payer_heatmap(packet)
 
+    intro = _tab_intro(
+        "RCM PROFILE", "Every metric, benchmarked against its cohort.",
+        "Every metric",
+        "Observed and predicted values sit beside cohort P25/P50/P75 "
+        "bands; the Δ column scores the gap in each metric's own unit.",
+    )
     return f"""
-    <div class="wb-tab-panel" data-panel="profile">
+    <div class="wb-tab-panel" data-panel="profile" {_panel_attrs("profile")}>
+      {intro}
       <div class="wb-card">
         <div class="wb-card-title">Metric detail</div>
         {''.join(parts)}
@@ -2161,6 +2246,12 @@ def _render_payer_heatmap(packet: DealAnalysisPacket) -> str:
 
 def _render_bridge(packet: DealAnalysisPacket) -> str:
     br = packet.ebitda_bridge
+    intro = _tab_intro(
+        "EBITDA BRIDGE", "Lever by lever, current to target.",
+        "Lever by lever",
+        "Drag a target and the bridge recomputes server-side — the "
+        "same math the IC packet prints.",
+    )
     if br.status != SectionStatus.OK or not br.per_metric_impacts:
         empty = ck_empty_state(
             "The bridge has nothing to build from yet.",
@@ -2174,7 +2265,8 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
             cta_href="/diligence/ingest",
         )
         return f"""
-        <div class="wb-tab-panel" data-panel="bridge">
+        <div class="wb-tab-panel" data-panel="bridge" {_panel_attrs("bridge")}>
+          {intro}
           {empty}
           <p class="dim wb-center-note">
             Or upload actuals on the
@@ -2257,7 +2349,8 @@ def _render_bridge(packet: DealAnalysisPacket) -> str:
         )
 
     return f"""
-    <div class="wb-tab-panel" data-panel="bridge">
+    <div class="wb-tab-panel" data-panel="bridge" {_panel_attrs("bridge")}>
+      {intro}
       {override_banner}
       <div class="wb-grid-5050">
         <div class="wb-card">
@@ -2363,6 +2456,11 @@ def _render_tornado(br) -> str:
 
 def _render_mc(packet: DealAnalysisPacket) -> str:
     mc = packet.simulation
+    intro = _tab_intro(
+        "MONTE CARLO", "A band, not a point estimate.", "A band",
+        "Thousands of simulated trajectories put P10 / P50 / P90 "
+        "bounds on the EBITDA plan and the returns it implies.",
+    )
     if mc is None or mc.status != SectionStatus.OK:
         reason = (mc.reason if mc else "") or "simulation not run"
         # Packet failures store the raw exception text (e.g. "Top-level
@@ -2383,7 +2481,8 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
             cta_href=f"/deal/{packet.deal_id}",
         )
         return f"""
-        <div class="wb-tab-panel" data-panel="mc">
+        <div class="wb-tab-panel" data-panel="mc" {_panel_attrs("mc")}>
+          {intro}
           {empty}
           <p class="dim wb-center-note">
             CLI alternative: <code class="mono">rcm-mc analysis {_esc(packet.deal_id)}</code>
@@ -2407,16 +2506,15 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
         + "</tbody></table>"
     )
 
-    moic_bits: List[str] = []
-    # MOIC table: the packet's MC section in SimulationSummary only
+    # MOIC bands: the packet's MC section in SimulationSummary only
     # holds a PercentileSet, not the raw probability_of_target_moic
-    # dict. We reconstruct the dict from the percentile set if the
-    # mc.moic is populated.
-    moic_summary = (
-        f'<div class="kpi-label">MOIC bands</div>'
-        f'<div class="num">P10 {_fmt_moic(mc.moic.p10)} · '
+    # dict — render the three percentiles through the kit stat tile.
+    moic_summary = ck_kpi_block(
+        "MOIC bands",
+        f'<span class="num">P10 {_fmt_moic(mc.moic.p10)} · '
         f'P50 {_fmt_moic(mc.moic.p50)} · '
-        f'P90 {_fmt_moic(mc.moic.p90)}</div>'
+        f'P90 {_fmt_moic(mc.moic.p90)}</span>',
+        sub="Multiple on invested capital across simulated trajectories",
     )
 
     # Variance contribution tornado.
@@ -2442,7 +2540,8 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
     conv = mc.convergence_check or {}
     conv_status = "converged" if conv.get("converged") else "not converged"
     return f"""
-    <div class="wb-tab-panel" data-panel="mc">
+    <div class="wb-tab-panel" data-panel="mc" {_panel_attrs("mc")}>
+      {intro}
       <div class="wb-card">
         <div class="wb-card-title">EBITDA impact — percentile band ({n_sims:,} sims · {conv_status})</div>
         <div class="histo">{histo_svg}</div>
@@ -2454,7 +2553,6 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
           {stats}
         </div>
         <div class="wb-card">
-          <div class="wb-card-title">Returns</div>
           {moic_summary}
         </div>
       </div>
@@ -2869,9 +2967,16 @@ def _render_scenarios(packet: DealAnalysisPacket) -> str:
         '</div>'
     )
 
+    intro = _tab_intro(
+        "SCENARIOS", "Side by side, under the same assumptions.",
+        "Side by side",
+        "Each scenario reruns the full simulation; the matrix scores "
+        "head-to-head win probability against the base case.",
+    )
     return f"""
     <div class="wb-tab-panel" data-panel="scenarios"
-         data-deal-id="{_esc(packet.deal_id)}">
+         data-deal-id="{_esc(packet.deal_id)}" {_panel_attrs("scenarios")}>
+      {intro}
       <div class="wb-card">
         <div class="wb-card-title">
           Scenario comparison

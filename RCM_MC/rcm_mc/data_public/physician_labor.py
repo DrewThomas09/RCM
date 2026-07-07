@@ -1,12 +1,16 @@
-"""Physician Labor Market Tracker.
+"""ILLUSTRATIVE — Physician Labor Market Tracker over a curated synthetic panel.
 
-Models physician supply/demand by specialty — critical for PE platforms
-with clinician-dependent revenue. Covers wage inflation, retirement cliff,
-NP/PA substitution, burnout attrition.
+Do not quote these outputs in IC documents: the supply, wage, extender,
+burnout, and geography figures below are curated approximations, not
+AAMC/BLS/Merritt-Hawkins extracts. The deliverable is the methodology —
+modeling physician supply/demand by specialty for PE platforms with
+clinician-dependent revenue (wage inflation, retirement cliff, NP/PA
+substitution, burnout attrition). For the curated-but-sourced wage/
+turnover panel used in stress math see
+:mod:`rcm_mc.market_intel.labor_market`.
 """
 from __future__ import annotations
 
-import importlib
 from dataclasses import dataclass
 from typing import List
 
@@ -73,17 +77,24 @@ class LaborResult:
     burnout: List[BurnoutIndex]
     geography: List[GeographicGap]
     corpus_deal_count: int
+    # Machine-readable honesty flag: the panel is curated synthetic
+    # data, so any consumer beyond the labelled UI page (exports,
+    # assistant context, future APIs) inherits the caveat instead of
+    # unlabelled numbers.
+    is_illustrative: bool = True
 
 
 def _load_corpus() -> List[dict]:
-    deals: List[dict] = []
-    for i in range(2, 103):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
-        except ImportError:
-            pass
-    return deals
+    """Delegate to the canonical registry-driven loader.
+
+    Five sibling market models each hand-rolled an ``importlib`` loop
+    over divergent ``range()``s, so the same corpus read as five
+    different "Corpus Deals" counts depending on the page and silently
+    drifted stale as seed files were added. The registry enumerates
+    every seed group, so all five now agree and track new seeds.
+    """
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _build_specialties() -> List[SpecialtySupply]:

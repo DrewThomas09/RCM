@@ -62,8 +62,8 @@ def _cmd_refresh(args: argparse.Namespace) -> int:
     try:
         planned = refresh_mod.plan(quick=not args.full, connectors=names)
     except KeyError:
-        # Manual-only connectors (openfda, cms_coverage, npi_registry, icd10)
-        # and typos both land here — a traceback would read as a crash.
+        # Manual-only connectors (openfda, npi_registry, icd10) and typos
+        # both land here — a traceback would read as a crash.
         plannable = ", ".join(refresh_mod.plan())
         manual = ", ".join(refresh_mod.UNPLANNED)
         print(f"no refresh plan for: {names}\n"

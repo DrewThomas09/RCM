@@ -32,6 +32,10 @@ from __future__ import annotations
 from .adapters import (
     ManualMarketIntelAdapter, StubVendorBloombergAdapter,
     StubVendorPitchBookAdapter, StubVendorSeekingAlphaAdapter,
+    get_adapter, set_adapter,
+)
+from .content_vintage import (
+    content_freshness_report, content_vintage,
 )
 from .news_feed import NewsItem, news_for_target, sector_sentiment
 from .public_comps import (
@@ -39,7 +43,9 @@ from .public_comps import (
     category_bands, find_comparables, list_companies,
     peer_physician_turnover_stats,
 )
-from .peer_snapshot import PeerSnapshot, compute_peer_snapshot
+from .peer_snapshot import (
+    ASSUMED_EBITDA_MARGIN, PeerSnapshot, compute_peer_snapshot,
+)
 from .labor_market import (
     LaborStress, RoleEconomics, get_role, labor_cost_stress,
     list_roles,
@@ -61,8 +67,13 @@ from .transaction_multiples import (
 )
 
 __all__ = [
+    "ASSUMED_EBITDA_MARGIN",
     "AnalystCoverage",
     "CategoryBand",
+    "content_freshness_report",
+    "content_vintage",
+    "get_adapter",
+    "set_adapter",
     "EarningsLatest",
     "ManualMarketIntelAdapter",
     "MultipleBand",

@@ -20,6 +20,16 @@ class MultipleBand:
     p75_ev_ebitda: float
     sample_size: int
     note: Optional[str] = None
+    # How this band was selected for the caller's query:
+    #   "size_band"               — the requested/computed size band matched
+    #   "largest_sample_fallback" — a size band was requested but has no row
+    #                               for the specialty; nearest available
+    #                               (largest-sample) band returned instead
+    #   "largest_sample_default"  — no size requested; documented default
+    # Disclosed because a $50M EV query silently answered with the
+    # OVER_500M band reads as "the" multiple to downstream consumers
+    # (peer snapshot, API) unless the mismatch travels with the row.
+    match_basis: str = "size_band"
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__.copy()
@@ -74,6 +84,12 @@ def transaction_multiple(
     - When ``ev_usd`` is given, compute the size band from the YAML
       ranges and match.
     - Otherwise fall back to the specialty's largest-sample band.
+
+    The returned band's ``match_basis`` says which of those happened —
+    in particular ``"largest_sample_fallback"`` when a size band WAS
+    requested but the specialty has no row for it, so callers can
+    render "nearest available band" instead of presenting a different
+    size class as the requested one.
     """
     data = _load()
     bands = list_specialty_bands(specialty)
@@ -81,13 +97,20 @@ def transaction_multiple(
         return None
     size_bands = data.get("deal_size_bands") or {}
 
+    size_requested = deal_size_band is not None or ev_usd is not None
     explicit = deal_size_band
     if explicit is None and ev_usd is not None:
         explicit = _size_band_for_ev(float(ev_usd), size_bands)
     if explicit:
         for b in bands:
             if b.deal_size_band == explicit:
+                b.match_basis = "size_band"
                 return b
     # Fallback: largest sample.
     bands.sort(key=lambda b: -b.sample_size)
-    return bands[0]
+    best = bands[0]
+    best.match_basis = (
+        "largest_sample_fallback" if size_requested
+        else "largest_sample_default"
+    )
+    return best

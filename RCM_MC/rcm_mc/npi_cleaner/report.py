@@ -531,6 +531,65 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         sheets.append(Sheet("Connectors", cn_rows,
                             col_widths=[34, 12, 12, 64]))
 
+    # ---- Recovery gaps (SAD jurisdiction + dollar-ranked gap inventory) --
+    # advanced.sad / advanced.gaps come from the offline vendor_adapter run
+    # (connectors front); guarded so files without them grow no empty tab.
+    _adv = res.advanced if isinstance(res.advanced, dict) else {}
+    _sad = _adv.get("sad") if isinstance(_adv.get("sad"), dict) else {}
+    _gapsd = _adv.get("gaps") if isinstance(_adv.get("gaps"), dict) else {}
+    if _sad.get("rollup") or _gapsd.get("inventory"):
+        rg_rows: List[list] = []
+        if _sad.get("rollup"):
+            rg_rows.append(_header(["SAD jurisdiction verdict", "Rows",
+                                    "Dollars", "% of $"]))
+            for rr in _sad["rollup"]:
+                if not isinstance(rr, dict):
+                    continue
+                rg_rows.append([str(rr.get("verdict") or ""),
+                                int(rr.get("rows") or 0),
+                                round(float(rr.get("dollars") or 0.0), 2),
+                                rr.get("pct_dollars")])
+            for ar in (_sad.get("ambiguous") or [])[:15]:
+                if isinstance(ar, dict):
+                    rg_rows.append([
+                        "  ambiguous: " + str(ar.get("hcpcs")
+                                              or ar.get("code") or ""),
+                        int(ar.get("rows") or 0),
+                        round(float(ar.get("dollars") or 0.0), 2), ""])
+            if _sad.get("note"):
+                rg_rows.append([str(_sad["note"]), "", "", ""])
+            rg_rows.append(["", "", "", ""])
+        if _gapsd.get("inventory"):
+            rg_rows.append(_header(["Recoverable gap", "Rows", "Dollars",
+                                    "Recoverability / route"]))
+            for g in _gapsd["inventory"]:
+                if not isinstance(g, dict):
+                    continue
+                rg_rows.append([
+                    str(g.get("gap") or ""), int(g.get("rows") or 0),
+                    round(float(g.get("dollars") or 0.0), 2),
+                    " — ".join(x for x in (str(g.get("recoverability")
+                                               or ""),
+                                           str(g.get("route") or "")) if x)])
+            if _gapsd.get("total_gap_dollars") is not None:
+                rg_rows.append([
+                    "Total gap dollars", "",
+                    round(float(_gapsd.get("total_gap_dollars") or 0.0), 2),
+                    ""])
+            if _gapsd.get("plan"):
+                rg_rows.append(["", "", "", ""])
+                rg_rows.append(_header(["Resolution plan", "", "Priority $",
+                                        "Action"]))
+                for pl in _gapsd["plan"]:
+                    if not isinstance(pl, dict):
+                        continue
+                    rg_rows.append([
+                        str(pl.get("gap") or ""), "",
+                        round(float(pl.get("priority_dollars") or 0.0), 2),
+                        str(pl.get("action") or "")])
+        sheets.append(Sheet("Recovery gaps", rg_rows,
+                            col_widths=[40, 10, 14, 70]))
+
     # ---- Cleaned data (last; capped) ----
     data_rows: List[list] = []
     if headers:

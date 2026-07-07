@@ -1,4 +1,10 @@
-"""Geographic Market Analyzer — CBSA-level white-space and market-entry scoring.
+"""ILLUSTRATIVE — Geographic Market Analyzer over a curated synthetic CBSA panel.
+
+Do not quote these outputs in IC documents: the CBSA metrics below are
+curated to be realistic but are NOT sourced Census/CMS values — the
+deliverable is the scoring methodology. For real metro/county
+demographics use :mod:`rcm_mc.data.cbsa_demographics` and
+:mod:`rcm_mc.data.county_demographics`.
 
 Scores markets (Core-Based Statistical Areas) by:
 - Demographics: population, 65+ share, income
@@ -8,12 +14,17 @@ Scores markets (Core-Based Statistical Areas) by:
 - Reimbursement index
 - Market growth
 - White-space attractiveness (composite 0-100)
+
+The component panel is derived from the same ``_score_market`` pass
+that scores the markets (panel-average normalized score × the actual
+weight, summing to the panel-average composite). An earlier version
+returned seven hardcoded rows that claimed to decompose the composite
+while being disconnected from it — fake even by illustrative standards.
 """
 from __future__ import annotations
 
-import importlib
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +141,7 @@ class MarketComponent:
 @dataclass
 class EntryScenario:
     cbsa: str
-    entry_strategy: str               # "De novo", "Acquisition", "JV"
+    entry_strategy: str               # "De novo" | "Acquisition (platform)"
     year1_revenue_mm: float
     year3_revenue_mm: float
     year5_revenue_mm: float
@@ -162,6 +173,11 @@ class GeoMarketResult:
     avoid_markets: int
     total_addressable_pop_mm: float
     corpus_deal_count: int
+    # Machine-readable honesty flag: the CBSA panel is curated synthetic
+    # data, so any consumer beyond the labelled UI page (exports,
+    # assistant context, future APIs) inherits the caveat instead of
+    # unlabelled numbers.
+    is_illustrative: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -169,19 +185,16 @@ class GeoMarketResult:
 # ---------------------------------------------------------------------------
 
 def _load_corpus() -> List[dict]:
-    deals: List[dict] = []
-    for i in range(2, 67):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
-        except ImportError:
-            pass
-    try:
-        from rcm_mc.data_public.deals_corpus import _SEED_DEALS, EXTENDED_SEED_DEALS
-        deals = _SEED_DEALS + EXTENDED_SEED_DEALS + deals
-    except Exception:
-        pass
-    return deals
+    """Delegate to the canonical registry-driven loader.
+
+    Five sibling market models each hand-rolled an ``importlib`` loop
+    over divergent ``range()``s, so the same corpus read as five
+    different "Corpus Deals" counts depending on the page and silently
+    drifted stale as seed files were added. The registry enumerates
+    every seed group, so all five now agree and track new seeds.
+    """
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _normalize(val: float, low: float, high: float) -> float:
@@ -190,36 +203,58 @@ def _normalize(val: float, low: float, high: float) -> float:
     return max(0, min(100, (val - low) / (high - low) * 100))
 
 
-def _score_market(m: Dict, sector: str) -> (float, str):
-    """Composite white-space score 0-100."""
-    # Growth (higher = better)
-    growth_score = _normalize(m["growth_5yr"], -0.02, 0.15)
-    # Density HHI (lower = better for white-space)
-    hhi_score = _normalize(3000 - m["hhi"], 0, 2500)
-    # Reimbursement (higher = better)
-    mcr_score = _normalize(m["mcr_index"], 0.80, 1.25)
-    # Commercial mix (higher = better for most sectors)
-    comm_score = _normalize(m["comm_pct"], 0.40, 0.70)
-    # Demographic fit (depends on sector)
-    if sector in ("Senior Primary Care", "Dialysis", "Home Health", "Hospice", "Oncology"):
+# (dimension label, weight, raw-metric key) — single source of truth for
+# both the market scores and the component decomposition panel, so the
+# two can never diverge again.
+_SCORE_DIMENSIONS: List[Tuple[str, float, str]] = [
+    ("Market Growth (5yr CAGR)", 0.22, "growth_5yr"),
+    ("Competitive Density (HHI)", 0.14, "hhi"),
+    ("Reimbursement Index", 0.12, "mcr_index"),
+    ("Commercial Payer Mix", 0.12, "comm_pct"),
+    ("Demographic Fit", 0.14, "pct_65plus"),
+    ("Median Household Income", 0.12, "median_income_k"),
+    ("PCP Density (inverse)", 0.14, "pcp_per_1k"),
+]
+
+# Sectors whose demographic fit favors 65+ share instead of younger mix.
+_SENIOR_SECTORS = (
+    "Senior Primary Care", "Dialysis", "Home Health", "Hospice", "Oncology",
+)
+
+
+def _dimension_scores(m: Dict, sector: str) -> Dict[str, float]:
+    """Per-dimension normalized scores (0-100) for one market.
+
+    Split out of ``_score_market`` so the component panel decomposes
+    the same numbers the composite is built from.
+    """
+    if sector in _SENIOR_SECTORS:
         demo_score = _normalize(m["pct_65plus"], 10, 22)
     else:
-        demo_score = _normalize(100 - m["pct_65plus"], 78, 95)    # younger markets for most sectors
+        demo_score = _normalize(100 - m["pct_65plus"], 78, 95)  # younger markets
+    return {
+        # Growth (higher = better)
+        "Market Growth (5yr CAGR)": _normalize(m["growth_5yr"], -0.02, 0.15),
+        # Density HHI (lower = better for white-space)
+        "Competitive Density (HHI)": _normalize(3000 - m["hhi"], 0, 2500),
+        # Reimbursement (higher = better)
+        "Reimbursement Index": _normalize(m["mcr_index"], 0.80, 1.25),
+        # Commercial mix (higher = better for most sectors)
+        "Commercial Payer Mix": _normalize(m["comm_pct"], 0.40, 0.70),
+        # Demographic fit (depends on sector)
+        "Demographic Fit": demo_score,
+        # Income (higher = better for commercial-heavy sectors)
+        "Median Household Income": _normalize(m["median_income_k"], 60, 120),
+        # PCP density: for white-space, lower is better
+        "PCP Density (inverse)": _normalize(4 - m["pcp_per_1k"], 0, 3),
+    }
 
-    # Income (higher = better for commercial-heavy sectors)
-    income_score = _normalize(m["median_income_k"], 60, 120)
 
-    # PCP density: for white-space, lower is better
-    pcp_score = _normalize(4 - m["pcp_per_1k"], 0, 3)
-
-    composite = (
-        growth_score * 0.22 +
-        hhi_score * 0.14 +
-        mcr_score * 0.12 +
-        comm_score * 0.12 +
-        demo_score * 0.14 +
-        income_score * 0.12 +
-        pcp_score * 0.14
+def _score_market(m: Dict, sector: str) -> Tuple[float, str]:
+    """Composite white-space score 0-100."""
+    scores = _dimension_scores(m, sector)
+    composite = sum(
+        scores[label] * weight for label, weight, _ in _SCORE_DIMENSIONS
     )
 
     if composite >= 68:
@@ -254,44 +289,85 @@ def _build_markets(sector: str) -> List[MarketRow]:
     return sorted(rows, key=lambda r: -r.white_space_score)
 
 
-def _build_components() -> List[MarketComponent]:
-    return [
-        MarketComponent("Market Growth (5yr CAGR)", 0.058, 68, 0.22, round(68 * 0.22, 1)),
-        MarketComponent("Competitive Density (HHI)", 1420, 56, 0.14, round(56 * 0.14, 1)),
-        MarketComponent("Reimbursement Index", 1.02, 65, 0.12, round(65 * 0.12, 1)),
-        MarketComponent("Commercial Payer Mix", 0.58, 60, 0.12, round(60 * 0.12, 1)),
-        MarketComponent("Demographic Fit", 0.145, 55, 0.14, round(55 * 0.14, 1)),
-        MarketComponent("Median Household Income", 81, 57, 0.12, round(57 * 0.12, 1)),
-        MarketComponent("PCP Density (inverse)", 2.4, 52, 0.14, round(52 * 0.14, 1)),
-    ]
+def _build_components(sector: str) -> List[MarketComponent]:
+    """Decompose the composite from the real scoring pass.
+
+    Each row is the panel-average raw metric, the panel-average
+    normalized score for that dimension, the actual weight, and the
+    resulting contribution — so contributions sum (± rounding) to the
+    panel-average white-space composite the markets table shows.
+    """
+    n = len(_CBSAS)
+    if n == 0:
+        return []
+    per_market = [_dimension_scores(m, sector) for m in _CBSAS]
+    rows = []
+    for label, weight, metric_key in _SCORE_DIMENSIONS:
+        avg_value = sum(m[metric_key] for m in _CBSAS) / n
+        avg_score = sum(scores[label] for scores in per_market) / n
+        rows.append(MarketComponent(
+            dimension=label,
+            value=round(avg_value, 3),
+            normalized_score=round(avg_score, 1),
+            weight=weight,
+            contribution=round(avg_score * weight, 1),
+        ))
+    return rows
+
+
+# Contribution / EBITDA margin assumptions used to derive payback from
+# each scenario's own capital and revenue ramp (illustrative but
+# internally consistent — an earlier version showed constant 3.2/4.8yr
+# paybacks disconnected from the scenario economics):
+#   De novo   — 20% site-level contribution margin on ramped revenue.
+#   Acquisition — 22% platform EBITDA margin; payback on the purchase
+#   price in EBITDA-years therefore reads as the entry EV/EBITDA
+#   multiple, which is the honest way to state it.
+_DE_NOVO_CONTRIBUTION_MARGIN = 0.20
+_ACQUISITION_EBITDA_MARGIN = 0.22
+
+
+def _payback_years(capex_mm: float, year3_revenue_mm: float,
+                   margin: float) -> float:
+    """Capital ÷ steady-state annual contribution (year-3 run rate)."""
+    annual = year3_revenue_mm * margin
+    if annual <= 0:
+        return 0.0
+    return round(capex_mm / annual, 1)
 
 
 def _build_entry_scenarios(markets: List[MarketRow]) -> List[EntryScenario]:
     scenarios = []
     top = [m for m in markets if m.tier in ("Priority", "Watch")][:5]
     for m in top:
-        # Three strategies per top market
+        # Two strategies per top market
         pop_factor = m.population_k / 5000      # normalize to reference 5M population
         # De novo
+        dn_capex = round(pop_factor * 3.6, 2)
+        dn_y3 = round(pop_factor * 14.0, 2)
         scenarios.append(EntryScenario(
             cbsa=m.cbsa,
             entry_strategy="De novo (4 sites over 3 yrs)",
             year1_revenue_mm=round(pop_factor * 3.5, 2),
-            year3_revenue_mm=round(pop_factor * 14.0, 2),
+            year3_revenue_mm=dn_y3,
             year5_revenue_mm=round(pop_factor * 24.5, 2),
-            capex_mm=round(pop_factor * 3.6, 2),
-            payback_years=round(3.2, 1),
+            capex_mm=dn_capex,
+            payback_years=_payback_years(
+                dn_capex, dn_y3, _DE_NOVO_CONTRIBUTION_MARGIN),
             expected_moic=round(2.3 + (m.white_space_score - 55) / 30, 2),
         ))
         # Acquisition
+        acq_capex = round(pop_factor * 95.0, 2)
+        acq_y3 = round(pop_factor * 32.0, 2)
         scenarios.append(EntryScenario(
             cbsa=m.cbsa,
             entry_strategy="Acquisition (platform)",
             year1_revenue_mm=round(pop_factor * 22.0, 2),
-            year3_revenue_mm=round(pop_factor * 32.0, 2),
+            year3_revenue_mm=acq_y3,
             year5_revenue_mm=round(pop_factor * 48.0, 2),
-            capex_mm=round(pop_factor * 95.0, 2),
-            payback_years=round(4.8, 1),
+            capex_mm=acq_capex,
+            payback_years=_payback_years(
+                acq_capex, acq_y3, _ACQUISITION_EBITDA_MARGIN),
             expected_moic=round(2.6 + (m.white_space_score - 55) / 28, 2),
         ))
     return scenarios[:10]    # cap for display
@@ -335,7 +411,7 @@ def compute_geo_market(
     corpus = _load_corpus()
 
     markets = _build_markets(sector)
-    components = _build_components()
+    components = _build_components(sector)
     scenarios = _build_entry_scenarios(markets)
     tiers = _build_tiers(markets)
 

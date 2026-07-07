@@ -13,7 +13,7 @@ not payer-contract language.
 """
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # --------------------------------------------------------------------------
 # Place of Service (CMS POS code set) — code → short name.

@@ -220,5 +220,186 @@ class PayerShiftMethodologyTests(unittest.TestCase):
         self.assertTrue(compute_payer_shift().is_illustrative)
 
 
+# ────────────────────────────────────────────────────────────────────
+# P1 — peer snapshot discloses the multiple's basis
+# ────────────────────────────────────────────────────────────────────
+
+class PeerSnapshotBasisTests(unittest.TestCase):
+
+    def test_actual_ebitda_basis(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+        )
+        self.assertEqual(s.multiple_basis, "actual_ebitda")
+        self.assertIsNone(s.assumed_margin)
+        d = s.to_dict()
+        self.assertEqual(d["multiple_basis"], "actual_ebitda")
+        self.assertIsNone(d["assumed_margin"])
+
+    def test_assumed_margin_basis_disclosed_in_payload_and_summary(self):
+        from rcm_mc.market_intel import (
+            ASSUMED_EBITDA_MARGIN, compute_peer_snapshot,
+        )
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_revenue_usd=250_000_000,
+        )
+        self.assertEqual(s.multiple_basis, "assumed_margin_12pct")
+        self.assertEqual(s.assumed_margin, ASSUMED_EBITDA_MARGIN)
+        # Exact re-derivation: EV / (revenue × 12%).
+        self.assertAlmostEqual(
+            s.target_implied_multiple,
+            350_000_000 / (250_000_000 * ASSUMED_EBITDA_MARGIN), places=6)
+        self.assertIn("assumed", s.summary.lower())
+        self.assertIn("12%", s.summary)
+
+    def test_no_multiple_no_basis(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(category="MULTI_SITE_ACUTE_HOSPITAL")
+        self.assertIsNone(s.target_implied_multiple)
+        self.assertIsNone(s.multiple_basis)
+
+    def test_summary_multiples_render_2dp(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+        )
+        self.assertIn("10.00x", s.summary)   # 2dp+x house convention
+
+
+# ────────────────────────────────────────────────────────────────────
+# P2 — adapter registry is real and drives peer-snapshot bands
+# ────────────────────────────────────────────────────────────────────
+
+class AdapterRegistryTests(unittest.TestCase):
+
+    def test_default_is_manual_adapter(self):
+        from rcm_mc.market_intel import ManualMarketIntelAdapter, get_adapter
+        self.assertIsInstance(get_adapter(), ManualMarketIntelAdapter)
+
+    def test_set_adapter_rejects_non_conforming_object(self):
+        from rcm_mc.market_intel import set_adapter
+        with self.assertRaises(TypeError):
+            set_adapter(object())
+
+    def test_swapped_adapter_reaches_peer_snapshot(self):
+        from rcm_mc.market_intel import compute_peer_snapshot, set_adapter
+        from rcm_mc.market_intel.transaction_multiples import MultipleBand
+
+        class FakeVendorAdapter:
+            def public_comps(self):
+                return []
+
+            def transaction_multiple(self, *, specialty, ev_usd=None):
+                return MultipleBand(
+                    specialty=specialty, deal_size_band="VENDOR_TEST",
+                    p25_ev_ebitda=7.00, p50_ev_ebitda=9.00,
+                    p75_ev_ebitda=11.00, sample_size=99,
+                )
+
+            def news_for_target(self, *, specialty=None, tickers=None,
+                                limit=20):
+                return []
+
+        prev = set_adapter(FakeVendorAdapter())
+        try:
+            s = compute_peer_snapshot(
+                category="MULTI_SITE_ACUTE_HOSPITAL",
+                target_ev_usd=350_000_000,
+                target_ebitda_usd=35_000_000,
+                specialty="ANESTHESIOLOGY",
+            )
+            self.assertEqual(
+                s.transaction_band["deal_size_band"], "VENDOR_TEST")
+            self.assertEqual(s.transaction_band["sample_size"], 99)
+        finally:
+            set_adapter(prev)
+        # Restored: manual adapter serves the curated band again.
+        s2 = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+            specialty="ANESTHESIOLOGY",
+        )
+        self.assertNotEqual(
+            s2.transaction_band["deal_size_band"], "VENDOR_TEST")
+
+    def test_stub_message_names_the_real_install_function(self):
+        from rcm_mc.market_intel import StubVendorSeekingAlphaAdapter
+        with self.assertRaises(NotImplementedError) as cm:
+            StubVendorSeekingAlphaAdapter("key").public_comps()
+        self.assertIn("set_adapter", str(cm.exception))
+
+
+# ────────────────────────────────────────────────────────────────────
+# P2 — transaction_multiple labels size-band fallbacks
+# ────────────────────────────────────────────────────────────────────
+
+class TransactionMultipleFallbackTests(unittest.TestCase):
+
+    def test_matched_band_reports_size_band(self):
+        from rcm_mc.market_intel import transaction_multiple
+        m = transaction_multiple(
+            specialty="MULTI_SITE_PHYSICIAN_GROUP", ev_usd=50_000_000)
+        self.assertEqual(m.deal_size_band, "SUB_100M")
+        self.assertEqual(m.match_basis, "size_band")
+        self.assertEqual(m.to_dict()["match_basis"], "size_band")
+
+    def test_no_size_requested_reports_default(self):
+        from rcm_mc.market_intel import transaction_multiple
+        m = transaction_multiple(specialty="MULTI_SITE_PHYSICIAN_GROUP")
+        self.assertEqual(m.match_basis, "largest_sample_default")
+
+    def test_unavailable_requested_band_reports_fallback(self):
+        from rcm_mc.market_intel import transaction_multiple
+        m = transaction_multiple(
+            specialty="MULTI_SITE_PHYSICIAN_GROUP",
+            deal_size_band="NO_SUCH_BAND",
+        )
+        self.assertIsNotNone(m)
+        self.assertEqual(m.match_basis, "largest_sample_fallback")
+
+
+# ────────────────────────────────────────────────────────────────────
+# P2 — content vintage accessor + YAML contract
+# ────────────────────────────────────────────────────────────────────
+
+class ContentVintageTests(unittest.TestCase):
+
+    def test_every_content_yaml_has_parseable_last_reviewed(self):
+        from rcm_mc.market_intel import content_freshness_report
+        from rcm_mc.market_intel.content_vintage import CONTENT_FILES
+        report = content_freshness_report()
+        self.assertEqual(set(report), set(CONTENT_FILES))
+        for name, row in report.items():
+            self.assertIsNone(row["error"], f"{name}: {row['error']}")
+            self.assertIsNotNone(row["last_reviewed"], name)
+            _dt.date.fromisoformat(row["last_reviewed"])  # parseable
+            self.assertTrue(row["source_urls"] or name == "pe_transactions",
+                            f"{name} missing source_urls")
+
+    def test_staleness_clock_is_injectable_and_correct(self):
+        from rcm_mc.market_intel import content_vintage
+        v = content_vintage("ma_penetration")
+        reviewed = _dt.date.fromisoformat(v["last_reviewed"])
+        fresh_day = reviewed + _dt.timedelta(days=10)
+        stale_day = reviewed + _dt.timedelta(days=121)
+        self.assertFalse(
+            content_vintage("ma_penetration", today=fresh_day)["stale"])
+        self.assertTrue(
+            content_vintage("ma_penetration", today=stale_day)["stale"])
+        self.assertEqual(
+            content_vintage("ma_penetration", today=fresh_day)["age_days"],
+            10)
+
+    def test_missing_file_fails_closed(self):
+        from rcm_mc.market_intel import content_vintage
+        v = content_vintage("no_such_content")
+        self.assertTrue(v["stale"])
+        self.assertEqual(v["error"], "missing")
+
+
 if __name__ == "__main__":
     unittest.main()

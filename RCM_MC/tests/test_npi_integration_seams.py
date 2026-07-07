@@ -19,7 +19,6 @@ builders). No mocks of our own modules — only the external network clients
 (NPPES lookup, PECOS) and the deep preflight probe are stubbed, exactly the
 injection seams those modules expose for tests.
 """
-import io
 import json
 import os
 import sqlite3
@@ -368,6 +367,14 @@ class OfflinePackInstallSeamTests(unittest.TestCase):
         leie_row = next(p for p in plan if p["id"] == "oig_leie")
         self.assertEqual(leie_row["state"], "ready")
 
+    def test_cli_bootstrap_icd10_installs_vendored_pack(self):
+        from rcm_mc.npi_cleaner import cli, refdata_packs
+        self.assertEqual(cli.main(["--refdata-bootstrap-icd10"]), 0)
+        st = next(p for p in refdata_packs.status() if p["id"] == "icd10cm")
+        self.assertTrue(st["installed"])
+        self.assertGreater(int(st.get("rows") or 0), 50_000)
+        self.assertIn("vendored", str(st.get("source") or ""))
+
     def test_cli_install_rejects_unknown_pack(self):
         from rcm_mc.npi_cleaner import cli
         src = Path(tempfile.mkdtemp(prefix="npi-seams-bad-")) / "x.csv"
@@ -442,6 +449,28 @@ class ReportRenderingSeamTests(unittest.TestCase):
                         for c in row if c.value is not None)
         self.assertIn("Applicable source", text)
         self.assertIn("needs_data", text)
+
+    def test_workbook_recovery_gaps_sheet_from_advanced_payload(self):
+        import io as _io
+        try:
+            from openpyxl import load_workbook
+        except Exception:
+            self.skipTest("openpyxl unavailable")
+        from rcm_mc.npi_cleaner.report import build_workbook
+        with patch.dict(os.environ, {"RCM_MC_NPI_WORKDIR": _workdir()}):
+            res = engine.clean_bytes(
+                ("BillingNPI,HCPCS,Modifier,State,BilledAmount\n"
+                 f"{GOOD},J1745,JW,TX,150.00\n"
+                 f"{GOOD_B},A0428,,CA,300.00\n").encode(), "sad.csv")
+        if not (res.advanced or {}).get("sad"):
+            self.skipTest("pandas/vendored adapter unavailable")
+        wb = load_workbook(_io.BytesIO(build_workbook(
+            res, res.headers, [[GOOD, "J1745", "JW", "TX", "150.00"]])))
+        self.assertIn("Recovery gaps", wb.sheetnames)
+        text = " ".join(str(c.value) for row in wb["Recovery gaps"].iter_rows()
+                        for c in row if c.value is not None)
+        self.assertIn("SAD jurisdiction verdict", text)
+        self.assertIn("Recoverable gap", text)
 
     def test_offline_workbook_still_gets_plan_sheet(self):
         import io as _io
