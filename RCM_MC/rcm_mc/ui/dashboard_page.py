@@ -149,11 +149,323 @@ def _freshness_bucket(last_refreshed_iso: Optional[str]) -> tuple[str, str]:
 
 
 def _dot(level: str) -> str:
-    colors = {"ok": "#3F7D4D", "stale": "#B7791F",
-              "cold": "#A53A2D", "never": "#5C6878"}
-    c = colors.get(level, "#5C6878")
-    return (f'<span style="display:inline-block;width:8px;height:8px;'
-            f'border-radius:50%;background:{c};margin-right:6px;"></span>')
+    """Traffic-light dot — tone comes from the .dash-dot-* classes in
+    ``_DASH_CSS`` (kit severity tokens), not per-span inline hexes."""
+    lvl = level if level in ("ok", "stale", "cold", "never") else "never"
+    return f'<span class="dash-dot dash-dot-{lvl}" aria-hidden="true"></span>'
+
+
+# ── Page-scoped CSS ────────────────────────────────────────────────
+# One namespaced <style> block for the whole dashboard. Every class
+# resolves to the kit's semantic custom properties (with canonical
+# fallbacks) so retheming stays a one-file change in _chartis_kit.
+# Replaces the pre-editorial inline-style idiom flagged by the
+# 2026-07 design audit (146 inline styles, 17 raw legacy hexes).
+
+_DASH_CSS = """<style>
+/* ── dashboard editorial facelift · .dash-* namespace ─────────── */
+.dash-link { color:var(--sc-teal-ink,#155752); font-weight:500;
+  text-decoration:none; }
+.dash-link:hover { text-decoration:underline; }
+.dash-link:focus-visible { outline:2px solid var(--sc-teal-ink,#155752);
+  outline-offset:2px; }
+.dash-dim { color:var(--sc-text-dim,#465366); }
+.dash-faint { color:var(--sc-text-faint,#7a8699); }
+/* Element-qualified: .wc-container p (element+class) would otherwise
+   out-rank a bare class and re-impose its 4px margins on these. */
+p.dash-note { margin:0 0 10px; color:var(--sc-text-dim,#465366);
+  font-size:12px; }
+p.dash-note-after { margin:10px 0 0; color:var(--sc-text-dim,#465366);
+  font-size:12px; }
+p.dash-note.sm, p.dash-note-after.sm { font-size:11px; }
+.dash-actions-note { font-weight:normal; font-size:11px; }
+.dash-form-inline { display:inline; margin:0; }
+.dash-grow { flex:1; }
+.dash-static { flex-shrink:0; }
+.dash-btn-row { flex-shrink:0; display:flex; gap:4px; }
+.dash-runtime { font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-size:11px; }
+.dash-id { font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-size:11px; color:var(--sc-text-dim,#465366);
+  text-transform:uppercase; letter-spacing:0.03em; }
+.dash-ts { flex-shrink:0; color:var(--sc-text-faint,#7a8699);
+  font-size:11px; font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  white-space:nowrap; }
+.dash-ul { list-style:none; padding:0; margin:0; }
+.dash-ul.dash-evts { font-size:13px; }
+.dash-svg-mid { vertical-align:middle; }
+.dash-id-col { min-width:100px; }
+.dash-list-row { padding:8px 0;
+  border-bottom:1px solid var(--sc-bone,#ece5d6);
+  display:flex; align-items:center; gap:12px; }
+.dash-list-row:last-child { border-bottom:none; }
+.dash-list-row.pad-sm { padding:6px 0; }
+.dash-list-row.pad-lg { padding:10px 0; }
+.dash-list-row.pad-x  { padding:8px 12px; }
+.dash-evt-body { flex:1; color:var(--sc-text,#1a2332); }
+.dash-reasons { flex-shrink:0; font-size:12px; display:flex;
+  flex-wrap:wrap; gap:12px; }
+.dash-pos  { color:var(--sc-positive,#0a8a5f); }
+.dash-warn { color:var(--sc-warning,#b8732a); }
+.dash-neg  { color:var(--sc-negative,#b5321e); }
+.dash-neg-strong { color:var(--sc-negative,#b5321e); font-weight:600; }
+
+/* Traffic-light dots — freshness buckets + job statuses */
+.dash-dot { display:inline-block; width:8px; height:8px;
+  border-radius:50%; margin-right:6px; }
+.dash-dot-ok    { background:var(--sc-positive,#0a8a5f); }
+.dash-dot-stale { background:var(--sc-warning,#b8732a); }
+.dash-dot-cold  { background:var(--sc-negative,#b5321e); }
+.dash-dot-never { background:var(--sc-text-faint,#8a93a0); }
+
+/* Buttons — one ghost + one icon treatment for all page controls */
+.dash-btn-ghost { background:#fff;
+  border:1px solid var(--sc-rule,#d6cfc0);
+  color:var(--sc-teal-ink,#155752); padding:2px 10px; border-radius:2px;
+  font-size:11px; font-weight:500; cursor:pointer;
+  font-family:var(--sc-sans,'Inter Tight',sans-serif);
+  transition:border-color 0.1s, background 0.1s; }
+.dash-btn-ghost:hover { border-color:var(--sc-teal-ink,#155752);
+  background:var(--sc-parchment,#f5f1ea); }
+.dash-btn-ghost:focus-visible {
+  outline:2px solid var(--sc-teal-ink,#155752); outline-offset:1px; }
+.dash-btn-icon { background:transparent; border:0;
+  color:var(--sc-text-faint,#8a93a0); cursor:pointer; font-size:14px;
+  padding:0 4px; transition:color 0.1s; }
+.dash-btn-icon:hover { color:var(--sc-teal-ink,#155752); }
+.dash-btn-icon:focus-visible {
+  outline:2px solid var(--sc-teal-ink,#155752); outline-offset:1px;
+  color:var(--sc-teal-ink,#155752); }
+
+/* Mono tag chips — event kinds, PINNED marker */
+.dash-tag { display:inline-block; flex-shrink:0; padding:1px 6px;
+  font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:9px;
+  font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+  border:1px solid var(--sc-rule,#d6cfc0); border-radius:2px;
+  color:var(--sc-text-dim,#465366);
+  background:var(--sc-parchment,#f5f1ea); min-width:42px;
+  text-align:center; }
+.dash-tag.ml { margin-left:6px; }
+.dash-tag.t-neg  { color:var(--sc-negative,#b5321e); }
+.dash-tag.t-warn { color:var(--sc-warning,#b8732a); }
+.dash-tag.t-pos  { color:var(--sc-positive,#0a8a5f); }
+.dash-tag.t-teal { color:var(--sc-teal-ink,#155752); }
+
+/* Jump row + section band dividers */
+.dash-jump { display:flex; gap:16px; flex-wrap:wrap; margin:0 0 8px;
+  font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:10px;
+  letter-spacing:0.08em; text-transform:uppercase; }
+.dash-jump a { color:var(--sc-text-dim,#465366); text-decoration:none;
+  border-bottom:1px solid transparent; padding-bottom:1px; }
+.dash-jump a:hover, .dash-jump a:focus-visible {
+  color:var(--sc-teal-ink,#155752);
+  border-bottom-color:var(--sc-teal-ink,#155752); outline:none; }
+.dash-band { margin:28px 0 2px; scroll-margin-top:70px; }
+
+/* ⌘K discoverability strip */
+.dash-cmdk-hint { margin:4px 0 14px; padding:8px 12px;
+  background:var(--sc-parchment,#f5f1ea);
+  border:1px solid var(--sc-rule,#d6cfc0); border-radius:2px;
+  font-size:12px; color:var(--sc-text-dim,#465366); }
+.dash-cmdk-hint kbd {
+  font-family:var(--sc-mono,'JetBrains Mono',monospace); padding:1px 5px;
+  background:#fff; color:var(--sc-text,#1a2332);
+  border:1px solid var(--sc-rule,#d6cfc0); border-radius:2px;
+  font-size:11px; }
+
+/* Portfolio-pulse hero — kit navy panel idiom */
+.dash-hero { background:var(--sc-navy,#0b2341); color:#fff;
+  padding:22px 26px; border-radius:2px; margin:6px 0 18px; }
+.dash-hero-top { display:flex; align-items:center;
+  justify-content:space-between; margin-bottom:14px; }
+h2.dash-hero-label { font-size:11px; font-weight:700; margin:0;
+  text-transform:uppercase; letter-spacing:0.18em; color:#fff; }
+.dash-hero-live { display:inline-flex; align-items:center; gap:6px;
+  font-size:10px; color:rgba(255,255,255,0.72); font-weight:600;
+  text-transform:uppercase; letter-spacing:0.12em; }
+.dash-hero-stats { display:flex; gap:24px; flex-wrap:wrap;
+  margin-bottom:16px; }
+.dash-hero-stat { flex:1; min-width:120px; }
+.dash-hero-stat .v { font-size:32px; font-weight:700; color:#fff;
+  line-height:1; font-variant-numeric:tabular-nums;
+  letter-spacing:-0.02em; }
+.dash-hero-stat .l { font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.1em;
+  color:rgba(255,255,255,0.78); margin:6px 0 0; }
+p.dash-hero-sub { font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.08em;
+  color:rgba(255,255,255,0.78); margin:8px 0 4px; }
+.dash-mosaic { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;
+  line-height:0; }
+.dash-mosaic a { display:inline-block; width:18px; height:18px;
+  border-radius:2px; transition:transform 0.1s; }
+.dash-mosaic a:hover, .dash-mosaic a:focus-visible {
+  transform:scale(1.15); outline:2px solid #fff; outline-offset:1px; }
+.dash-hero-legend { display:flex; gap:14px; margin-top:8px;
+  flex-wrap:wrap; }
+.dash-hero-legend .chip { display:inline-flex; align-items:center;
+  gap:4px; font-size:11px; color:rgba(255,255,255,0.78);
+  font-variant-numeric:tabular-nums; }
+.dash-hero-legend .sw { display:inline-block; width:10px; height:10px;
+  border-radius:2px; }
+.dash-hero-legend strong { color:#fff; }
+.dash-hero-moic { display:flex; align-items:center; gap:14px;
+  margin-top:14px; padding-top:12px;
+  border-top:1px solid rgba(255,255,255,0.18); flex-wrap:wrap; }
+.dash-hero-moic .lab { font-size:10px; font-weight:600; margin:0;
+  text-transform:uppercase; letter-spacing:0.08em;
+  color:rgba(255,255,255,0.78); flex-shrink:0; }
+.dash-hero-moic .big { font-size:28px; font-weight:700; color:#fff;
+  font-variant-numeric:tabular-nums; flex-shrink:0; }
+.dash-hero-moic .panel { background:#fff; padding:6px 10px;
+  border-radius:2px; flex-shrink:0; }
+.dash-hero-moic .pct { font-size:11px; color:rgba(255,255,255,0.78);
+  font-variant-numeric:tabular-nums; margin:0; }
+.dash-hero-syn { background:rgba(255,255,255,0.08);
+  border-left:3px solid var(--sc-warning,#b8732a); padding:12px 16px;
+  border-radius:2px; margin:18px 0 0; }
+.dash-hero-syn .eb { font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.1em;
+  color:rgba(255,255,255,0.78); margin:0 0 4px; }
+.dash-hero-syn .tx { font-size:14px; color:#fff; line-height:1.5;
+  margin:0; }
+@keyframes wc-pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.55; transform:scale(0.85); } }
+.wc-pulse-dot { display:inline-block; width:8px; height:8px;
+  border-radius:50%; background:#7ED3A8; box-shadow:0 0 6px #7ED3A8;
+  animation:wc-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .wc-pulse-dot { animation:none; }
+  .dash-mosaic a:hover, .dash-mosaic a:focus-visible { transform:none; }
+}
+
+/* Sharpest-insight card — sibling anchors, no nesting */
+.dash-insight { position:relative; display:flex; align-items:baseline;
+  gap:12px; margin:4px 0 16px; padding:18px 22px; background:#fff;
+  border:1px solid var(--sc-rule,#d6cfc0); border-left-width:4px;
+  border-radius:2px; transition:border-color 0.1s; }
+.dash-insight:hover { border-color:var(--sc-teal-ink,#155752); }
+.dash-insight-dot { flex-shrink:0; width:10px; height:10px;
+  border-radius:50%; position:relative; top:-1px; }
+.dash-insight-alert    { border-left-color:var(--sc-negative,#b5321e); }
+.dash-insight-warn     { border-left-color:var(--sc-warning,#b8732a); }
+.dash-insight-positive { border-left-color:var(--sc-positive,#0a8a5f); }
+.dash-insight-neutral  { border-left-color:var(--sc-teal-ink,#155752); }
+.dash-insight-alert    .dash-insight-dot { background:var(--sc-negative,#b5321e); }
+.dash-insight-warn     .dash-insight-dot { background:var(--sc-warning,#b8732a); }
+.dash-insight-positive .dash-insight-dot { background:var(--sc-positive,#0a8a5f); }
+.dash-insight-neutral  .dash-insight-dot { background:var(--sc-teal-ink,#155752); }
+.dash-insight-main { flex:1; }
+p.dash-insight-eyebrow {
+  font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:10px;
+  font-weight:600; text-transform:uppercase; letter-spacing:0.08em;
+  color:var(--sc-text-dim,#465366); margin:0; }
+/* Undo the .wc-container h3 uppercase/tracking — the headline is a
+   serif sentence, not a label. */
+h3.dash-insight-headline { margin:0; text-transform:none;
+  letter-spacing:normal; }
+.dash-insight-headline a {
+  font-family:var(--sc-serif,'Source Serif 4',serif); font-size:18px;
+  font-weight:600; color:var(--sc-text,#1a2332); text-decoration:none;
+  display:inline-block; margin-top:4px; line-height:1.3; }
+/* Stretched link: the headline anchor covers the whole card without
+   nesting an <a> inside an <a> (the pre-facelift markup fractured). */
+.dash-insight-headline a::after { content:""; position:absolute;
+  inset:0; }
+.dash-insight-headline a:focus-visible { outline:none; }
+.dash-insight:focus-within {
+  outline:2px solid var(--sc-teal-ink,#155752); outline-offset:1px; }
+p.dash-insight-body { font-size:13px; margin:6px 0 0;
+  color:var(--sc-text-dim,#465366); }
+p.dash-insight-more { margin:8px 0 0; font-size:11px;
+  color:var(--sc-text-dim,#465366); }
+.dash-insight-more a { position:relative; z-index:1; }
+.dash-insight-arrow { flex-shrink:0; font-size:18px;
+  color:var(--sc-text-faint,#7a8699); }
+
+/* Exposure bars */
+h3.dash-subhead { font-size:11px; font-weight:600;
+  color:var(--sc-text,#1a2332); text-transform:uppercase;
+  letter-spacing:0.05em; margin:0 0 6px; }
+.dash-subhead .qual { font-weight:normal;
+  color:var(--sc-text-faint,#7a8699); text-transform:none;
+  letter-spacing:normal; }
+.dash-bar-row { display:grid; grid-template-columns:140px 1fr 70px;
+  align-items:center; gap:10px; padding:4px 0; font-size:12px; }
+.dash-bar-row .lab { color:var(--sc-text,#1a2332); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; }
+.dash-bar-track { background:var(--sc-parchment,#f5f1ea);
+  border-radius:2px; height:14px; overflow:hidden; }
+.dash-bar-fill { height:100%; transition:width 0.2s; }
+.dash-bar-fill.teal { background:var(--sc-teal,#155752); }
+.dash-bar-fill.warn { background:var(--sc-warning,#b8732a); }
+.dash-bar-row .num { color:var(--sc-text-dim,#465366);
+  font-variant-numeric:tabular-nums; text-align:right;
+  font-family:var(--sc-mono,'JetBrains Mono',monospace); }
+p.dash-empty-inline { margin:0; color:var(--sc-text-faint,#7a8699);
+  font-size:12px; font-style:italic; }
+
+/* Pinned-deal cards */
+.dash-pin-grid { display:flex; flex-wrap:wrap; gap:8px; }
+.dash-pin-card { display:block; text-decoration:none; color:inherit;
+  background:#fff; border:1px solid var(--sc-rule,#d6cfc0);
+  border-radius:2px; padding:10px 12px; min-width:160px;
+  flex:1 1 160px; transition:border-color 0.1s; }
+.dash-pin-card:hover, .dash-pin-card:focus-visible {
+  border-color:var(--sc-teal-ink,#155752); outline:none; }
+.dash-pin-head { display:flex; align-items:baseline;
+  justify-content:space-between; gap:6px; }
+.dash-pin-meta { display:flex; align-items:center; gap:8px;
+  margin-top:4px; }
+.dash-pin-reason { flex:1; font-size:12px;
+  color:var(--sc-text-dim,#465366); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; }
+
+/* Predicted-outcomes rows */
+.dash-moic-median { font-weight:600; color:var(--sc-teal-ink,#155752);
+  font-size:14px;
+  border-bottom:1px dotted var(--sc-teal-ink,#155752); }
+.dash-moic-legend { display:flex; align-items:center; gap:14px;
+  font-size:11px; color:var(--sc-text-dim,#465366);
+  margin-bottom:10px; flex-wrap:wrap; }
+.dash-moic-legend .li { display:inline-flex; align-items:center;
+  gap:5px; }
+.dash-moic-legend .sw-range { display:inline-block; width:14px;
+  height:6px; background:var(--sc-teal,#155752); opacity:0.35;
+  border-radius:2px; }
+.dash-moic-legend .sw-median { display:inline-block; width:8px;
+  height:8px; background:var(--sc-teal,#155752); border-radius:50%;
+  border:1.5px solid #fff;
+  box-shadow:0 0 0 1px var(--sc-teal,#155752); }
+.dash-deal-cell { color:inherit; text-decoration:none;
+  min-width:160px; flex-shrink:0; }
+.dash-deal-cell .nm { font-size:13px; }
+.dash-deal-cell .id { font-size:10px; margin-top:2px; }
+.dash-moic-cell { flex:1; font-size:12px;
+  color:var(--sc-text,#1a2332); font-variant-numeric:tabular-nums;
+  white-space:nowrap; }
+.dash-moic-cell a { text-decoration:none; color:inherit; }
+
+/* Quiet-too-long rows */
+.dash-quiet-link { flex:1; font-size:12px;
+  color:var(--sc-teal-ink,#155752); }
+.dash-quiet-chip { display:inline-block; padding:1px 8px;
+  border-radius:2px; font-size:11px; font-weight:600; }
+
+/* Templates — whole-row launch anchor */
+.dash-tpl-launch { flex:1; color:inherit; text-decoration:none; }
+.dash-tpl-launch .sub { font-size:11px;
+  color:var(--sc-text-faint,#7a8699); margin-top:2px; }
+
+/* System-status value line (inside ck_kpi_block) */
+.dash-status-val { font-size:13px; font-weight:500;
+  color:var(--sc-text,#1a2332); }
+.dash-status-grid {
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:8px; }
+.dash-subhead.mt { margin:14px 0 6px; }
+</style>"""
 
 
 # ── Section renderers ──────────────────────────────────────────────
@@ -169,7 +481,7 @@ def _render_analyses_section() -> str:
         # POST → 303-redirect back to /dashboard.
         save_form = (
             f'<form method="POST" action="/api/saved-analyses" '
-            f'style="display:inline;margin:0;" '
+            f'class="dash-form-inline" '
             f'onsubmit="var n=prompt(\'Save this analysis as template '
             f'and give it a name:\', \'{_html.escape(a["name"])}\');'
             f'if(!n){{return false;}}'
@@ -180,23 +492,17 @@ def _render_analyses_section() -> str:
             f'<input type="hidden" name="description" '
             f'value="{_html.escape(a["desc"][:200])}">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
-            f'<button type="submit" '
-            f'title="Save as template for one-click relaunch" '
-            f'style="background:transparent;border:0;color:#8A92A0;'
-            f'cursor:pointer;font-size:14px;padding:0;'
-            f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#155752\';" '
-            f'onmouseout="this.style.color=\'#8A92A0\';">★</button>'
+            f'<button type="submit" class="dash-btn-icon" '
+            f'title="Save as template for one-click relaunch">★</button>'
             f'</form>'
         )
         rows.append([
-            (f'<a href="{_html.escape(a["route"])}" '
-             f'style="color:#155752;font-weight:500;">'
+            (f'<a href="{_html.escape(a["route"])}" class="dash-link">'
              f'{_html.escape(a["name"])}</a>'
              f'&nbsp;{save_form}'),
-            f'<span style="color:#5C6878;">{_html.escape(a["category"])}</span>',
+            f'<span class="dash-dim">{_html.escape(a["category"])}</span>',
             _html.escape(a["desc"]),
-            (f'<span style="color:#5C6878;">'
+            (f'<span class="dash-dim dash-runtime">'
              f'{_html.escape(a["runtime"])}</span>'),
         ])
     table = _wc.sortable_table(
@@ -207,8 +513,8 @@ def _render_analyses_section() -> str:
     return _wc.section_card(
         "What you can run", table, pad=False,
         actions_html=(
-            '<span style="font-size:11px;color:#5C6878;'
-            'font-weight:normal;">click ★ to save as template</span>'
+            '<span class="dash-faint dash-actions-note">'
+            'click ★ to save as template</span>'
         ),
     )
 
@@ -950,7 +1256,7 @@ def _portfolio_pulse_inputs(
         syn = (
             f"{out['n_hrrp_exposed']} portfolio hospitals carry CMS "
             f"readmission penalties: combined ~"
-            f"${out['hrrp_exposure_mm']:.1f}M EBITDA at risk this fiscal "
+            f"${out['hrrp_exposure_mm']:.2f}M EBITDA at risk this fiscal "
             f"year. Discount the bid book accordingly."
         )
     else:
@@ -1035,6 +1341,8 @@ def _render_portfolio_pulse_hero(
     single screen that explains: how big the book is, how it's
     doing, and what to worry about — without clicking anywhere.
     """
+    from ._chartis_kit import ck_fmt_number, ck_provenance_tooltip
+
     pulse = _portfolio_pulse_inputs(db_path, deals=deals)
     if pulse["n_deals"] == 0:
         return ""
@@ -1047,7 +1355,9 @@ def _render_portfolio_pulse_hero(
 
     # ── Mosaic: one colored square per deal ─────────────────────
     # Sorted high-to-low so the mosaic reads as a gradient — visual
-    # cue for portfolio shape at a glance.
+    # cue for portfolio shape at a glance. Hover/focus scale lives in
+    # the .dash-mosaic CSS (keyboard reachable); the tile color is the
+    # only per-tile inline property because it is data-driven.
     tiles = sorted(
         pulse["deal_tiles"],
         key=lambda t: (t.get("score") or -1),
@@ -1063,17 +1373,11 @@ def _render_portfolio_pulse_hero(
         tile_html.append(
             f'<a href="/deal/{deal_id}" '
             f'title="{name} · health {score_str}" '
-            f'style="display:inline-block;width:18px;height:18px;'
-            f'background:{c};border-radius:3px;'
-            f'transition:transform 0.1s, box-shadow 0.1s;" '
-            f'onmouseover="this.style.transform=\'scale(1.4)\';'
-            f'this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.25)\';" '
-            f'onmouseout="this.style.transform=\'\';'
-            f'this.style.boxShadow=\'\';"></a>'
+            f'aria-label="{name}, health {score_str}" '
+            f'style="background:{c};"></a>'
         )
     mosaic = (
-        '<div style="display:flex;flex-wrap:wrap;gap:4px;'
-        'margin-top:2px;line-height:0;">'
+        '<div class="dash-mosaic">'
         + "".join(tile_html)
         + '</div>'
     )
@@ -1086,126 +1390,112 @@ def _render_portfolio_pulse_hero(
     if moic_med is not None:
         bar = _moic_range_bar(moic_p25, moic_med, moic_p75,
                               width=300, height=22)
+        moic_value = ck_provenance_tooltip(
+            "Predicted exit MOIC",
+            f"{moic_med:.2f}x",
+            explainer=(
+                "Median of the per-deal predicted MOIC medians, each "
+                "benchmarked against comparable realized deals in an "
+                "illustrative corpus. Directional context for the "
+                "morning read — not a valuation."
+            ),
+            inject_css=False,  # tooltip CSS injected by the stat tiles
+        )
         moic_strip = (
-            '<div style="display:flex;align-items:center;gap:14px;'
-            'margin-top:14px;padding-top:12px;'
-            'border-top:1px solid rgba(255,255,255,0.18);">'
-            '<div style="font-size:10px;font-weight:600;'
-            'text-transform:uppercase;letter-spacing:0.08em;'
-            'color:#D6E1EB;flex-shrink:0;">'
-            'Predicted exit MOIC<br/>(illustrative corpus)</div>'
-            f'<div style="font-size:28px;font-weight:700;'
-            f'color:#fff;font-variant-numeric:tabular-nums;'
-            f'flex-shrink:0;">{moic_med:.2f}x</div>'
-            f'<div style="background:#fff;padding:6px 10px;'
-            f'border-radius:6px;flex-shrink:0;">{bar}</div>'
-            f'<div style="font-size:11px;color:#D6E1EB;'
-            f'font-variant-numeric:tabular-nums;">'
+            '<div class="dash-hero-moic">'
+            '<p class="lab">'
+            'Predicted exit MOIC<br/>(illustrative corpus)</p>'
+            f'<div class="big">{moic_value}</div>'
+            f'<div class="panel">{bar}</div>'
+            f'<p class="pct">'
             f'p25 {moic_p25:.2f}x · p75 {moic_p75:.2f}x'
-            f'</div></div>'
+            f'</p></div>'
         )
 
     # ── Band-mosaic legend ──────────────────────────────────────
+    # Swatch colors come from _band_color — the same data-driven map
+    # the mosaic tiles use, so legend and tiles can never drift.
     legend_chip = (
-        lambda c, label, n: (
-            f'<span style="display:inline-flex;align-items:center;'
-            f'gap:4px;font-size:11px;color:#D6E1EB;'
-            f'font-variant-numeric:tabular-nums;">'
-            f'<span style="display:inline-block;width:10px;'
-            f'height:10px;background:{c};border-radius:2px;"></span>'
-            f'{label} <strong style="color:#fff;">{n}</strong></span>'
+        lambda band, label, n: (
+            f'<span class="chip">'
+            f'<span class="sw" style="background:{_band_color(band)};">'
+            f'</span>'
+            f'{label} <strong>{n}</strong></span>'
         )
     )
     legend = (
-        '<div style="display:flex;gap:14px;margin-top:8px;'
-        'flex-wrap:wrap;">'
-        + legend_chip("#3F7D4D", "great", bands["great"])
-        + legend_chip("#2C5C84", "good", bands["good"])
-        + legend_chip("#B7791F", "fair", bands["fair"])
-        + legend_chip("#A53A2D", "poor", bands["poor"])
+        '<div class="dash-hero-legend">'
+        + legend_chip("great", "great", bands["great"])
+        + legend_chip("good", "good", bands["good"])
+        + legend_chip("fair", "fair", bands["fair"])
+        + legend_chip("poor", "poor", bands["poor"])
         + '</div>'
     )
 
-    # ── Stat tiles ──────────────────────────────────────────────
+    # ── Stat tiles — each big number carries an "explain this" hover
     def _stat(big: str, small: str) -> str:
         return (
-            '<div style="flex:1;min-width:120px;">'
-            f'<div style="font-size:32px;font-weight:700;color:#fff;'
-            f'line-height:1;font-variant-numeric:tabular-nums;'
-            f'letter-spacing:-0.02em;">{big}</div>'
-            f'<div style="font-size:10px;font-weight:600;'
-            f'text-transform:uppercase;letter-spacing:0.1em;'
-            f'color:#D6E1EB;margin-top:6px;">{small}</div>'
+            '<div class="dash-hero-stat">'
+            f'<div class="v">{big}</div>'
+            f'<p class="l">{small}</p>'
             '</div>'
         )
 
+    ev_value = ck_provenance_tooltip(
+        "Total EV",
+        total_ev,
+        explainer=(
+            "Sum across active deals: profile-declared EV where the "
+            "deal was registered with one, HCRIS net-patient-revenue "
+            "proxy otherwise. Directional sizing, not a valuation."
+        ),
+    )
+    health_value = ck_provenance_tooltip(
+        "Portfolio health",
+        avg_health,
+        explainer=(
+            "Average composite health score (0-100 scale) across "
+            "every scored deal. Components: covenant posture, open "
+            "alerts, deadline slippage, snapshot freshness."
+        ),
+        inject_css=False,
+    )
     stats = (
-        '<div style="display:flex;gap:24px;flex-wrap:wrap;'
-        'margin-bottom:16px;">'
-        + _stat(f"{n}", "deals")
-        + _stat(total_ev, "total EV")
-        + _stat(avg_health, "portfolio health")
+        '<div class="dash-hero-stats">'
+        + _stat(ck_fmt_number(n), "deals")
+        + _stat(ev_value, "total EV")
+        + _stat(health_value, "portfolio health · avg /100")
         + '</div>'
     )
 
     # ── The synthesis line — the surprise the partner didn't ask for
     syn_text = _html.escape(pulse["headline_synthesis"])
-    # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
-    # Semantic amber stripe (synthesis call-out tone) preserved.
     synthesis = (
-        '<div style="background:rgba(255,255,255,0.08);'
-        'border-left:3px solid #B7791F;padding:12px 16px;'
-        'border-radius:2px;margin:18px 0 0;">'
-        '<div style="font-size:10px;font-weight:600;'
-        'text-transform:uppercase;letter-spacing:0.1em;'
-        'color:#B7791F;margin-bottom:4px;">'
-        'The synthesis you\'d miss</div>'
-        f'<div style="font-size:14px;color:#fff;line-height:1.5;">'
-        f'{syn_text}</div>'
+        '<div class="dash-hero-syn">'
+        '<p class="eb">The synthesis you\'d miss</p>'
+        f'<p class="tx">{syn_text}</p>'
         '</div>'
     )
 
     # ── Live indicator + label row ──────────────────────────────
+    # <header>/<h2> so the hero joins the page's heading outline the
+    # same way every section_card title does.
     label_row = (
-        '<div style="display:flex;align-items:center;'
-        'justify-content:space-between;margin-bottom:14px;">'
-        '<div style="font-size:11px;font-weight:700;'
-        'text-transform:uppercase;letter-spacing:0.18em;color:#fff;">'
-        'Portfolio pulse</div>'
-        '<span style="display:inline-flex;align-items:center;gap:6px;'
-        'font-size:10px;color:#DCE6D9;font-weight:600;'
-        'text-transform:uppercase;letter-spacing:0.12em;">'
-        '<span class="wc-pulse-dot" style="display:inline-block;'
-        'width:8px;height:8px;background:#3F7D4D;border-radius:50%;'
-        'box-shadow:0 0 6px #3F7D4D;"></span> live</span>'
-        '</div>'
+        '<header class="dash-hero-top">'
+        '<h2 class="dash-hero-label">Portfolio pulse</h2>'
+        '<span class="dash-hero-live">'
+        '<span class="wc-pulse-dot"></span> live</span>'
+        '</header>'
     )
 
-    pulse_anim = (
-        '<style>'
-        '@keyframes wc-pulse {'
-        ' 0%,100% { opacity:1; transform:scale(1); }'
-        ' 50% { opacity:0.55; transform:scale(0.85); } }'
-        '.wc-pulse-dot { animation: wc-pulse 1.6s ease-in-out infinite; }'
-        '</style>'
-    )
-
+    # Navy panel per the kit hero idiom (ck_search_hero); all styling
+    # lives in the .dash-hero block of _DASH_CSS, keyframes included.
     return (
-        pulse_anim
-        # 2026-05-28 batch 36 · Tier-4 trope removal — drops the
-        # 135° gradient, 12px radius, and heavy box-shadow on the
-        # pulse hero section. Flat brand color + 2px radius (spec cap)
-        # + no shadow keeps the dark visual emphasis without the
-        # forbidden tropes.
-        + '<section style="background:#155752;'
-        'color:#fff;padding:22px 26px;'
-        'border-radius:2px;margin:6px 0 18px;">'
+        '<section class="dash-hero" id="dash-hero">'
         + label_row
         + stats
-        + '<div style="font-size:10px;font-weight:600;'
-        'text-transform:uppercase;letter-spacing:0.08em;'
-        'color:#D6E1EB;margin:8px 0 4px;">'
-        'Deals (sorted by health, hover for name)</div>'
+        + '<p class="dash-hero-sub">'
+        'Deals (sorted by health, hover for name)</p>'
         + mosaic
         + legend
         + moic_strip
@@ -1221,64 +1511,71 @@ def _render_headline_insight_section(
     """One-glance insight card — the "wow" that justifies the morning
     visit. Rendered immediately after the header, before every other
     section, so it's the first thing a partner sees."""
-    from . import _web_components as _wc
     all_ins = _all_insights(db_path, deals=deals)
     ins = all_ins[0] if all_ins else None
     if ins is None:
         return ""
 
-    # Tone-driven palette — alert is screaming red, positive is
-    # affirming green, warn is attention-grabbing amber, neutral
-    # is the brand navy.
-    palette = {
-        "alert":    ("#EBD3CD", "#EBD3CD", "#A53A2D", "⚠"),
-        "warn":     ("#EFE2BC", "#EFE2BC", "#B7791F", "●"),
-        "positive": ("#DCE6D9", "#DCE6D9", "#3F7D4D", "✓"),
-        "neutral":  ("#FAF7F0", "#D6E1EB", "#155752", "◆"),
-    }
-    bg, border, fg, icon = palette.get(
-        ins.get("tone", "neutral"), palette["neutral"])
+    # Tone → .dash-insight-* modifier (kit severity tokens drive the
+    # left frame + dot; see _DASH_CSS). Replaces the platform-
+    # dependent emoji glyphs and the legacy tint palette.
+    tone = ins.get("tone", "neutral")
+    if tone not in ("alert", "warn", "positive", "neutral"):
+        tone = "neutral"
     href = ins.get("href") or "#"
     headline = _html.escape(ins.get("headline", ""))
     body = _html.escape(ins.get("body", ""))
 
     # "See all N" link only appears when there are more than the
-    # top-1 — otherwise we're nudging the partner at empty.
+    # top-1 — otherwise we're nudging the partner at empty. It is a
+    # SIBLING of the headline anchor (never nested inside it — the
+    # pre-facelift <a>-in-<a> markup fractured in every browser) and
+    # sits above the stretched-link overlay via z-index.
     extras = len(all_ins) - 1
     see_all = ""
     if extras > 0:
+        from ._chartis_kit import ck_arrow_link
         see_all = (
-            f'<div style="margin-top:8px;font-size:11px;color:{fg};'
-            f'opacity:0.7;">'
+            f'<p class="dash-insight-more">'
             f'+ {extras} more signal{"s" if extras != 1 else ""} · '
-            f'<a href="/insights" style="color:{fg};font-weight:500;">'
-            f'see all →</a>'
-            f'</div>'
+            f'{ck_arrow_link("see all", "/insights")}'
+            f'</p>'
         )
+    # Whole-card click comes from the ::after stretched-link on the
+    # headline anchor — valid HTML, keyboard focusable, no JS hover.
+    # <article>/<h3> because the card is a self-contained story with
+    # a real headline — screen readers get it in the outline.
     return (
-        f'<a href="{_html.escape(href)}" '
-        f'style="display:block;text-decoration:none;'
-        f'margin:4px 0 16px;padding:18px 22px;background:{bg};'
-        f'border:1px solid {border};border-left:4px solid {fg};'
-        f'border-radius:8px;color:{fg};'
-        f'transition:transform 0.1s, border-color 0.1s;" '
-        f'onmouseover="this.style.transform=\'translateX(2px)\';" '
-        f'onmouseout="this.style.transform=\'\';">'
-        f'<div style="display:flex;align-items:baseline;gap:12px;">'
-        f'<span style="font-size:20px;flex-shrink:0;">{icon}</span>'
-        f'<div style="flex:1;">'
-        f'<div style="font-size:10px;font-weight:600;'
-        f'text-transform:uppercase;letter-spacing:0.08em;opacity:0.75;">'
-        f'Sharpest insight · today</div>'
-        f'<div style="font-size:18px;font-weight:600;'
-        f'margin-top:4px;color:{fg};">{headline}</div>'
-        f'<div style="font-size:13px;margin-top:6px;opacity:0.85;">'
-        f'{body}</div>'
+        f'<article class="dash-insight dash-insight-{tone}">'
+        f'<span class="dash-insight-dot" aria-hidden="true"></span>'
+        f'<div class="dash-insight-main">'
+        f'<p class="dash-insight-eyebrow">'
+        f'Sharpest insight · today</p>'
+        f'<h3 class="dash-insight-headline">'
+        f'<a href="{_html.escape(href)}">{headline}</a></h3>'
+        f'<p class="dash-insight-body">{body}</p>'
         f'{see_all}'
         f'</div>'
-        f'<span style="flex-shrink:0;opacity:0.5;font-size:18px;">→</span>'
-        f'</div></a>'
+        f'<span class="dash-insight-arrow" aria-hidden="true">→</span>'
+        f'</article>'
     )
+
+
+def _fmt_event_ts(iso19: str) -> str:
+    """Compact display form of an event timestamp.
+
+    Today's events render as bare HH:MM:SS — inside a 24-hour feed
+    the date is implied, and repeating it twenty times turns the
+    column into noise. Yesterday's events keep the date (ISO order,
+    date first, per house style). The full 19-char ISO string rides
+    in the row's title attribute either way, so nothing is lost.
+    """
+    if len(iso19) < 19:
+        return iso19
+    today = datetime.now(timezone.utc).date().isoformat()
+    if iso19[:10] == today:
+        return iso19[11:19]
+    return f"{iso19[:10]} {iso19[11:16]}"
 
 
 def _render_since_yesterday_section(db_path: str) -> str:
@@ -1290,28 +1587,44 @@ def _render_since_yesterday_section(db_path: str) -> str:
     packets that ran, team activity — all chronological.
     """
     from . import _web_components as _wc
+    from ._chartis_kit import ck_empty_state
 
     events = _since_yesterday_events(db_path, window_hours=24)
 
     if not events:
-        body = (
-            '<p style="margin:0;color:#5C6878;">'
-            'Nothing happened in the last 24 hours. '
-            'When alerts fire, data refreshes, or a teammate runs a '
-            'packet, the summary shows up here.</p>'
+        body = ck_empty_state(
+            "Nothing happened in the last 24 hours.",
+            body=(
+                "When alerts fire, data refreshes, or a teammate runs "
+                "a packet, the summary shows up here — newest first."
+            ),
+            eyebrow="OVERNIGHT FEED",
+            icon="◷",
         )
         return _wc.section_card("Since yesterday", body, pad=True)
 
+    # Event-kind → mono tag. Rendered here (not in
+    # _since_yesterday_events) so the event-dict contract consumed by
+    # infra/morning_digest keeps its emoji ``icon`` field untouched.
+    kind_tags = {
+        "alert":   ("ALERT", "t-neg"),
+        "refresh": ("DATA", "t-pos"),
+        "packet":  ("RUN", "t-teal"),
+        "audit":   ("TEAM", ""),
+    }
+
     rows: List[str] = []
     for ev in events:
-        ts = _html.escape(str(ev.get("at", ""))[:19])
-        icon = _html.escape(ev.get("icon", "·"))
+        ts_full = str(ev.get("at", ""))[:19]
+        ts = _html.escape(_fmt_event_ts(ts_full))
+        ts_title = _html.escape(ts_full)
+        tag, tag_tone = kind_tags.get(
+            str(ev.get("kind", "")), ("EVENT", ""))
         label = _html.escape(ev.get("label", ""))
         href = ev.get("href") or ""
         if href:
             label = (f'<a href="{_html.escape(href)}" '
-                     f'style="color:#155752;text-decoration:none;">'
-                     f'{label}</a>')
+                     f'class="dash-link">{label}</a>')
 
         # Inline ack + snooze controls for alert rows. Two
         # one-click options without leaving the dashboard:
@@ -1326,11 +1639,6 @@ def _render_since_yesterday_section(db_path: str) -> str:
             d = _html.escape(ev.get("alert_deal_id") or "")
             t = _html.escape(ev.get("alert_trigger_key") or "")
             if k and d and t:
-                btn_style = (
-                    "background:transparent;border:1px solid #D6E1EB;"
-                    "color:#155752;padding:2px 8px;border-radius:4px;"
-                    "font-size:11px;cursor:pointer;font-weight:500;"
-                )
                 hidden = (
                     f'<input type="hidden" name="kind" value="{k}">'
                     f'<input type="hidden" name="deal_id" value="{d}">'
@@ -1338,39 +1646,38 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'<input type="hidden" name="redirect" value="/dashboard">'
                 )
                 ack_form = (
-                    f'<span style="flex-shrink:0;display:flex;gap:4px;">'
+                    f'<span class="dash-btn-row">'
                     # Ack now (snooze_days=0)
                     f'<form method="POST" action="/api/alerts/ack" '
-                    f'style="margin:0;" '
+                    f'class="dash-form-inline" '
                     f'onsubmit="event.target.querySelector(\'button\')'
                     f'.disabled=true;">'
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="0">'
                     f'<button type="submit" title="Acknowledge · handled" '
-                    f'style="{btn_style}">Ack</button></form>'
+                    f'class="dash-btn-ghost">Ack</button></form>'
                     # Snooze 7d (snooze_days=7) — partner says "I see
                     # this, but don't bother me about it for a week"
                     f'<form method="POST" action="/api/alerts/ack" '
-                    f'style="margin:0;" '
+                    f'class="dash-form-inline" '
                     f'onsubmit="event.target.querySelector(\'button\')'
                     f'.disabled=true;">'
                     f'{hidden}'
                     f'<input type="hidden" name="snooze_days" value="7">'
                     f'<button type="submit" '
                     f'title="Snooze for 7 days · remind me later" '
-                    f'style="{btn_style}background:#FFFFFF;">'
+                    f'class="dash-btn-ghost">'
                     f'Snooze 7d</button></form>'
                     f'</span>'
                 )
 
         rows.append(
-            f'<li style="padding:6px 0;border-bottom:1px solid #FAF7F0;'
-            f'display:flex;gap:10px;align-items:center;">'
-            f'<span style="flex-shrink:0;font-size:14px;width:20px;">{icon}</span>'
-            f'<span style="flex:1;color:#FFFFFF;">{label}</span>'
+            f'<li class="dash-list-row pad-sm">'
+            f'<span class="dash-tag {tag_tone}">{tag}</span>'
+            f'<span class="dash-evt-body">'
+            f'{label}</span>'
             f'{ack_form}'
-            f'<span style="flex-shrink:0;color:#5C6878;font-size:11px;'
-            f'font-family:var(--sc-mono,monospace);white-space:nowrap;">{ts}</span>'
+            f'<span class="dash-ts" title="{ts_title}">{ts}</span>'
             f'</li>'
         )
     # Sort hint — the list is always newest-first, but without this
@@ -1378,16 +1685,16 @@ def _render_since_yesterday_section(db_path: str) -> str:
     # priority ordering. 20-event cap also surfaced so they know
     # older-than-top might exist off-page.
     hint = (
-        f'<p style="margin:0 0 10px;color:#5C6878;font-size:11px;">'
+        f'<p class="dash-note sm">'
         f'{len(events)} event{"s" if len(events) != 1 else ""} · '
-        f'newest first · past 24 hours'
+        f'newest first · last 24 hours'
         f'{" · older events in /audit" if len(events) >= 20 else ""}'
         f'</p>'
     )
     body = (
         hint
-        + f'<ul style="list-style:none;padding:0;margin:0;'
-        f'font-size:13px;">{"".join(rows)}</ul>'
+        + f'<ul class="dash-ul dash-evts">'
+        f'{"".join(rows)}</ul>'
     )
     return _wc.section_card("Since yesterday", body, pad=True)
 
@@ -1435,7 +1742,7 @@ def _sparkline_svg(scores: List[int], *,
         f'<svg width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" '
         f'aria-label="Health score trend, {n} points" '
-        f'style="vertical-align:middle;">'
+        f'class="dash-svg-mid">'
         f'<polyline fill="none" stroke="{stroke}" stroke-width="1.5" '
         f'stroke-linejoin="round" stroke-linecap="round" '
         f'points="{polyline}"/>'
@@ -1474,8 +1781,8 @@ def _render_saved_templates_section(db_path: str) -> str:
         desc = t.get("description") or ""
         name = t.get("name") or "unnamed"
         pinned_chip = (
-            '<span style="margin-left:6px;font-size:10px;color:#155752;">'
-            '📌</span>'
+            '<span class="dash-tag t-teal ml">'
+            'pinned</span>'
         ) if t.get("pinned") else ""
         # Clone button — copy this template's route + params under a
         # new name so a partner can tweak (e.g. swap the CCN) without
@@ -1483,42 +1790,36 @@ def _render_saved_templates_section(db_path: str) -> str:
         # diligence on similar deals.
         clone_form = (
             f'<form method="POST" action="/api/saved-analyses/'
-            f'{t["id"]}/clone" style="display:inline;margin:0;">'
+            f'{t["id"]}/clone" class="dash-form-inline">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" '
             f'title="Clone: duplicate this template under a new name '
             f'so you can tweak it (e.g. swap the CCN)" '
-            f'style="background:transparent;border:0;color:#8A92A0;'
-            f'cursor:pointer;font-size:14px;padding:0 6px;'
-            f'transition:color 0.1s;" '
-            f'onmouseover="this.style.color=\'#155752\';" '
-            f'onmouseout="this.style.color=\'#8A92A0\';">⎘</button>'
+            f'class="dash-btn-icon">⎘</button>'
             f'</form>'
         )
         delete_form = (
             f'<form method="POST" action="/api/saved-analyses/'
-            f'{t["id"]}/delete" style="display:inline;margin:0;" '
+            f'{t["id"]}/delete" class="dash-form-inline" '
             f'onsubmit="return confirm(\'Delete template: '
             f'{_html.escape(name)}?\');">'
             f'<input type="hidden" name="redirect" value="/dashboard">'
             f'<button type="submit" title="Delete template" '
-            f'style="background:transparent;border:0;color:#8A92A0;'
-            f'cursor:pointer;font-size:14px;padding:0 4px;">×</button>'
+            f'class="dash-btn-icon">×</button>'
             f'</form>'
         )
         rows.append(
-            f'<li style="padding:8px 12px;border-bottom:1px solid #FAF7F0;'
-            f'display:flex;align-items:center;gap:12px;">'
+            f'<li class="dash-list-row pad-x">'
             f'<a href="/api/saved-analyses/{t["id"]}/run" '
-            f'style="flex:1;color:#FFFFFF;text-decoration:none;" '
+            f'class="dash-tpl-launch" '
             f'title="Click to launch"'
             f' onclick="if(!event.metaKey&&!event.ctrlKey){{'
             f'fetch(this.href,{{method:\'POST\',credentials:\'same-origin\'}})'
             f'.then(()=>window.location=\'{_html.escape(href)}\');'
             f'event.preventDefault();}}">'
-            f'<span style="font-weight:500;color:#155752;">'
+            f'<span class="dash-link">'
             f'{_html.escape(name)}</span>{pinned_chip}'
-            f'<div style="font-size:11px;color:#5C6878;margin-top:2px;">'
+            f'<div class="sub">'
             f'{_html.escape(desc) if desc else _html.escape(href)}'
             f' · ran {run_count}×</div>'
             f'</a>'
@@ -1526,11 +1827,11 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'</li>'
         )
     body = (
-        f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'<ul class="dash-ul">'
         f'{"".join(rows)}</ul>'
-        f'<p style="margin:10px 0 0;font-size:11px;color:#5C6878;">'
+        f'<p class="dash-note-after sm">'
         f'Click any template to launch. Run count updates automatically. '
-        f'<a href="/api/docs" style="color:#155752;">API</a>'
+        f'<a href="/api/docs" class="dash-link">API</a>'
         f'</p>'
     )
     return _wc.section_card(
@@ -1574,14 +1875,21 @@ def _render_needs_attention_section(
     scored = [(d, _priority_rank(d)) for d in deals]
     scored = [(d, r) for d, r in scored if r > 0]
     if not scored:
-        # Everything is healthy — render a one-line reassurance
-        # instead of a card full of nothing.
+        # Everything is healthy — the kit's affirmative "all clear"
+        # band instead of a bare green paragraph.
+        from ._chartis_kit import ck_affirm_empty
         return _wc.section_card(
             "Needs attention today",
-            '<p style="margin:0;color:#3F7D4D;">'
-            '✓ Everything looks healthy. No deals are flagging '
-            'covenant, alert, or deadline risks right now.'
-            '</p>',
+            ck_affirm_empty(
+                headline="Everything looks healthy.",
+                body=(
+                    "No deals are flagging covenant, alert, or "
+                    "deadline risks right now. A quiet triage is a "
+                    "good morning to work the pipeline."
+                ),
+                cta_text="Open the pipeline",
+                cta_href="/pipeline",
+            ),
         )
 
     scored.sort(key=lambda t: t[1], reverse=True)
@@ -1596,60 +1904,56 @@ def _render_needs_attention_section(
         cov = _safe_status_str(d.get("covenant_status")).upper()
         if cov == "TRIPPED":
             reasons.append(
-                '<span style="color:#A53A2D;font-weight:600;">'
-                'covenant TRIPPED</span>')
+                '<span class="dash-neg-strong">covenant TRIPPED</span>')
         elif cov == "TIGHT":
             reasons.append(
-                '<span style="color:#B7791F;">covenant TIGHT</span>')
+                '<span class="dash-warn">covenant TIGHT</span>')
         if (d.get("overdue_deadlines") or 0) > 0:
             reasons.append(
-                f'<span style="color:#A53A2D;">'
+                f'<span class="dash-neg">'
                 f'{d["overdue_deadlines"]} overdue '
                 f'deadline{"s" if d["overdue_deadlines"] != 1 else ""}</span>')
         if (d.get("alerts") or 0) > 0:
             reasons.append(
-                f'<span style="color:#B7791F;">'
+                f'<span class="dash-warn">'
                 f'{d["alerts"]} open alert{"s" if d["alerts"] != 1 else ""}</span>')
         score = d.get("score")
         if isinstance(score, int) and score < 60:
             reasons.append(
-                f'<span style="color:#B7791F;">'
+                f'<span class="dash-warn">'
                 f'health {score}</span>')
         if d.get("snap_age_days") is not None and d["snap_age_days"] > 30:
             reasons.append(
-                f'<span style="color:#5C6878;">'
+                f'<span class="dash-dim">'
                 f'snapshot {d["snap_age_days"]}d stale</span>')
 
         rows.append(
-            f'<li style="padding:10px 0;border-bottom:1px solid #FAF7F0;'
-            f'display:flex;align-items:center;gap:12px;">'
-            f'<span style="flex-shrink:0;font-family:var(--sc-mono,monospace);font-size:11px;'
-            f'color:#5C6878;text-transform:uppercase;min-width:100px;">'
+            f'<li class="dash-list-row pad-lg">'
+            f'<span class="dash-id dash-static dash-id-col">'
             f'{_html.escape(d["deal_id"])}</span>'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#155752;font-weight:500;'
-            f'text-decoration:none;">{_html.escape(d["name"])}</a>'
-            f'<span style="flex-shrink:0;font-size:12px;'
-            f'display:flex;flex-wrap:wrap;gap:12px;">'
+            f'class="dash-link dash-grow">'
+            f'{_html.escape(d["name"])}</a>'
+            f'<span class="dash-reasons">'
             f'{" · ".join(reasons) if reasons else ""}</span>'
             f'</li>'
         )
     more_link = (
-        f'<p style="margin:10px 0 0;font-size:12px;color:#5C6878;">'
+        f'<p class="dash-note-after">'
         f'Showing top 3 of {len(scored)} deals with active risk flags. '
         f'See all on <a href="/portfolio/risk-scan" '
-        f'style="color:#155752;">Portfolio risk scan</a>.'
+        f'class="dash-link">Portfolio risk scan</a>.'
         f'</p>'
         if len(scored) > 3 else
-        f'<p style="margin:10px 0 0;font-size:12px;color:#5C6878;">'
+        f'<p class="dash-note-after">'
         f'Showing {len(scored)} deal{"s" if len(scored) != 1 else ""} '
         f'with active risk flags. See all on '
         f'<a href="/portfolio/risk-scan" '
-        f'style="color:#155752;">Portfolio risk scan</a>.'
+        f'class="dash-link">Portfolio risk scan</a>.'
         f'</p>'
     )
     body = (
-        f'<ul style="list-style:none;padding:0;margin:0;">'
+        f'<ul class="dash-ul">'
         f'{"".join(rows)}</ul>{more_link}'
     )
     return _wc.section_card(
@@ -1672,6 +1976,7 @@ def _render_exposure_section(
     is meaningless on a single deal).
     """
     from . import _web_components as _wc
+    from ._chartis_kit import ck_fmt_percent
     if deals is None:
         try:
             from .portfolio_risk_scan_page import _gather_per_deal
@@ -1693,12 +1998,9 @@ def _render_exposure_section(
     total = len(deals)
 
     def _bar_chart(items: Dict[str, int], *, top_n: int = 6,
-                   color: str = "#155752") -> str:
+                   tone: str = "teal") -> str:
         if not items:
-            return (
-                '<p style="margin:0;color:#8A92A0;font-size:12px;'
-                'font-style:italic;">No data yet.</p>'
-            )
+            return '<p class="dash-empty-inline">No data yet.</p>'
         # Sort descending, cap at top_n, lump the rest into "Other"
         ranked = sorted(items.items(), key=lambda t: t[1], reverse=True)
         head = ranked[:top_n]
@@ -1711,38 +2013,35 @@ def _render_exposure_section(
             pct = (count / total) * 100
             bar_w = int(round(pct))
             rows.append(
-                f'<div style="display:grid;grid-template-columns:'
-                f'140px 1fr 70px;align-items:center;gap:10px;'
-                f'padding:4px 0;font-size:12px;">'
-                f'<span style="color:#0F1C2E;white-space:nowrap;'
-                f'overflow:hidden;text-overflow:ellipsis;" '
+                f'<div class="dash-bar-row">'
+                f'<span class="lab" '
                 f'title="{_html.escape(label)}">'
                 f'{_html.escape(label)}</span>'
-                f'<div style="background:#FAF7F0;border-radius:3px;'
-                f'height:14px;overflow:hidden;">'
-                f'<div style="background:{color};height:100%;'
-                f'width:{bar_w}%;transition:width 0.2s;"></div></div>'
-                f'<span style="color:#5C6878;font-variant-numeric:'
-                f'tabular-nums;text-align:right;">'
-                f'{count} · {pct:.0f}%</span></div>'
+                f'<div class="dash-bar-track">'
+                f'<div class="dash-bar-fill {tone}" '
+                f'style="width:{bar_w}%;"></div></div>'
+                # precision=0 is deliberate here (house pct style is
+                # 1dp, but "3 · 60%" whole-share chips are pinned by
+                # tests/test_exposure_section.py and read cleaner on
+                # a count-of-deals share).
+                f'<span class="num">'
+                f'{count} · '
+                f'{ck_fmt_percent(count / total, precision=0)}'
+                f'</span></div>'
             )
         return "".join(rows)
 
     sector_block = (
-        '<div style="font-size:11px;font-weight:600;color:#0F1C2E;'
-        'text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">'
-        'By sector</div>'
-        + _bar_chart(sector_counts, color="#155752")
+        '<h3 class="dash-subhead">By sector</h3>'
+        + _bar_chart(sector_counts, tone="teal")
     )
     chain_block = (
-        '<div style="font-size:11px;font-weight:600;color:#0F1C2E;'
-        'text-transform:uppercase;letter-spacing:0.05em;'
-        'margin:14px 0 6px;">By chain '
-        '<span style="font-weight:normal;color:#8A92A0;">'
-        '· deals where CMS POS knows the parent</span></div>'
-        + (_bar_chart(chain_counts, color="#B7791F") if chain_counts
-           else '<p style="margin:0;color:#8A92A0;font-size:12px;'
-                'font-style:italic;">No chain-affiliated deals: '
+        '<h3 class="dash-subhead mt">By chain '
+        '<span class="qual">'
+        '· deals where CMS POS knows the parent</span></h3>'
+        + (_bar_chart(chain_counts, tone="warn") if chain_counts
+           else '<p class="dash-empty-inline">'
+                'No chain-affiliated deals: '
                 'either all independent or POS data not loaded.</p>')
     )
     body = sector_block + chain_block
@@ -1777,20 +2076,25 @@ def _moic_range_bar(p25: Optional[float],
     p75_x = _x(p75)
     med_x = _x(median)
 
+    # SVG attributes can't take var() portably in this codebase's
+    # inline-SVG idiom, so the constants below are the kit chart
+    # palette from rcm_mc/ui/README.md: gridline #E8E0D0 (track),
+    # rule #BFB6A2 (cost-of-capital reference), positive #0a8a5f
+    # (the 2.5x "good deal" bar), teal-deep #155752 (whisker/median).
     return (
         f'<svg width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" '
         f'aria-label="MOIC range chart" '
-        f'style="vertical-align:middle;">'
+        f'class="dash-svg-mid">'
         # Background track
         f'<rect x="0" y="{height/2 - 2}" width="{width}" height="4" '
-        f'fill="#FAF7F0"/>'
+        f'fill="#E8E0D0"/>'
         # 1.0x cost-of-capital reference line
         f'<line x1="{cost_x}" y1="2" x2="{cost_x}" y2="{height-2}" '
-        f'stroke="#D6CFC0" stroke-width="1" stroke-dasharray="2,2"/>'
+        f'stroke="#BFB6A2" stroke-width="1" stroke-dasharray="2,2"/>'
         # 2.5x "good deal" reference line
         f'<line x1="{bar_x}" y1="2" x2="{bar_x}" y2="{height-2}" '
-        f'stroke="#3F7D4D" stroke-width="1" stroke-dasharray="2,2"/>'
+        f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="2,2"/>'
         # p25-p75 whisker
         f'<rect x="{p25_x}" y="{height/2 - 4}" '
         f'width="{max(2, p75_x - p25_x)}" height="8" '
@@ -1819,6 +2123,7 @@ def _render_predicted_outcomes_section(
     scans on every render.
     """
     from . import _web_components as _wc
+    from ._chartis_kit import ck_fmt_moic, ck_fmt_percent
     try:
         from ..portfolio.store import PortfolioStore
         from ..deals.watchlist import list_starred
@@ -1945,7 +2250,9 @@ def _render_predicted_outcomes_section(
         any_prediction = True
 
         bar = _moic_range_bar(p25, median, p75)
-        win_pct = f"{int(win_rate * 100)}%" if win_rate else "—"
+        # House numeric style: percentages carry 1 decimal place —
+        # ck_fmt_percent takes the raw ratio and applies exactly that.
+        win_pct = ck_fmt_percent(win_rate) if win_rate else "—"
         name = scan_row.get("name") or deal_id
 
         # "See why" deep-link — preserves the EXACT target profile
@@ -1964,27 +2271,21 @@ def _render_predicted_outcomes_section(
         comp_href = f"/diligence/comparable-outcomes?{comp_qs}"
 
         rows.append(
-            f'<li style="padding:10px 0;border-bottom:1px solid #FAF7F0;'
-            f'display:flex;align-items:center;gap:14px;">'
+            f'<li class="dash-list-row pad-lg">'
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="color:#FFFFFF;text-decoration:none;'
-            f'min-width:160px;flex-shrink:0;">'
-            f'<div style="font-weight:500;color:#155752;font-size:13px;">'
+            f'class="dash-deal-cell">'
+            f'<div class="dash-link nm">'
             f'{_html.escape(name)}</div>'
-            f'<div style="font-family:var(--sc-mono,monospace);font-size:10px;'
-            f'color:#5C6878;text-transform:uppercase;margin-top:2px;">'
+            f'<div class="dash-id id">'
             f'{_html.escape(deal_id)}</div></a>'
-            f'<div style="flex-shrink:0;">{bar}</div>'
-            f'<div style="flex:1;font-size:12px;color:#0F1C2E;'
-            f'font-variant-numeric:tabular-nums;white-space:nowrap;">'
+            f'<div class="dash-static">{bar}</div>'
+            f'<div class="dash-moic-cell">'
             f'<a href="{_html.escape(comp_href)}" '
-            f'title="See the comparable deals that drove this prediction" '
-            f'style="text-decoration:none;color:inherit;">'
-            f'<span style="font-weight:600;color:#155752;'
-            f'font-size:14px;border-bottom:1px dotted #155752;">'
-            f'{median:.2f}x</span>'
-            f'<span style="color:#5C6878;"> median · '
-            f'p25 {p25:.2f}x · p75 {p75:.2f}x · '
+            f'title="See the comparable deals that drove this prediction">'
+            f'<span class="dash-moic-median">'
+            f'{ck_fmt_moic(median)}</span>'
+            f'<span class="dash-dim"> median · '
+            f'p25 {ck_fmt_moic(p25)} · p75 {ck_fmt_moic(p75)} · '
             f'{win_pct} clear 2.5x</span>'
             f'</a></div>'
             f'</li>'
@@ -1993,39 +2294,46 @@ def _render_predicted_outcomes_section(
     if not any_prediction:
         return ""
 
+    # Mini-legend swatches repeat the _moic_range_bar constants —
+    # kit chart palette (gridline / rule / positive / teal-deep).
     legend = (
-        '<div style="display:flex;align-items:center;gap:14px;'
-        'font-size:11px;color:#5C6878;margin-bottom:10px;'
-        'flex-wrap:wrap;">'
-        '<span style="display:inline-flex;align-items:center;gap:5px;">'
+        '<div class="dash-moic-legend">'
+        '<span class="li">'
         '<svg width="20" height="10" viewBox="0 0 20 10">'
-        '<rect x="0" y="3" width="20" height="4" fill="#FAF7F0"/>'
-        '<line x1="3" y1="0" x2="3" y2="10" stroke="#D6CFC0" '
+        '<rect x="0" y="3" width="20" height="4" fill="#E8E0D0"/>'
+        '<line x1="3" y1="0" x2="3" y2="10" stroke="#BFB6A2" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
-        '<line x1="9" y1="0" x2="9" y2="10" stroke="#3F7D4D" '
+        '<line x1="9" y1="0" x2="9" y2="10" stroke="#0a8a5f" '
         'stroke-width="1" stroke-dasharray="2,2"/>'
         '</svg>scale 0–6×</span>'
-        '<span style="display:inline-flex;align-items:center;gap:4px;">'
-        '<span style="display:inline-block;width:14px;height:6px;'
-        'background:#155752;opacity:0.35;border-radius:2px;"></span>'
+        '<span class="li">'
+        '<span class="sw-range"></span>'
         'p25–p75 range</span>'
-        '<span style="display:inline-flex;align-items:center;gap:4px;">'
-        '<span style="display:inline-block;width:8px;height:8px;'
-        'background:#155752;border-radius:50%;border:1.5px solid #fff;'
-        'box-shadow:0 0 0 1px #155752;"></span>'
+        '<span class="li">'
+        '<span class="sw-median"></span>'
         'median predicted MOIC</span>'
-        '<span style="color:#3F7D4D;">— —</span>'
+        '<span class="dash-pos">— —</span>'
         '<span>2.5× "good deal" bar</span>'
         '</div>'
     )
 
+    from ._chartis_kit import ck_provenance_tooltip
+    corpus_note = ck_provenance_tooltip(
+        "Illustrative corpus",
+        "an illustrative corpus",
+        explainer=(
+            "Realized healthcare-PE deal outcomes assembled for "
+            "benchmarking. Each match weighs sector, size, vintage, "
+            "and sponsor. Directional context — not a valuation."
+        ),
+    )
     body = (
-        '<p style="margin:0 0 10px;font-size:12px;color:#5C6878;">'
+        '<p class="dash-note">'
         'Predicted exit MOIC for each watchlisted deal, computed '
-        'live by matching against the realized PE deals in the '
-        'corpus.</p>'
+        'live by matching against the realized deals in '
+        f'{corpus_note} — directional, not a valuation.</p>'
         + legend
-        + f'<ul style="list-style:none;padding:0;margin:0;">'
+        + f'<ul class="dash-ul">'
         f'{"".join(rows)}</ul>'
     )
     return _wc.section_card(
@@ -2124,10 +2432,12 @@ def _render_quiet_too_long_section(db_path: str) -> str:
     rows: List[str] = []
     for d in enriched[:4]:
         days = d["days_quiet"]
+        # Chip tint pairs are the editorial quiet-severity trio; the
+        # red pair (#EBD3CD / #A53A2D) is pinned by
+        # tests/test_quiet_too_long.py and stays literal.
         if days is None:
             quiet_label = "never viewed"
-            tone = "#EBD3CD"
-            fg = "#A53A2D"
+            tone, fg = "#EBD3CD", "#A53A2D"
         elif days >= 60:
             quiet_label = f"{days}d quiet"
             tone, fg = "#EBD3CD", "#A53A2D"
@@ -2138,25 +2448,21 @@ def _render_quiet_too_long_section(db_path: str) -> str:
             quiet_label = f"{days}d quiet"
             tone, fg = "#D6E1EB", "#2C5C84"
         rows.append(
-            f'<li style="padding:8px 0;border-bottom:1px solid #FAF7F0;'
-            f'display:flex;align-items:center;gap:14px;">'
+            f'<li class="dash-list-row">'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
-            f'style="flex:1;color:#155752;font-weight:500;'
-            f'text-decoration:none;font-family:var(--sc-mono,monospace);font-size:12px;'
-            f'text-transform:uppercase;letter-spacing:0.03em;">'
+            f'class="dash-link dash-id dash-quiet-link">'
             f'{_html.escape(d["deal_id"])}</a>'
-            f'<span style="display:inline-block;padding:1px 8px;'
-            f'background:{tone};color:{fg};border-radius:9999px;'
-            f'font-size:11px;font-weight:600;">'
+            f'<span class="dash-quiet-chip" '
+            f'style="background:{tone};color:{fg};">'
             f'{quiet_label}</span>'
             f'</li>'
         )
     body = (
-        '<p style="margin:0 0 8px;font-size:12px;color:#5C6878;">'
+        '<p class="dash-note">'
         'Watchlisted deals you haven\'t opened in a while. The '
         'one nobody is yelling at might need your fresh eyes more '
         'than the one pinging you daily.</p>'
-        + f'<ul style="list-style:none;padding:0;margin:0;">'
+        + f'<ul class="dash-ul">'
         f'{"".join(rows)}</ul>'
     )
     return _wc.section_card(
@@ -2179,6 +2485,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
     critical workflow.
     """
     from . import _web_components as _wc
+    from ._chartis_kit import ck_signal_badge
     try:
         from ..portfolio.store import PortfolioStore
         from ..deals.watchlist import list_starred
@@ -2191,14 +2498,15 @@ def _render_pinned_deals_section(db_path: str) -> str:
     if not starred:
         return ""
 
-    # Colors per band — aligned with the existing severity palette.
+    # Band → (kit badge tone, sparkline stroke). Stroke hexes are the
+    # kit's semantic severity constants (SVG attrs can't take var()).
     band_palette = {
-        "excellent": ("#DCE6D9", "#3F7D4D"),
-        "good":      ("#DCE6D9", "#3F7D4D"),
-        "fair":      ("#EFE2BC", "#B7791F"),
-        "poor":      ("#EBD3CD", "#A53A2D"),
-        "critical":  ("#EBD3CD", "#A53A2D"),
-        "unknown":   ("#FAF7F0", "#5C6878"),
+        "excellent": ("positive", "#0a8a5f"),
+        "good":      ("positive", "#0a8a5f"),
+        "fair":      ("warning", "#b8732a"),
+        "poor":      ("negative", "#b5321e"),
+        "critical":  ("negative", "#b5321e"),
+        "unknown":   ("neutral", "#7a8699"),
     }
 
     try:
@@ -2217,7 +2525,8 @@ def _render_pinned_deals_section(db_path: str) -> str:
         score = h.get("score")
         band = (h.get("band") or "unknown").lower()
         components = h.get("components") or []
-        bg, fg = band_palette.get(band, band_palette["unknown"])
+        badge_tone, stroke = band_palette.get(
+            band, band_palette["unknown"])
 
         # Pick the single top-impact component (most negative) — that's
         # the "why" a partner wants to see at a glance.
@@ -2239,37 +2548,25 @@ def _render_pinned_deals_section(db_path: str) -> str:
                 series = history_series(store, deal_id, days=90)
                 scores = [s for _, s in series if s is not None]
                 if scores:
-                    # Color the spark the same as the score chip —
+                    # Color the spark the same as the score badge —
                     # a tight visual tie between the number and the
                     # line.
-                    spark_color = fg if band != "unknown" else "#5C6878"
-                    spark = _sparkline_svg(scores, stroke=spark_color)
+                    spark = _sparkline_svg(scores, stroke=stroke)
             except Exception:  # noqa: BLE001
                 spark = ""
 
         score_str = str(score) if score is not None else "—"
-        # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
         cards.append(
             f'<a href="/deal/{_html.escape(deal_id)}" '
-            f'style="display:block;text-decoration:none;color:inherit;'
-            f'background:#fff;border:1px solid #D6CFC0;border-radius:2px;'
-            f'padding:10px 12px;min-width:160px;flex:1 1 160px;'
-            f'transition:border-color 0.1s;">'
-            f'<div style="display:flex;align-items:baseline;'
-            f'justify-content:space-between;gap:6px;">'
-            f'<span style="font-family:var(--sc-mono,monospace);font-size:11px;'
-            f'color:#5C6878;text-transform:uppercase;letter-spacing:0.03em;">'
+            f'class="dash-pin-card">'
+            f'<div class="dash-pin-head">'
+            f'<span class="dash-id">'
             f'{_html.escape(deal_id)}</span>'
-            f'<span style="padding:1px 8px;background:{bg};color:{fg};'
-            f'border-radius:9999px;font-size:11px;font-weight:600;'
-            f'font-variant-numeric:tabular-nums;">{score_str}</span>'
+            f'{ck_signal_badge(score_str, tone=badge_tone)}'
             f'</div>'
-            f'<div style="display:flex;align-items:center;gap:8px;'
-            f'margin-top:4px;">'
-            f'<span style="flex:1;font-size:12px;color:#5C6878;'
-            f'white-space:nowrap;overflow:hidden;'
-            f'text-overflow:ellipsis;">{reason or "&nbsp;"}</span>'
-            f'<span style="flex-shrink:0;">{spark}</span>'
+            f'<div class="dash-pin-meta">'
+            f'<span class="dash-pin-reason">{reason or "&nbsp;"}</span>'
+            f'<span class="dash-static">{spark}</span>'
             f'</div>'
             f'</a>'
         )
@@ -2278,7 +2575,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
         return ""
 
     body = (
-        f'<div style="display:flex;flex-wrap:wrap;gap:8px;">'
+        f'<div class="dash-pin-grid">'
         f'{"".join(cards)}</div>'
     )
     return _wc.section_card(
@@ -2335,11 +2632,13 @@ def _render_workflow_shortcuts_section(db_path: str) -> str:
     ]
     rows: List[List[str]] = []
     for label, href, desc, badge in items:
+        # NOTE: the `</a>{badge}` adjacency is regex-pinned by
+        # tests/test_dashboard_badges.py — keep the chip immediately
+        # after the closing anchor.
         rows.append([
-            (f'<a href="{_html.escape(href)}" '
-             f'style="color:#155752;font-weight:500;">'
+            (f'<a href="{_html.escape(href)}" class="dash-link">'
              f'{_html.escape(label)}</a>{badge}'),
-            f'<span style="color:#5C6878;">{_html.escape(desc)}</span>',
+            f'<span class="dash-dim">{_html.escape(desc)}</span>',
         ])
     table = _wc.sortable_table(
         ["Open", "Why you'd come here today"], rows,
@@ -2360,35 +2659,47 @@ def _render_recent_results_section(db_path: str) -> str:
         reg = get_default_registry()
         jobs = reg.list_recent(n=5)
         for j in jobs:
+            # Job status → the same CSS traffic-light dots the
+            # freshness table uses (no colored ● text glyphs).
             badge = {
-                "done": '<span style="color:#3F7D4D;">●</span> done',
-                "running": '<span style="color:#B7791F;">●</span> running',
-                "queued": '<span style="color:#5C6878;">●</span> queued',
-                "failed": '<span style="color:#A53A2D;">●</span> failed',
+                "done": f'{_dot("ok")}done',
+                "running": f'{_dot("stale")}running',
+                "queued": f'{_dot("never")}queued',
+                "failed": f'{_dot("cold")}failed',
             }.get(j.status, _html.escape(j.status))
-            ts = _html.escape(j.created_at or "")
+            # Trim sub-second noise — ISO to the second is the house
+            # display grain for a submitted-at column.
+            ts = _html.escape((j.created_at or "")[:19])
             job_id = _html.escape(j.job_id or "")
             kind = _html.escape(j.kind or "")
             rows.append([
                 f'<code>{job_id[:8]}</code>',
                 kind,
                 badge,
-                f'<span style="color:#5C6878;">{ts}</span>',
+                f'<span class="dash-dim">{ts}</span>',
             ])
     except Exception:  # noqa: BLE001
         pass
 
     if not rows:
-        body = (
-            '<p style="margin:0 0 8px;"><strong>No runs yet, '
-            'first time here?</strong> Try one of the curated analyses '
-            'above. <a href="/diligence/thesis-pipeline?dataset=hospital_04_mixed_payer" '
-            'style="color:#155752;font-weight:500;">Thesis Pipeline</a> '
-            'runs in ~170 ms on a fixture and walks you through 19 '
-            'diligence steps end-to-end.</p>'
-            '<p style="margin:0;color:#5C6878;font-size:12px;">'
-            'Async jobs (data refresh, packet rebuild) appear here once '
-            'submitted, with status badges that update automatically.</p>'
+        from ._chartis_kit import ck_empty_state
+        body = ck_empty_state(
+            "No runs yet, first time here?",
+            body=(
+                "Try one of the curated analyses above — the Thesis "
+                "Pipeline runs in ~170 ms on a fixture and walks you "
+                "through 19 diligence steps end-to-end. Async jobs "
+                "(data refresh, packet rebuild) appear here once "
+                "submitted, with status badges that update "
+                "automatically."
+            ),
+            eyebrow="RUN HISTORY",
+            icon="▸",
+            cta_label="Run the Thesis Pipeline",
+            cta_href=(
+                "/diligence/thesis-pipeline"
+                "?dataset=hospital_04_mixed_payer"
+            ),
         )
     else:
         body = _wc.sortable_table(
@@ -2457,24 +2768,22 @@ def _render_system_status_section(db_path: str,
     items.append(("PHI mode", phi_level, phi_mode))
 
     from . import _web_components as _wc
+    from ._chartis_kit import ck_kpi_block
     cards = []
     for item in items:
         label, level, value = item[0], item[1], item[2]
         tip = item[3] if len(item) > 3 else ""
-        tip_attr = f' title="{_html.escape(tip)}"' if tip else ""
-        # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
-        cards.append(
-            f'<div{tip_attr} style="background:#FAF7F0;border:1px solid #D6CFC0;'
-            f'border-radius:2px;padding:10px 12px;min-width:140px;'
-            f'flex:1 1 140px;">'
-            f'<div style="font-size:11px;color:#5C6878;text-transform:uppercase;'
-            f'letter-spacing:0.05em;">{_html.escape(label)}</div>'
-            f'<div style="font-size:13px;color:#111;margin-top:4px;font-weight:500;">'
-            f'{_dot(level)}{_html.escape(value)}</div>'
-            f'</div>'
-        )
+        # Editorial KPI block; the traffic dot rides inside the value
+        # slot (trusted server markup) and the admin detail that used
+        # to hide in a title attribute renders as the visible sub line.
+        cards.append(ck_kpi_block(
+            label,
+            (f'<span class="dash-status-val">'
+             f'{_dot(level)}{_html.escape(value)}</span>'),
+            sub=_html.escape(tip) if tip else None,
+        ))
     body = (
-        '<div style="display:flex;flex-wrap:wrap;gap:10px;">'
+        '<div class="ck-kpi-grid dash-status-grid">'
         + "".join(cards) + '</div>'
     )
     return _wc.section_card("System status", body)
@@ -2483,6 +2792,8 @@ def _render_system_status_section(db_path: str,
 def _render_data_freshness_section(db_path: str) -> str:
     from . import _web_components as _wc
 
+    from ._chartis_kit import ck_empty_state
+
     try:
         from ..data.data_refresh import get_status
         from ..portfolio.store import PortfolioStore
@@ -2490,20 +2801,36 @@ def _render_data_freshness_section(db_path: str) -> str:
     except Exception as exc:  # noqa: BLE001
         return _wc.section_card(
             "Data freshness",
-            f'<p>Status table unavailable '
-            f'(<code>{_html.escape(type(exc).__name__)}</code>). '
-            f'Run <code>rcm-mc data refresh</code> to populate, or open '
-            f'<a href="/data/refresh" style="color:#155752;">'
-            f'Data refresh</a>.</p>',
+            ck_empty_state(
+                "Status table unavailable.",
+                body=(
+                    f"({type(exc).__name__}) Run `rcm-mc data refresh` "
+                    f"to populate the per-source status table, or "
+                    f"trigger a refresh from the Data refresh panel."
+                ),
+                eyebrow="DATA ESTATE",
+                icon="◌",
+                cta_label="Open Data refresh",
+                cta_href="/data/refresh",
+                tone="warning",
+            ),
         )
 
     if not rows_data:
         return _wc.section_card(
             "Data freshness",
-            '<p>No data sources registered yet. Run a data refresh via the '
-            '<code>rcm-mc data refresh</code> CLI or open '
-            '<a href="/data/refresh" style="color:#155752;">Data refresh</a> '
-            'and click a Refresh button.</p>',
+            ck_empty_state(
+                "No data sources registered yet.",
+                body=(
+                    "Run a data refresh via the `rcm-mc data refresh` "
+                    "CLI or open the Data refresh panel and click a "
+                    "Refresh button — per-source freshness lands here."
+                ),
+                eyebrow="DATA ESTATE",
+                icon="◌",
+                cta_label="Open Data refresh",
+                cta_href="/data/refresh",
+            ),
         )
 
     rows: List[List[str]] = []
@@ -2515,7 +2842,7 @@ def _render_data_freshness_section(db_path: str) -> str:
         rows.append([
             name,
             f'{_dot(level)}{_html.escape(label)}',
-            f'<span style="color:#5C6878;">{status}</span>',
+            f'<span class="dash-dim">{status}</span>',
         ])
     table = _wc.sortable_table(
         ["Source", "Last refreshed", "Status"], rows,
@@ -2540,7 +2867,10 @@ def render_dashboard(db_path: str, *,
         Full HTML page (passes through `chartis_shell` for consistent
         chrome + PHI banner).
     """
-    from ._chartis_kit import chartis_shell, ck_page_title
+    from ._chartis_kit import (
+        chartis_shell, ck_editorial_head, ck_eyebrow, ck_fmt_number,
+        ck_next_section,
+    )
     from ._export_menu import export_menu
     from . import _web_components as _wc
 
@@ -2555,40 +2885,6 @@ def render_dashboard(db_path: str, *,
 
     workflow_shortcuts = _render_workflow_shortcuts_section(db_path)
 
-    # Mode-aware eyebrow — "PARTNER WORKSPACE" for the PE-fund view,
-    # "CONSULTING WORKSPACE" for the Chartis commercial-diligence view.
-    from ._workspace_mode import current_workspace_mode, CONSULTING
-    _eyebrow = (
-        "CONSULTING WORKSPACE · LANDING"
-        if current_workspace_mode() == CONSULTING
-        else "PARTNER WORKSPACE · LANDING"
-    )
-    header = ck_page_title(
-        "Dashboard",
-        eyebrow=_eyebrow,
-        # Short scannable meta (the row is CSS-uppercased).
-        meta="Curated analyses · recent runs · system status · data freshness",
-    )
-    # Discoverability hint for the command palette — kbd tags need to
-    # render as HTML, which page_header's subtitle escapes, so emit
-    # this as a standalone strip below the header.
-    # 2026-05-28 batch 36 · Tier-4 trope removal — cap radius at 2px.
-    cmdk_hint = (
-        '<div class="wc-cmdk-hint-bar" style="margin:4px 0 16px;'
-        'padding:8px 12px;background:#FAF7F0;border:1px solid #D6E1EB;'
-        'border-radius:2px;font-size:12px;color:#2C5C84;">'
-        'Tip: press '
-        '<kbd style="font-family:var(--sc-mono,monospace);padding:1px 5px;background:#fff;'
-        'color:#0F1C2E;border:1px solid #D6CFC0;border-radius:3px;'
-        'font-size:11px;">⌘K</kbd> '
-        '(or <kbd style="font-family:var(--sc-mono,monospace);padding:1px 5px;'
-        'background:#fff;color:#0F1C2E;border:1px solid #D6CFC0;'
-        'border-radius:3px;font-size:11px;">Ctrl-K</kbd>) '
-        'anywhere on this page to open the command palette: '
-        'jump to a deal, open any page, or launch an analysis.'
-        '</div>'
-    )
-
     # Compute the per-deal scan ONCE per dashboard render and thread
     # it through every section that needs it. Without this, three
     # separate sections (headline-insight, needs-attention, exposure)
@@ -2601,24 +2897,124 @@ def render_dashboard(db_path: str, *,
     except Exception:  # noqa: BLE001
         deals_scan = None
 
-    inner = (
-        header
-        + _render_portfolio_pulse_hero(db_path, deals=deals_scan)
+    # Mode-aware eyebrow — "PARTNER WORKSPACE" for the PE-fund view,
+    # "CONSULTING WORKSPACE" for the Chartis commercial-diligence view.
+    from ._workspace_mode import current_workspace_mode, CONSULTING
+    _eyebrow = (
+        "CONSULTING WORKSPACE · LANDING"
+        if current_workspace_mode() == CONSULTING
+        else "PARTNER WORKSPACE · LANDING"
+    )
+
+    # Real-count meta line for the masthead — deals from the scan
+    # already in hand, alert/watchlist counts from the same best-
+    # effort reader the Daily-workflow badges use. Every part is
+    # optional so a fresh DB still renders a truthful strip.
+    n_deals = len(deals_scan or [])
+    badge_counts = _workflow_badge_counts(db_path)
+    meta_parts = [
+        f"{ck_fmt_number(n_deals)} DEAL{'S' if n_deals != 1 else ''}"
+    ]
+    n_alerts = badge_counts.get("alerts")
+    if n_alerts is not None:
+        meta_parts.append(
+            f"{ck_fmt_number(n_alerts)} OPEN ALERT"
+            f"{'S' if n_alerts != 1 else ''}")
+    n_watch = badge_counts.get("watchlist")
+    if n_watch is not None:
+        meta_parts.append(f"{ck_fmt_number(n_watch)} WATCHLISTED")
+    meta_parts.append("LIVE")
+
+    header = ck_editorial_head(
+        eyebrow=_eyebrow,
+        title="Dashboard",
+        meta=" · ".join(meta_parts),
+        lede_italic_phrase="One screen, every morning:",
+        lede_body=(
+            "what changed overnight, which deals need attention, and "
+            "what to run next — composed from the same live data "
+            "every analysis surface reads."
+        ),
+    )
+    # Discoverability hint for the command palette — kbd tags need to
+    # render as HTML, which page_header's subtitle escapes, so emit
+    # this as a standalone strip below the masthead.
+    cmdk_hint = (
+        '<div class="wc-cmdk-hint-bar dash-cmdk-hint">'
+        'Tip: press '
+        '<kbd>⌘K</kbd> '
+        '(or <kbd>Ctrl-K</kbd>) '
+        'anywhere on this page to open the command palette: '
+        'jump to a deal, open any page, or launch an analysis.'
+        '</div>'
+    )
+
+    # ── Compose in four editorial bands ─────────────────────────
+    # Section order is unchanged from the single-column era; the
+    # bands only add grouping rhythm + jump anchors. A band whose
+    # every section rendered empty (fresh DB) is skipped entirely —
+    # no orphaned eyebrows.
+    def _band(band_id: str, label: str) -> str:
+        return (
+            f'<div class="dash-band" id="{band_id}">'
+            f'{ck_eyebrow(label)}</div>'
+        )
+
+    morning_group = (
+        _render_portfolio_pulse_hero(db_path, deals=deals_scan)
         + _render_headline_insight_section(db_path, deals=deals_scan)
-        + cmdk_hint
         + _render_since_yesterday_section(db_path)
         + _render_needs_attention_section(db_path, deals=deals_scan)
-        + _render_exposure_section(db_path, deals=deals_scan)
+    )
+    shape_group = (
+        _render_exposure_section(db_path, deals=deals_scan)
         + _render_pinned_deals_section(db_path)
         + _render_quiet_too_long_section(db_path)
         + _render_predicted_outcomes_section(db_path, deals_scan=deals_scan)
-        + _render_saved_templates_section(db_path)
+    )
+    run_group = (
+        _render_saved_templates_section(db_path)
         + _render_analyses_section()
         + workflow_shortcuts
-        + _render_recent_results_section(db_path)
+    )
+    platform_group = (
+        _render_recent_results_section(db_path)
         + _render_system_status_section(db_path, started_at)
         + _render_data_freshness_section(db_path)
         + portfolio_exports
+    )
+
+    bands = [
+        ("dash-morning", "This morning", morning_group),
+        ("dash-shape", "Portfolio shape", shape_group),
+        ("dash-run", "Run analyses", run_group),
+        ("dash-platform", "Platform", platform_group),
+    ]
+    jump_row = (
+        '<nav class="dash-jump" aria-label="Page sections">'
+        + "".join(
+            f'<a href="#{band_id}">{label}</a>'
+            for band_id, label, group in bands if group
+        )
+        + '</nav>'
+    )
+    banded = "".join(
+        _band(band_id, label) + group
+        for band_id, label, group in bands if group
+    )
+
+    inner = (
+        _DASH_CSS
+        + header
+        + cmdk_hint
+        + jump_row
+        + banded
+        + ck_next_section(
+            "Open the portfolio risk scan",
+            "/portfolio/risk-scan",
+            eyebrow="Up next",
+            italic_word="risk",
+        )
     )
     # The Cmd-K palette is now injected globally by chartis_shell
     # via universal_palette_bundle() — every authenticated page on
@@ -2628,12 +3024,24 @@ def render_dashboard(db_path: str, *,
     # 2026-05-28 wave-B: ck_page_actions adds the Copy share link
     # affordance + Back-to-top jump for partners who deep-scroll
     # the dashboard. Idempotent JS guards prevent double-binding.
+    # (spinner_js was dropped in the 2026-07 facelift: no
+    # loading_spinner() is rendered anywhere on this page, so the
+    # helper was dead JS on every landing-page load.)
     from ._chartis_kit import ck_page_actions
     body = (
         _wc.web_styles()
         + _wc.responsive_container(inner)
         + _wc.sortable_table_js()
-        + _wc.spinner_js()
         + ck_page_actions()
     )
-    return chartis_shell(body, "Dashboard", active_nav="/dashboard")
+    # NB: do NOT also pass editorial_intro= here. The body already
+    # renders its own ck_editorial_head masthead (class="ck-eh", with
+    # the real-count meta line + italic lede). Passing editorial_intro
+    # makes chartis_shell inject a SECOND ck_page_title (a duplicate
+    # <h1>Dashboard</h1>) plus a ck_section_intro deck on top, because
+    # the shell's dedup guard keys off class="ck-page-title" — which
+    # ck_editorial_head does not emit. That produced a triple-stacked
+    # masthead with two competing <h1>s. One masthead only.
+    return chartis_shell(
+        body, "Dashboard", active_nav="/dashboard",
+    )

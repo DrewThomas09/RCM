@@ -152,6 +152,13 @@ _CARC_HINTS = ("carc", "denialcode", "denialreason", "adjustmentreason",
                "adjreason", "reasoncode", "denial")
 # A CARC is 1-3 digits or letter+1-2 digits (A1, B7, P1, W1 …).
 _CARC_VALID_RE = re.compile(r"^(\d{1,3}|[A-Z]\d{1,2})$")
+# 835 exports routinely prefix the CARC with its X12 group code ("CO-45",
+# "PR1", "OA23"): strip the group before shape-checking and tallying so a
+# CO-45 file doesn't flag carc-invalid on every row (tanking the validity
+# dimension) and CO-45 / 45 count as ONE denial reason with an intact
+# playbook join. Group-only tokens ("CO") pass through unchanged — the
+# lookahead requires a code to follow.
+_CARC_GROUP_RE = re.compile(r"^(?:CO|OA|PI|PR|CR)[-\s]?(?=[A-Z]?\d)")
 
 # The official CMS two-digit Place of Service code set. Report-only domain
 # check — a POS outside this list is a denial waiting to happen.
@@ -192,6 +199,18 @@ _MOJIBAKE = {
     "â": '"', "â": '"',
     "â": "-", "â": "-",
     "Â ": " ",
+    # Accented-letter artifacts (utf-8 read as cp1252) — the most common
+    # letters in Spanish/French/German provider and practice names. "Ã "
+    # (a-grave) is keyed with a PLAIN space because the whitespace step
+    # folds the NBSP to a space before this table runs.
+    "Ã©": "é", "Ã¨": "è", "Ãª": "ê", "Ã«": "ë",
+    "Ã¡": "á", "Ã¢": "â", "Ã£": "ã", "Ã¤": "ä", "Ã¥": "å",
+    "Ã³": "ó", "Ã²": "ò", "Ã´": "ô", "Ãµ": "õ", "Ã¶": "ö",
+    "Ãº": "ú", "Ã¹": "ù", "Ã»": "û", "Ã¼": "ü",
+    "Ã­": "í", "Ã¬": "ì", "Ã®": "î", "Ã¯": "ï",
+    "Ã±": "ñ", "Ã§": "ç",
+    "Ã‰": "É", "Ã‘": "Ñ", "Ã–": "Ö", "Ãœ": "Ü",
+    "Ã ": "à", "Ã ": "à",
 }
 
 # Full state / territory names → USPS 2-letter code.
@@ -218,6 +237,21 @@ _SEX_MAP = {"m": "M", "male": "M", "1": "M", "f": "F", "female": "F",
             "2": "F", "u": "U", "unknown": "U", "0": "U"}
 _EXCEL_FLOAT_RE = re.compile(r"^(\d+)\.0+$")
 _MONEY_PARENS_RE = re.compile(r"^\((.*)\)$")
+# Trailing-sign negatives from mainframe/EBCDIC-lineage extracts and some
+# 835 flatteners: "500.00-" and "500.00CR" both mean -500.00. Matched on the
+# $-and-space-stripped value.
+_MONEY_TRAIL_NEG_RE = re.compile(r"^([\d.,]*\d)\s*(-|CR)$", re.IGNORECASE)
+# Unambiguously EUROPEAN-formatted amounts: dot-grouped thousands with a
+# comma-decimal ("1.234,56"), or a bare comma-decimal with exactly two
+# decimal digits ("1234,56"). "1,234" alone stays a US thousands reading —
+# ambiguity always resolves to the US interpretation, so nothing that parsed
+# correctly before changes meaning.
+_MONEY_EU_RE = re.compile(r"^-?(\d{1,3}(\.\d{3})+|\d+),\d{1,2}$")
+# Scientific-notation NPI damage (spreadsheet round-trip): a 10-digit NPI
+# stored as a float renders as d.dddddddddE+09. When the mantissa carries all
+# 10 digits the value is exactly recoverable; when it doesn't, the export
+# destroyed the identifier and the cell is flagged, never guessed at.
+_NPI_SCI_RE = re.compile(r"^\d(\.\d+)?[eE]\+?0*9$")
 
 
 def _clean_generic(cell: str) -> Tuple[str, List[str]]:
@@ -259,6 +293,18 @@ def _clean_npi_cell(v: str) -> Tuple[str, List[str]]:
     if m:  # 1234567890.0 (Excel float coercion)
         v = m.group(1)
         rules.append("npi-excel-float")
+    if _NPI_SCI_RE.match(v.strip()):
+        # Spreadsheet scientific notation ("1.679576722E+09"). Recover ONLY
+        # when the mantissa carries ALL 10 digits — "1.68E+09" could have
+        # been any NPI starting 168, so expanding it would fabricate an
+        # identifier ("1680000000") and stripping non-digits would
+        # fabricate a 12-digit junk value ("16809"). The lossy case is
+        # left untouched for the npi-scientific-lossy flag (see the row
+        # loop) so the user learns the export destroyed identifiers.
+        _mant = v.strip().upper().split("E", 1)[0].replace(".", "")
+        if len(_mant) == 10 and _mant.isdigit():
+            return _mant, rules + ["npi-scientific-notation"]
+        return v, rules
     digits = "".join(ch for ch in v if ch.isdigit())
     if digits != v and v != "":
         rules.append("npi-strip-nondigits")
@@ -275,18 +321,47 @@ def _clean_money_cell(v: str) -> Tuple[str, List[str]]:
     if m:  # (123.45) accounting negative
         v = m.group(1)
         neg = True
-    v2 = v.replace("$", "").replace(",", "").replace(" ", "").strip()
+    v2 = v.replace("$", "").replace(" ", "").strip()
+    trail = _MONEY_TRAIL_NEG_RE.match(v2)
+    if trail:  # 500.00- / 500.00CR (mainframe trailing sign)
+        v2 = trail.group(1)
+        neg = True
+    eu = False
+    if _MONEY_EU_RE.match(v2):
+        # Unambiguous European format: "1.234,56" → 1234.56. Without this,
+        # stripping commas turned a €1.234,56 charge into $1.23 and logged
+        # it as a repair. Anything ambiguous keeps the US reading below.
+        v2 = v2.replace(".", "").replace(",", ".")
+        eu = True
+    else:
+        v2 = v2.replace(",", "")
     try:
         num = float(v2)
     except ValueError:
         return raw, []
     if neg:
         num = -abs(num)
-    out = ("%.2f" % num).rstrip("0").rstrip(".") if "." in ("%.2f" % num) else str(int(num))
     out = "%.2f" % num
     if out != raw:
-        rules.append("money-normalize")
+        if eu:
+            rules.append("money-eu-decimal")
+        if trail:
+            rules.append("money-trailing-negative")
+        if not rules:
+            rules.append("money-normalize")
     return out, rules
+
+
+def _modifier_malformed(v: str) -> bool:
+    """True when a cleaned modifier cell still carries a token that isn't a
+    2-character alphanumeric modifier ("LT4", "2", "GYX"). The normalizer
+    deliberately KEEPS such tokens (content is never silently discarded);
+    this flag is how the user learns they exist."""
+    s = v.strip()
+    if not s:
+        return False
+    return any(not (len(p) == 2 and p.isalnum())
+               for p in s.split(",") if p)
 
 
 def _money_unparseable(v: str) -> bool:
@@ -304,7 +379,14 @@ def _money_unparseable(v: str) -> bool:
     m = _MONEY_PARENS_RE.match(s)
     if m:
         s = m.group(1)
-    s = s.replace("$", "").replace(",", "").replace(" ", "").strip()
+    s = s.replace("$", "").replace(" ", "").strip()
+    t = _MONEY_TRAIL_NEG_RE.match(s)
+    if t:
+        s = t.group(1)
+    if _MONEY_EU_RE.match(s):
+        s = s.replace(".", "").replace(",", ".")
+    else:
+        s = s.replace(",", "")
     if s == "":
         return True
     try:
@@ -327,7 +409,15 @@ def _excel_serial_to_iso(n: float) -> Optional[str]:
 
 
 _DATE_ISO_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})")
-_DATE_US_RE = re.compile(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})$")
+# US dates tolerate a trailing time component ("01/02/2024 10:30",
+# "1/2/24 3:45:00 PM") — datetime-stamped exports are routine and the time
+# part is discarded exactly like date-iso-trim discards it from ISO stamps.
+_DATE_US_RE = re.compile(
+    r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})"
+    r"(?:[ T]\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AaPp][Mm])?)?$")
+# Compact CCYYMMDD ("20240211") — the HIPAA X12 date format leaking into a
+# tabular extract. Century-bounded so a stray 8-digit id can't false-match.
+_DATE_COMPACT_RE = re.compile(r"^(19|20)(\d{2})(\d{2})(\d{2})$")
 
 
 def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
@@ -336,6 +426,17 @@ def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
     s = v.strip()
     if _DATE_ISO_RE.match(s):
         return s[:10], ([] if s[:10] == v else ["date-iso-trim"])
+    m = _DATE_COMPACT_RE.match(s)
+    if m:
+        # 8-digit CCYYMMDD → ISO, but only when it is a REAL calendar date;
+        # an implausible month/day falls through to the unparseable flag.
+        try:
+            from datetime import date as _d
+            iso = _d(int(m.group(1) + m.group(2)), int(m.group(3)),
+                     int(m.group(4))).isoformat()
+            return iso, ["date-compact-to-iso"]
+        except ValueError:
+            return v, []
     # Excel serial number.
     try:
         n = float(s)
@@ -356,6 +457,20 @@ def _clean_date_cell(v: str) -> Tuple[str, List[str]]:
         except ValueError:
             return v, []
     return v, []
+
+
+def _date_unparseable(v: str) -> bool:
+    """True when a CLEANED date cell is non-blank and still not ISO-shaped.
+
+    Every parseable form (ISO, ISO datetime, Excel serial, US slash/dash
+    with or without a time, compact CCYYMMDD) is normalized to YYYY-MM-DD by
+    ``_clean_date_cell`` before this runs, so anything left is a value the
+    chronology checks silently skip — the money column has
+    ``money-unparseable``; this is the date analogue."""
+    s = v.strip()
+    if not s:
+        return False
+    return _DATE_ISO_RE.match(s) is None
 
 
 # ZIP3-prefix ranges are approximate for a few split prefixes and for the
@@ -525,17 +640,24 @@ def _clean_dx_cell(v: str) -> Tuple[str, List[str]]:
 
 def _clean_modifier_cell(v: str) -> Tuple[str, List[str]]:
     """Normalize a claim-line modifier field: split on common delimiters,
-    upper-case, keep 2-char alphanumerics, de-dup, and re-join with commas."""
+    upper-case, de-dup, and re-join with commas. Valid 2-char alphanumeric
+    modifiers come first; unrecognized tokens ("LT4", a keyed LT+4) are KEPT
+    after them rather than silently discarded — flag, never delete (the
+    modifier-malformed flag tells the user they exist)."""
     if v == "":
         return v, []
     parts = re.split(r"[,;|/\s]+", v.strip().upper())
-    mods, seen = [], set()
+    mods, extras, seen = [], [], set()
     for p in parts:
         p = p.strip()
-        if len(p) == 2 and p.isalnum() and p not in seen:
-            seen.add(p)
+        if not p or p in seen:
+            continue
+        seen.add(p)
+        if len(p) == 2 and p.isalnum():
             mods.append(p)
-    out = ",".join(mods)
+        else:
+            extras.append(p)
+    out = ",".join(mods + extras)
     return out, ([] if out == v else ["modifier-normalize"])
 
 
@@ -967,6 +1089,9 @@ def _to_number(s: str) -> Optional[float]:
     m = _MONEY_PARENS_RE.match(t)
     if m:
         t = "-" + m.group(1)
+    tn = _MONEY_TRAIL_NEG_RE.match(t)
+    if tn:  # trailing-sign negative ("500.00-" / "500.00CR")
+        t = "-" + tn.group(1)
     try:
         return float(t)
     except ValueError:
@@ -1047,13 +1172,19 @@ def _digits(v: object) -> str:
 
 
 def classify_npi(raw: object) -> str:
-    """One of: ``blank`` · ``malformed`` (not 10 digits) · ``checksum`` (10
-    digits but Luhn-fails) · ``valid``."""
+    """One of: ``blank`` · ``malformed`` (not 10 digits, or an implausible
+    first digit) · ``checksum`` (10 digits but Luhn-fails) · ``valid``.
+
+    CMS only ever issues NPIs beginning with 1 (individual/entity) or 2
+    (reserved) — a Luhn-valid 10-digit value starting 3-9 cannot be a real
+    NPI and reads ``malformed`` rather than lending false confidence."""
     s = str(raw).strip() if raw is not None else ""
     if s == "" or s.lower() in ("nan", "none", "null", "na"):
         return "blank"
     d = _digits(s)
     if len(d) != 10:
+        return "malformed"
+    if d[0] not in "12":
         return "malformed"
     return "valid" if luhn_npi_valid(d) else "checksum"
 
@@ -1216,7 +1347,10 @@ class CleanResult:
                        "discharge-status-invalid", "admission-type-invalid",
                        "modifier-unknown", "icd10-unknown-code",
                        "hcpcs-unknown-code", "admission-source-invalid",
-                       "ndc-malformed", "taxonomy-unknown-code")
+                       "ndc-malformed", "taxonomy-unknown-code",
+                       "date-unparseable", "ragged-row",
+                       "npi-scientific-lossy", "modifier-malformed",
+                       "leie-excluded-npi")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1228,7 +1362,8 @@ class CleanResult:
                           "anesthesia-units-implausible",
                           "revenue-tob-mismatch", "timely-filing-risk",
                           "service-date-order", "discharge-status-final-bill",
-                          "units-exceed-threshold")
+                          "units-exceed-threshold", "npi-name-conflict",
+                          "drg-on-professional")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1414,37 +1549,63 @@ def zip_batch_probe(data: bytes) -> bool:
                for n in names)
 
 
+# Zip-batch member cap: files past this many are skipped (and now SAID so).
+_BATCH_MEMBER_CAP = 50
+
+
 def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
     """Members of a multi-file zip batch, or None when this isn't one.
+    Back-compat wrapper over ``zip_batch_members_ex`` (which also reports
+    what was skipped)."""
+    members, _info = zip_batch_members_ex(data)
+    return members
+
+
+def zip_batch_members_ex(data: bytes) -> Tuple[
+        Optional[List[Tuple[str, bytes]]], Dict[str, object]]:
+    """(members, skip-info) of a multi-file zip batch; members is None when
+    this isn't one. ``skip-info`` carries ``skipped_unsupported`` (member
+    names excluded by format) and ``over_cap`` (count past the
+    {cap}-member batch cap) so the batch banner can say what was NOT
+    cleaned instead of silently dropping files.
 
     An .xlsx is ALSO a zip — the tell is ``[Content_Types].xml`` in the
     archive root, so that (and any other Office package) is excluded
     before the cheaper suffix scan. Only claim-shaped members count;
-    directory entries and macOS resource forks are skipped.
+    directory entries and macOS resource forks are skipped silently
+    (they are packaging noise, not data).
 
     Raises ``ValueError`` when the archive IS a batch but expands past
     the uncompressed cap — the caller turns that into a clear warning
     instead of sniffing the zip as CSV garbage."""
+    info: Dict[str, object] = {"skipped_unsupported": [], "over_cap": 0,
+                               "cap": _BATCH_MEMBER_CAP}
     if data[:4] != b"PK\x03\x04":
-        return None
+        return None, info
     import zipfile as _zf
     try:
         zf = _zf.ZipFile(io.BytesIO(data))
         infos = zf.infolist()
     except Exception:  # noqa: BLE001 — truncated/hostile zip → not a batch
-        return None
+        return None, info
     names = [i.filename for i in infos]
     if "[Content_Types].xml" in names:
-        return None                       # Office package (xlsx/docx/…)
-    members = [i for i in infos
-               if not i.filename.endswith("/")
-               and not i.filename.startswith("__MACOSX")
-               and i.filename.rsplit("/", 1)[-1][:1] != "."
-               and i.filename.lower().endswith(
+        return None, info                 # Office package (xlsx/docx/…)
+    real_files = [i for i in infos
+                  if not i.filename.endswith("/")
+                  and not i.filename.startswith("__MACOSX")
+                  and i.filename.rsplit("/", 1)[-1][:1] != "."]
+    members = [i for i in real_files
+               if i.filename.lower().endswith(
                    (".csv", ".tsv", ".txt", ".837", ".835", ".edi", ".x12"))]
     if not members:
-        return None
-    members = sorted(members, key=lambda i: i.filename)[:50]
+        return None, info
+    info["skipped_unsupported"] = sorted(
+        i.filename.rsplit("/", 1)[-1] for i in real_files
+        if i not in members)
+    members = sorted(members, key=lambda i: i.filename)
+    info["over_cap"] = max(0, len(members) - _BATCH_MEMBER_CAP)
+    members = members[:_BATCH_MEMBER_CAP]
     declared = sum(max(i.file_size, 0) for i in members)
     if declared > _BATCH_MAX_UNCOMPRESSED:
         raise ValueError(
@@ -1454,13 +1615,13 @@ def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
             "archive and upload in parts.")
     out = []
     budget = _BATCH_MAX_UNCOMPRESSED
-    for info in members:
+    for m_info in members:
         try:
             # Chunked read with a hard cap: declared sizes can be forged,
             # so never trust file_size alone.
             chunks = []
             got = 0
-            with zf.open(info) as fh:
+            with zf.open(m_info) as fh:
                 while True:
                     chunk = fh.read(1 << 20)
                     if not chunk:
@@ -1473,12 +1634,13 @@ def zip_batch_members(data: bytes) -> Optional[List[Tuple[str, bytes]]]:
                             "decompress further.")
                     chunks.append(chunk)
             budget -= got
-            out.append((info.filename.rsplit("/", 1)[-1], b"".join(chunks)))
+            out.append((m_info.filename.rsplit("/", 1)[-1],
+                        b"".join(chunks)))
         except ValueError:
             raise
         except Exception:  # noqa: BLE001 — skip the unreadable member
             continue
-    return out or None
+    return (out or None), info
 
 
 def _looks_like_xlsx(data: bytes) -> bool:
@@ -1577,16 +1739,134 @@ def _read_xlsx(data: bytes) -> Tuple[List[str], List[List[str]],
                 "is the one you meant, export it as CSV and re-upload.")
     if not rows:
         return [], [], note
-    headers = [h.strip() for h in rows[0]]
-    return headers, rows[1:], note
+    headers, body, shape_notes = _shape_rows(rows)
+    if shape_notes:
+        note = "; ".join(([note] if note else []) + shape_notes)
+    return headers, body, note
 
 
-def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
-                                      Optional[str]]:
+# BOM → codec for wide-character uploads. UTF-32 BOMs are checked FIRST:
+# the UTF-32-LE BOM starts with the UTF-16-LE BOM bytes. Excel's "Unicode
+# Text" export is exactly UTF-16-LE + BOM + tabs — without this sniff those
+# files decoded to NUL-riddled garbage and were "cleaned" anyway.
+_WIDE_BOMS: Tuple[Tuple[bytes, str, str], ...] = (
+    (b"\xff\xfe\x00\x00", "utf-32-le", "UTF-32 (little-endian)"),
+    (b"\x00\x00\xfe\xff", "utf-32-be", "UTF-32 (big-endian)"),
+    (b"\xff\xfe", "utf-16-le", "UTF-16 (little-endian)"),
+    (b"\xfe\xff", "utf-16-be", "UTF-16 (big-endian)"),
+)
+# BOM-less UTF-16 heuristic: NUL bytes above this share of the first 4 KB
+# mean a wide encoding (ASCII text has essentially none).
+_NUL_DENSITY_MIN = 0.20
+
+
+def _wide_probe(head: bytes) -> Optional[Tuple[str, int, str]]:
+    """(codec, bom_length, human label) when the head bytes say UTF-16/32,
+    else None. BOM first; failing that, NUL-density + NUL position decide
+    (text bytes land at even offsets for LE, odd for BE)."""
+    for bom, enc, label in _WIDE_BOMS:
+        if head.startswith(bom):
+            return enc, len(bom), label
+    probe = head[:4096]
+    if probe and probe.count(0) / len(probe) >= _NUL_DENSITY_MIN:
+        even_nuls = probe[0::2].count(0)
+        odd_nuls = probe[1::2].count(0)
+        if odd_nuls >= even_nuls:
+            return "utf-16-le", 0, "UTF-16 (little-endian, no BOM)"
+        return "utf-16-be", 0, "UTF-16 (big-endian, no BOM)"
+    return None
+
+
+def _decode_table_bytes(data: bytes) -> Tuple[str, Optional[str]]:
+    """bytes → (text, note). UTF-16/32 (BOM or NUL-density) decodes to real
+    text with a note naming the encoding; then utf-8-sig; latin-1 last."""
+    wide = _wide_probe(data[:4096])
+    if wide is not None:
+        enc, bom_len, label = wide
+        try:
+            return (data[bom_len:].decode(enc, errors="replace"),
+                    f"File was {label}-encoded (Excel's 'Unicode Text' "
+                    "export produces this) — decoded automatically. "
+                    "Prefer CSV UTF-8 exports.")
+        except Exception:  # noqa: BLE001 — fall through to the classic path
+            pass
+    try:
+        return data.decode("utf-8-sig"), None
+    except UnicodeDecodeError:
+        return data.decode("latin-1", errors="replace"), None
+
+
+def _populated_cells(row: List[str]) -> int:
+    return sum(1 for c in row if c and c.strip())
+
+
+_NUMERIC_CELL_RE = re.compile(r"^-?\d+(\.\d+)?$")
+
+
+def _shape_rows(all_rows: List[List[str]]
+                ) -> Tuple[List[str], List[List[str]], List[str]]:
+    """(headers, body, notes) from raw parsed rows, with two bounded
+    heuristics for files that don't lead with a clean header:
+
+      * PREAMBLE: cover/title lines ("Claims Extract Q3 2025") with ≤2
+        populated cells above a table whose rows consistently carry ≥4 are
+        skipped (max 3) — otherwise every real column vanishes into a
+        one-column table.
+      * HEADERLESS: when the would-be header row is ≥60% numeric-shaped
+        cells, it is DATA — ``column_1..N`` names are synthesized and the
+        row is kept, instead of promoting NPIs to header text.
+
+    Both are warned about; neither ever fires on an ordinary headered file.
+    """
+    notes: List[str] = []
+    skipped = 0
+    while (skipped < 3 and len(all_rows) >= 4
+           and _populated_cells(all_rows[0]) <= 2):
+        # Row 0 is a title only when a STABLE ≥4-wide table starts within
+        # the next few rows: everything before the first wide row is
+        # narrow (more title lines), everything from it on is wide. An
+        # ordinary 2-column file never matches (no wide row follows).
+        widths = [_populated_cells(r) for r in all_rows[1:5]]
+        wide_at = next((i for i, w in enumerate(widths) if w >= 4), None)
+        if (wide_at is None
+                or any(w > 2 for w in widths[:wide_at])
+                or any(w < 4 for w in widths[wide_at:])):
+            break
+        all_rows = all_rows[1:]
+        skipped += 1
+    if skipped:
+        notes.append(
+            f"Skipped {skipped} title row(s) above the header — the file "
+            "leads with a cover line, not column names.")
+    if not all_rows:
+        return [], [], notes
+    hdr = [h.strip() for h in all_rows[0]]
+    populated = [c for c in hdr if c]
+    numeric = sum(1 for c in populated if _NUMERIC_CELL_RE.match(c))
+    if len(populated) >= 2 and numeric / len(populated) >= 0.6:
+        headers = [f"column_{i + 1}" for i in range(len(hdr))]
+        notes.append(
+            "File appears to have no header row — column_1…column_"
+            f"{len(hdr)} names were synthesized and the first row was "
+            "kept as data. Add a header row to name the columns.")
+        return headers, all_rows, notes
+    return hdr, all_rows[1:], notes
+
+
+def _read_table(data: bytes, *, reshape: bool = True
+                ) -> Tuple[List[str], List[List[str]], str,
+                           Optional[str]]:
     """Decode bytes → (headers, rows, format, note). Handles CSV/TSV and
     .xlsx. ``format`` is the delimiter for text files, or ``"xlsx"`` for
     spreadsheets; ``note`` is a user-facing remark about how the file was
-    read (today: which worksheet a multi-sheet workbook was read from).
+    read (worksheet chosen, encoding detected, title rows skipped, …).
+
+    ``reshape=False`` disables the title-row / headerless heuristics.
+    The streaming path needs that: bigfile prepends the FILE's first
+    record to every chunk as its header line, so shaping must happen
+    ONCE at the stream level (bigfile._shape_stream_head) — running it
+    per chunk made chunk 2+ treat that prepended record as a title/data
+    row, silently eating or replaying one record per chunk.
     """
     if _looks_like_xlsx(data):
         headers, body, note = _read_xlsx(data)
@@ -1600,19 +1880,20 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
         if parsed is not None:
             return parsed[0], parsed[1], "x835", None
         return [], [], "x12", None    # X12 but not 837/835 — warning later
-    try:
-        text = data.decode("utf-8-sig")
-    except UnicodeDecodeError:
-        text = data.decode("latin-1", errors="replace")
+    text, enc_note = _decode_table_bytes(data)
     sample = text[:8192]
     delim = _sniff_delimiter(sample)
     reader = csv.reader(io.StringIO(text), delimiter=delim)
     all_rows = [r for r in reader if r != []]
+    notes = [enc_note] if enc_note else []
     if not all_rows:
-        return [], [], delim, None
-    headers = [h.strip() for h in all_rows[0]]
-    body = all_rows[1:]
-    return headers, body, delim, None
+        return [], [], delim, ("; ".join(notes) or None)
+    if reshape:
+        headers, body, shape_notes = _shape_rows(all_rows)
+        notes.extend(shape_notes)
+    else:
+        headers, body = [h.strip() for h in all_rows[0]], all_rows[1:]
+    return headers, body, delim, ("; ".join(notes) or None)
 
 
 def _header_tokens(header: str) -> List[str]:
@@ -1678,8 +1959,13 @@ def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
                  scan_cap: int = 50000, distinct_cap: int = 400
                  ) -> Tuple[float, List[str]]:
     """(% of populated HCPCS cells that are J-codes over a bounded scan,
-    distinct J-codes for the RxNorm crosswalk). Bounded so a 10M-row file
-    can't turn connector planning into a full extra pass."""
+    per-CELL J-code values for the RxNorm crosswalk). Bounded so a 10M-row
+    file can't turn connector planning into a full extra pass: the scan cap
+    bounds the list length and ``distinct_cap`` bounds the distinct-value
+    universe. The list is cell-grain (not distinct) on purpose —
+    resolve_drugs dedupes before any lookup, and passing cells makes its
+    ``rows_seen`` coverage counter mean CELLS for J-codes exactly as it
+    does for NDCs and drug names (one canonical unit across the scorecard)."""
     if hcpcs_idx is None:
         return 0.0, []
     seen: List[str] = []
@@ -1696,7 +1982,7 @@ def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
         populated += 1
         if _JCODE_RE.match(val):
             jcount += 1
-            if val not in seen_set and len(seen) < distinct_cap:
+            if val in seen_set or len(seen_set) < distinct_cap:
                 seen_set.add(val)
                 seen.append(val)
     pct = (100.0 * jcount / populated) if populated else 0.0
@@ -1716,6 +2002,48 @@ def _detect_one(headers: List[str], hints: tuple) -> Optional[int]:
 # How many rows the value-based amount sniffer reads. Bounded so the fallback
 # stays cheap at 10M-row scale (sample, never full-scan).
 _AMOUNT_SNIFF_SAMPLE = 4000
+
+# Value-based NPI column sniff bounds — mirrors the amount sniffer's
+# conservatism: bounded sample, high thresholds, unclaimed columns only.
+_NPI_SNIFF_SAMPLE = 4000
+_NPI_SNIFF_MIN_POPULATED = 3
+_NPI_SNIFF_TEN_FRAC = 0.90
+_NPI_SNIFF_LUHN_FRAC = 0.85
+
+
+def _sniff_npi_columns(headers: List[str], rows: List[List[str]],
+                       claimed: set, *,
+                       sample: int = _NPI_SNIFF_SAMPLE) -> List[int]:
+    """Columns that hold NPI VALUES under headers the hint list misses
+    (PROV_ID, ProviderNumber, Perf_Prov). Over a bounded sample, an
+    unclaimed column whose populated cells are ≥90% bare 10-digit values
+    and ≥85% Luhn-valid is adopted for stats + screens (never for cell
+    rewriting, and never displacing an explicit billing header). Without
+    this, such a column got no Luhn screen, no column stats, and no LEIE
+    screen at all."""
+    out: List[int] = []
+    for ci in range(len(headers)):
+        if ci in claimed:
+            continue
+        populated = ten = luhn = 0
+        for n, row in enumerate(rows):
+            if n >= sample:
+                break
+            if ci >= len(row):
+                continue
+            cell = row[ci].strip()
+            if not cell:
+                continue
+            populated += 1
+            if len(cell) == 10 and cell.isdigit():
+                ten += 1
+                if cell[0] in "12" and luhn_npi_valid(cell):
+                    luhn += 1
+        if (populated >= _NPI_SNIFF_MIN_POPULATED
+                and ten / populated >= _NPI_SNIFF_TEN_FRAC
+                and luhn / populated >= _NPI_SNIFF_LUHN_FRAC):
+            out.append(ci)
+    return out
 
 
 def _sniff_amount_column(
@@ -1850,6 +2178,7 @@ def clean_bytes(
     progress: Optional[ProgressCb] = None,
     _stream_chunk: bool = False,
     _stream_seen: Optional[set] = None,
+    _stream_fold_seen: Optional[set] = None,
     _changelog_sink: Optional[Callable[[Tuple[int, str, str, str, str]],
                                        None]] = None,
 ) -> CleanResult:
@@ -1869,7 +2198,10 @@ def clean_bytes(
     ``_stream_seen`` is the streamer's SHARED duplicate-tracking set: when
     given, exact-dup membership uses compact row digests in that set instead
     of full-tuple keys in a per-call set, so duplicates die across chunk
-    boundaries too. The caller bounds its growth (see bigfile.py).
+    boundaries too. ``_stream_fold_seen`` is the same idea for the
+    near-duplicate (case/whitespace-folded) signal, so a "SMITH" row in
+    chunk 1 and its "Smith" twin in chunk 9 still count. The caller bounds
+    both sets' growth (see bigfile.py).
     """
     def cb(msg: str, frac: float) -> None:
         if progress:
@@ -1877,7 +2209,7 @@ def clean_bytes(
 
     cb("Reading file", 0.05)
     try:
-        _members = zip_batch_members(data)
+        _members, _zip_info = zip_batch_members_ex(data)
     except ValueError as _zexc:
         _res = CleanResult(delimiter="zip", headers=[])
         _res.warnings.append(str(_zexc))
@@ -1888,9 +2220,10 @@ def clean_bytes(
     if _members is not None:
         return _clean_batch(_members, src_name,
                             drop_duplicates=drop_duplicates, deid=deid,
-                            profile=profile, cb=cb)
+                            profile=profile, cb=cb, skip_info=_zip_info)
     try:
-        headers, rows, delim, _read_note = _read_table(data)
+        headers, rows, delim, _read_note = _read_table(
+            data, reshape=not _stream_chunk)
     except ImportError:
         _res = CleanResult(delimiter="xlsx", headers=[])
         _res.warnings.append(
@@ -1922,6 +2255,11 @@ def clean_bytes(
             "270/276 inquiry can't be cleaned as claims.")
         res.out_name = _out_name(src_name)
         _write_output(res, headers, [])
+        if not _stream_chunk:
+            # This early return used to bypass the auto-file loop, so the
+            # most common "we can't handle your file" outcome never
+            # reached the backlog.
+            _autofile_gaps(res)
         cb("Done", 1.0)
         return res
     if not headers:
@@ -1943,10 +2281,8 @@ def clean_bytes(
                        if any(h in _norm_key(headers[i])
                               for h in _ORDER_REFER_HINTS)]
     res.order_referring_columns = [headers[i] for i in order_refer_idx]
-    if not npi_idx:
-        res.warnings.append(
-            "No NPI column detected (looked for headers containing 'NPI'). "
-            "Rows were still trimmed and de-duplicated.")
+    # The "no NPI column" warning waits until after the value-based sniff
+    # below — a PROV_ID column full of Luhn-valid NPIs is an NPI column.
 
     name_idx = _detect_one(headers, _NAME_HINTS)
     state_idx = _detect_one(headers, _STATE_HINTS)
@@ -2137,6 +2473,54 @@ def clean_bytes(
                 elif setter == "drug":
                     drug_idx = _i
 
+    claim_i = _detect_one(headers, ("claimid", "claimnumber", "claimno",
+                                    "patientcontrolnumber", "icn", "dcn"))
+    # Value-based NPI sniff over columns NO role claimed: a PROV_ID /
+    # ProviderNumber column full of Luhn-valid 10-digit values is an NPI
+    # column even though its header never says so. Adopted for stats and
+    # screens only (repair-free — cells are never rewritten), and it never
+    # displaces an explicit billing header.
+    try:
+        _sniff_claimed: set = set(npi_idx)
+        for _rs0 in (money_set, date_set, zip_set, hcpcs_set, sex_set,
+                     dx_set, mod_set, phone_set, taxo_set, ndc_norm_set,
+                     state_set, rev_set, pos_set, drg_set, pname_set):
+            _sniff_claimed |= _rs0
+        for _ix0 in (name_idx, state_idx, ndc_idx, drug_idx, dob_i, admit_i,
+                     disch_i, payer_i, carc_i, tob_i, dstat_i, atype_i,
+                     asrc_i, todate_i, submit_i, member_i, cond_i, occ_i,
+                     valc_i, allowed_i, billed_i, paid_i, units_i,
+                     patient_i, dos_i, hcpcs_i, claim_i):
+            if _ix0 is not None:
+                _sniff_claimed.add(_ix0)
+        _sniffed_npi = _sniff_npi_columns(headers, rows, _sniff_claimed)
+    except Exception:  # noqa: BLE001 — the sniff must never block a run
+        _sniffed_npi = []
+    if _sniffed_npi:
+        npi_idx = sorted(set(npi_idx) | set(_sniffed_npi))
+        res.npi_columns = [headers[i] for i in npi_idx]
+        res.structure["npi_sniffed_columns"] = \
+            [headers[i] for i in _sniffed_npi]
+        if billing_idx is None:
+            # No header-detected NPI column at all → the first sniffed
+            # column is the de-facto billing column (screened, not edited).
+            billing_idx = _sniffed_npi[0]
+            res.billing_column = headers[billing_idx]
+        order_refer_idx = [i for i in npi_idx
+                           if any(h in _norm_key(headers[i])
+                                  for h in _ORDER_REFER_HINTS)]
+        res.order_referring_columns = [headers[i] for i in order_refer_idx]
+        res.warnings.append(
+            f"{len(_sniffed_npi)} column(s) hold NPI-shaped values under "
+            "non-NPI headers ("
+            + ", ".join(headers[i] for i in _sniffed_npi[:5])
+            + ") — screened as NPI columns (values are never rewritten). "
+            "Rename the headers to include 'NPI' to make this explicit.")
+    if not npi_idx:
+        res.warnings.append(
+            "No NPI column detected (looked for headers containing 'NPI'). "
+            "Rows were still trimmed and de-duplicated.")
+
     ncols = len(headers)
     for i in npi_idx:
         res.column_stats[headers[i]] = {
@@ -2156,15 +2540,15 @@ def clean_bytes(
     _col_distinct = [set() for _ in range(ncols)]  # dictionary (capped 1000)
     _payer_raw: Dict[str, int] = {}               # payer variant clustering
     _carc_counts: Dict[str, int] = {}             # top denial reasons
-    _code_charges: Dict[str, List[float]] = {}    # per-HCPCS outlier fences
+    _carc_variants: Dict[str, set] = {}           # bare code → raw spellings
+    _code_charges: Dict[str, List[tuple]] = {}   # per-HCPCS (amt, row) pairs
     _taxo_counts: Dict[str, int] = {}             # taxonomy → specialty mix
     _svc_seen: Dict[tuple, List[tuple]] = {}      # dup-service window scan
     _payer_q: Dict[str, Dict] = {}                # per-payer quality split
     _claim_agg: Dict[str, List[float]] = {}       # claim rollup [lines, charge]
     _claim_trunc = False
     _CLAIM_CAP = 50_000                           # distinct claims tracked
-    claim_i = _detect_one(headers, ("claimid", "claimnumber", "claimno",
-                                    "patientcontrolnumber", "icn", "dcn"))
+    # (claim_i was detected above, before the NPI value sniff.)
     _charge_i = billed_i if billed_i is not None else allowed_i
     # Change-log spill: entries past the in-memory preview stream to a
     # temp CSV so the audit-trail FILE is complete at any scale. The
@@ -2177,24 +2561,44 @@ def clean_bytes(
     cleaned: List[List[str]] = []
     seen = set()
     _seen_fold = set()   # case/whitespace-folded keys → near-dup signal
+    # Ragged-row accounting: pads/trims used to happen with ZERO signal, so
+    # an unquoted comma in an address shifted every later cell AND silently
+    # destroyed the overflow. xlsx / X12 rows are structurally variable-
+    # width by construction, so only delimited text counts as ragged.
+    _ragged_track = delim not in ("xlsx", "x12", "x835")
+    _ragged_padded = _ragged_truncated = 0
     total = max(len(rows), 1)
     for ri, row in enumerate(rows):
-        # Pad / trim ragged rows to the header width.
+        # Pad / trim ragged rows to the header width (counted below).
+        _ragged_row = False
         if len(row) < ncols:
             row = row + [""] * (ncols - len(row))
+            if _ragged_track:
+                _ragged_padded += 1
+                _ragged_row = True
         elif len(row) > ncols:
             row = row[:ncols]
+            if _ragged_track:
+                _ragged_truncated += 1
+                _ragged_row = True
         # Deterministic normalization pass on every cell: generic cleanups
         # (whitespace, mojibake, null-tokens, Excel apostrophe) plus per-role
         # fixes (NPI, money, date, state, zip, HCPCS). Each fix is tallied.
         new_row = []
+        _cell_flags: set = set()   # row-level flags raised by cell cleaners
         for ci, cell in enumerate(row):
             stripped = cell.strip()
             if stripped != cell:
                 res.n_cells_trimmed += 1
             val, hits = _clean_generic(stripped)
             if ci in npi_set:
+                _pre_npi = val
                 val, r = _clean_npi_cell(val); hits += r
+                if ("npi-scientific-notation" not in r and _pre_npi
+                        and _NPI_SCI_RE.match(_pre_npi.strip())):
+                    # Scientific notation whose mantissa lost digits — the
+                    # identifier is unrecoverable; flagged, never guessed.
+                    _cell_flags.add("npi-scientific-lossy")
             elif ci in money_set:
                 val, r = _clean_money_cell(val); hits += r
             elif ci in date_set:
@@ -2280,6 +2684,12 @@ def clean_bytes(
         # Snapshot for worklist row-capture AND per-payer quality: any rule
         # whose count rises during this row's checks fired on this row.
         _sanity_pre = dict(res.sanity)
+        # Row-shape and cell-cleaner flags (counted after the snapshot so
+        # they land in the worklists like every other row-level flag).
+        if _ragged_row:
+            res.sanity["ragged-row"] = res.sanity.get("ragged-row", 0) + 1
+        for _cf in _cell_flags:
+            res.sanity[_cf] = res.sanity.get(_cf, 0) + 1
         # Cross-field sanity flags (report-only) on the cleaned row.
         for f in _row_sanity_flags(new_row, allowed_i, billed_i, paid_i,
                                    units_i, high_units=_high_units):
@@ -2351,6 +2761,34 @@ def clean_bytes(
                              for ci in money_set):
             res.sanity["money-unparseable"] = \
                 res.sanity.get("money-unparseable", 0) + 1
+        # Date cell that survived cleaning but still isn't ISO-shaped —
+        # every chronology check on this row silently skipped it, so the
+        # user must be told (the date analogue of money-unparseable).
+        if date_set and any(ci < len(new_row)
+                            and _date_unparseable(new_row[ci])
+                            for ci in date_set):
+            res.sanity["date-unparseable"] = \
+                res.sanity.get("date-unparseable", 0) + 1
+        # Modifier cell still carrying a token that isn't a 2-char
+        # alphanumeric modifier — kept in the output (never discarded),
+        # flagged here.
+        if mod_set and any(ci < len(new_row) and new_row[ci]
+                           and _modifier_malformed(new_row[ci])
+                           for ci in mod_set):
+            res.sanity["modifier-malformed"] = \
+                res.sanity.get("modifier-malformed", 0) + 1
+        # A DRG on a professional-shaped row (POS populated, no Type of
+        # Bill) is structurally wrong — DRGs price institutional stays.
+        if drg_set and pos_set:
+            _drg_val = any(ci < len(new_row) and new_row[ci].strip()
+                           for ci in drg_set)
+            _pos_val = any(ci < len(new_row) and new_row[ci].strip()
+                           for ci in pos_set)
+            _tob_val = (tob_i is not None and tob_i < len(new_row)
+                        and new_row[tob_i].strip())
+            if _drg_val and _pos_val and not _tob_val:
+                res.sanity["drg-on-professional"] = \
+                    res.sanity.get("drg-on-professional", 0) + 1
         # Value-domain validity: sex not M/F/U, taxonomy not 10-char alnum.
         if sex_set and any(ci < len(new_row) and _sex_invalid(new_row[ci])
                            for ci in sex_set):
@@ -2406,8 +2844,9 @@ def clean_bytes(
         if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
             _cparts = [p for p in re.split(r"[,;|\s]+",
                                            new_row[carc_i].strip().upper()) if p]
-            if _cparts and any(_CARC_VALID_RE.match(p) is None
-                               for p in _cparts):
+            if _cparts and any(
+                    _CARC_VALID_RE.match(_CARC_GROUP_RE.sub("", p)) is None
+                    for p in _cparts):
                 res.sanity["carc-invalid"] = \
                     res.sanity.get("carc-invalid", 0) + 1
         # Institutional-claim domains (UB-04): Type of Bill, discharge
@@ -2628,13 +3067,27 @@ def clean_bytes(
         # exact repeats ARE kept near-duplicates worth surfacing. Stored
         # as a hash — it's only a membership probe for a counter, and
         # keeping folded copies of every row doubled peak memory at scale.
-        _fold_h = hash(tuple(" ".join(c.split()).casefold()
-                             for c in new_row))
-        if _fold_h in _seen_fold:
-            res.sanity["near-duplicate-row"] = \
-                res.sanity.get("near-duplicate-row", 0) + 1
+        # Streaming runs inject a SHARED digest set (mirroring
+        # _stream_seen) so folded twins die across chunk boundaries too.
+        if _stream_fold_seen is not None:
+            _fk = int.from_bytes(
+                hashlib.blake2b(
+                    "\x1f".join(" ".join(c.split()).casefold()
+                                for c in new_row).encode("utf-8"),
+                    digest_size=12).digest(), "big")
+            if _fk in _stream_fold_seen:
+                res.sanity["near-duplicate-row"] = \
+                    res.sanity.get("near-duplicate-row", 0) + 1
+            elif len(_stream_fold_seen) < _STREAM_SEEN_CAP:
+                _stream_fold_seen.add(_fk)
         else:
-            _seen_fold.add(_fold_h)
+            _fold_h = hash(tuple(" ".join(c.split()).casefold()
+                                 for c in new_row))
+            if _fold_h in _seen_fold:
+                res.sanity["near-duplicate-row"] = \
+                    res.sanity.get("near-duplicate-row", 0) + 1
+            else:
+                _seen_fold.add(_fold_h)
         # Kept-row accumulators for payer clustering and charge outliers.
         # Taxonomy → specialty mix: count well-formed codes on kept rows
         # (capped distinct codes so a garbage column can't grow the dict).
@@ -2682,13 +3135,22 @@ def clean_bytes(
         if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
             for _cp in re.split(r"[,;|\s]+", new_row[carc_i].strip().upper()):
                 if _cp:
-                    _carc_counts[_cp] = _carc_counts.get(_cp, 0) + 1
+                    # Tally by the BARE code so "CO-45" and "45" merge into
+                    # one denial reason (and hit the playbook); the raw
+                    # spelling is kept as a display variant.
+                    _cn = _CARC_GROUP_RE.sub("", _cp)
+                    _carc_counts[_cn] = _carc_counts.get(_cn, 0) + 1
+                    if _cn != _cp:
+                        _carc_variants.setdefault(_cn, set()).add(_cp)
         if (_charge_i is not None and hcpcs_i is not None
                 and _charge_i < len(new_row) and hcpcs_i < len(new_row)):
             _amt = _to_number(new_row[_charge_i])
             _code = new_row[hcpcs_i]
             if _amt is not None and _code:
-                _code_charges.setdefault(_code, []).append(_amt)
+                # (amount, 1-based output row) — the row index feeds the
+                # charge-outlier worklist so flagged rows are downloadable.
+                _code_charges.setdefault(_code, []).append(
+                    (_amt, len(cleaned) + 1))
         cleaned.append(new_row)
         # Rules that fired on this row → worklist row indices and the
         # per-payer quality split ("which payer's feed is dirtiest").
@@ -2734,40 +3196,64 @@ def clean_bytes(
             "values you asked to remove.")
     res.n_rows_out = len(cleaned)
 
+    # Ragged-row visibility: the pads/trims above, surfaced as structure
+    # counts (and a warning when data was actually DROPPED). The sanity
+    # counter/worklist already carry the per-row detail.
+    if _ragged_padded or _ragged_truncated:
+        res.structure["ragged_rows"] = {"padded": _ragged_padded,
+                                        "truncated": _ragged_truncated}
+        if _ragged_truncated:
+            res.warnings.append(
+                f"{_ragged_truncated:,} row(s) carried MORE cells than the "
+                "header — the overflow cells were dropped (see the "
+                "ragged-row worklist). Unquoted delimiters inside a text "
+                "field are the usual cause; fix the export's quoting.")
+
     # Suspected duplicate CLAIMS — distinct rows (already past exact-row dedup)
     # that share the same billing provider · patient · date-of-service ·
     # procedure · amount. This is the double-billing signal exact dedup misses;
-    # reported, never auto-removed (a repeat key can be legitimate).
+    # reported, never auto-removed (a repeat key can be legitimate). BOTH
+    # members of each colliding key land in the worklist — the count stays
+    # "extra rows" while the download shows the full collision.
     _dup_key_idx = [i for i in (billing_idx, patient_i, dos_i, hcpcs_i,
                                 units_i, allowed_i) if i is not None]
     _has_when = dos_i is not None
     _has_who = billing_idx is not None or patient_i is not None
     _has_what = hcpcs_i is not None
     if _has_when and _has_who and _has_what and len(_dup_key_idx) >= 3:
-        _seen_keys: set = set()
+        _first_row: Dict[str, int] = {}
         _dup = 0
-        for r in cleaned:
+        _dup_rows: set = set()
+        for _rn, r in enumerate(cleaned, 1):
             parts = [r[i] for i in _dup_key_idx if i < len(r)]
             if all(p == "" for p in parts):
                 continue
             k = "||".join(parts)
-            if k in _seen_keys:
+            _f = _first_row.get(k)
+            if _f is not None:
                 _dup += 1
+                if len(_dup_rows) < _WORKLIST_CAP:
+                    _dup_rows.add(_f)
+                    _dup_rows.add(_rn)
             else:
-                _seen_keys.add(k)
+                _first_row[k] = _rn
         if _dup:
             res.sanity["suspected-duplicate-claim"] = _dup
+            res.flag_rows["suspected-duplicate-claim"] = \
+                sorted(_dup_rows)[:_WORKLIST_CAP]
 
     # Conflicting-amount claims: the SAME who·when·what key billed at TWO OR
     # MORE different amounts. Disjoint from suspected-duplicate-claim (which
     # keys on the amount too) — this is the corrected-claim / re-bill signal.
+    # Every row of a conflicted key (bounded per key) lands in the worklist.
     _amt_key_idx = [i for i in (billing_idx, patient_i, dos_i, hcpcs_i)
                     if i is not None]
     if (_has_when and _has_who and _has_what and len(_amt_key_idx) >= 3
             and _charge_i is not None):
         _key_amts: Dict[str, set] = {}
         _key_n: Dict[str, int] = {}
-        for r in cleaned:
+        _key_rows: Dict[str, List[int]] = {}
+        for _rn, r in enumerate(cleaned, 1):
             parts = [r[i] for i in _amt_key_idx if i < len(r)]
             if all(p == "" for p in parts):
                 continue
@@ -2777,10 +3263,52 @@ def clean_bytes(
             k = "||".join(parts)
             _key_amts.setdefault(k, set()).add(round(_amt, 2))
             _key_n[k] = _key_n.get(k, 0) + 1
+            _kr = _key_rows.setdefault(k, [])
+            if len(_kr) < 200:            # bounded per key
+                _kr.append(_rn)
         _conf = sum(_key_n[k] - 1 for k, amts in _key_amts.items()
                     if len(amts) > 1)
         if _conf:
             res.sanity["conflicting-amount-claim"] = _conf
+            _conf_rows: set = set()
+            for k, amts in _key_amts.items():
+                if len(amts) > 1:
+                    _conf_rows.update(_key_rows.get(k, ()))
+                    if len(_conf_rows) >= _WORKLIST_CAP:
+                        break
+            res.flag_rows["conflicting-amount-claim"] = \
+                sorted(_conf_rows)[:_WORKLIST_CAP]
+
+    # NPI ↔ name conflict: the same billing NPI carrying materially
+    # different provider names across rows — a keying/identity error and
+    # the top cause of bad NPPES recovery input. Names are folded
+    # (uppercase, punctuation stripped, whitespace collapsed) so case and
+    # formatting variants never flag. Counted per extra row; bounded.
+    if billing_idx is not None and name_idx is not None and cleaned:
+        _npi_first_name: Dict[str, str] = {}
+        _nc_rows: List[int] = []
+        for _rn, r in enumerate(cleaned, 1):
+            if billing_idx >= len(r) or name_idx >= len(r):
+                continue
+            _npi_v = r[billing_idx]
+            _nm_v = r[name_idx]
+            if len(_npi_v) != 10 or not _npi_v.isdigit() or not _nm_v.strip():
+                continue
+            _nk = " ".join(re.sub(r"[^A-Z0-9 ]", " ",
+                                  _nm_v.upper()).split())
+            if not _nk:
+                continue
+            _fk2 = _npi_first_name.get(_npi_v)
+            if _fk2 is None:
+                if len(_npi_first_name) < 50_000:
+                    _npi_first_name[_npi_v] = _nk
+            elif _nk != _fk2:
+                if len(_nc_rows) < _WORKLIST_CAP:
+                    _nc_rows.append(_rn)
+                res.sanity["npi-name-conflict"] = \
+                    res.sanity.get("npi-name-conflict", 0) + 1
+        if _nc_rows:
+            res.flag_rows["npi-name-conflict"] = _nc_rows
 
     # Top denial / adjustment reasons (revenue-cycle visibility), enriched
     # with the playbook: category (preventable / process / contractual /
@@ -2792,6 +3320,11 @@ def clean_bytes(
         _top_entries = []
         for _c, _n in _top:
             _e: Dict[str, object] = {"code": _c, "count": _n}
+            _vs = _carc_variants.get(_c)
+            if _vs:
+                # Group-prefixed spellings seen in the file ("CO-45") —
+                # the code above is the bare CARC they normalized to.
+                _e["as_seen"] = sorted(_vs)[:4]
             _pb = _rd.carc_playbook(_c) if _rd is not None else None
             if _pb:
                 _e["category"] = _pb["category"]
@@ -2984,16 +3517,22 @@ def clean_bytes(
     # analysis page's box plot, so the two agree.
     _out_total = 0
     _out_detail: List[Dict[str, object]] = []
-    for _code, _vals in _code_charges.items():
-        if len(_vals) < 10:
+    _out_rows: List[int] = []
+    for _code, _pairs in _code_charges.items():
+        if len(_pairs) < 10:
             continue
-        _vals.sort()
+        _vals = sorted(a for a, _r in _pairs)
         _q1, _q3 = _quantile(_vals, 0.25), _quantile(_vals, 0.75)
         _iqr = _q3 - _q1
         if _iqr <= 0:
             continue
         _lo, _hi = (_q1 - _iqr_mult * _iqr, _q3 + _iqr_mult * _iqr)
-        _n_out = sum(1 for v in _vals if v < _lo or v > _hi)
+        _n_out = 0
+        for _a, _r in _pairs:
+            if _a < _lo or _a > _hi:
+                _n_out += 1
+                if len(_out_rows) < _WORKLIST_CAP:
+                    _out_rows.append(_r)
         if _n_out:
             _out_total += _n_out
             _out_detail.append({
@@ -3002,6 +3541,7 @@ def clean_bytes(
                 "max": round(_vals[-1], 2)})
     if _out_total:
         res.sanity["charge-outlier"] = _out_total
+        res.flag_rows["charge-outlier"] = sorted(_out_rows)[:_WORKLIST_CAP]
         _out_detail.sort(key=lambda d: -int(d["outliers"]))  # type: ignore[arg-type]
         res.outliers = _out_detail[:8]
 
@@ -3037,11 +3577,27 @@ def clean_bytes(
                 paid_i=paid_i, money_set=money_set, claimed=_claimed_cols)
             if _amount_i is not None and _amount_i != billed_i:
                 res.structure["population_amount_column"] = headers[_amount_i]
+            # Rendering/servicing/attending individual-NPI column, when one
+            # exists among the detected NPI columns: coding intensity is
+            # about who CODED the visit — the org-grain billing NPI washes
+            # hot coders out in group practices. analytics.build prefers
+            # rendering_i and labels provider_basis so renderers caption
+            # the grain honestly.
+            _rend_i = None
+            for _ni in sorted(npi_set):
+                if _ni == billing_idx or _ni >= len(headers):
+                    continue
+                _hh = re.sub(r"[^a-z0-9]", "", str(headers[_ni]).lower())
+                if any(k in _hh for k in ("rendering", "servicing",
+                                          "attending", "individualnpi")):
+                    _rend_i = _ni
+                    break
             res.population = _analytics.build(headers, cleaned, {
                 "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
                 "hcpcs_i": hcpcs_i, "billed_i": _amount_i, "dx_set": dx_set,
                 "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
                 "disch_i": disch_i, "billing_idx": billing_idx,
+                "rendering_i": _rend_i,
                 "readmit_window": _readmit_window,
             })
         except Exception:  # noqa: BLE001 — analytics never block cleaning
@@ -3067,6 +3623,10 @@ def clean_bytes(
         _blank_npi_pct = 0.0
     try:
         from . import connectors as _conn
+        # Static source metadata: rendered by the Live-connectors panel even
+        # on an offline run, so it is set unconditionally (it used to ride
+        # the enrich flag, leaving the panel empty on plain runs).
+        res.catalog = _conn.catalog()
         res.connector_plan = _conn.plan({
             "has_npi": bool(npi_idx),
             "has_billing": billing_idx is not None,
@@ -3082,6 +3642,24 @@ def clean_bytes(
     except Exception:  # noqa: BLE001 — planning never blocks cleaning
         res.connector_plan = None
 
+    # Billed dollars per billing NPI (digits-keyed): lets the bounded online
+    # screens spend their per-run caps on the HIGHEST-dollar providers
+    # (NPPES verify) and lets the LEIE screen report billed-dollar exposure
+    # behind an exclusion match, not just a count. Billed wins over allowed —
+    # exposure is what was billed through the NPI.
+    _npi_dollars: Dict[str, float] = {}
+    if (enrich or deep) and billing_idx is not None:
+        _amt_i2 = billed_i if billed_i is not None else allowed_i
+        if _amt_i2 is not None:
+            for _drow in cleaned:
+                if billing_idx < len(_drow) and _amt_i2 < len(_drow):
+                    _dk = _digits(_drow[billing_idx])
+                    if len(_dk) == 10:
+                        _dv = _to_number(_drow[_amt_i2])
+                        if _dv is not None:
+                            _npi_dollars[_dk] = (_npi_dollars.get(_dk, 0.0)
+                                                 + _dv)
+
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
     # offline results stand.
@@ -3091,7 +3669,8 @@ def clean_bytes(
             _taxo_idx = min(taxo_set) if taxo_set else None
             res.nppes, res.recovered_rows, _nppes_fills = _enrich_via_nppes(
                 cleaned, npi_idx, billing_idx, name_idx, state_idx,
-                taxo_idx=_taxo_idx, headers=headers)
+                taxo_idx=_taxo_idx, headers=headers,
+                weights=_npi_dollars or None)
             # Record the blanks NPPES filled: audited in the change log,
             # counted as repairs, credited to completeness. Bounded (≤ the
             # verify NPI cap), so appending to the preview list is safe.
@@ -3108,7 +3687,6 @@ def clean_bytes(
         cb("Resolving drugs via RxNorm / openFDA", 0.68)
         try:
             from . import connectors
-            res.catalog = connectors.catalog()
             ndcs = ([row[ndc_idx] for row in cleaned
                      if ndc_idx is not None and ndc_idx < len(row)]
                     if ndc_idx is not None else [])
@@ -3141,20 +3719,6 @@ def clean_bytes(
         except Exception as exc:  # noqa: BLE001
             res.connectors = [{"id": "error",
                                "note": f"{type(exc).__name__}: {exc}"}]
-        # Compliance — OIG LEIE (offline) + Medicare PECOS (networked, bounded).
-        cb("Screening billing NPIs (OIG LEIE · PECOS)", 0.74)
-        try:
-            from . import compliance
-            billing = ([row[billing_idx] for row in cleaned
-                        if billing_idx is not None and billing_idx < len(row)]
-                       if billing_idx is not None else [])
-            # LEIE is offline (always in online mode); the networked PECOS
-            # screen rides the deep flag so a plain online run stays fast.
-            res.compliance = (compliance.screen(billing, run_cms=deep)
-                              if billing else [])
-        except Exception as exc:  # noqa: BLE001
-            res.compliance = [{"id": "error",
-                               "note": f"{type(exc).__name__}: {exc}"}]
         # Ordering / referring provider eligibility — verify those NPIs are
         # active in NPPES (a deactivated ordering/referring provider is a
         # frequent, avoidable denial). Bounded + guarded like the rest.
@@ -3179,6 +3743,45 @@ def clean_bytes(
                 }
             except Exception as exc:  # noqa: BLE001
                 res.order_referring = {"error": f"{type(exc).__name__}: {exc}"}
+
+    # Compliance — OIG LEIE (offline) + Medicare PECOS (networked, bounded).
+    # Deliberately OUTSIDE the enrich block: deep implies online consent and
+    # the LEIE half needs no network at all, so a deep-without-enrich run
+    # must not silently drop the exclusions screen (it used to leave
+    # res.compliance None). PECOS still rides the deep flag inside screen().
+    if enrich or deep:
+        cb("Screening billing NPIs (OIG LEIE · PECOS)", 0.74)
+        try:
+            from . import compliance
+            billing = ([row[billing_idx] for row in cleaned
+                        if billing_idx is not None and billing_idx < len(row)]
+                       if billing_idx is not None else [])
+            res.compliance = (compliance.screen(
+                billing, run_cms=deep,
+                dollars_by_npi=_npi_dollars or None)
+                if billing else [])
+        except Exception as exc:  # noqa: BLE001
+            res.compliance = [{"id": "error",
+                               "note": f"{type(exc).__name__}: {exc}"}]
+        # A stale installed LEIE pack silently weakens the screen it just
+        # ran — say so on the run itself, not only in the packs panel. Env
+        # CSV deployments manage their own freshness, so only the pack path
+        # warns. Guarded: freshness reporting must never fail a run.
+        try:
+            import os as _os
+            if not _os.environ.get("RCM_MC_LEIE_CSV"):
+                from . import refdata_packs as _rpk
+                _lst = next((p for p in _rpk.status()
+                             if p.get("id") == "leie"), None)
+                if _lst and _lst.get("installed") and _lst.get("stale"):
+                    res.warnings.append(
+                        "Compliance: the installed LEIE reference pack is "
+                        f"{_lst.get('age_days', '?')} days old (refresh "
+                        f"cadence {_lst.get('cadence_days', '?')} days) — "
+                        "exclusion screening may miss recent OIG actions. "
+                        "Refresh the leie pack.")
+        except Exception:  # noqa: BLE001
+            pass
 
     # Real vendored-engine pass: run the actual v48 field_validators +
     # consistency + dedup screens when pandas and the modules are available.
@@ -3264,7 +3867,9 @@ def _autofile_gaps(res: "CleanResult") -> None:
     per completed run, beside history recording."""
     try:
         gaps: List[Dict[str, str]] = []
-        if not res.npi_columns:
+        # Headers must exist for "no NPI column" to be meaningful — an X12
+        # ack or empty file has no columns to detect anything in.
+        if res.headers and not res.npi_columns:
             gaps.append({
                 "category": "field",
                 "title": "Detector found no NPI column in an upload",
@@ -3287,6 +3892,109 @@ def _autofile_gaps(res: "CleanResult") -> None:
                         "details": f"{label} codes are failing the installed "
                                    "reference set at a high rate; refreshing "
                                    "the pack may resolve it."})
+        # Signals the survey found completing runs WITHOUT leaving a trace
+        # on the backlog: header hints an NPI sniff had to rescue, ragged
+        # files, unparseable date formats, headerless/X12-mismatch shapes,
+        # zip members skipped. Titles are generic (dedupe-by-title, no PHI
+        # or filenames); headers are metadata and ride in the details.
+        _sniffed = res.structure.get("npi_sniffed_columns") or []
+        if _sniffed:
+            gaps.append({
+                "category": "field",
+                "title": "NPI column detected by value under a non-NPI "
+                         "header",
+                "details": "The value sniff adopted column(s) the header "
+                           "hints missed: "
+                           + ", ".join(str(s) for s in _sniffed[:5])
+                           + ". Consider extending the NPI header hints."})
+        rows_in = res.n_rows_in or 0
+        _rr = res.structure.get("ragged_rows") or {}
+        _rr_n = int(_rr.get("padded") or 0) + int(_rr.get("truncated") or 0)
+        if rows_in >= 100 and _rr_n and _rr_n / rows_in >= 0.05:
+            gaps.append({
+                "category": "format",
+                "title": "High ragged-row rate on an upload",
+                "details": "Many rows had a different cell count than the "
+                           "header — a delimiter/quoting defect in the "
+                           "source export. A smarter re-alignment repair "
+                           "may be worth building."})
+        _du = int(res.sanity.get("date-unparseable") or 0)
+        if rows_out >= 200 and _du and _du / rows_out >= 0.05:
+            gaps.append({
+                "category": "format",
+                "title": "High date-unparseable rate — an unrecognized "
+                         "date format",
+                "details": "Date cells failed every parser (ISO, US, "
+                           "Excel serial, CCYYMMDD) at a high rate; the "
+                           "source may use a format worth adding."})
+        _wblob = " ".join(res.warnings)
+        if "no 837 claim" in _wblob:
+            gaps.append({
+                "category": "format",
+                "title": "X12 upload carried no 837/835 claims",
+                "details": "An X12 interchange without CLM/CLP segments "
+                           "was uploaded (999/270/276 …). Support for "
+                           "more transaction sets may be wanted."})
+        if "no header row" in _wblob:
+            gaps.append({
+                "category": "format",
+                "title": "Headerless file cleaned with synthesized "
+                         "column names",
+                "details": "A file with no header row was cleaned as "
+                           "column_1..N. A saved mapping template for "
+                           "this source would restore role detection."})
+        _bs = res.structure.get("batch_skipped") or {}
+        if _bs:
+            gaps.append({
+                "category": "format",
+                "title": "Zip batch members were skipped",
+                "details": f"{_bs.get('unsupported', 0)} unsupported-format "
+                           f"member(s) and {_bs.get('over_cap', 0)} over "
+                           "the batch cap were not cleaned. Batch-format "
+                           "support / a bigger cap may be wanted."})
+        # Integration gaps — online/reference screens that could not do
+        # their job on THIS run. Missing data and missing egress should
+        # land on the backlog exactly like missing parsers do.
+        for _cmp in (res.compliance or []):
+            if (isinstance(_cmp, dict) and _cmp.get("id") == "oig_leie"
+                    and _cmp.get("available") is False):
+                gaps.append({
+                    "category": "integration",
+                    "title": "LEIE exclusion screen ran without data",
+                    "details": "Billing NPIs went through the compliance "
+                               "screen but no LEIE dataset is loaded — "
+                               "install the leie reference pack (or set "
+                               "RCM_MC_LEIE_CSV) so exclusions actually "
+                               "screen."})
+                break
+        _derr = (str(res.deep.get("error") or "").lower()
+                 if isinstance(res.deep, dict) else "")
+        if "timed out" in _derr or "could not reach" in _derr:
+            gaps.append({
+                "category": "integration",
+                "title": "Deep recovery timed out — likely no egress",
+                "details": "The networked deep pipeline hit its preflight/"
+                           "watchdog limit. If this deployment has no "
+                           "outbound network, deep mode needs an offline "
+                           "story (or should say so up front)."})
+        if any("could not reach" in str(_cn.get("note") or "").lower()
+               for _cn in (res.connectors or []) if isinstance(_cn, dict)):
+            gaps.append({
+                "category": "integration",
+                "title": "Drug connectors unreachable on an enrich run",
+                "details": "RxNorm/openFDA lookups failed as a transport "
+                           "error. If this deployment is offline, a "
+                           "vendored drug reference pack would cover the "
+                           "same checks without egress."})
+        for _pr in (res.connector_plan or []):
+            if (isinstance(_pr, dict)
+                    and str(_pr.get("id") or "").startswith("pack_")
+                    and _pr.get("applies")
+                    and _pr.get("state") == "needs_data"):
+                gaps.append({
+                    "category": "integration",
+                    "title": f"{_pr.get('name')} needed but not installed",
+                    "details": str(_pr.get("reason") or "")})
         if not gaps:
             return
         from . import wishlist as _wishlist
@@ -3297,14 +4005,17 @@ def _autofile_gaps(res: "CleanResult") -> None:
 
 
 def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
-                 cb) -> "CleanResult":
+                 cb, skip_info: Optional[Dict[str, object]] = None
+                 ) -> "CleanResult":
     """Clean every member of a zip batch and merge into one parent result.
 
     Each file runs through the full single-file pipeline (its own history
     record included); the parent carries summed counters so the report
     card blends all rows, plus per-file grades in ``batch``. Online modes
     (enrich/deep) are deliberately off in batch — one upload must not fan
-    out into N network sweeps.
+    out into N network sweeps. ``skip_info`` (from zip_batch_members_ex)
+    names the members that were NOT cleaned so the banner never implies
+    full coverage of a partially-processed archive.
     """
     import zipfile as _zf
     res = CleanResult(delimiter="zip", headers=[])
@@ -3341,6 +4052,30 @@ def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
             for _dc in sub.deid_columns:
                 if _dc not in res.deid_columns:
                     res.deid_columns.append(_dc)
+    # Skipped members surface BEFORE the banner: a mixed archive must never
+    # imply full coverage. Unsupported formats are named (capped); the
+    # member cap is stated with the count over it.
+    _skips: List[str] = []
+    _si = skip_info or {}
+    _uns = list(_si.get("skipped_unsupported") or [])
+    _over = int(_si.get("over_cap") or 0)
+    if _uns:
+        _named = ", ".join(str(u) for u in _uns[:8])
+        if len(_uns) > 8:
+            _named += f", … ({len(_uns) - 8} more)"
+        _skips.append(f"{len(_uns)} member(s) in an unsupported format "
+                      f"were not cleaned: {_named} — export those as CSV "
+                      "and re-upload.")
+    if _over:
+        _skips.append(f"{_over} member(s) over the "
+                      f"{_si.get('cap', _BATCH_MEMBER_CAP)}-file batch cap "
+                      "were not cleaned — split the archive and upload "
+                      "the rest separately.")
+    if _uns or _over:
+        res.structure["batch_skipped"] = {"unsupported": len(_uns),
+                                          "over_cap": _over}
+    for _sk in reversed(_skips):
+        res.warnings.insert(0, _sk)
     res.warnings.insert(0, (
         f"Batch mode: {n} file(s) cleaned from the zip — per-file grades "
         "on the Quality tab; the download is a zip of the cleaned files. "
@@ -3435,8 +4170,13 @@ def _apply_drug_fills(cleaned, headers, drug_idx, ndc_idx, hcpcs_i, concepts):
 
 
 def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
-                      taxo_idx=None, headers=None):
+                      taxo_idx=None, headers=None, weights=None):
     """Run NPPES verify + recover over the cleaned rows via nppes_bridge.
+
+    ``weights`` (optional, NPI digits → summed billed dollars) makes the
+    bridge spend its bounded verify cap on the highest-dollar NPIs instead
+    of first-seen order — on multi-thousand-provider extracts the cap
+    covers <1% of NPIs and first-seen made that 1% arbitrary.
 
     Returns ``(payload, recovered_rows, fills)`` where ``fills`` is a list
     of ``(row_1based, column_header, before, after, rule)`` — blank
@@ -3458,7 +4198,7 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
         for i in npi_idx:
             if i < len(row):
                 all_npis.append(row[i])
-    verify = nppes_bridge.verify_npis(all_npis)
+    verify = nppes_bridge.verify_npis(all_npis, weights=weights)
 
     # Fill blank name / state / taxonomy from the verified billing NPI's
     # canonical record. Bounded by verify's distinct-NPI cap (≤40) and

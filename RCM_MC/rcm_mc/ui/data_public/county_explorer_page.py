@@ -132,6 +132,51 @@ def _county_kpi_strip(rows, footer, name) -> str:
     return strip + '</div>'
 
 
+def _county_insights(rows, footer, name) -> str:
+    """P13 takeaway bullets — recomputed from the SAME rows + weighted
+    footer the table and its tfoot render from (never a second data
+    path), each behind a significance guard so trivia is suppressed
+    (a 0.4pp tail over the state mean is not a "read"). Needs ≥8
+    counties with data before any distributional claim; returns ''
+    when nothing passes — silence over noise, no empty section shell."""
+    from rcm_mc.ui._chartis_kit import ck_insight_bullets
+    cands = []
+    esc_name = _html.escape(str(name))
+    total_pop = footer.get("population") or 0
+    pop_rows = [r for r in rows if r.get("population")]
+    if len(pop_rows) >= 8 and total_pop:
+        top = max(pop_rows, key=lambda r: r["population"])
+        share = top["population"] / total_pop
+        cands.append((
+            f"<strong>{_html.escape(str(top['name']))}</strong> alone holds "
+            f"{share*100:.1f}% of {esc_name}'s {_fmt_pop(total_pop)} residents "
+            f"({_fmt_pop(top['population'])}) — metro-first entry math for "
+            f"any statewide build-out.",
+            share >= 0.20))
+    aged = [(r["name"], r["pct_age_65_plus"]) for r in rows
+            if r.get("pct_age_65_plus") is not None]
+    mean_aged = footer.get("pct_age_65_plus")
+    if len(aged) >= 8 and mean_aged is not None:
+        top = max(aged, key=lambda x: x[1])
+        cands.append((
+            f"Oldest county: <strong>{_html.escape(str(top[0]))}</strong> at "
+            f"{top[1]*100:.1f}% 65+ vs the {mean_aged*100:.1f}% state weighted "
+            f"mean across {len(aged)} counties — the senior-demand tail for "
+            f"Medicare-heavy theses.",
+            (top[1] - mean_aged) >= 0.03))
+    unins = [(r["name"], r["uninsured_rate"]) for r in rows
+             if r.get("uninsured_rate") is not None]
+    mean_un = footer.get("uninsured_rate")
+    if len(unins) >= 8 and mean_un is not None:
+        hi = max(unins, key=lambda x: x[1])
+        cands.append((
+            f"Highest uninsured: <strong>{_html.escape(str(hi[0]))}</strong> "
+            f"at {hi[1]*100:.1f}% vs the {mean_un*100:.1f}% state weighted "
+            f"mean — the bad-debt screen for safety-net-exposed targets.",
+            (hi[1] - mean_un) >= 0.03))
+    return ck_insight_bullets(cands, title=f"{name} counties — the read")
+
+
 def _county_top_bar(key: str, rows, footer, n: int = 12) -> str:
     """Top-N counties on one metric as a horizontal ranked bar, with the
     state population-weighted mean as a dashed reference. '' when no data."""
@@ -276,6 +321,7 @@ def render_county_explorer(params: Dict = None) -> str:
 <div class="ck-page-wrap">
   {ck_page_title(f"County Explorer — {name}", eyebrow="MARKET INTEL", meta=f"{len(rows)} {name} counties on real Census/ACS demographics — click a column to sort")}
   {_county_kpi_strip(rows, footer, name)}
+  {_county_insights(rows, footer, name)}
   <p style="font-size:13px;color:{td};max-width:74ch;margin:0 0 14px">
     Drill into {_html.escape(name)}'s counties on real public demographics
     (County Health Rankings / Census ACS). Click any column to re-sort. The

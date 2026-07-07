@@ -167,6 +167,55 @@ class CdcDataStore:
             self.conn.executemany(sql, params)
         return len(params)
 
+    def replace_slice(self, table: str, dataset_key: str,
+                      rows: Sequence[Dict[str, Any]], *,
+                      slice_sig: str = "") -> int:
+        """Atomically replace ONE dataset's slice of a shared generic table.
+
+        A re-fetch that returns fewer rows than the previous pull would,
+        under plain upserts, strand the earlier pull's trailing
+        ``row_idx`` rows — served intermixed with fresh rows and counted
+        by every surface, with nothing flagging the mixed vintages. One
+        transaction deletes exactly the slice being re-pulled and writes
+        the fresh rows (mirroring ``oig_leie``'s replace-in-transaction
+        semantics), so a reader never observes a half-replaced slice.
+
+        Slice targeting matches the normalizer's key grammar: unfiltered
+        pulls key ``{dataset_key}:{row_idx}`` (one colon segment) and
+        filtered pulls ``{dataset_key}:{slice_sig}:{row_idx}`` — dataset
+        keys are slugs/UUIDs (never contain ``:``) and signatures are
+        fixed-length hex, so the LIKE shapes below classify exactly.
+        Only meaningful for the generic ``*_rows`` table.
+        """
+        tdef = TABLES[table]
+        for needed in ("row_key", "dataset_key", "row_idx"):
+            if needed not in tdef.columns:
+                raise ValueError(
+                    f"replace_slice targets generic row tables; {table!r} "
+                    f"has no {needed!r} column")
+        sql = tdef.upsert_sql()
+        now = _utc_now()
+        params: List[Tuple[Any, ...]] = []
+        for r in rows:
+            r = dict(r)
+            r.setdefault("ingested_at", now)
+            params.append(tuple(_coerce(r.get(c)) for c in tdef.columns))
+        with self.conn:  # implicit BEGIN/COMMIT, atomic
+            if slice_sig:
+                self.conn.execute(
+                    f"DELETE FROM {tdef.name} WHERE dataset_key = ? "
+                    f"AND row_key LIKE ? || ':' || ? || ':%'",
+                    (dataset_key, dataset_key, slice_sig))
+            else:
+                self.conn.execute(
+                    f"DELETE FROM {tdef.name} WHERE dataset_key = ? "
+                    f"AND row_key LIKE ? || ':%' "
+                    f"AND row_key NOT LIKE ? || ':%:%'",
+                    (dataset_key, dataset_key, dataset_key))
+            if params:
+                self.conn.executemany(sql, params)
+        return len(params)
+
     def count(self, table: str, where: str = "", args: Sequence[Any] = ()) -> int:
         sql = f"SELECT COUNT(*) AS n FROM {table}"
         if where:

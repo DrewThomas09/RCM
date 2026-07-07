@@ -90,6 +90,7 @@ from .cms_api_client import (
 )
 from .market_concentration import (
     market_concentration_summary,
+    competitor_concentration_summary,
     provider_geo_dependency,
     state_volatility_summary,
     state_growth_summary,
@@ -410,6 +411,7 @@ __all__ = [
     "COLUMN_ALIASES",
     "DATASET_IDS",
     "market_concentration_summary",
+    "competitor_concentration_summary",
     "provider_geo_dependency",
     "state_volatility_summary",
     "state_growth_summary",

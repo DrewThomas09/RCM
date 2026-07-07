@@ -42,6 +42,23 @@ from .power_ui import (
     bookmark_hint, deal_context_bar, export_json_panel,
     interpret_callout, provenance, sortable_table,
 )
+from ._glossary_link import metric_label_link
+
+# Benchmark-grid metric label → /metric-glossary anchor (backlog #35
+# part 2; the predictive screener's headers got the same treatment in
+# W2-218). The X-Ray engine's spec.attr names differ from the
+# glossary's canonical keys for five metrics — this alias table
+# bridges them. Attrs with no glossary card (beds, the per-patient-day
+# unit costs, contractual allowance rate, net income margin) fall
+# through metric_label_link's guard and render as plain escaped text,
+# so a dead anchor can never ship from this grid.
+_XRAY_ATTR_TO_GLOSSARY_KEY = {
+    "other_day_pct": "commercial_pct",
+    "payer_diversity_index": "payer_diversity",
+    "net_revenue_per_bed": "revenue_per_bed",
+    "opex_per_bed": "expense_per_bed",
+    "operating_margin_on_npr": "operating_margin",
+}
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -661,7 +678,8 @@ def _metric_row(
     return (
         f'<div class="hx-metric-row">'
         f'<div>'
-        f'<div class="hx-metric-name">{html.escape(bm.spec.label)}</div>'
+        f'<div class="hx-metric-name">'
+        f'{metric_label_link(bm.spec.label, bm.spec.attr, alias=_XRAY_ATTR_TO_GLOSSARY_KEY)}</div>'
         f'<div class="hx-metric-help">{html.escape(bm.spec.unit_help)}</div>'
         f'</div>'
         f'<div class="hx-metric-val">'

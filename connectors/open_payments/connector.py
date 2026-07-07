@@ -40,7 +40,8 @@ from typing import Any, Dict, List, Optional
 
 from .endpoints import (DATASTORE_PATH_TEMPLATE, ENDPOINTS, EndpointSpec,
                         get_endpoint)
-from .normalize import NormalizeResult, normalize, normalize_generic
+from .normalize import (NormalizeResult, normalize, normalize_generic,
+                        slice_signature)
 from .transport import Opener, OpenPaymentsTransport
 
 # Server-verified page ceiling: the datastore 400s on limit > 500.
@@ -186,6 +187,7 @@ class OpenPaymentsConnector:
         ``dataset_key``. Mirrors how the estate CLIs drive ingest.
         """
         spec = get_endpoint(key)
+        replace_ctx = None
         if spec.kind == "generic":
             if not dataset_key:
                 raise ValueError("refresh('fetched_rows', ...) needs "
@@ -201,6 +203,12 @@ class OpenPaymentsConnector:
             norm = normalize_generic(dataset_key, result.rows,
                                      row_offset=result.start_offset,
                                      slice_params=dict(filters or {}))
+            if result.start_offset == 0 and not result.truncated:
+                # Complete pull from offset 0 → replace the slice
+                # atomically (see replace_slice) instead of stranding
+                # stale trailing row_idx rows from a larger earlier pull.
+                replace_ctx = (dataset_key,
+                               slice_signature(dict(filters or {})))
         elif spec.kind == "catalog":
             rows = self.discover(opener=opener)
             norm = NormalizeResult(rows={spec.target_table: rows})
@@ -212,7 +220,12 @@ class OpenPaymentsConnector:
             norm = normalize(spec, result.rows)
         upserted = 0
         for table, table_rows in norm.rows.items():
-            upserted += store.upsert(table, table_rows)
+            if replace_ctx is not None:
+                upserted += store.replace_slice(
+                    table, replace_ctx[0], table_rows,
+                    slice_sig=replace_ctx[1])
+            else:
+                upserted += store.upsert(table, table_rows)
         return {
             "dataset_id": spec.dataset_id,
             "endpoint": result.endpoint,
@@ -222,6 +235,7 @@ class OpenPaymentsConnector:
             "pages": result.pages,
             "total": result.total,
             "truncated": result.truncated,
+            "replaced": replace_ctx is not None,
             "unmapped": dict(norm.unmapped),
         }
 

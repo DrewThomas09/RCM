@@ -281,6 +281,141 @@ def _library_section(section: Dict[str, Any]) -> str:
     )
 
 
+def _provenance_coverage_section() -> str:
+    """Live provenance-coverage appendix (BACKLOG #32 / P10).
+
+    The methodology hub is "where the platform shows its work" — this
+    section applies that standard to the platform itself: what share
+    of ck_kpi_block stat blocks let a partner trace the number to its
+    origin (help-tooltip, ck_provenance_tooltip, ck_source_link, or an
+    inline Source:/basis: note). The numbers come from the SAME scan
+    function the tests reproduce (rcm_mc/ui/_provenance_coverage.py),
+    never from a hand-maintained constant that would drift.
+    """
+    # Local import + never-raise guard: the appendix must not be able
+    # to take /methodology down (same defensiveness as ck_source_link's
+    # unknown-label fall-through).
+    try:
+        from ._provenance_coverage import cached_coverage_report
+        report = cached_coverage_report()
+    except Exception:
+        return ""
+    if not report.pages:
+        return ""
+
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="grid-template-columns:'
+        'repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+        + ck_kpi_block(
+            "KPI Call Sites", ck_fmt_num(report.total_sites),
+            f"across {ck_fmt_num(len(report.pages))} page renderers",
+            help={
+                "definition": (
+                    "Every ck_kpi_block(...) call found by a static "
+                    "scan of the rcm_mc/ui/ source tree — the "
+                    "platform's entire KPI stat-block surface, "
+                    "multi-line calls included."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "With Provenance", ck_fmt_num(report.with_provenance),
+            "tooltip · source link · basis note",
+            help={
+                "definition": (
+                    "Call sites whose arguments carry a provenance "
+                    "affordance: a help= definition/citation gloss, a "
+                    "ck_provenance_tooltip or ck_source_link wrap "
+                    "(directly or via a local variable one assignment "
+                    "away), or an inline “Source:” / "
+                    "“basis:” note."
+                ),
+            },
+        )
+        + ck_kpi_block(
+            "Coverage", f"{report.pct:.1f}%",
+            "of KPI blocks trace their origin",
+            help={
+                "definition": (
+                    "With-provenance ÷ call sites. Computed live "
+                    "at first render by "
+                    "rcm_mc/ui/_provenance_coverage.py and reproduced "
+                    "by tests/test_provenance_coverage.py — never a "
+                    "hand-maintained number."
+                ),
+            },
+        )
+        + "</div>"
+    )
+
+    # Worst-first, then busiest-first — the table exists to drive
+    # sourcing work toward the pages with the most untraceable KPIs
+    # (same rationale as ck_gap_count).
+    rows = sorted(
+        report.pages,
+        key=lambda p: (p.pct, -p.total_sites, p.page),
+    )
+    row_html = ""
+    for p in rows:
+        pct_style = (
+            "color:var(--coral,#b04a3a);" if p.with_provenance == 0 else ""
+        )
+        row_html += (
+            "<tr>"
+            f'<td style="padding:5px 10px;border-bottom:1px solid '
+            f'var(--rule-soft,#eee5cf);font-family:var(--sc-mono,monospace);'
+            f'font-size:11.5px;">{html.escape(p.page)}</td>'
+            f'<td class="num" style="padding:5px 10px;text-align:right;'
+            f'border-bottom:1px solid var(--rule-soft,#eee5cf);">'
+            f"{p.total_sites}</td>"
+            f'<td class="num" style="padding:5px 10px;text-align:right;'
+            f'border-bottom:1px solid var(--rule-soft,#eee5cf);">'
+            f"{p.with_provenance}</td>"
+            f'<td class="num" style="padding:5px 10px;text-align:right;'
+            f'border-bottom:1px solid var(--rule-soft,#eee5cf);{pct_style}">'
+            f"{p.pct:.1f}%</td>"
+            "</tr>"
+        )
+    th = (
+        'style="padding:6px 10px;text-align:right;font:500 10px/1 '
+        "var(--sc-mono,monospace);letter-spacing:.12em;text-transform:"
+        'uppercase;color:var(--muted,#7a8595);border-bottom:1px solid '
+        'var(--rule,#c9bf9c);"'
+    )
+    table = (
+        '<div style="max-height:340px;overflow-y:auto;'
+        "background:var(--paper-card,#fefcf3);"
+        'border:1px solid var(--rule,#c9bf9c);">'
+        '<table style="width:100%;border-collapse:collapse;'
+        'font-size:12.5px;">'
+        "<thead><tr>"
+        f'<th {th.replace("text-align:right", "text-align:left")}>Page</th>'
+        f"<th {th}>Call sites</th>"
+        f"<th {th}>With provenance</th>"
+        f"<th {th}>Coverage</th>"
+        "</tr></thead>"
+        f"<tbody>{row_html}</tbody>"
+        "</table></div>"
+    )
+
+    return (
+        '<div id="provenance-coverage" style="margin-bottom:24px;">'
+        '<h2 class="cad-h1" style="font-size:16px;margin-bottom:12px;'
+        'display:flex;align-items:center;gap:8px;">'
+        "<span>&#9678;</span> Provenance Coverage</h2>"
+        '<p style="font-size:12.5px;line-height:1.65;max-width:72ch;'
+        'color:var(--ink-2,#2b3e54);margin:0 0 12px;">'
+        "A ck_kpi_block call site counts as covered when the number it "
+        "shows can be traced at the call: a help-tooltip definition, a "
+        "ck_provenance_tooltip or ck_source_link wrap, or an inline "
+        "“Source:” / “basis:” note. Static scan of "
+        "rcm_mc/ui/, recomputed each deploy — worst pages first."
+        "</p>"
+        f"{kpi_strip}{table}"
+        "</div>"
+    )
+
+
 def render_library(q: str = "") -> str:
     """Render the PE Desk research library page.
 
@@ -519,9 +654,13 @@ def render_library(q: str = "") -> str:
     # to re-search shouldn't have to scroll back up.
     from ._chartis_kit import ck_back_to_top_button
     back_to_top = ck_back_to_top_button()
+    # Provenance-coverage appendix (BACKLOG #32) renders only on the
+    # unfiltered catalog — under an active ?q= filter the partner asked
+    # for matching library entries, and a 300-row scan table is noise.
+    prov_section = _provenance_coverage_section() if not q_clean else ""
     body = (
         head_block + search_bar + empty_state
-        + sections + extra_links + next_up + back_to_top
+        + sections + prov_section + extra_links + next_up + back_to_top
     )
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

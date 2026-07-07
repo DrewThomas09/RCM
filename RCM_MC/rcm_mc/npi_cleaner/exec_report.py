@@ -10,9 +10,15 @@ email, which is why it deliberately does not use the app's chartis shell.
 from __future__ import annotations
 
 import html as _html
+import re as _re
 from typing import Dict, List
 
 from . import rules as _rules
+
+# Remit exports often prefix the CARC with its group code ("CO-45", "PR1");
+# descriptions and playbooks key on the bare code, so lookups strip a
+# leading CO/OA/PI/PR/CR when the raw token misses. Display keeps the raw.
+_CARC_PREFIX_RE = _re.compile(r"^(?:CO|OA|PI|PR|CR)[-\s]?(?=[A-Z]?\d)")
 
 _CSS = """
 body{font-family:Georgia,'Times New Roman',serif;color:#1a2332;margin:40px auto;
@@ -46,6 +52,20 @@ def _dim_color(v: float) -> str:
     return "#0a8a5f" if v >= 85 else ("#b8732a" if v >= 70 else "#b5321e")
 
 
+def _fmt_money(v: object) -> str:
+    try:
+        return f"${float(v):,.2f}"  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _fmt_pct(v: object) -> str:
+    try:
+        return f"{float(v):.1f}%"  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "—"
+
+
 def build_exec_report(sc: Dict[str, object], file_name: str,
                       generated: str) -> str:
     """Render the one-pager from an as_scorecard() dict. ``generated`` is an
@@ -76,6 +96,30 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
         f"{int(sc.get('changes_logged') or 0):,} cells changed "
         "(full audit trail available)</div>")
     parts.append("</div>")
+
+    # Trend banner — regression/recovery vs the previous run of this file.
+    # This page is the artifact that gets forwarded; a quality drop the web
+    # UI knew about must not vanish from the emailed copy.
+    trend = sc.get("trend_alerts") or []
+    if trend:
+        parts.append(
+            "<div style='border-left:4px solid #b8732a;background:#faf3ea;"
+            "padding:8px 12px;margin:10px 0'>")
+        parts.append("<strong style='font-size:13px'>Change vs the "
+                     "previous run of this file</strong>")
+        for a in trend[:6]:
+            parts.append(f"<div class='small'>• {_esc(a)}</div>")
+        parts.append("</div>")
+
+    # De-identification confirmation — one line, but the difference between
+    # "safe to forward" and not.
+    deid = sc.get("deid") or {}
+    if deid:
+        cols = ", ".join(str(c) for c in (deid.get("columns") or [])[:8])
+        parts.append(
+            f"<p class='small'>De-identified: {int(deid.get('cells') or 0):,}"
+            f" patient-identifier cells masked"
+            + (f" ({_esc(cols)})" if cols else "") + ".</p>")
 
     # Dimensions.
     parts.append("<h2>Quality dimensions</h2><table>")
@@ -110,6 +154,153 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                 f"<td class='small'>{_esc(d['remediation'])}</td></tr>")
         parts.append("</table>")
 
+    # Compliance screens (OIG LEIE + PECOS). A file with excluded billing
+    # NPIs is direct fraud exposure — the one thing a one-pager must not
+    # stay silent about.
+    comp = sc.get("compliance") or []
+    if comp:
+        parts.append("<h2>Compliance (OIG LEIE · PECOS)</h2><table>"
+                     "<tr><th>Screen</th><th class='num'>Checked</th>"
+                     "<th class='num'>Hits</th><th>Result</th></tr>")
+        for s in comp:
+            if not isinstance(s, dict) or s.get("id") == "error":
+                continue
+            hits = int(s.get("excluded") or 0) + int(s.get("not_enrolled")
+                                                     or 0)
+            tone = ("sev-critical" if int(s.get("excluded") or 0) > 0
+                    else ("sev-warning" if hits else "sev-info"))
+            avail = ("" if s.get("available")
+                     else " <span class='small'>(not available)</span>")
+            parts.append(
+                f"<tr><td>{_esc(s.get('label') or s.get('id'))}{avail}</td>"
+                f"<td class='num'>{int(s.get('checked') or 0):,}</td>"
+                f"<td class='num {tone}'>{hits:,}</td>"
+                f"<td class='small'>{_esc(s.get('note') or '')}</td></tr>")
+            for m in (s.get("matches") or [])[:6]:
+                who = " ".join(str(m.get(k)) for k in ("npi", "name")
+                               if m.get(k))
+                extra = " · ".join(
+                    str(m.get(k)) for k in ("excl_type", "excl_date")
+                    if m.get(k))
+                billed = (f" · billed {_fmt_money(m['billed'])}"
+                          if m.get("billed") is not None else "")
+                parts.append(
+                    f"<tr><td colspan='4' class='small sev-critical'>"
+                    f"&nbsp;&nbsp;⚠ excluded: {_esc(who)}"
+                    + (f" ({_esc(extra)})" if extra else "")
+                    + _esc(billed) + "</td></tr>")
+        parts.append("</table>")
+
+    # Dollar exposure — the v49 engine sizes each issue in billed dollars;
+    # this is the dollars-at-risk narrative of the whole page.
+    adv = sc.get("advanced") or {}
+    adv_issues = [it for it in (adv.get("issues") or [])
+                  if isinstance(it, dict)]
+    if adv_issues:
+        adv_issues = sorted(
+            adv_issues,
+            key=lambda it: -(float(it.get("dollars") or 0.0)))
+        parts.append("<h2>Dollar exposure by issue</h2><table>"
+                     "<tr><th>Issue</th><th class='num'>Rows</th>"
+                     "<th class='num'>$ exposure</th>"
+                     "<th class='num'>% of file $</th></tr>")
+        for it in adv_issues[:8]:
+            parts.append(
+                f"<tr><td>{_esc(it.get('issue'))}</td>"
+                f"<td class='num'>{int(it.get('rows') or 0):,}</td>"
+                f"<td class='num'>{_fmt_money(it.get('dollars'))}</td>"
+                f"<td class='num'>{_fmt_pct(it.get('pct_dollars'))}"
+                "</td></tr>")
+        parts.append("</table>")
+
+    # NPPES cross-check — verified/deactivated counts + recovered NPIs.
+    nppes = sc.get("nppes") or {}
+    nv = (nppes.get("verify") or {}) if isinstance(nppes, dict) else {}
+    nr = (nppes.get("recover") or {}) if isinstance(nppes, dict) else {}
+    if nv or nr:
+        bits2: List[str] = []
+        if nv:
+            bits2.append(f"{int(nv.get('checked') or 0):,} NPIs checked "
+                         f"against NPPES — {int(nv.get('active') or 0):,} "
+                         f"active, {int(nv.get('not_found') or 0):,} not "
+                         "found / deactivated")
+        rec_n = (len(nr.get("matches") or [])
+                 if isinstance(nr, dict) else 0)
+        if rec_n:
+            bits2.append(f"{rec_n} row(s) with recovered candidate NPIs")
+        if int(sc.get("recovered_written") or 0):
+            bits2.append(f"{int(sc['recovered_written']):,} recovered NPIs "
+                         "written into the cleaned file")
+        if bits2:
+            parts.append("<h2>NPPES verification</h2>"
+                         f"<p class='small'>{_esc(' · '.join(bits2))}</p>")
+
+    # Online screens & data sources — what the connectors actually did on
+    # this run (coverage counters), screens that want data they don't have,
+    # and reference-source health. Every block is guarded: an offline run
+    # without payloads renders nothing here rather than empty chrome.
+    conns = [c for c in (sc.get("connectors") or [])
+             if isinstance(c, dict) and c.get("id") != "error"]
+    orf = sc.get("order_referring") or {}
+    needs = [p for p in (sc.get("connector_plan") or [])
+             if isinstance(p, dict) and p.get("applies")
+             and p.get("state") == "needs_data"]
+    adv0 = sc.get("advanced") or {}
+    # Live network connectors that are simply not in use are noise on a
+    # one-pager (the plan table already covers what would run) — badge the
+    # reference PACKS and vendored seeds, plus anything actually live.
+    ref_st = [r for r in ((adv0.get("reference_status") or [])
+                          if isinstance(adv0, dict) else [])
+              if isinstance(r, dict)
+              and (r.get("kind") != "network"
+                   or r.get("status") != "UNAVAILABLE")]
+    if conns or orf or needs or ref_st:
+        parts.append("<h2>Online screens &amp; data sources</h2>")
+        if conns:
+            parts.append("<table><tr><th>Connector</th>"
+                         "<th class='num'>Cells seen</th>"
+                         "<th class='num'>Enriched</th><th>Result</th></tr>")
+            for c in conns:
+                parts.append(
+                    f"<tr><td>{_esc(c.get('label') or c.get('id'))}</td>"
+                    f"<td class='num'>{int(c.get('rows_seen') or 0):,}</td>"
+                    f"<td class='num'>{int(c.get('rows_enriched') or 0):,}"
+                    f"</td><td class='small'>{_esc(c.get('note') or '')}"
+                    "</td></tr>")
+            parts.append("</table>")
+        if orf and not orf.get("error"):
+            _orc = ", ".join(str(x) for x in (orf.get("columns") or []))
+            parts.append(
+                "<p class='small'>Ordering/referring eligibility"
+                + (f" ({_esc(_orc)})" if _orc else "") + ": "
+                f"{int(orf.get('checked') or 0):,} checked · "
+                f"{int(orf.get('active') or 0):,} active · "
+                f"{int(orf.get('not_found') or 0):,} not found/deactivated."
+                + (f" {_esc(orf.get('note') or '')}"
+                   if orf.get("note") else "") + "</p>")
+        if needs:
+            parts.append("<table><tr><th>Screen waiting on data</th>"
+                         "<th>What to do</th></tr>")
+            for p in needs[:6]:
+                parts.append(
+                    f"<tr><td>{_esc(p.get('name') or p.get('id'))}</td>"
+                    f"<td class='small'>{_esc(p.get('reason') or '')}"
+                    "</td></tr>")
+            parts.append("</table>")
+        if ref_st:
+            _badge = {"LIVE-PACK": "sev-info", "DEGRADED": "sev-warning",
+                      "UNAVAILABLE": "sev-warning"}
+            bits3 = []
+            for r in ref_st:
+                st = str(r.get("status") or "")
+                vint = str(r.get("vintage") or "")
+                bits3.append(
+                    f"<span class='{_badge.get(st, 'sev-info')}'>"
+                    f"{_esc(r.get('name') or r.get('id'))}: {_esc(st)}"
+                    + (f" ({_esc(vint)})" if vint else "") + "</span>")
+            parts.append("<p class='small'>Reference sources — "
+                         + " · ".join(bits3) + "</p>")
+
     # Payer clusters.
     payer = sc.get("payer") or {}
     multi = payer.get("multi_spelling") or []
@@ -143,10 +334,21 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                      "<tr><th>Code</th><th>Meaning</th>"
                      "<th class='num'>Rows</th><th>Playbook</th></tr>")
         for d in top[:10]:
-            desc = (_rd.carc_description(str(d["code"])) if _rd else None) or ""
+            code = str(d["code"]).strip().upper()
+            bare = _CARC_PREFIX_RE.sub("", code)
+            desc = ""
+            if _rd:
+                desc = (_rd.carc_description(code)
+                        or _rd.carc_description(bare) or "")
             _pb = ""
             if d.get("category"):
                 _pb = f"[{d['category']}] {d.get('action', '')}"
+            elif _rd and bare != code:
+                # Group-code-prefixed tokens (CO-45) miss the engine-side
+                # playbook join; recover it here from the bare code.
+                pb2 = _rd.carc_playbook(bare)
+                if pb2:
+                    _pb = f"[{pb2['category']}] {pb2.get('action', '')}"
             parts.append(f"<tr><td>{_esc(d['code'])}</td>"
                          f"<td class='small'>{_esc(desc)}</td>"
                          f"<td class='num'>{int(d['count']):,}</td>"
@@ -199,19 +401,60 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
         if prev:
             top_c = " · ".join(
                 f"{_esc(p['condition'])} {p['pct']}%" for p in prev[:6])
-            parts.append(f"<p class='small'><strong>Chronic conditions "
-                         f"(prevalence):</strong> {top_c}</p>")
+            # Without a patient column those percentages are shares of
+            # ROWS — calling them "prevalence" in the deck artifact would
+            # misstate the denominator.
+            if cond.get("patient_grouping") is False:
+                parts.append(
+                    "<p class='small'><strong>Chronic condition mentions "
+                    "(% of rows — no patient column detected):</strong> "
+                    f"{top_c}</p>")
+            else:
+                parts.append(f"<p class='small'><strong>Chronic conditions "
+                             f"(prevalence):</strong> {top_c}</p>")
         ci = pop.get("coding_intensity") or {}
         if ci:
             _line = (f"E&amp;M coding intensity: "
                      f"{int(ci.get('established_visits') or 0):,} "
                      f"established visits, file average level "
                      f"{ci.get('file_avg_level')}")
+            _nat = ci.get("national_mix") or {}
+            if _nat:
+                try:
+                    _tot = sum(float(v) for v in _nat.values())
+                    _nat_avg = (sum(int(str(k)[-1]) * float(v)
+                                    for k, v in _nat.items()) / _tot
+                                if _tot else None)
+                except (TypeError, ValueError):
+                    _nat_avg = None
+                if _nat_avg is not None:
+                    _line += (f" vs national avg level {_nat_avg:.2f} "
+                              "(Medicare established-visit mix)")
+            if ci.get("provider_basis"):
+                _line += f" (per-{ci['provider_basis']}-provider basis)"
             outs = ci.get("outliers") or []
             if outs:
                 _line += (f" — {len(outs)} provider(s) code materially "
                           "hotter than the file")
             parts.append(f"<p class='small'>{_esc(_line)}</p>")
+
+    # Charge outliers — per-HCPCS statistical outliers (3×IQR), previously
+    # web-UI-only.
+    outl = sc.get("outliers") or []
+    if outl:
+        parts.append("<h2>Charge outliers (per HCPCS)</h2><table>"
+                     "<tr><th>Code</th><th class='num'>Lines</th>"
+                     "<th class='num'>Outliers</th>"
+                     "<th class='num'>Median</th>"
+                     "<th class='num'>Max</th></tr>")
+        for o in outl[:8]:
+            parts.append(
+                f"<tr><td>{_esc(o.get('code'))}</td>"
+                f"<td class='num'>{int(o.get('n') or 0):,}</td>"
+                f"<td class='num'>{int(o.get('outliers') or 0):,}</td>"
+                f"<td class='num'>{_fmt_money(o.get('median'))}</td>"
+                f"<td class='num'>{_fmt_money(o.get('max'))}</td></tr>")
+        parts.append("</table>")
 
     # Who is in this file — credential + specialty mix (report-only).
     creds: Dict[str, int] = dict(sc.get("credentials") or {})

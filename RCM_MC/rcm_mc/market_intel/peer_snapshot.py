@@ -32,12 +32,18 @@ from .public_comps import (
     CategoryBand, PublicComp, category_bands, list_companies,
 )
 from .news_feed import sector_sentiment as _sector_sentiment
-from .transaction_multiples import transaction_multiple
+from .adapters import ManualMarketIntelAdapter, get_adapter
+from .content_vintage import content_vintage
 
 
 # Assumed EBITDA margin when only revenue is available — acute
-# hospital system median.  Partner-visible in the provenance sub-line.
-_ASSUMED_MARGIN: float = 0.12
+# hospital system median. Exposed publicly (ASSUMED_EBITDA_MARGIN) so
+# UI callers can cite the same constant instead of re-hardcoding 0.12,
+# and disclosed in the payload via ``multiple_basis`` /
+# ``assumed_margin`` — a derived multiple must never render as if it
+# came from actual EBITDA.
+ASSUMED_EBITDA_MARGIN: float = 0.12
+_ASSUMED_MARGIN: float = ASSUMED_EBITDA_MARGIN  # back-compat alias
 
 
 @dataclass
@@ -48,16 +54,43 @@ class PeerSnapshot:
     target_ev_usd: Optional[float] = None
     target_ebitda_usd: Optional[float] = None
     target_implied_multiple: Optional[float] = None
+    # Provenance of the implied multiple: "actual_ebitda" when EV/EBITDA
+    # were both supplied, "assumed_margin_12pct" when EBITDA was derived
+    # from revenue × ASSUMED_EBITDA_MARGIN, None when no multiple.
+    multiple_basis: Optional[str] = None
+    assumed_margin: Optional[float] = None   # populated only when assumed
 
     peer_median_ev_ebitda: Optional[float] = None
     peer_p25_ev_ebitda: Optional[float] = None
     peer_p75_ev_ebitda: Optional[float] = None
     delta_vs_median_turns: Optional[float] = None   # target - median
+    # n= disclosure for the peer band: how many named public
+    # constituents anchor the p25/median/p75 range (None when no band).
+    # ``peer_band_indicative`` is True below two constituents — a
+    # single-ticker "range" is an analyst curve, not observed spread,
+    # and the payload must say so wherever the band renders.
+    peer_constituent_count: Optional[int] = None
+    peer_band_indicative: Optional[bool] = None
+    # Broader companion of ``peer_band_indicative``: True below the
+    # public_comps ``SMALL_SAMPLE_CONSTITUENTS`` floor (three), so a
+    # two-ticker band — not flagged as single-ticker "indicative" but
+    # still too thin to be an observed distribution — reads honestly on
+    # the Deal Profile block. Sourced from ``CategoryBand.small_sample``
+    # so the module and the snapshot can't disagree; ``indicative``
+    # nests inside it.
+    peer_band_small_sample: Optional[bool] = None
 
     peers: List[Dict[str, Any]] = field(default_factory=list)
 
     sector_sentiment: Optional[str] = None
     transaction_band: Optional[Dict[str, Any]] = None
+
+    # Vintage of every curated YAML this snapshot read, keyed by
+    # content name → {last_reviewed, stale}. The snapshot's numbers are
+    # quarterly-refreshed fixtures; a payload without its as-of dates
+    # reads as live market data to the Deal Profile block and any
+    # export downstream.
+    content_vintages: Dict[str, Any] = field(default_factory=dict)
 
     # Partner-readable verdict
     assessment: str = "NO_DATA"        # DISCOUNT / IN-LINE / PREMIUM / NO_DATA
@@ -70,13 +103,19 @@ class PeerSnapshot:
             "target_ev_usd": self.target_ev_usd,
             "target_ebitda_usd": self.target_ebitda_usd,
             "target_implied_multiple": self.target_implied_multiple,
+            "multiple_basis": self.multiple_basis,
+            "assumed_margin": self.assumed_margin,
             "peer_median_ev_ebitda": self.peer_median_ev_ebitda,
             "peer_p25_ev_ebitda": self.peer_p25_ev_ebitda,
             "peer_p75_ev_ebitda": self.peer_p75_ev_ebitda,
             "delta_vs_median_turns": self.delta_vs_median_turns,
+            "peer_constituent_count": self.peer_constituent_count,
+            "peer_band_indicative": self.peer_band_indicative,
+            "peer_band_small_sample": self.peer_band_small_sample,
             "peers": list(self.peers),
             "sector_sentiment": self.sector_sentiment,
             "transaction_band": self.transaction_band,
+            "content_vintages": dict(self.content_vintages),
             "assessment": self.assessment,
             "summary": self.summary,
         }
@@ -100,8 +139,18 @@ def _summary(
     category: str, target_mult: Optional[float],
     median: Optional[float], assessment: str,
     delta_turns: Optional[float],
+    multiple_basis: Optional[str] = None,
+    peer_constituent_count: Optional[int] = None,
 ) -> str:
-    """Partner-readable one-sentence summary."""
+    """Partner-readable one-sentence summary.
+
+    Multiples render at 2dp + ``x`` (house convention); the turns delta
+    stays 1dp because it reads as a delta-in-turns, not a multiple.
+    When the implied multiple rests on the assumed 12% margin, the
+    sentence says so — the caveat must travel with the number. Same
+    rule for a single-constituent peer band: a "range" anchored on one
+    public ticker must not read as observed market spread.
+    """
     if assessment == "NO_DATA":
         return (
             "Insufficient data to place target against peer range — "
@@ -111,25 +160,36 @@ def _summary(
         return ""
     turns = delta_turns or 0.0
     direction = "above" if turns > 0 else "below" if turns < 0 else "at"
+    basis_note = (
+        f" (EBITDA assumed at {ASSUMED_EBITDA_MARGIN:.0%} of revenue)"
+        if multiple_basis == "assumed_margin_12pct" else ""
+    )
+    small_peer_note = (
+        " Peer band rests on a single public constituent — treat the "
+        "range as indicative, not a distribution."
+        if peer_constituent_count == 1 else ""
+    )
     if assessment == "PREMIUM":
         return (
-            f"Target implied EV/EBITDA {target_mult:.1f}x "
+            f"Target implied EV/EBITDA {target_mult:.2f}x{basis_note} "
             f"is {abs(turns):.1f} turns {direction} the peer median "
-            f"({median:.1f}x) for {category.replace('_', ' ').title()} — "
+            f"({median:.2f}x) for {category.replace('_', ' ').title()} — "
             f"entering at a premium that the thesis must justify "
             f"through operational uplift or sector rotation."
+            + small_peer_note
         )
     if assessment == "DISCOUNT":
         return (
-            f"Target implied EV/EBITDA {target_mult:.1f}x is "
+            f"Target implied EV/EBITDA {target_mult:.2f}x{basis_note} is "
             f"{abs(turns):.1f} turns {direction} the peer median "
-            f"({median:.1f}x) — discount could reflect genuine alpha "
+            f"({median:.2f}x) — discount could reflect genuine alpha "
             f"or hidden distress. Cross-reference with Deal Autopsy."
+            + small_peer_note
         )
     return (
-        f"Target implied EV/EBITDA {target_mult:.1f}x is within peer "
-        f"range (median {median:.1f}x). Valuation is defensible "
-        f"without additional story."
+        f"Target implied EV/EBITDA {target_mult:.2f}x{basis_note} is "
+        f"within peer range (median {median:.2f}x). Valuation is "
+        f"defensible without additional story." + small_peer_note
     )
 
 
@@ -185,15 +245,23 @@ def compute_peer_snapshot(
     band = bands.get(cat)
 
     # Implied multiple: prefer EV/EBITDA when both supplied, else
-    # EV / (revenue × 12%).
+    # EV / (revenue × 12%) — and say which one happened, because a
+    # margin-derived multiple carries model risk the actual-EBITDA one
+    # does not.
     implied_mult: Optional[float] = None
+    multiple_basis: Optional[str] = None
+    assumed_margin: Optional[float] = None
     if target_ev_usd and target_ebitda_usd and target_ebitda_usd > 0:
         implied_mult = target_ev_usd / target_ebitda_usd
+        multiple_basis = "actual_ebitda"
     elif target_ev_usd and target_revenue_usd and target_revenue_usd > 0:
-        implied_ebitda = target_revenue_usd * _ASSUMED_MARGIN
+        implied_ebitda = target_revenue_usd * ASSUMED_EBITDA_MARGIN
         implied_mult = (
             target_ev_usd / implied_ebitda if implied_ebitda > 0 else None
         )
+        if implied_mult is not None:
+            multiple_basis = "assumed_margin_12pct"
+            assumed_margin = ASSUMED_EBITDA_MARGIN
 
     peer_median = band.median_ev_ebitda if band else None
     peer_p25 = band.p25_ev_ebitda if band else None
@@ -202,18 +270,42 @@ def compute_peer_snapshot(
         implied_mult - peer_median
         if implied_mult is not None and peer_median is not None else None
     )
+    # n= disclosure — see the PeerSnapshot field comments.
+    peer_n = band.constituent_count if band else None
+    band_indicative = (peer_n < 2) if peer_n is not None else None
+    band_small_sample = band.small_sample if band else None
 
     assessment = _assess(implied_mult, peer_p25, peer_median, peer_p75)
-    summary = _summary(cat, implied_mult, peer_median, assessment, delta)
+    summary = _summary(cat, implied_mult, peer_median, assessment, delta,
+                       multiple_basis, peer_constituent_count=peer_n)
     peers = _top_peers(cat, target_revenue_usd, top_n=3)
 
     # Sector sentiment
     sentiment = _sector_sentiment(specialty) if specialty else None
 
-    # Transaction band
+    # Vintage of each curated source actually read. The transaction
+    # band's vintage is only meaningful when the manual (curated-YAML)
+    # adapter serves it — a vendor adapter installed via set_adapter()
+    # supplies its own data, so stamping the fixture's date on vendor
+    # numbers would be a false provenance claim.
+    vintage_names = ["public_comps"]
+    if specialty:
+        vintage_names.append("news_feed")
+        if isinstance(get_adapter(), ManualMarketIntelAdapter):
+            vintage_names.append("transaction_multiples")
+    vintages: Dict[str, Any] = {}
+    for name in vintage_names:
+        v = content_vintage(name)
+        vintages[name] = {
+            "last_reviewed": v["last_reviewed"], "stale": v["stale"],
+        }
+
+    # Transaction band — routed through the active adapter so a real
+    # PitchBook/vendor client installed via set_adapter() reaches the
+    # Deal Profile market-context block without touching this module.
     tb_obj = None
     if specialty:
-        tb = transaction_multiple(
+        tb = get_adapter().transaction_multiple(
             specialty=specialty, ev_usd=target_ev_usd,
         )
         if tb is not None:
@@ -231,13 +323,19 @@ def compute_peer_snapshot(
         target_ev_usd=target_ev_usd,
         target_ebitda_usd=target_ebitda_usd,
         target_implied_multiple=implied_mult,
+        multiple_basis=multiple_basis,
+        assumed_margin=assumed_margin,
         peer_median_ev_ebitda=peer_median,
         peer_p25_ev_ebitda=peer_p25,
         peer_p75_ev_ebitda=peer_p75,
         delta_vs_median_turns=delta,
+        peer_constituent_count=peer_n,
+        peer_band_indicative=band_indicative,
+        peer_band_small_sample=band_small_sample,
         peers=peers,
         sector_sentiment=sentiment,
         transaction_band=tb_obj,
+        content_vintages=vintages,
         assessment=assessment,
         summary=summary,
     )

@@ -272,18 +272,33 @@ def _seed_deals_and_snapshots(
                 npr = float(_row["net_patient_revenue"])
                 opex = float(_row["operating_expenses"])
                 name = str(_row["name"]).title()
-                profile = {
-                    "state": str(_row["state"]),
+                _fy = int(_row["fiscal_year"])
+                _detail = f"CMS HCRIS CCN {_REAL_CCN} FY{_fy}"
+                _sourced = {
                     "bed_count": float(_row["beds"]),
                     "net_revenue": npr,
                     "ebitda_margin": round((npr - opex) / npr, 4),
                     "medicare_day_pct": round(
                         float(_row["medicare_day_pct"]), 4),
+                }
+                profile = {
+                    "state": str(_row["state"]),
+                    # Flat copies for the flat-key readers (list_deals,
+                    # regression, deal dashboard) …
+                    **_sourced,
+                    # … and the nested ObservedMetric shape whose
+                    # source="HCRIS" drives the per-metric ENTERED→ACTUAL
+                    # relabel on the deal surfaces.
+                    "observed_metrics": {
+                        k: {"value": v, "source": "HCRIS",
+                            "source_detail": _detail,
+                            "quality_flags": []}
+                        for k, v in _sourced.items()},
                     "hcris_ccn": _REAL_CCN,
-                    "hcris_fy": int(_row["fiscal_year"]),
+                    "hcris_fy": _fy,
                     "metrics_basis": (
                         f"ACTUAL — filed HCRIS values, CCN {_REAL_CCN} "
-                        f"FY{int(_row['fiscal_year'])}"),
+                        f"FY{_fy}"),
                 }
             except Exception:  # noqa: BLE001 — frame optional in seeding
                 profile = None

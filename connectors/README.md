@@ -30,7 +30,7 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | Open Payments | `connectors/open_payments` | Sunshine Act DKAN — full catalog (74 datasets) + PY2024 general/research/ownership payments, profiles, summaries, state totals | `openpaymentsdata.cms.gov` | 11 |
 | Medicaid Open Data | `connectors/medicaid_data` | data.medicaid.gov DKAN — full catalog (541 datasets) + NADAC, State Drug Utilization, rebate products, enrollment, managed care, FULs, CMS-64, quality measures | `data.medicaid.gov` | 15 |
 | Healthcare.gov | `connectors/healthcare_gov` | Marketplace DKAN — full catalog (337 datasets) + PY2026 QHP PUFs (plan attributes, benefits & cost sharing, rates, quality, service areas) | `data.healthcare.gov` | 7 |
-| CDC Open Data | `connectors/cdc_data` | data.cdc.gov Socrata/SODA — full catalog (~1,500 datasets) + PLACES county health (incl. pinned 2023 CKD prevalence), mortality (provisional/weekly/monthly/leading causes), drug overdose, BRFSS, chronic disease, life expectancy | `data.cdc.gov` | 14 |
+| CDC Open Data | `connectors/cdc_data` | data.cdc.gov Socrata/SODA — full catalog (~1,500 datasets) + PLACES county health (incl. pinned 2023 CKD prevalence), mortality (provisional/weekly/monthly/leading causes), drug overdose, BRFSS, chronic disease, life expectancy, births/maternal, vaccination coverage, disability, environment (PM2.5), oral health, aging | `data.cdc.gov` | 29 |
 | HRSA | `connectors/hrsa_data` | HRSA data downloads — HPSA shortage areas (primary care/dental/mental health), MUA/P, health-center sites | `data.hrsa.gov` | 5 |
 | NIH RePORTER | `connectors/nih_reporter` | NIH RePORTER v2 (POST JSON) — funded projects + linked publications | `api.reporter.nih.gov` | 2 |
 | Census ACS | `connectors/census_acs` | ACS 5-year — county/state/CBSA demographic profiles (population, 65+, income, poverty, uninsured); requires free `CENSUS_API_KEY` | `api.census.gov/data` | 3 |
@@ -38,12 +38,16 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | BLS QCEW | `connectors/bls_qcew` | Quarterly Census of Employment & Wages — healthcare employment, wages, location quotients by county/MSA x NAICS | `data.bls.gov/cew` | 2 |
 | healthdata.gov | `connectors/healthdata_gov` | HHS-wide Socrata meta-catalog (23,080 datasets, native-vs-mirror discriminated) + HHS Protect hospital capacity (facility 1.05M rows + state daily), PCR testing, county community profiles, therapeutics locator, HHS-ID↔CCN crosswalk, school modalities, policy orders | `healthdata.gov` | 10 |
 
-**189 registered datasets across 16 connectors** — plus five full open-data
+**204 registered datasets across 16 connectors** — plus seven full open-data
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
-data.cdc.gov ~1,500), each with a generic fetched-rows slot so **any**
-catalog dataset can be pulled on demand and queried through the same
-uniform surface. See the live list with `python -m connectors.cli datasets`.
+data.cdc.gov ~1,500, healthdata.gov 23,080), each with a generic
+fetched-rows slot so **any** catalog dataset can be pulled on demand
+(a complete re-pull replaces its slice atomically, so a shrunken upstream
+dataset never strands stale trailing rows) and
+queried through the same uniform surface. See the live list with
+`python -m connectors.cli datasets` (the counts above are pinned to the
+live registry by `connectors/tests/test_estate_invariants.py`).
 
 ## The uniform contract
 
@@ -78,22 +82,40 @@ them as a single database:
 /health
 /v1/connectors                       one row per connector (label, base URLs, datasets)
 /v1/datasets                         every dataset (merged registries)
+/v1/status                           per-connector fetch state: db_present, total_rows, last_ingested_at
 /v1/query/{dataset}?<filters>&select=&sort=&limit=&offset=
-/v1/query/{dataset}/aggregate?group_by=a,b&<filters>&limit=
+/v1/query/{dataset}/aggregate?group_by=a,b&metric=sum:f,avg:g&<filters>&limit=
 /v1/lookup/{noun}/{id}               drug｜device｜company｜document｜contractor｜provider｜taxonomy｜code｜category
-                                     ｜practice｜prescriber｜facility-cost｜ownership｜cms-dataset
+                                     ｜practice｜prescriber｜facility-cost｜facility-universe｜ownership｜cms-dataset
                                      ｜hospital｜nursing-home｜home-health｜hospice｜dialysis｜clinician｜pdc-dataset
                                      ｜physician-payments｜manufacturer｜op-dataset
                                      ｜ndc-cost｜state-drug｜medicaid-dataset｜marketplace-plan｜county-plans
                                      ｜county-health｜cdc-dataset｜shortage-area｜health-center
                                      ｜grant｜grantee-org｜county-demographics｜state-demographics
+                                     ｜exclusion｜exclusion-name｜industry-employment｜labor-market
+                                     ｜hhs-dataset｜hospital-capacity
 /v1/validate/npi/{npi}
 /v1/search/{code_type}?q=&limit=      (ICD-10)
 ```
 
 The uniform filter grammar (every dataset): `{"field": v}` equality, or
 `field__op` — `eq/ne/gt/gte/lt/lte/like/in/between/isnull/notnull`; sort with
-`field` / `-field`.
+`field` / `-field`. Range operators (`gt/gte/lt/lte/between`) compare
+numerically when the value is a number (the canonical storage is TEXT, so
+the engines `CAST` explicitly); `in` and `between` take comma-joined
+values over HTTP/CLI (`state__in=MD,VA`) or real lists via the Python API.
+
+Aggregates count rows per group by default; optional **metrics** add
+`sum/avg/min/max` over any whitelisted column, `CAST` to REAL —
+`?metric=sum:tot_clms,avg:tot_clms` over HTTP, repeatable
+`--metric sum:tot_clms` on every connector CLI's `aggregate` verb, or
+`metrics=["sum:tot_clms"]` via the Python API. Results carry the specs in a
+`metrics` key and per-group values as `{func}_{field}` columns; the
+count-only shape is unchanged when no metric is requested.
+
+Every standalone connector server also exposes its own `/v1/status` with the
+same row shape as the unified route (plus a per-table row-count breakdown),
+so fetch state reads identically whichever surface a caller hits.
 
 ## Usage
 
@@ -107,13 +129,18 @@ python -m connectors.cli catalog            # full JSON catalog
 python -m connectors.cli serve --db :memory:
 python -m connectors.cli serve --db ./var/connectors
 
-# Ingest with a connector's own CLI, then query via the unified surface
-python -m connectors.cms_coverage.cli discover
+# Ingest a polite slice of every plannable connector in one command
+# (writes {db}/_refresh_report.json; --json emits the same report)
+python -m connectors.cli refresh --db var/connectors
+
+# Or drive one connector's own CLI, then query via the unified surface
+python -m connectors.cms_coverage.cli --root var/connectors fetch --max-pages 2
+python -m connectors.cms_coverage.cli --root var/connectors query cms_coverage_national_ncd --limit 10
 ```
 
 ```python
 from connectors import registry as estate
-estate.catalog()["n_datasets"]          # 26
+estate.catalog()["n_datasets"]          # 204
 estate.dataset_owner("icd10_cm")         # 'icd10'
 
 from connectors.api_server import open_stores, make_server
@@ -137,6 +164,8 @@ server, port = make_server(stores)       # one /v1 surface over all connectors
 ## Tests
 
 ```bash
-# Whole estate (per-connector suites + the unified surface) — 731 tests
+# Whole estate (per-connector suites + the unified surface) — 1,000+ tests
+# (discovery-based, so the count grows with every connector; CI runs this
+# exact command on 3.11/3.12/3.14)
 python -m unittest discover -s connectors -t . -p "test_*.py"
 ```

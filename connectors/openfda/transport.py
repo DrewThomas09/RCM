@@ -152,7 +152,12 @@ class OpenFdaTransport:
             ra = resp.header("retry-after")
             if ra:
                 try:
-                    return min(float(ra), self.backoff_cap_s)
+                    # Clamp to [0, cap]: a negative (or NaN) Retry-After
+                    # must never reach time.sleep(), which raises
+                    # ValueError and would abort the retry loop. (The
+                    # estate-wide clamp sweep missed this reference copy;
+                    # pinned by tests/test_transport_backoff_parity.py.)
+                    return max(0.0, min(float(ra), self.backoff_cap_s))
                 except ValueError:
                     pass  # HTTP-date form is rare for openFDA; fall through
         ceiling = min(self.backoff_cap_s, self.backoff_base_s * (2 ** attempt))

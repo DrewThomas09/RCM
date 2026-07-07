@@ -62,8 +62,8 @@ def _cmd_refresh(args: argparse.Namespace) -> int:
     try:
         planned = refresh_mod.plan(quick=not args.full, connectors=names)
     except KeyError:
-        # Manual-only connectors (openfda, cms_coverage, npi_registry, icd10)
-        # and typos both land here — a traceback would read as a crash.
+        # Manual-only connectors (openfda, npi_registry, icd10) and typos
+        # both land here — a traceback would read as a crash.
         plannable = ", ".join(refresh_mod.plan())
         manual = ", ".join(refresh_mod.UNPLANNED)
         print(f"no refresh plan for: {names}\n"
@@ -76,7 +76,10 @@ def _cmd_refresh(args: argparse.Namespace) -> int:
                 print(f"{name:16} {' '.join(argv)}")
         return 0
     report = refresh_mod.refresh(args.db, quick=not args.full, connectors=names)
-    print(report.summary())
+    if getattr(args, "json", False):
+        print(json.dumps(report.as_dict(), indent=2, default=str))
+    else:
+        print(report.summary())
     return 0 if report.ok else 1
 
 
@@ -113,6 +116,9 @@ def build_parser() -> argparse.ArgumentParser:
                     help="widen page caps (still never unbounded pulls)")
     sp.add_argument("--dry-run", action="store_true",
                     help="print the planned CLI invocations without running")
+    sp.add_argument("--json", action="store_true",
+                    help="emit the machine-readable report (also persisted "
+                         "to {db}/_refresh_report.json on every real run)")
     sp.set_defaults(func=_cmd_refresh)
     return p
 

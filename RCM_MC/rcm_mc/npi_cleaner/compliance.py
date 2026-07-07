@@ -35,42 +35,75 @@ def _digits(v: object) -> str:
 
 
 def _distinct_npis(npis: List[str], cap: int) -> tuple:
-    seen: List[str] = []
+    # Set membership + insertion-order list: the old `d not in seen` linear
+    # scan over a list was O(n·k) — ~10^10 comparisons on a 1M-row file with
+    # 100k distinct NPIs, which stalled the job thread at "Screening billing
+    # NPIs" before the LEIE screen even started. Same output, same
+    # (first-cap, truncated) contract.
+    seen: set = set()
+    out: List[str] = []
     for v in npis:
         d = _digits(v)
         if len(d) == 10 and d not in seen:
-            seen.append(d)
-    return seen[:cap], len(seen) > cap
+            seen.add(d)
+            out.append(d)
+    return out[:cap], len(out) > cap
 
 
 # ------------------------------------------------------------------ OIG LEIE --
-def _leie_npi_set(path: str) -> Optional[set]:
-    """Load the set of excluded NPIs from a LEIE CSV. Returns None on failure."""
+def _leie_lookup(path: str) -> Optional[Dict[str, Dict[str, str]]]:
+    """Load excluded NPIs from a LEIE CSV as ``{npi: {name, excl_type,
+    excl_date}}``. The source UPDATED.csv carries LASTNAME/FIRSTNAME/BUSNAME,
+    EXCLTYPE and EXCLDATE — a fraud-exposure match that names neither the
+    provider nor the exclusion is a half-way output, so keep them (they are
+    public OIG data, not upload PHI). Returns None on failure."""
     try:
         with open(path, newline="", encoding="utf-8-sig", errors="replace") as fh:
             reader = csv.reader(fh)
             header = next(reader, [])
-            # LEIE 'UPDATED' files carry an NPI column; find it case-insensitively.
-            npi_col = None
+            cols: Dict[str, int] = {}
             for i, h in enumerate(header):
-                if h.strip().upper() == "NPI":
-                    npi_col = i
-                    break
+                cols[h.strip().upper()] = i
+            npi_col = cols.get("NPI")
             if npi_col is None:
                 return None
-            out = set()
+
+            def _cell(row: List[str], name: str) -> str:
+                i = cols.get(name)
+                return row[i].strip() if i is not None and i < len(row) else ""
+
+            out: Dict[str, Dict[str, str]] = {}
             for row in reader:
                 if npi_col < len(row):
                     d = _digits(row[npi_col])
                     if len(d) == 10:
-                        out.add(d)
+                        bus = _cell(row, "BUSNAME")
+                        person = " ".join(p for p in (
+                            _cell(row, "FIRSTNAME"),
+                            _cell(row, "LASTNAME")) if p)
+                        out[d] = {
+                            "name": bus or person,
+                            "excl_type": _cell(row, "EXCLTYPE"),
+                            "excl_date": _cell(row, "EXCLDATE"),
+                        }
             return out
     except Exception:  # noqa: BLE001
         return None
 
 
-def screen_leie(npis: List[str], *, leie_path: Optional[str] = None) -> dict:
-    """Offline OIG LEIE exclusion screen. Never raises."""
+def _leie_npi_set(path: str) -> Optional[set]:
+    """Back-compat shim: the set of excluded NPIs from a LEIE CSV."""
+    detail = _leie_lookup(path)
+    return set(detail) if detail is not None else None
+
+
+def screen_leie(npis: List[str], *, leie_path: Optional[str] = None,
+                dollars_by_npi: Optional[Dict[str, float]] = None) -> dict:
+    """Offline OIG LEIE exclusion screen. Never raises.
+
+    ``dollars_by_npi`` (optional, additive) maps a billing NPI to the summed
+    billed dollars flowing through it, so the screen can report
+    ``excluded_billed_total`` — the exposure figure, not just a count."""
     path = leie_path or os.environ.get("RCM_MC_LEIE_CSV") or ""
     out: Dict[str, object] = {
         "id": "oig_leie", "label": "OIG LEIE (excluded providers)",
@@ -79,16 +112,20 @@ def screen_leie(npis: List[str], *, leie_path: Optional[str] = None) -> dict:
         "matches": [], "note": "",
     }
     excluded: Optional[set] = None
+    detail: Optional[Dict[str, Dict[str, str]]] = None
     if path and Path(path).exists():
-        excluded = _leie_npi_set(path)
-        if excluded is None:
+        detail = _leie_lookup(path)
+        if detail is None:
             out["note"] = ("LEIE dataset could not be read (expected a CSV "
                            "with an NPI column).")
             return out
+        excluded = set(detail)
     else:
         # No file configured — fall back to the pulled reference pack
         # (Reference data packs → leie), which is how most deployments
         # should run this now: one click, refreshed monthly, no env var.
+        # The pack stores NPIs only, so matches stay bare there (and the
+        # note says so) — honesty over invented detail.
         try:
             from . import refdata_packs as _packs
             pack = _packs.leie_npis()
@@ -106,13 +143,49 @@ def screen_leie(npis: List[str], *, leie_path: Optional[str] = None) -> dict:
     out["available"] = True
     distinct, _trunc = _distinct_npis(npis, 10_000)
     out["checked"] = len(distinct)
+
+    # Optional billed-dollar exposure per NPI (engine passes billing-NPI →
+    # summed billed). Keyed by digits so raw and cleaned NPIs both hit.
+    dollars: Dict[str, float] = {}
+    if dollars_by_npi:
+        for k, v in dollars_by_npi.items():
+            d = _digits(k)
+            if len(d) == 10:
+                try:
+                    dollars[d] = dollars.get(d, 0.0) + float(v)
+                except (TypeError, ValueError):
+                    continue
+
+    exposure = 0.0
     for npi in distinct:
         if npi in excluded:
             out["excluded"] = int(out["excluded"]) + 1
-            out["matches"].append({"npi": npi})
-    out["note"] = (f"{out['excluded']} of {len(distinct)} distinct NPIs appear "
-                   f"on the OIG exclusions list."
-                   if distinct else "No NPIs to screen.")
+            m: Dict[str, object] = {"npi": npi}
+            info = detail.get(npi) if detail else None
+            if info:
+                if info.get("name"):
+                    m["name"] = info["name"]
+                if info.get("excl_type"):
+                    m["excl_type"] = info["excl_type"]
+                if info.get("excl_date"):
+                    m["excl_date"] = info["excl_date"]
+            if npi in dollars:
+                m["billed"] = round(dollars[npi], 2)
+                exposure += dollars[npi]
+            out["matches"].append(m)
+    if dollars:
+        out["excluded_billed_total"] = round(exposure, 2)
+    note = (f"{out['excluded']} of {len(distinct)} distinct NPIs appear "
+            f"on the OIG exclusions list."
+            if distinct else "No NPIs to screen.")
+    if detail is None and int(out["excluded"]) > 0:
+        note += (" Reference-pack matches carry the NPI only — point "
+                 "RCM_MC_LEIE_CSV at the OIG UPDATED.csv for names, "
+                 "exclusion types and dates.")
+    if dollars and int(out["excluded"]) > 0:
+        note += (f" ${out['excluded_billed_total']:,.2f} of this file's "
+                 "billed dollars flow through excluded NPIs.")
+    out["note"] = note
     return out
 
 
@@ -201,11 +274,14 @@ def screen_cms(npis: List[str], *, cms_client=None, cap: int = _MAX_CMS,
 
 
 def screen(npis: List[str], *, leie_path: Optional[str] = None,
-           cms_client=None, run_cms: bool = True) -> List[dict]:
+           cms_client=None, run_cms: bool = True,
+           dollars_by_npi: Optional[Dict[str, float]] = None) -> List[dict]:
     """Run the compliance screens over billing NPIs; returns a list of result
     dicts for the compliance panel. LEIE is offline (always); PECOS is
-    networked (``run_cms``)."""
-    results = [screen_leie(npis, leie_path=leie_path)]
+    networked (``run_cms``). ``dollars_by_npi`` (optional) lets the LEIE
+    screen size the billed-dollar exposure behind any exclusion match."""
+    results = [screen_leie(npis, leie_path=leie_path,
+                           dollars_by_npi=dollars_by_npi)]
     if run_cms:
         results.append(screen_cms(npis, cms_client=cms_client))
     return results

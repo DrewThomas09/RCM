@@ -1,4 +1,4 @@
-"""Market-intel vendor adapters.
+"""Market-intel vendor adapters + the active-adapter registry.
 
 Same pattern as rcm_mc.integrations.{chart_audit,contract_digitization}:
 
@@ -12,7 +12,16 @@ Same pattern as rcm_mc.integrations.{chart_audit,contract_digitization}:
 Stubs are opinionated: they raise NotImplementedError with a clear
 message so a partner who thinks they're getting live data never
 silently gets stale or fake values. Replace the stub class with a
-real HTTP client when a subscription is in place.
+real HTTP client when a subscription is in place, then install it via
+``set_adapter(...)``.
+
+Registry: ``get_adapter()`` / ``set_adapter(adapter)``. The registry
+exists because the stub messages used to promise a "market-intel
+adapter registry" that had never been built — installing a real vendor
+adapter changed nothing anywhere. Consumers that want vendor-swappable
+reads (the peer snapshot's transaction band today) route through
+``get_adapter()``; the default is the curated-YAML manual adapter, so
+behavior without a subscription is byte-identical to before.
 """
 from __future__ import annotations
 
@@ -62,6 +71,43 @@ class ManualMarketIntelAdapter:
         )
 
 
+# ---------------------------------------------------------------------------
+# Active-adapter registry
+# ---------------------------------------------------------------------------
+
+_ACTIVE_ADAPTER: MarketIntelAdapter = ManualMarketIntelAdapter()
+
+
+def get_adapter() -> MarketIntelAdapter:
+    """Return the adapter market-intel reads route through.
+
+    Defaults to :class:`ManualMarketIntelAdapter` (curated YAMLs, no
+    network I/O) so offline behavior is unchanged until someone
+    explicitly installs a vendor client.
+    """
+    return _ACTIVE_ADAPTER
+
+
+def set_adapter(adapter: MarketIntelAdapter) -> MarketIntelAdapter:
+    """Install ``adapter`` as the active source; returns the previous one.
+
+    Returning the previous adapter makes temporary swaps restorable
+    (``prev = set_adapter(vendor); ... ; set_adapter(prev)``) — tests
+    and short-lived vendor trials must not leave a global behind.
+    Rejects objects that don't satisfy the protocol so a half-built
+    client fails at install time, not on a partner's page load.
+    """
+    if not isinstance(adapter, MarketIntelAdapter):
+        raise TypeError(
+            "adapter must implement MarketIntelAdapter "
+            "(public_comps / transaction_multiple / news_for_target)"
+        )
+    global _ACTIVE_ADAPTER
+    previous = _ACTIVE_ADAPTER
+    _ACTIVE_ADAPTER = adapter
+    return previous
+
+
 class StubVendorSeekingAlphaAdapter:
     """Documents what a Seeking Alpha integration would look like.
 
@@ -84,8 +130,8 @@ class StubVendorSeekingAlphaAdapter:
         raise NotImplementedError(
             f"Implement GET {self.BASE}/symbols/{{ticker}}/key-data "
             "for each of HCA, THC, CYH, UHS, EHC, ARDT and map the "
-            "response into PublicComp. Swap this class into the "
-            "market-intel adapter registry."
+            "response into PublicComp. Install the implemented client "
+            "via rcm_mc.market_intel.adapters.set_adapter(...)."
         )
 
     def transaction_multiple(

@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional
 
 from .connector import HealthdataGovConnector
 from .lookup import lookup_hhs_dataset, lookup_hospital_capacity
-from .query import QueryError, query
+from .query import QueryError, aggregate, query
 from .registry import registry_as_dicts
 from .tables import HealthdataGovStore
 
@@ -109,6 +109,18 @@ def cmd_query(args: argparse.Namespace) -> int:
                     offset=args.offset)
     except QueryError as exc:
         print(f"query error: {exc}", file=sys.stderr)
+        return 2
+    _print(res.as_dict())
+    return 0
+
+def cmd_aggregate(args: argparse.Namespace) -> int:
+    store = _store(args)
+    try:
+        res = aggregate(store, args.dataset, group_by=args.group_by.split(","),
+                        filters=_parse_filters(args.filter),
+                        metrics=args.metric, limit=args.limit)
+    except QueryError as exc:
+        print(f"aggregate error: {exc}", file=sys.stderr)
         return 2
     _print(res.as_dict())
     return 0
@@ -197,6 +209,15 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--limit", type=int, default=50)
     q.add_argument("--offset", type=int, default=0)
     q.set_defaults(func=cmd_query)
+
+    agg = sub.add_parser("aggregate")
+    agg.add_argument("dataset")
+    agg.add_argument("--group-by", required=True, help="comma-separated columns")
+    agg.add_argument("--filter", action="append")
+    agg.add_argument("--metric", action="append",
+                     help="func:field metric (sum/avg/min/max; repeatable)")
+    agg.add_argument("--limit", type=int, default=50)
+    agg.set_defaults(func=cmd_aggregate)
 
     cs = sub.add_parser("catalog-search")
     cs.add_argument("--q", required=True)

@@ -10,9 +10,10 @@ drive it; until then this proves the surface and is testable end to end.
 Routes (all GET, JSON out):
 
     /health
+    /v1/status                            → fetch state (rows + vintage)
     /v1/datasets                         → the registry (auto-exposed)
     /v1/query/{dataset}?<filters>&select=&sort=&limit=&offset=
-    /v1/query/{dataset}/aggregate?group_by=a,b&<filters>&limit=
+    /v1/query/{dataset}/aggregate?group_by=a,b&metric=sum:f&<filters>&limit=
     /v1/lookup/code/{code}?type=cm|pcs
     /v1/lookup/category/{category}?type=cm|pcs
     /v1/search/{code_type}?q=<term>&limit=
@@ -32,9 +33,9 @@ from urllib.parse import parse_qs, unquote, urlparse
 from .lookup import v1_handlers
 from .query import AggregateResult, QueryError, QueryResult, aggregate, query
 from .registry import by_dataset_id, registry_as_dicts
-from .tables import Icd10Store
+from .tables import TABLES, Icd10Store
 
-_RESERVED = {"select", "sort", "limit", "offset", "group_by", "type", "q"}
+_RESERVED = {"select", "sort", "limit", "offset", "group_by", "metric", "type", "q"}
 
 
 def _parse_query(qs: Dict[str, List[str]]) -> Dict[str, Any]:
@@ -48,8 +49,50 @@ def _parse_query(qs: Dict[str, List[str]]) -> Dict[str, Any]:
         "limit": flat.get("limit", 50),
         "offset": flat.get("offset", 0),
         "group_by": flat["group_by"].split(",") if flat.get("group_by") else None,
+        "metrics": flat["metric"].split(",") if flat.get("metric") else None,
     }
 
+
+_VINTAGE_COLS = ("ingested_at", "fetched_at")
+_CONNECTOR_NAME = "icd10"
+_CONNECTOR_LABEL = "ICD-10-CM + ICD-10-PCS (NLM Clinical Tables)"
+
+
+def connector_status(store: Icd10Store) -> Dict[str, Any]:
+    """Fetch state for this connector, in the estate's ``/v1/status`` row shape.
+
+    Same keys as one entry of the unified server's ``/v1/status``
+    (``connector``/``label``/``db_path``/``db_present``/``total_rows``/
+    ``last_ingested_at``), plus a per-table row-count breakdown — so
+    "never fetched" (0 rows, no vintage) is distinguishable from
+    "fetched, empty" and from a year-stale pull on this standalone
+    surface too. Interpolated identifiers all come from the module's own
+    ``TABLES`` constant, never from the request.
+    """
+    total = 0
+    last = ""
+    tables: Dict[str, int] = {}
+    for tname, tdef in TABLES.items():
+        n = int(store.count(tname))
+        tables[tname] = n
+        total += n
+        for col in tdef.columns:
+            if col not in _VINTAGE_COLS:
+                continue
+            rows = store.fetchall(f"SELECT MAX({col}) AS m FROM {tname}")
+            val = rows[0]["m"] if rows else None
+            if val and str(val) > last:
+                last = str(val)
+    db_path = str(getattr(store, "db_path", ":memory:"))
+    return {
+        "connector": _CONNECTOR_NAME,
+        "label": _CONNECTOR_LABEL,
+        "db_path": db_path,
+        "db_present": db_path != ":memory:",
+        "total_rows": total,
+        "last_ingested_at": last or None,
+        "tables": tables,
+    }
 
 def build_handler(store: Icd10Store):
     """Build a request handler class bound to ``store``.
@@ -88,6 +131,11 @@ def build_handler(store: Icd10Store):
         def _route(self, parts: List[str], qs: Dict[str, List[str]]) -> None:
             if parts == ["health"]:
                 return self._send(200, {"status": "ok"})
+            if parts == ["v1", "status"]:
+                # Same envelope as the unified estate surface: a list of
+                # status rows (of one, here).
+                return self._send(
+                    200, {"connectors": [connector_status(store)]})
             if parts == ["v1", "datasets"]:
                 return self._send(200, {"datasets": registry_as_dicts()})
             # /v1/query/{dataset}[/aggregate]
@@ -99,7 +147,8 @@ def build_handler(store: Icd10Store):
                         raise QueryError("aggregate requires group_by")
                     res: AggregateResult = aggregate(
                         store, dataset, group_by=p["group_by"],
-                        filters=p["filters"], limit=p["limit"], registry=registry)
+                        filters=p["filters"], limit=p["limit"],
+                        metrics=p.get("metrics"), registry=registry)
                     return self._send(200, res.as_dict())
                 if len(parts) == 3:
                     qres: QueryResult = query(

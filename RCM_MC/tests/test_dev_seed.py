@@ -229,6 +229,16 @@ class RealCcnAnchorTests(unittest.TestCase):
             self.assertEqual(float(row["bed_count"]), float(ref["beds"]))
             self.assertEqual(str(row["hcris_ccn"]), _REAL_CCN)
             self.assertIn("ACTUAL", str(row["metrics_basis"]))
+            # Workstream H — the filed metrics also carry the nested
+            # ObservedMetric shape with source="HCRIS", which drives the
+            # per-metric ENTERED→ACTUAL relabel on the deal surfaces.
+            om = row["observed_metrics"]
+            for key in ("net_revenue", "bed_count", "ebitda_margin",
+                        "medicare_day_pct"):
+                self.assertEqual(om[key]["source"], "HCRIS", key)
+                self.assertIn(_REAL_CCN, om[key]["source_detail"], key)
+                self.assertEqual(float(om[key]["value"]),
+                                 float(row[key]), key)
 
     def test_deal_page_names_the_ccn(self):
         from rcm_mc.ui.deal_dashboard import render_deal_dashboard

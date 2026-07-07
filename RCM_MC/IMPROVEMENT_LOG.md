@@ -4907,3 +4907,255 @@ three-valued-logic guards.
 **Verify**: F601/F602/B033 now clear across `rcm_mc`; `compileall` clean;
 `classify_carc("18")` → PAYER_BEHAVIOR; data-universe/chartis-kit/denial/
 benchmark/monte-carlo suites **1292 passed** (785 + 507) / 2 skipped.
+
+## W4-006 (2026-07-07) — BACKLOG #10: demo-deal realism — sth rebuilt on real CCN 330304
+One of the five demo.py deals is now a REAL facility, not a fiction: `sth`
+IS **White Plains Hospital** (CCN 330304, NY, FY2022) — graduated from the
+composite-anchor treatment to a full rebuild.
+- **demo.py**: at seed time the deal's name + financial observed_metrics
+  load from the live vendored HCRIS frame (never hardcoded copies that can
+  drift): net_revenue $884.69M, 292 beds, +8.7% patient-basis operating
+  margin ((NPR − opex)/NPR, the screener's formula), 39.4% Medicare share.
+  Each carries the nested ObservedMetric shape with `source="HCRIS"` +
+  `source_detail="CMS HCRIS CCN 330304 FY2022"`, plus flat copies for the
+  flat-key readers; `hcris_ccn`/`hcris_fy`/`metrics_basis="ACTUAL — …"`
+  recorded. RCM workflow metrics (denial/collection) stay explicitly
+  illustrative — HCRIS files no such fields. Frame-unavailable → fictional
+  fallback so the demo always boots.
+- **ENTERED→ACTUAL relabel where sourced**: deal_quick_view + deal_dashboard
+  now badge a metric ACTUAL iff its observed_metrics entry names a filing
+  source (HCRIS/IRS990) — per-metric, never per-deal, so the illustrative
+  denial rate on the SAME deal keeps its ENTERED badge. Sub-lines/chips name
+  the CCN ("filed HCRIS · CCN 330304"); the quick view gains a "Real
+  facility" provenance card (X-Ray-linked CCN + which metrics are filed);
+  the snapshot deal page's identity meta names "HCRIS CCN 330304 · FY2022".
+  dev/seed.py's mvm_2026 (CCN 450358) gains the same sourced
+  observed_metrics shape so both seeders agree on provenance.
+- **Found + fixed while verifying (route walker)**: /portfolio rendered a
+  literal "nan" in Avg Denial / Avg Days-in-AR once ANY deal carried nested
+  observed_metrics — `_expand_profiles` adds every profile-metric column
+  (possibly all-empty), and `mean()` of an empty column is NaN, which is
+  truthy AND passes `is not None`. KPI aggregation now maps NaN→None ("—").
+**Verify**: tests/test_demo_real_ccn.py (13: seeded values == HCRIS row
+loaded independently; relabel only where sourced; CCN chips on quick view /
+dashboard / snapshot page; portfolio nan guard); test_dev_seed extended for
+the sourced shape. demo/seed/renderer suites 57 + 29 + 78 + 68 passed; HTTP
+E2E on a demo-seeded server (/deal/sth, /analysis/sth, /portfolio: 200s, CCN
+named, no leaks); full route walk re-run clean of the nan finding.
+
+## W4-007 (2026-07-07) — BACKLOG #32: provenance-coverage metric live on /methodology
+The methodology hub now applies its own standard ("where the platform shows
+its work") to the platform itself: what % of `ck_kpi_block` stat blocks let a
+partner trace the number to its origin. **16.7% overall — 346 of 2,077 call
+sites across 325 page renderers** at ship time (a live number, recomputed
+each deploy — the point is to watch it climb).
+- **`rcm_mc/ui/_provenance_coverage.py`**: one importable scan function
+  (`scan_provenance_coverage`) consumed by BOTH the /methodology renderer and
+  the tests — no duplicated logic, no hand-maintained number that can drift
+  (same reasoning as W4-006's no-hardcoded-copies rule). Static AST scan of
+  `rcm_mc/ui/**/*.py` (multi-line calls handled natively; `def` lookalikes
+  and `__pycache__`/`static` excluded). A call site counts as covered when
+  it carries a **tooltip** (`help={"definition": …}` gloss, or a
+  `ck_provenance_tooltip`/`provenance_tooltip`/`ck_help_tooltip` call in an
+  argument), a **source** (`ck_source_link(...)`, or a `Source:` string
+  marker), or a **basis** note (`basis:` marker; CSS `flex-basis:` excluded
+  by lookbehind). ONE hop of local-name resolution — pages routinely build
+  `value = ck_provenance_tooltip(...)` a line above the block (source_page),
+  and a human hand count sees that tooltip, so the scanner must too. Explicit
+  `help=None` stays uncovered (the deliberate opt-out spelling). Unparseable
+  files (concurrent editor mid-save) are reported in `skipped`, never fatal.
+  `python3 -m rcm_mc.ui._provenance_coverage` prints a worst-first
+  leaderboard for hand verification (v5_fidelity_audit precedent).
+- **/methodology (library_page.py)**: "Provenance Coverage" appendix after
+  the catalog sections — one-line definition of what counts, three
+  `ck_kpi_block`s (call sites / with provenance / coverage %, all carrying
+  `help=` glosses — the section dogfoods its own metric), and a scrollable
+  worst-first per-page table (page · call sites · with provenance ·
+  coverage, 1dp; zero-coverage rows in coral). Hidden under an active `?q=`
+  filter (the partner asked for matching entries, not a 300-row scan table).
+  Scan cached per process (`lru_cache`) — ~2 s once, not per request; the
+  hot path stayed hot by materializing AST scope children once per scope
+  instead of a recursive generator (a 10x scan speedup found while timing).
+**Verify**: tests/test_provenance_coverage.py (17: synthetic fixture tree
+with 10 known call sites → exactly 6 covered incl. one-hop/f-string/attr-call
+boundaries + flex-basis and help=None non-matches; scan-twice reproducibility
+on an isolated tree; hand-count pins on two stable pages —
+exports_index_page.py 2/2 = 100.0%, source_page.py 2 of 3 = 66.7%; live-tree
+internal consistency without pinning the moving global %; /methodology
+renders the SAME cached report's numbers, per-page rows match, appendix
+hidden under ?q=). Existing methodology/library suites re-run green:
+test_library_editorial_and_search + test_sticky_and_backtotop (28),
+chartis-integration/page-actions/model-card/research/ui-rework/provenance-
+tooltip (136 + 6 skipped), seekingchartis_v2 + guide-metric + screener-AR
+(24 + 6 skipped).
+
+## W4-008 (2026-07-07) — BACKLOG #34: P13 bullets on /metro-markets + /county-explorer
+Closes the P13 long-tail item. /metro-markets had its two guarded bullets
+land earlier ("refill #34" commit); this pass adds the county half and
+completes the verification plan ("figures re-derived in tests exactly") on
+BOTH pages.
+- **/county-explorer (`_county_insights`)**: three templates, recomputed
+  from the SAME `explorer_rows` rows + population-weighted footer the table
+  and its tfoot render from — never a second data path. (1) population
+  concentration — top county's share of the state total, guard ≥20% share
+  ("Maricopa County alone holds 61.8% of Arizona's 7.4M residents (4.6M) —
+  metro-first entry math for any statewide build-out"); (2) oldest county
+  vs the state weighted mean, guard ≥3pp over; (3) highest-uninsured county
+  vs the state weighted mean, guard ≥3pp over (the bad-debt screen). Every
+  distributional claim needs ≥8 counties with data — Delaware (3 counties)
+  renders NO insights block, not an empty shell; `ck_insight_bullets`
+  already returns '' when nothing passes (silence over noise) and carries
+  the copy-to-clipboard affordance for free. County names html-escaped.
+- **Guard calibration**: OH is the honest case — Franklin County holds only
+  11.2% of Ohio, so the concentration bullet is suppressed while the aged
+  (Noble Co. 29.8% 65+ vs 18.4% wtd mean) and uninsured (Holmes Co. 28.9%
+  vs 7.8%) bullets fire; the page states only what the spread supports.
+**Verify**: tests/test_county_explorer.py (+5: OH aged/uninsured figures
+re-derived exactly — weighted mean recomputed independently in the test as
+Σ(rate×pop)/Σpop, top county by max(); AZ concentration share re-derived and
+guard bound asserted; OH concentration suppression pinned; synthetic 0.4pp
+tails → '' — the tiny-delta guard; empty rows + real thin-data DE → no
+ck-insights block at all). tests/test_metro_markets.py (+3 and one deepened:
+median now re-derived exactly for BOTH metro bullets; synthetic 0.4pp tails
+→ ''; empty rows → ''). Full run: test_county_explorer (12) +
+test_metro_markets (10) + test_insight_bullets (7) = 29 green. Pre-existing
+unrelated red in test_guide_context_sufficiency (/connector-estate,
+/market-scan guide-blind — another workstream's routes) noted, not touched.
+
+## W4-009 (2026-07-07) — BACKLOG #35: glossary long-tail — HCRIS X-Ray metric labels (part 2, item closed)
+Completes #35. Part 1 (W2-218, "refill #35") already linked the predictive
+screener's four metric column headers; this pass adopts metric_label_link on
+the second named surface — the HCRIS X-Ray benchmark grid's metric-name
+cells (`_metric_row` in ui/hcris_xray_page.py, previously bare
+`html.escape(bm.spec.label)`).
+- **Attr→key alias table** (`_XRAY_ATTR_TO_GLOSSARY_KEY`): the X-Ray
+  engine's spec.attr names differ from the glossary's canonical keys for
+  five metrics (other_day_pct→commercial_pct, payer_diversity_index→
+  payer_diversity, net_revenue_per_bed→revenue_per_bed, opex_per_bed→
+  expense_per_bed, operating_margin_on_npr→operating_margin) — same
+  single-place aliasing pattern the bridge uses for "cmi". Five attrs match
+  the glossary key directly (total_patient_days, occupancy_rate,
+  medicare_day_pct, medicaid_day_pct, net_to_gross_ratio) and need no row.
+  Net: **10 of 15 grid labels now route to their canonical
+  /metric-glossary card**; the 5 attrs with no card (beds, NPR/opex per
+  patient day, contractual_allowance_rate, net_income_margin_on_npr) fall
+  through the helper's guard to plain escaped text — no dead anchor can
+  ship from this grid. Visual treatment identical to the other adopters
+  (color:inherit + dotted underline from the shared helper).
+- **Peer-roster headers deliberately NOT wrapped**: power_ui.sortable_table
+  html-escapes its `headers` (correctly — they're data-ish strings), so an
+  anchor there would render as literal markup. The benchmark grid is the
+  page's metric-label surface; the roster keeps plain headers.
+**Verify**: tests/test_glossary_longtail.py (10 new: alias values all
+resolve in the registry + alias keys are real catalog attrs; the
+linked/unlinked partition of METRIC_CATALOG re-derived and pinned exactly
+(10/5) so a new metric or glossary card forces a deliberate revisit; a real
+rendered X-Ray report carries all 10 anchors, ships NO raw-attr or no-card
+anchors, and EVERY /metric-glossary#<key> found on the page resolves; the
+same every-anchor-resolves sweep on the rendered predictive screener plus
+its four W2-218 header anchors; bogus-key regression — direct and via
+alias — renders plain escaped text, no <a>, no glossary href). Full run:
+new file (10) + both pages' existing suites + glossary-helper/registry/page
+suites = 109 green (test_hcris_xray, _headline, _render_hygiene,
+_no_raw_css, _workstation, _input_workstation, _ebitda_floor,
+_component_map_doc, test_xray_section_nav, test_predictive_screener_lead/
+_ar_days/_honest_missing, test_glossary_link_helper, test_metric_glossary,
+test_metric_glossary_page).
+
+## W4-010 (2026-07-07) — BACKLOG #31 closed: catchment-radius rings on the state-detail pin map
+The pin map on /market-data/state/<ST> shipped no-fake-points (W2-217
+verified); the remaining nub was a catchment-radius option so a partner
+can eyeball catchment overlap between plotted facilities.
+- **Off / 15 mi / 30 mi control** on the pin map (ui/us_map.py
+  `render_state_hospital_points`), off by default. Toggle visibility is
+  pure CSS (`:checked` sibling rules over hidden radios — no JS needed to
+  show/hide); a ~10-line vanilla shim syncs the control with `?radius=`
+  (reads it on load, `history.replaceState` on change) so the state is
+  shareable without touching the route handler. Fixed presets only —
+  `parse_catchment_radius` maps anything that isn't exactly a preset
+  integer (bogus text, negatives, floats, huge numbers) to rings-off,
+  never to a made-up ring.
+- **Geometry is projection-derived, not a guessed constant**: the pin
+  fit's px-per-degree scale + cos(mean-lat) aspect correction now come
+  from a shared `_fit_projection` (same numbers the dots use), and
+  `catchment_ring_px` converts miles → degrees → pixels at the PIN's own
+  latitude: ry = scale·mi/69.055, rx = scale·mi/(69.172·cos φ_pin)·
+  cos φ_mean. A ground circle maps to an ellipse under the
+  equirectangular fit, so rings render as `<ellipse>` (honest, and the
+  one-`<circle>`-per-pin invariant keeps holding). The legend caption
+  names the active radius and the caveat: straight-line equirectangular
+  approximation — drive-time proxy, not drive time.
+- **No-fake-points extends to rings**: one ring per PLOTTED pin, never
+  for table-only hospitals without a coordinate. Degenerate fits (a
+  single distinct point — scale would be fabricated) omit rings with an
+  honest "no distance scale" note instead of drawing them wrong. Rings
+  styled recessively (teal kit vars, 5% fill / 35% dashed stroke, drawn
+  under the dots) so pins stay legible.
+- `render_state_detail` takes the raw `?radius=` value through the same
+  parser (route unchanged — parallel-stream file); RI-scale sanity
+  checked (638 px/deg → a 15-mi ring honestly covers much of the state).
+**Verify**: tests/test_state_catchment_radius.py (20 new: bogus-value
+parse table; hand-computed scale (162 px/deg for a 30–32°N span) + ring
+px at a known latitude (15 mi @ 30°N → ry 35.19 px, rx 34.77 px, near-
+circular but deliberately not equal); rendered ellipse carries the
+derived radii; ring count == real-pin count per preset incl. a
+no-coordinate facility; default-off (Off checked, presets unchecked,
+rings CSS-hidden); invalid active radius degrades to off; degenerate
+single-point omission; presets opt-out restores legacy output; legend
+caveat wording; no external calls with rings on; state-detail plumb-
+through for "15"/bogus/none). Existing pin-map families untouched and
+green: 43 passed (new + test_hospital_coords + test_market_data_map +
+test_market_data_drilldown); broad map/market sweep 664 passed.
+
+## W4-011 (2026-07-07) — completeness audit: the whole scored backlog is closed
+A multi-agent audit re-verified every BACKLOG.md item against the actual
+code and a PASSING real-path test (no trusting checkmarks), then closed the
+one gap it found. The top scored block (#2–#9, #15) is now marked
+✅ DONE in-place with the verifying test/route beside each row, so the file
+no longer reads half-open.
+- **All 9 top-block scored specs VERIFIED against real routes + real data**
+  (not smoke imports): #2 CIM Cross-Check (tests/test_cim_crosscheck.py, 30
+  passed; claims at ±7/18/40% fire green/yellow/red exactly on real TX
+  HCRIS, every estimate row sourced, memo+CSV export, no LLM) →
+  /diligence/cim-crosscheck; #3 Roll-Up Builder
+  (tests/test_rollup_scenario.py, 13 passed; combined beds/days/NPR + HHI
+  before/after hand-matched to raw TX CCNs 450076/450068/450358) →
+  /pipeline/rollup; #4 percentile chip (tests/test_peer_percentile.py, 10
+  passed; ties half-credit + NaN-drop + n<8 honesty guard) → deal
+  quick-view + CIM P4b chip; #5 DQ dashboard (tests/test_data_quality_page
+  .py + _gap_chart, 15 passed; every gap row == `rcm-mc data gaps`, live
+  row counts == loaders) → /data-quality; #6 facility→rule exposure
+  (tests/test_regulatory_exposure.py, 7 passed; provider-type + state
+  scoping, every headline cites a rule URL) → /diligence/hcris-xray; #7
+  insight-bullet primitive (tests/test_insight_bullets.py, 7 passed;
+  <0.5pp deltas suppressed at the 0.15/0.6pp boundary, copy-to-clipboard,
+  4 pages wired) → /portfolio + state market + metro/county; #8 deal
+  switcher (tests/test_deal_context.py + _prefill, 15 passed; real-CCN deal
+  opens 4 modules pre-scoped, open-redirect guard, params-win) →
+  /deal-context; #15 empty-state sweep (tests/test_empty_state_sweep.py, 3
+  passed; permanent gate over empty-db + ?state=ZZ variants via
+  route_walker markers).
+- **One gap found and finished — #9 in-UI model card.** Implementation
+  (methodology panel + screener footer, numbers reproduced by
+  scripts/eval_margin_model.py) was present but lacked an explicit test
+  pinning the "never claims AI/LLM" wording the spec requires. Added
+  tests/test_model_card_no_ai.py (drives render_methodology / the screener
+  footer and asserts the card content carries no AI/LLM claim, distinct
+  from unrelated Cmd-K palette chrome) and a small predictive_screener.py
+  touch. Combined model-card run now 12 passed. #9 → VERIFIED.
+- **Refill rows (#16–#36) confirmed still DONE** with their existing
+  LOG/W-refs; nothing ambiguous remained.
+- **Remaining open work is legitimately NETWORK-GATED, not parked** (kept
+  intact in BACKLOG.md "Groomed-out / blocked"): (1) Medicaid S-3 re-ingest
+  + POS bed backfill — loaders + data.cms.gov URLs named in
+  gap_fill_registry, runnable when egress opens; (2) ONC CHPL HCIT wiring —
+  api named in FEATURE_MATRIX E, page renders ck_illustrative_note until a
+  source connects; (3) P9 per-CCN CHOW diff alerts — vendored snf_chow is
+  state×year aggregate, per-CCN feed named in the gap registry. A meta-scan
+  of BACKLOG/FEATURE_MATRIX/IMPROVEMENT_LOG + a TODO/FIXME/NotImplementedError
+  grep over rcm_mc/ surfaced no other offline-actionable backlog work; the
+  remaining stubs are phase-tagged deferrals or external-connector shapes.
+**Net:** every non-network-gated backlog item is VERIFIED against a passing
+real-path test. Report-only auditors edited nothing; the only code change
+was the #9 no-AI test (+ its screener touch); this reconcile pass edited
+BACKLOG.md and this log.

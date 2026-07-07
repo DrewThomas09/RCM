@@ -1,13 +1,18 @@
-"""MSA-Level Provider Market Concentration Analyzer.
+"""ILLUSTRATIVE — MSA-level concentration analyzer over a curated synthetic panel.
 
-MSA-level competitive intelligence using HHI, CR3, CR5 for healthcare
-provider markets. Critical for regime classification (fragmented vs
-concentrated) that drives rollup thesis. Extends /market-concentration
-(state-level) with finer MSA granularity.
+Do not quote these outputs in IC documents: the MSA rows, operator
+profiles, FTC-action likelihoods, and value-at-risk figures below carry
+real operator names with CURATED numbers — they illustrate the regime-
+classification methodology (fragmented vs concentrated via HHI/CR3/CR5)
+and are not filed or computed market data. For concentration computed
+from an actual CMS pull use
+:mod:`rcm_mc.data_public.market_concentration` (note that module's HHI
+is on the 0-1 fractional scale, while this panel uses the 0-10,000
+merger-guideline convention).
 """
 from __future__ import annotations
 
-import importlib
+import statistics
 from dataclasses import dataclass
 from typing import List
 
@@ -81,17 +86,36 @@ class MSAResult:
     stress_scenarios: List[StressScenario]
     top_operators: List[OperatorProfile]
     corpus_deal_count: int
+    # Machine-readable honesty flag: the MSA panel pairs real operator
+    # names with curated numbers, so any consumer beyond the labelled
+    # UI page (exports, assistant context, future APIs) inherits the
+    # caveat instead of unlabelled numbers.
+    is_illustrative: bool = True
+    # Median HHI beside the mean: the panel's HHI distribution is
+    # right-skewed (a 4,250 fertility market against a 380 home-health
+    # market), so the mean overstates the typical market's
+    # concentration — median is the robust central read. Additive
+    # field; ``avg_hhi`` stays for back-compat.
+    median_hhi: int = 0
+    # Median CR3 beside ``avg_cr3_pct`` for the same reason: the top-3
+    # concentration ratio is right-skewed by the handful of near-
+    # monopoly markets (0.72 fertility vs 0.12 derma), so the mean
+    # top-3 share reads more consolidated than the typical MSA. Additive
+    # field; ``avg_cr3_pct`` stays for back-compat.
+    median_cr3_pct: float = 0.0
 
 
 def _load_corpus() -> List[dict]:
-    deals: List[dict] = []
-    for i in range(2, 112):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
-        except ImportError:
-            pass
-    return deals
+    """Delegate to the canonical registry-driven loader.
+
+    Five sibling market models each hand-rolled an ``importlib`` loop
+    over divergent ``range()``s, so the same corpus read as five
+    different "Corpus Deals" counts depending on the page and silently
+    drifted stale as seed files were added. The registry enumerates
+    every seed group, so all five now agree and track new seeds.
+    """
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _build_msas() -> List[MSAConcentration]:
@@ -200,7 +224,9 @@ def compute_msa_concentration() -> MSAResult:
     high = sum(1 for m in msas if m.market_structure == "highly concentrated")
 
     avg_hhi = int(sum(m.hhi for m in msas) / len(msas)) if msas else 0
+    median_hhi = int(statistics.median(m.hhi for m in msas)) if msas else 0
     avg_cr3 = sum(m.cr3_pct for m in msas) / len(msas) if msas else 0
+    median_cr3 = statistics.median(m.cr3_pct for m in msas) if msas else 0.0
 
     return MSAResult(
         total_msas_analyzed=len(msas),
@@ -208,7 +234,9 @@ def compute_msa_concentration() -> MSAResult:
         moderately_concentrated_count=moderate,
         highly_concentrated_count=high,
         avg_hhi=avg_hhi,
+        median_hhi=median_hhi,
         avg_cr3_pct=round(avg_cr3, 4),
+        median_cr3_pct=round(median_cr3, 4),
         msa_details=msas,
         regimes=regimes,
         whitespace=whitespace,

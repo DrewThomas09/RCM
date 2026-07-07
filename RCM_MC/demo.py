@@ -67,6 +67,19 @@ HOST = (
 )
 USERNAME = "demo"
 PASSWORD = "DemoPass!1"
+
+# Workstream H (BACKLOG #10) — ONE of the five demo deals is rebuilt on a
+# real, named CCN: ``sth`` IS White Plains Hospital (CCN 330304, NY), the
+# facility the healthy-beat archetype was anchored to. Its HCRIS-filed
+# metrics (NPR, beds, operating margin, Medicare share) seed as
+# observed_metrics with source="HCRIS" — looked up from the live vendored
+# frame at seed time so the numbers can never drift from the filing — and
+# the UI relabels exactly those metrics ENTERED→ACTUAL. The RCM workflow
+# metrics (denial / collection) stay illustrative: HCRIS files no such
+# fields, and pretending otherwise is the kind of fake-data move the demo
+# exists to avoid.
+_REAL_CCN_DEAL = "sth"
+_REAL_CCN = "330304"
 # Andrew's primary partner account — added so the rendered login
 # page can show a clean, real-shaped credential pair partners can
 # read off the screen. Both accounts share role=admin so either
@@ -86,6 +99,10 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         "mgh": "Magnolia Grove Hospital",
         "nyp": "Northvale Physician Partners",
         "buh": "Beacon Urban Health",
+        # sth is the real-CCN deal (see _REAL_CCN_DEAL): at seed time its
+        # name is replaced by the facility's filed HCRIS name ("White
+        # Plains Hospital"); this entry is only the frame-unavailable
+        # fallback.
         "sth": "Sterling Heights Medical",
     }
     # Per-deal RCM observed metrics so the analysis-workbench
@@ -178,11 +195,55 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
         #   mgh → 050039 Enloe Medical Center (CA, −0.5%)
         #   nyp → 330182 St. Francis Hospital (NY, +2.0%)
         #   buh → 500129 Tacoma General Allenmore (WA, +5.1%)
-        #   sth → 330304 White Plains Hospital (NY, +8.7%)
+        # sth graduated from composite-anchor to a FULL real-CCN rebuild
+        # (330304 White Plains Hospital, NY, +8.7%) — see _REAL_CCN_DEAL.
         _anchor_ccn = {"ccf": "240004", "mgh": "050039", "nyp": "330182",
-                       "buh": "500129", "sth": "330304"}.get(deal_id)
+                       "buh": "500129"}.get(deal_id)
         profile = {"observed_metrics": observed,
                    "rcm_metrics_basis": "illustrative-demo"}
+        deal_name = deal_names[deal_id]
+        if deal_id == _REAL_CCN_DEAL:
+            # The real-CCN deal: name + observed financial metrics come
+            # straight from the facility's filed cost report. Resilient —
+            # a missing/failed frame falls back to the fictional seed so
+            # the demo always boots.
+            try:
+                from rcm_mc.data.hcris import _get_latest_per_ccn
+                _rows = _get_latest_per_ccn()
+                _rows = _rows[_rows["ccn"].astype(str) == _REAL_CCN]
+                if len(_rows):
+                    r = _rows.iloc[0]
+                    npr = float(r["net_patient_revenue"])
+                    opex = float(r["operating_expenses"])
+                    fy = int(r["fiscal_year"])
+                    deal_name = str(r["name"]).title()
+                    detail = f"CMS HCRIS CCN {_REAL_CCN} FY{fy}"
+                    sourced = {
+                        "net_revenue": npr,
+                        "bed_count": float(r["beds"]),
+                        # Patient-basis operating margin — the same
+                        # (NPR - opex)/NPR the screener trusts.
+                        "ebitda_margin": round((npr - opex) / npr, 4),
+                        "medicare_day_pct": round(
+                            float(r["medicare_day_pct"]), 4),
+                    }
+                    for k, v in sourced.items():
+                        # Nested ObservedMetric shape carries the per-metric
+                        # provenance (drives the ENTERED→ACTUAL relabel);
+                        # flat copies keep every flat-key reader working.
+                        observed[k] = {"value": v, "source": "HCRIS",
+                                       "source_detail": detail,
+                                       "quality_flags": []}
+                        profile[k] = v
+                    profile.update({
+                        "state": str(r["state"]), "ccn": _REAL_CCN,
+                        "hcris_ccn": _REAL_CCN, "hcris_fy": fy,
+                        "metrics_basis": (
+                            f"ACTUAL — filed HCRIS values, CCN {_REAL_CCN} "
+                            f"FY{fy}"),
+                    })
+            except Exception:  # noqa: BLE001 — demo must seed regardless
+                pass
         if _anchor_ccn:
             try:
                 from rcm_mc.data.hcris import _get_latest_per_ccn
@@ -208,7 +269,7 @@ def seed(store: PortfolioStore, run_dir: str) -> None:
             except Exception:  # noqa: BLE001 — anchor is additive; demo must seed
                 pass
         store.upsert_deal(
-            deal_id, name=deal_names[deal_id],
+            deal_id, name=deal_name,
             profile=profile,
         )
         ddir = os.path.join(run_dir, deal_id + "_run")

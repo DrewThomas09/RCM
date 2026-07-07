@@ -483,20 +483,45 @@ def render_deal_dashboard(
     # render the model's fallback constants (12% denial / 10% margin,
     # which the derived ESTIMATES above legitimately use) as if they
     # were the deal's observed values. Missing → em-dash, no badge.
+    # Workstream H refinement — ENTERED→ACTUAL relabel where sourced: a
+    # metric whose nested observed_metrics entry names a public filing
+    # (HCRIS / IRS990) is a filed figure, not self-reported, and badges
+    # ACTUAL. Only genuinely sourced metrics relabel; the rest stay
+    # ENTERED so the two bases never blur.
     from ._chartis_kit import ck_basis_badge
+
+    _om = profile.get("observed_metrics") or {}
+
+    def _metric_basis(key: str) -> str:
+        entry = _om.get(key) if isinstance(_om, dict) else None
+        if isinstance(entry, dict) and str(
+                entry.get("source") or "").upper() in ("HCRIS", "IRS990"):
+            return "actual"
+        return "entered"
+
+    _ccn = str(profile.get("hcris_ccn") or "")
+
+    def _basis_sub(key: str, default_sub: str) -> str:
+        # A relabelled metric's sub line names the CCN it traces to —
+        # the provenance the ACTUAL badge is claiming.
+        if _metric_basis(key) == "actual" and _ccn:
+            return f"filed HCRIS · CCN {html.escape(_ccn)}"
+        return default_sub
+
     bed_count = profile.get("bed_count")
     bed_count_display = (
-        f"{int(bed_count):,}{ck_basis_badge('entered')}"
+        f"{int(bed_count):,}{ck_basis_badge(_metric_basis('bed_count'))}"
         if bed_count not in (None, "") else "—"
     )
     dr_raw = profile.get("denial_rate")
     denial_display = (
-        f"{float(dr_raw):.1f}%{ck_basis_badge('entered')}"
+        f"{float(dr_raw):.1f}%{ck_basis_badge(_metric_basis('denial_rate'))}"
         if dr_raw not in (None, "") else "—"
     )
     margin_raw = profile.get("ebitda_margin")
     margin_display = (
-        f"{ck_fmt_pct(float(margin_raw))}{ck_basis_badge('entered')}"
+        f"{ck_fmt_pct(float(margin_raw))}"
+        f"{ck_basis_badge(_metric_basis('ebitda_margin'))}"
         if margin_raw not in (None, "") else "—"
     )
     # Glossary links from the KPI cards (PAGE_INVENTORY "partial" fix):
@@ -513,15 +538,20 @@ def render_deal_dashboard(
         '<div class="ck-kpi-grid" '
         'style="grid-template-columns:repeat(3,1fr);'
         'gap:8px;margin:8px 0 16px;">'
-        + ck_kpi_block("Bed Count", bed_count_display, "HCRIS / entered")
+        + ck_kpi_block("Bed Count", bed_count_display,
+                       _basis_sub("bed_count", "HCRIS / entered"))
         + ck_kpi_block("Denial Rate", denial_display,
-                       ("initial denials" if dr_raw not in (None, "")
-                        else "not entered — estimates use the 12% model "
-                             "default") + _gloss("denial_rate"))
+                       _basis_sub(
+                           "denial_rate",
+                           "initial denials" if dr_raw not in (None, "")
+                           else "not entered — estimates use the 12% model "
+                                "default") + _gloss("denial_rate"))
         + ck_kpi_block("EBITDA Margin", margin_display,
-                       ("of net revenue" if margin_raw not in (None, "")
-                        else "not entered — estimates use the 10% model "
-                             "default") + _gloss("ebitda_margin"))
+                       _basis_sub(
+                           "ebitda_margin",
+                           "of net revenue" if margin_raw not in (None, "")
+                           else "not entered — estimates use the 10% model "
+                                "default") + _gloss("ebitda_margin"))
         + '</div>'
     )
 

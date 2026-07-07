@@ -12,6 +12,8 @@ Used by:
 """
 from __future__ import annotations
 
+import datetime as _dt
+import statistics
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -93,14 +95,29 @@ def transactions_for_specialty(
     return out[:limit]
 
 
-def sponsor_activity(lookback_months: int = 12) -> Dict[str, int]:
+def sponsor_activity(
+    lookback_months: int = 12,
+    *,
+    as_of: Optional[_dt.date] = None,
+) -> Dict[str, int]:
     """Count deals per sponsor in the lookback window.
 
     Used by the Seeking Alpha page to show "Who's deploying capital
     in healthcare right now?" — the leaderboard of active sponsors.
+
+    ``as_of`` pins the window end (default: today in UTC — naive
+    ``date.today()`` drifts with the box's timezone). Injectable
+    because the library is a curated fixture: as it ages past the
+    lookback the leaderboard empties, and without a deterministic
+    clock that failure mode was untestable. When this returns ``{}``
+    on a non-empty library, the honest render is "library last
+    reviewed <date>" (see
+    :func:`rcm_mc.market_intel.content_vintage.content_vintage` with
+    ``"pe_transactions"``), not "no sponsor activity" — a stale
+    fixture must not read as a quiet market.
     """
-    from datetime import date
-    as_of = date.today()
+    if as_of is None:
+        as_of = _dt.datetime.now(_dt.timezone.utc).date()
     counts: Dict[str, int] = {}
     for t in list_transactions():
         try:
@@ -117,22 +134,39 @@ def sponsor_activity(lookback_months: int = 12) -> Dict[str, int]:
     )
 
 
-def multiple_band_by_specialty() -> Dict[str, Dict[str, float]]:
+#: Specialty rollups with fewer observed multiples than this carry
+#: ``small_sample: True`` — the curated library holds a handful of
+#: deals per specialty, and a "median" of two or three multiples is a
+#: reference point, not a market statistic. The count was already
+#: disclosed; the flag encodes the floor so consumers don't each pick
+#: their own.
+SMALL_SAMPLE_N: int = 5
+
+
+def multiple_band_by_specialty() -> Dict[str, Dict[str, Any]]:
     """Roll-up: per specialty, median / min / max of observed
-    EV/EBITDA multiples in the library."""
+    EV/EBITDA multiples in the library.
+
+    ``statistics.median`` (not the upper middle element) because the
+    per-specialty samples here are tiny — on n=2 with 8.0x/12.0x the
+    upper-element pick read 12.0x, overstating the median by two turns.
+    Each rollup carries ``count`` and ``small_sample`` (n <
+    ``SMALL_SAMPLE_N``) so the tiny-n caveat travels with the number.
+    """
     by_sp: Dict[str, List[float]] = {}
     for t in list_transactions():
         if t.ev_ebitda_multiple and t.specialty:
             by_sp.setdefault(t.specialty, []).append(
                 float(t.ev_ebitda_multiple),
             )
-    out: Dict[str, Dict[str, float]] = {}
+    out: Dict[str, Dict[str, Any]] = {}
     for sp, mults in by_sp.items():
         mults.sort()
         out[sp] = {
             "count": len(mults),
-            "median": mults[len(mults) // 2],
+            "median": statistics.median(mults),
             "min": mults[0],
             "max": mults[-1],
+            "small_sample": len(mults) < SMALL_SAMPLE_N,
         }
     return out

@@ -225,6 +225,11 @@ def _nucc_urls() -> List[str]:
     return out
 
 
+# ``cadence_days`` is each pack's honest refresh cadence (how often the
+# publisher revises the set): past it, status() marks the pack stale so a
+# compliance screen run on a 9-month-old exclusions list SAYS so instead
+# of silently passing. LEIE is monthly (35d with slack); HCPCS quarterly
+# (100d); NUCC semiannual (200d); ICD-10-CM annual (400d).
 PACKS: Dict[str, Dict[str, object]] = {
     "taxonomy": {
         "title": "NUCC provider taxonomy (full)",
@@ -232,6 +237,7 @@ PACKS: Dict[str, Dict[str, object]] = {
         "columns": 2,
         "parse": _parse_taxonomy,
         "urls": _nucc_urls,
+        "cadence_days": 200,
         "license": "Public (NUCC); attribution appreciated.",
         "enables": "Full specialty display names in the specialty mix.",
     },
@@ -248,6 +254,7 @@ PACKS: Dict[str, Dict[str, object]] = {
             + _year_urls("https://ftp.cdc.gov/pub/Health_Statistics/NCHS/"
                          "Publications/ICD10CM/{year}/"
                          "icd10cm-codes-{year}.txt")),
+        "cadence_days": 400,
         "license": "Public domain (US Government work).",
         "enables": "icd10-unknown-code — shaped-but-nonexistent diagnoses.",
     },
@@ -261,6 +268,7 @@ PACKS: Dict[str, Dict[str, object]] = {
                        "{year}-hcpcs-alpha-numeric-hcpc-file.zip")
             + _year_urls("https://www.cms.gov/files/zip/"
                          "january-{year}-alpha-numeric-hcpcs-file.zip")),
+        "cadence_days": 100,
         "license": "CMS public file (Level II only; CPT-4 excluded).",
         "enables": "hcpcs-unknown-code — letter-led codes not in the set.",
     },
@@ -271,6 +279,7 @@ PACKS: Dict[str, Dict[str, object]] = {
         "parse": _parse_leie,
         "urls": lambda: ["https://oig.hhs.gov/exclusions/downloadables/"
                          "UPDATED.csv"],
+        "cadence_days": 35,
         "license": "Public (HHS OIG). Refresh monthly.",
         "enables": "leie-excluded-npi — automatic offline exclusion "
                    "screening on every run.",
@@ -300,6 +309,30 @@ def _fetch(url: str, opener: Callable = urllib.request.urlopen) -> bytes:
     return b"".join(chunks)
 
 
+def _install_rows(pack_id: str, spec: Dict[str, object], rows: list, *,
+                  source: str, digest: str) -> Dict[str, object]:
+    """Replace one pack's table + provenance row. Shared by the HTTPS
+    pull, the install-from-file path and the vendored bootstrap so every
+    install records the same source/fetched/rows/sha256 provenance."""
+    table = str(spec["table"])
+    ncols = int(spec["columns"])  # type: ignore[arg-type]
+    ph = ",".join("?" * ncols)
+    with _LOCK, _conn() as con:
+        con.execute(f"DELETE FROM {table}")  # noqa: S608 — fixed name
+        con.executemany(
+            f"INSERT OR REPLACE INTO {table} VALUES ({ph})",  # noqa: S608
+            rows)
+        con.execute(
+            "INSERT INTO pack_meta (pack, source, fetched, rows,"
+            " sha256) VALUES (?,?,?,?,?) ON CONFLICT(pack) DO UPDATE"
+            " SET source=excluded.source, fetched=excluded.fetched,"
+            " rows=excluded.rows, sha256=excluded.sha256",
+            (pack_id, source, time.time(), len(rows), digest))
+    _invalidate_cache(pack_id)
+    return {"pack": pack_id, "source": source, "rows": len(rows),
+            "sha256": digest}
+
+
 def pull(pack_id: str, *, opener: Callable = urllib.request.urlopen,
          url: Optional[str] = None) -> Dict[str, object]:
     """Download, parse and install one pack. Tries the pack's candidate
@@ -319,30 +352,87 @@ def pull(pack_id: str, *, opener: Callable = urllib.request.urlopen,
             rows = list(spec["parse"](raw))  # type: ignore[operator]
             if not rows:
                 raise ValueError("file parsed to zero rows")
-            digest = hashlib.sha256(raw).hexdigest()
-            table = str(spec["table"])
-            ncols = int(spec["columns"])  # type: ignore[arg-type]
-            ph = ",".join("?" * ncols)
-            with _LOCK, _conn() as con:
-                con.execute(f"DELETE FROM {table}")  # noqa: S608 — fixed name
-                con.executemany(
-                    f"INSERT OR REPLACE INTO {table} VALUES ({ph})",  # noqa: S608
-                    rows)
-                con.execute(
-                    "INSERT INTO pack_meta (pack, source, fetched, rows,"
-                    " sha256) VALUES (?,?,?,?,?) ON CONFLICT(pack) DO UPDATE"
-                    " SET source=excluded.source, fetched=excluded.fetched,"
-                    " rows=excluded.rows, sha256=excluded.sha256",
-                    (pack_id, cand, time.time(), len(rows), digest))
-            _invalidate_cache(pack_id)
-            return {"pack": pack_id, "source": cand, "rows": len(rows),
-                    "sha256": digest}
+            return _install_rows(pack_id, spec, rows, source=cand,
+                                 digest=hashlib.sha256(raw).hexdigest())
         except Exception as exc:  # noqa: BLE001 — try the next candidate
             last_err = exc
     raise ValueError(
         f"could not pull {pack_id!r}: {type(last_err).__name__}: {last_err}. "
         "The host needs outbound HTTPS to the source (or set "
-        f"NPI_REFPACK_URL_{pack_id.upper()} to a mirror).")
+        f"NPI_REFPACK_URL_{pack_id.upper()} to a mirror). On a no-egress "
+        "host, install from a downloaded file instead "
+        "(install_from_file / rcm-mc npi-clean --refdata-install).")
+
+
+def install_from_bytes(pack_id: str, raw: bytes, *,
+                       source: str = "local file") -> Dict[str, object]:
+    """Install one pack from an already-downloaded payload — the offline
+    path for no-egress deployments, where pull() can never succeed. Same
+    parsers, same provenance row (source recorded as ``file: …``), same
+    cache invalidation. Raises ValueError on an unparseable payload."""
+    spec = PACKS.get(pack_id)
+    if spec is None:
+        raise ValueError(f"unknown pack: {pack_id!r} "
+                         f"(known: {', '.join(sorted(PACKS))})")
+    if not raw:
+        raise ValueError("empty payload")
+    rows = list(spec["parse"](raw))  # type: ignore[operator]
+    if not rows:
+        raise ValueError("file parsed to zero rows")
+    return _install_rows(pack_id, spec, rows, source=f"file: {source}",
+                         digest=hashlib.sha256(raw).hexdigest())
+
+
+def install_from_file(pack_id: str, path: str) -> Dict[str, object]:
+    """``install_from_bytes`` from a path on disk (CLI/API convenience)."""
+    p = Path(path)
+    if not p.exists():
+        raise ValueError(f"file not found: {path}")
+    return install_from_bytes(pack_id, p.read_bytes(), source=p.name)
+
+
+def bootstrap_icd10cm_from_vendored() -> Dict[str, object]:
+    """Seed the icd10cm pack from the vendored v49 validity table.
+
+    A no-egress deployment can never pull() a pack, yet a complete
+    148,980-row ICD-10-CM validity set (FY2025 + FY2026) already ships
+    inside vendor_v49 for the pandas path — the stdlib-grade
+    ``icd10-unknown-code`` check stayed dark for no reason. This
+    installs that table as the icd10cm pack, provenance recorded as the
+    vendored file, so the flag fires with zero network."""
+    seed = (Path(__file__).parent / "vendor_v49" / "npi_recovery" /
+            "reference" / "icd10cm_validity_seed.csv")
+    if not seed.exists():
+        raise ValueError("vendored icd10cm_validity_seed.csv not shipped "
+                         "in this build")
+    raw = seed.read_bytes()
+    reader = csv.reader(io.StringIO(raw.decode("utf-8", errors="replace")))
+    header = [h.strip().lower() for h in next(reader, [])]
+    try:
+        c_i = header.index("code")
+    except ValueError:
+        raise ValueError("unexpected validity-seed format (no code column)")
+    f_i = header.index("fy") if "fy" in header else None
+    best_fy: Dict[str, str] = {}
+    for row in reader:
+        if c_i >= len(row):
+            continue
+        code = row[c_i].strip().upper()
+        if not (3 <= len(code) <= 7 and code[0].isalpha()
+                and code[1:].isalnum()):
+            continue
+        fy = (row[f_i].strip() if f_i is not None and f_i < len(row)
+              else "")
+        if fy >= best_fy.get(code, ""):
+            best_fy[code] = fy
+    if not best_fy:
+        raise ValueError("no ICD-10-CM codes parsed from the vendored seed")
+    rows = [(code, f"FY{fy}" if fy else "")
+            for code, fy in best_fy.items()]
+    return _install_rows(
+        "icd10cm", PACKS["icd10cm"], rows,
+        source="vendored icd10cm_validity_seed FY2025-FY2026 (vendor_v49)",
+        digest=hashlib.sha256(raw).hexdigest())
 
 
 def pull_async(pack_id: str) -> bool:
@@ -368,7 +458,10 @@ def pull_async(pack_id: str) -> bool:
 
 def status() -> List[Dict[str, object]]:
     """One entry per pack: installed?, rows, fetched, source, licensing,
-    what installing it enables, and any in-flight pull state."""
+    what installing it enables, and any in-flight pull state. Installed
+    packs also carry their vintage (``fetched_iso``), ``age_days`` and a
+    ``stale`` flag against the pack's refresh cadence — a screen run on
+    a nine-month-old exclusions list must be able to say so."""
     meta: Dict[str, tuple] = {}
     try:
         with _LOCK, _conn() as con:
@@ -381,13 +474,27 @@ def status() -> List[Dict[str, object]]:
     out = []
     for pid, spec in PACKS.items():
         m = meta.get(pid)
+        cadence = int(spec.get("cadence_days") or 0)
         d: Dict[str, object] = {
             "id": pid, "title": spec["title"], "license": spec["license"],
             "enables": spec["enables"], "installed": m is not None,
+            "cadence_days": cadence,
         }
         if m:
-            d.update({"source": m[0], "fetched": m[1], "rows": m[2],
-                      "sha256": m[3]})
+            try:
+                fetched_s = float(m[1])
+            except (TypeError, ValueError):
+                fetched_s = 0.0
+            age_days = max(0.0, (time.time() - fetched_s) / 86400.0)
+            d.update({
+                "source": m[0], "fetched": m[1], "rows": m[2],
+                "sha256": m[3],
+                "fetched_iso": (datetime.fromtimestamp(
+                    fetched_s, tz=timezone.utc).strftime("%Y-%m-%d")
+                    if fetched_s else ""),
+                "age_days": round(age_days, 1),
+                "stale": bool(cadence and age_days > cadence),
+            })
         p = _PULLS.get(pid)
         if p:
             d["pull"] = dict(p)

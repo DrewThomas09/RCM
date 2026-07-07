@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional
 
 from .connector import DEFAULT_MAX_PAGES, PAGE_LIMIT, OpenPaymentsConnector
 from .endpoints import ENDPOINTS
-from .query import QueryError, query
+from .query import QueryError, aggregate, query
 from .registry import registry_as_dicts
 from .tables import OpenPaymentsStore
 
@@ -140,6 +140,22 @@ def cmd_query(args: argparse.Namespace) -> int:
     finally:
         store.close()
 
+def cmd_aggregate(args: argparse.Namespace) -> int:
+    store = OpenPaymentsStore(args.db)
+    try:
+        filters = _parse_filters(args.filter)
+    except ValueError as exc:
+        store.close()
+        return _err(str(exc))
+    try:
+        res = aggregate(store, args.dataset, group_by=args.group_by.split(","),
+                        filters=filters, metrics=args.metric, limit=args.limit)
+        return _print(res.as_dict())
+    except QueryError as exc:
+        return _err(f"aggregate error: {exc}")
+    finally:
+        store.close()
+
 
 def cmd_catalog_search(args: argparse.Namespace) -> int:
     """Find datasets in the synced catalog by title/description/keyword."""
@@ -201,6 +217,15 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--limit", type=int, default=50)
     q.add_argument("--offset", type=int, default=0)
     q.set_defaults(func=cmd_query)
+
+    agg = sub.add_parser("aggregate", parents=[common])
+    agg.add_argument("dataset")
+    agg.add_argument("--group-by", required=True, help="comma-separated columns")
+    agg.add_argument("--filter", action="append")
+    agg.add_argument("--metric", action="append",
+                     help="func:field metric (sum/avg/min/max; repeatable)")
+    agg.add_argument("--limit", type=int, default=50)
+    agg.set_defaults(func=cmd_aggregate)
 
     cs = sub.add_parser("catalog-search", parents=[common])
     cs.add_argument("--q", required=True)

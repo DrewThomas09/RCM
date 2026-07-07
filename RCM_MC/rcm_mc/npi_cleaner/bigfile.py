@@ -40,10 +40,12 @@ cannot be split without parsing the whole container.
 from __future__ import annotations
 
 import csv
+import io
+import itertools
 import os
 import uuid
 from pathlib import Path
-from typing import BinaryIO, Dict, Iterator, List, Optional
+from typing import BinaryIO, Dict, Iterator, List, Optional, Tuple
 
 from .engine import (
     CleanResult,
@@ -89,6 +91,69 @@ def _iter_records(fh: BinaryIO) -> Iterator[bytes]:
             quotes = 0
     if parts:  # trailing record without a newline
         yield b"".join(parts)
+
+
+def _shape_stream_head(header: bytes, records: Iterator[bytes]
+                       ) -> Tuple[bytes, Iterator[bytes], int, List[str]]:
+    """(header, records, skipped_bytes, notes) — engine._shape_rows
+    mirrored at the RECORD level, once for the whole stream.
+
+    The chunk loop prepends the file's first record to every chunk as its
+    header line, so the in-memory title-row / headerless heuristics must
+    run here, BEFORE chunking (per-chunk reshape is disabled via
+    ``reshape=False``). Running them per chunk made chunk 2+ treat that
+    prepended record as a title or data row: title-led files silently
+    LOST one data record per chunk and headerless files REPLAYED the
+    first record into every chunk — exactly the silent-lossy class this
+    module exists to prevent.
+    """
+    buf: List[bytes] = [header]
+    for rec in records:
+        buf.append(rec)
+        if len(buf) >= 8:                      # head window: row0 + 7
+            break
+    sample = b"".join(buf).decode("utf-8", errors="replace")
+    delim = _engine._sniff_delimiter(sample[:8192])
+
+    def _cells(rec: bytes) -> List[str]:
+        txt = rec.decode("utf-8", errors="replace")
+        try:
+            return next(csv.reader(io.StringIO(txt), delimiter=delim), [])
+        except csv.Error:
+            return [txt]
+
+    notes: List[str] = []
+    skipped_bytes = 0
+    skipped = 0
+    while (skipped < 3 and len(buf) >= 4
+           and _engine._populated_cells(_cells(buf[0])) <= 2):
+        widths = [_engine._populated_cells(_cells(r)) for r in buf[1:5]]
+        wide_at = next((i for i, w in enumerate(widths) if w >= 4), None)
+        if (wide_at is None
+                or any(w > 2 for w in widths[:wide_at])
+                or any(w < 4 for w in widths[wide_at:])):
+            break
+        skipped_bytes += len(buf.pop(0))
+        skipped += 1
+    if skipped:
+        notes.append(
+            f"Skipped {skipped} title row(s) above the header — the file "
+            "leads with a cover line, not column names.")
+    hdr_cells = [c.strip() for c in _cells(buf[0])]
+    populated = [c for c in hdr_cells if c]
+    numeric = sum(1 for c in populated
+                  if _engine._NUMERIC_CELL_RE.match(c))
+    if len(populated) >= 2 and numeric / len(populated) >= 0.6:
+        names = [f"column_{i + 1}" for i in range(len(hdr_cells))]
+        notes.append(
+            "File appears to have no header row — column_1…column_"
+            f"{len(hdr_cells)} names were synthesized and the first row "
+            "was kept as data. Add a header row to name the columns.")
+        new_header = (delim.join(names) + "\r\n").encode("utf-8")
+    else:
+        new_header = buf.pop(0)
+    return new_header, itertools.chain(iter(buf), records), \
+        skipped_bytes, notes
 
 
 def _warning_result(src_name: str, message: str,
@@ -153,6 +218,43 @@ def clean_path(
             "cleaning needs delimited text — export as CSV and re-upload, "
             "or split the file and upload the pieces.", progress)
 
+    # UTF-16/32 (Excel "Unicode Text" exports): the byte-level record
+    # iterator splits on \n BYTES and is blind to wide encodings, so a big
+    # wide file is transcoded to a temp UTF-8 copy first (bounded memory,
+    # incremental decoder) and streamed from there. Small-enough ones just
+    # take the in-memory path, which decodes properly already.
+    wide = _engine._wide_probe(head)
+    if wide is not None:
+        if size <= _FORMAT_INMEM_MAX_BYTES:
+            return _in_memory()
+        enc, bom_len, label = wide
+        tmp = WORKDIR / f"transcode_{uuid.uuid4().hex}.csv"
+        try:
+            import codecs
+            dec = codecs.getincrementaldecoder(enc)(errors="replace")
+            with open(path, "rb") as src, \
+                    open(tmp, "w", encoding="utf-8", newline="") as dst:
+                src.seek(bom_len)
+                while True:
+                    blk = src.read(1 << 20)
+                    if not blk:
+                        dst.write(dec.decode(b"", True))
+                        break
+                    dst.write(dec.decode(blk))
+            res = _clean_csv_stream(
+                str(tmp), src_name, os.path.getsize(tmp),
+                drop_duplicates=drop_duplicates, deid=deid,
+                profile=profile, overrides=overrides, progress=progress)
+            res.warnings.insert(0, (
+                f"File was {label}-encoded — transcoded to UTF-8 before "
+                "streaming. Prefer CSV UTF-8 exports."))
+            return res
+        finally:
+            try:
+                Path(tmp).unlink(missing_ok=True)
+            except OSError:
+                pass
+
     return _clean_csv_stream(
         path, src_name, size, drop_duplicates=drop_duplicates, deid=deid,
         profile=profile, overrides=overrides, progress=progress)
@@ -186,6 +288,15 @@ def _clean_csv_stream(
     # Per-column fill counters across all chunks (column → filled cells);
     # recomputed into res.column_fill at the end over total rows in.
     fill_counts: Dict[str, int] = {}
+    # Merged-panel accumulators. Per-chunk results carry each panel's top
+    # entries; summing those across ~48 MB chunks is honest granularity —
+    # far better than the panels silently rendering empty on streamed runs.
+    pq_acc: Dict[str, Dict[str, object]] = {}     # payer-quality split
+    den_counts: Dict[str, int] = {}               # denial code → count
+    den_meta: Dict[str, Dict[str, object]] = {}   # code → playbook fields
+    den_col: Optional[str] = None
+    den_distinct = 0
+    spec_acc: Dict[str, Dict[str, object]] = {}   # taxonomy code → {n,name}
     n_log_rows = 0
     rows_in_offset = 0    # changelog rows are 1-based INPUT indices
     rows_out_offset = 0   # worklist rows are 1-based OUTPUT indices
@@ -207,10 +318,22 @@ def _clean_csv_stream(
                 "File appears to be empty — no header row found.")
             header = None
         bytes_done = len(header) if header else 0
+        if header is not None:
+            # Title-row / headerless shaping happens HERE, once for the
+            # whole stream — the chunks reuse this header verbatim and
+            # never reshape (see _shape_stream_head).
+            header, records, _shape_skipped, _shape_notes = \
+                _shape_stream_head(header, records)
+            bytes_done += _shape_skipped
+            res.warnings.extend(_shape_notes)
         # One digest set shared by every chunk → duplicates die across
         # chunk boundaries too. Growth is capped inside the engine
         # (_STREAM_SEEN_CAP); saturation is surfaced as a warning below.
         stream_seen: set = set()
+        # Same idea for the case/whitespace-folded near-duplicate signal:
+        # a shared digest set means a "SMITH" row in chunk 1 still pairs
+        # with its "Smith" twin in chunk 9.
+        stream_fold_seen: set = set()
         # Master-changelog sink health: once a write fails, the sink goes
         # quiet and the run finishes with changelog_truncated instead of
         # dying mid-flight.
@@ -260,6 +383,7 @@ def _clean_csv_stream(
                 drop_duplicates=drop_duplicates, deid=deid,
                 profile=profile, overrides=overrides, _stream_chunk=True,
                 _stream_seen=(stream_seen if drop_duplicates else None),
+                _stream_fold_seen=stream_fold_seen,
                 _changelog_sink=_sink)
             payload = sub.chunk_payload
             if payload is None:
@@ -283,6 +407,12 @@ def _clean_csv_stream(
                 res.billing_column = sub.billing_column
                 res.accepted_rules = sub.accepted_rules
                 res.profile_name = sub.profile_name
+                # Connector recommendation + source catalog are computed
+                # from detected COLUMNS (identical in every chunk), so the
+                # first chunk's answer is the file's answer — without this
+                # a streamed run's Live-connectors panel rendered empty.
+                res.connector_plan = sub.connector_plan
+                res.catalog = sub.catalog
             for row in cleaned:
                 out_writer.writerow([_defang_cell(c) for c in row])
 
@@ -310,6 +440,47 @@ def _clean_csv_stream(
                 col = str(cf.get("column") or "")
                 fill_counts[col] = (fill_counts.get(col, 0)
                                     + int(cf.get("filled") or 0))
+            # Structural findings: duplicate headers / sniffed NPI columns
+            # are identical in every chunk (same header line) — first chunk
+            # wins; ragged-row counts sum. empty_columns is recomputed from
+            # the merged fill counts at the end.
+            for sk, sv in (sub.structure or {}).items():
+                if sk == "ragged_rows" and isinstance(sv, dict):
+                    agg_rr = res.structure.setdefault(
+                        "ragged_rows", {"padded": 0, "truncated": 0})
+                    agg_rr["padded"] += int(sv.get("padded") or 0)
+                    agg_rr["truncated"] += int(sv.get("truncated") or 0)
+                elif sk != "empty_columns" and sk not in res.structure:
+                    res.structure[sk] = sv
+            # Merged panels: payer quality, denials, specialty mix — summed
+            # from each chunk's top entries (per-chunk truncation makes the
+            # tail approximate; the heads, which the UI shows, are exact).
+            for pe in sub.payer_quality:
+                acc = pq_acc.setdefault(str(pe.get("payer")), {
+                    "rows": 0, "flagged": 0, "rules": {}})
+                acc["rows"] += int(pe.get("rows") or 0)
+                acc["flagged"] += int(pe.get("flagged") or 0)
+                for tr in (pe.get("top_rules") or []):
+                    r_id = str(tr.get("rule"))
+                    acc["rules"][r_id] = (acc["rules"].get(r_id, 0)
+                                          + int(tr.get("n") or 0))
+            if sub.denials:
+                den_col = den_col or str(sub.denials.get("column") or "")
+                den_distinct = max(den_distinct,
+                                   int(sub.denials.get("distinct") or 0))
+                for de in (sub.denials.get("top") or []):
+                    code = str(de.get("code"))
+                    den_counts[code] = (den_counts.get(code, 0)
+                                        + int(de.get("count") or 0))
+                    if code not in den_meta:
+                        den_meta[code] = {k: de[k] for k in
+                                          ("category", "linked_rule",
+                                           "action") if k in de}
+            for se in sub.specialties:
+                code = str(se.get("code"))
+                sa = spec_acc.setdefault(code, {"n": 0,
+                                                "name": se.get("name")})
+                sa["n"] += int(se.get("n") or 0)
             if sub.deid_applied:
                 res.deid_applied = True
                 res.deid_cells += sub.deid_cells
@@ -357,6 +528,57 @@ def _clean_csv_stream(
             {"column": col, "filled": n,
              "pct": round(100.0 * n / max(res.n_rows_in, 1), 1)}
             for col, n in fill_counts.items()]
+        # Headered-but-empty columns, from the merged fill counts — exact
+        # across the whole file, unlike the per-chunk panels.
+        _empty = [col for col, n in fill_counts.items() if n == 0]
+        if _empty and res.n_rows_out:
+            res.structure["empty_columns"] = _empty
+    # Merged panels (summed per-chunk tops — heads exact, tails approx).
+    if pq_acc:
+        for fam, acc in sorted(pq_acc.items(),
+                               key=lambda kv: -int(kv[1]["rows"]))[:10]:
+            rows_n = max(int(acc["rows"]), 1)
+            top_r = sorted(acc["rules"].items(),
+                           key=lambda kv: -kv[1])[:3]
+            res.payer_quality.append({
+                "payer": fam,
+                "rows": int(acc["rows"]),
+                "flagged": int(acc["flagged"]),
+                "clean_pct": round(
+                    100 * (1 - int(acc["flagged"]) / rows_n), 1),
+                "top_rules": [{"rule": r, "n": n} for r, n in top_r],
+            })
+    if den_counts and den_col:
+        _top = sorted(den_counts.items(), key=lambda kv: -kv[1])[:10]
+        _entries = []
+        for code, n in _top:
+            e: Dict[str, object] = {"code": code, "count": n}
+            e.update(den_meta.get(code) or {})
+            _entries.append(e)
+        res.denials = {"column": den_col,
+                       "distinct": max(den_distinct, len(den_counts)),
+                       "top": _entries,
+                       "note": "streamed: merged from per-chunk top codes"}
+        try:
+            from . import refdata as _rd
+            _known = _prev = 0
+            for code, n in den_counts.items():
+                pb = _rd.carc_playbook(code)
+                if pb:
+                    _known += n
+                    if pb["category"] == "preventable":
+                        _prev += n
+            if _known:
+                res.denials["preventable_pct"] = round(
+                    100 * _prev / _known, 1)
+        except Exception:  # noqa: BLE001 — playbook never blocks merging
+            pass
+    if spec_acc:
+        res.specialties = [
+            {"code": c, "n": int(sa["n"]), "name": sa.get("name")}
+            for c, sa in sorted(spec_acc.items(),
+                                key=lambda kv: (-int(kv[1]["n"]),
+                                                kv[0]))[:15]]
     if chunk_i:
         from .engine import _STREAM_SEEN_CAP
         if len(stream_seen) >= _STREAM_SEEN_CAP:
@@ -364,16 +586,29 @@ def _clean_csv_stream(
                 f"Duplicate tracking capped at {_STREAM_SEEN_CAP:,} "
                 "distinct rows — rows first seen after the cap aren't "
                 "tracked, so their later duplicates may remain.")
+        _rr = res.structure.get("ragged_rows") or {}
+        if int(_rr.get("truncated") or 0):
+            res.warnings.append(
+                f"{int(_rr['truncated']):,} row(s) carried MORE cells "
+                "than the header — the overflow cells were dropped (see "
+                "the ragged-row worklist). Unquoted delimiters inside a "
+                "text field are the usual cause.")
         res.warnings.insert(0, (
             f"Streaming mode: {size / 1e9:.1f} GB file cleaned in "
             f"{chunk_i} chunk(s) with bounded memory. Exact duplicates "
-            "are removed across the whole file (bounded digest set); "
-            "NPPES verification, deep recovery, the suggestions "
-            "companion, the xlsx workbook and whole-file analytics "
-            "(payer clusters, charge outliers, claim rollup, dictionary, "
-            "population marts) are skipped in this mode. The grade, "
-            "repairs, findings, change log and worklists cover every "
-            "row."))
+            "AND near-duplicates are tracked across the whole file "
+            "(bounded digest sets); the suspected-duplicate-claim, "
+            "conflicting-amount, possible-duplicate-service, "
+            "charge-outlier and NPI-name-conflict scans reset at each "
+            "chunk boundary, so cross-chunk repeats of THOSE may be "
+            "missed. Payer quality, "
+            "denial reasons and the specialty mix are merged from "
+            "per-chunk tallies. NPPES verification, deep recovery, the "
+            "suggestions companion, the xlsx workbook and the remaining "
+            "whole-file analytics (payer variant clusters, claim rollup, "
+            "dictionary, population marts) are skipped in this mode. The "
+            "grade, repairs, row-level findings, change log and "
+            "worklists cover every row."))
         # One history record for the whole run — the chunks recorded
         # nothing.
         try:

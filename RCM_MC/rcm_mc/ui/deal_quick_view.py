@@ -61,10 +61,17 @@ def render_deal_quick_view(
     # keys this view reads — packet-seeded deals store them nested, and the
     # view used to show "No profile metrics yet" while the data sat right
     # there (same shape issue fixed in store.list_deals()).
+    # Workstream H: while flattening, collect the keys whose nested entry
+    # names a public-filing source (HCRIS / IRS990) — exactly those metrics
+    # relabel ENTERED→ACTUAL below; everything else stays ENTERED.
+    filed_keys: set = set()
     om = profile.get("observed_metrics") or {}
     if isinstance(om, dict):
         profile = dict(profile)
         for _k, _entry in om.items():
+            if isinstance(_entry, dict) and str(
+                    _entry.get("source") or "").upper() in ("HCRIS", "IRS990"):
+                filed_keys.add(str(_k))
             if _k in profile:
                 continue
             if isinstance(_entry, dict) and "value" in _entry:
@@ -72,16 +79,16 @@ def render_deal_quick_view(
             elif isinstance(_entry, (int, float)):
                 profile[_k] = _entry
 
-    # Profile KPIs
+    # Profile KPIs — (label, profile_key, suffix, scale, peer_chip_key)
     kpi_fields = [
-        ("Denial Rate", profile.get("denial_rate"), "%", None, "denial_rate"),
-        ("Days in AR", profile.get("days_in_ar"), "", None, "days_in_ar"),
-        ("Net Collection", profile.get("net_collection_rate"), "%", None, "net_collection_rate"),
-        ("Clean Claim Rate", profile.get("clean_claim_rate"), "%", None, "clean_claim_rate"),
-        ("Cost to Collect", profile.get("cost_to_collect"), "%", None, "cost_to_collect"),
-        ("Net Revenue", profile.get("net_revenue"), "$M", 1e6, None),
-        ("Bed Count", profile.get("bed_count"), "", None, None),
-        ("Claims Volume", profile.get("claims_volume"), "", None, None),
+        ("Denial Rate", "denial_rate", "%", None, "denial_rate"),
+        ("Days in AR", "days_in_ar", "", None, "days_in_ar"),
+        ("Net Collection", "net_collection_rate", "%", None, "net_collection_rate"),
+        ("Clean Claim Rate", "clean_claim_rate", "%", None, "clean_claim_rate"),
+        ("Cost to Collect", "cost_to_collect", "%", None, "cost_to_collect"),
+        ("Net Revenue", "net_revenue", "$M", 1e6, None),
+        ("Bed Count", "bed_count", "", None, None),
+        ("Claims Volume", "claims_volume", "", None, None),
     ]
 
     def _peer_chip(metric_key: Optional[str], val: Any) -> str:
@@ -104,7 +111,8 @@ def render_deal_quick_view(
 
     kpi_cards = ""
     populated = 0
-    for label, val, suffix, scale, metric_key in kpi_fields:
+    for label, key, suffix, scale, metric_key in kpi_fields:
+        val = profile.get(key)
         if val is not None:
             populated += 1
             verify_flag = ""
@@ -132,9 +140,45 @@ def render_deal_quick_view(
             except (TypeError, ValueError):
                 display = str(val)
 
+            # ENTERED→ACTUAL relabel where sourced: a metric whose nested
+            # entry names a public filing carries the ACTUAL badge on its
+            # own card, so filed and self-reported values never blur.
+            basis_badge = ck_basis_badge("actual") if key in filed_keys else ""
             kpi_cards += ck_kpi_block(
                 label,
-                html.escape(display) + verify_flag + _peer_chip(metric_key, val))
+                html.escape(display) + basis_badge + verify_flag
+                + _peer_chip(metric_key, val))
+
+    # Workstream H — a deal REBUILT on a real CCN: the provenance chip names
+    # the CCN + fiscal year (X-Ray-linked) and says exactly which metrics
+    # carry the filed values. Distinct from the composite anchor below —
+    # here the deal IS the facility, not a fiction borrowing its financials.
+    real_ccn = str(profile.get("hcris_ccn") or "")
+    real_html = ""
+    if real_ccn and filed_keys:
+        _fy_raw = profile.get("hcris_fy")
+        try:
+            _fy_txt = f", FY{int(_fy_raw)}" if _fy_raw not in (None, "") else ""
+        except (TypeError, ValueError):
+            _fy_txt = ""
+        _filed_list = ", ".join(
+            html.escape(k.replace("_", " ")) for k in sorted(filed_keys))
+        _rest = (
+            "The RCM workflow metrics (denial / collection) remain "
+            "<strong>illustrative demo values</strong> — HCRIS files no "
+            "denial/collection fields."
+            if profile.get("rcm_metrics_basis") == "illustrative-demo" else
+            "Remaining profile metrics are partner-entered via Import."
+        )
+        real_html = (
+            f'<div class="cad-card" style="margin:0 0 10px;">'
+            f'<p class="ck-section-body" style="margin:0;font-size:12px;">'
+            f'Real facility — this deal is seeded from the filed cost report '
+            f'of <strong>{name}</strong> (CCN '
+            f'<a href="/diligence/hcris-xray?ccn={html.escape(real_ccn)}" '
+            f'style="color:{PALETTE["text_link"]};">{html.escape(real_ccn)}</a>'
+            f'{_fy_txt}){ck_basis_badge("actual")}: '
+            f'{_filed_list} carry the filed HCRIS values. {_rest}</p></div>')
 
     # Workstream H — composite-demo anchor: when the deal names a REAL
     # facility anchor, show its filed financials (ACTUAL, sourced) and say
@@ -162,13 +206,20 @@ def render_deal_quick_view(
             f'The RCM metrics below are <strong>illustrative demo values</strong> '
             f'(HCRIS files no denial/collection fields).</p></div>')
 
+    # Basis line: badged ENTERED for the self-reported metrics; when some
+    # metrics are filed, say so instead of blanket-labelling everything.
+    _basis_lead = (
+        f'Deal profile metrics{ck_basis_badge("entered")} '
+        f'(filed values badged{ck_basis_badge("actual")})'
+        if filed_keys else
+        f'Deal profile metrics{ck_basis_badge("entered")}'
+    )
     profile_section = (
-        anchor_html +
+        real_html + anchor_html +
         # Basis disclosure: these are the deal's SELF-REPORTED RCM metrics
         # (partner-entered via /import), not a public filing or a model.
         f'<p class="ck-section-body" style="margin:0 0 8px;font-size:11px;'
-        f'color:var(--sc-text-dim,#6a7480);">Deal profile metrics'
-        f'{ck_basis_badge("entered")} — '
+        f'color:var(--sc-text-dim,#6a7480);">{_basis_lead} — '
         f'<a href="/import" style="color:{PALETTE["text_link"]};">edit via Import</a> · '
         f'<a href="/deal-context?set={html.escape(deal_id)}&return=/deal/{html.escape(deal_id)}" '
         f'style="color:{PALETTE["text_link"]};" title="Carry this deal as ambient '
@@ -176,7 +227,7 @@ def render_deal_quick_view(
         f'set as active deal</a>.</p>'
         f'<div class="ck-kpi-grid">{kpi_cards}</div>'
         if kpi_cards else
-        anchor_html +
+        real_html + anchor_html +
         f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
         f'No profile metrics yet. '
         f'<a href="/import" style="color:{PALETTE["text_link"]};">Edit deal profile</a>.</p></div>'

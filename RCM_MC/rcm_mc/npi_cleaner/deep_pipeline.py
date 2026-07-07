@@ -34,6 +34,30 @@ WORKDIR.mkdir(parents=True, exist_ok=True)
 # fails the job in minutes instead of never.
 DEFAULT_TIMEOUT_S = 420
 
+# Preflight TCP-connect budget. On a no-egress box the old behavior held the
+# job's back-half progress bar for the full 7-minute watchdog before the
+# honest timeout message; a bounded connect answers the same question in
+# seconds.
+_PREFLIGHT_TIMEOUT_S = 4.0
+
+
+def _default_probe(timeout: float = _PREFLIGHT_TIMEOUT_S) -> bool:
+    """Can this box plausibly reach data.cms.gov? Delegates to the bounded
+    TCP preflight in the connectors estate (``connectors.net_preflight``) —
+    the codebase's home for network-touching code — so this offline cleaner
+    package itself imports no network modules. When that helper is not
+    importable (or itself misbehaves) the probe answers optimistically and
+    the wall-clock watchdog remains the only guard, exactly the
+    pre-preflight behavior. Never raises."""
+    try:
+        from connectors.net_preflight import can_reach_cms
+    except Exception:  # noqa: BLE001 — no preflight helper: watchdog guards
+        return True
+    try:
+        return bool(can_reach_cms(timeout=timeout))
+    except Exception:  # noqa: BLE001 — a broken probe must not block a run
+        return True
+
 
 def available() -> bool:
     """True when requests + the vendored pipeline import (i.e. deep mode can
@@ -51,11 +75,17 @@ def run(
     data: bytes, src_name: str, *,
     timeout_s: int = DEFAULT_TIMEOUT_S,
     progress: Optional[Callable[[str, float], None]] = None,
+    probe: Optional[Callable[[], bool]] = None,
 ) -> Dict[str, object]:
     """Run the full pipeline with a timeout. Returns a structured dict:
 
         {"ok": bool, "error": str|None, "stats": {...},
          "workbook_path": str|None, "workbook_name": str}
+
+    ``probe`` (injectable for tests) is a fast reachability check run
+    BEFORE the worker spawns; when it returns False the run fails in
+    seconds with the honest no-egress message instead of burning the full
+    watchdog. The watchdog still guards the slow-but-reachable case.
 
     Never raises.
     """
@@ -78,6 +108,19 @@ def run(
     except Exception:  # noqa: BLE001
         out["error"] = ("Deep recovery needs the 'requests' package and the "
                         "v49 pipeline. Install requests to enable it.")
+        return out
+
+    # Fast no-egress preflight — fail in seconds, not after the watchdog.
+    try:
+        reachable = (probe or _default_probe)()
+    except Exception:  # noqa: BLE001 — a broken probe must not block a run
+        reachable = True
+    if not reachable:
+        out["error"] = (
+            "Deep recovery preflight could not reach data.cms.gov — this "
+            "environment may not allow outbound access. The deterministic "
+            "results above are unaffected.")
+        cb("preflight failed — no outbound access", 1.0)
         return out
 
     # Persist the upload to a file the pipeline can read (it takes a path).

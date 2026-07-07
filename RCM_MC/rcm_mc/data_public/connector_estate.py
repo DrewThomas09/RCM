@@ -402,11 +402,15 @@ def sample_rows(dataset_id: str, limit: int = 10,
 
 def aggregate(dataset_id: str, group_by: Any,
               filters: dict[str, Any] | None = None,
-              limit: int = 20) -> dict[str, Any]:
+              limit: int = 20,
+              metrics: list[Any] | None = None) -> dict[str, Any]:
     """Group-by/count aggregate as ``AggregateResult.as_dict()``, or ``{}``.
 
-    ``group_by`` may be a single column name or a list. Same degrade
-    contract as :func:`sample_rows`.
+    ``group_by`` may be a single column name or a list. ``metrics`` are
+    optional ``"func:field"`` specs (sum/avg/min/max over CAST-to-REAL
+    values — the engines' uniform grammar); omitted, the result keeps
+    the historical count-only shape. Same degrade contract as
+    :func:`sample_rows`.
     """
     if isinstance(group_by, str):
         group_by = [group_by]
@@ -420,10 +424,16 @@ def aggregate(dataset_id: str, group_by: Any,
         return {}
     adapter, store = handle
     try:
+        kwargs: dict[str, Any] = {}
+        if metrics:
+            # Only passed when requested, so an older engine copy
+            # without the kwarg keeps working for count-only callers.
+            kwargs["metrics"] = list(metrics)
         result = adapter.aggregate(store, dataset_id,
                                    group_by=list(group_by),
                                    filters=filters or {},
-                                   limit=_clamp(limit, 20, 1, 100))
+                                   limit=_clamp(limit, 20, 1, 100),
+                                   **kwargs)
         return result.as_dict()
     except Exception:
         return {}
@@ -510,6 +520,169 @@ def dataset_ingested_count(dataset_id: str) -> int | None:
             store.close()
     except Exception:
         return None
+
+
+_VINTAGE_COLS = ("ingested_at", "fetched_at")
+
+
+def _store_vintage(store: Any, tables: dict[str, Any]) -> str:
+    """MAX ingested_at/fetched_at across a store's canonical tables.
+
+    ISO-8601 UTC strings compare correctly as strings, so a plain max()
+    is the vintage. Identifiers come from the connector's own TABLES
+    constants — never from user input. '' when nothing is stamped.
+    """
+    best = ""
+    for tname, tdef in tables.items():
+        for col in getattr(tdef, "columns", ()):
+            if col not in _VINTAGE_COLS:
+                continue
+            rows = store.fetchall(f"SELECT MAX({col}) AS m FROM {tname}")
+            val = rows[0]["m"] if rows else None
+            if val and str(val) > best:
+                best = str(val)
+    return best
+
+
+def connector_vintages() -> dict[str, str]:
+    """Last-ingested timestamp per connector with a db file, or ``{}``.
+
+    The counterpart to :func:`ingested_counts`: row counts say *how much*
+    is local, this says *how stale* it is — without it a fresh NADAC pull
+    is indistinguishable from a year-old one. Same degrade contract:
+    never raises, a connector that errors is omitted.
+    """
+    h = _load()
+    if h is None:
+        return {}
+    out: dict[str, str] = {}
+    try:
+        adapters = h[1].adapters()
+    except Exception:
+        return {}
+    for name, adapter in adapters.items():
+        path = _db_path(name)
+        if path is None:
+            continue
+        try:
+            store = adapter.open_store(path)
+        except Exception:
+            continue
+        try:
+            vintage = _store_vintage(store,
+                                     getattr(adapter.tables_mod, "TABLES", {}))
+            if vintage:
+                out[name] = vintage
+        except Exception:
+            continue
+        finally:
+            with contextlib.suppress(Exception):
+                store.close()
+    return out
+
+
+def dataset_vintage(dataset_id: str) -> str | None:
+    """Last-ingested timestamp for ONE dataset, or ``None``.
+
+    Applies the same ``source_filter`` slice :func:`dataset_ingested_count`
+    does, so shared-table datasets (per-year NADAC etc.) report their own
+    slice's vintage, not the whole table's.
+    """
+    h = _load()
+    if h is None:
+        return None
+    owner = dataset_owner(dataset_id)
+    if owner is None or _db_path(owner) is None:
+        return None
+    try:
+        adapter = h[1].adapters()[owner]
+        row = adapter.by_dataset_id().get(dataset_id)
+        if row is None:
+            return None
+        source_filter = getattr(row, "source_filter", "") or ""
+        tdef = getattr(adapter.tables_mod, "TABLES", {}).get(row.target_table)
+        if tdef is None:
+            return None
+        cols = [c for c in tdef.columns if c in _VINTAGE_COLS]
+        if not cols:
+            return None
+        store = adapter.open_store(_db_path(owner))
+        try:
+            best = ""
+            sliced = source_filter and "source_endpoint" in tdef.columns
+            for col in cols:
+                sql = f"SELECT MAX({col}) AS m FROM {row.target_table}"
+                args: tuple = ()
+                if sliced:
+                    sql += " WHERE source_endpoint = ?"
+                    args = (source_filter,)
+                rows = store.fetchall(sql, args)
+                val = rows[0]["m"] if rows else None
+                if val and str(val) > best:
+                    best = str(val)
+            return best or None
+        finally:
+            store.close()
+    except Exception:
+        return None
+
+
+def ingest_hint(connector_name: str) -> dict[str, Any]:
+    """How to populate one connector locally: ``{planned, command, ...}``.
+
+    The estate page used to tell users to run ``refresh`` for EVERY
+    connector — but refresh deliberately skips the manual-only ones
+    (their ingest verbs need domain arguments), so the copy-ready command
+    could never work for them. The manual set comes from the estate's own
+    ``_spi`` declaration, not a hardcoded copy here. ``{}`` when the
+    estate is absent — or when *connector_name* is not a connector at
+    all: advertising a refresh command for an unknown name would hand
+    the caller an instruction that exits 2 ("no refresh plan for …").
+    """
+    h = _load()
+    if h is None:
+        return {}
+    try:
+        known = getattr(h[2], "CONNECTOR_NAMES", ())
+        if known and connector_name not in known:
+            return {}
+        manual = set(getattr(h[2], "MANUAL_INGEST_CLIS", ()))
+        if connector_name in manual:
+            return {
+                "planned": False,
+                "command": f"python -m connectors.{connector_name}.cli",
+                "readme": f"connectors/{connector_name}/README.md",
+            }
+        return {
+            "planned": True,
+            "command": ("python -m connectors.cli refresh --db var/connectors"
+                        f" --connector {connector_name}"),
+        }
+    except Exception:
+        return {}
+
+
+def cli_query_hint(dataset_id: str, limit: int = 10) -> str:
+    """Copy-ready per-connector CLI one-liner that queries the INGESTED db.
+
+    The storage flag is the part the old hint omitted: without it the
+    per-connector CLIs query an empty default store and print 0 rows even
+    after a full ingest. The flag style (``--root`` dir vs ``--db`` file,
+    before vs after the verb) comes from the estate's ``_spi`` mapping.
+    '' when the estate or dataset is unknown.
+    """
+    h = _load()
+    if h is None:
+        return ""
+    owner = dataset_owner(dataset_id)
+    if owner is None:
+        return ""
+    try:
+        argv = h[2].cli_query_argv(owner, dataset_id,
+                                   limit=_clamp(limit, 10, 1, 1000))
+        return f"python -m connectors.{owner}.cli " + " ".join(argv)
+    except Exception:
+        return ""
 
 
 def catalog_dataset_counts() -> dict[str, int]:

@@ -140,6 +140,18 @@ Census Geocoder (`Public_AR_Current`). The app reads only the vendored file
 - **Rule still in force:** no live geocoding at render time, no
   browser-to-geocoder calls, no ZIP/state/county-centroid substitution
   presented as a real location.
+- **UPDATE 2026-07-07 (W4-010) — catchment rings.** The pin map now has an
+  off-by-default **Off / 15 mi / 30 mi catchment-radius control** (CSS
+  `:checked` toggle + a tiny shim that syncs `?radius=`; bogus values
+  degrade to off via `parse_catchment_radius`). Ring geometry is derived
+  from the pin projection's actual px/deg scale (`catchment_ring_px`:
+  miles → degrees → pixels at each pin's own latitude, drawn as an
+  `<ellipse>` because that is a ground circle's true image under the
+  equirectangular fit) and is labeled a straight-line equirectangular
+  approximation — a drive-time proxy, not drive time. Rings render ONLY
+  around plotted real-coordinate pins (the no-fake-points rule extends to
+  rings) and are omitted, with a note, when a single-point fit has no
+  honest distance scale.
 
 ### Original discovery (why this needed sourcing)
 

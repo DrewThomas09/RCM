@@ -260,11 +260,22 @@ def render_portfolio_overview(
         return chartis_shell(empty, "Portfolio", active_nav="/portfolio",
                         subtitle="No deals yet")
 
-    # KPI summary
-    avg_denial = deals["denial_rate"].dropna().mean() if "denial_rate" in deals.columns else None
-    avg_ar = deals["days_in_ar"].dropna().mean() if "days_in_ar" in deals.columns else None
-    total_rev = deals["net_revenue"].dropna().sum() if "net_revenue" in deals.columns else None
-    avg_ncr = deals["net_collection_rate"].dropna().mean() if "net_collection_rate" in deals.columns else None
+    # KPI summary. NaN → None: _expand_profiles adds a metric column as
+    # soon as ANY deal carries nested observed_metrics, so a column can
+    # exist while every cell is empty — mean() of that is NaN, which is
+    # truthy AND passes an `is not None` guard, and the KPI rendered a
+    # literal "nan" (caught by the route walker on the dev-seeded db).
+    def _agg_or_none(col: str, how: str = "mean"):
+        if col not in deals.columns:
+            return None
+        series = deals[col].dropna()
+        v = series.sum() if how == "sum" else series.mean()
+        return None if pd.isna(v) else float(v)
+
+    avg_denial = _agg_or_none("denial_rate")
+    avg_ar = _agg_or_none("days_in_ar")
+    total_rev = _agg_or_none("net_revenue", how="sum")
+    avg_ncr = _agg_or_none("net_collection_rate")
     # When every contributing deal's revenue is its real anchor-facility filing
     # (composite demo deals), say so under the KPI rather than implying entered
     # deal financials.

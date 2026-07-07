@@ -1,10 +1,13 @@
 """Phase 2 benchmarks tab renderer.
 
-Three sections, one page:
+Four sections, one page:
 
-  1. KPI scorecard — the four HFMA metrics vs benchmark bands.
-  2. Cohort liquidation curves — one chart per payer class.
-  3. Denial stratification Pareto — root causes sorted by dollars.
+  1. Hero — Days in A/R vs the HFMA peer median, with the
+     "What this shows" partner callout.
+  2. Quality of Revenue — management reconciliation, gross-to-cash
+     cascade, per-payer-class breakout.
+  3. KPI scorecard — the HFMA metrics vs benchmark bands.
+  4. Cohort liquidation + denial stratification Pareto.
 
 Whitespace first. One primary number per section. If a KPI is None
 we render "Insufficient data" + the reason — never a fabricated
@@ -14,11 +17,17 @@ This module does NOT reach into the CCD file system or trigger a
 Phase 1 re-ingest; it is given a :class:`KPIBundle` and a
 :class:`CohortLiquidationReport`. A bare call with no bundle renders
 a placeholder page explaining how to attach a CCD.
+
+Built on the chartis editorial kit: ck_editorial_head masthead,
+ck_kpi_block stat tiles, ck_data_table/ck_data_cell tables,
+ck_provenance_tooltip on every benchmark-derived number, and
+ck_empty_state where a section has nothing to show (never a silent
+blank). All tones come from kit CSS vars — no baked hex colors.
 """
 from __future__ import annotations
 
 import html
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from ..diligence.benchmarks import (
     CashWaterfallReport, CohortCell, CohortLiquidationReport,
@@ -27,8 +36,10 @@ from ..diligence.benchmarks import (
     WaterfallCohort, WaterfallStep,
 )
 from ._chartis_kit import (
-    P, chartis_shell, ck_kpi_block, ck_next_section, ck_page_title,
-    ck_panel, ck_section_header, ck_section_intro, ck_signal_badge,
+    P, chartis_shell, ck_bar_row, ck_data_cell, ck_data_table,
+    ck_editorial_head, ck_empty_state, ck_fmt_currency, ck_fmt_percent,
+    ck_kpi_block, ck_next_section, ck_page_actions, ck_panel,
+    ck_provenance_tooltip, ck_section_header, ck_signal_badge,
 )
 
 
@@ -80,302 +91,145 @@ _BENCHMARKS: Dict[str, Dict[str, Any]] = {
     },
 }
 
+# Partner-readable one-liners for the [?] tooltip on each KPI label.
+_KPI_HELP: Dict[str, str] = {
+    "days_in_ar": (
+        "Average days from claim submission to final payment — the "
+        "working-capital speed of the revenue cycle. Every 10 days of "
+        "elevated A/R is roughly 2.7% of annual revenue tied up in "
+        "unpaid claims."
+    ),
+    "first_pass_denial_rate": (
+        "Share of claims denied on first adjudication. Elevated rates "
+        "flag front-end process problems — eligibility, authorization, "
+        "coding — that are usually fixable operational levers."
+    ),
+    "ar_aging_over_90": (
+        "Share of open A/R dollars older than 90 days. Stale "
+        "receivables convert at steep discounts; a heavy >90d tail "
+        "usually hides unbooked bad debt."
+    ),
+    "cost_to_collect": (
+        "RCM operating cost as a share of cash collected. Read as a "
+        "percentage: 3.5% means it costs 3.5 cents to collect a "
+        "dollar."
+    ),
+    "net_revenue_realization": (
+        "Realized cash ÷ expected net revenue across mature claim "
+        "cohorts — what share of what the hospital expected to "
+        "collect actually became cash. Below 88% flags structural "
+        "RCM issues."
+    ),
+}
 
-# ── Public entry points ─────────────────────────────────────────────
+_HFMA_CITATION = "HFMA MAP Key 2021"
 
-_DB_STYLES = f"""
+
+# ── Page-local styles — kit CSS vars only, no baked hexes ──────────
+
+_DB_STYLES = """
 <style>
-.db-card-grid{{display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}}
-.db-kpi-card{{background:{P["panel"]};border:1px solid {P["border"]};
-border-radius:4px;padding:14px 16px;}}
-.db-kpi-label{{font-size:10px;color:{P["text_faint"]};letter-spacing:.5px;
-text-transform:uppercase;margin-bottom:10px;}}
-.db-kpi-value{{font-family:"JetBrains Mono",monospace;
-font-variant-numeric:tabular-nums;font-size:26px;line-height:1;}}
-.db-kpi-band{{font-size:10px;margin-top:6px;font-weight:600;}}
-.db-kpi-peer{{font-size:10px;margin-top:3px;color:{P["text_faint"]};}}
-.db-kpi-reason{{font-size:10px;color:{P["text_faint"]};margin-top:4px;}}
-.db-lag-extra{{font-size:10px;color:{P["text_dim"]};margin-top:6px;}}
-.db-pareto-row{{margin-bottom:8px;}}
-.db-pareto-meta{{display:flex;justify-content:space-between;
-font-size:11px;color:{P["text_dim"]};margin-bottom:2px;}}
-.db-pareto-track{{background:{P["panel_alt"]};height:4px;border-radius:2px;overflow:hidden;}}
-.db-pareto-fill{{background:{P["accent"]};height:100%;}}
+.db-tone-pos{color:var(--sc-positive,#0a8a5f);}
+.db-tone-warn{color:var(--sc-warning,#b8732a);}
+.db-tone-neg{color:var(--sc-negative,#b5321e);}
+.db-tone-dim{color:var(--sc-text-dim,#465366);}
+.db-hero .ck-kpi-value{font-size:34px;}
+.db-hero .ck-kpi-sub,.db-kpis .ck-kpi-sub{
+  color:var(--sc-text-dim,#465366);line-height:1.7;}
+/* The kit's .ck-help wrapper is white-space:nowrap so a term never
+   separates from its [?] trigger. Inside the 7-up scorecard grid the
+   tiles are ~160px wide and the longer KPI names (FIRST-PASS DENIAL
+   RATE, NET REVENUE REALIZATION) overflowed into the neighbouring
+   tile. Let scorecard labels wrap; the trigger simply follows the
+   last word. */
+.db-hero .ck-kpi-label .ck-help,
+.db-kpis .ck-kpi-label .ck-help{white-space:normal;}
+.db-kpis .ck-kpi-label{overflow-wrap:break-word;}
+.db-hero-note{max-width:72ch;}
+.db-mono{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-variant-numeric:tabular-nums;font-size:11px;
+  color:var(--sc-text-dim,#465366);}
+.db-figcap{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-size:11px;color:var(--sc-text-dim,#465366);
+  letter-spacing:0.02em;margin:6px 0 10px;max-width:80ch;}
+.db-legend{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-size:11px;color:var(--sc-text-dim,#465366);margin:10px 0 0;}
+.db-recon-list{list-style:none;margin:14px 0 0;padding:12px 0 0;
+  border-top:1px solid var(--sc-rule,#d6cfc0);
+  display:flex;flex-direction:column;gap:8px;}
+.db-recon-list li{display:flex;align-items:center;gap:10px;
+  flex-wrap:wrap;font-size:12px;}
+.db-pareto-svg{width:100%;max-width:720px;height:auto;
+  print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+.db-provenance{margin-top:40px;padding-top:14px;
+  border-top:1px solid var(--sc-rule,#d6cfc0);
+  display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;
+  font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  font-size:11px;color:var(--sc-text-dim,#465366);}
 </style>
 """
 
 
-def render_benchmarks_page(
-    bundle: Optional[KPIBundle] = None,
-    cohort_report: Optional[CohortLiquidationReport] = None,
-    cash_waterfall: Optional[CashWaterfallReport] = None,
-) -> str:
-    """Render the full Phase 2 page.
+# ── Small formatting helpers ────────────────────────────────────────
 
-    When ``bundle`` is None, render the placeholder that was in
-    ``_pages.render_benchmarks_page`` — a partner hasn't attached a
-    CCD yet, so there's nothing to compute against.
-
-    ``cash_waterfall`` is optional: when supplied, the Quality of
-    Revenue section renders as the headline (section #1) above the
-    KPI scorecard. The QoR waterfall is the partner's headline
-    exhibit — KPIs and cohorts support it, not the other way
-    around. Absent, the section is skipped silently.
-    """
-    if bundle is None:
-        return _placeholder_page()
-
-    page_title = ck_page_title(
-        "Benchmarks",
-        eyebrow="RCM DILIGENCE",
-        meta=(
-            f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}"
-        ),
-    )
-    body = (
-        _DB_STYLES
-        + page_title
-        + _hero(bundle)
-        + _cash_waterfall_section(cash_waterfall)
-        + _kpi_scorecard(bundle)
-        + _cohort_section(cohort_report)
-        + _denial_pareto(bundle.denial_stratification)
-        + _provenance_footer(bundle)
-        + ck_next_section(
-            "Open the bridge auditor",
-            "/diligence/bridge-audit",
-            eyebrow="Up next",
-            italic_word="bridge",
-        )
-    )
-    return chartis_shell(
-        body,
-        "RCM Diligence · Benchmarks",
-        active_nav="/diligence/benchmarks",
-        subtitle=f"Phase 2 of 4 · as-of {bundle.as_of_date.isoformat()}",
-    )
+def _minus(s: str) -> str:
+    """Swap a leading ASCII hyphen for the typographic minus."""
+    return "−" + s[1:] if s.startswith("-") else s
 
 
-# ── Section builders ────────────────────────────────────────────────
-
-def _placeholder_page() -> str:
-    intro = ck_section_intro(
-        eyebrow="RCM Diligence Workspace",
-        headline="Phase 2: KPI Benchmarking & Stress Testing.",
-        italic_word="Stress",
-        body=(
-            "Attach a Canonical Claims Dataset in Phase 1 to "
-            "populate the KPI scorecard, cohort liquidation curves, "
-            "and denial stratification Pareto on this tab."
-        ),
-    )
-    body = intro + ck_panel(
-        '<p class="ck-section-body">'
-        '<a href="/diligence/ingest" class="cad-btn cad-btn-primary">'
-        '→ Phase 1: Ingest a CCD</a></p>',
-        title="Next step",
-    )
-    return chartis_shell(body, "RCM Diligence · Benchmarks",
-                        subtitle="Phase 2 of 4")
+def _plural(n: int, noun: str) -> str:
+    return f"{n} {noun}" + ("" if n == 1 else "s")
 
 
-def _hero(bundle: KPIBundle) -> str:
-    # Primary number: Days in A/R (the one metric every CFO reads first).
-    dar = bundle.days_in_ar
-    band = _BENCHMARKS.get("days_in_ar", {})
-    peer_median = band.get("median")
-    if dar.value is not None:
-        primary_num = f"{dar.value:,.1f}"
-        primary_unit = "days"
-        color = _colour_for(dar.value, band)
-        band_label = _band_label(dar.value, band)
-        if peer_median is not None:
-            delta = dar.value - peer_median
-            delta_txt = (
-                f'{delta:+.1f} days vs HFMA peer median '
-                f'{peer_median:.0f}d'
-            )
-            if delta < 0:
-                summary = (
-                    f"Claims are converting to cash faster than the "
-                    f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
-                    f"This target's working capital efficiency is "
-                    f"above average: fewer dollars tied up in unpaid "
-                    f"claims than comparable hospitals."
-                )
-            elif delta > 10:
-                summary = (
-                    f"Days in A/R is {delta:.0f} days slower than the "
-                    f"HFMA acute-hospital peer median ({peer_median:.0f} days). "
-                    f"Every 10 days of elevated A/R is roughly 2.7% of "
-                    f"annual revenue sitting in working capital: an "
-                    f"EBITDA-bridge opportunity when modeled at the "
-                    f"cost-of-capital rate."
-                )
-            else:
-                summary = (
-                    f"Days in A/R is within the HFMA acute-hospital "
-                    f"peer median range ({peer_median:.0f}d ± 10). "
-                    f"Working capital is neither a strength nor a bridge "
-                    f"lever: look elsewhere (denials, Medicare mix) "
-                    f"for upside."
-                )
-        else:
-            delta_txt = ""
-            summary = ""
-    else:
-        primary_num = "—"
-        primary_unit = "insufficient data"
-        color = P["text_faint"]
-        band_label = "Insufficient data"
-        delta_txt = ""
-        summary = (
-            "The CCD does not contain enough submit-date / paid-date "
-            "pairs to compute days-in-A/R. Typically occurs when claim "
-            "lifecycle fields weren't extracted from the source EMR."
-        )
-
-    summary_html = (
-        '<p class="ck-section-body">'
-        f'<strong>What this shows: </strong>{html.escape(summary)}</p>'
-    ) if summary else ""
-
-    intro = ck_section_intro(
-        eyebrow="Primary KPI · Days in A/R",
-        headline=f"{primary_num} {primary_unit}.",
-        italic_word=primary_unit,
-        body=(
-            f"{html.escape(band_label)}"
-            + (f" · {html.escape(delta_txt)}" if delta_txt else "")
-            + f" · n={dar.sample_size} claims · {html.escape(dar.reason or '')}"
-        ),
-    )
-    return f"{intro}{summary_html}"
+def _toned(text: str, tone: Optional[str]) -> str:
+    """Wrap pre-escaped text in a page tone span (pos/warn/neg/dim)."""
+    if tone in ("pos", "warn", "neg", "dim"):
+        return f'<span class="db-tone-{tone}">{text}</span>'
+    return text
 
 
-def _kpi_scorecard(bundle: KPIBundle) -> str:
-    cards = [
-        _kpi_card("days_in_ar", bundle.days_in_ar),
-        _kpi_card("first_pass_denial_rate", bundle.first_pass_denial_rate),
-        _kpi_card("ar_aging_over_90", bundle.ar_aging_over_90),
-        _kpi_card("cost_to_collect", bundle.cost_to_collect),
-        _kpi_card("net_revenue_realization", bundle.net_revenue_realization),
-        _lag_card(bundle.lag_service_to_bill, "Service → Bill Lag"),
-        _lag_card(bundle.lag_bill_to_cash, "Bill → Cash Lag"),
-    ]
-    return (
-        ck_section_header("KPI Scorecard", eyebrow="PHASE 2")
-        + f'<div class="db-card-grid">{"".join(cards)}</div>'
-    )
-
-
-def _kpi_card(key: str, kpi: KPIResult) -> str:
-    band = _BENCHMARKS.get(key, {})
-    label = band.get("label", kpi.name)
-    unit = band.get("unit", kpi.unit)
-    peer_median = band.get("median")
-    better = band.get("better", "lower")
-    if kpi.value is None:
-        value_str = "—"
-        color = P["text_faint"]
-        band_label = "Insufficient data"
-        reason = kpi.reason or ""
-        peer_line = ""
-    else:
-        value_str = _format_value(kpi.value, kpi.unit)
-        color = _colour_for(kpi.value, band)
-        band_label = _band_label(kpi.value, band)
-        reason = f"n={kpi.sample_size} claims"
-        # Peer-median delta line.  Shows signed delta in native unit
-        # with an arrow indicating whether that sign means good/bad.
-        if peer_median is not None:
-            delta = kpi.value - peer_median
-            if unit == "pct":
-                delta_txt = f"{delta*100:+.1f} pp"
-                peer_txt = f"peer median {peer_median*100:.1f}%"
-            elif unit == "days":
-                delta_txt = f"{delta:+.0f}d"
-                peer_txt = f"peer median {peer_median:.0f}d"
-            elif unit == "ratio":
-                delta_txt = f"{delta:+.3f}"
-                peer_txt = f"peer median {peer_median:.3f}"
-            else:
-                delta_txt = f"{delta:+.2f}"
-                peer_txt = f"peer median {peer_median:.2f}"
-            # Arrow: upward triangle if above median, downward if below.
-            # Color the arrow by whether delta is favorable.
-            if delta > 0:
-                arrow = "▲"
-                favorable = (better == "higher")
-            elif delta < 0:
-                arrow = "▼"
-                favorable = (better == "lower")
-            else:
-                arrow = "●"
-                favorable = True
-            arrow_cls = "cad-pos" if favorable else "cad-neg"
-            peer_line = (
-                '<div class="db-kpi-peer">'
-                f'<span class="{arrow_cls}">{arrow}</span> '
-                f'{html.escape(delta_txt)} vs {html.escape(peer_txt)}</div>'
-            )
-        else:
-            peer_line = ""
-    return (
-        '<div class="db-kpi-card">'
-        f'<div class="db-kpi-label">{html.escape(label)}</div>'
-        f'<div class="db-kpi-value" style="color:{color};">{value_str}</div>'
-        f'<div class="db-kpi-band" style="color:{color};">{html.escape(band_label)}</div>'
-        f'{peer_line}'
-        f'<div class="db-kpi-reason">{html.escape(reason)}</div>'
-        '</div>'
-    )
-
-
-def _lag_card(kpi: KPIResult, label: str) -> str:
-    if kpi.value is None:
-        value_str, color = "—", P["text_faint"]
-        extra = kpi.reason or ""
-    else:
-        value_str = f"{kpi.value:,.0f}d"
-        color = P["text"]
-        extra = f"p25={kpi.numerator:,.0f}d  p75={kpi.denominator:,.0f}d  n={kpi.sample_size}"
-    return (
-        '<div class="db-kpi-card">'
-        f'<div class="db-kpi-label">{html.escape(label)}</div>'
-        f'<div class="db-kpi-value" style="color:{color};">{value_str}</div>'
-        f'<div class="db-lag-extra">{html.escape(extra)}</div>'
-        '</div>'
-    )
+def _deduct(v: float) -> str:
+    """Deduction cell: '−$1,600.00', but never '−$0.00' for a zero."""
+    return f"−${v:,.2f}" if v > 0 else f"${v:,.2f}"
 
 
 def _format_value(value: float, unit: str) -> str:
     if unit == "pct":
-        return f"{value * 100:,.1f}%"
+        return ck_fmt_percent(value)
     if unit == "days":
-        return f"{value:,.1f}d"
+        return f"{value:,.1f} d"
     if unit == "ratio":
-        return f"{value:,.3f}"
+        # Cost-to-collect reads as a % of cash collected, not a bare
+        # 3-decimal ratio — partners quote "3.5%", never "0.035".
+        return ck_fmt_percent(value)
     return f"{value:,.2f}"
 
 
-def _colour_for(value: float, band: Dict[str, Any]) -> str:
+def _tone_for(value: float, band: Dict[str, Any]) -> Optional[str]:
+    """Quartile banding → semantic tone key (pos / warn / neg)."""
     if not band:
-        return P["text"]
+        return None
     better = band.get("better", "lower")
     if better == "lower":
         if value <= band["top_quartile_max"]:
-            return P["positive"]
+            return "pos"
         if value >= band["bottom_quartile_min"]:
-            return P["negative"]
-        return P["warning"]
+            return "neg"
+        return "warn"
     # higher is better
     if value >= band["top_quartile_max"]:
-        return P["positive"]
+        return "pos"
     if value <= band["bottom_quartile_min"]:
-        return P["negative"]
-    return P["warning"]
+        return "neg"
+    return "warn"
+
+
+def _band_fmt(v: float, unit: str) -> str:
+    if unit in ("pct", "ratio"):
+        return f"{v * 100:,.1f}%"
+    if unit == "days":
+        return f"{v:,.0f} d"
+    return f"{v:,.2f}"
 
 
 def _band_label(value: float, band: Dict[str, Any]) -> str:
@@ -383,11 +237,7 @@ def _band_label(value: float, band: Dict[str, Any]) -> str:
         return ""
     better = band.get("better", "lower")
     unit = band.get("unit", "")
-    def fmt(v):
-        if unit == "pct": return f"{v*100:,.1f}%"
-        if unit == "days": return f"{v:,.0f}d"
-        if unit == "ratio": return f"{v:,.3f}"
-        return f"{v:,.2f}"
+    fmt = lambda v: _band_fmt(v, unit)  # noqa: E731
     if better == "lower":
         if value <= band["top_quartile_max"]:
             return f"top quartile (≤ {fmt(band['top_quartile_max'])})"
@@ -405,98 +255,489 @@ def _band_label(value: float, band: Dict[str, Any]) -> str:
     return f"bottom quartile (≤ {fmt(band['bottom_quartile_min'])})"
 
 
-def _cohort_section(report: Optional[CohortLiquidationReport]) -> str:
-    if report is None:
-        return ""
-    all_mature = report.mature_cells()
-    censored = report.censored_cells()
-    rows_html = []
-    for cell in all_mature + censored:
-        cls_colour = (P["text"] if cell.status == CohortStatus.MATURE
-                      else P["text_faint"])
-        value_str = (
-            f"{(cell.cumulative_liquidation_pct or 0) * 100:,.1f}%"
-            if cell.cumulative_liquidation_pct is not None else "—"
-        )
-        rows_html.append(
-            '<tr>'
-            f'<td class="mono">{html.escape(cell.cohort_month)}</td>'
-            f'<td class="num">{cell.days_since_dos}d</td>'
-            f'<td class="num">{cell.cohort_size_claims}</td>'
-            f'<td class="num" style="color:{cls_colour};">{value_str}</td>'
-            f'<td>{html.escape(cell.status.value)}</td>'
-            f'<td style="font-size:10px;color:{P["text_faint"]};">'
-            f'{html.escape(cell.reason or "")}</td>'
-            '</tr>'
-        )
-    return ck_panel(
-        '<p class="ck-eyebrow">'
-        f'Mature cohorts: {len(all_mature)}  ·  '
-        f'In-flight (censored): {len(censored)}  ·  '
-        f'Windows: {", ".join(str(w) + "d" for w in report.window_days)}'
-        '</p>'
-        '<table class="cad-table">'
-        '<thead><tr>'
-        '<th>Cohort</th>'
-        '<th class="num">Window</th>'
-        '<th class="num">Claims</th>'
-        '<th class="num">Liquidation</th>'
-        '<th>Status</th>'
-        '<th>Note</th>'
-        '</tr></thead>'
-        f'<tbody>{"".join(rows_html)}</tbody>'
-        '</table>',
-        title="Cohort Liquidation",
+def _band_explainer(key: str, kpi: KPIResult) -> str:
+    """Provenance copy for a KPI value — the on-page citation for the
+    HFMA band that colours it, plus the sample it was computed from."""
+    band = _BENCHMARKS.get(key, {})
+    if not band:
+        return f"Computed from {kpi.sample_size:,} claims in the attached CCD."
+    unit = band.get("unit", "")
+    better = band.get("better", "lower")
+    cmp_top = "≤" if better == "lower" else "≥"
+    cmp_bot = "≥" if better == "lower" else "≤"
+    return (
+        f"HFMA MAP Key 2021 acute-care benchmark: top quartile "
+        f"{cmp_top} {_band_fmt(band['top_quartile_max'], unit)}, "
+        f"median {_band_fmt(band['median'], unit)}, bottom quartile "
+        f"{cmp_bot} {_band_fmt(band['bottom_quartile_min'], unit)} "
+        f"({better} is better). Computed from {kpi.sample_size:,} "
+        f"claims in the attached CCD."
     )
 
 
-_DB_CHART_CAPTION_CSS = (
-    ".db-figcap{font-size:11px;color:#6b6456;margin:6px 0 8px;"
-    "font-family:'JetBrains Mono',ui-monospace,monospace;"
-    "letter-spacing:0.02em;}"
-)
+def _peer_delta_line(kpi_value: float, band: Dict[str, Any]) -> str:
+    """'▲ +2.1 pp vs peer median 10.0%' — arrow toned by favorability."""
+    peer_median = band.get("median")
+    if peer_median is None:
+        return ""
+    unit = band.get("unit", "")
+    better = band.get("better", "lower")
+    delta = kpi_value - peer_median
+    if unit in ("pct", "ratio"):
+        delta_txt = _minus(f"{delta * 100:+.1f}") + " pp"
+        peer_txt = f"peer median {peer_median * 100:,.1f}%"
+    elif unit == "days":
+        delta_txt = _minus(f"{delta:+.1f}") + " d"
+        peer_txt = f"peer median {peer_median:,.0f} d"
+    else:
+        delta_txt = _minus(f"{delta:+.2f}")
+        peer_txt = f"peer median {peer_median:,.2f}"
+    if delta > 0:
+        arrow, favorable = "▲", (better == "higher")
+    elif delta < 0:
+        arrow, favorable = "▼", (better == "lower")
+    else:
+        arrow, favorable = "●", True
+    arrow_tone = "pos" if favorable else "neg"
+    return (
+        f'{_toned(arrow, arrow_tone)} {html.escape(delta_txt)} '
+        f'vs {html.escape(peer_txt)}'
+    )
+
+
+# ── Public entry points ─────────────────────────────────────────────
+
+def render_benchmarks_page(
+    bundle: Optional[KPIBundle] = None,
+    cohort_report: Optional[CohortLiquidationReport] = None,
+    cash_waterfall: Optional[CashWaterfallReport] = None,
+    *,
+    prelude_html: str = "",
+) -> str:
+    """Render the full Phase 2 page.
+
+    When ``bundle`` is None, render the placeholder that was in
+    ``_pages.render_benchmarks_page`` — a partner hasn't attached a
+    CCD yet, so there's nothing to compute against.
+
+    ``cash_waterfall`` is optional: when supplied, the Quality of
+    Revenue section renders as the headline (section #1) above the
+    KPI scorecard. The QoR waterfall is the partner's headline
+    exhibit — KPIs and cohorts support it, not the other way
+    around. Absent, the section renders a designed empty state.
+
+    ``prelude_html`` renders directly beneath the editorial head —
+    the benchmarks route threads the fixture selector through here so
+    every workspace phase shares the same cadence (head first,
+    controls second); it used to be spliced above the head, which
+    made Phase 2 open differently from Phases 1/3/4.
+    """
+    if bundle is None:
+        return _placeholder_page(prelude_html=prelude_html)
+
+    as_of = bundle.as_of_date.isoformat()
+    dar = bundle.days_in_ar
+    # Phase labeling lives in the eyebrow (as on every workspace phase
+    # page) — the meta strip carries only the data facts.
+    meta_parts = [f"as-of {as_of}"]
+    if dar.sample_size:
+        meta_parts.append(f"n={dar.sample_size:,} claims")
+    meta_parts.append("HFMA MAP Key 2021 bands")
+    head = ck_editorial_head(
+        # Same eyebrow grammar as the sibling workspace phases
+        # (rcm_mc/diligence/_pages.py): middle-dot + "PHASE N OF 4".
+        eyebrow="RCM DILIGENCE · PHASE 2 OF 4",
+        title="Benchmarks",
+        meta=" · ".join(meta_parts),
+        lede_italic_phrase="Did billed dollars become cash?",
+        lede_body=(
+            "Five HFMA KPIs against acute-care peer bands, the "
+            "gross-to-cash waterfall, cohort liquidation curves, and "
+            "the denial Pareto — the Phase-2 evidence base for the "
+            "RCM thesis."
+        ),
+        source_note=(
+            f"HFMA MAP Key 2021 acute-care benchmark bands · "
+            f"CCD as-of {as_of}"
+        ),
+    )
+    body = (
+        _DB_STYLES
+        + head
+        + prelude_html
+        + _hero(bundle)
+        + _cash_waterfall_section(cash_waterfall)
+        + _kpi_scorecard(bundle)
+        + _cohort_section(cohort_report)
+        + _denial_pareto(bundle.denial_stratification)
+        + _provenance_footer(bundle)
+        + ck_next_section(
+            "Open the bridge auditor",
+            "/diligence/bridge-audit",
+            eyebrow="Up next",
+            italic_word="bridge",
+        )
+        # Action pills come last — the site-wide order is
+        # content → next-section footer → ck_page_actions.
+        + ck_page_actions()
+    )
+    return chartis_shell(
+        body,
+        "RCM Diligence · Benchmarks",
+        active_nav="/diligence/benchmarks",
+    )
+
+
+# ── Section builders ────────────────────────────────────────────────
+
+def _placeholder_page(*, prelude_html: str = "") -> str:
+    head = ck_editorial_head(
+        # Same eyebrow grammar as the sibling workspace phases
+        # (rcm_mc/diligence/_pages.py): middle-dot + "PHASE N OF 4".
+        eyebrow="RCM DILIGENCE · PHASE 2 OF 4",
+        title="Benchmarks",
+        meta="No dataset attached",
+        lede_italic_phrase="KPI benchmarking and stress testing",
+        lede_body=(
+            "— attach a Canonical Claims Dataset in Phase 1 to "
+            "populate the HFMA KPI scorecard, cohort liquidation "
+            "curves, and denial-stratification Pareto on this tab."
+        ),
+    )
+    body = head + prelude_html + ck_empty_state(
+        "Attach a Canonical Claims Dataset.",
+        body=(
+            "Phase 2 computes the HFMA KPI scorecard, the "
+            "quality-of-revenue cash waterfall, cohort liquidation "
+            "curves, and the denial Pareto from the CCD produced by "
+            "Phase 1 ingest. No dataset is attached yet."
+        ),
+        eyebrow="NO DATA YET",
+        cta_label="Phase 1: Ingest a CCD",
+        cta_href="/diligence/ingest",
+    )
+    return chartis_shell(
+        body, "RCM Diligence · Benchmarks",
+        active_nav="/diligence/benchmarks",
+        subtitle="Phase 2 of 4",
+    )
+
+
+def _hero(bundle: KPIBundle) -> str:
+    # Primary number: Days in A/R (the one metric every CFO reads first).
+    dar = bundle.days_in_ar
+    band = _BENCHMARKS.get("days_in_ar", {})
+    peer_median = band.get("median")
+    if dar.value is not None:
+        tone = _tone_for(dar.value, band)
+        band_label = _band_label(dar.value, band)
+        value_html = ck_provenance_tooltip(
+            "Days in A/R",
+            _toned(html.escape(f"{dar.value:,.1f} d"), tone),
+            explainer=_band_explainer("days_in_ar", dar),
+            inject_css=True,
+        )
+        if peer_median is not None:
+            delta = dar.value - peer_median
+            delta_txt = _minus(f"{delta:+.1f}") + " d"
+            arrow = "▲" if delta > 0 else "▼" if delta < 0 else "●"
+            arrow_tone = "pos" if delta <= 0 else "neg"
+            delta_html = (
+                f'{_toned(arrow, arrow_tone)} {html.escape(delta_txt)} '
+                f'vs HFMA peer median {peer_median:,.0f} d'
+            )
+            if delta < 0:
+                summary = (
+                    f"Claims are converting to cash faster than the "
+                    f"HFMA acute-hospital peer median ({peer_median:,.0f} d). "
+                    f"This target's working capital efficiency is "
+                    f"above average: fewer dollars tied up in unpaid "
+                    f"claims than comparable hospitals."
+                )
+            elif delta > 10:
+                summary = (
+                    f"Days in A/R is {delta:,.0f} d slower than the "
+                    f"HFMA acute-hospital peer median ({peer_median:,.0f} d). "
+                    f"Every 10 days of elevated A/R is roughly 2.7% of "
+                    f"annual revenue sitting in working capital: an "
+                    f"EBITDA-bridge opportunity when modeled at the "
+                    f"cost-of-capital rate."
+                )
+            else:
+                summary = (
+                    f"Days in A/R is within the HFMA acute-hospital "
+                    f"peer median range ({peer_median:,.0f} d ± 10). "
+                    f"Working capital is neither a strength nor a bridge "
+                    f"lever: look elsewhere (denials, Medicare mix) "
+                    f"for upside."
+                )
+        else:
+            delta_html = ""
+            summary = ""
+        sub_parts = [
+            _toned(html.escape(band_label), tone),
+            delta_html,
+            html.escape(_plural(dar.sample_size, "claim")),
+        ]
+        sub = "<br>".join(p for p in sub_parts if p)
+    else:
+        value_html = ck_provenance_tooltip(
+            "Days in A/R",
+            _toned("—", "dim"),
+            explainer=(
+                "Days in A/R could not be computed. "
+                + (dar.reason or "The CCD lacks the claim lifecycle "
+                                 "fields this KPI needs.")
+            ),
+            inject_css=True,
+        )
+        sub = _toned("Insufficient data", "dim") + (
+            f'<br>{_toned(html.escape(dar.reason), "dim")}'
+            if dar.reason else ""
+        )
+        summary = (
+            "The CCD does not contain enough submit-date / paid-date "
+            "pairs to compute days-in-A/R. Typically occurs when claim "
+            "lifecycle fields weren't extracted from the source EMR."
+        )
+
+    summary_html = (
+        '<p class="ck-section-body db-hero-note">'
+        f'<strong>What this shows: </strong>{html.escape(summary)}</p>'
+    ) if summary else ""
+
+    hero_block = ck_kpi_block(
+        "Primary KPI · Days in A/R",
+        value_html,
+        sub=sub,
+        help={
+            "definition": _KPI_HELP["days_in_ar"],
+            "citation": _HFMA_CITATION,
+        },
+    )
+    return (
+        f'<div class="ck-kpi-strip db-hero">{hero_block}</div>'
+        f'{summary_html}'
+    )
+
+
+def _kpi_scorecard(bundle: KPIBundle) -> str:
+    cards = [
+        _kpi_card("days_in_ar", bundle.days_in_ar),
+        _kpi_card("first_pass_denial_rate", bundle.first_pass_denial_rate),
+        _kpi_card("ar_aging_over_90", bundle.ar_aging_over_90),
+        _kpi_card("cost_to_collect", bundle.cost_to_collect),
+        _kpi_card("net_revenue_realization", bundle.net_revenue_realization),
+        _lag_card(bundle.lag_service_to_bill, "Service → Bill Lag"),
+        _lag_card(bundle.lag_bill_to_cash, "Bill → Cash Lag"),
+    ]
+    return (
+        ck_section_header(
+            "KPI Scorecard", eyebrow="HFMA MAP KEY 2021",
+            count=f"{len(cards)} KPIs",
+        )
+        + f'<div class="ck-kpi-grid db-kpis">{"".join(cards)}</div>'
+    )
+
+
+def _kpi_card(key: str, kpi: KPIResult) -> str:
+    band = _BENCHMARKS.get(key, {})
+    label = band.get("label", kpi.name)
+    unit = band.get("unit", kpi.unit)
+    help_block = {
+        "definition": _KPI_HELP.get(key, ""),
+        "citation": _HFMA_CITATION,
+    }
+    if kpi.value is None:
+        sub = _toned("Insufficient data", "dim") + (
+            f'<br>{_toned(html.escape(kpi.reason), "dim")}'
+            if kpi.reason else ""
+        )
+        return ck_kpi_block(label, _toned("—", "dim"), sub=sub,
+                            help=help_block)
+    tone = _tone_for(kpi.value, band)
+    band_label = _band_label(kpi.value, band)
+    value_html = ck_provenance_tooltip(
+        label,
+        _toned(html.escape(_format_value(kpi.value, unit)), tone),
+        explainer=_band_explainer(key, kpi),
+        inject_css=False,
+    )
+    # Peer-median delta line: signed delta in native unit with an
+    # arrow toned by whether that sign is favorable.
+    peer_line = _peer_delta_line(kpi.value, band)
+    sub_parts = [
+        _toned(html.escape(band_label), tone),
+        peer_line,
+        html.escape(_plural(kpi.sample_size, "claim")),
+    ]
+    sub = "<br>".join(p for p in sub_parts if p)
+    return ck_kpi_block(label, value_html, sub=sub, help=help_block)
+
+
+def _lag_card(kpi: KPIResult, label: str) -> str:
+    if kpi.value is None:
+        value_html = _toned("—", "dim")
+        sub = _toned(html.escape(kpi.reason or "Insufficient data"), "dim")
+    else:
+        value_html = html.escape(f"{kpi.value:,.0f} d")
+        sub = html.escape(
+            f"p25 {kpi.numerator:,.0f} d · p75 {kpi.denominator:,.0f} d · "
+            f"n={kpi.sample_size:,}"
+        )
+    return ck_kpi_block(label, value_html, sub=sub)
+
+
+def _cohort_section(report: Optional[CohortLiquidationReport]) -> str:
+    header = ck_section_header(
+        "Cohort Liquidation", eyebrow="LIQUIDATION CURVES",
+        count=(
+            f"{len(report.mature_cells())} mature · "
+            f"{len(report.censored_cells())} in-flight"
+            if report is not None else None
+        ),
+    )
+    if report is None:
+        return header + ck_empty_state(
+            "No cohort liquidation data yet.",
+            body=(
+                "Cohort liquidation needs claim lifecycle fields — "
+                "date of service, payment dates, and paid amounts — "
+                "from the Phase 1 ingest. Re-run ingest with lifecycle "
+                "extraction enabled to populate liquidation curves by "
+                "cohort month."
+            ),
+            eyebrow="COHORT LIQUIDATION",
+            cta_label="Re-run Phase 1 ingest",
+            cta_href="/diligence/ingest",
+        )
+    cells: List[CohortCell] = sorted(
+        report.mature_cells() + report.censored_cells(),
+        key=lambda c: (c.cohort_month, c.days_since_dos),
+    )
+    rows_html: List[str] = []
+    prev_month: Optional[str] = None
+    for cell in cells:
+        month_tone = "dim" if cell.cohort_month == prev_month else None
+        prev_month = cell.cohort_month
+        if cell.cumulative_liquidation_pct is not None:
+            pct = cell.cumulative_liquidation_pct
+            liq_cell = ck_data_cell(
+                ck_fmt_percent(pct), align="right", mono=True,
+                bar=max(0.0, min(100.0, pct * 100)),
+            )
+        else:
+            liq_cell = ck_data_cell("—", align="right", mono=True,
+                                    tone="dim")
+        if cell.status == CohortStatus.MATURE:
+            status_badge = ck_signal_badge("Mature", tone="positive")
+        elif cell.status == CohortStatus.INSUFFICIENT_DATA:
+            status_badge = ck_signal_badge("In-flight", tone="neutral")
+        else:
+            status_badge = ck_signal_badge(cell.status.value,
+                                           tone="neutral")
+        rows_html.append(
+            "<tr>"
+            + ck_data_cell(html.escape(cell.cohort_month), mono=True,
+                           tone=month_tone)
+            + ck_data_cell(f"{cell.days_since_dos} d", align="right",
+                           mono=True)
+            + ck_data_cell(f"{cell.cohort_size_claims:,}", align="right",
+                           mono=True)
+            + liq_cell
+            + ck_data_cell(status_badge)
+            + ck_data_cell(html.escape(cell.reason or ""), tone="dim")
+            + "</tr>"
+        )
+    if not rows_html:
+        rows_html.append(
+            '<tr><td colspan="6" class="ck-cell ck-empty-row">'
+            '<em>No cohorts</em> in this CCD at as-of '
+            f'{report.as_of_date.isoformat()}.</td></tr>'
+        )
+    windows = ", ".join(f"{w} d" for w in report.window_days)
+    table = ck_data_table(
+        headers=[
+            {"label": "Cohort"},
+            {"label": "Window", "align": "right"},
+            {"label": "Claims", "align": "right"},
+            {"label": "Liquidation", "align": "right"},
+            {"label": "Status"},
+            {"label": "Note"},
+        ],
+        rows_html="".join(rows_html),
+    )
+    intro = (
+        '<p class="ck-section-body">'
+        'Cumulative cash liquidation by date-of-service cohort at '
+        f'{html.escape(windows)} windows. In-flight (censored) cohorts '
+        'show claim counts but no rate — never fabricated.</p>'
+    )
+    return header + ck_panel(intro + table,
+                             title="Liquidation by cohort month")
+
+
+def _cat_label(category: Any) -> str:
+    """Normalize a CARC category for display — chart and list share
+    this so the same row never renders under two different names."""
+    return str(category) if category else "(uncategorized)"
 
 
 def _denial_pareto_chart(
-    row_list: List[DenialStratRow], width: int = 720, height: int = 300
+    row_list: List[DenialStratRow], total: float,
+    width: int = 720, height: int = 310,
 ) -> str:
     """Pareto chart: denial dollars as sorted bars + cumulative-% line.
 
     The canonical 80/20 view — bars descend by dollar impact, a line
     tracks the running cumulative share, and an 80% reference marks how
-    many categories carry the bulk of denials. Reads the same dollars
-    the bar list below shows. Empty input returns "".
+    many categories carry the bulk of denials. ``total`` is the sum
+    over ALL rows (the same denominator the bar list below uses), so
+    the cumulative line and per-bar percentages mean what they say.
+    When more than 12 categories exist, the tail is aggregated into a
+    final "Other (N)" bar so cumulative still reaches 100%. Empty
+    input returns "".
     """
-    rows = sorted(
-        [r for r in row_list if getattr(r, "category", None)],
-        key=lambda r: r.dollars_denied, reverse=True,
-    )[:12]
-    if not rows:
+    rows = sorted(row_list, key=lambda r: r.dollars_denied, reverse=True)
+    if not rows or total <= 0:
         return ""
-    total = sum(r.dollars_denied for r in rows) or 1.0
-    max_d = max((r.dollars_denied for r in rows), default=0) or 1.0
+    shown = rows[:12]
+    rest = rows[12:]
+    # (label, dollars, claim_count, is_aggregate)
+    bars: List[Tuple[str, float, int, bool]] = [
+        (_cat_label(r.category), r.dollars_denied, r.count, False)
+        for r in shown
+    ]
+    if rest:
+        bars.append((
+            f"Other ({len(rest)})",
+            sum(r.dollars_denied for r in rest),
+            sum(r.count for r in rest),
+            True,
+        ))
+    max_d = max(d for _, d, _, _ in bars) or 1.0
 
-    pad_l, pad_r, pad_t, pad_b = 56, 48, 18, 64
+    pad_l, pad_r, pad_t, pad_b = 64, 64, 26, 64
     plot_w = width - pad_l - pad_r
     plot_h = height - pad_t - pad_b
-    n = len(rows)
+    n = len(bars)
     slot = plot_w / n
     bw = min(slot * 0.62, 54)
 
-    accent = P["accent"]
-    rule = P["border"]
+    accent = P["teal"]
+    rule = P["rule"]
     txt = P["text_dim"]
     line_c = P["warning"]
+    mono = "JetBrains Mono,ui-monospace,monospace"
 
     def _y(frac: float) -> float:
         return pad_t + (1 - max(0.0, min(1.0, frac))) * plot_h
 
     parts: List[str] = [
-        f'<svg viewBox="0 0 {width} {height}" '
+        f'<svg viewBox="0 0 {width} {height}" class="db-pareto-svg" '
         f'preserveAspectRatio="xMidYMid meet" role="img" '
-        f'aria-label="Denial dollars Pareto with cumulative share" '
-        f'style="width:100%;max-width:{width}px;height:auto;'
-        f'print-color-adjust:exact;-webkit-print-color-adjust:exact;">'
+        f'aria-label="Denial dollars Pareto with cumulative share of '
+        f'all denied dollars">'
     ]
     # Axes.
     parts.append(
@@ -504,44 +745,75 @@ def _denial_pareto_chart(
         f'stroke="{rule}" stroke-width="1"/>'
         f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
         f'y2="{pad_t + plot_h}" stroke="{rule}" stroke-width="1"/>'
+        f'<line x1="{pad_l + plot_w}" y1="{pad_t}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="{rule}" stroke-width="1"/>'
     )
-    # 80% reference line.
+    # Axis headers — name the dual scale so bars are never read
+    # against the cumulative axis.
+    parts.append(
+        f'<text x="{pad_l - 8}" y="{pad_t - 12}" text-anchor="end" '
+        f'font-size="8.5" font-family="{mono}" fill="{txt}">$ DENIED</text>'
+        f'<text x="{pad_l + plot_w + 8}" y="{pad_t - 12}" '
+        f'text-anchor="start" font-size="8.5" font-family="{mono}" '
+        f'fill="{txt}">CUM %</text>'
+    )
+    # Left-axis $ anchors (bar scale) + right-axis cumulative anchors.
+    parts.append(
+        f'<text x="{pad_l - 8}" y="{pad_t + 4}" text-anchor="end" '
+        f'font-size="9" font-family="{mono}" fill="{txt}">'
+        f'{html.escape(ck_fmt_currency(max_d))}</text>'
+        f'<text x="{pad_l - 8}" y="{pad_t + plot_h}" text-anchor="end" '
+        f'font-size="9" font-family="{mono}" fill="{txt}">$0</text>'
+        f'<text x="{pad_l + plot_w + 8}" y="{pad_t + 4}" '
+        f'text-anchor="start" font-size="9" font-family="{mono}" '
+        f'fill="{txt}">100%</text>'
+        f'<text x="{pad_l + plot_w + 8}" y="{pad_t + plot_h}" '
+        f'text-anchor="start" font-size="9" font-family="{mono}" '
+        f'fill="{txt}">0%</text>'
+    )
+    # 80% reference line against the cumulative (right) axis.
     y80 = _y(0.8)
     parts.append(
         f'<line x1="{pad_l}" y1="{y80:.1f}" x2="{pad_l + plot_w}" '
         f'y2="{y80:.1f}" stroke="{line_c}" stroke-width="1" '
         f'stroke-dasharray="4 3" opacity="0.5"/>'
-        f'<text x="{pad_l + plot_w + 4}" y="{y80 + 3:.1f}" font-size="9.5" '
-        f'font-family="JetBrains Mono,ui-monospace,monospace" '
-        f'fill="{line_c}">80%</text>'
+        f'<text x="{pad_l + plot_w + 8}" y="{y80 + 3:.1f}" font-size="9" '
+        f'font-family="{mono}" fill="{line_c}">80%</text>'
     )
-    # Bars + cumulative line.
+    # Bars + per-bar $ labels + cumulative line.
     cum = 0.0
     pts: List[str] = []
     tips: List[str] = []
-    for i, r in enumerate(rows):
+    for i, (cat, dollars, count, is_agg) in enumerate(bars):
         cx = pad_l + slot * i + slot / 2
-        bh = r.dollars_denied / max_d * plot_h
+        bh = dollars / max_d * plot_h
         by = pad_t + plot_h - bh
-        cum += r.dollars_denied / total
+        cum += dollars / total
         tip = html.escape(
-            f"{r.category}: ${r.dollars_denied:,.0f} "
-            f"({r.dollars_denied / total:.1%}) · {r.count} claims · "
-            f"cumulative {cum:.1%}"
+            f"{cat}: ${dollars:,.2f} ({dollars / total:.1%} of total "
+            f"denied) · {count} claims · cumulative {cum:.1%}"
         )
         tips.append(tip)
+        opacity = "0.45" if is_agg else "0.82"
         parts.append(
             f'<rect x="{cx - bw / 2:.1f}" y="{by:.1f}" width="{bw:.1f}" '
             f'height="{max(bh, 0.5):.1f}" rx="1.5" fill="{accent}" '
-            f'opacity="0.82"><title>{tip}</title></rect>'
+            f'opacity="{opacity}"><title>{tip}</title></rect>'
         )
-        cat = html.escape(str(r.category)[:10])
+        # Direct $ label above each bar — the bar scale is readable
+        # without hunting for the left axis.
+        parts.append(
+            f'<text x="{cx:.1f}" y="{by - 4:.1f}" text-anchor="middle" '
+            f'font-size="8.5" font-family="{mono}" fill="{txt}">'
+            f'{html.escape(ck_fmt_currency(dollars))}</text>'
+        )
+        short = cat[:10] + "…" if len(cat) > 10 else cat
         parts.append(
             f'<text x="{cx:.1f}" y="{pad_t + plot_h + 14:.1f}" '
             f'text-anchor="end" font-size="9" '
             f'font-family="Inter Tight,system-ui,sans-serif" fill="{txt}" '
             f'transform="rotate(-35 {cx:.1f} {pad_t + plot_h + 14:.1f})">'
-            f'{cat}</text>'
+            f'{html.escape(short)}<title>{html.escape(cat)}</title></text>'
         )
         pts.append(f'{cx:.1f},{_y(cum):.1f}')
     parts.append(
@@ -554,56 +826,64 @@ def _denial_pareto_chart(
             f'<circle cx="{x}" cy="{y}" r="2.6" fill="{line_c}">'
             f'<title>{tips[i]}</title></circle>'
         )
-    # Y-axis 0/100% cumulative anchors.
-    parts.append(
-        f'<text x="{pad_l - 6}" y="{pad_t + 4:.1f}" text-anchor="end" '
-        f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
-        f'fill="{txt}">100%</text>'
-        f'<text x="{pad_l - 6}" y="{pad_t + plot_h:.1f}" text-anchor="end" '
-        f'font-size="9" font-family="JetBrains Mono,ui-monospace,monospace" '
-        f'fill="{txt}">0</text>'
-    )
     parts.append("</svg>")
     return "".join(parts)
 
 
 def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
     row_list = list(rows)
+    n_cats = len(row_list)
+    header = ck_section_header(
+        "Denial Stratification", eyebrow="DENIAL PARETO",
+        count=f"{n_cats} categor" + ("y" if n_cats == 1 else "ies"),
+    )
     if not row_list:
-        return ""
-    total = sum(r.dollars_denied for r in row_list) or 1.0
-    _chart = _denial_pareto_chart(row_list)
-    _fig = (
-        f'<style>{_DB_CHART_CAPTION_CSS}</style>'
-        f'<div class="db-figcap">Denial dollars by category &middot; '
-        f'bars = impact, line = cumulative share &middot; 80% reference</div>'
-        f'{_chart}'
-    ) if _chart else ""
-    items = []
-    for r in row_list:
-        pct = r.dollars_denied / total
-        bar_width = max(pct * 100, 2)
-        items.append(
-            '<div class="db-pareto-row">'
-            '<div class="db-pareto-meta">'
-            f'<span>{html.escape(r.category)}</span>'
-            f'<span class="mono">${r.dollars_denied:,.0f}  ·  '
-            f'{r.count} claims  ·  {r.pct_of_total_denied*100:,.1f}%</span>'
-            '</div>'
-            '<div class="db-pareto-track">'
-            f'<div class="db-pareto-fill" style="width:{bar_width}%;"></div>'
-            '</div>'
-            '</div>'
+        return header + ck_empty_state(
+            "No denial rows in this CCD.",
+            body=(
+                "The CCD contains no denied claims with CARC "
+                "categories — either denials weren't extracted in "
+                "Phase 1, or the target genuinely has none. Re-run "
+                "ingest with remittance (835) extraction to populate "
+                "the Pareto."
+            ),
+            eyebrow="DENIAL PARETO",
+            cta_label="Re-run Phase 1 ingest",
+            cta_href="/diligence/ingest",
         )
-    return ck_panel(
-        '<p class="ck-eyebrow">'
-        'ANSI CARC categories by dollar impact. Drill-through to underlying '
-        'claim rows is available via '
-        '<a href="/diligence/root-cause" class="ck-link">Phase 3: Root Cause</a>.'
-        '</p>'
-        f'{_fig}'
-        f'{"".join(items)}',
-        title="Denial Stratification",
+    # One denominator for everything on this screen: the full total
+    # over ALL rows. The chart's cumulative line, its per-bar shares,
+    # and the bar list below all divide by this same number.
+    total = sum(r.dollars_denied for r in row_list) or 1.0
+    sorted_rows = sorted(row_list, key=lambda r: r.dollars_denied,
+                         reverse=True)
+    chart = _denial_pareto_chart(sorted_rows, total)
+    fig = (
+        f'{chart}'
+        '<p class="db-figcap">How to read: bars = denied $ by CARC '
+        'category (left axis; each bar carries its own $ label) · '
+        'line = cumulative share of all denied dollars (right axis) · '
+        'dashed rule marks 80%.</p>'
+    ) if chart else ""
+    items: List[str] = []
+    for r in sorted_rows:
+        share = r.dollars_denied / total
+        items.append(ck_bar_row(
+            _cat_label(r.category),
+            f"{ck_fmt_currency(r.dollars_denied)} · "
+            f"{_plural(r.count, 'claim')}",
+            share * 100,
+        ))
+    intro = (
+        '<p class="ck-section-body">'
+        'ANSI CARC categories by dollar impact. Drill-through to '
+        'underlying claim rows is available via '
+        '<a href="/diligence/root-cause" class="ck-link">'
+        'Phase 3: Root Cause</a>.</p>'
+    )
+    return header + ck_panel(
+        intro + fig + "".join(items),
+        title="Pareto by CARC category",
     )
 
 
@@ -615,7 +895,8 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
          / CRITICAL band against management-reported accrual revenue,
          plus the dollar delta.
       2. Top-line realization metrics (cash / gross / cohort counts).
-      3. Cohort × step cascade table (ALL-payers).
+      3. Cohort × step cascade table (ALL-payers) with per-cohort
+         reconciliation verdicts pulled into a badge footer.
       4. Per-payer-class breakout — one compact row per payer class
          summarising gross → accrual → cash so a partner sees which
          payer mix is driving the top-line divergence.
@@ -624,28 +905,63 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
     supplied, the card renders "not supplied" and the status is
     UNKNOWN. In-flight cohorts show claim counts but no realization.
     """
+    header_count = None
+    if report is not None:
+        header_count = (
+            f"{len(report.mature_cohorts())} mature · "
+            f"{len(report.censored_cohorts())} in-flight"
+        )
+    header = ck_section_header(
+        "Quality of Revenue", eyebrow="CASH WATERFALL",
+        count=header_count,
+    )
     if report is None:
-        return ""
+        return header + ck_empty_state(
+            "No cash waterfall yet.",
+            body=(
+                "Quality-of-Revenue analysis needs claim lifecycle "
+                "fields — gross charges, adjudication steps, and "
+                "payment dates — from the Phase 1 ingest. Re-run "
+                "ingest with lifecycle extraction enabled to populate "
+                "the gross-to-cash cascade."
+            ),
+            eyebrow="QUALITY OF REVENUE",
+            cta_label="Re-run Phase 1 ingest",
+            cta_href="/diligence/ingest",
+        )
     mature = report.mature_cohorts()
     censored = report.censored_cohorts()
 
     mgmt_card = _management_reconciliation_card(report)
 
     # Top-line summary.
-    realization_str = (
-        f"{report.total_realization_rate * 100:,.1f}%"
-        if report.total_realization_rate is not None else "—"
+    rate = report.total_realization_rate
+    if rate is not None:
+        realization_html = ck_provenance_tooltip(
+            "Realization rate",
+            _toned(html.escape(ck_fmt_percent(rate)),
+                   _realization_tone(rate)),
+            explainer=(
+                "Realized cash ÷ gross charges across mature claim "
+                "cohorts. HFMA MAP Key 2021 acute-care norms: ≥ 95% "
+                "strong, 88–95% watch, below 88% flags structural RCM "
+                "issues."
+            ),
+            inject_css=False,
+        )
+    else:
+        realization_html = _toned("—", "dim")
+    sub = (
+        f"${report.total_realized_cash_usd:,.2f} of "
+        f"${report.total_gross_charges_usd:,.2f} gross · "
+        f"{_plural(len(mature), 'mature cohort')}"
+        + (f" · {len(censored)} in-flight" if censored else "")
     )
     topline = (
-        '<div class="ck-kpi-strip">'
+        '<div class="ck-kpi-strip db-kpis">'
         + ck_kpi_block(
-            "Realization Rate", realization_str,
-            sub=(
-                f'${report.total_realized_cash_usd:,.0f} of '
-                f'${report.total_gross_charges_usd:,.0f} gross · '
-                f'{len(mature)} mature cohort(s)'
-                + (f", {len(censored)} in-flight" if censored else "")
-            ),
+            "Realization Rate", realization_html,
+            sub=html.escape(sub),
             help={
                 "definition": (
                     "Realized cash ÷ gross charges across mature "
@@ -654,86 +970,111 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
                     "billed actually became cash. PE healthcare median "
                     "is ~92-95%; below 88% flags structural RCM issues."
                 ),
-                "citation": "HFMA MAP Key 2021",
+                "citation": _HFMA_CITATION,
             },
         )
         + '</div>'
     )
 
     # Cascade table. One row per cohort × step; ALL-payers roll-up.
+    # Reconciliation verdicts are pulled OUT of the data rows into a
+    # badge footer so the table stays one species of row.
+    recon_items: List[str] = []
     if not mature:
         body_rows = (
-            '<tr><td colspan="5" class="ck-empty-row">'
+            '<tr><td colspan="5" class="ck-cell ck-empty-row">'
             '<em>No mature cohorts</em> at as-of '
             f'{report.as_of_date.isoformat()}.</td></tr>'
         )
     else:
-        parts: list[str] = []
+        parts: List[str] = []
         for cohort in mature:
+            first_row = True
             for s in cohort.steps:
                 is_terminal = s.name == "realized_cash"
                 is_addback = s.name == "appeals_recovered"
-                row_colour = (
-                    P["positive"] if is_terminal
-                    else P["text_dim"] if is_addback
-                    else P["text"]
-                )
-                sign = "+" if is_addback else ("" if is_terminal else "−")
+                is_base = s.name == "gross_charges"
+                step_tone = ("pos" if is_terminal
+                             else "dim" if is_addback else None)
+                cell_tone = ("pos" if is_terminal
+                             else "dim" if is_addback else None)
+                # The opening base and the terminal cash row are levels,
+                # not flows — no sign. Zero amounts (e.g. no appeals
+                # recovered) show a bare $0.00, never "+$0.00"/"−$0.00".
+                sign = ("" if (is_terminal or is_base or s.amount_usd == 0)
+                        else "+" if is_addback else "−")
                 parts.append(
-                    '<tr>'
-                    f'<td class="mono">{html.escape(cohort.cohort_month)}</td>'
-                    f'<td style="color:{row_colour};">{html.escape(s.label)}</td>'
-                    f'<td class="num" style="color:{row_colour};">'
-                    f'{sign}${s.amount_usd:,.0f}</td>'
-                    f'<td class="num" style="color:{P["text_dim"]};">'
-                    f'${s.running_balance_usd:,.0f}</td>'
-                    f'<td class="num" style="color:{P["text_faint"]};font-size:10px;">'
-                    f'{s.claim_count}</td>'
-                    '</tr>'
+                    "<tr>"
+                    + ck_data_cell(
+                        html.escape(cohort.cohort_month), mono=True,
+                        tone=None if first_row else "dim")
+                    + ck_data_cell(
+                        _toned(html.escape(s.label), step_tone),
+                        weight=700 if is_terminal else None)
+                    + ck_data_cell(
+                        f"{sign}${s.amount_usd:,.2f}", align="right",
+                        mono=True, tone=cell_tone,
+                        weight=700 if is_terminal else None)
+                    + ck_data_cell(
+                        f"${s.running_balance_usd:,.2f}", align="right",
+                        mono=True, tone="dim")
+                    + ck_data_cell(
+                        f"{s.claim_count:,}", align="right", mono=True,
+                        tone="dim")
+                    + "</tr>"
                 )
-            # Per-cohort divergence status badge row (when we have a
-            # management number to compare against).
+                first_row = False
+            # Per-cohort divergence verdict (when we have a management
+            # number to compare against) → badge footer, not a row.
             if cohort.management_reported_revenue_usd is not None:
-                badge_colour, _ = _status_palette(cohort.divergence_status)
+                status = cohort.divergence_status
+                s_title, _ = _STATUS_COPY.get(
+                    status, _STATUS_COPY[DivergenceStatus.UNKNOWN.value])
+                s_tone = _STATUS_TONE.get(status, "neutral")
                 pct = cohort.qor_divergence_pct or 0.0
-                parts.append(
-                    '<tr>'
-                    f'<td class="mono">{html.escape(cohort.cohort_month)}</td>'
-                    f'<td style="color:{badge_colour};font-weight:600;">'
-                    f'Reconciliation · {html.escape(cohort.divergence_status)}</td>'
-                    f'<td class="num" style="color:{badge_colour};">'
-                    f'{pct*100:+.1f}%</td>'
-                    f'<td class="num" style="color:{P["text_dim"]};">'
-                    f'mgmt ${cohort.management_reported_revenue_usd:,.0f}</td>'
-                    f'<td></td>'
-                    '</tr>'
+                recon_items.append(
+                    '<li>'
+                    f'<span class="db-mono">'
+                    f'{html.escape(cohort.cohort_month)}</span>'
+                    + ck_signal_badge(f"Reconciliation · {s_title}",
+                                      tone=s_tone)
+                    + f'<span class="db-mono">'
+                    f'{_minus(f"{pct * 100:+.1f}")}% vs mgmt '
+                    f'${cohort.management_reported_revenue_usd:,.2f}'
+                    '</span></li>'
                 )
         body_rows = "".join(parts)
 
-    per_class = _per_payer_class_table(report)
-
-    cascade_panel = ck_panel(
-        '<p class="ck-eyebrow">'
-        'Claim-level cascade from gross charges to realized cash, cohorted '
-        'by date of service. Cohorts younger than '
+    cascade_table = ck_data_table(
+        headers=[
+            {"label": "Cohort"},
+            {"label": "Step"},
+            {"label": "Amount", "align": "right"},
+            {"label": "Running", "align": "right"},
+            {"label": "Claims", "align": "right"},
+        ],
+        rows_html=body_rows,
+    )
+    recon_html = (
+        f'<ul class="db-recon-list">{"".join(recon_items)}</ul>'
+        if recon_items else ""
+    )
+    intro = (
+        '<p class="ck-section-body">'
+        'Claim-level cascade from gross charges to realized cash, '
+        'cohorted by date of service. Cohorts younger than '
         f'{report.realization_window_days} days are marked '
-        '<em>insufficient data</em>: never fabricated. Drill-through to '
-        'underlying claim_ids is available in '
+        '<em>insufficient data</em> — never fabricated. Drill-through '
+        'to underlying claim_ids is available in '
         '<a href="/diligence/root-cause" class="ck-link">Phase 3</a>.'
         '</p>'
-        f'{topline}'
-        '<table class="cad-table">'
-        '<thead><tr>'
-        '<th>Cohort</th><th>Step</th>'
-        '<th class="num">Amount</th>'
-        '<th class="num">Running</th>'
-        '<th class="num">n</th>'
-        '</tr></thead>'
-        f'<tbody>{body_rows}</tbody>'
-        '</table>',
-        title="Quality of Revenue (Cash Waterfall)",
     )
-    return f"{mgmt_card}{cascade_panel}{per_class}"
+    cascade_panel = ck_panel(
+        intro + topline + cascade_table + recon_html,
+        title="Gross-to-cash cascade",
+    )
+    per_class = _per_payer_class_table(report)
+    return f"{header}{mgmt_card}{cascade_panel}{per_class}"
 
 
 # ── QoR helpers ─────────────────────────────────────────────────────
@@ -763,57 +1104,69 @@ _STATUS_COPY = {
     ),
 }
 
+_STATUS_TONE = {
+    DivergenceStatus.IMMATERIAL.value: "positive",
+    DivergenceStatus.WATCH.value: "warning",
+    DivergenceStatus.CRITICAL.value: "negative",
+}
 
-def _status_palette(status: str) -> tuple[str, str]:
-    """Return ``(text_colour, tint_background)`` for a status label."""
-    if status == DivergenceStatus.IMMATERIAL.value:
-        return P["positive"], "rgba(16,185,129,.12)"
-    if status == DivergenceStatus.WATCH.value:
-        return P["warning"], "rgba(245,158,11,.14)"
-    if status == DivergenceStatus.CRITICAL.value:
-        return P["negative"], "rgba(239,68,68,.14)"
-    return P["text_faint"], P["panel_alt"]
+
+def _realization_tone(rate: Optional[float]) -> Optional[str]:
+    """Band a realization rate against the thresholds the QoR help
+    copy quotes — colour must be earned from the value, never
+    unconditional. ≥95% strong (pos), 88–95% neutral, <88% structural
+    concern (neg)."""
+    if rate is None:
+        return "dim"
+    if rate >= 0.95:
+        return "pos"
+    if rate >= 0.88:
+        return None
+    return "neg"
 
 
 def _management_reconciliation_card(report: CashWaterfallReport) -> str:
     """Headline card above the cascade table: divergence band, delta,
     and the human copy a partner can drop into a memo."""
     status = report.total_divergence_status
-    title, copy = _STATUS_COPY.get(status, _STATUS_COPY[DivergenceStatus.UNKNOWN.value])
-    colour, tint = _status_palette(status)
+    title, copy = _STATUS_COPY.get(
+        status, _STATUS_COPY[DivergenceStatus.UNKNOWN.value])
 
     accrual = report.total_accrual_revenue_usd
     mgmt = report.total_management_revenue_usd
     delta = report.total_qor_divergence_usd
     pct = report.total_qor_divergence_pct
 
-    status_tone = {
-        DivergenceStatus.IMMATERIAL.value: "positive",
-        DivergenceStatus.WATCH.value: "warning",
-        DivergenceStatus.CRITICAL.value: "negative",
-    }.get(status, "neutral")
-    status_badge = ck_signal_badge(html.escape(status), tone=status_tone)
+    status_badge = ck_signal_badge(
+        title, tone=_STATUS_TONE.get(status, "neutral"))
     if status == DivergenceStatus.UNKNOWN.value or mgmt is None:
         numbers_html = (
-            '<p class="ck-eyebrow">'
-            'Waterfall accrual: '
-            f'<span class="mono">${(accrual or 0):,.0f}</span></p>'
+            '<div class="ck-kpi-strip db-kpis">'
+            + ck_kpi_block("Waterfall accrual",
+                           html.escape(f"${(accrual or 0):,.2f}"))
+            + '</div>'
         )
     else:
-        pct_str = f"{pct*100:+.1f}%" if pct is not None else "n/a"
-        delta_str = f"{'+' if (delta or 0) >= 0 else '−'}${abs(delta or 0):,.0f}"
+        pct_str = (_minus(f"{pct * 100:+.1f}") + "%"
+                   if pct is not None else "n/a")
+        delta_str = (
+            ("+" if (delta or 0) >= 0 else "−")
+            + f"${abs(delta or 0):,.2f}"
+        )
         numbers_html = (
-            '<div class="ck-kpi-strip">'
-            + ck_kpi_block("Waterfall accrual", f"${accrual:,.0f}")
-            + ck_kpi_block("Management accrual", f"${mgmt:,.0f}")
-            + ck_kpi_block("Delta", f"{delta_str} ({pct_str})")
+            '<div class="ck-kpi-strip db-kpis">'
+            + ck_kpi_block("Waterfall accrual",
+                           html.escape(f"${accrual:,.2f}"))
+            + ck_kpi_block("Management accrual",
+                           html.escape(f"${mgmt:,.2f}"))
+            + ck_kpi_block("Delta",
+                           html.escape(f"{delta_str} ({pct_str})"))
             + '</div>'
         )
 
     return ck_panel(
         '<p class="ck-section-body">'
-        f'{status_badge} <strong>{html.escape(title)}</strong></p>'
-        f'<p class="ck-section-body">{html.escape(copy)}</p>'
+        f'{status_badge} {html.escape(copy)}</p>'
         f'{numbers_html}',
         title="Management reconciliation",
     )
@@ -866,70 +1219,69 @@ def _per_payer_class_table(report: CashWaterfallReport) -> str:
             in_flight = len([c for c in cohorts
                              if c.status == CohortStatus.INSUFFICIENT_DATA])
             rows.append(
-                '<tr>'
-                f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
-                f'<td colspan="6" class="ck-empty-row">'
-                f'<em>{in_flight} cohort(s) in-flight</em>: '
-                'insufficient data'
-                f'</td>'
-                '</tr>'
+                "<tr>"
+                + ck_data_cell(html.escape(pc), mono=True)
+                + '<td colspan="6" class="ck-cell tone-dim">'
+                f'<em>{_plural(in_flight, "cohort")} in-flight</em> — '
+                'insufficient data</td>'
+                "</tr>"
             )
             continue
         rate = (t["cash"] / t["gross"]) if t["gross"] > 0 else None
-        rate_str = f"{rate*100:,.1f}%" if rate is not None else "—"
+        rate_str = ck_fmt_percent(rate) if rate is not None else "—"
         rows.append(
-            '<tr>'
-            f'<td class="mono" style="color:{P["text"]};">{html.escape(pc)}</td>'
-            f'<td class="num">${t["gross"]:,.0f}</td>'
-            f'<td class="num" style="color:{P["text_dim"]};">'
-            f'−${t["contractual"]:,.0f}</td>'
-            f'<td class="num" style="color:{P["text_dim"]};">'
-            f'−${t["denials_net"]:,.0f}</td>'
-            f'<td class="num" style="color:{P["text_dim"]};">'
-            f'−${t["bad_debt"]:,.0f}</td>'
-            f'<td class="num" style="color:{P["text"]};">${t["accrual"]:,.0f}</td>'
-            f'<td class="num" style="color:{P["positive"]};">{rate_str}</td>'
-            '</tr>'
+            "<tr>"
+            + ck_data_cell(html.escape(pc), mono=True)
+            + ck_data_cell(f'${t["gross"]:,.2f}', align="right", mono=True)
+            + ck_data_cell(_deduct(t["contractual"]), align="right",
+                           mono=True, tone="dim")
+            + ck_data_cell(_deduct(t["denials_net"]), align="right",
+                           mono=True, tone="dim")
+            + ck_data_cell(_deduct(t["bad_debt"]), align="right",
+                           mono=True, tone="dim")
+            + ck_data_cell(f'${t["accrual"]:,.2f}', align="right",
+                           mono=True)
+            + ck_data_cell(rate_str, align="right", mono=True,
+                           tone=_realization_tone(rate), weight=600)
+            + "</tr>"
         )
 
-    return (
-        f'<div style="margin-top:16px;background:{P["panel"]};'
-        f'border:1px solid {P["border"]};border-radius:4px;padding:14px 16px;">'
-        f'  <div style="font-size:10px;color:{P["text_faint"]};letter-spacing:1px;'
-        f'text-transform:uppercase;margin-bottom:8px;">By Payer Class</div>'
-        f'  <table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        f'    <thead><tr style="color:{P["text_dim"]};">'
-        f'      <th style="text-align:left;padding:6px 8px;border-bottom:1px solid {P["border"]};">Payer Class</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Gross</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Contractuals</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Denials (net)</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Bad Debt</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Accrual</th>'
-        f'      <th style="text-align:right;padding:6px 8px;border-bottom:1px solid {P["border"]};">Realization</th>'
-        f'    </tr></thead>'
-        f'    <tbody>{"".join(rows)}</tbody>'
-        f'  </table>'
-        f'</div>'
+    table = ck_data_table(
+        headers=[
+            {"label": "Payer Class"},
+            {"label": "Gross", "align": "right"},
+            {"label": "Contractuals", "align": "right"},
+            {"label": "Denials (net)", "align": "right"},
+            {"label": "Bad Debt", "align": "right"},
+            {"label": "Accrual", "align": "right"},
+            {"label": "Realization", "align": "right"},
+        ],
+        rows_html="".join(rows),
     )
+    legend = (
+        '<p class="db-legend">Realization bands: ≥ 95.0% strong · '
+        '88.0–95.0% watch · &lt; 88.0% structural concern — '
+        'HFMA MAP Key 2021 acute-care norms.</p>'
+    )
+    return ck_panel(table + legend, title="By payer class")
 
 
 def _provenance_footer(bundle: KPIBundle) -> str:
     tv = bundle.days_in_ar.temporal
     events = tv.overlapping_events
-    events_str = ""
+    events_html = ""
     if events:
         names = "; ".join(e.name for e in events)
-        events_str = (
-            f'<span style="color:{P["warning"]};">'
-            f'regulatory overlap: {html.escape(names)}</span>'
-        )
+        events_html = ck_signal_badge(
+            f"Regulatory overlap: {names}", tone="warning")
     return (
-        f'<div style="margin-top:40px;padding-top:16px;border-top:1px solid {P["border"]};'
-        f'color:{P["text_faint"]};font-size:10px;font-family:\'JetBrains Mono\',monospace;">'
-        f'claims range: {html.escape(tv.claims_date_min or "n/a")} → '
-        f'{html.escape(tv.claims_date_max or "n/a")}  ·  '
-        f'as_of: {bundle.as_of_date.isoformat()}  ·  '
-        f'provider_id: {html.escape(bundle.provider_id or "(unassigned)")}  '
-        f'{events_str}'
-        f'</div>'
+        '<footer class="db-provenance">'
+        f'<span>claims range {html.escape(tv.claims_date_min or "n/a")} → '
+        f'{html.escape(tv.claims_date_max or "n/a")}</span>'
+        f'<span>as-of {bundle.as_of_date.isoformat()}</span>'
+        f'<span>provider_id '
+        f'{html.escape(bundle.provider_id or "(unassigned)")}</span>'
+        '<span>benchmark bands: HFMA MAP Key 2021 (acute care)</span>'
+        f'{events_html}'
+        '</footer>'
     )

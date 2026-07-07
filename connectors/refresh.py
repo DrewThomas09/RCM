@@ -23,21 +23,29 @@ design (see each connector's README).
 """
 from __future__ import annotations
 
+import json
+import os
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Sequence
 
-from ._spi import CONNECTOR_NAMES
+from ._spi import (
+    CONNECTOR_NAMES, MANUAL_INGEST_CLIS, ROOT_STYLE_CLIS,
+    SUBCMD_DB_STYLE_CLIS, storage_argv,
+)
 
 # Connectors whose CLI takes --root DIR (db lives inside that dir) rather
-# than --db FILE. The earlier four slices predate the --db convention.
-_ROOT_STYLE = {"openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data"}
+# than --db FILE. Declared in _spi (the estate metadata module) so the
+# RCM-MC estate page's copy-ready hints use the same mapping; kept here
+# as aliases for existing callers.
+_ROOT_STYLE = set(ROOT_STYLE_CLIS)
 
 # Connectors that declare --db on each subcommand instead of the top-level
 # parser; their storage flag must FOLLOW the verb or argparse rejects it.
-_SUBCMD_DB_STYLE = {"cms_open_data", "open_payments"}
+_SUBCMD_DB_STYLE = set(SUBCMD_DB_STYLE_CLIS)
 
 # ``quick`` argv suffixes per connector, run in order after
 # ``python -m connectors.<name>.cli [--db …|--root …]``. Every entry is a
@@ -45,6 +53,12 @@ _SUBCMD_DB_STYLE = {"cms_open_data", "open_payments"}
 # marked optional: api.census.gov requires CENSUS_API_KEY for data pulls,
 # so without the env var those steps fail and are reported, not fatal.
 _QUICK_PLAN: Dict[str, List[List[str]]] = {
+    "cms_coverage": [
+        ["fetch", "--dataset", "national_ncd", "--max-pages", "2"],
+        ["fetch", "--dataset", "local_lcd", "--max-pages", "2"],
+        ["fetch", "--dataset", "local_article", "--max-pages", "2"],
+        ["fetch", "--dataset", "contractors"],
+    ],
     "cms_open_data": [
         ["discover"],
         ["fetch", "--dataset", "geo_variation_state_county", "--max-pages", "2"],
@@ -175,10 +189,15 @@ _FULL_OVERRIDES: Dict[str, List[List[str]]] = {
 }
 
 # Connectors with no unattended ingest in the plan (their ingest verbs need
-# domain arguments — search terms, NPI lists, code ranges — and
-# cms_coverage's ``discover`` is informational, not an ingest). They stay
-# manual; see each README.
-UNPLANNED: tuple = ("openfda", "cms_coverage", "npi_registry", "icd10")
+# domain arguments — search terms, NPI lists, code ranges). They stay
+# manual; see each README. Declared in _spi so the estate page's ingest
+# hints agree; cms_coverage left this list when it gained a ``fetch`` verb.
+UNPLANNED: tuple = MANUAL_INGEST_CLIS
+
+# Env-var prerequisites: steps for these connectors are SKIPPED (reported,
+# ok, not fatal) when the variable is absent. Without this, a keyless but
+# otherwise perfect sweep exits 1 and reads as a failure to cron/CI.
+_ENV_PREREQS: Dict[str, str] = {"census_acs": "CENSUS_API_KEY"}
 
 _STEP_TIMEOUT_S = 600
 
@@ -191,6 +210,20 @@ class StepResult:
     returncode: int
     seconds: float
     tail: str = ""
+    # True when the step never ran because a declared env prerequisite
+    # (e.g. CENSUS_API_KEY) is absent — designed-optional, so ok stays True.
+    skipped: bool = False
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "connector": self.connector,
+            "argv": list(self.argv),
+            "ok": self.ok,
+            "skipped": self.skipped,
+            "returncode": self.returncode,
+            "seconds": round(self.seconds, 3),
+            "tail": self.tail,
+        }
 
 
 @dataclass
@@ -205,11 +238,35 @@ class RefreshReport:
     def summary(self) -> str:
         lines = []
         for s in self.steps:
-            mark = "ok " if s.ok else "FAIL"
+            mark = "skip" if s.skipped else ("ok " if s.ok else "FAIL")
             lines.append(f"{mark} {s.connector:16} {s.seconds:6.1f}s  {' '.join(s.argv)}")
         n_fail = sum(1 for s in self.steps if not s.ok)
-        lines.append(f"{len(self.steps)} steps, {n_fail} failed, db_dir={self.db_dir}")
+        n_skip = sum(1 for s in self.steps if s.skipped)
+        tail = f"{len(self.steps)} steps, {n_fail} failed, db_dir={self.db_dir}"
+        if n_skip:
+            tail = (f"{len(self.steps)} steps, {n_fail} failed, "
+                    f"{n_skip} skipped, db_dir={self.db_dir}")
+        lines.append(tail)
         return "\n".join(lines)
+
+    def as_dict(self) -> Dict[str, Any]:
+        """JSON-ready report — the machine-readable twin of summary().
+
+        Persisted to ``{db_dir}/_refresh_report.json`` after a real run so
+        the estate page / a cron wrapper can see what the last refresh
+        did; before this the report was print-only and the outcome was
+        lost with the terminal scrollback.
+        """
+        return {
+            "db_dir": self.db_dir,
+            "ok": self.ok,
+            "n_steps": len(self.steps),
+            "n_failed": sum(1 for s in self.steps if not s.ok),
+            "n_skipped": sum(1 for s in self.steps if s.skipped),
+            "finished_at": datetime.now(timezone.utc).isoformat(
+                timespec="seconds"),
+            "steps": [s.as_dict() for s in self.steps],
+        }
 
 
 def plan(quick: bool = True,
@@ -229,30 +286,43 @@ def plan(quick: bool = True,
 
 
 def _storage_argv(name: str, db_dir: str) -> List[str]:
-    if name in _ROOT_STYLE:
-        # --root connectors write {root}/{name}.db themselves; pointing root
-        # at db_dir keeps every db at {db_dir}/{name}.db — the exact layout
-        # the unified server's open_stores() expects.
-        return ["--root", db_dir.rstrip("/")]
-    return ["--db", f"{db_dir.rstrip('/')}/{name}.db"]
+    # --root connectors write {root}/{name}.db themselves; pointing root
+    # at db_dir keeps every db at {db_dir}/{name}.db — the exact layout
+    # the unified server's open_stores() expects. The mapping itself lives
+    # in _spi.storage_argv so every surface renders the same flags.
+    return storage_argv(name, db_dir)
 
 
 def refresh(db_dir: str, *, quick: bool = True,
             connectors: Optional[Sequence[str]] = None,
-            runner: Any = None) -> RefreshReport:
+            runner: Any = None,
+            write_report: Optional[bool] = None) -> RefreshReport:
     """Run the ingest plan, one subprocess per step, never raising per-step.
 
     ``runner`` is injectable for tests (same signature as
-    ``subprocess.run``); default is the real thing.
+    ``subprocess.run``); default is the real thing. ``write_report``
+    persists ``report.as_dict()`` to ``{db_dir}/_refresh_report.json``;
+    the default (``None``) writes only on real runs — injected-runner
+    tests must not touch the filesystem.
     """
     run = runner or subprocess.run
     if runner is None:
         # Only touch the filesystem for a real run — injected-runner tests
         # must not leave stray directories in the caller's cwd.
-        import os
         os.makedirs(db_dir, exist_ok=True)  # sqlite cannot create parent dirs
     report = RefreshReport(db_dir=db_dir)
     for name, steps in plan(quick=quick, connectors=connectors).items():
+        prereq = _ENV_PREREQS.get(name)
+        if prereq and not os.environ.get(prereq):
+            # Designed-optional connector: record every step as skipped
+            # (ok, visible, non-fatal) instead of letting a keyless sweep
+            # read as a failure.
+            for argv in steps:
+                report.steps.append(StepResult(
+                    connector=name, argv=list(argv), ok=True, returncode=0,
+                    seconds=0.0, tail=f"skipped: {prereq} not set",
+                    skipped=True))
+            continue
         storage = _storage_argv(name, db_dir)
         for argv in steps:
             if name in _SUBCMD_DB_STYLE:
@@ -276,4 +346,13 @@ def refresh(db_dir: str, *, quick: bool = True,
                 report.steps.append(StepResult(
                     connector=name, argv=argv, ok=False, returncode=-1,
                     seconds=time.monotonic() - t0, tail=str(exc)[-400:]))
+    if write_report is None:
+        write_report = runner is None
+    if write_report:
+        try:
+            path = os.path.join(db_dir, "_refresh_report.json")
+            with open(path, "w", encoding="utf-8") as fh:
+                json.dump(report.as_dict(), fh, indent=2)
+        except OSError:
+            pass  # persistence is best-effort; never fail the sweep for it
     return report

@@ -1,18 +1,35 @@
-"""Payer Mix Shift Simulator — models P&L impact of payer re-mix.
+"""ILLUSTRATIVE — Payer Mix Shift Simulator with a curated synthetic panel.
 
-Healthcare PE deals face payer mix shifts over hold period from:
+Do not quote these outputs in IC documents: the default mixes and rate
+indices are curated illustrations, not filed data. The *methodology* is
+the deliverable — it models P&L impact of payer re-mix over a hold from:
 - Medicare Advantage penetration
 - Commercial-to-Medicaid migration
 - State Medicaid expansion
 - Self-pay erosion in urgent care / HC Marketplace
 
 Simulates starting mix → target mix across hold, projects revenue/EBITDA impact.
+For a corpus-calibrated payer-mix model see
+:mod:`rcm_mc.data_public.payer_mix_shift_model`.
+
+EBITDA fall-through convention: rate/mix-driven revenue deltas change
+what is collected per unit of care, not how much care is delivered, so
+they carry no incremental clinical cost and fall through to EBITDA at
+near-100%. We hold back 10% (``EBITDA_FALLTHROUGH = 0.90``) for
+payer-specific billing/collection overhead. A prior version applied
+``margin + 2pp`` (~20%) — treating a pure price change like ordinary
+revenue — which understated the EBITDA impact roughly five-fold and
+contradicted the yearly projection that held margin flat.
 """
 from __future__ import annotations
 
-import importlib
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
+
+
+# Share of a rate/mix-driven revenue delta that reaches EBITDA. See
+# module docstring for the reasoning and the incident that set it.
+EBITDA_FALLTHROUGH = 0.90
 
 
 # ---------------------------------------------------------------------------
@@ -99,6 +116,17 @@ class PayerShiftResult:
     total_ebitda_impact_mm: float
     total_ev_impact_mm: float
     corpus_deal_count: int
+    # Machine-readable honesty flag: default mixes/rates are a curated
+    # synthetic illustration, so any consumer beyond the labelled UI
+    # page (exports, assistant context, future APIs) inherits the
+    # caveat instead of unlabelled numbers.
+    is_illustrative: bool = True
+    # Missing-mass disclosure: payer codes in the caller's mixes that
+    # have no benchmark row are silently priced at the default 0.70
+    # rate / 0.90 collection — fine for a typo, wrong to hide when a
+    # material slice of the book is an unmodelled payer. The codes are
+    # listed so the caller can see exactly which mass got defaulted.
+    unknown_payers: List[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -106,19 +134,16 @@ class PayerShiftResult:
 # ---------------------------------------------------------------------------
 
 def _load_corpus() -> List[dict]:
-    deals: List[dict] = []
-    for i in range(2, 64):
-        try:
-            mod = importlib.import_module(f"rcm_mc.data_public.extended_seed_{i}")
-            deals.extend(getattr(mod, f"EXTENDED_SEED_DEALS_{i}", []))
-        except ImportError:
-            pass
-    try:
-        from rcm_mc.data_public.deals_corpus import _SEED_DEALS, EXTENDED_SEED_DEALS
-        deals = _SEED_DEALS + EXTENDED_SEED_DEALS + deals
-    except Exception:
-        pass
-    return deals
+    """Delegate to the canonical registry-driven loader.
+
+    Five sibling market models each hand-rolled an ``importlib`` loop
+    over divergent ``range()``s, so the same corpus read as five
+    different "Corpus Deals" counts depending on the page and silently
+    drifted stale as seed files were added. The registry enumerates
+    every seed group, so all five now agree and track new seeds.
+    """
+    from rcm_mc.data_public.corpus_loader import load_corpus_deals
+    return load_corpus_deals("all")
 
 
 def _build_mix(mix_dict: Dict[str, float]) -> List[PayerMix]:
@@ -140,6 +165,14 @@ def _build_mix(mix_dict: Dict[str, float]) -> List[PayerMix]:
 
 
 def _weighted_yield(mix: Dict[str, float]) -> float:
+    """Mix-weighted collected yield vs commercial=1.00.
+
+    Unknown payer keys are priced at 0.70 rate / 0.90 collection
+    (roughly the government-payer middle) rather than raised — the
+    callers are page/query inputs and a typo shouldn't 500 — but the
+    defaulted codes are surfaced via ``PayerShiftResult.unknown_payers``
+    so the substitution is disclosed, not silent.
+    """
     return sum(pct * _PAYER_RATE_INDEX.get(p, 0.7) * _PAYER_COLLECTION_RATE.get(p, 0.9)
                for p, pct in mix.items())
 
@@ -197,7 +230,9 @@ def _build_scenarios(
 
         yield_change_pct = (new_yield / base_yield - 1) if base_yield else 0
         revenue_impact = revenue_mm * yield_change_pct
-        ebitda_impact = revenue_impact * (ebitda_margin + 0.02)   # High fall-through on rate changes
+        # Rate/mix deltas fall through at EBITDA_FALLTHROUGH — volumes
+        # and cost base are unchanged (see module docstring).
+        ebitda_impact = revenue_impact * EBITDA_FALLTHROUGH
         ev_impact = ebitda_impact * exit_multiple
 
         start_comm = base_mix.get("commercial", 0.5)
@@ -226,6 +261,15 @@ def _build_yearly(
     base_mix: Dict[str, float], target_mix: Dict[str, float],
     hold_years: int, revenue_mm: float, ebitda_margin: float, growth_pct: float,
 ) -> List[YearlyProjection]:
+    """Project the hold-period P&L under the interpolated mix.
+
+    EBITDA is built as counterfactual EBITDA (same growth, base mix, at
+    the base margin) plus EBITDA_FALLTHROUGH on the mix-driven revenue
+    delta — the same fall-through convention the scenario table uses.
+    The prior version held margin constant here (rev × margin), which
+    contradicted the scenario table's fall-through and treated a pure
+    collection-rate change as if it carried full operating cost.
+    """
     rows = []
     for yr in range(0, hold_years + 1):
         progress = yr / hold_years if hold_years else 0
@@ -239,8 +283,10 @@ def _build_yearly(
         base_yield = _weighted_yield(base_mix)
         yield_mult = cur_yield / base_yield if base_yield else 1
 
-        rev = revenue_mm * ((1 + growth_pct) ** yr) * yield_mult
-        ebitda = rev * ebitda_margin
+        rev_no_shift = revenue_mm * ((1 + growth_pct) ** yr)
+        rev = rev_no_shift * yield_mult
+        ebitda = (rev_no_shift * ebitda_margin
+                  + (rev - rev_no_shift) * EBITDA_FALLTHROUGH)
 
         rows.append(YearlyProjection(
             year=yr,
@@ -292,14 +338,34 @@ def compute_payer_shift(
             "self_pay": 0.10,
         }
 
+    # Disclose every payer code we had to price at the defaults (see
+    # PayerShiftResult.unknown_payers).
+    unknown_payers = sorted(
+        p for p in set(starting_mix) | set(target_mix)
+        if p not in _PAYER_RATE_INDEX
+    )
+
     start_mix_rows = _build_mix(starting_mix)
     target_mix_rows = _build_mix(target_mix)
     scenarios = _build_scenarios(starting_mix, revenue_mm, ebitda_margin, exit_multiple)
     yearly = _build_yearly(starting_mix, target_mix, hold_years, revenue_mm, ebitda_margin, growth_pct)
 
     terminal_rev = yearly[-1].revenue_mm if yearly else revenue_mm
-    total_ebitda_impact = sum(y.ebitda_mm for y in yearly) - (revenue_mm * ebitda_margin) * len(yearly)
-    total_ev_impact = (yearly[-1].ebitda_mm - revenue_mm * ebitda_margin) * exit_multiple if yearly else 0
+
+    # Impact is measured against the same-growth-NO-shift counterfactual
+    # (revenue grown at growth_pct, base mix, base margin) so the delta
+    # isolates the mix effect. The prior version subtracted a FLAT base,
+    # which attributed all baseline revenue growth to "payer shift".
+    def _counterfactual_ebitda(yr: int) -> float:
+        return revenue_mm * ((1 + growth_pct) ** yr) * ebitda_margin
+
+    total_ebitda_impact = sum(
+        y.ebitda_mm - _counterfactual_ebitda(y.year) for y in yearly
+    )
+    total_ev_impact = (
+        (yearly[-1].ebitda_mm - _counterfactual_ebitda(yearly[-1].year))
+        * exit_multiple if yearly else 0
+    )
 
     return PayerShiftResult(
         sector=sector,
@@ -312,4 +378,5 @@ def compute_payer_shift(
         total_ebitda_impact_mm=round(total_ebitda_impact, 2),
         total_ev_impact_mm=round(total_ev_impact, 1),
         corpus_deal_count=len(corpus),
+        unknown_payers=unknown_payers,
     )

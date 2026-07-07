@@ -19,10 +19,20 @@ Public API:
     ck_diverging_bar(title, items, ...)              value-vs-reference Δ bars
     ck_chart_card(title, svg, ...)                   editorial frame + Export PNG
     ck_chart_assets()                                <style>+<script>, once/page
+    ck_nice_ticks(lo, hi, target)                    round-number axis ticks
+    DATA_SERIES / DATA_SERIES_EXTENDED               house data-viz palette
+
+This module is also the home of the cross-kit shared pieces: the house
+categorical data palette (mirroring the ``--sc-data-1..5`` tokens in
+chartis_tokens.css, resolved to hex so PNG export stays self-contained)
+and the nice-number tick algorithm, both consumed by ``cdd_chart_kit``
+and ``power_chart`` so the three kits stop re-solving axis quality and
+palette choice independently.
 """
 from __future__ import annotations
 
 import html as _html
+import math as _math
 import re as _re
 from typing import Callable, List, Optional, Sequence, Tuple
 
@@ -46,6 +56,52 @@ _MONO = "JetBrains Mono, ui-monospace, monospace"
 # Editorial series colors, cycled for grouped charts. Teal-first so a single
 # series reads as the platform accent; the rest stay desaturated/print-safe.
 _SERIES = [_TEAL, _NAVY, _WARN, _POS, _NEG, _FAINT]
+
+# House data-viz palette — resolved hex mirror of the --sc-data-1..5 tokens
+# in chartis_tokens.css (kept muted for chart-color distinguishability).
+# Resolved here (not var(--sc-data-N)) because every chart in this kit must
+# rasterize to PNG from a detached clone, where CSS custom properties do
+# not cascade. Used as the default for 3+-series grouped charts so the
+# 4th/5th series stop wearing semantic good/bad status colors; exported so
+# cdd_chart_kit and power_chart share the same categorical vocabulary.
+DATA_SERIES = ["#2fb3ad", "#3a6fb0", "#b8732a", "#5c3e8c", "#0a8a5f"]
+
+# The 5 tokens plus 3 desaturated editorial fallbacks for long series lists.
+DATA_SERIES_EXTENDED = DATA_SERIES + [_NAVY, _FAINT, _NEG]
+
+
+def ck_nice_ticks(lo: float, hi: float, target: int = 5) -> List[float]:
+    """Round-number axis ticks covering [lo, hi] (Heckbert's "nice numbers").
+
+    Returns tick values inside the range at a 1/2/5×10^k step sized for
+    roughly ``target`` ticks. Exists because each kit was re-solving axis
+    quality separately (power_chart placed 5 even ticks over the raw
+    padded range → $29.6M/$31.7M-style labels; cdd only rounded the max):
+    one shared algorithm keeps every axis in the estate legible. Values
+    within a hair of zero are normalized to 0.0 so ``-0`` never renders."""
+    if not (lo == lo and hi == hi):        # NaN guard
+        return []
+    if hi <= lo:
+        hi = lo + 1.0
+    raw = (hi - lo) / max(1, target - 1)
+    mag = 10.0 ** _math.floor(_math.log10(raw))
+    frac = raw / mag
+    if frac < 1.5:
+        step = mag
+    elif frac < 3.0:
+        step = 2.0 * mag
+    elif frac < 7.0:
+        step = 5.0 * mag
+    else:
+        step = 10.0 * mag
+    first = _math.ceil(lo / step) * step
+    ticks: List[float] = []
+    v = first
+    eps = step * 1e-9
+    while v <= hi + eps and len(ticks) < 50:
+        ticks.append(0.0 if abs(v) < step * 1e-6 else v)
+        v += step
+    return ticks
 
 _TONE = {
     "teal": _TEAL, "positive": _POS, "warning": _WARN,
@@ -125,10 +181,14 @@ def ck_bar_chart(
 
     ``items``: ``(label, value, tone)`` tuples (tone ∈ teal/positive/warning/
     negative/navy/muted). ``reference``: optional ``(label, value)`` drawn as
-    a dashed horizontal line — the US-median benchmark on the geo pages. Values
-    are assumed non-negative (state metrics); a negative slips to width 0.
-    Returns '' when no finite item exists so the caller can fall back to the
-    table alone. ``value_fmt`` formats the on-bar value (defaults to compact)."""
+    a dashed horizontal line — the US-median benchmark on the geo pages. The
+    scale is positive-only (state metrics): a negative value cannot get a bar,
+    but it no longer disappears silently — it renders as a small red
+    below-baseline tick with its value labeled in negative tone, so a delta
+    slipping into a level chart is visible. For delta-shaped (signed) data
+    use ``ck_diverging_bar`` instead. Returns '' when no finite item exists so
+    the caller can fall back to the table alone. ``value_fmt`` formats the
+    on-bar value (defaults to compact)."""
     pts = _coerce(items, want_tone=True)
     if not pts:
         return ""
@@ -170,18 +230,34 @@ def ck_bar_chart(
         by = T + ploth - bh
         bx = cx - bw / 2.0
         color = _tone_hex(tone)
-        parts.append(
-            f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
-            f'rx="1.5" fill="{color}"><title>{_html.escape(label)}: '
-            f'{_html.escape(fmt(val))}</title></rect>'
-        )
-        # value on top
-        val_label_ys.append(by - 6)
-        parts.append(
-            f'<text x="{cx:.1f}" y="{by - 6:.1f}" text-anchor="middle" '
-            f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
-            f'fill="{_INK}">{_html.escape(fmt(val))}</text>'
-        )
+        if val < 0:
+            # A negative can't get a bar on this positive-only scale, but a
+            # silent zero-height rect misreads as a true zero. Render an
+            # explicit below-baseline tick + the value in negative tone.
+            parts.append(
+                f'<rect x="{bx:.1f}" y="{T + ploth + 1:.1f}" width="{bw:.1f}" '
+                f'height="3" rx="1" fill="{_NEG}"><title>{_html.escape(label)}: '
+                f'{_html.escape(fmt(val))}</title></rect>'
+            )
+            val_label_ys.append(by - 6)
+            parts.append(
+                f'<text x="{cx:.1f}" y="{by - 6:.1f}" text-anchor="middle" '
+                f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
+                f'fill="{_NEG}">{_html.escape(fmt(val))}</text>'
+            )
+        else:
+            parts.append(
+                f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
+                f'rx="1.5" fill="{color}"><title>{_html.escape(label)}: '
+                f'{_html.escape(fmt(val))}</title></rect>'
+            )
+            # value on top
+            val_label_ys.append(by - 6)
+            parts.append(
+                f'<text x="{cx:.1f}" y="{by - 6:.1f}" text-anchor="middle" '
+                f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
+                f'fill="{_INK}">{_html.escape(fmt(val))}</text>'
+            )
         # category label below baseline — truncate to what fits this bar's
         # band (~6.5px per mono char at 11px) so adjacent labels never
         # overlap when there are many bars, with an ellipsis + full-text
@@ -315,16 +391,27 @@ def ck_grouped_bar(
     list of ``(series_name, values, color_or_None)`` where ``values`` aligns
     to ``categories`` (None/NaN cells are skipped). Use to compare several
     states across one normalized axis, or several metrics across states.
-    Returns '' when nothing finite is present."""
+    Returns '' when nothing finite is present.
+
+    Default colors: 1–2 series keep the teal/navy platform accents; 3+
+    series switch to the house ``DATA_SERIES`` palette so the 4th/5th
+    series never wear semantic good/bad status colors (a 5-series chart in
+    green/red implies judgments the data doesn't carry). The scale is
+    positive-only: a negative cell renders as a small red below-baseline
+    tick (with its value in the hover <title>) rather than an invisible
+    zero-height bar — for genuinely signed, delta-shaped data reach for
+    ``ck_diverging_bar``."""
     cats = [str(c) for c in categories]
     if not cats or not groups:
         return ""
     fmt = value_fmt or _compact
+    default_palette = DATA_SERIES if len(groups) >= 3 else _SERIES
     series: List[Tuple[str, List[Optional[float]], str]] = []
     for gi, g in enumerate(groups):
         name = str(g[0])
         raw = list(g[1])
-        color = g[2] if len(g) > 2 and g[2] else _SERIES[gi % len(_SERIES)]
+        color = (g[2] if len(g) > 2 and g[2]
+                 else default_palette[gi % len(default_palette)])
         vals: List[Optional[float]] = []
         for j in range(len(cats)):
             try:
@@ -368,6 +455,16 @@ def ck_grouped_bar(
             if v is None:
                 continue
             bx = cx0 + bw * si
+            if v < 0:
+                # Negative on a positive-only scale: explicit red tick below
+                # the baseline instead of an invisible zero-height bar.
+                parts.append(
+                    f'<rect x="{bx:.1f}" y="{T + ploth + 1:.1f}" '
+                    f'width="{max(1.5, bw - 1.5):.1f}" height="3" rx="1" '
+                    f'fill="{_NEG}"><title>{_html.escape(name)} · '
+                    f'{_html.escape(cat)}: {_html.escape(fmt(v))}</title></rect>'
+                )
+                continue
             bh = bar_h(v)
             by = T + ploth - bh
             parts.append(
@@ -380,18 +477,26 @@ def ck_grouped_bar(
             f'text-anchor="middle" font-family="{_MONO}" font-size="10.5" '
             f'fill="{_DIM}">{_html.escape(_trunc(cat, 12))}</text>'
         )
-    # legend (top)
-    lx = L
+    # legend (top) — wraps to a second row instead of walking off the
+    # 560px frame when many/long series names overflow (the row-1 layout
+    # is byte-identical whenever one row fits; row 2 still clears the
+    # plot top at T=40).
+    lx, swatch_y, text_y = L, 14.0, 22.0
     for name, _vals, color in series:
+        item_w = 22 + min(16, len(name)) * 6.2
+        if lx > L and lx + item_w > W - R:
+            lx, swatch_y, text_y = L, swatch_y + 13.0, text_y + 13.0
         parts.append(
-            f'<rect x="{lx:.1f}" y="14" width="9" height="9" rx="1.5" fill="{color}"/>'
+            f'<rect x="{lx:.1f}" y="{swatch_y:g}" width="9" height="9" '
+            f'rx="1.5" fill="{color}"/>'
         )
         parts.append(
-            f'<text x="{lx + 13:.1f}" y="22" font-family="{_MONO}" font-size="10" '
+            f'<text x="{lx + 13:.1f}" y="{text_y:g}" font-family="{_MONO}" '
+            f'font-size="10" '
             f'fill="{_DIM}"><title>{_html.escape(name)}</title>'
             f'{_html.escape(_trunc(name, 16))}</text>'
         )
-        lx += 22 + min(16, len(name)) * 6.2
+        lx += item_w
     parts.append("</svg>")
     return ck_chart_card(
         title, "".join(parts), source=source, subtitle=subtitle,
@@ -418,7 +523,9 @@ def ck_diverging_bar(
     pts = _coerce(items, want_tone=True)
     if not pts:
         return ""
-    fmt = value_fmt or (lambda v: f"{v:+.0f}%")
+    # Default follows the house percentage rule: 1 decimal, sign always
+    # shown (the sign carries the whole meaning on a diverging chart).
+    fmt = value_fmt or (lambda v: f"{v:+.1f}%")
     mag = max((abs(v) for _, v, _ in pts), default=0.0) or 1.0
     rowh = 22.0
     W = 560.0
@@ -486,11 +593,15 @@ def ck_chart_card(
     subtitle: str = "",
     chart_id: Optional[str] = None,
     note: str = "",
+    svg_button: bool = False,
 ) -> str:
     """Editorial frame around a chart SVG: kicker title, optional subtitle,
     an Export-PNG button, the SVG, and an optional source/footnote line.
     ``chart_id`` is the DOM id the export helper targets (auto-derived from
-    the title when omitted)."""
+    the title when omitted). ``svg_button=True`` adds a lossless SVG
+    download next to the PNG export (same delegated ``.ck-chart-dl``
+    listener, dispatched by ``data-format``) — opt-in so existing cards
+    keep their exact single-button layout."""
     cid = chart_id or ("ckc-" + _slug(title))
     sub = (
         f'<div class="ck-chart-sub">{_html.escape(subtitle)}</div>'
@@ -504,13 +615,27 @@ def ck_chart_card(
         f'<div class="ck-chart-note">{_html.escape(note)}</div>'
         if note else ""
     )
+    png_btn = (
+        f'<button type="button" class="ck-chart-dl" data-chart-id="{_html.escape(cid)}" '
+        f'data-chart-name="{_html.escape(_slug(title))}" '
+        f'aria-label="Export {_html.escape(title)} as PNG">Export PNG</button>'
+    )
+    if svg_button:
+        btns = (
+            f'<div style="display:flex;gap:6px;flex-shrink:0;">'
+            f'<button type="button" class="ck-chart-dl ck-chart-dl-svg" '
+            f'data-format="svg" data-chart-id="{_html.escape(cid)}" '
+            f'data-chart-name="{_html.escape(_slug(title))}" '
+            f'aria-label="Export {_html.escape(title)} as SVG">SVG</button>'
+            f'{png_btn}</div>'
+        )
+    else:
+        btns = png_btn
     return (
         f'<figure class="ck-chart-card">'
         f'<div class="ck-chart-head">'
         f'<div><div class="ck-chart-title">{_html.escape(title)}</div>{sub}</div>'
-        f'<button type="button" class="ck-chart-dl" data-chart-id="{_html.escape(cid)}" '
-        f'data-chart-name="{_html.escape(_slug(title))}" '
-        f'aria-label="Export {_html.escape(title)} as PNG">Export PNG</button>'
+        f'{btns}'
         f'</div>'
         f'<div class="ck-chart-svg" id="{_html.escape(cid)}">{svg}</div>'
         f'{src}{ftn}'
@@ -543,10 +668,13 @@ letter-spacing:.04em;text-transform:uppercase;color:""" + _TEAL + """;
 background:transparent;border:1px solid """ + _RULE + """;border-radius:3px;
 padding:3px 9px;cursor:pointer;transition:background 90ms,color 90ms;white-space:nowrap;}
 .ck-chart-dl:hover{background:""" + _TEAL + """;color:#fff;border-color:""" + _TEAL + """;}
+.ck-chart-dl:focus-visible{outline:2px solid """ + _TEAL + """;outline-offset:2px;}
 .ck-chart-src{font-family:""" + _MONO + """;font-size:9px;color:""" + _FAINT + """;
 margin-top:7px;}
 .ck-chart-note{font-size:11px;color:""" + _DIM + """;margin-top:6px;line-height:1.5;}
 @media (max-width:640px){.ck-chart-grid{grid-template-columns:1fr;}}
+@media print{.ck-chart-dl{display:none;}
+.ck-chart-card{break-inside:avoid;page-break-inside:avoid;}}
 </style>
 <script>
 (function(){
@@ -557,13 +685,23 @@ margin-top:7px;}
     var wrap = document.getElementById(btn.getAttribute('data-chart-id'));
     var svg = wrap ? wrap.querySelector('svg') : null;
     if(!svg){ return; }
-    var name = (btn.getAttribute('data-chart-name')||'chart') + '.png';
+    var base = btn.getAttribute('data-chart-name')||'chart';
     var vb = (svg.getAttribute('viewBox')||'0 0 560 240').split(/\\s+/);
     var w = parseFloat(vb[2])||560, h = parseFloat(vb[3])||240;
     var clone = svg.cloneNode(true);
     clone.setAttribute('width', w); clone.setAttribute('height', h);
     clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
     var xml = new XMLSerializer().serializeToString(clone);
+    if(btn.getAttribute('data-format') === 'svg'){
+      var sblob = new Blob(['<?xml version="1.0"?>\\n', xml],
+                           {type:'image/svg+xml;charset=utf-8'});
+      var sa = document.createElement('a');
+      sa.href = URL.createObjectURL(sblob); sa.download = base + '.svg';
+      document.body.appendChild(sa); sa.click();
+      setTimeout(function(){ URL.revokeObjectURL(sa.href); sa.remove(); }, 1500);
+      return;
+    }
+    var name = base + '.png';
     var url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
     var img = new Image();
     img.onload = function(){

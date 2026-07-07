@@ -58,6 +58,52 @@ CONNECTOR_LABELS: Dict[str, str] = {
 # leaking per-connector routing into the unified server.
 _QS_ALIASES: Dict[str, str] = {"code_type": "type"}
 
+# ── storage-flag styles per connector CLI ─────────────────────────────
+# The earlier root-style slices take a top-level ``--root DIR`` (their db
+# lives at ``{root}/{name}.db``); everything else takes ``--db FILE``. Two
+# catalog connectors declare ``--db`` per subcommand, so the flag must
+# FOLLOW the verb or argparse rejects the invocation. Declared here (the
+# one module that already reaches across connectors) so the refresh
+# driver, the RCM-MC estate page's copy-ready hints, and tests all agree
+# on the same mapping instead of re-deriving it.
+ROOT_STYLE_CLIS: Tuple[str, ...] = (
+    "openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data")
+SUBCMD_DB_STYLE_CLIS: Tuple[str, ...] = ("cms_open_data", "open_payments")
+
+# Connectors the estate-level ``refresh`` sweep cannot ingest unattended:
+# their ingest verbs need domain arguments (openFDA search windows, NPI
+# lists, ICD-10 code seeds). Surfaces that tell a user how to populate a
+# connector must not point these at ``refresh`` — it skips them entirely.
+MANUAL_INGEST_CLIS: Tuple[str, ...] = ("openfda", "npi_registry", "icd10")
+
+
+def storage_argv(name: str, db_dir: str) -> List[str]:
+    """The argv fragment pointing *name*'s CLI at ``{db_dir}/{name}.db``.
+
+    Root-style connectors write ``{root}/{name}.db`` themselves, so their
+    ``--root`` IS the db dir — the exact layout the unified server's
+    ``open_stores()`` expects.
+    """
+    if name in ROOT_STYLE_CLIS:
+        return ["--root", db_dir.rstrip("/")]
+    return ["--db", f"{db_dir.rstrip('/')}/{name}.db"]
+
+
+def cli_query_argv(name: str, dataset_id: str, db_dir: str = "var/connectors",
+                   limit: int = 10) -> List[str]:
+    """A correct, copy-ready ``query`` argv for one connector CLI.
+
+    The storage flag is the part callers kept getting wrong: without it
+    the per-connector CLIs query an empty default store and print 0 rows
+    even after a full ingest. Subcommand-``--db`` CLIs need the flag after
+    the verb; everyone else takes it before.
+    """
+    verb = ["query", dataset_id, "--limit", str(int(limit))]
+    storage = storage_argv(name, db_dir)
+    if name in SUBCMD_DB_STYLE_CLIS:
+        return [*verb, *storage]
+    return [*storage, *verb]
+
 
 def _find_store_class(tables_mod: Any) -> type:
     """The single ``*Store`` class each connector's ``tables`` module owns."""

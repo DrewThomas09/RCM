@@ -13,6 +13,7 @@ HTML-escaped at render time.
 """
 from __future__ import annotations
 
+import os
 import sqlite3
 import threading
 import time
@@ -21,8 +22,20 @@ from typing import Dict, List, Optional
 
 from .engine import WORKDIR
 
-_DB_PATH = Path(WORKDIR) / "npi_cleaner_wishlist.sqlite3"
+_DB_NAME = "npi_cleaner_wishlist.sqlite3"
+_DB_PATH = Path(WORKDIR) / _DB_NAME
 _LOCK = threading.Lock()
+
+
+def _db_path() -> Path:
+    """Default store root is /tmp, which a reboot or tmp cleaner wipes —
+    erasing the improvement backlog this module promises to keep. Set
+    RCM_MC_NPI_WORKDIR to a persistent directory to keep it; read
+    per-call so tests can still monkeypatch ``_DB_PATH``."""
+    root = (os.environ.get("RCM_MC_NPI_WORKDIR") or "").strip()
+    if root:
+        return Path(root) / _DB_NAME
+    return _DB_PATH
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS wishlist (
@@ -46,8 +59,9 @@ _LIST_MAX = 500
 
 
 def _conn() -> sqlite3.Connection:
-    WORKDIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(_DB_PATH)
+    p = _db_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(p)
     con.execute("PRAGMA busy_timeout = 5000")
     con.executescript(_SCHEMA)
     # Migration: where a request came from — 'user' (typed on the page) vs
@@ -116,20 +130,27 @@ def auto_file(category: str, title: str,
             "details": details, "status": "open", "source": "auto"}
 
 
-def list_requests(status: Optional[str] = None) -> List[Dict[str, object]]:
-    """Newest first, bounded. ``status`` filters when given."""
+def list_requests(status: Optional[str] = None,
+                  source: Optional[str] = None) -> List[Dict[str, object]]:
+    """Newest first, bounded. ``status`` / ``source`` filter when given
+    (``source`` is 'user' or 'auto'; additive parameter)."""
     try:
         with _LOCK, _conn() as con:
+            sql = ("SELECT id, created, category, title, details, status,"
+                   " source FROM wishlist")
+            where: List[str] = []
+            args: List[object] = []
             if status and status in _STATUSES:
-                rows = con.execute(
-                    "SELECT id, created, category, title, details, status,"
-                    " source FROM wishlist WHERE status = ? "
-                    "ORDER BY id DESC LIMIT ?", (status, _LIST_MAX)).fetchall()
-            else:
-                rows = con.execute(
-                    "SELECT id, created, category, title, details, status,"
-                    " source FROM wishlist ORDER BY id DESC LIMIT ?",
-                    (_LIST_MAX,)).fetchall()
+                where.append("status = ?")
+                args.append(status)
+            if source and source in ("user", "auto"):
+                where.append("source = ?")
+                args.append(source)
+            if where:
+                sql += " WHERE " + " AND ".join(where)
+            sql += " ORDER BY id DESC LIMIT ?"
+            args.append(_LIST_MAX)
+            rows = con.execute(sql, args).fetchall()
     except Exception:  # noqa: BLE001 — a broken store must not 500 the page
         return []
     return [{"id": r[0], "created": r[1], "category": r[2],
@@ -138,17 +159,57 @@ def list_requests(status: Optional[str] = None) -> List[Dict[str, object]]:
 
 
 def set_status(request_id: int, status: str) -> bool:
-    """Move a request through the backlog (open → planned → shipped)."""
+    """Move a request through the backlog (open → planned → shipped).
+    Guarded like the rest of the module: a corrupt/locked store returns
+    False instead of raising through the POST handler."""
     if status not in _STATUSES:
         return False
-    with _LOCK, _conn() as con:
-        cur = con.execute("UPDATE wishlist SET status = ? WHERE id = ?",
-                          (status, int(request_id)))
-        return cur.rowcount > 0
+    try:
+        with _LOCK, _conn() as con:
+            cur = con.execute("UPDATE wishlist SET status = ? WHERE id = ?",
+                              (status, int(request_id)))
+            return cur.rowcount > 0
+    except Exception:  # noqa: BLE001 — never 500 the page
+        return False
 
 
 def delete_request(request_id: int) -> bool:
-    with _LOCK, _conn() as con:
-        cur = con.execute("DELETE FROM wishlist WHERE id = ?",
-                          (int(request_id),))
-        return cur.rowcount > 0
+    try:
+        with _LOCK, _conn() as con:
+            cur = con.execute("DELETE FROM wishlist WHERE id = ?",
+                              (int(request_id),))
+            return cur.rowcount > 0
+    except Exception:  # noqa: BLE001 — never 500 the page
+        return False
+
+
+def mark_shipped(title_contains: str, *,
+                 source: Optional[str] = "auto") -> int:
+    """The backlog's "shipped" transition for the improvement loop: mark
+    every OPEN request whose title contains ``title_contains``
+    (case-insensitive) as shipped. Defaults to auto-filed requests only —
+    the loop ships machine-detected gaps; a human decides about human
+    asks (pass ``source=None`` to include those too). Returns how many
+    requests moved; 0 on any store error (never raises)."""
+    frag = " ".join(str(title_contains or "").split()).lower()
+    if not frag:
+        return 0
+    try:
+        with _LOCK, _conn() as con:
+            if source in ("user", "auto"):
+                rows = con.execute(
+                    "SELECT id, title FROM wishlist WHERE status = 'open'"
+                    " AND source = ?", (source,)).fetchall()
+            else:
+                rows = con.execute(
+                    "SELECT id, title FROM wishlist"
+                    " WHERE status = 'open'").fetchall()
+            hit_ids = [int(r[0]) for r in rows
+                       if frag in str(r[1] or "").lower()]
+            for rid in hit_ids:
+                con.execute(
+                    "UPDATE wishlist SET status = 'shipped' WHERE id = ?",
+                    (rid,))
+            return len(hit_ids)
+    except Exception:  # noqa: BLE001 — never blocks the loop
+        return 0

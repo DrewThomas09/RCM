@@ -13,7 +13,7 @@ not payer-contract language.
 """
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # --------------------------------------------------------------------------
 # Place of Service (CMS POS code set) — code → short name.
@@ -978,8 +978,9 @@ def modifier_meaning(code: str) -> Optional[str]:
 def modifier_unknown(code: str) -> bool:
     """True when a 2-char modifier is well-formed but NOT in the known
     catalog — a typo signal, kept report-only because payers do define
-    proprietary modifiers. Malformed shapes are caught upstream by the
-    modifier normalizer (which drops non-2-char tokens)."""
+    proprietary modifiers. Malformed shapes are a different rule: the
+    modifier normalizer KEEPS non-2-char tokens (valid-first ordering,
+    no characters ever lost) and reports them via modifier-malformed."""
     c = code.strip().upper()
     if len(c) != 2 or not c.isalnum():
         return False   # shape problems are a different rule

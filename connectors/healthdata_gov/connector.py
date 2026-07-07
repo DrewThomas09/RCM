@@ -34,7 +34,7 @@ from dataclasses import dataclass, field as dc_field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from .endpoints import ENDPOINTS, EndpointSpec, get_endpoint
-from .normalize import normalize, normalize_generic
+from .normalize import normalize, normalize_generic, slice_signature
 from .transport import HealthdataSodaTransport, Opener
 
 DEFAULT_MAX_PAGES = 5          # polite bound on any single fetch call
@@ -269,9 +269,18 @@ class HealthdataGovConnector:
         slice_params = {k: v for k, v in (params or {}).items()
                         if str(k) not in ("$limit", "$offset")}
         rows = normalize_generic(key, result.rows, slice_params=slice_params)
-        n = store.upsert("healthdata_gov_rows", rows)
+        if result.exhausted:
+            # Complete pull (refresh always starts at offset 0 and the
+            # page cap didn't cut it short) → replace the slice
+            # atomically, so a shrunken upstream dataset can't strand
+            # stale trailing row_idx rows from an earlier, larger pull.
+            n = store.replace_slice("healthdata_gov_rows", key, rows,
+                                    slice_sig=slice_signature(slice_params))
+        else:
+            n = store.upsert("healthdata_gov_rows", rows)
         return {"dataset": "healthdata_gov_fetched_rows", "endpoint": key,
                 "fetched": len(result.rows), "exhausted": result.exhausted,
+                "replaced": bool(result.exhausted),
                 "written": {"healthdata_gov_rows": n}}
 
 

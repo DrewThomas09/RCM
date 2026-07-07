@@ -76,6 +76,28 @@ _RULES: List[Rule] = [
          "$ signs, thousands separators, and accounting-style (negatives) "
          "unified to plain decimals.",
          "None needed.", "conformity"),
+    Rule("money-eu-decimal", "repair", "warning", "Amounts",
+         "European decimal format converted",
+         "Amounts in the unambiguous European format (1.234,56 — "
+         "dot-grouped thousands with a comma decimal) converted to plain "
+         "decimals. Without this repair a €1.234,56 charge was silently "
+         "corrupted to 1.23. Ambiguous values (a bare \"1,234\") keep the "
+         "US thousands reading.",
+         "Standardize the source export on a dot-decimal locale.",
+         "conformity"),
+    Rule("money-trailing-negative", "repair", "info", "Amounts",
+         "Trailing-sign negative converted",
+         "Mainframe-style trailing-sign amounts (500.00- or 500.00CR) "
+         "parsed as negatives instead of flagging as unparseable.",
+         "None needed — the value is deterministic.", "conformity"),
+    Rule("npi-scientific-notation", "repair", "warning", "Identifiers",
+         "NPI scientific notation recovered",
+         "NPIs a spreadsheet stored as floats and rendered in scientific "
+         "notation (1.679576722E+09) restored to their exact 10 digits — "
+         "applied only when the mantissa carries all 10 digits, so no "
+         "identifier is ever fabricated.",
+         "Format NPI columns as text before opening extracts in Excel.",
+         "validity"),
     Rule("date-excel-serial", "repair", "warning", "Dates",
          "Excel serial dates converted",
          "Raw Excel day-numbers (45300) converted to ISO dates.",
@@ -88,6 +110,12 @@ _RULES: List[Rule] = [
          "Datetimes trimmed to dates",
          "ISO datetimes trimmed to the date part.",
          "None needed.", "conformity"),
+    Rule("date-compact-to-iso", "repair", "info", "Dates",
+         "Compact dates converted",
+         "8-digit CCYYMMDD dates (20240211 — the X12 wire format leaking "
+         "into a tabular extract) converted to ISO. Only real calendar "
+         "dates convert; implausible values flag as unparseable instead.",
+         "Standardize source extracts on ISO-8601.", "conformity"),
     Rule("state-name-to-code", "repair", "info", "Geography",
          "State names mapped to codes",
          "Full state names (Texas) mapped to USPS codes (TX).",
@@ -161,7 +189,10 @@ _RULES: List[Rule] = [
          "Source system should store dotted ICD-10-CM.", "conformity"),
     Rule("modifier-normalize", "repair", "info", "Coding",
          "Modifiers normalized",
-         "Modifier lists split, upper-cased, and de-duplicated.",
+         "Modifier lists split, upper-cased, and de-duplicated. Tokens "
+         "that aren't valid 2-character modifiers are KEPT (after the "
+         "valid ones) and flagged as modifier-malformed — content is "
+         "never silently discarded.",
          "None needed.", "conformity"),
     Rule("phone-format", "repair", "info", "Contact",
          "Phones formatted", "10/11-digit numbers formatted (555) 123-4567.",
@@ -298,6 +329,55 @@ _RULES: List[Rule] = [
          "code set. Runs only when the taxonomy reference pack is "
          "installed (pull it under Reference data packs).",
          "Verify against the current NUCC taxonomy release.", "validity"),
+    Rule("ragged-row", "flag", "warning", "Structure",
+         "Ragged row (width differs from header)",
+         "A row carried more or fewer cells than the header. Short rows "
+         "are padded with blanks; long rows lose their overflow cells — "
+         "the classic unquoted-comma CSV disease, which also shifts every "
+         "subsequent column on the row.",
+         "Fix the export's quoting/delimiter at the source; verify the "
+         "shifted rows in the worklist before trusting their values.",
+         "validity"),
+    Rule("date-unparseable", "flag", "warning", "Dates",
+         "Unparseable date",
+         "A value in a date column couldn't be read by any recognized "
+         "form (ISO, US slash/dash, Excel serial, compact CCYYMMDD). "
+         "Every chronology check — future dates, service-before-birth, "
+         "discharge-before-admit, timely filing — silently skips these "
+         "cells, so screening coverage is reduced until they're fixed.",
+         "Identify the source's date format; if it's a real format the "
+         "cleaner should learn, file it on the wishlist.", "validity"),
+    Rule("npi-scientific-lossy", "flag", "warning", "Identifiers",
+         "NPI destroyed by scientific notation",
+         "An NPI cell in spreadsheet scientific notation (1.68E+09) whose "
+         "mantissa no longer carries all 10 digits — the identifier was "
+         "destroyed by the export and cannot be recovered from this file.",
+         "Re-export from the source system with NPI columns formatted as "
+         "text; the original identifier is not recoverable here.",
+         "validity"),
+    Rule("modifier-malformed", "flag", "warning", "Coding",
+         "Malformed modifier token",
+         "A modifier cell carries a token that isn't a 2-character "
+         "alphanumeric modifier (LT4, 5, GYX) — keying damage or a "
+         "truncated pair. The token is kept in the output (never "
+         "silently dropped) so nothing is lost.",
+         "Correct the modifier at the source; check for missing "
+         "delimiters between modifier pairs.", "validity"),
+    Rule("npi-name-conflict", "flag", "warning", "Identifiers",
+         "Same NPI, different provider names",
+         "The same billing NPI appears with materially different provider "
+         "names across rows (case and punctuation variants don't count). "
+         "A keying/identity error — and the top cause of wrong NPPES "
+         "recovery input.",
+         "Verify which provider the NPI belongs to in NPPES and fix the "
+         "mismatched rows at the source.", "consistency"),
+    Rule("drg-on-professional", "flag", "warning", "Coding",
+         "DRG on a professional-shaped row",
+         "A DRG value on a row with a Place of Service and no Type of "
+         "Bill — DRGs price institutional stays; professional claims "
+         "don't carry them. Usually a column shift or a mixed extract.",
+         "Check whether institutional and professional claims are mixed "
+         "in one extract, or whether columns shifted.", "consistency"),
     Rule("service-date-order", "flag", "warning", "Dates",
          "Service from-date after thru-date",
          "The service (statement) from-date is later than its thru-date — "

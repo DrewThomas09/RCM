@@ -147,12 +147,22 @@ def lookup_company(store: OpenFdaStore, company: str) -> Dict[str, Any]:
     }
 
 
-def search_companies(store: OpenFdaStore, q: str, *, limit: int = 25
+def search_companies(store: OpenFdaStore, q: str, *, limit: Any = 25
                      ) -> List[Dict[str, Any]]:
-    """Fuzzy-find companies by normalized name (case-insensitive LIKE)."""
+    """Fuzzy-find companies by normalized name (case-insensitive LIKE).
+
+    ``limit`` is clamped like every other integer param on the /v1
+    surface — a non-numeric value degrades to the default instead of
+    bubbling a ValueError (a 500) out of the HTTP handler.
+    """
+    try:
+        lim = int(limit)
+    except (TypeError, ValueError):
+        lim = 25
+    lim = max(1, min(lim, 1000))
     return _rows(store, "SELECT company_key, normalized_name, kind FROM dim_company "
                  "WHERE normalized_name LIKE ? ORDER BY normalized_name LIMIT ?",
-                 (f"%{q}%", int(limit)))
+                 (f"%{q}%", lim))
 
 
 # ── router-agnostic plugin surface ────────────────────────────────────
