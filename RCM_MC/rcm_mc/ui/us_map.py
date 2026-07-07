@@ -296,11 +296,54 @@ _PT_VIEW_W = 480
 _PT_VIEW_H = 360
 _PT_PAD = 18
 
+# Catchment-ring geometry (BACKLOG #31 remaining nub). Statute miles per
+# degree on a spherical earth: a latitude degree is ~constant everywhere;
+# a longitude degree shrinks by cos(latitude). First-order spherical
+# constants — the rendered ring is therefore labeled as an approximation.
+_MI_PER_DEG_LAT = 69.055
+_MI_PER_DEG_LON_EQ = 69.172
+# Fixed presets only — the radius is never a free-form number, so a bogus
+# ?radius= can only ever degrade to "off", never to a made-up ring.
+CATCHMENT_RADIUS_PRESETS_MI: tuple = (15, 30)
 
-def _project_points(pts: List[Any]) -> List[tuple]:
-    """Equirectangular fit of (lat,lon) points to the SVG viewport, aspect-
-    corrected for the state's mean latitude. Returns (x, y) per input point.
-    Single point / zero-range axes are centered (no divide-by-zero)."""
+
+def parse_catchment_radius(
+    raw: Any,
+    presets: Iterable[int] = CATCHMENT_RADIUS_PRESETS_MI,
+) -> Optional[int]:
+    """Validate a raw ``?radius=`` value against the fixed mile presets.
+
+    Anything that is not exactly one of the preset integers — bogus text,
+    negatives, floats, huge numbers, empty strings, None — returns None so
+    the rings stay off. Never raises: this guards a query param.
+    """
+    if raw is None:
+        return None
+    allowed = set(presets or ())
+    if isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw if raw in allowed else None
+    s = str(raw).strip()
+    if not s.isdigit():          # rejects "", "-15", "15.5", "1e2", "abc"
+        return None
+    try:
+        v = int(s)
+    except ValueError:
+        return None
+    return v if v in allowed else None
+
+
+def _fit_projection(pts: List[Any]) -> Dict[str, Any]:
+    """Equirectangular fit shared by the pin dots AND the catchment rings.
+
+    Returns the fit parameters — px-per-degree ``scale``, the cos(mean-lat)
+    aspect correction, offsets, bbox — so ring geometry is derived from the
+    SAME projection the pins use, never from a guessed pixel constant.
+    ``degenerate`` flags a fit with no real distance scale (a single point,
+    or all points coincident): scale falls back to 1.0 px/degree there,
+    which centers the dot but cannot honestly size a ring.
+    """
     lats = [p.lat for p in pts]
     lons = [p.lon for p in pts]
     lat0, lat1 = min(lats), max(lats)
@@ -312,7 +355,8 @@ def _project_points(pts: List[Any]) -> List[tuple]:
     h_deg = (lat1 - lat0)
     avail_w = _PT_VIEW_W - 2 * _PT_PAD
     avail_h = _PT_VIEW_H - 2 * _PT_PAD
-    if w_deg <= 0 and h_deg <= 0:
+    degenerate = w_deg <= 0 and h_deg <= 0
+    if degenerate:
         scale = 1.0
     elif w_deg <= 0:
         scale = avail_h / h_deg
@@ -322,12 +366,55 @@ def _project_points(pts: List[Any]) -> List[tuple]:
         scale = min(avail_w / w_deg, avail_h / h_deg)
     draw_w = w_deg * scale
     draw_h = h_deg * scale
-    off_x = _PT_PAD + (avail_w - draw_w) / 2.0
-    off_y = _PT_PAD + (avail_h - draw_h) / 2.0
+    return {
+        "lat0": lat0, "lat1": lat1, "lon0": lon0, "lon1": lon1,
+        "mean_lat": mean_lat, "cos_lat": cos_lat, "scale": scale,
+        "off_x": _PT_PAD + (avail_w - draw_w) / 2.0,
+        "off_y": _PT_PAD + (avail_h - draw_h) / 2.0,
+        "degenerate": degenerate,
+    }
+
+
+def catchment_ring_px(
+    miles: float,
+    *,
+    scale: float,
+    mean_lat_deg: float,
+    pin_lat_deg: float,
+) -> tuple:
+    """Pixel semi-axes (rx, ry) of a ``miles``-radius ground circle under
+    the ``_fit_projection`` mapping.
+
+    The pin projection is equirectangular with x compressed by
+    cos(mean_lat): x_px = scale * dlon_deg * cos(mean_lat) and
+    y_px = scale * dlat_deg. A true ground circle therefore maps to an
+    ellipse, derived from the projection's ACTUAL scale:
+
+        ry = scale * miles / 69.055                       (miles/deg lat)
+        rx = scale * miles / (69.172 * cos(pin_lat)) * cos(mean_lat)
+
+    First-order spherical math (no ellipsoid, straight-line not drive
+    distance) — honest to ~1% at catchment scale; the UI labels the ring
+    as approximate.
+    """
+    ry = scale * miles / _MI_PER_DEG_LAT
+    cos_pin = math.cos(math.radians(pin_lat_deg))
+    if cos_pin <= 0:  # pole guard — unreachable for US facilities
+        cos_pin = 1.0
+    cos_mean = math.cos(math.radians(mean_lat_deg)) or 1.0
+    rx = scale * miles / (_MI_PER_DEG_LON_EQ * cos_pin) * cos_mean
+    return rx, ry
+
+
+def _project_points(pts: List[Any], fit: Optional[Dict[str, Any]] = None) -> List[tuple]:
+    """Equirectangular fit of (lat,lon) points to the SVG viewport, aspect-
+    corrected for the state's mean latitude. Returns (x, y) per input point.
+    Single point / zero-range axes are centered (no divide-by-zero)."""
+    f = fit or _fit_projection(pts)
     out = []
     for p in pts:
-        x = off_x + ((p.lon - lon0) * cos_lat) * scale
-        y = off_y + (lat1 - p.lat) * scale   # invert: north at top
+        x = f["off_x"] + ((p.lon - f["lon0"]) * f["cos_lat"]) * f["scale"]
+        y = f["off_y"] + (f["lat1"] - p.lat) * f["scale"]   # invert: north at top
         out.append((x, y))
     return out
 
@@ -339,6 +426,8 @@ def render_state_hospital_points(
     total_in_state: Optional[int] = None,
     provenance: Optional[str] = None,
     empty_message: Optional[str] = None,
+    catchment_radius_mi: Optional[int] = None,
+    catchment_presets: Iterable[int] = CATCHMENT_RADIUS_PRESETS_MI,
 ) -> str:
     """Render geocoded hospital points for one state as a local SVG.
 
@@ -347,6 +436,21 @@ def render_state_hospital_points(
     coordinates are plotted — callers must not pass approximated ones.
     ``total_in_state`` (hospitals the state actually has) drives an honest
     "N of M geocoded" note. No external calls; no live geocoding.
+
+    Catchment rings (BACKLOG #31 nub): ``catchment_presets`` renders an
+    off-by-default radius control (Off / 15 mi / 30 mi). Rings are drawn
+    ONLY around plotted real-coordinate pins (the no-fake-points rule
+    extends to rings), sized from the projection's actual scale via
+    ``catchment_ring_px``, and labeled as a straight-line approximation.
+    ``catchment_radius_mi`` (already validated via
+    ``parse_catchment_radius``) pre-selects a preset server-side; a small
+    vanilla-JS shim additionally syncs the control with ``?radius=`` so
+    the state is shareable without a server round-trip. Toggle visibility
+    itself is pure CSS (``:checked`` sibling rules) — no JS required to
+    show/hide. When the fitted view has no distance scale (a single
+    distinct point), rings are omitted with an honest note rather than
+    drawn at a fabricated size. Pass an empty ``catchment_presets`` to
+    suppress the feature entirely.
     """
     pts = [p for p in (points or [])
            if getattr(p, "lat", None) is not None
@@ -361,7 +465,115 @@ def render_state_hospital_points(
                 f'color:var(--sc-text-dim,#465366);font-size:13px;margin:0;">'
                 f'{_html.escape(msg)}</p></div>')
 
-    xy = _project_points(pts)
+    fit = _fit_projection(pts)
+    xy = _project_points(pts, fit)
+
+    # ---- catchment rings (optional; off by default) --------------------
+    presets: List[int] = []
+    for r in (catchment_presets or ()):
+        try:
+            ri = int(r)
+        except (TypeError, ValueError):
+            continue
+        if ri > 0 and ri not in presets:
+            presets.append(ri)
+    active = catchment_radius_mi if catchment_radius_mi in presets else None
+
+    rings_svg = ""
+    ring_inputs = ""
+    ring_control = ""
+    ring_caps = ""
+    ring_css = ""
+    ring_js = ""
+    ring_note = ""
+    if presets and fit["degenerate"]:
+        ring_note = (
+            '<div class="usm-ring-unavail" style="font-size:11px;'
+            'color:var(--sc-text-dim,#465366);margin:0 0 8px;">'
+            'Catchment rings unavailable: only one distinct plotted '
+            'location, so this fitted view has no distance scale.</div>')
+    elif presets:
+        groups = []
+        for mi in presets:
+            ell = []
+            for p, (x, y) in zip(pts, xy):
+                rx, ry = catchment_ring_px(
+                    mi, scale=fit["scale"], mean_lat_deg=fit["mean_lat"],
+                    pin_lat_deg=p.lat)
+                ell.append(f'<ellipse cx="{x:.1f}" cy="{y:.1f}" '
+                           f'rx="{rx:.1f}" ry="{ry:.1f}"/>')
+            groups.append(
+                f'<g class="usm-ring-g" data-mi="{mi}" aria-hidden="true">'
+                + "".join(ell) + "</g>")
+        rings_svg = "".join(groups)
+
+        inputs, labels, caps, rules = [], [], [], []
+        opts = [("off", "Off")] + [(str(mi), f"{mi} mi") for mi in presets]
+        for val, text in opts:
+            checked = " checked" if (
+                (active is None and val == "off")
+                or (active is not None and val == str(active))) else ""
+            inputs.append(
+                f'<input type="radio" class="usm-rsel" id="{cid}-r-{val}" '
+                f'name="{cid}-r" value="{val}"{checked}>')
+            labels.append(
+                f'<label class="usm-ring-lab" for="{cid}-r-{val}">{text}</label>')
+            rules.append(
+                f'#{cid} input#{cid}-r-{val}:checked~.usm-ring-ctl '
+                f'label[for="{cid}-r-{val}"]{{background:var(--sc-teal,#155752);'
+                'color:#fff;border-color:var(--sc-teal,#155752);}')
+        for mi in presets:
+            rules.append(
+                f'#{cid} input#{cid}-r-{mi}:checked~svg '
+                f'.usm-ring-g[data-mi="{mi}"]{{display:inline;}}')
+            rules.append(
+                f'#{cid} input#{cid}-r-{mi}:checked~.usm-pt-legend '
+                f'.usm-ring-cap-{mi}{{display:inline;}}')
+            caps.append(
+                f'<span class="usm-ring-cap usm-ring-cap-{mi}">'
+                f'&asymp;{mi}-mile straight-line radius around each plotted '
+                'hospital &mdash; equirectangular approximation (drive-time '
+                'proxy, not drive time).</span>')
+        ring_inputs = "".join(inputs)
+        ring_control = (
+            '<div class="usm-ring-ctl"><span>Catchment radius:</span>'
+            + " ".join(labels) + '</div>')
+        ring_caps = "".join(caps)
+        ring_css = (
+            f"#{cid} input.usm-rsel{{position:absolute;opacity:0;"
+            "pointer-events:none;}}"
+            f"#{cid} .usm-ring-ctl{{display:flex;align-items:center;gap:6px;"
+            "flex-wrap:wrap;font-size:11px;color:var(--sc-text-dim,#465366);"
+            "margin:0 0 8px;}}"
+            f"#{cid} .usm-ring-lab{{display:inline-block;border:1px solid "
+            "var(--sc-rule,#d6cfc0);border-radius:999px;padding:1px 9px;"
+            "cursor:pointer;user-select:none;}}"
+            f"#{cid} .usm-ring-g{{display:none;}}"
+            f"#{cid} .usm-ring-g ellipse{{fill:var(--sc-teal,#155752);"
+            "fill-opacity:.05;stroke:var(--sc-teal,#155752);"
+            "stroke-opacity:.35;stroke-width:1;stroke-dasharray:4 3;}}"
+            f"#{cid} .usm-ring-cap{{display:none;font-size:10.5px;}}"
+            + "".join(rules)
+        )
+        # ?radius= sync only — show/hide is CSS-driven. Bogus query values
+        # match no radio, so they safely leave the control at "Off".
+        ring_js = (
+            "<script>(function(){"
+            f"var root=document.getElementById('{cid}');if(!root)return;"
+            "var rs=root.querySelectorAll('input.usm-rsel');if(!rs.length)return;"
+            "var q=null;"
+            "try{q=new URLSearchParams(window.location.search).get('radius');}"
+            "catch(e){}"
+            "if(q){rs.forEach(function(r){if(r.value===q){r.checked=true;}});}"
+            "rs.forEach(function(r){r.addEventListener('change',function(){"
+            "if(!r.checked){return;}"
+            "try{var u=new URL(window.location.href);"
+            "if(r.value==='off'){u.searchParams.delete('radius');}"
+            "else{u.searchParams.set('radius',r.value);}"
+            "window.history.replaceState(null,'',u);}catch(e){}"
+            "});});"
+            "})();</script>"
+        )
     dots = []
     for p, (x, y) in zip(pts, xy):
         q = getattr(p, "match_quality", "") or ""
@@ -399,20 +611,24 @@ def render_state_hospital_points(
         "border-radius:50%;vertical-align:middle;margin-right:4px;}}"
         f"#{cid} .usm-pt-note{{font-size:12px;color:var(--sc-text-dim,#465366);"
         "margin:0 0 8px;}}"
+        f"{ring_css}"
         "</style>"
         f'<div id="{cid}">'
         f'<p class="usm-pt-note">{_html.escape(note)}</p>'
+        f'{ring_note}{ring_inputs}{ring_control}'
         f'<svg class="usm-pt-frame" viewBox="0 0 {_PT_VIEW_W} {_PT_VIEW_H}" '
         f'style="width:100%;max-width:{_PT_VIEW_W}px;height:auto;display:block;" '
         f'role="img" aria-label="Geocoded hospital locations in {st}">'
-        + "".join(dots) +
+        + rings_svg + "".join(dots) +
         '</svg>'
         '<div class="usm-pt-legend">'
         f'<span><span class="usm-pt-sw" style="background:var(--sc-teal,#155752);">'
         '</span>exact address match</span>'
         f'<span><span class="usm-pt-sw" style="background:var(--sc-warning,#b8732a);">'
         '</span>approx. street match</span>'
+        f'{ring_caps}'
         '</div>'
         f'{prov}'
+        f'{ring_js}'
         '</div>'
     )

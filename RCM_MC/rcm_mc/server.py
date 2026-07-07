@@ -9270,8 +9270,10 @@ class RCMHandler(BaseHTTPRequestHandler):
         """GET /market-data/state/<ST> — state-level hospital detail."""
         from .data.hcris import _get_latest_per_ccn
         from .ui.market_data_page import render_state_detail
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        radius = (qs.get("radius") or [None])[0]
         hcris_df = _get_latest_per_ccn()
-        return self._send_html(render_state_detail(state, hcris_df))
+        return self._send_html(render_state_detail(state, hcris_df, radius=radius))
 
     def _route_benchmarks(self) -> None:
         """GET /benchmarks — benchmark evolution over time."""

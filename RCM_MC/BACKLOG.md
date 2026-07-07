@@ -55,7 +55,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 ## Refill 3 (groomed 2026-06-12, window 3) — ready queue
 | # | Item | Score | Verification plan |
 |---|---|---|---|
-| 31 | ◐ PARTIAL — state-detail pin map shipped (no-fake-points); remaining nub: catchment radius option | 12 | verified 2026-06-12 |
+| 31 | ✅ DONE — state-detail pin map (no-fake-points, shipped earlier) + catchment-radius nub: Off/15 mi/30 mi ring control on the state-detail pin map, rings ONLY around real-coordinate pins, geometry derived from the projection's actual px/deg scale (labeled straight-line equirectangular approx., not drive time), ?radius=-synced, off by default | — | LOG W4-010 |
 | 32 | ✅ DONE — P10 provenance-coverage metric (static AST scan of ck_kpi_block call sites; per-page + overall % published live on /methodology) | — | LOG W4-007 |
 | 33 | ✅ DONE — all-hospital peer sets link → /pipeline/rollup?ccns= | — | W2-211 |
 | 34 | ✅ DONE — P13 long-tail: guarded bullets on /metro-markets (2 templates, landed earlier) + /county-explorer (3 templates); figures recomputed from the same rows/footer the panels render; tiny-delta + empty-data guards test-pinned on both pages | — | LOG W4-008 |

@@ -5061,3 +5061,48 @@ _no_raw_css, _workstation, _input_workstation, _ebitda_floor,
 _component_map_doc, test_xray_section_nav, test_predictive_screener_lead/
 _ar_days/_honest_missing, test_glossary_link_helper, test_metric_glossary,
 test_metric_glossary_page).
+
+## W4-010 (2026-07-07) — BACKLOG #31 closed: catchment-radius rings on the state-detail pin map
+The pin map on /market-data/state/<ST> shipped no-fake-points (W2-217
+verified); the remaining nub was a catchment-radius option so a partner
+can eyeball catchment overlap between plotted facilities.
+- **Off / 15 mi / 30 mi control** on the pin map (ui/us_map.py
+  `render_state_hospital_points`), off by default. Toggle visibility is
+  pure CSS (`:checked` sibling rules over hidden radios — no JS needed to
+  show/hide); a ~10-line vanilla shim syncs the control with `?radius=`
+  (reads it on load, `history.replaceState` on change) so the state is
+  shareable without touching the route handler. Fixed presets only —
+  `parse_catchment_radius` maps anything that isn't exactly a preset
+  integer (bogus text, negatives, floats, huge numbers) to rings-off,
+  never to a made-up ring.
+- **Geometry is projection-derived, not a guessed constant**: the pin
+  fit's px-per-degree scale + cos(mean-lat) aspect correction now come
+  from a shared `_fit_projection` (same numbers the dots use), and
+  `catchment_ring_px` converts miles → degrees → pixels at the PIN's own
+  latitude: ry = scale·mi/69.055, rx = scale·mi/(69.172·cos φ_pin)·
+  cos φ_mean. A ground circle maps to an ellipse under the
+  equirectangular fit, so rings render as `<ellipse>` (honest, and the
+  one-`<circle>`-per-pin invariant keeps holding). The legend caption
+  names the active radius and the caveat: straight-line equirectangular
+  approximation — drive-time proxy, not drive time.
+- **No-fake-points extends to rings**: one ring per PLOTTED pin, never
+  for table-only hospitals without a coordinate. Degenerate fits (a
+  single distinct point — scale would be fabricated) omit rings with an
+  honest "no distance scale" note instead of drawing them wrong. Rings
+  styled recessively (teal kit vars, 5% fill / 35% dashed stroke, drawn
+  under the dots) so pins stay legible.
+- `render_state_detail` takes the raw `?radius=` value through the same
+  parser (route unchanged — parallel-stream file); RI-scale sanity
+  checked (638 px/deg → a 15-mi ring honestly covers much of the state).
+**Verify**: tests/test_state_catchment_radius.py (20 new: bogus-value
+parse table; hand-computed scale (162 px/deg for a 30–32°N span) + ring
+px at a known latitude (15 mi @ 30°N → ry 35.19 px, rx 34.77 px, near-
+circular but deliberately not equal); rendered ellipse carries the
+derived radii; ring count == real-pin count per preset incl. a
+no-coordinate facility; default-off (Off checked, presets unchecked,
+rings CSS-hidden); invalid active radius degrades to off; degenerate
+single-point omission; presets opt-out restores legacy output; legend
+caveat wording; no external calls with rings on; state-detail plumb-
+through for "15"/bogus/none). Existing pin-map families untouched and
+green: 43 passed (new + test_hospital_coords + test_market_data_map +
+test_market_data_drilldown); broad map/market sweep 664 passed.

@@ -640,8 +640,15 @@ overflow:hidden;margin-bottom:8px;}
 def render_state_detail(
     state: str,
     hcris_df: Optional[pd.DataFrame] = None,
+    radius: Any = None,
 ) -> str:
-    """Render state-level detail page with hospital list."""
+    """Render state-level detail page with hospital list.
+
+    ``radius`` is the RAW ``?radius=`` query value (str/int/None) for the
+    optional catchment rings on the pin map — validated here via
+    ``parse_catchment_radius`` so bogus input degrades to rings-off, never
+    to a fabricated ring size.
+    """
     if hcris_df is None:
         try:
             from ..data.hcris import _get_latest_per_ccn
@@ -766,11 +773,15 @@ def render_state_detail(
                 state_points.append(c)
     map_panel = ""
     if state_points:
-        from .us_map import render_state_hospital_points
+        from .us_map import parse_catchment_radius, render_state_hospital_points
         map_panel = ck_panel(
             render_state_hospital_points(
                 state_points, state=state_upper, total_in_state=n,
                 provenance=coords_provenance(),
+                # BACKLOG #31 nub — optional catchment rings, off by default.
+                # Rings only around real-coordinate pins (no-fake-points);
+                # the on-page control also syncs with ?radius= client-side.
+                catchment_radius_mi=parse_catchment_radius(radius),
             ),
             title=f"Hospital locations in {html.escape(state_upper)}",
         )
