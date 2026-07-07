@@ -5,13 +5,18 @@ Subcommands::
 
     python -m connectors.cms_coverage.cli discover
     python -m connectors.cms_coverage.cli datasets
+    python -m connectors.cms_coverage.cli fetch [--dataset KEY] [--max-pages N]
     python -m connectors.cms_coverage.cli query <dataset_id> [--filter f=v ...]
                                           [--select c,c] [--sort -c] [--limit N]
     python -m connectors.cms_coverage.cli lookup-document   <document_id>  [--root DIR]
     python -m connectors.cms_coverage.cli lookup-contractor <contractor_id> [--root DIR]
     python -m connectors.cms_coverage.cli serve [--host H] [--port P] [--root DIR]
 
-The ``--root`` dir holds the SQLite db.
+The ``--root`` dir holds the SQLite db. ``fetch`` ingests one endpoint
+(``--dataset national_ncd`` or the full ``cms_coverage_national_ncd``) or
+all nine, page-capped by ``--max-pages``. Read verbs (``query`` /
+``lookup-*``) never create the root dir or the db — a never-ingested
+root answers from an empty in-memory store instead of littering the cwd.
 """
 from __future__ import annotations
 
@@ -38,6 +43,20 @@ def _store(root: str) -> CmsCoverageStore:
     return CmsCoverageStore(_paths(root)["db"])
 
 
+def _store_read(root: str) -> CmsCoverageStore:
+    """Store for READ verbs: never creates the root dir or the db file.
+
+    A plain ``query`` on a never-ingested root used to mkdir
+    ``./.cms_coverage_data`` and write an empty schema db as a side
+    effect of a read; open ``:memory:`` instead (the same discipline the
+    RCM-MC bridge applies) so reads stay side-effect free.
+    """
+    db = Path(root) / "cms_coverage.db"
+    if not db.is_file():
+        return CmsCoverageStore(":memory:")
+    return CmsCoverageStore(str(db))
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
 
@@ -56,8 +75,21 @@ def cmd_datasets(_args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_query(args: argparse.Namespace) -> int:
+def cmd_fetch(args: argparse.Namespace) -> int:
+    from .pipeline import ingest
     store = _store(args.root)
+    try:
+        results = ingest(store, dataset=args.dataset,
+                         max_pages=args.max_pages)
+    except KeyError as exc:
+        print(f"fetch error: {exc}", file=sys.stderr)
+        return 2
+    _print([r.as_dict() for r in results])
+    return 0
+
+
+def cmd_query(args: argparse.Namespace) -> int:
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" not in f:
@@ -79,12 +111,12 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_lookup_document(args: argparse.Namespace) -> int:
-    _print(lookup_document(_store(args.root), args.document_id))
+    _print(lookup_document(_store_read(args.root), args.document_id))
     return 0
 
 
 def cmd_lookup_contractor(args: argparse.Namespace) -> int:
-    _print(lookup_contractor(_store(args.root), args.contractor_id))
+    _print(lookup_contractor(_store_read(args.root), args.contractor_id))
     return 0
 
 
@@ -104,6 +136,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("discover").set_defaults(func=cmd_discover)
     sub.add_parser("datasets").set_defaults(func=cmd_datasets)
+
+    f = sub.add_parser("fetch")
+    f.add_argument("--dataset",
+                   help="endpoint key (national_ncd) or dataset id "
+                        "(cms_coverage_national_ncd); omit for all nine")
+    f.add_argument("--max-pages", type=int, default=None,
+                   help="cap pages per endpoint (default: fetch to exhaustion)")
+    f.set_defaults(func=cmd_fetch)
 
     q = sub.add_parser("query")
     q.add_argument("dataset")

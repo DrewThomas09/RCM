@@ -322,6 +322,15 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     help="download and install a reference pack "
                          "(taxonomy|icd10cm|hcpcs|leie|all), then exit; "
                          "needs outbound HTTPS to the public source")
+    ap.add_argument("--refdata-install", nargs=2, default=None,
+                    metavar=("PACK", "FILE"),
+                    help="install a reference pack from an already-"
+                         "downloaded file (the offline path for no-egress "
+                         "deployments where --refdata-pull can never "
+                         "succeed), then exit")
+    ap.add_argument("--refdata-bootstrap-icd10", action="store_true",
+                    help="seed the icd10cm pack from the vendored v49 "
+                         "ICD-10-CM table (no network needed), then exit")
     ap.add_argument("--profile", default=None, metavar="NAME",
                     help="apply a saved cleaning profile (rule suite + "
                          "thresholds) by name")
@@ -387,8 +396,35 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     help="delete a wishlist request by id and exit")
     args = ap.parse_args(argv)
 
-    if args.refdata_status or args.refdata_pull:
+    if (args.refdata_status or args.refdata_pull or args.refdata_install
+            or args.refdata_bootstrap_icd10):
         from . import refdata_packs as _packs
+        # Offline installs first — the paths that work on a no-egress box.
+        if args.refdata_install:
+            pack_id, path = args.refdata_install
+            try:
+                info = _packs.install_from_file(pack_id, path)
+            except ValueError as exc:
+                sys.stderr.write(f"{pack_id}: {exc}\n")
+                return 1
+            if args.json:
+                return _emit_json(info)
+            sys.stdout.write(
+                f"{info['pack']}: {info['rows']:,} rows installed from "
+                f"{info['source']} (sha256 {str(info['sha256'])[:12]}…)\n")
+            return 0
+        if args.refdata_bootstrap_icd10:
+            try:
+                info = _packs.bootstrap_icd10cm_from_vendored()
+            except ValueError as exc:
+                sys.stderr.write(f"icd10cm: {exc}\n")
+                return 1
+            if args.json:
+                return _emit_json(info)
+            sys.stdout.write(
+                f"{info['pack']}: {info['rows']:,} rows installed from "
+                f"{info['source']}\n")
+            return 0
         if args.refdata_pull:
             ids = (list(_packs.PACKS) if args.refdata_pull == "all"
                    else [args.refdata_pull])

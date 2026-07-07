@@ -11,6 +11,7 @@ connector-specific:
     /health
     /v1/connectors                          → the estate: one row per connector
     /v1/datasets                            → every dataset (merged registries)
+    /v1/status                              → fetch state per connector (rows + vintage)
     /v1/query/{dataset}                     → dispatched to the owning connector
     /v1/query/{dataset}/aggregate           → dispatched to the owning connector
     /v1/lookup/{noun}/{id}                  → delegated to the owning connector
@@ -67,6 +68,52 @@ def open_stores(db_path: str = ":memory:") -> Dict[str, Any]:
     return stores
 
 
+_VINTAGE_COLS = ("ingested_at", "fetched_at")
+
+
+def estate_status(stores: Dict[str, Any],
+                  adapters: Optional[Dict[str, Adapter]] = None
+                  ) -> List[Dict[str, Any]]:
+    """Per-connector fetch state: rows on disk + last-ingested vintage.
+
+    Before this surface existed, "never fetched" was indistinguishable
+    from "fetched, empty" — every store answers ``{total: 0, rows: []}``
+    with HTTP 200 either way. The per-row ``ingested_at``/``fetched_at``
+    columns every canonical table already carries are aggregated here
+    (MAX), so a caller can tell a fresh pull from a year-stale one.
+    Identifiers interpolated below come from the connectors' own TABLES
+    constants, never from the request.
+    """
+    adapters = adapters or estate.adapters()
+    out: List[Dict[str, Any]] = []
+    for name in CONNECTOR_NAMES:
+        store = stores.get(name)
+        if store is None:
+            continue
+        total = 0
+        last = ""
+        for tname, tdef in adapters[name].tables_mod.TABLES.items():
+            total += int(store.count(tname))
+            for col in tdef.columns:
+                if col not in _VINTAGE_COLS:
+                    continue
+                rows = store.fetchall(
+                    f"SELECT MAX({col}) AS m FROM {tname}")
+                val = rows[0]["m"] if rows else None
+                if val and str(val) > last:
+                    last = str(val)
+        db_path = str(getattr(store, "db_path", ":memory:"))
+        out.append({
+            "connector": name,
+            "label": adapters[name].label,
+            "db_path": db_path,
+            "db_present": db_path != ":memory:",
+            "total_rows": total,
+            "last_ingested_at": last or None,
+        })
+    return out
+
+
 def build_handler(stores: Dict[str, Any],
                   adapters: Optional[Dict[str, Adapter]] = None):
     """Build a request handler bound to ``{connector: store}``."""
@@ -117,6 +164,9 @@ def build_handler(stores: Dict[str, Any],
                 return self._send(200, {"connectors": estate.connectors_summary()})
             if parts == ["v1", "datasets"]:
                 return self._send(200, {"datasets": estate.all_registry_rows()})
+            if parts == ["v1", "status"]:
+                return self._send(200, {"connectors":
+                                        estate_status(stores, adapters)})
             # /v1/query/{dataset}[/aggregate] → owning connector
             if len(parts) >= 3 and parts[0] == "v1" and parts[1] == "query":
                 return self._route_query(parts, qs)

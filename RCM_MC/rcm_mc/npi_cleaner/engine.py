@@ -152,6 +152,13 @@ _CARC_HINTS = ("carc", "denialcode", "denialreason", "adjustmentreason",
                "adjreason", "reasoncode", "denial")
 # A CARC is 1-3 digits or letter+1-2 digits (A1, B7, P1, W1 …).
 _CARC_VALID_RE = re.compile(r"^(\d{1,3}|[A-Z]\d{1,2})$")
+# 835 exports routinely prefix the CARC with its X12 group code ("CO-45",
+# "PR1", "OA23"): strip the group before shape-checking and tallying so a
+# CO-45 file doesn't flag carc-invalid on every row (tanking the validity
+# dimension) and CO-45 / 45 count as ONE denial reason with an intact
+# playbook join. Group-only tokens ("CO") pass through unchanged — the
+# lookahead requires a code to follow.
+_CARC_GROUP_RE = re.compile(r"^(?:CO|OA|PI|PR|CR)[-\s]?(?=[A-Z]?\d)")
 
 # The official CMS two-digit Place of Service code set. Report-only domain
 # check — a POS outside this list is a denial waiting to happen.
@@ -1846,12 +1853,20 @@ def _shape_rows(all_rows: List[List[str]]
     return hdr, all_rows[1:], notes
 
 
-def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
-                                      Optional[str]]:
+def _read_table(data: bytes, *, reshape: bool = True
+                ) -> Tuple[List[str], List[List[str]], str,
+                           Optional[str]]:
     """Decode bytes → (headers, rows, format, note). Handles CSV/TSV and
     .xlsx. ``format`` is the delimiter for text files, or ``"xlsx"`` for
     spreadsheets; ``note`` is a user-facing remark about how the file was
     read (worksheet chosen, encoding detected, title rows skipped, …).
+
+    ``reshape=False`` disables the title-row / headerless heuristics.
+    The streaming path needs that: bigfile prepends the FILE's first
+    record to every chunk as its header line, so shaping must happen
+    ONCE at the stream level (bigfile._shape_stream_head) — running it
+    per chunk made chunk 2+ treat that prepended record as a title/data
+    row, silently eating or replaying one record per chunk.
     """
     if _looks_like_xlsx(data):
         headers, body, note = _read_xlsx(data)
@@ -1873,8 +1888,11 @@ def _read_table(data: bytes) -> Tuple[List[str], List[List[str]], str,
     notes = [enc_note] if enc_note else []
     if not all_rows:
         return [], [], delim, ("; ".join(notes) or None)
-    headers, body, shape_notes = _shape_rows(all_rows)
-    notes.extend(shape_notes)
+    if reshape:
+        headers, body, shape_notes = _shape_rows(all_rows)
+        notes.extend(shape_notes)
+    else:
+        headers, body = [h.strip() for h in all_rows[0]], all_rows[1:]
     return headers, body, delim, ("; ".join(notes) or None)
 
 
@@ -1941,8 +1959,13 @@ def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
                  scan_cap: int = 50000, distinct_cap: int = 400
                  ) -> Tuple[float, List[str]]:
     """(% of populated HCPCS cells that are J-codes over a bounded scan,
-    distinct J-codes for the RxNorm crosswalk). Bounded so a 10M-row file
-    can't turn connector planning into a full extra pass."""
+    per-CELL J-code values for the RxNorm crosswalk). Bounded so a 10M-row
+    file can't turn connector planning into a full extra pass: the scan cap
+    bounds the list length and ``distinct_cap`` bounds the distinct-value
+    universe. The list is cell-grain (not distinct) on purpose —
+    resolve_drugs dedupes before any lookup, and passing cells makes its
+    ``rows_seen`` coverage counter mean CELLS for J-codes exactly as it
+    does for NDCs and drug names (one canonical unit across the scorecard)."""
     if hcpcs_idx is None:
         return 0.0, []
     seen: List[str] = []
@@ -1959,7 +1982,7 @@ def _jcode_stats(rows: List[List[str]], hcpcs_idx: Optional[int], *,
         populated += 1
         if _JCODE_RE.match(val):
             jcount += 1
-            if val not in seen_set and len(seen) < distinct_cap:
+            if val in seen_set or len(seen_set) < distinct_cap:
                 seen_set.add(val)
                 seen.append(val)
     pct = (100.0 * jcount / populated) if populated else 0.0
@@ -2199,7 +2222,8 @@ def clean_bytes(
                             drop_duplicates=drop_duplicates, deid=deid,
                             profile=profile, cb=cb, skip_info=_zip_info)
     try:
-        headers, rows, delim, _read_note = _read_table(data)
+        headers, rows, delim, _read_note = _read_table(
+            data, reshape=not _stream_chunk)
     except ImportError:
         _res = CleanResult(delimiter="xlsx", headers=[])
         _res.warnings.append(
@@ -2516,6 +2540,7 @@ def clean_bytes(
     _col_distinct = [set() for _ in range(ncols)]  # dictionary (capped 1000)
     _payer_raw: Dict[str, int] = {}               # payer variant clustering
     _carc_counts: Dict[str, int] = {}             # top denial reasons
+    _carc_variants: Dict[str, set] = {}           # bare code → raw spellings
     _code_charges: Dict[str, List[tuple]] = {}   # per-HCPCS (amt, row) pairs
     _taxo_counts: Dict[str, int] = {}             # taxonomy → specialty mix
     _svc_seen: Dict[tuple, List[tuple]] = {}      # dup-service window scan
@@ -2819,8 +2844,9 @@ def clean_bytes(
         if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
             _cparts = [p for p in re.split(r"[,;|\s]+",
                                            new_row[carc_i].strip().upper()) if p]
-            if _cparts and any(_CARC_VALID_RE.match(p) is None
-                               for p in _cparts):
+            if _cparts and any(
+                    _CARC_VALID_RE.match(_CARC_GROUP_RE.sub("", p)) is None
+                    for p in _cparts):
                 res.sanity["carc-invalid"] = \
                     res.sanity.get("carc-invalid", 0) + 1
         # Institutional-claim domains (UB-04): Type of Bill, discharge
@@ -3109,7 +3135,13 @@ def clean_bytes(
         if carc_i is not None and carc_i < len(new_row) and new_row[carc_i]:
             for _cp in re.split(r"[,;|\s]+", new_row[carc_i].strip().upper()):
                 if _cp:
-                    _carc_counts[_cp] = _carc_counts.get(_cp, 0) + 1
+                    # Tally by the BARE code so "CO-45" and "45" merge into
+                    # one denial reason (and hit the playbook); the raw
+                    # spelling is kept as a display variant.
+                    _cn = _CARC_GROUP_RE.sub("", _cp)
+                    _carc_counts[_cn] = _carc_counts.get(_cn, 0) + 1
+                    if _cn != _cp:
+                        _carc_variants.setdefault(_cn, set()).add(_cp)
         if (_charge_i is not None and hcpcs_i is not None
                 and _charge_i < len(new_row) and hcpcs_i < len(new_row)):
             _amt = _to_number(new_row[_charge_i])
@@ -3288,6 +3320,11 @@ def clean_bytes(
         _top_entries = []
         for _c, _n in _top:
             _e: Dict[str, object] = {"code": _c, "count": _n}
+            _vs = _carc_variants.get(_c)
+            if _vs:
+                # Group-prefixed spellings seen in the file ("CO-45") —
+                # the code above is the bare CARC they normalized to.
+                _e["as_seen"] = sorted(_vs)[:4]
             _pb = _rd.carc_playbook(_c) if _rd is not None else None
             if _pb:
                 _e["category"] = _pb["category"]
@@ -3540,11 +3577,27 @@ def clean_bytes(
                 paid_i=paid_i, money_set=money_set, claimed=_claimed_cols)
             if _amount_i is not None and _amount_i != billed_i:
                 res.structure["population_amount_column"] = headers[_amount_i]
+            # Rendering/servicing/attending individual-NPI column, when one
+            # exists among the detected NPI columns: coding intensity is
+            # about who CODED the visit — the org-grain billing NPI washes
+            # hot coders out in group practices. analytics.build prefers
+            # rendering_i and labels provider_basis so renderers caption
+            # the grain honestly.
+            _rend_i = None
+            for _ni in sorted(npi_set):
+                if _ni == billing_idx or _ni >= len(headers):
+                    continue
+                _hh = re.sub(r"[^a-z0-9]", "", str(headers[_ni]).lower())
+                if any(k in _hh for k in ("rendering", "servicing",
+                                          "attending", "individualnpi")):
+                    _rend_i = _ni
+                    break
             res.population = _analytics.build(headers, cleaned, {
                 "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
                 "hcpcs_i": hcpcs_i, "billed_i": _amount_i, "dx_set": dx_set,
                 "patient_i": patient_i, "dos_i": dos_i, "admit_i": admit_i,
                 "disch_i": disch_i, "billing_idx": billing_idx,
+                "rendering_i": _rend_i,
                 "readmit_window": _readmit_window,
             })
         except Exception:  # noqa: BLE001 — analytics never block cleaning
@@ -3570,6 +3623,10 @@ def clean_bytes(
         _blank_npi_pct = 0.0
     try:
         from . import connectors as _conn
+        # Static source metadata: rendered by the Live-connectors panel even
+        # on an offline run, so it is set unconditionally (it used to ride
+        # the enrich flag, leaving the panel empty on plain runs).
+        res.catalog = _conn.catalog()
         res.connector_plan = _conn.plan({
             "has_npi": bool(npi_idx),
             "has_billing": billing_idx is not None,
@@ -3585,6 +3642,24 @@ def clean_bytes(
     except Exception:  # noqa: BLE001 — planning never blocks cleaning
         res.connector_plan = None
 
+    # Billed dollars per billing NPI (digits-keyed): lets the bounded online
+    # screens spend their per-run caps on the HIGHEST-dollar providers
+    # (NPPES verify) and lets the LEIE screen report billed-dollar exposure
+    # behind an exclusion match, not just a count. Billed wins over allowed —
+    # exposure is what was billed through the NPI.
+    _npi_dollars: Dict[str, float] = {}
+    if (enrich or deep) and billing_idx is not None:
+        _amt_i2 = billed_i if billed_i is not None else allowed_i
+        if _amt_i2 is not None:
+            for _drow in cleaned:
+                if billing_idx < len(_drow) and _amt_i2 < len(_drow):
+                    _dk = _digits(_drow[billing_idx])
+                    if len(_dk) == 10:
+                        _dv = _to_number(_drow[_amt_i2])
+                        if _dv is not None:
+                            _npi_dollars[_dk] = (_npi_dollars.get(_dk, 0.0)
+                                                 + _dv)
+
     # Optional live NPPES cross-check via the app's shared CMS connection.
     # Guarded end-to-end: any failure leaves res.nppes with a note and the
     # offline results stand.
@@ -3594,7 +3669,8 @@ def clean_bytes(
             _taxo_idx = min(taxo_set) if taxo_set else None
             res.nppes, res.recovered_rows, _nppes_fills = _enrich_via_nppes(
                 cleaned, npi_idx, billing_idx, name_idx, state_idx,
-                taxo_idx=_taxo_idx, headers=headers)
+                taxo_idx=_taxo_idx, headers=headers,
+                weights=_npi_dollars or None)
             # Record the blanks NPPES filled: audited in the change log,
             # counted as repairs, credited to completeness. Bounded (≤ the
             # verify NPI cap), so appending to the preview list is safe.
@@ -3611,7 +3687,6 @@ def clean_bytes(
         cb("Resolving drugs via RxNorm / openFDA", 0.68)
         try:
             from . import connectors
-            res.catalog = connectors.catalog()
             ndcs = ([row[ndc_idx] for row in cleaned
                      if ndc_idx is not None and ndc_idx < len(row)]
                     if ndc_idx is not None else [])
@@ -3644,20 +3719,6 @@ def clean_bytes(
         except Exception as exc:  # noqa: BLE001
             res.connectors = [{"id": "error",
                                "note": f"{type(exc).__name__}: {exc}"}]
-        # Compliance — OIG LEIE (offline) + Medicare PECOS (networked, bounded).
-        cb("Screening billing NPIs (OIG LEIE · PECOS)", 0.74)
-        try:
-            from . import compliance
-            billing = ([row[billing_idx] for row in cleaned
-                        if billing_idx is not None and billing_idx < len(row)]
-                       if billing_idx is not None else [])
-            # LEIE is offline (always in online mode); the networked PECOS
-            # screen rides the deep flag so a plain online run stays fast.
-            res.compliance = (compliance.screen(billing, run_cms=deep)
-                              if billing else [])
-        except Exception as exc:  # noqa: BLE001
-            res.compliance = [{"id": "error",
-                               "note": f"{type(exc).__name__}: {exc}"}]
         # Ordering / referring provider eligibility — verify those NPIs are
         # active in NPPES (a deactivated ordering/referring provider is a
         # frequent, avoidable denial). Bounded + guarded like the rest.
@@ -3682,6 +3743,45 @@ def clean_bytes(
                 }
             except Exception as exc:  # noqa: BLE001
                 res.order_referring = {"error": f"{type(exc).__name__}: {exc}"}
+
+    # Compliance — OIG LEIE (offline) + Medicare PECOS (networked, bounded).
+    # Deliberately OUTSIDE the enrich block: deep implies online consent and
+    # the LEIE half needs no network at all, so a deep-without-enrich run
+    # must not silently drop the exclusions screen (it used to leave
+    # res.compliance None). PECOS still rides the deep flag inside screen().
+    if enrich or deep:
+        cb("Screening billing NPIs (OIG LEIE · PECOS)", 0.74)
+        try:
+            from . import compliance
+            billing = ([row[billing_idx] for row in cleaned
+                        if billing_idx is not None and billing_idx < len(row)]
+                       if billing_idx is not None else [])
+            res.compliance = (compliance.screen(
+                billing, run_cms=deep,
+                dollars_by_npi=_npi_dollars or None)
+                if billing else [])
+        except Exception as exc:  # noqa: BLE001
+            res.compliance = [{"id": "error",
+                               "note": f"{type(exc).__name__}: {exc}"}]
+        # A stale installed LEIE pack silently weakens the screen it just
+        # ran — say so on the run itself, not only in the packs panel. Env
+        # CSV deployments manage their own freshness, so only the pack path
+        # warns. Guarded: freshness reporting must never fail a run.
+        try:
+            import os as _os
+            if not _os.environ.get("RCM_MC_LEIE_CSV"):
+                from . import refdata_packs as _rpk
+                _lst = next((p for p in _rpk.status()
+                             if p.get("id") == "leie"), None)
+                if _lst and _lst.get("installed") and _lst.get("stale"):
+                    res.warnings.append(
+                        "Compliance: the installed LEIE reference pack is "
+                        f"{_lst.get('age_days', '?')} days old (refresh "
+                        f"cadence {_lst.get('cadence_days', '?')} days) — "
+                        "exclusion screening may miss recent OIG actions. "
+                        "Refresh the leie pack.")
+        except Exception:  # noqa: BLE001
+            pass
 
     # Real vendored-engine pass: run the actual v48 field_validators +
     # consistency + dedup screens when pandas and the modules are available.
@@ -3852,6 +3952,49 @@ def _autofile_gaps(res: "CleanResult") -> None:
                            f"member(s) and {_bs.get('over_cap', 0)} over "
                            "the batch cap were not cleaned. Batch-format "
                            "support / a bigger cap may be wanted."})
+        # Integration gaps — online/reference screens that could not do
+        # their job on THIS run. Missing data and missing egress should
+        # land on the backlog exactly like missing parsers do.
+        for _cmp in (res.compliance or []):
+            if (isinstance(_cmp, dict) and _cmp.get("id") == "oig_leie"
+                    and _cmp.get("available") is False):
+                gaps.append({
+                    "category": "integration",
+                    "title": "LEIE exclusion screen ran without data",
+                    "details": "Billing NPIs went through the compliance "
+                               "screen but no LEIE dataset is loaded — "
+                               "install the leie reference pack (or set "
+                               "RCM_MC_LEIE_CSV) so exclusions actually "
+                               "screen."})
+                break
+        _derr = (str(res.deep.get("error") or "").lower()
+                 if isinstance(res.deep, dict) else "")
+        if "timed out" in _derr or "could not reach" in _derr:
+            gaps.append({
+                "category": "integration",
+                "title": "Deep recovery timed out — likely no egress",
+                "details": "The networked deep pipeline hit its preflight/"
+                           "watchdog limit. If this deployment has no "
+                           "outbound network, deep mode needs an offline "
+                           "story (or should say so up front)."})
+        if any("could not reach" in str(_cn.get("note") or "").lower()
+               for _cn in (res.connectors or []) if isinstance(_cn, dict)):
+            gaps.append({
+                "category": "integration",
+                "title": "Drug connectors unreachable on an enrich run",
+                "details": "RxNorm/openFDA lookups failed as a transport "
+                           "error. If this deployment is offline, a "
+                           "vendored drug reference pack would cover the "
+                           "same checks without egress."})
+        for _pr in (res.connector_plan or []):
+            if (isinstance(_pr, dict)
+                    and str(_pr.get("id") or "").startswith("pack_")
+                    and _pr.get("applies")
+                    and _pr.get("state") == "needs_data"):
+                gaps.append({
+                    "category": "integration",
+                    "title": f"{_pr.get('name')} needed but not installed",
+                    "details": str(_pr.get("reason") or "")})
         if not gaps:
             return
         from . import wishlist as _wishlist
@@ -4027,8 +4170,13 @@ def _apply_drug_fills(cleaned, headers, drug_idx, ndc_idx, hcpcs_i, concepts):
 
 
 def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
-                      taxo_idx=None, headers=None):
+                      taxo_idx=None, headers=None, weights=None):
     """Run NPPES verify + recover over the cleaned rows via nppes_bridge.
+
+    ``weights`` (optional, NPI digits → summed billed dollars) makes the
+    bridge spend its bounded verify cap on the highest-dollar NPIs instead
+    of first-seen order — on multi-thousand-provider extracts the cap
+    covers <1% of NPIs and first-seen made that 1% arbitrary.
 
     Returns ``(payload, recovered_rows, fills)`` where ``fills`` is a list
     of ``(row_1based, column_header, before, after, rule)`` — blank
@@ -4050,7 +4198,7 @@ def _enrich_via_nppes(cleaned, npi_idx, billing_idx, name_idx, state_idx,
         for i in npi_idx:
             if i < len(row):
                 all_npis.append(row[i])
-    verify = nppes_bridge.verify_npis(all_npis)
+    verify = nppes_bridge.verify_npis(all_npis, weights=weights)
 
     # Fill blank name / state / taxonomy from the verified billing NPI's
     # canonical record. Bounded by verify's distinct-NPI cap (≤40) and

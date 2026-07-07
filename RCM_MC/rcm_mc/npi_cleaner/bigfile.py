@@ -40,10 +40,12 @@ cannot be split without parsing the whole container.
 from __future__ import annotations
 
 import csv
+import io
+import itertools
 import os
 import uuid
 from pathlib import Path
-from typing import BinaryIO, Dict, Iterator, List, Optional
+from typing import BinaryIO, Dict, Iterator, List, Optional, Tuple
 
 from .engine import (
     CleanResult,
@@ -89,6 +91,69 @@ def _iter_records(fh: BinaryIO) -> Iterator[bytes]:
             quotes = 0
     if parts:  # trailing record without a newline
         yield b"".join(parts)
+
+
+def _shape_stream_head(header: bytes, records: Iterator[bytes]
+                       ) -> Tuple[bytes, Iterator[bytes], int, List[str]]:
+    """(header, records, skipped_bytes, notes) — engine._shape_rows
+    mirrored at the RECORD level, once for the whole stream.
+
+    The chunk loop prepends the file's first record to every chunk as its
+    header line, so the in-memory title-row / headerless heuristics must
+    run here, BEFORE chunking (per-chunk reshape is disabled via
+    ``reshape=False``). Running them per chunk made chunk 2+ treat that
+    prepended record as a title or data row: title-led files silently
+    LOST one data record per chunk and headerless files REPLAYED the
+    first record into every chunk — exactly the silent-lossy class this
+    module exists to prevent.
+    """
+    buf: List[bytes] = [header]
+    for rec in records:
+        buf.append(rec)
+        if len(buf) >= 8:                      # head window: row0 + 7
+            break
+    sample = b"".join(buf).decode("utf-8", errors="replace")
+    delim = _engine._sniff_delimiter(sample[:8192])
+
+    def _cells(rec: bytes) -> List[str]:
+        txt = rec.decode("utf-8", errors="replace")
+        try:
+            return next(csv.reader(io.StringIO(txt), delimiter=delim), [])
+        except csv.Error:
+            return [txt]
+
+    notes: List[str] = []
+    skipped_bytes = 0
+    skipped = 0
+    while (skipped < 3 and len(buf) >= 4
+           and _engine._populated_cells(_cells(buf[0])) <= 2):
+        widths = [_engine._populated_cells(_cells(r)) for r in buf[1:5]]
+        wide_at = next((i for i, w in enumerate(widths) if w >= 4), None)
+        if (wide_at is None
+                or any(w > 2 for w in widths[:wide_at])
+                or any(w < 4 for w in widths[wide_at:])):
+            break
+        skipped_bytes += len(buf.pop(0))
+        skipped += 1
+    if skipped:
+        notes.append(
+            f"Skipped {skipped} title row(s) above the header — the file "
+            "leads with a cover line, not column names.")
+    hdr_cells = [c.strip() for c in _cells(buf[0])]
+    populated = [c for c in hdr_cells if c]
+    numeric = sum(1 for c in populated
+                  if _engine._NUMERIC_CELL_RE.match(c))
+    if len(populated) >= 2 and numeric / len(populated) >= 0.6:
+        names = [f"column_{i + 1}" for i in range(len(hdr_cells))]
+        notes.append(
+            "File appears to have no header row — column_1…column_"
+            f"{len(hdr_cells)} names were synthesized and the first row "
+            "was kept as data. Add a header row to name the columns.")
+        new_header = (delim.join(names) + "\r\n").encode("utf-8")
+    else:
+        new_header = buf.pop(0)
+    return new_header, itertools.chain(iter(buf), records), \
+        skipped_bytes, notes
 
 
 def _warning_result(src_name: str, message: str,
@@ -253,6 +318,14 @@ def _clean_csv_stream(
                 "File appears to be empty — no header row found.")
             header = None
         bytes_done = len(header) if header else 0
+        if header is not None:
+            # Title-row / headerless shaping happens HERE, once for the
+            # whole stream — the chunks reuse this header verbatim and
+            # never reshape (see _shape_stream_head).
+            header, records, _shape_skipped, _shape_notes = \
+                _shape_stream_head(header, records)
+            bytes_done += _shape_skipped
+            res.warnings.extend(_shape_notes)
         # One digest set shared by every chunk → duplicates die across
         # chunk boundaries too. Growth is capped inside the engine
         # (_STREAM_SEEN_CAP); saturation is surfaced as a warning below.
@@ -334,6 +407,12 @@ def _clean_csv_stream(
                 res.billing_column = sub.billing_column
                 res.accepted_rules = sub.accepted_rules
                 res.profile_name = sub.profile_name
+                # Connector recommendation + source catalog are computed
+                # from detected COLUMNS (identical in every chunk), so the
+                # first chunk's answer is the file's answer — without this
+                # a streamed run's Live-connectors panel rendered empty.
+                res.connector_plan = sub.connector_plan
+                res.catalog = sub.catalog
             for row in cleaned:
                 out_writer.writerow([_defang_cell(c) for c in row])
 

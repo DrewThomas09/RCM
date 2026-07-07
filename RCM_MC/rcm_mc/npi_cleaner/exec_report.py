@@ -235,6 +235,72 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
             parts.append("<h2>NPPES verification</h2>"
                          f"<p class='small'>{_esc(' · '.join(bits2))}</p>")
 
+    # Online screens & data sources — what the connectors actually did on
+    # this run (coverage counters), screens that want data they don't have,
+    # and reference-source health. Every block is guarded: an offline run
+    # without payloads renders nothing here rather than empty chrome.
+    conns = [c for c in (sc.get("connectors") or [])
+             if isinstance(c, dict) and c.get("id") != "error"]
+    orf = sc.get("order_referring") or {}
+    needs = [p for p in (sc.get("connector_plan") or [])
+             if isinstance(p, dict) and p.get("applies")
+             and p.get("state") == "needs_data"]
+    adv0 = sc.get("advanced") or {}
+    # Live network connectors that are simply not in use are noise on a
+    # one-pager (the plan table already covers what would run) — badge the
+    # reference PACKS and vendored seeds, plus anything actually live.
+    ref_st = [r for r in ((adv0.get("reference_status") or [])
+                          if isinstance(adv0, dict) else [])
+              if isinstance(r, dict)
+              and (r.get("kind") != "network"
+                   or r.get("status") != "UNAVAILABLE")]
+    if conns or orf or needs or ref_st:
+        parts.append("<h2>Online screens &amp; data sources</h2>")
+        if conns:
+            parts.append("<table><tr><th>Connector</th>"
+                         "<th class='num'>Cells seen</th>"
+                         "<th class='num'>Enriched</th><th>Result</th></tr>")
+            for c in conns:
+                parts.append(
+                    f"<tr><td>{_esc(c.get('label') or c.get('id'))}</td>"
+                    f"<td class='num'>{int(c.get('rows_seen') or 0):,}</td>"
+                    f"<td class='num'>{int(c.get('rows_enriched') or 0):,}"
+                    f"</td><td class='small'>{_esc(c.get('note') or '')}"
+                    "</td></tr>")
+            parts.append("</table>")
+        if orf and not orf.get("error"):
+            _orc = ", ".join(str(x) for x in (orf.get("columns") or []))
+            parts.append(
+                "<p class='small'>Ordering/referring eligibility"
+                + (f" ({_esc(_orc)})" if _orc else "") + ": "
+                f"{int(orf.get('checked') or 0):,} checked · "
+                f"{int(orf.get('active') or 0):,} active · "
+                f"{int(orf.get('not_found') or 0):,} not found/deactivated."
+                + (f" {_esc(orf.get('note') or '')}"
+                   if orf.get("note") else "") + "</p>")
+        if needs:
+            parts.append("<table><tr><th>Screen waiting on data</th>"
+                         "<th>What to do</th></tr>")
+            for p in needs[:6]:
+                parts.append(
+                    f"<tr><td>{_esc(p.get('name') or p.get('id'))}</td>"
+                    f"<td class='small'>{_esc(p.get('reason') or '')}"
+                    "</td></tr>")
+            parts.append("</table>")
+        if ref_st:
+            _badge = {"LIVE-PACK": "sev-info", "DEGRADED": "sev-warning",
+                      "UNAVAILABLE": "sev-warning"}
+            bits3 = []
+            for r in ref_st:
+                st = str(r.get("status") or "")
+                vint = str(r.get("vintage") or "")
+                bits3.append(
+                    f"<span class='{_badge.get(st, 'sev-info')}'>"
+                    f"{_esc(r.get('name') or r.get('id'))}: {_esc(st)}"
+                    + (f" ({_esc(vint)})" if vint else "") + "</span>")
+            parts.append("<p class='small'>Reference sources — "
+                         + " · ".join(bits3) + "</p>")
+
     # Payer clusters.
     payer = sc.get("payer") or {}
     multi = payer.get("multi_spelling") or []

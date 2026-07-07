@@ -57,6 +57,20 @@ def _open(root: str) -> Dict[str, Any]:
     }
 
 
+def _store_read(root: str) -> OpenFdaStore:
+    """Store for READ verbs: never creates the root dir or the db file.
+
+    A plain ``query``/``lookup-*`` on a never-ingested root used to mkdir
+    ``./.openfda_data`` and write an empty schema db as a side effect of
+    a read; open ``:memory:`` instead (the same discipline the RCM-MC
+    bridge applies) so reads stay side-effect free.
+    """
+    db = Path(root) / "openfda.db"
+    if not db.is_file():
+        return OpenFdaStore(":memory:")
+    return OpenFdaStore(str(db))
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
 
@@ -105,14 +119,14 @@ def cmd_incremental(args: argparse.Namespace) -> int:
 
 
 def cmd_aggregate(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" in f:
             k, v = f.split("=", 1)
             filters[k] = v
     try:
-        res = aggregate(ctx["store"], args.dataset,
+        res = aggregate(store, args.dataset,
                         group_by=args.group_by.split(","), filters=filters,
                         limit=args.limit)
     except QueryError as exc:
@@ -123,17 +137,17 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
 
 
 def cmd_market_map(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
+    store = _store_read(args.root)
     fn = mm.MARKET_MAPS[args.name]
     kwargs: Dict[str, Any] = {"limit": args.limit}
     if args.name == "clearance_timeline" and args.product_code:
         kwargs["product_code"] = args.product_code
-    _print({"market_map": args.name, "rows": fn(ctx["store"], **kwargs)})
+    _print({"market_map": args.name, "rows": fn(store, **kwargs)})
     return 0
 
 
 def cmd_query(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" not in f:
@@ -145,7 +159,7 @@ def cmd_query(args: argparse.Namespace) -> int:
     select = args.select.split(",") if args.select else None
     sort = args.sort.split(",") if args.sort else None
     try:
-        res = query(ctx["store"], args.dataset, filters=filters, select=select,
+        res = query(store, args.dataset, filters=filters, select=select,
                     sort=sort, limit=args.limit, offset=args.offset)
     except QueryError as exc:
         print(f"query error: {exc}", file=sys.stderr)
@@ -155,26 +169,22 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_lookup_drug(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
-    _print(lookup_drug(ctx["store"], args.ndc))
+    _print(lookup_drug(_store_read(args.root), args.ndc))
     return 0
 
 
 def cmd_lookup_device(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
-    _print(lookup_device(ctx["store"], args.product_code))
+    _print(lookup_device(_store_read(args.root), args.product_code))
     return 0
 
 
 def cmd_lookup_company(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
-    _print(lookup_company(ctx["store"], args.company))
+    _print(lookup_company(_store_read(args.root), args.company))
     return 0
 
 
 def cmd_search_company(args: argparse.Namespace) -> int:
-    ctx = _open(args.root)
-    _print(search_companies(ctx["store"], args.query, limit=args.limit))
+    _print(search_companies(_store_read(args.root), args.query, limit=args.limit))
     return 0
 
 

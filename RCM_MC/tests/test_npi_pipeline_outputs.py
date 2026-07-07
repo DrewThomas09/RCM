@@ -373,7 +373,10 @@ class TestExecReportSections(unittest.TestCase):
                 {"issue": "invalid_hcpcs", "rows": 12, "pct_rows": 1.2,
                  "dollars": 8123.4, "pct_dollars": 3.4},
                 {"issue": "missing_npi", "rows": 40, "pct_rows": 4.0,
-                 "dollars": 90555.678, "pct_dollars": 22.15}]},
+                 # 22.16, not 22.15: the binary float for 22.15 is
+                 # 22.1499…, so a half-value fixture would assert on
+                 # rounding luck instead of the 1dp formatting rule.
+                 "dollars": 90555.678, "pct_dollars": 22.16}]},
             trend_alerts=["Quality score dropped 92 → 81 vs the previous "
                           "run of this file."],
             deid={"cells": 120, "columns": ["PatientName", "MemberID"]},

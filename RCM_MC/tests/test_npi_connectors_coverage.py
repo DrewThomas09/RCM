@@ -152,6 +152,22 @@ class TestPlanHonesty(unittest.TestCase):
             for key in ("id", "name", "applies", "mode", "reason", "state"):
                 self.assertIn(key, p)
 
+    def test_openfda_jcode_only_file_is_needs_data_not_ready(self):
+        # The engine feeds openFDA the NDC column only; on a J-code file
+        # with no NDC column the connector sits idle, so "ready" promised
+        # a lookup that never fires. ``applies`` stays True (the contract
+        # suite pins it); the honesty lives in ``state`` + reason.
+        plan = self.C.plan({"has_billing": True, "jcode_pct": 96.0,
+                            "has_hcpcs": True})
+        ofda = next(p for p in plan if p["id"] == "openfda")
+        self.assertTrue(ofda["applies"])
+        self.assertEqual(ofda["state"], "needs_data")
+        self.assertIn("no NDC column", ofda["reason"])
+        # With an NDC column it is genuinely ready.
+        plan = self.C.plan({"has_ndc": True})
+        ofda = next(p for p in plan if p["id"] == "openfda")
+        self.assertEqual(ofda["state"], "ready")
+
 
 class TestCatalogPecos(unittest.TestCase):
     def test_catalog_contains_pecos_marked_cleaning_wired(self):
@@ -247,6 +263,62 @@ class TestOpenFdaNdcQuery(unittest.TestCase, _FdaOpenerMixin):
         self.assertEqual(ofda["resolved"], 0)
         self.assertEqual(ofda["unresolved"], 1)
         self.assertFalse([s for s in searches if "ndc" in s])
+
+    def test_hyphenated_eleven_digit_billing_ndc_derives_native_form(self):
+        # "00002-3227-30" is the 5-4-2 BILLING form with hyphens — openFDA's
+        # package_ndc carries the native 4-4-2 "0002-3227-30". Passing the
+        # billing form through as-is left hyphenated claims NDCs exactly as
+        # dead as the digits-only query this front replaced.
+        opener, searches = self._make_opener()
+        self.C.resolve_drugs(["00002-3227-30"], [], opener=opener)
+        fda_search = next(s for s in searches
+                          if s.startswith("package_ndc"))
+        self.assertIn('"0002-3227-30"', fda_search)
+        self.assertIn('"00002-3227-30"', fda_search)
+
+    def test_bare_ten_digit_native_532_and_541_forms_are_queried(self):
+        # A bare 10-digit value may be the native form with hyphens
+        # stripped: 50242-004-06 (5-3-2) → "5024200406". The zfill-only
+        # reading missed it entirely.
+        opener, searches = self._make_opener()
+        self.C.resolve_drugs(["5024200406"], [], opener=opener)
+        fda_search = next(s for s in searches
+                          if s.startswith("package_ndc"))
+        self.assertIn('"50242-004-06"', fda_search)
+        # 5-4-1: 60332-1320-1 → "6033213201".
+        opener, searches = self._make_opener()
+        self.C.resolve_drugs(["6033213201"], [], opener=opener)
+        fda_search = next(s for s in searches
+                          if s.startswith("package_ndc"))
+        self.assertIn('"60332-1320-1"', fda_search)
+
+    def test_openfda_404_is_a_miss_not_an_outage(self):
+        # openFDA answers zero-match searches with HTTP 404, which the
+        # shared client raises. That is "0 of N matched", NOT "could not
+        # reach openFDA" — the outage wording on a connected run was a
+        # fabricated degradation claim.
+        from urllib.error import HTTPError
+
+        def opener_404(url, headers, timeout_s):
+            if "api.fda.gov" in url:
+                raise HTTPError(url, 404, "NOT FOUND", {}, None)
+            return b"{}"
+
+        res = self.C.resolve_drugs(["00002322730", "00093104901"], [],
+                                   opener=opener_404)
+        ofda = next(r for r in res if r["id"] == "openfda")
+        self.assertEqual(ofda["resolved"], 0)
+        self.assertEqual(ofda["unresolved"], 2)
+        self.assertNotIn("Could not reach", ofda["note"])
+        self.assertIn("0 of 2", ofda["note"])
+
+    def test_openfda_real_outage_still_reads_as_outage(self):
+        def opener_down(url, headers, timeout_s):
+            raise OSError("connection refused")
+
+        res = self.C.resolve_drugs(["00002322730"], [], opener=opener_down)
+        ofda = next(r for r in res if r["id"] == "openfda")
+        self.assertIn("Could not reach openFDA", ofda["note"])
 
 
 class TestCoverageCounters(unittest.TestCase, _FdaOpenerMixin):
@@ -405,6 +477,21 @@ class TestConnectorStatusHealth(unittest.TestCase):
             self.assertIn(s["status"], (self.C.STATUS_LIVE,
                                         self.C.STATUS_DEGRADED,
                                         self.C.STATUS_UNAVAILABLE))
+
+    def test_leie_env_csv_reports_live_not_unavailable(self):
+        # screen_leie reads RCM_MC_LEIE_CSV first (it beats the pack), so
+        # with that file present the status panel must not say "Not
+        # installed — its checks stay off" while plan() says ready and
+        # the screen actually runs.
+        with tempfile.NamedTemporaryFile(suffix=".csv",
+                                         delete=False) as fh:
+            fh.write(LEIE_CSV)
+            path = fh.name
+        self.addCleanup(os.unlink, path)
+        os.environ["RCM_MC_LEIE_CSV"] = path
+        by_id = {s["id"]: s for s in self.C.connector_status()}
+        self.assertEqual(by_id["pack_leie"]["status"], self.C.STATUS_LIVE)
+        self.assertIn("RCM_MC_LEIE_CSV", by_id["pack_leie"]["note"])
 
 
 class TestRefdataOfflineInstall(unittest.TestCase):

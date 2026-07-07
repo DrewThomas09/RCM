@@ -219,10 +219,21 @@ def plan(signals: Dict[str, object]) -> List[dict]:
                    if drug_signal else
                    "No NDC, drug-name, or J-code column in this file.")
     add("rxnorm", "RxNorm / RxNav", drug_signal, "network", drug_reason)
-    add("openfda", "openFDA drug label", (has_ndc or jcode > 0), "network",
-        ("Match NDC / J-code drugs to an FDA product label."
-         if (has_ndc or jcode > 0) else
-         "No NDC or J-code column to label."))
+    if has_ndc:
+        add("openfda", "openFDA drug label", True, "network",
+            "Match NDC / J-code drugs to an FDA product label.")
+    elif jcode > 0:
+        # Honest ghost-claim guard: openFDA matches by NDC, and the engine
+        # feeds it the NDC column only — on a J-code file with no NDC
+        # column the connector sits idle, so saying "ready" here promised
+        # a lookup that never fires.
+        add("openfda", "openFDA drug label", True, "network",
+            "J-codes present but no NDC column — openFDA labels match by "
+            "NDC, so this connector sits idle on this file (RxNorm's "
+            "HCPCS crosswalk covers the J-codes).", state="needs_data")
+    else:
+        add("openfda", "openFDA drug label", False, "network",
+            "No NDC or J-code column to label.")
 
     # --- Compliance: billing NPI screens ---
     if not has_billing:
@@ -321,25 +332,34 @@ def _ndc_candidates(raw: object) -> List[str]:
     real files ("0 of N NDCs matched" read as a data problem when it was
     a query-shape bug). Derive the native candidates by removing the
     billing pad zero from whichever segment carries it, plus the 5-4-2
-    form itself; a hyphenated input is passed through as-is."""
+    form itself. A 10-digit hyphenated input is already the native form
+    and passes through as-is; an 11-digit hyphenated input is the billing
+    form with hyphens, so it goes through the same derivation as bare
+    digits (passing it through unchanged left hyphenated claims NDCs as
+    dead as the digits-only query this function replaced). Bare 10-digit
+    values are ambiguous — native with hyphens stripped (4-4-2 / 5-3-2 /
+    5-4-1) or billing with a dropped leading zero — so ALL readings are
+    queried in the one OR group rather than guessing one."""
     s = str(raw or "").strip()
     if not s:
         return []
     if "-" in s:
         parts = [re.sub(r"\D", "", p) for p in s.split("-")]
-        if len(parts) == 3 and all(parts):
-            return ["-".join(parts)]
         digits = "".join(parts)
+        if len(parts) == 3 and all(parts) and len(digits) == 10:
+            return ["-".join(parts)]     # already the FDA native form
     else:
         digits = "".join(c for c in s if c.isdigit())
+    cands: List[str] = []
     if len(digits) == 10:
-        # 10 bare digits: assume the common case of a dropped leading
-        # zero on the labeler (the 11-digit form minus its pad).
-        digits = digits.zfill(11)
+        # Native readings of the bare 10 digits, most common first.
+        cands.append(f"{digits[:4]}-{digits[4:8]}-{digits[8:]}")   # 4-4-2
+        cands.append(f"{digits[:5]}-{digits[5:8]}-{digits[8:]}")   # 5-3-2
+        cands.append(f"{digits[:5]}-{digits[5:9]}-{digits[9:]}")   # 5-4-1
+        digits = digits.zfill(11)        # billing reading: dropped pad zero
     if len(digits) != 11:
         return []
     lab, prod, pkg = digits[:5], digits[5:9], digits[9:]
-    cands: List[str] = []
     if lab.startswith("0"):
         cands.append(f"{lab[1:]}-{prod}-{pkg}")      # native 4-4-2
     if prod.startswith("0"):
@@ -347,7 +367,8 @@ def _ndc_candidates(raw: object) -> List[str]:
     if pkg.startswith("0"):
         cands.append(f"{lab}-{prod}-{pkg[1:]}")      # native 5-4-1
     cands.append(f"{lab}-{prod}-{pkg}")              # billing 5-4-2
-    return cands
+    seen: set = set()
+    return [c for c in cands if not (c in seen or seen.add(c))]
 
 
 def _ndc_search_expr(keys: List[str], field: str = "package_ndc") -> str:
@@ -356,6 +377,19 @@ def _ndc_search_expr(keys: List[str], field: str = "package_ndc") -> str:
     if len(keys) == 1:
         return f'{field}:"{keys[0]}"'
     return f"{field}:(" + " ".join(f'"{k}"' for k in keys) + ")"
+
+
+def _is_http_404(exc: Exception) -> bool:
+    """True when an openFDA lookup failure is the API's zero-results
+    answer. openFDA replies HTTP 404 when a search matches NOTHING, and
+    the shared client raises on 4xx — so without this check every
+    honestly-unmatched NDC counted as a lookup ERROR, and a connected
+    run over unlabeled NDCs reported 'Could not reach openFDA' (a
+    fabricated outage) instead of '0 of N matched'."""
+    for e in (exc, getattr(exc, "__cause__", None)):
+        if e is not None and getattr(e, "code", None) == 404:
+            return True
+    return "HTTP 404" in str(exc)
 
 
 def resolve_drugs(
@@ -474,8 +508,12 @@ def resolve_drugs(
                     res = pac.openfda_search(
                         "drug", "ndc", search=_ndc_search_expr(keys, field),
                         limit=1, opener=opener)
-                except Exception:  # noqa: BLE001
-                    failures += 1
+                except Exception as exc:  # noqa: BLE001
+                    # HTTP 404 is openFDA's "no matches" — a miss, not an
+                    # outage; only transport failures feed the
+                    # connectivity note.
+                    if not _is_http_404(exc):
+                        failures += 1
                     continue
                 if isinstance(res, list) and res:
                     rec = res[0]
@@ -632,6 +670,26 @@ def connector_status() -> List[dict]:
             "rows": int(info.get("rows") or 0),
             "vintage": str(info.get("fetched_iso") or ""),
         }
+        if pid == "leie":
+            # screen_leie reads RCM_MC_LEIE_CSV FIRST (it beats the pack),
+            # so when that file exists the honest status is live-via-file —
+            # reporting "Not installed — its checks stay off" here while
+            # plan() said "ready" and the screen actually ran was a direct
+            # self-contradiction on a compliance surface.
+            _env = os.environ.get("RCM_MC_LEIE_CSV") or ""
+            try:
+                _env_ok = bool(_env) and Path(_env).exists()
+            except OSError:
+                _env_ok = False
+            if _env_ok:
+                entry.update(
+                    status=STATUS_LIVE,
+                    note=(f"Active via RCM_MC_LEIE_CSV ({Path(_env).name})"
+                          " — the screen reads this file (it takes "
+                          "precedence over the reference pack); freshness "
+                          "follows the file."))
+                out.append(entry)
+                continue
         if not info:
             entry.update(status=STATUS_UNAVAILABLE,
                          note="Reference-pack store unavailable.")

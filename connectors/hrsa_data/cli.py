@@ -44,6 +44,20 @@ def _store(root: str) -> HrsaDataStore:
     return HrsaDataStore(_paths(root)["db"])
 
 
+def _store_read(root: str) -> HrsaDataStore:
+    """Store for READ verbs: never creates the root dir or the db file.
+
+    A plain ``query``/``lookup-*`` on a never-ingested root used to mkdir
+    ``./.hrsa_data_data`` and write an empty schema db as a side effect of
+    a read; open ``:memory:`` instead (the same discipline the RCM-MC
+    bridge applies) so reads stay side-effect free.
+    """
+    db = Path(root) / "hrsa_data.db"
+    if not db.is_file():
+        return HrsaDataStore(":memory:")
+    return HrsaDataStore(str(db))
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
 
@@ -89,7 +103,7 @@ def cmd_fetch(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
-    store = _store(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" not in f:
@@ -111,12 +125,12 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_lookup_shortage_area(args: argparse.Namespace) -> int:
-    _print(lookup_shortage_area(_store(args.root), args.state, args.limit))
+    _print(lookup_shortage_area(_store_read(args.root), args.state, args.limit))
     return 0
 
 
 def cmd_lookup_health_center(args: argparse.Namespace) -> int:
-    _print(lookup_health_center(_store(args.root), args.state, args.limit))
+    _print(lookup_health_center(_store_read(args.root), args.state, args.limit))
     return 0
 
 

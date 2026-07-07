@@ -44,6 +44,20 @@ def _store(root: str) -> Icd10Store:
     return Icd10Store(_db_path(root))
 
 
+def _store_read(root: str) -> Icd10Store:
+    """Store for READ verbs: never creates the root dir or the db file.
+
+    A plain ``query``/``lookup-*``/``search`` on a never-ingested root
+    used to mkdir ``./.icd10_data`` and write an empty schema db as a
+    side effect of a read; open ``:memory:`` instead (the same discipline
+    the RCM-MC bridge applies) so reads stay side-effect free.
+    """
+    db = Path(root) / "icd10.db"
+    if not db.is_file():
+        return Icd10Store(":memory:")
+    return Icd10Store(str(db))
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
 
@@ -91,7 +105,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
-    store = _store(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" not in f:
@@ -113,7 +127,7 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_aggregate(args: argparse.Namespace) -> int:
-    store = _store(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" in f:
@@ -130,17 +144,17 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
 
 
 def cmd_lookup_code(args: argparse.Namespace) -> int:
-    _print(lookup_code(_store(args.root), args.code, args.type))
+    _print(lookup_code(_store_read(args.root), args.code, args.type))
     return 0
 
 
 def cmd_lookup_category(args: argparse.Namespace) -> int:
-    _print(lookup_category(_store(args.root), args.category, args.type))
+    _print(lookup_category(_store_read(args.root), args.category, args.type))
     return 0
 
 
 def cmd_search(args: argparse.Namespace) -> int:
-    _print(search_codes(_store(args.root), args.code_type, args.term,
+    _print(search_codes(_store_read(args.root), args.code_type, args.term,
                         limit=args.limit))
     return 0
 

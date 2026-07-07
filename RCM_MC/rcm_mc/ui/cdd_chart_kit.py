@@ -17,7 +17,10 @@ from __future__ import annotations
 
 import html
 import itertools
+import re as _re2
 from typing import Any, Dict, List, Optional, Tuple
+
+from ._chart_kit import DATA_SERIES_EXTENDED, _trunc
 
 # ── Chartis palettes ─────────────────────────────────────────────────
 _NAVY = "#0b2341"
@@ -36,6 +39,9 @@ PALETTES: Dict[str, List[str]] = {
                         "#3d6e8f", "#6e5b9e"],
     "Diverging": ["#b5321e", "#cf7a4e", "#e0b48a", "#ece5d6", "#9bc1bc",
                   "#4ea69d", "#1F7A75", "#155752", "#0b2341", "#6e5b9e"],
+    # The house --sc-data-1..5 tokens (see chartis_tokens.css), shared with
+    # _chart_kit so builder charts can match the platform's analysis pages.
+    "House data": list(DATA_SERIES_EXTENDED),
 }
 _SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
           "'Times New Roman', serif")
@@ -208,7 +214,14 @@ def presentable_pie(
 def parse_table(text: str) -> Dict[str, Any]:
     """Parse a pasted Excel table — first row = headers (category name +
     series names), each later row = label + numeric cells. Tab, comma,
-    or 2+-space separated. Non-numeric cells become ``None``."""
+    or 2+-space separated. Non-numeric cells become ``None``.
+
+    Comma lines go through the stdlib ``csv`` reader so a quoted CSV
+    export ("Los Angeles, CA",5) keeps its label in one cell instead of
+    shearing into two columns. Accounting-style negatives — ``(1,234)``,
+    ``($2,500)`` — coerce to negative numbers rather than silently
+    dropping to ``None`` (which was deleting the negative rows of pasted
+    P&L bridges)."""
     lines = [ln for ln in (text or "").replace("\r", "\n").split("\n")
              if ln.strip()]
     if not lines:
@@ -218,7 +231,13 @@ def parse_table(text: str) -> Dict[str, Any]:
         if "\t" in ln:
             return [c.strip() for c in ln.split("\t")]
         if "," in ln:
-            return [c.strip() for c in ln.split(",")]
+            import csv
+            import io
+            try:
+                return [c.strip() for c in
+                        next(csv.reader(io.StringIO(ln)))]
+            except (csv.Error, StopIteration):
+                return [c.strip() for c in ln.split(",")]
         import re
         return [c.strip() for c in re.split(r"\s{2,}", ln.strip())] \
             if re.search(r"\s{2,}", ln) else ln.split()
@@ -233,8 +252,13 @@ def parse_table(text: str) -> Dict[str, Any]:
         vals: List[Optional[float]] = []
         for c in cells[1:]:
             c2 = c.replace("%", "").replace("$", "").replace(",", "").strip()
+            neg = False
+            if len(c2) > 2 and c2.startswith("(") and c2.endswith(")"):
+                neg = True
+                c2 = c2[1:-1].strip()
             try:
-                vals.append(float(c2))
+                v = float(c2)
+                vals.append(-v if neg else v)
             except ValueError:
                 vals.append(None)
         rows.append((label, vals))
@@ -436,16 +460,26 @@ def _uid_of(opts: Dict[str, Any]) -> int:
 
 def _depth_bar(opts: Dict[str, Any], x: float, y: float, w: float, h: float,
                fill: str, *, rx: float = 1.5, vertical: bool = True,
-               shadow: bool = True) -> str:
+               shadow: bool = True, title: str = "") -> str:
     """A bar with depth: solid colour + a sheen-gradient overlay (+ optional
-    soft drop-shadow). Width/height are clamped non-negative by the caller."""
+    soft drop-shadow). Width/height are clamped non-negative by the caller.
+    ``title`` (optional) becomes an SVG ``<title>`` child of the base rect —
+    the native hover tooltip, so a bar whose value label is suppressed
+    (small segment, show_values off) is still recoverable, matching the
+    hover affordance the sibling kits already carry."""
     uid = opts.get("_uid", 0)
     flt = f' filter="url(#cdsh{uid})"' if shadow else ""
     grad = f"cdvg{uid}" if vertical else f"cdhg{uid}"
+    if title:
+        base = (f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" '
+                f'height="{h:.1f}" rx="{rx:g}" fill="{fill}"{flt}>'
+                f'<title>{_esc(title)}</title></rect>')
+    else:
+        base = (f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" '
+                f'height="{h:.1f}" rx="{rx:g}" fill="{fill}"{flt}/>')
     return (
-        f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
-        f'rx="{rx:g}" fill="{fill}"{flt}/>'
-        f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
+        base
+        + f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
         f'rx="{rx:g}" fill="url(#{grad})" pointer-events="none"/>')
 
 
@@ -505,26 +539,62 @@ def _frame_open(opts: Dict[str, Any]) -> str:
     return "".join(bits)
 
 
+def _hint(opts: Dict[str, Any], msg: str) -> str:
+    """Frame + a centered, faint what-to-do hint for degenerate inputs.
+
+    The empty-TABLE path already tells the user 'Paste data to render a
+    chart', but six chart types used to return a silent blank frame when
+    the table parsed fine yet lacked the shape that chart needs (slope
+    with one value column, radar with two rows, …) — in the builder that
+    reads as 'my paste broke'. Same styling as the empty-table
+    placeholder so the two failure modes speak with one voice."""
+    W, H = opts.get("W", _W), opts.get("H", _H)
+    return (_frame_open(opts)
+            + f'<text x="{W/2:.0f}" y="{H/2:.0f}" text-anchor="middle" '
+            f'font-family="{_SANS}" font-size="13" fill="{_FAINT}">'
+            f'{_esc(msg)}</text></svg>')
+
+
 def _legend(series: List[Dict[str, Any]], colors: List[str],
             opts: Dict[str, Any]) -> str:
     W, H = opts.get("W", _W), opts.get("H", _H)
     if not opts.get("legend", True) or len(series) <= 1:
         return ""
-    # Estimate widths and center the row.
-    items = [(s["name"], colors[i % len(colors)])
+    # Long series names used to walk straight off the 720px frame (no
+    # truncation, and the centered start-x could go negative). Mirror
+    # _chart_kit's treatment: ellipsize past 18 chars with the full name in
+    # a <title>, and wrap to a second row when one row won't fit.
+    items = [(str(s["name"]), colors[i % len(colors)])
              for i, s in enumerate(series)]
-    widths = [len(name) * 6.2 + 18 for name, _ in items]
-    total = sum(widths) + 14 * (len(items) - 1)
-    x = (W - total) / 2
-    y = H - 18
+
+    def _w(name: str) -> float:
+        return len(_trunc(name, 18)) * 6.2 + 18
+
+    rows: List[List[Tuple[str, str]]] = [[]]
+    row_w = 0.0
+    for it in items:
+        w = _w(it[0]) + (14 if rows[-1] else 0)
+        if rows[-1] and row_w + w > W - 40:
+            rows.append([it])
+            row_w = _w(it[0])
+        else:
+            rows[-1].append(it)
+            row_w += w
     out = ""
-    for (name, color), w in zip(items, widths):
-        out += (
-            f'<rect x="{x:.0f}" y="{y-8:.0f}" width="10" height="10" '
-            f'rx="2" fill="{color}"/>'
-            f'<text x="{x+15:.0f}" y="{y+1:.0f}" font-family="{_SANS}" '
-            f'font-size="11" fill="{_DIM}">{_esc(name)}</text>')
-        x += w + 14
+    y = H - 18 - (len(rows) - 1) * 15
+    for row in rows:
+        total = sum(_w(n) for n, _ in row) + 14 * (len(row) - 1)
+        x = max(14.0, (W - total) / 2)
+        for name, color in row:
+            disp = _trunc(name, 18)
+            tip = f'<title>{_esc(name)}</title>' if disp != name else ""
+            out += (
+                f'<rect x="{x:.0f}" y="{y-8:.0f}" width="10" height="10" '
+                f'rx="2" fill="{color}"/>'
+                f'<text x="{x+15:.0f}" y="{y+1:.0f}" font-family="{_SANS}" '
+                f'font-size="11" fill="{_DIM}">{tip}{_esc(disp)}</text>')
+            x += _w(name) + 14
+        y += 15
     return out
 
 
@@ -536,8 +606,17 @@ def _plot(opts: Dict[str, Any]) -> Tuple[float, float, float, float]:
 
 
 def _y_axis(x0, y0, x1, y1, vmax, vmin, opts, suffix=""):
-    """Gridlines + y labels; returns svg + a value→y mapper."""
+    """Gridlines + y labels; returns svg + a value→y mapper.
+
+    Ticks stay at fifths of the (already-nice) vmax rather than adopting
+    the shared ck_nice_ticks values: builder consumers pin the ABSENCE of
+    specific tick strings when value labels are off (a 0-150 axis with a
+    1/2/5-step grid always lands a tick on 100, which a pinned test
+    forbids for the 100/130 sample table), so the grid here must remain
+    the even-fifths lattice. When the scale dips negative a solid zero
+    line separates gains from losses."""
     span = (vmax - vmin) or 1
+
     def yof(v):
         return y1 - (v - vmin) / span * (y1 - y0)
     svg = ""
@@ -549,6 +628,10 @@ def _y_axis(x0, y0, x1, y1, vmax, vmin, opts, suffix=""):
                 f'<text x="{x0-6:.1f}" y="{y+3:.1f}" text-anchor="end" '
                 f'font-family="{_SANS}" font-size="10" fill="{_FAINT}">'
                 f'{_fmt(v, suffix)}</text>')
+    if vmin < 0 < vmax:
+        zy = yof(0)
+        svg += (f'<line x1="{x0:.1f}" y1="{zy:.1f}" x2="{x1:.1f}" '
+                f'y2="{zy:.1f}" stroke="{_FAINT}" stroke-width="1.1"/>')
     return svg, yof
 
 
@@ -558,19 +641,27 @@ def _x_labels(cats, x0, x1, y1, opts):
         return ""
     band = (x1 - x0) / n
     rot = n > 8
+    # Band-adaptive truncation (ported from _chart_kit's category labels):
+    # long labels on many-category charts otherwise overprint each other and
+    # clip the bottom margin. The visible label is ellipsized; the full text
+    # rides in a <title> on the text node for hover recovery.
+    max_chars = max(5, int(band / (5.5 if rot else 6.5)) + (6 if rot else 0))
     out = ""
     for i, c in enumerate(cats):
         cx = x0 + band * (i + 0.5)
+        label = _trunc(c, max_chars)
+        tip = (f'<title>{_esc(c)}</title>'
+               if label != str(c) else "")
         if rot:
             out += (f'<text x="{cx:.1f}" y="{y1+14:.1f}" '
                     f'text-anchor="end" font-family="{_SANS}" '
                     f'font-size="10" fill="{_DIM}" '
                     f'transform="rotate(-35 {cx:.1f} {y1+14:.1f})">'
-                    f'{_esc(c)}</text>')
+                    f'{tip}{_esc(label)}</text>')
         else:
             out += (f'<text x="{cx:.1f}" y="{y1+15:.1f}" '
                     f'text-anchor="middle" font-family="{_SANS}" '
-                    f'font-size="10.5" fill="{_DIM}">{_esc(c)}</text>')
+                    f'font-size="10.5" fill="{_DIM}">{tip}{_esc(label)}</text>')
     return out
 
 
@@ -638,7 +729,10 @@ def _bars(table, opts):
     x0, y0, x1, y1 = _plot(opts)
     show_vals = opts.get("show_values", True)
 
-    # Compute stack totals / max.
+    # Compute stack totals / max (and, for grouped charts, a signed min so
+    # growth/margin-delta tables draw below the zero line instead of
+    # rendering off-canvas or as invisible zero-height bars).
+    finite = [v for s in series for v in s["values"] if v is not None]
     if percent:
         totals = [sum(abs(s["values"][i] or 0) for s in series)
                   for i in range(len(cats))]
@@ -648,17 +742,27 @@ def _bars(table, opts):
                                   for s in series)
                               for i in range(len(cats))), default=1))
     else:
-        vmax = _nice_max(max((max((v or 0) for v in s["values"])
-                              for s in series), default=1))
+        vmax = _nice_max(max(finite, default=1))
     if not percent:
         vmax = _ref_scaled_max(vmax, opts)
     vmin = 0.0
+    if not (stacked or percent):
+        vmin = min(0.0, min(finite, default=0.0))
+
+    def _bar_title(sname: str, cat: Any, val: float, ns: int) -> str:
+        v_txt = _fmt(val, suffix)
+        return f"{sname} · {cat}: {v_txt}" if ns > 1 else f"{cat}: {v_txt}"
 
     body = _frame_open(opts)
     if horizontal:
         n = len(cats)
         band = (y1 - y0) / max(n, 1)
-        body += (f'<line x1="{x0:.1f}" y1="{y0:.1f}" x2="{x0:.1f}" '
+        xspan = (vmax - vmin) or 1
+
+        def xof(v):
+            return x0 + (v - vmin) / xspan * (x1 - x0)
+        zx = xof(0.0)
+        body += (f'<line x1="{zx:.1f}" y1="{y0:.1f}" x2="{zx:.1f}" '
                  f'y2="{y1:.1f}" stroke="{_GRID}" stroke-width="0.8"/>')
         ns = len(series)
         for i, c in enumerate(cats):
@@ -675,7 +779,8 @@ def _bars(table, opts):
                     body += _depth_bar(
                         opts, x0 + cumw, yy, max(0, w), inner * 0.92,
                         colors[si % len(colors)], rx=0, vertical=False,
-                        shadow=False)
+                        shadow=False,
+                        title=_bar_title(s["name"], c, v, ns))
                     if show_vals and v > vmax * 0.07:
                         body += (f'<text x="{x0+cumw+w/2:.1f}" '
                                  f'y="{yy+inner*0.55:.1f}" '
@@ -686,16 +791,22 @@ def _bars(table, opts):
             else:
                 bh = inner / max(ns, 1)
                 for si, s in enumerate(series):
-                    v = s["values"][i] or 0
-                    w = (v / vmax) * (x1 - x0)
+                    v = s["values"][i]
+                    if v is None:
+                        continue    # a missing cell is not a zero-length bar
+                    w = abs(xof(v) - zx)
+                    bx = zx if v >= 0 else xof(v)
                     yy = gy + band * 0.11 + si * bh
                     body += _depth_bar(
-                        opts, x0, yy, max(0, w), bh * 0.92,
+                        opts, bx, yy, max(0, w), bh * 0.92,
                         colors[si % len(colors)], rx=1.5, vertical=False,
-                        shadow=(ns == 1))
+                        shadow=(ns == 1),
+                        title=_bar_title(s["name"], c, v, ns))
                     if show_vals and ns == 1:
-                        body += (f'<text x="{x0+w+4:.1f}" '
-                                 f'y="{yy+bh*0.7:.1f}" '
+                        lx = (bx + w + 4) if v >= 0 else (bx - 4)
+                        anc = "" if v >= 0 else ' text-anchor="end"'
+                        body += (f'<text x="{lx:.1f}" '
+                                 f'y="{yy+bh*0.7:.1f}"{anc} '
                                  f'font-family="{_SANS}" font-size="10" '
                                  f'fill="{_DIM}">{_fmt(v, suffix)}</text>')
             body += (f'<text x="{x0-6:.1f}" y="{gy+band*0.55:.1f}" '
@@ -722,7 +833,8 @@ def _bars(table, opts):
                 body += _depth_bar(
                     opts, gx + band * 0.18, yy, band * 0.64, max(0, h),
                     colors[si % len(colors)], rx=0, vertical=True,
-                    shadow=False)
+                    shadow=False,
+                    title=_bar_title(s["name"], c, v, ns))
                 if show_vals and v > vmax * 0.06:
                     body += (f'<text x="{gx+band*0.5:.1f}" '
                              f'y="{yy+h/2+3:.1f}" text-anchor="middle" '
@@ -732,16 +844,20 @@ def _bars(table, opts):
         else:
             bw = band * 0.7 / max(ns, 1)
             for si, s in enumerate(series):
-                v = s["values"][i] or 0
-                h = (v / vmax) * (y1 - y0)
+                v = s["values"][i]
+                if v is None:
+                    continue    # skip missing cells — never fabricate a 0
+                h = abs(yof(v) - yof(0.0))
                 xx = gx + band * 0.15 + si * bw
-                yy = yof(v)
+                yy = yof(max(v, 0.0))
                 body += _depth_bar(
                     opts, xx, yy, bw * 0.9, max(0, h),
                     colors[si % len(colors)], rx=1.5, vertical=True,
-                    shadow=(ns <= 2))
+                    shadow=(ns <= 2),
+                    title=_bar_title(s["name"], c, v, ns))
                 if show_vals and ns <= 3:
-                    body += (f'<text x="{xx+bw*0.45:.1f}" y="{yy-3:.1f}" '
+                    ly = (yy - 3) if v >= 0 else (yy + h + 10)
+                    body += (f'<text x="{xx+bw*0.45:.1f}" y="{ly:.1f}" '
                              f'text-anchor="middle" font-family="{_SANS}" '
                              f'font-size="9.5" fill="{_DIM}">'
                              f'{_fmt(v, suffix)}</text>')
@@ -802,18 +918,27 @@ def _lines(table, opts):
     area = opts.get("area", False)
     x0, y0, x1, y1 = _plot(opts)
     n = len(cats)
+    finite = [v for s in series for v in s["values"] if v is not None]
     if area:
         vmax = _nice_max(max((sum(max(s["values"][i] or 0, 0)
                                   for s in series)
                               for i in range(n)), default=1))
+        vmin = 0.0   # a stacked area is anchored at zero by construction
     else:
-        vmax = _nice_max(max((max((v or 0) for v in s["values"])
-                              for s in series), default=1))
+        vmax = _nice_max(max(finite, default=1))
+        # Growth / margin-delta tables (exactly what transform_table's
+        # 'growth' calc produces) carry negatives; clamping the axis at 0
+        # used to send those points through the x-labels and off-canvas.
+        vmin = min(0.0, min(finite, default=0.0))
     vmax = _ref_scaled_max(vmax, opts)
     body = _frame_open(opts)
-    grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts, opts.get("suffix", ""))
+    grid, yof = _y_axis(x0, y0, x1, y1, vmax, vmin, opts,
+                        opts.get("suffix", ""))
     body += grid
+
     def xof(i):
+        if n == 1:
+            return (x0 + x1) / 2   # a lone point centers, not top-left
         return x0 + (x1 - x0) * (i / max(n - 1, 1))
     if area:
         # Per-series vertical gradient fade (colour at the top edge → faint
@@ -847,15 +972,39 @@ def _lines(table, opts):
             cum = top
     else:
         for si, s in enumerate(series):
-            pts = " ".join(f"{xof(i):.1f},{yof(s['values'][i] or 0):.1f}"
-                           for i in range(n))
-            body += (f'<polyline points="{pts}" fill="none" '
-                     f'stroke="{colors[si % len(colors)]}" '
-                     f'stroke-width="2.4" stroke-linejoin="round"/>')
+            col = colors[si % len(colors)]
+            # A missing (None) cell is a GAP, not a zero: the polyline
+            # breaks into per-run segments so a blank quarter never reads
+            # as a crash to the baseline.
+            segs: List[List[str]] = [[]]
             for i in range(n):
+                v = s["values"][i]
+                if v is None:
+                    if segs[-1]:
+                        segs.append([])
+                    continue
+                segs[-1].append(f"{xof(i):.1f},{yof(v):.1f}")
+            for seg in segs:
+                if len(seg) >= 2:
+                    body += (f'<polyline points="{" ".join(seg)}" '
+                             f'fill="none" stroke="{col}" '
+                             f'stroke-width="2.4" stroke-linejoin="round"/>')
+            for i in range(n):
+                v = s["values"][i]
+                if v is None:
+                    continue
                 body += (f'<circle cx="{xof(i):.1f}" '
-                         f'cy="{yof(s["values"][i] or 0):.1f}" r="2.6" '
-                         f'fill="{colors[si % len(colors)]}"/>')
+                         f'cy="{yof(v):.1f}" r="2.6" '
+                         f'fill="{col}"><title>{_esc(s["name"])} · '
+                         f'{_esc(cats[i])}: '
+                         f'{_fmt(v, opts.get("suffix", ""))}</title>'
+                         f'</circle>')
+            if n == 1 and s["values"] and s["values"][0] is not None:
+                v0 = s["values"][0]
+                body += (f'<text x="{xof(0)+8:.1f}" y="{yof(v0)+3.5:.1f}" '
+                         f'font-family="{_SANS}" font-size="10.5" '
+                         f'fill="{_DIM}">'
+                         f'{_fmt(v0, opts.get("suffix", ""))}</text>')
         if opts.get("trendline") and series:
             pts = [(float(i), v) for i, v in enumerate(series[0]["values"])
                    if v is not None]
@@ -880,13 +1029,17 @@ def _waterfall(table, opts):
     colors = opts["colors"]
     pos, neg, tot = "#0a8a5f", "#b5321e", _NAVY
     x0, y0, x1, y1 = _plot(opts)
-    # Cumulative path; a row labelled total/net/= renders as an absolute
-    # bar from zero.
+    # Cumulative path; a row labelled Total / Subtotal / Net / "=" renders
+    # as an absolute bar from zero. Matched on WORD boundaries — the old
+    # substring test turned "Network fees" (or "Internet", "Netherlands")
+    # into a navy absolute bar and silently corrupted the bridge math.
     cum = 0.0
     bars = []
     running = 0.0
     for c, d in zip(cats, deltas):
-        is_total = any(k in c.lower() for k in ("total", "net", "="))
+        is_total = bool(
+            _re2.search(r"\b(?:sub)?total\b|\bnet\b", str(c), _re2.I)
+        ) or "=" in str(c)
         if is_total:
             start, end = 0.0, (d if d else running)
         else:
@@ -909,8 +1062,11 @@ def _waterfall(table, opts):
         top, bot = max(start, end), min(start, end)
         yy, h = yof(top), abs(yof(bot) - yof(top))
         col = tot if is_total else (pos if end >= start else neg)
-        body += _depth_bar(opts, gx, yy, bw, max(h, 1), col, rx=1.5,
-                           vertical=True, shadow=True)
+        body += _depth_bar(
+            opts, gx, yy, bw, max(h, 1), col, rx=1.5,
+            vertical=True, shadow=True,
+            title=f'{c}: '
+                  f'{_fmt(end if is_total else (end - start), opts.get("suffix", ""))}')
         body += (f'<text x="{gx+bw/2:.1f}" y="{yy-3:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
                  f'font-size="9.5" fill="{_DIM}">'
@@ -930,8 +1086,18 @@ def _waterfall(table, opts):
 
 def _pie(table, opts):
     import math
-    labels = [r[0] for r in table["rows"]]
-    vals = [(r[1][0] if r[1] else 0) or 0 for r in table["rows"]]
+    all_labels = [r[0] for r in table["rows"]]
+    all_vals = [(r[1][0] if r[1] else 0) or 0 for r in table["rows"]]
+    # A share-of-whole chart cannot draw a negative slice — the arc sweeps
+    # backwards and corrupts every later slice's position AND the displayed
+    # percentages (the negative nets out of the total). Same v>0 guard as
+    # presentable_pie/waffle; anything dropped is disclosed in a footnote.
+    pairs = [(lab, v) for lab, v in zip(all_labels, all_vals) if v > 0]
+    dropped = len(all_labels) - len(pairs)
+    if not pairs:
+        return _hint(opts, "Pie needs at least one positive value")
+    labels = [lab for lab, _ in pairs]
+    vals = [v for _, v in pairs]
     colors = opts["colors"]
     donut = opts.get("donut", False)
     W, H = opts.get("W", _W), opts.get("H", _H)
@@ -939,6 +1105,11 @@ def _pie(table, opts):
     total = sum(vals) or 1
     body = _frame_open(opts)
     uid = _uid_of(opts)
+    if dropped:
+        body += (f'<text x="{W-14:.1f}" y="{H-7:.1f}" text-anchor="end" '
+                 f'font-family="{_SANS}" font-size="9.5" fill="{_FAINT}">'
+                 f'{dropped} non-positive row{"s" if dropped != 1 else ""} '
+                 f'excluded</text>')
     # Shadow plate under the pie for depth (covered by the slices on top).
     body += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
              f'fill="#ffffff" filter="url(#cdsh{uid})"/>')
@@ -989,8 +1160,12 @@ def _scatter(table, opts):
     ys = [p[2] for p in pts] or [0, 1]
     xmin, xmax = min(xs + [0]), _nice_max(max(xs + [1]))
     ymax = _nice_max(max(ys + [1]))
+    # Signed y floor — negative points used to map below the plot, through
+    # the x-labels and off the canvas entirely.
+    ymin = min(ys + [0])
     body = _frame_open(opts)
-    grid, yof = _y_axis(x0, y0, x1, y1, ymax, 0, opts, opts.get("ysuffix", ""))
+    grid, yof = _y_axis(x0, y0, x1, y1, ymax, ymin, opts,
+                        opts.get("ysuffix", ""))
     body += grid
     body += (f'<line x1="{x0:.1f}" y1="{y1:.1f}" x2="{x1:.1f}" '
              f'y2="{y1:.1f}" stroke="{_FAINT}" stroke-width="0.8"/>')
@@ -1071,7 +1246,7 @@ def _combo(table, opts):
     x0, y0, x1, y1 = _plot(opts)
     n = len(cats)
     if not series:
-        return _frame_open(opts) + "</svg>"
+        return _hint(opts, "Combo needs a value column")
     bar_s = series[0]
     line_s = series[1] if len(series) > 1 else None
     vmax = _ref_scaled_max(
@@ -1083,25 +1258,53 @@ def _combo(table, opts):
                          opts.get("suffix", ""))
     band = (x1 - x0) / max(n, 1)
     for i in range(n):
-        v = bar_s["values"][i] or 0
+        v = bar_s["values"][i]
+        if v is None:
+            continue
         h = (v / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.2
-        body += _depth_bar(opts, gx, yof(v), band * 0.6, max(h, 0),
-                           colors[0], rx=1.5, vertical=True, shadow=True)
+        body += _depth_bar(opts, gx, yof(max(v, 0)), band * 0.6, max(h, 0),
+                           colors[0], rx=1.5, vertical=True, shadow=True,
+                           title=f'{bar_s["name"]} · {cats[i]}: '
+                                 f'{_fmt(v, opts.get("suffix", ""))}')
     if line_s:
+        lcol = colors[1 % len(colors)]
         lmax = _nice_max(max((v or 0) for v in line_s["values"]) or 1)
+
         def xof(i):
             return x0 + band * (i + 0.5)
+
         def yl(v):
             return y1 - (v / lmax) * (y1 - y0)
-        pts = " ".join(f"{xof(i):.1f},{yl(line_s['values'][i] or 0):.1f}"
-                       for i in range(n))
-        body += (f'<polyline points="{pts}" fill="none" '
-                 f'stroke="{colors[1 % len(colors)]}" stroke-width="2.4"/>')
+        # Right-hand axis for the line series (in the line's colour) — a
+        # second scale the reader can't see is a dual-axis chart lying by
+        # omission; the line used to be scaled to an undisclosed max.
+        for gi in range(6):
+            lv = lmax * gi / 5
+            body += (f'<text x="{x1+5:.1f}" y="{yl(lv)+3:.1f}" '
+                     f'text-anchor="start" font-family="{_SANS}" '
+                     f'font-size="9.5" fill="{lcol}">'
+                     f'{_fmt(lv, opts.get("line_suffix", ""))}</text>')
+        segs: List[List[str]] = [[]]
         for i in range(n):
+            v = line_s["values"][i]
+            if v is None:
+                if segs[-1]:
+                    segs.append([])
+                continue
+            segs[-1].append(f"{xof(i):.1f},{yl(v):.1f}")
+        for seg in segs:
+            if len(seg) >= 2:
+                body += (f'<polyline points="{" ".join(seg)}" fill="none" '
+                         f'stroke="{lcol}" stroke-width="2.4"/>')
+        for i in range(n):
+            v = line_s["values"][i]
+            if v is None:
+                continue
             body += (f'<circle cx="{xof(i):.1f}" '
-                     f'cy="{yl(line_s["values"][i] or 0):.1f}" r="3" '
-                     f'fill="{colors[1 % len(colors)]}"/>')
+                     f'cy="{yl(v):.1f}" r="3" '
+                     f'fill="{lcol}"><title>{_esc(line_s["name"])} · '
+                     f'{_esc(cats[i])}: {_fmt(v)}</title></circle>')
     body += _x_labels(cats, x0, x1, y1, opts)
     body += _legend(series[:2], colors, opts) + "</svg>"
     return body
@@ -1117,7 +1320,7 @@ def _funnel(table, opts):
     body = _frame_open(opts)
     n = len(cats)
     if not n:
-        return body + "</svg>"
+        return _hint(opts, "Funnel needs at least one stage row")
     vmax = max(vals) or 1
     cx = (x0 + x1) / 2
     sh = (y1 - y0) / n
@@ -1189,7 +1392,7 @@ def _radar(table, opts):
     cx, cy, R = W / 2, H / 2 + 8, 150.0
     n = len(cats)
     if n < 3:
-        return _frame_open(opts) + '</svg>'
+        return _hint(opts, "Radar needs 3+ category rows")
     vmax = _nice_max(max((max((v or 0) for v in s["values"])
                           for s in series), default=1))
     body = _frame_open(opts)
@@ -1298,7 +1501,7 @@ def _gauge(table, opts):
     import math
     rows = table["rows"]
     if not rows:
-        return _frame_open(opts) + "</svg>"
+        return _hint(opts, "Gauge needs one row: label, value, max")
     label = rows[0][0]
     vals = rows[0][1] if rows[0][1] else [0]
     value = vals[0] or 0
@@ -1411,7 +1614,7 @@ def _heatmap(table, opts):
     y0 += 14   # room for column headers
     nrow, ncol = len(cats), len(series)
     if not nrow or not ncol:
-        return _frame_open(opts) + "</svg>"
+        return _hint(opts, "Heatmap needs rows and at least one value column")
     allv = [v for s in series for v in s["values"] if v is not None]
     lo, hi = (min(allv), max(allv)) if allv else (0, 1)
     rng = (hi - lo) or 1
@@ -1457,7 +1660,7 @@ def _slope(table, opts):
     headers = table.get("headers", [])
     x0, y0, x1, y1 = _plot(dict(opts, legend=False))
     if len(series) < 2:
-        return _frame_open(opts) + "</svg>"
+        return _hint(opts, "Slope needs 2 value columns (before → after)")
     a, b = series[0]["values"], series[1]["values"]
     allv = [v for v in (a + b) if v is not None]
     vmax = _nice_max(max(allv) if allv else 1)
@@ -1510,7 +1713,7 @@ def _gantt(table, opts):
         if len(vals) >= 2 and vals[0] is not None and vals[1] is not None:
             tasks.append((lab, vals[0], vals[1]))
     if not tasks:
-        return _frame_open(opts) + "</svg>"
+        return _hint(opts, "Gantt needs numeric start and end columns")
     tmin = min(t[1] for t in tasks)
     tmax = max(t[2] for t in tasks)
     body = _frame_open(opts)
@@ -1562,7 +1765,9 @@ def _pareto(table, opts):
         h = (v / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.18
         body += _depth_bar(opts, gx, yof(v), band * 0.64, max(h, 0),
-                           colors[0], rx=1.5, vertical=True, shadow=True)
+                           colors[0], rx=1.5, vertical=True, shadow=True,
+                           title=f'{cats[i]}: '
+                                 f'{_fmt(v, opts.get("suffix", ""))}')
         cum += v
         pts.append((x0 + band * (i + 0.5),
                     y1 - (cum / total) * (y1 - y0), cum / total))
@@ -1596,7 +1801,7 @@ def _histogram(table, opts):
     x0, y0, x1, y1 = _plot(dict(opts, legend=False))
     body = _frame_open(opts)
     if not vals:
-        return body + "</svg>"
+        return _hint(opts, "Histogram needs numeric values in the first column")
     nb = int(opts.get("bins") or 0) or \
         max(4, min(12, int(len(vals) ** 0.5) + 2))
     lo, hi = min(vals), max(vals)
@@ -1614,8 +1819,10 @@ def _histogram(table, opts):
     for i, c in enumerate(counts):
         h = (c / vmax) * (y1 - y0)
         gx = x0 + band * i + band * 0.06
+        rng = f"{_fmt(lo + i * w)}\u2013{_fmt(lo + (i + 1) * w)}"
         body += _depth_bar(opts, gx, yof(c), band * 0.88, max(h, 0),
-                           colors[0], rx=1.5, vertical=True, shadow=True)
+                           colors[0], rx=1.5, vertical=True, shadow=True,
+                           title=f"{rng}: {c}")
         if c:
             body += (f'<text x="{gx+band*0.44:.1f}" y="{yof(c)-3:.1f}" '
                      f'text-anchor="middle" font-family="{_SANS}" '
@@ -1652,7 +1859,7 @@ def _box(table, opts):
     x0, y0, x1, y1 = _plot(dict(opts, legend=False))
     body = _frame_open(opts)
     if not groups:
-        return body + "</svg>"
+        return _hint(opts, "Box plot needs numeric values per row")
     allv = [v for _, vs in groups for v in vs]
     vmax = _nice_max(max(allv))
     vmin = min(allv + [0])
@@ -1702,7 +1909,7 @@ def _dumbbell(table, opts):
     x0, y0, x1, y1 = _plot(opts)
     body = _frame_open(opts)
     if len(series) < 2:
-        return body + "</svg>"
+        return _hint(opts, "Dumbbell needs 2 value columns (range ends)")
     a, b = series[0]["values"], series[1]["values"]
     allv = [v for v in (a + b) if v is not None]
     vmax = _nice_max(max(allv) if allv else 1)
@@ -1758,7 +1965,7 @@ def _waffle(table, opts):
     W, H = opts.get("W", _W), opts.get("H", _H)
     body = _frame_open(opts)
     if not pairs:
-        return body + "</svg>"
+        return _hint(opts, "Waffle needs at least one positive value")
     total = sum(v for _, v in pairs)
     # Largest-remainder allocation so the 100 cells always sum exactly.
     raw = [v / total * 100 for _, v in pairs]
@@ -1806,7 +2013,7 @@ def _smallmult(table, opts):
     W, H = opts.get("W", _W), opts.get("H", _H)
     body = _frame_open(opts)
     if not series or len(cats) < 2:
-        return body + "</svg>"
+        return _hint(opts, "Small multiples need a value column and 2+ rows")
     n = len(series)
     cols = 1 if n == 1 else 2 if n <= 4 else 3 if n <= 6 else 4
     rows_n = math.ceil(n / cols)
@@ -1880,23 +2087,28 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
         f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (3×)</button>'
         f'<button type="button" style="{btn}" '
         f'onclick="ckCopySvg(\'{tid}\',this)">⧉ Copy SVG</button></div>'
-        '<script>'
-        'function ckSvgStr(id){var c=document.getElementById(id);'
+        # The helpers are installed ONCE per page behind a window guard —
+        # a page embedding several toolbars used to redefine the same four
+        # globals per instance (harmless but sloppy, and a hazard if two
+        # kit versions ever coexist on one page).
+        '<script>(function(){'
+        'if(window.__cdChartExport)return;window.__cdChartExport=1;'
+        'window.ckSvgStr=function(id){var c=document.getElementById(id);'
         'if(!c)return"";var s=c.querySelector("svg");if(!s)return"";'
         'var n=s.cloneNode(true);n.setAttribute("xmlns",'
         '"http://www.w3.org/2000/svg");'
         'return "<?xml version=\\"1.0\\" encoding=\\"UTF-8\\"?>\\n"'
-        '+new XMLSerializer().serializeToString(n);}'
-        'function ckDlSvg(id,fn){var str=ckSvgStr(id);if(!str)return;'
+        '+new XMLSerializer().serializeToString(n);};'
+        'window.ckDlSvg=function(id,fn){var str=ckSvgStr(id);if(!str)return;'
         'var b=new Blob([str],{type:"image/svg+xml;charset=utf-8"});'
         'var a=document.createElement("a");a.href=URL.createObjectURL(b);'
         'a.download=fn+".svg";document.body.appendChild(a);a.click();'
-        'a.remove();}'
-        'function ckCopySvg(id,btn){var str=ckSvgStr(id);if(!str)return;'
+        'a.remove();};'
+        'window.ckCopySvg=function(id,btn){var str=ckSvgStr(id);if(!str)return;'
         'navigator.clipboard.writeText(str).then(function(){'
         'var t=btn.textContent;btn.textContent="✓ Copied";'
-        'setTimeout(function(){btn.textContent=t;},1200);});}'
-        'function ckDlPng(id,fn){var c=document.getElementById(id);'
+        'setTimeout(function(){btn.textContent=t;},1200);});};'
+        'window.ckDlPng=function(id,fn){var c=document.getElementById(id);'
         'if(!c)return;var s=c.querySelector("svg");if(!s)return;'
         'var vb=s.viewBox.baseVal;var w=(vb&&vb.width)||720;'
         'var h=(vb&&vb.height)||450;var sc=3;'
@@ -1908,8 +2120,8 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
         'a.href=URL.createObjectURL(bl);a.download=fn+".png";'
         'document.body.appendChild(a);a.click();a.remove();});};'
         'img.src="data:image/svg+xml;base64,"+btoa(unescape('
-        'encodeURIComponent(ckSvgStr(id))));}'
-        '</script>')
+        'encodeURIComponent(ckSvgStr(id))));};'
+        '})();</script>')
 
 
 # Size presets (display width in px).

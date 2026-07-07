@@ -43,6 +43,20 @@ def _store(root: str) -> NpiStore:
     return NpiStore(_paths(root)["db"])
 
 
+def _store_read(root: str) -> NpiStore:
+    """Store for READ verbs: never creates the root dir or the db file.
+
+    A plain ``query``/``lookup-*`` on a never-ingested root used to mkdir
+    ``./.npi_registry_data`` and write an empty schema db as a side effect of
+    a read; open ``:memory:`` instead (the same discipline the RCM-MC
+    bridge applies) so reads stay side-effect free.
+    """
+    db = Path(root) / "npi_registry.db"
+    if not db.is_file():
+        return NpiStore(":memory:")
+    return NpiStore(str(db))
+
+
 def _print(obj: Any) -> None:
     print(json.dumps(obj, indent=2, ensure_ascii=False, default=str))
 
@@ -80,7 +94,7 @@ def cmd_ingest(args: argparse.Namespace) -> int:
 
 
 def cmd_query(args: argparse.Namespace) -> int:
-    store = _store(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" not in f:
@@ -102,7 +116,7 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def cmd_aggregate(args: argparse.Namespace) -> int:
-    store = _store(args.root)
+    store = _store_read(args.root)
     filters: Dict[str, Any] = {}
     for f in args.filter or []:
         if "=" in f:
@@ -119,12 +133,12 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
 
 
 def cmd_lookup_provider(args: argparse.Namespace) -> int:
-    _print(lookup_provider(_store(args.root), args.npi))
+    _print(lookup_provider(_store_read(args.root), args.npi))
     return 0
 
 
 def cmd_lookup_taxonomy(args: argparse.Namespace) -> int:
-    _print(lookup_taxonomy(_store(args.root), args.code, limit=args.limit))
+    _print(lookup_taxonomy(_store_read(args.root), args.code, limit=args.limit))
     return 0
 
 

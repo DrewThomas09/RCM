@@ -70,6 +70,24 @@ def _clamp_int(value: Any, default: int, lo: int, hi: int) -> int:
     return max(lo, min(n, hi))
 
 
+def _numeric(value: Any) -> Optional[float]:
+    """The float form of *value* when it is numeric, else ``None``.
+
+    Canonical columns are all TEXT, so range operators need an explicit
+    numeric compare (``CAST``) when the caller's value is a number —
+    lexicographic TEXT compare silently mis-ranks 9 vs 10. Non-numeric
+    values (ISO dates, codes) keep the TEXT compare.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def _columns(table: str) -> Tuple[str, ...]:
     return TABLES[table].columns
 
@@ -141,10 +159,20 @@ def _build_where(row: RegistryRow, filters: Dict[str, Any], colset: set
             parts = value if isinstance(value, (list, tuple)) else str(value).split(",")
             if len(parts) != 2:
                 raise QueryError(f"between expects two values, got {value!r}")
-            clauses.append(f"{field_name} BETWEEN ? AND ?")
-            args.extend(str(p) for p in parts)
+            nums = [_numeric(p) for p in parts]
+            if all(n is not None for n in nums):
+                # Numeric bounds → numeric compare over the TEXT storage.
+                clauses.append(f"CAST({field_name} AS REAL) BETWEEN ? AND ?")
+                args.extend(nums)
+            else:
+                clauses.append(f"{field_name} BETWEEN ? AND ?")
+                args.extend(str(p) for p in parts)
         elif op == "in":
-            vals = value if isinstance(value, (list, tuple)) else [value]
+            # HTTP/CLI callers can only send ONE string per key, so a
+            # comma-joined list is the documented grammar (mirroring
+            # ``between``); a Python-API list passes through unchanged.
+            vals = (value if isinstance(value, (list, tuple))
+                    else str(value).split(","))
             if not vals:
                 clauses.append("0 = 1")  # empty IN matches nothing
                 continue
@@ -152,8 +180,14 @@ def _build_where(row: RegistryRow, filters: Dict[str, Any], colset: set
             clauses.append(f"{field_name} IN ({placeholders})")
             args.extend(str(v) for v in vals)
         else:
-            clauses.append(f"{field_name} {sql_op} ?")
-            args.append(str(value))
+            num = _numeric(value) if op in ("gt", "gte", "lt", "lte") else None
+            if num is not None:
+                # Numeric bound → numeric compare (see _numeric).
+                clauses.append(f"CAST({field_name} AS REAL) {sql_op} ?")
+                args.append(num)
+            else:
+                clauses.append(f"{field_name} {sql_op} ?")
+                args.append(str(value))
     if not clauses:
         return "", args
     return "WHERE " + " AND ".join(clauses), args

@@ -87,7 +87,8 @@ def _datasets_table(rows: list[dict[str, Any]], *, show_connector: bool = False)
 
 
 def _connector_card(summary: dict[str, Any], rows: list[dict[str, Any]],
-                    ingested: dict[str, int], *, max_rows: int | None = 8) -> str:
+                    ingested: dict[str, int], *, max_rows: int | None = 8,
+                    vintages: dict[str, str] | None = None) -> str:
     name = summary.get("connector", "")
     label = summary.get("label", name)
     n = summary.get("n_datasets", len(rows))
@@ -95,10 +96,13 @@ def _connector_card(summary: dict[str, Any], rows: list[dict[str, Any]],
     n_ing = ingested.get(name)
     ing_html = ""
     if n_ing:
+        vintage = (vintages or {}).get(name, "")
+        vintage_html = (
+            f' · last ingested {_e(vintage)}' if vintage else "")
         ing_html = (
             f'<span style="font-family:var(--ck-mono,monospace);font-size:10px;'
             f'color:var(--sc-positive,#0a8a5f);font-weight:700;">'
-            f'{n_ing:,} rows ingested</span>')
+            f'{n_ing:,} rows ingested{vintage_html}</span>')
     shown = rows if max_rows is None else rows[:max_rows]
     more_html = ""
     if max_rows is not None and len(rows) > max_rows:
@@ -122,11 +126,16 @@ def _connector_card(summary: dict[str, Any], rows: list[dict[str, Any]],
         '</div>')
 
 
-def _kpi_strip() -> str:
-    summaries = _estate.connectors_summary()
+def _kpi_strip(summaries: list[dict[str, Any]] | None = None,
+               ingested: dict[str, int] | None = None) -> str:
+    # Optional precomputed inputs: render_connector_estate computes them
+    # once per request and threads them through (each ingested_counts()
+    # call opens every connector's SQLite file and COUNTs every table).
+    # None falls back to self-service for compatibility.
+    summaries = _estate.connectors_summary() if summaries is None else summaries
     n_conn = len(summaries)
     n_reg = sum(s.get("n_datasets", 0) for s in summaries)
-    ingested = _estate.ingested_counts()
+    ingested = _estate.ingested_counts() if ingested is None else ingested
     n_rows = sum(ingested.values())
     cat_counts = _estate.catalog_dataset_counts()
     n_disc = sum(cat_counts.values())
@@ -266,11 +275,18 @@ def _detail_view(dataset_id: str, params: dict[str, Any]) -> str:
     parts = [back, ck_section_header("REGISTRY", f"declarative row for {dataset_id}"),
              _registry_fields(row)]
 
+    hint = _estate.ingest_hint(owner)
     if n_local is not None:
         sample = _estate.sample_rows(dataset_id, limit=10)
         parts.append(ck_section_header(
             "LOCAL STORE",
             f"{n_local:,} rows ingested · first 10 shown, first 8 columns"))
+        vintage = _estate.dataset_vintage(dataset_id)
+        if vintage:
+            parts.append(
+                '<div style="font-family:var(--ck-mono,monospace);font-size:10px;'
+                'color:var(--ck-text-faint,#8b94a0);margin:-4px 0 8px;">'
+                f'last ingested {_e(vintage)}</div>')
         if sample.get("rows"):
             parts.append('<div class="ck-panel" style="margin-bottom:16px;">'
                          f'<div style="padding:10px 12px;">{_sample_table(sample)}</div></div>')
@@ -280,15 +296,42 @@ def _detail_view(dataset_id: str, params: dict[str, Any]) -> str:
                 'margin-bottom:16px;">Table is empty — fetch this dataset first '
                 '(see the CLI one-liners below).</div>')
         parts.append(_aggregate_panel(dataset_id, params))
-    else:
+    elif hint.get("planned") is False:
+        # Honest absent-data copy: refresh deliberately skips manual-only
+        # connectors, so the old "run refresh, then reload" instruction
+        # could never work for their datasets.
         parts.append(
             '<div style="font-size:11.5px;color:var(--ck-text-dim,#56606f);'
             'margin-bottom:16px;">No local ingest for this connector yet — '
-            'run <code>python -m connectors.cli refresh --db var/connectors</code> '
+            'the estate-level refresh skips it (manual-only: its ingest '
+            'verbs need domain arguments). Ingest with '
+            f'<code>{_e(hint.get("command", ""))}</code> — see '
+            f'<code>{_e(hint.get("readme", f"connectors/{owner}/README.md"))}</code>.'
+            '</div>')
+    else:
+        refresh_cmd = hint.get(
+            "command",
+            f"python -m connectors.cli refresh --db var/connectors "
+            f"--connector {owner}")
+        parts.append(
+            '<div style="font-size:11.5px;color:var(--ck-text-dim,#56606f);'
+            'margin-bottom:16px;">No local ingest for this connector yet — '
+            f'run <code>{_e(refresh_cmd)}</code> '
             'from the repo root, then reload.</div>')
 
     api_url = f"/v1/query/{dataset_id}?limit=10"
     agg_url = f"/v1/query/{dataset_id}/aggregate?group_by=<column>"
+    # Storage-flagged one-liner: without the flag the per-connector CLIs
+    # query an empty default store and print 0 rows even after a full
+    # ingest (the bridge knows each CLI's flag style via the estate SPI).
+    cli_query = (_estate.cli_query_hint(dataset_id)
+                 or f"python -m connectors.{owner}.cli query {dataset_id} --limit 10")
+    if hint.get("planned") is False:
+        ingest_line = (f"python -m connectors.{owner}.cli  "
+                       f"# manual-only ingest — see connectors/{owner}/README.md")
+    else:
+        ingest_line = (f"python -m connectors.cli refresh --db var/connectors "
+                       f"--connector {owner}")
     parts.append(ck_section_header("QUERY IT", "unified /v1 surface + CLI"))
     parts.append(
         '<div class="ck-panel" style="margin-bottom:16px;"><div style="padding:10px 12px;">'
@@ -298,8 +341,8 @@ def _detail_view(dataset_id: str, params: dict[str, Any]) -> str:
         + _code_block(api_url) + _code_block(agg_url) +
         '<div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;'
         'color:var(--ck-text-faint,#8b94a0);">CLI</div>'
-        + _code_block(f"python -m connectors.{owner}.cli query {dataset_id} --limit 10")
-        + _code_block("python -m connectors.cli refresh --db var/connectors")
+        + _code_block(cli_query)
+        + _code_block(ingest_line)
         + "</div></div>")
     return "".join(parts)
 
@@ -344,9 +387,14 @@ def _search_box(q: str) -> str:
         '</form>')
 
 
-def _overview(connector_filter: str) -> str:
-    summaries = _estate.connectors_summary()
-    ingested = _estate.ingested_counts()
+def _overview(connector_filter: str,
+              summaries: list[dict[str, Any]] | None = None,
+              ingested: dict[str, int] | None = None,
+              vintages: dict[str, str] | None = None) -> str:
+    # Same compute-once threading as _kpi_strip: None self-serves.
+    summaries = _estate.connectors_summary() if summaries is None else summaries
+    ingested = _estate.ingested_counts() if ingested is None else ingested
+    vintages = _estate.connector_vintages() if vintages is None else vintages
     by_conn: dict[str, list[dict[str, Any]]] = {}
     for r in _estate.all_datasets():
         by_conn.setdefault(r.get("connector", ""), []).append(r)
@@ -367,13 +415,38 @@ def _overview(connector_filter: str) -> str:
         name = s.get("connector", "")
         parts.append(_connector_card(
             s, by_conn.get(name, []), ingested,
-            max_rows=None if connector_filter else 8))
+            max_rows=None if connector_filter else 8,
+            vintages=vintages))
     return "".join(parts)
 
 
 def render_connector_estate(params: dict[str, Any] | None = None) -> str:
     params = params or {}
     if not _estate.estate_available():
+        failure = _estate.load_failure()
+        if failure:
+            # The estate root RESOLVED but importing it raised — telling
+            # the operator to "check out the full repository" would be
+            # factually wrong (it IS checked out). Surface the cached
+            # import error instead. Both strings are escaped inside
+            # ck_empty_state.
+            root = _estate.repo_root() or "(unresolved)"
+            body = ck_page_title(
+                "Connector Estate", eyebrow="Public Data",
+                meta="connectors/ estate found but failed to load",
+            ) + ck_empty_state(
+                "Connector estate failed to load",
+                f"The connectors/ estate was found at {root} but importing "
+                f"it raised: {failure}. The checkout is present — no need "
+                "to re-clone. Fix the import error (half-updated tree, "
+                "syntax error), then restart the server; the failure is "
+                "cached per root until then.",
+                eyebrow="PUBLIC DATA",
+                icon="⛁", tone="warning")
+            return chartis_shell(
+                body, "Connector Estate",
+                active_nav=_ROUTE,
+                subtitle="Public healthcare API estate — failed to load")
         body = ck_page_title(
             "Connector Estate", eyebrow="Public Data",
             meta="repo-root connectors/ estate not found on this deployment",
@@ -391,10 +464,15 @@ def render_connector_estate(params: dict[str, Any] | None = None) -> str:
                              active_nav=_ROUTE,
                              subtitle="Public healthcare API estate — unavailable")
 
+    # Compute the expensive per-request inputs ONCE and thread them
+    # through the sub-renderers — ingested_counts() opens every
+    # connector's SQLite file and COUNTs every canonical table, and this
+    # page used to recompute it up to three times per GET.
     summaries = _estate.connectors_summary()
+    ingested = _estate.ingested_counts()
     n_conn = len(summaries)
     n_reg = sum(s.get("n_datasets", 0) for s in summaries)
-    n_rows = sum(_estate.ingested_counts().values())
+    n_rows = sum(ingested.values())
     meta = (f"{n_conn} connectors · {n_reg} registered datasets · "
             f"{n_rows:,} rows ingested locally")
 
@@ -404,7 +482,7 @@ def render_connector_estate(params: dict[str, Any] | None = None) -> str:
 
     parts = [
         ck_page_title("Connector Estate", eyebrow="Public Data", meta=meta),
-        _kpi_strip(),
+        _kpi_strip(summaries, ingested),
     ]
     if dataset:
         parts.append(_detail_view(dataset, params))
@@ -413,7 +491,7 @@ def render_connector_estate(params: dict[str, Any] | None = None) -> str:
         parts.append(_search_view(q))
     else:
         parts.append(_search_box(""))
-        parts.append(_overview(connector))
+        parts.append(_overview(connector, summaries, ingested))
     return chartis_shell(
         "".join(parts), "Connector Estate",
         active_nav=_ROUTE,

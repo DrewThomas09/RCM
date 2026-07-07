@@ -381,6 +381,7 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
     #      file order. ----
     flag_rows = getattr(res, "flag_rows", None) or {}
     _row_billed: dict = {}
+    _billed_ci = None
     if flag_rows and headers:
         try:
             # Lazy + guarded: a detection failure degrades to file order,
@@ -428,7 +429,20 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
             if i in by_idx:
                 wl.append([i] + list(by_idx[i]))
         if len(idxs) > 200 or by_dollars:
-            note = ("Sorted by billed $ descending. " if by_dollars else "")
+            note = ""
+            if by_dollars:
+                # The generic 'amount' hint can land on a paid-type column
+                # (remit-side files) — say WHICH column ranked the rows
+                # rather than claiming "billed $" for money that isn't.
+                _col = str(headers[_billed_ci]) if (
+                    _billed_ci is not None and _billed_ci < len(headers)
+                ) else ""
+                if any(h in _col.lower()
+                       for h in ("billed", "charge", "submitted")):
+                    note = "Sorted by billed $ descending. "
+                else:
+                    note = (f"Sorted by {_col} descending "
+                            "(largest dollars first). ")
             if len(idxs) > 200:
                 note += (f"{len(idxs) - 200} more flagged row(s) in the "
                          "full worklist CSV download.")
@@ -458,6 +472,64 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
                             f"{m.get('query','')} ({m.get('state','')}) → "
                             f"{cands[0]['npi']} {cands[0].get('name','')}"])
         sheets.append(Sheet("NPPES", np_rows, col_widths=[10, 60]))
+
+    # ---- Connectors (coverage counters + plan + reference sources) ----
+    # Guarded like every optional sheet: renders only when the run produced
+    # any connector payload, so an offline run's workbook doesn't grow an
+    # empty tab. Coverage counters (rows_seen/rows_enriched) come from
+    # resolve_drugs; plan states from connectors.plan(); source health from
+    # advanced.reference_status (vendor_adapter embeds connector_status()).
+    _conns = [c for c in (res.connectors or [])
+              if isinstance(c, dict) and c.get("id") != "error"]
+    _orf = res.order_referring or {}
+    _plan = [p for p in (res.connector_plan or []) if isinstance(p, dict)]
+    _refst = []
+    try:
+        _refst = [r for r in ((res.advanced or {}).get("reference_status")
+                              or []) if isinstance(r, dict)]
+    except Exception:  # noqa: BLE001 — advanced may be any shape
+        _refst = []
+    if _conns or _plan or _refst or (_orf and not _orf.get("error")):
+        cn_rows: List[list] = []
+        if _conns:
+            cn_rows.append(_header(["Connector", "Cells seen", "Enriched",
+                                    "Result"]))
+            for c in _conns:
+                cn_rows.append([str(c.get("label") or c.get("id") or ""),
+                                int(c.get("rows_seen") or 0),
+                                int(c.get("rows_enriched") or 0),
+                                str(c.get("note") or "")])
+            cn_rows.append(["", "", "", ""])
+        if _orf and not _orf.get("error"):
+            cn_rows.append(_header(["Ordering/referring screen", "Checked",
+                                    "Active", "Not found"]))
+            cn_rows.append([", ".join(str(x) for x in
+                                      (_orf.get("columns") or [])),
+                            int(_orf.get("checked") or 0),
+                            int(_orf.get("active") or 0),
+                            int(_orf.get("not_found") or 0)])
+            cn_rows.append(["", "", "", ""])
+        if _plan:
+            cn_rows.append(_header(["Applicable source", "Mode", "State",
+                                    "Why / what to do"]))
+            for p in _plan:
+                if not p.get("applies"):
+                    continue
+                cn_rows.append([str(p.get("name") or p.get("id") or ""),
+                                str(p.get("mode") or ""),
+                                str(p.get("state") or ""),
+                                str(p.get("reason") or "")])
+            cn_rows.append(["", "", "", ""])
+        if _refst:
+            cn_rows.append(_header(["Reference source", "Status", "Vintage",
+                                    "Note"]))
+            for r in _refst:
+                cn_rows.append([str(r.get("name") or r.get("id") or ""),
+                                str(r.get("status") or ""),
+                                str(r.get("vintage") or ""),
+                                str(r.get("note") or "")])
+        sheets.append(Sheet("Connectors", cn_rows,
+                            col_widths=[34, 12, 12, 64]))
 
     # ---- Cleaned data (last; capped) ----
     data_rows: List[list] = []

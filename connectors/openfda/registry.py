@@ -25,8 +25,21 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List
 
 from .endpoints import ENDPOINTS, EndpointSpec
+from .tables import TABLES
 
 SOURCE = "openfda"
+
+# A spec's ``date_field`` names the RAW openFDA field (used by the live
+# incremental fetch window), which is not always a canonical column — the
+# registry's ``date_field`` is a *query* contract (``{date_field}__gte=…``
+# must work against the target table), so raw-only names are mapped to
+# the canonical column the normalizer writes them into, or dropped when
+# the canonical table carries no date at all (drug_label → the dateless
+# dim_drug_product). Keyed by endpoint key so an unrelated spec reusing a
+# raw name is not silently remapped.
+_RAW_DATE_TO_CANONICAL: Dict[str, str] = {
+    "device_recall": "report_date",   # raw event_date_posted → report_date
+}
 
 
 @dataclass(frozen=True)
@@ -48,6 +61,22 @@ class RegistryRow:
         return asdict(self)
 
 
+def _canonical_date_field(spec: EndpointSpec) -> str:
+    """The spec's date field only if it is a real column of the target table.
+
+    Advertising a raw-only field here would hand every caller a
+    ``QueryError('unknown filter field …')`` the moment they build the
+    documented incremental filter — the exact drift this guards against
+    (drug_label's ``effective_time``, device_recall's
+    ``event_date_posted``).
+    """
+    if not spec.date_field:
+        return ""
+    if spec.date_field in TABLES[spec.target_table].columns:
+        return spec.date_field
+    return _RAW_DATE_TO_CANONICAL.get(spec.key, "")
+
+
 def _row(spec: EndpointSpec) -> RegistryRow:
     return RegistryRow(
         dataset_id=spec.dataset_id,
@@ -59,7 +88,7 @@ def _row(spec: EndpointSpec) -> RegistryRow:
         join_keys=list(spec.join_keys),
         target_table=spec.target_table,
         source_filter=spec.key,
-        date_field=spec.date_field or "",
+        date_field=_canonical_date_field(spec),
     )
 
 
