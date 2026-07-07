@@ -171,11 +171,14 @@ _DASH_CSS = """<style>
   outline-offset:2px; }
 .dash-dim { color:var(--sc-text-dim,#465366); }
 .dash-faint { color:var(--sc-text-faint,#7a8699); }
-.dash-note { margin:0 0 10px; color:var(--sc-text-dim,#465366);
+/* Element-qualified: .wc-container p (element+class) would otherwise
+   out-rank a bare class and re-impose its 4px margins on these. */
+p.dash-note { margin:0 0 10px; color:var(--sc-text-dim,#465366);
   font-size:12px; }
-.dash-note-after { margin:10px 0 0; color:var(--sc-text-dim,#465366);
+p.dash-note-after { margin:10px 0 0; color:var(--sc-text-dim,#465366);
   font-size:12px; }
-.dash-note.sm, .dash-note-after.sm { font-size:11px; }
+p.dash-note.sm, p.dash-note-after.sm { font-size:11px; }
+.dash-actions-note { font-weight:normal; font-size:11px; }
 .dash-form-inline { display:inline; margin:0; }
 .dash-grow { flex:1; }
 .dash-static { flex-shrink:0; }
@@ -189,6 +192,9 @@ _DASH_CSS = """<style>
   font-size:11px; font-family:var(--sc-mono,'JetBrains Mono',monospace);
   white-space:nowrap; }
 .dash-ul { list-style:none; padding:0; margin:0; }
+.dash-ul.dash-evts { font-size:13px; }
+.dash-svg-mid { vertical-align:middle; }
+.dash-id-col { min-width:100px; }
 .dash-list-row { padding:8px 0;
   border-bottom:1px solid var(--sc-bone,#ece5d6);
   display:flex; align-items:center; gap:12px; }
@@ -239,6 +245,7 @@ _DASH_CSS = """<style>
   color:var(--sc-text-dim,#465366);
   background:var(--sc-parchment,#f5f1ea); min-width:42px;
   text-align:center; }
+.dash-tag.ml { margin-left:6px; }
 .dash-tag.t-neg  { color:var(--sc-negative,#b5321e); }
 .dash-tag.t-warn { color:var(--sc-warning,#b8732a); }
 .dash-tag.t-pos  { color:var(--sc-positive,#0a8a5f); }
@@ -271,7 +278,7 @@ _DASH_CSS = """<style>
   padding:22px 26px; border-radius:2px; margin:6px 0 18px; }
 .dash-hero-top { display:flex; align-items:center;
   justify-content:space-between; margin-bottom:14px; }
-.dash-hero-label { font-size:11px; font-weight:700;
+h2.dash-hero-label { font-size:11px; font-weight:700; margin:0;
   text-transform:uppercase; letter-spacing:0.18em; color:#fff; }
 .dash-hero-live { display:inline-flex; align-items:center; gap:6px;
   font-size:10px; color:rgba(255,255,255,0.72); font-weight:600;
@@ -284,8 +291,8 @@ _DASH_CSS = """<style>
   letter-spacing:-0.02em; }
 .dash-hero-stat .l { font-size:10px; font-weight:600;
   text-transform:uppercase; letter-spacing:0.1em;
-  color:rgba(255,255,255,0.78); margin-top:6px; }
-.dash-hero-sub { font-size:10px; font-weight:600;
+  color:rgba(255,255,255,0.78); margin:6px 0 0; }
+p.dash-hero-sub { font-size:10px; font-weight:600;
   text-transform:uppercase; letter-spacing:0.08em;
   color:rgba(255,255,255,0.78); margin:8px 0 4px; }
 .dash-mosaic { display:flex; flex-wrap:wrap; gap:4px; margin-top:2px;
@@ -305,7 +312,7 @@ _DASH_CSS = """<style>
 .dash-hero-moic { display:flex; align-items:center; gap:14px;
   margin-top:14px; padding-top:12px;
   border-top:1px solid rgba(255,255,255,0.18); flex-wrap:wrap; }
-.dash-hero-moic .lab { font-size:10px; font-weight:600;
+.dash-hero-moic .lab { font-size:10px; font-weight:600; margin:0;
   text-transform:uppercase; letter-spacing:0.08em;
   color:rgba(255,255,255,0.78); flex-shrink:0; }
 .dash-hero-moic .big { font-size:28px; font-weight:700; color:#fff;
@@ -313,14 +320,15 @@ _DASH_CSS = """<style>
 .dash-hero-moic .panel { background:#fff; padding:6px 10px;
   border-radius:2px; flex-shrink:0; }
 .dash-hero-moic .pct { font-size:11px; color:rgba(255,255,255,0.78);
-  font-variant-numeric:tabular-nums; }
+  font-variant-numeric:tabular-nums; margin:0; }
 .dash-hero-syn { background:rgba(255,255,255,0.08);
   border-left:3px solid var(--sc-warning,#b8732a); padding:12px 16px;
   border-radius:2px; margin:18px 0 0; }
 .dash-hero-syn .eb { font-size:10px; font-weight:600;
   text-transform:uppercase; letter-spacing:0.1em;
-  color:rgba(255,255,255,0.78); margin-bottom:4px; }
-.dash-hero-syn .tx { font-size:14px; color:#fff; line-height:1.5; }
+  color:rgba(255,255,255,0.78); margin:0 0 4px; }
+.dash-hero-syn .tx { font-size:14px; color:#fff; line-height:1.5;
+  margin:0; }
 @keyframes wc-pulse {
   0%,100% { opacity:1; transform:scale(1); }
   50% { opacity:0.55; transform:scale(0.85); } }
@@ -349,10 +357,14 @@ _DASH_CSS = """<style>
 .dash-insight-positive .dash-insight-dot { background:var(--sc-positive,#0a8a5f); }
 .dash-insight-neutral  .dash-insight-dot { background:var(--sc-teal-ink,#155752); }
 .dash-insight-main { flex:1; }
-.dash-insight-eyebrow {
+p.dash-insight-eyebrow {
   font-family:var(--sc-mono,'JetBrains Mono',monospace); font-size:10px;
   font-weight:600; text-transform:uppercase; letter-spacing:0.08em;
-  color:var(--sc-text-dim,#465366); }
+  color:var(--sc-text-dim,#465366); margin:0; }
+/* Undo the .wc-container h3 uppercase/tracking — the headline is a
+   serif sentence, not a label. */
+h3.dash-insight-headline { margin:0; text-transform:none;
+  letter-spacing:normal; }
 .dash-insight-headline a {
   font-family:var(--sc-serif,'Source Serif 4',serif); font-size:18px;
   font-weight:600; color:var(--sc-text,#1a2332); text-decoration:none;
@@ -364,18 +376,18 @@ _DASH_CSS = """<style>
 .dash-insight-headline a:focus-visible { outline:none; }
 .dash-insight:focus-within {
   outline:2px solid var(--sc-teal-ink,#155752); outline-offset:1px; }
-.dash-insight-body { font-size:13px; margin-top:6px;
+p.dash-insight-body { font-size:13px; margin:6px 0 0;
   color:var(--sc-text-dim,#465366); }
-.dash-insight-more { margin-top:8px; font-size:11px;
+p.dash-insight-more { margin:8px 0 0; font-size:11px;
   color:var(--sc-text-dim,#465366); }
 .dash-insight-more a { position:relative; z-index:1; }
 .dash-insight-arrow { flex-shrink:0; font-size:18px;
   color:var(--sc-text-faint,#7a8699); }
 
 /* Exposure bars */
-.dash-subhead { font-size:11px; font-weight:600;
+h3.dash-subhead { font-size:11px; font-weight:600;
   color:var(--sc-text,#1a2332); text-transform:uppercase;
-  letter-spacing:0.05em; margin-bottom:6px; }
+  letter-spacing:0.05em; margin:0 0 6px; }
 .dash-subhead .qual { font-weight:normal;
   color:var(--sc-text-faint,#7a8699); text-transform:none;
   letter-spacing:normal; }
@@ -391,7 +403,7 @@ _DASH_CSS = """<style>
 .dash-bar-row .num { color:var(--sc-text-dim,#465366);
   font-variant-numeric:tabular-nums; text-align:right;
   font-family:var(--sc-mono,'JetBrains Mono',monospace); }
-.dash-empty-inline { margin:0; color:var(--sc-text-faint,#7a8699);
+p.dash-empty-inline { margin:0; color:var(--sc-text-faint,#7a8699);
   font-size:12px; font-style:italic; }
 
 /* Pinned-deal cards */
@@ -501,8 +513,8 @@ def _render_analyses_section() -> str:
     return _wc.section_card(
         "What you can run", table, pad=False,
         actions_html=(
-            '<span class="dash-faint" style="font-weight:normal;'
-            'font-size:11px;">click ★ to save as template</span>'
+            '<span class="dash-faint dash-actions-note">'
+            'click ★ to save as template</span>'
         ),
     )
 
@@ -1391,13 +1403,13 @@ def _render_portfolio_pulse_hero(
         )
         moic_strip = (
             '<div class="dash-hero-moic">'
-            '<div class="lab">'
-            'Predicted exit MOIC<br/>(illustrative corpus)</div>'
+            '<p class="lab">'
+            'Predicted exit MOIC<br/>(illustrative corpus)</p>'
             f'<div class="big">{moic_value}</div>'
             f'<div class="panel">{bar}</div>'
-            f'<div class="pct">'
+            f'<p class="pct">'
             f'p25 {moic_p25:.2f}x · p75 {moic_p75:.2f}x'
-            f'</div></div>'
+            f'</p></div>'
         )
 
     # ── Band-mosaic legend ──────────────────────────────────────
@@ -1425,7 +1437,7 @@ def _render_portfolio_pulse_hero(
         return (
             '<div class="dash-hero-stat">'
             f'<div class="v">{big}</div>'
-            f'<div class="l">{small}</div>'
+            f'<p class="l">{small}</p>'
             '</div>'
         )
 
@@ -1460,18 +1472,20 @@ def _render_portfolio_pulse_hero(
     syn_text = _html.escape(pulse["headline_synthesis"])
     synthesis = (
         '<div class="dash-hero-syn">'
-        '<div class="eb">The synthesis you\'d miss</div>'
-        f'<div class="tx">{syn_text}</div>'
+        '<p class="eb">The synthesis you\'d miss</p>'
+        f'<p class="tx">{syn_text}</p>'
         '</div>'
     )
 
     # ── Live indicator + label row ──────────────────────────────
+    # <header>/<h2> so the hero joins the page's heading outline the
+    # same way every section_card title does.
     label_row = (
-        '<div class="dash-hero-top">'
-        '<div class="dash-hero-label">Portfolio pulse</div>'
+        '<header class="dash-hero-top">'
+        '<h2 class="dash-hero-label">Portfolio pulse</h2>'
         '<span class="dash-hero-live">'
         '<span class="wc-pulse-dot"></span> live</span>'
-        '</div>'
+        '</header>'
     )
 
     # Navy panel per the kit hero idiom (ck_search_hero); all styling
@@ -1480,8 +1494,8 @@ def _render_portfolio_pulse_hero(
         '<section class="dash-hero" id="dash-hero">'
         + label_row
         + stats
-        + '<div class="dash-hero-sub">'
-        'Deals (sorted by health, hover for name)</div>'
+        + '<p class="dash-hero-sub">'
+        'Deals (sorted by health, hover for name)</p>'
         + mosaic
         + legend
         + moic_strip
@@ -1520,29 +1534,48 @@ def _render_headline_insight_section(
     extras = len(all_ins) - 1
     see_all = ""
     if extras > 0:
+        from ._chartis_kit import ck_arrow_link
         see_all = (
-            f'<div class="dash-insight-more">'
+            f'<p class="dash-insight-more">'
             f'+ {extras} more signal{"s" if extras != 1 else ""} · '
-            f'<a href="/insights" class="dash-link">'
-            f'see all →</a>'
-            f'</div>'
+            f'{ck_arrow_link("see all", "/insights")}'
+            f'</p>'
         )
     # Whole-card click comes from the ::after stretched-link on the
     # headline anchor — valid HTML, keyboard focusable, no JS hover.
+    # <article>/<h3> because the card is a self-contained story with
+    # a real headline — screen readers get it in the outline.
     return (
-        f'<div class="dash-insight dash-insight-{tone}">'
+        f'<article class="dash-insight dash-insight-{tone}">'
         f'<span class="dash-insight-dot" aria-hidden="true"></span>'
         f'<div class="dash-insight-main">'
-        f'<div class="dash-insight-eyebrow">'
-        f'Sharpest insight · today</div>'
-        f'<div class="dash-insight-headline">'
-        f'<a href="{_html.escape(href)}">{headline}</a></div>'
-        f'<div class="dash-insight-body">{body}</div>'
+        f'<p class="dash-insight-eyebrow">'
+        f'Sharpest insight · today</p>'
+        f'<h3 class="dash-insight-headline">'
+        f'<a href="{_html.escape(href)}">{headline}</a></h3>'
+        f'<p class="dash-insight-body">{body}</p>'
         f'{see_all}'
         f'</div>'
         f'<span class="dash-insight-arrow" aria-hidden="true">→</span>'
-        f'</div>'
+        f'</article>'
     )
+
+
+def _fmt_event_ts(iso19: str) -> str:
+    """Compact display form of an event timestamp.
+
+    Today's events render as bare HH:MM:SS — inside a 24-hour feed
+    the date is implied, and repeating it twenty times turns the
+    column into noise. Yesterday's events keep the date (ISO order,
+    date first, per house style). The full 19-char ISO string rides
+    in the row's title attribute either way, so nothing is lost.
+    """
+    if len(iso19) < 19:
+        return iso19
+    today = datetime.now(timezone.utc).date().isoformat()
+    if iso19[:10] == today:
+        return iso19[11:19]
+    return f"{iso19[:10]} {iso19[11:16]}"
 
 
 def _render_since_yesterday_section(db_path: str) -> str:
@@ -1582,7 +1615,9 @@ def _render_since_yesterday_section(db_path: str) -> str:
 
     rows: List[str] = []
     for ev in events:
-        ts = _html.escape(str(ev.get("at", ""))[:19])
+        ts_full = str(ev.get("at", ""))[:19]
+        ts = _html.escape(_fmt_event_ts(ts_full))
+        ts_title = _html.escape(ts_full)
         tag, tag_tone = kind_tags.get(
             str(ev.get("kind", "")), ("EVENT", ""))
         label = _html.escape(ev.get("label", ""))
@@ -1614,7 +1649,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     f'<span class="dash-btn-row">'
                     # Ack now (snooze_days=0)
                     f'<form method="POST" action="/api/alerts/ack" '
-                    f'style="margin:0;" '
+                    f'class="dash-form-inline" '
                     f'onsubmit="event.target.querySelector(\'button\')'
                     f'.disabled=true;">'
                     f'{hidden}'
@@ -1624,7 +1659,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
                     # Snooze 7d (snooze_days=7) — partner says "I see
                     # this, but don't bother me about it for a week"
                     f'<form method="POST" action="/api/alerts/ack" '
-                    f'style="margin:0;" '
+                    f'class="dash-form-inline" '
                     f'onsubmit="event.target.querySelector(\'button\')'
                     f'.disabled=true;">'
                     f'{hidden}'
@@ -1642,7 +1677,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
             f'<span class="dash-evt-body">'
             f'{label}</span>'
             f'{ack_form}'
-            f'<span class="dash-ts">{ts}</span>'
+            f'<span class="dash-ts" title="{ts_title}">{ts}</span>'
             f'</li>'
         )
     # Sort hint — the list is always newest-first, but without this
@@ -1658,7 +1693,7 @@ def _render_since_yesterday_section(db_path: str) -> str:
     )
     body = (
         hint
-        + f'<ul class="dash-ul" style="font-size:13px;">'
+        + f'<ul class="dash-ul dash-evts">'
         f'{"".join(rows)}</ul>'
     )
     return _wc.section_card("Since yesterday", body, pad=True)
@@ -1707,7 +1742,7 @@ def _sparkline_svg(scores: List[int], *,
         f'<svg width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" '
         f'aria-label="Health score trend, {n} points" '
-        f'style="vertical-align:middle;">'
+        f'class="dash-svg-mid">'
         f'<polyline fill="none" stroke="{stroke}" stroke-width="1.5" '
         f'stroke-linejoin="round" stroke-linecap="round" '
         f'points="{polyline}"/>'
@@ -1746,7 +1781,7 @@ def _render_saved_templates_section(db_path: str) -> str:
         desc = t.get("description") or ""
         name = t.get("name") or "unnamed"
         pinned_chip = (
-            '<span class="dash-tag t-teal" style="margin-left:6px;">'
+            '<span class="dash-tag t-teal ml">'
             'pinned</span>'
         ) if t.get("pinned") else ""
         # Clone button — copy this template's route + params under a
@@ -1894,8 +1929,7 @@ def _render_needs_attention_section(
 
         rows.append(
             f'<li class="dash-list-row pad-lg">'
-            f'<span class="dash-id dash-static" '
-            f'style="min-width:100px;">'
+            f'<span class="dash-id dash-static dash-id-col">'
             f'{_html.escape(d["deal_id"])}</span>'
             f'<a href="/deal/{_html.escape(d["deal_id"])}" '
             f'class="dash-link dash-grow">'
@@ -1942,6 +1976,7 @@ def _render_exposure_section(
     is meaningless on a single deal).
     """
     from . import _web_components as _wc
+    from ._chartis_kit import ck_fmt_percent
     if deals is None:
         try:
             from .portfolio_risk_scan_page import _gather_per_deal
@@ -1985,19 +2020,25 @@ def _render_exposure_section(
                 f'<div class="dash-bar-track">'
                 f'<div class="dash-bar-fill {tone}" '
                 f'style="width:{bar_w}%;"></div></div>'
+                # precision=0 is deliberate here (house pct style is
+                # 1dp, but "3 · 60%" whole-share chips are pinned by
+                # tests/test_exposure_section.py and read cleaner on
+                # a count-of-deals share).
                 f'<span class="num">'
-                f'{count} · {pct:.0f}%</span></div>'
+                f'{count} · '
+                f'{ck_fmt_percent(count / total, precision=0)}'
+                f'</span></div>'
             )
         return "".join(rows)
 
     sector_block = (
-        '<div class="dash-subhead">By sector</div>'
+        '<h3 class="dash-subhead">By sector</h3>'
         + _bar_chart(sector_counts, tone="teal")
     )
     chain_block = (
-        '<div class="dash-subhead mt">By chain '
+        '<h3 class="dash-subhead mt">By chain '
         '<span class="qual">'
-        '· deals where CMS POS knows the parent</span></div>'
+        '· deals where CMS POS knows the parent</span></h3>'
         + (_bar_chart(chain_counts, tone="warn") if chain_counts
            else '<p class="dash-empty-inline">'
                 'No chain-affiliated deals: '
@@ -2044,7 +2085,7 @@ def _moic_range_bar(p25: Optional[float],
         f'<svg width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" '
         f'aria-label="MOIC range chart" '
-        f'style="vertical-align:middle;">'
+        f'class="dash-svg-mid">'
         # Background track
         f'<rect x="0" y="{height/2 - 2}" width="{width}" height="4" '
         f'fill="#E8E0D0"/>'
@@ -2082,7 +2123,7 @@ def _render_predicted_outcomes_section(
     scans on every render.
     """
     from . import _web_components as _wc
-    from ._chartis_kit import ck_fmt_moic
+    from ._chartis_kit import ck_fmt_moic, ck_fmt_percent
     try:
         from ..portfolio.store import PortfolioStore
         from ..deals.watchlist import list_starred
@@ -2209,8 +2250,9 @@ def _render_predicted_outcomes_section(
         any_prediction = True
 
         bar = _moic_range_bar(p25, median, p75)
-        # House numeric style: percentages carry 1 decimal place.
-        win_pct = f"{win_rate * 100:.1f}%" if win_rate else "—"
+        # House numeric style: percentages carry 1 decimal place —
+        # ck_fmt_percent takes the raw ratio and applies exactly that.
+        win_pct = ck_fmt_percent(win_rate) if win_rate else "—"
         name = scan_row.get("name") or deal_id
 
         # "See why" deep-link — preserves the EXACT target profile
@@ -2464,7 +2506,7 @@ def _render_pinned_deals_section(db_path: str) -> str:
         "fair":      ("warning", "#b8732a"),
         "poor":      ("negative", "#b5321e"),
         "critical":  ("negative", "#b5321e"),
-        "unknown":   ("neutral", "#5C6878"),
+        "unknown":   ("neutral", "#7a8699"),
     }
 
     try:
@@ -2625,7 +2667,9 @@ def _render_recent_results_section(db_path: str) -> str:
                 "queued": f'{_dot("never")}queued',
                 "failed": f'{_dot("cold")}failed',
             }.get(j.status, _html.escape(j.status))
-            ts = _html.escape(j.created_at or "")
+            # Trim sub-second noise — ISO to the second is the house
+            # display grain for a submitted-at column.
+            ts = _html.escape((j.created_at or "")[:19])
             job_id = _html.escape(j.job_id or "")
             kind = _html.escape(j.kind or "")
             rows.append([

@@ -21,7 +21,6 @@ error and the fast deterministic results still stand.
 """
 from __future__ import annotations
 
-import os
 import threading
 import uuid
 from pathlib import Path
@@ -43,27 +42,21 @@ _PREFLIGHT_TIMEOUT_S = 4.0
 
 
 def _default_probe(timeout: float = _PREFLIGHT_TIMEOUT_S) -> bool:
-    """Can this box plausibly reach data.cms.gov? A single bounded TCP
-    connect — to the configured HTTPS proxy when one is set (requests would
-    route through it, so probing the origin directly would falsely fail),
-    otherwise to the origin itself. Never raises."""
-    import socket
-    from urllib.parse import urlparse
-    host, port = "data.cms.gov", 443
-    proxy = (os.environ.get("HTTPS_PROXY")
-             or os.environ.get("https_proxy") or "").strip()
-    if proxy:
-        try:
-            p = urlparse(proxy if "://" in proxy else "//" + proxy)
-            if p.hostname:
-                host, port = p.hostname, int(p.port or 3128)
-        except (ValueError, TypeError):
-            pass
+    """Can this box plausibly reach data.cms.gov? Delegates to the bounded
+    TCP preflight in the connectors estate (``connectors.net_preflight``) —
+    the codebase's home for network-touching code — so this offline cleaner
+    package itself imports no network modules. When that helper is not
+    importable (or itself misbehaves) the probe answers optimistically and
+    the wall-clock watchdog remains the only guard, exactly the
+    pre-preflight behavior. Never raises."""
     try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return True
-    except OSError:
-        return False
+        from connectors.net_preflight import can_reach_cms
+    except Exception:  # noqa: BLE001 — no preflight helper: watchdog guards
+        return True
+    try:
+        return bool(can_reach_cms(timeout=timeout))
+    except Exception:  # noqa: BLE001 — a broken probe must not block a run
+        return True
 
 
 def available() -> bool:

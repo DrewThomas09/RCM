@@ -810,12 +810,13 @@ body.analysis-workbench {{
 }}
 .analysis-workbench .dq-question {{ margin-top: 5px; }}
 .analysis-workbench .dq-trigger {{ font-size: 11px; margin-top: 3px; }}
+/* Group head wraps the kit .ck-eyebrow (caps + teal dash) and adds
+   the list rhythm: top margin + hairline underline. */
 .analysis-workbench .dq-group-head {{
-  font-family: "JetBrains Mono", monospace; font-size: 10.5px;
-  font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--wb-text-dim); margin: 16px 0 6px;
+  margin: 16px 0 6px;
   padding-bottom: 4px; border-bottom: 1px solid var(--wb-border);
 }}
+.analysis-workbench .dq-group-head .ck-eyebrow {{ font-size: 10.5px; }}
 .analysis-workbench .dq-group-head:first-child {{ margin-top: 4px; }}
 
 /* Provenance list */
@@ -1158,6 +1159,11 @@ body.analysis-workbench {{
 # ── Value formatting ─────────────────────────────────────────────────
 
 def _fmt_money(v: Optional[float]) -> str:
+    # HOUSE-RULE DEVIATION (deliberate): $M renders at 1dp and $K/$ at
+    # 0dp, not the house 2dp-dollars rule. The exact strings "$13.0M",
+    # "$10.0M" and "$14.0M" are pinned by test_analysis_workbench and
+    # test_scenario_overlay (and mirrored in the page JS fmtMoney), so
+    # changing precision here requires a coordinated test cycle.
     if v is None or v != v:
         return "—"
     try:
@@ -1556,11 +1562,18 @@ def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
     cov_pct = float(packet.completeness.coverage_pct or 0.0)
     obs_tone = "green" if cov_pct >= 0.75 else "amber" if cov_pct >= 0.50 else "red"
 
+    em_html = ck_provenance_tooltip(
+        "Entry multiple", _esc(em_str),
+        explainer="EV / EBITDA multiple assumed at entry — a bridge "
+                  "assumption (editable on the Assumptions tab), not "
+                  "a computed output.",
+    )
     moic_html = ck_provenance_tooltip(
         "Base MOIC", _esc(moic_str),
         explainer="P50 of the Monte Carlo MOIC distribution — the "
                   "median simulated multiple on invested capital, not "
                   "a point estimate.",
+        inject_css=False,
     )
     irr_html = ck_provenance_tooltip(
         "Base IRR", _esc(irr_str),
@@ -1583,14 +1596,21 @@ def _hero_kpi_strip(packet: DealAnalysisPacket) -> str:
                   "was measured.",
         inject_css=False,
     )
+    obs_html = ck_provenance_tooltip(
+        "Metrics observed", _esc(obs_str),
+        explainer="Registry metrics with observed (partner-entered) "
+                  "values — the numerator of the coverage grade. "
+                  "Predicted and benchmark fills do not count.",
+        inject_css=False,
+    )
 
     cards = [
-        (_esc(em_str), "ENTRY MULTIPLE",   "EBITDA · base case",     ""),
+        (em_html,      "ENTRY MULTIPLE",   "EBITDA · base case",     ""),
         (moic_html,    "BASE MOIC",        "5-year hold",            moic_tone),
         (irr_html,     "BASE IRR",         "Gross, levered",         irr_tone),
         (flags_html,   "COVENANT FLAGS",   "From risk scan",         cov_tone),
         (verdict_html, "PARTNER VERDICT",  "Rules-based screen",     verdict_tone),
-        (_esc(obs_str),"METRICS OBSERVED", "Of registry",            obs_tone),
+        (obs_html,     "METRICS OBSERVED", "Of registry",            obs_tone),
     ]
     cells = "".join(
         f'<div class="wb-hero-card{" tone-" + tone if tone else ""}">'
@@ -1736,7 +1756,17 @@ def _render_overview(packet: DealAnalysisPacket) -> str:
         and bool(_bridge.per_metric_impacts)
     )
     if _bridge_ran:
-        hero_html = f'<div class="hero-number pos">{_fmt_money(total_impact)}</div>'
+        # Explain-this-number hover on the page's biggest figure —
+        # same idiom as the hero KPI strip (CSS injected there).
+        _hero_val = ck_provenance_tooltip(
+            "EBITDA opportunity", _fmt_money(total_impact),
+            explainer="Sum of the per-lever EBITDA impacts from "
+                      "current to target (moderate tier) computed by "
+                      "the bridge — the figure the waterfall "
+                      "reconciles.",
+            inject_css=False,
+        )
+        hero_html = f'<div class="hero-number pos">{_hero_val}</div>'
         # Caption interpolates the real current → target EBITDA rather
         # than printing the literal template words.
         hero_caption = (
@@ -2538,12 +2568,18 @@ def _render_mc(packet: DealAnalysisPacket) -> str:
 
     n_sims = mc.n_sims or 0
     conv = mc.convergence_check or {}
-    conv_status = "converged" if conv.get("converged") else "not converged"
+    converged = bool(conv.get("converged"))
+    # Convergence is a signal, not title prose — kit badge tone
+    # (positive / warning) instead of a parenthesised aside.
+    conv_badge = ck_signal_badge(
+        "converged" if converged else "not converged",
+        tone="positive" if converged else "warning",
+    )
     return f"""
     <div class="wb-tab-panel" data-panel="mc" {_panel_attrs("mc")}>
       {intro}
       <div class="wb-card">
-        <div class="wb-card-title">EBITDA impact — percentile band ({n_sims:,} sims · {conv_status})</div>
+        <div class="wb-card-title">EBITDA impact — percentile band ({n_sims:,} sims) {conv_badge}</div>
         <div class="histo">{histo_svg}</div>
         <div class="wb-chart-caption">Shape approximated from P10–P90 percentiles — not raw draws</div>
       </div>
@@ -2780,6 +2816,9 @@ def _render_pairwise_matrix(
             cls = "pw-high" if prob >= 0.60 else (
                 "pw-low" if prob <= 0.40 else ""
             )
+            # HOUSE-RULE DEVIATION (deliberate): win probabilities
+            # render 0dp, not the 1dp-percentages rule — the exact
+            # strings "25%"/"75%" are pinned by test_scenario_overlay.
             cells.append(
                 f'<td class="{cls}">{prob * 100:.0f}%</td>'
             )
@@ -3133,16 +3172,26 @@ def _render_risk_diligence(packet: DealAnalysisPacket) -> str:
         if dq_by_priority[pri]:
             n_q = len(dq_by_priority[pri])
             noun = "questions" if n_q != 1 else "question"
+            # Group head = the kit eyebrow (caps + teal dash), wrapped
+            # for the rhythm rules (top margin, hairline underline).
             dq_html += (
-                f'<div class="dq-group-head">{pri} · {n_q} {noun}</div>'
+                f'<div class="dq-group-head">'
+                f'{ck_eyebrow(f"{pri} · {n_q} {noun}")}</div>'
                 + "\n".join(dq_by_priority[pri])
             )
     dq_block = dq_html or (
         '<div class="dim">No diligence questions generated — '
         'questions appear as metrics land and flags fire.</div>')
 
+    intro = _tab_intro(
+        "RISK & DILIGENCE", "What could break the thesis.",
+        "What could break",
+        "Flags rank by severity with EBITDA at risk on the top line; "
+        "each one seeds a prioritised diligence question.",
+    )
     return f"""
-    <div class="wb-tab-panel" data-panel="risk">
+    <div class="wb-tab-panel" data-panel="risk" {_panel_attrs("risk")}>
+      {intro}
       {regulatory_card}
       <div class="wb-grid">
         <div>
@@ -3231,11 +3280,25 @@ def _render_provenance(packet: DealAnalysisPacket) -> str:
             f'<summary class="wb-card-title">{_esc(group_label)} ({len(nodes)})</summary>'
             f'{"".join(rows)}</details>'
         )
-    body = "\n".join(blocks) or (
-        '<div class="dim">No provenance captured — rebuild the packet '
-        'to record the lineage of every number.</div>')
+    # Editorial empty state (kit rule: never a bare dim one-liner for
+    # a whole-tab "no data yet"). No CTA link — the rebuild action is
+    # a POST form in the page header, not a GET destination.
+    body = "\n".join(blocks) or ck_empty_state(
+        "No lineage recorded yet.",
+        "Rebuild the analysis packet to record the source, confidence "
+        "and upstream dependencies of every number on this page.",
+        eyebrow="PROVENANCE",
+        icon="◈",
+    )
+    intro = _tab_intro(
+        "PROVENANCE", "Every number, traced to its source.",
+        "Every number",
+        "The lineage behind the packet — observed inputs, predictions "
+        "and derived figures, each with a source and confidence.",
+    )
     return f"""
-    <div class="wb-tab-panel" data-panel="provenance">
+    <div class="wb-tab-panel" data-panel="provenance" {_panel_attrs("provenance")}>
+      {intro}
       <div class="wb-card">
         <div class="wb-card-title">Provenance graph ({len(packet.provenance.nodes)} nodes)</div>
         {body}
@@ -3390,8 +3453,15 @@ def _render_assumptions(packet: DealAnalysisPacket) -> str:
         '<div class="ov-feedback" id="ov-raw-feedback"></div>'
     )
 
+    intro = _tab_intro(
+        "ASSUMPTIONS", "Your judgement, on the record.",
+        "Your judgement",
+        "Analyst overrides persist with a reason and apply on the "
+        "next packet rebuild — the model default stays visible.",
+    )
     return f"""
-    <div class="wb-tab-panel" data-panel="assumptions" data-deal-id="{deal_id}">
+    <div class="wb-tab-panel" data-panel="assumptions" data-deal-id="{deal_id}" {_panel_attrs("assumptions")}>
+      {intro}
       {banner}
       <div class="wb-card ov-section">
         <div class="ov-section-title">Bridge assumptions</div>
@@ -3986,6 +4056,7 @@ def render_workbench(packet: DealAnalysisPacket) -> str:
     return chartis_shell(
         shell_body,
         f"{packet.deal_name or packet.deal_id} · Analysis Workbench",
+        active_nav="/analysis",
         extra_css=_WORKBENCH_CSS,
         extra_js=_WORKBENCH_JS + _EXPLAIN_JS + _OVERRIDE_JS,
     )
