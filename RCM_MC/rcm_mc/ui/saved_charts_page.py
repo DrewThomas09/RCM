@@ -28,8 +28,11 @@ _ROUTE_LABELS = {"/chart-builder": "Chart", "/exhibit": "Exhibit"}
 # ── Page-scoped CSS (gallery grid + chart cards) ──────────────────────
 # All colour comes from the kit's canonical CSS custom properties so the
 # page tracks the v5 chartis palette; the fallbacks match the shell.
+# NOTE: this is RAW css (no <style> wrapper) because chartis_shell wraps
+# extra_css in its own <style> tag. A stray inner <style> here double-
+# wraps and silently kills the FIRST rule (.sc-gallery's grid), which
+# made saved charts stack full-width instead of tiling as a card grid.
 _SAVED_CHARTS_CSS = """
-<style>
 .sc-gallery{list-style:none;margin:0;padding:0;display:grid;
   grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px;}
 .sc-card{display:flex;flex-direction:column;gap:9px;
@@ -77,7 +80,6 @@ _SAVED_CHARTS_CSS = """
   outline-offset:2px;border-radius:2px;color:var(--sc-negative,#b5321e);}
 .sc-cta-row{display:flex;flex-wrap:wrap;gap:22px;align-items:center;
   margin-top:14px;}
-</style>
 """
 
 # The save strip embeds on /chart-builder and /exhibit, so its styling

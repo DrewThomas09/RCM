@@ -214,6 +214,8 @@ _PAGE_CSS = """
 .cb-ds-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sc-teal,#155752);}
 .cb-ds-chip:hover{border-color:var(--sc-teal,#155752);background:#fff;}
 .cb-canvas{text-align:center;}
+.cb-canvas #chartOut{display:flex;justify-content:center;}
+.cb-canvas #chartOut svg{display:block;margin:0 auto;max-width:100%;}
 .cb-canvas-actions{margin-top:14px;padding-top:14px;border-top:1px solid var(--sc-rule,#d6cfc0);}
 .cb-btn-ghost{margin-left:14px;padding:6px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;color:var(--sc-navy,#0b2341);font-family:var(--sc-sans,sans-serif);font-size:11.5px;font-weight:600;cursor:pointer;}
 .cb-btn-ghost:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
