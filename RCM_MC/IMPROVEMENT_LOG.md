@@ -5021,3 +5021,43 @@ median now re-derived exactly for BOTH metro bullets; synthetic 0.4pp tails
 test_metro_markets (10) + test_insight_bullets (7) = 29 green. Pre-existing
 unrelated red in test_guide_context_sufficiency (/connector-estate,
 /market-scan guide-blind — another workstream's routes) noted, not touched.
+
+## W4-009 (2026-07-07) — BACKLOG #35: glossary long-tail — HCRIS X-Ray metric labels (part 2, item closed)
+Completes #35. Part 1 (W2-218, "refill #35") already linked the predictive
+screener's four metric column headers; this pass adopts metric_label_link on
+the second named surface — the HCRIS X-Ray benchmark grid's metric-name
+cells (`_metric_row` in ui/hcris_xray_page.py, previously bare
+`html.escape(bm.spec.label)`).
+- **Attr→key alias table** (`_XRAY_ATTR_TO_GLOSSARY_KEY`): the X-Ray
+  engine's spec.attr names differ from the glossary's canonical keys for
+  five metrics (other_day_pct→commercial_pct, payer_diversity_index→
+  payer_diversity, net_revenue_per_bed→revenue_per_bed, opex_per_bed→
+  expense_per_bed, operating_margin_on_npr→operating_margin) — same
+  single-place aliasing pattern the bridge uses for "cmi". Five attrs match
+  the glossary key directly (total_patient_days, occupancy_rate,
+  medicare_day_pct, medicaid_day_pct, net_to_gross_ratio) and need no row.
+  Net: **10 of 15 grid labels now route to their canonical
+  /metric-glossary card**; the 5 attrs with no card (beds, NPR/opex per
+  patient day, contractual_allowance_rate, net_income_margin_on_npr) fall
+  through the helper's guard to plain escaped text — no dead anchor can
+  ship from this grid. Visual treatment identical to the other adopters
+  (color:inherit + dotted underline from the shared helper).
+- **Peer-roster headers deliberately NOT wrapped**: power_ui.sortable_table
+  html-escapes its `headers` (correctly — they're data-ish strings), so an
+  anchor there would render as literal markup. The benchmark grid is the
+  page's metric-label surface; the roster keeps plain headers.
+**Verify**: tests/test_glossary_longtail.py (10 new: alias values all
+resolve in the registry + alias keys are real catalog attrs; the
+linked/unlinked partition of METRIC_CATALOG re-derived and pinned exactly
+(10/5) so a new metric or glossary card forces a deliberate revisit; a real
+rendered X-Ray report carries all 10 anchors, ships NO raw-attr or no-card
+anchors, and EVERY /metric-glossary#<key> found on the page resolves; the
+same every-anchor-resolves sweep on the rendered predictive screener plus
+its four W2-218 header anchors; bogus-key regression — direct and via
+alias — renders plain escaped text, no <a>, no glossary href). Full run:
+new file (10) + both pages' existing suites + glossary-helper/registry/page
+suites = 109 green (test_hcris_xray, _headline, _render_hygiene,
+_no_raw_css, _workstation, _input_workstation, _ebitda_floor,
+_component_map_doc, test_xray_section_nav, test_predictive_screener_lead/
+_ar_days/_honest_missing, test_glossary_link_helper, test_metric_glossary,
+test_metric_glossary_page).

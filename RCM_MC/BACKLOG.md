@@ -59,7 +59,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 32 | ✅ DONE — P10 provenance-coverage metric (static AST scan of ck_kpi_block call sites; per-page + overall % published live on /methodology) | — | LOG W4-007 |
 | 33 | ✅ DONE — all-hospital peer sets link → /pipeline/rollup?ccns= | — | W2-211 |
 | 34 | ✅ DONE — P13 long-tail: guarded bullets on /metro-markets (2 templates, landed earlier) + /county-explorer (3 templates); figures recomputed from the same rows/footer the panels render; tiny-delta + empty-data guards test-pinned on both pages | — | LOG W4-008 |
-| 35 | **Glossary long-tail: predictive-screener + X-Ray metric headers** — metric_label_link adoption | 18 | links resolve; no dead anchors (helper guard); tests |
+| 35 | ✅ DONE — glossary long-tail: predictive-screener headers (part 1, W2-218) + HCRIS X-Ray benchmark-grid metric labels via metric_label_link attr→key alias table (10 of 15 linked; 5 no-card attrs guard-fall-through to plain text — no dead anchors) | — | LOG W4-009 |
 | 36 | ✅ DONE — memo + package routes record registry rows | — | W2-210 |
 
 ## Groomed-out / blocked (window 3 additions)
