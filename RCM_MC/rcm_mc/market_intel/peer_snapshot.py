@@ -71,6 +71,14 @@ class PeerSnapshot:
     # and the payload must say so wherever the band renders.
     peer_constituent_count: Optional[int] = None
     peer_band_indicative: Optional[bool] = None
+    # Broader companion of ``peer_band_indicative``: True below the
+    # public_comps ``SMALL_SAMPLE_CONSTITUENTS`` floor (three), so a
+    # two-ticker band — not flagged as single-ticker "indicative" but
+    # still too thin to be an observed distribution — reads honestly on
+    # the Deal Profile block. Sourced from ``CategoryBand.small_sample``
+    # so the module and the snapshot can't disagree; ``indicative``
+    # nests inside it.
+    peer_band_small_sample: Optional[bool] = None
 
     peers: List[Dict[str, Any]] = field(default_factory=list)
 
@@ -103,6 +111,7 @@ class PeerSnapshot:
             "delta_vs_median_turns": self.delta_vs_median_turns,
             "peer_constituent_count": self.peer_constituent_count,
             "peer_band_indicative": self.peer_band_indicative,
+            "peer_band_small_sample": self.peer_band_small_sample,
             "peers": list(self.peers),
             "sector_sentiment": self.sector_sentiment,
             "transaction_band": self.transaction_band,
@@ -264,6 +273,7 @@ def compute_peer_snapshot(
     # n= disclosure — see the PeerSnapshot field comments.
     peer_n = band.constituent_count if band else None
     band_indicative = (peer_n < 2) if peer_n is not None else None
+    band_small_sample = band.small_sample if band else None
 
     assessment = _assess(implied_mult, peer_p25, peer_median, peer_p75)
     summary = _summary(cat, implied_mult, peer_median, assessment, delta,
@@ -321,6 +331,7 @@ def compute_peer_snapshot(
         delta_vs_median_turns=delta,
         peer_constituent_count=peer_n,
         peer_band_indicative=band_indicative,
+        peer_band_small_sample=band_small_sample,
         peers=peers,
         sector_sentiment=sentiment,
         transaction_band=tb_obj,

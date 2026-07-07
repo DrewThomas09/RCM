@@ -1231,6 +1231,143 @@ class R2MedianVsMeanTests(unittest.TestCase):
                 t.median_population_k,
                 round(statistics.median(by_tier[t.tier]), 0), t.tier)
 
+    def test_msa_median_cr3_re_derived_and_below_mean(self):
+        from rcm_mc.data_public.msa_concentration import (
+            compute_msa_concentration,
+        )
+        r = compute_msa_concentration()
+        expected = round(
+            statistics.median(m.cr3_pct for m in r.msa_details), 4)
+        self.assertEqual(r.median_cr3_pct, expected)
+        # Near-monopoly markets (fertility 0.72, Austin anesth 0.58)
+        # pull the mean top-3 share above the typical MSA's — the median
+        # is the robust central read.
+        self.assertGreater(r.avg_cr3_pct, r.median_cr3_pct)
+
+
+# ════════════════════════════════════════════════════════════════════
+# ROUND 2 (deepening) — public_comps small-sample floors + vintage flow
+# ════════════════════════════════════════════════════════════════════
+
+class R2PublicCompsSmallSampleTests(unittest.TestCase):
+    """The public-comps peer statistics — a turnover benchmark and a
+    per-category p25/median/p75 curve — must carry their n, a documented
+    small-sample floor, and the curated YAML's vintage, like every other
+    percentile/share statistic on the front."""
+
+    def test_category_band_small_sample_re_derived(self):
+        from rcm_mc.market_intel import category_bands
+        from rcm_mc.market_intel.public_comps import (
+            SMALL_SAMPLE_CONSTITUENTS,
+        )
+        bands = category_bands()
+        self.assertTrue(bands)
+        for cat, band in bands.items():
+            self.assertEqual(
+                band.small_sample,
+                band.constituent_count < SMALL_SAMPLE_CONSTITUENTS, cat)
+            d = band.to_dict()
+            self.assertEqual(d["small_sample"], band.small_sample, cat)
+            self.assertIn("content_last_reviewed", d)
+
+    def test_small_sample_true_and_false_both_occur(self):
+        # The flag must actually discriminate: the lattice has both
+        # single/near-single-ticker curves (True) and the 3-ticker
+        # hospital band (False) — a flag that's always True is noise.
+        from rcm_mc.market_intel import category_bands
+        bands = category_bands()
+        self.assertTrue(bands["RURAL_ACUTE_HOSPITAL"].small_sample)   # n=1
+        self.assertTrue(bands["DIALYSIS"].small_sample)               # n=2
+        self.assertFalse(
+            bands["MULTI_SITE_ACUTE_HOSPITAL"].small_sample)          # n=3
+
+    def test_indicative_is_strict_subset_of_small_sample(self):
+        # peer_snapshot's single-ticker peer_band_indicative (n<2) must
+        # nest inside the band's small_sample (n<3): every indicative
+        # band is small-sample, and an n=2 band is small-sample without
+        # being indicative. Documents the two-threshold design.
+        from rcm_mc.market_intel import category_bands, compute_peer_snapshot
+        bands = category_bands()
+        for cat, band in bands.items():
+            snap = compute_peer_snapshot(
+                category=cat, target_ev_usd=350_000_000,
+                target_ebitda_usd=35_000_000)
+            if snap.peer_band_indicative:
+                self.assertTrue(band.small_sample, cat)
+        # And the n=2 witness: small-sample but not indicative. The
+        # snapshot's own peer_band_small_sample must agree with the band
+        # and catch the n=2 case peer_band_indicative misses.
+        dia = compute_peer_snapshot(
+            category="DIALYSIS", target_ev_usd=350_000_000,
+            target_ebitda_usd=35_000_000)
+        self.assertFalse(dia.peer_band_indicative)
+        self.assertTrue(dia.peer_band_small_sample)
+        self.assertTrue(dia.to_dict()["peer_band_small_sample"])
+        self.assertTrue(bands["DIALYSIS"].small_sample)
+
+    def test_peer_snapshot_small_sample_agrees_with_band_and_no_band(self):
+        from rcm_mc.market_intel import category_bands, compute_peer_snapshot
+        bands = category_bands()
+        for cat, band in bands.items():
+            snap = compute_peer_snapshot(
+                category=cat, target_ev_usd=350_000_000,
+                target_ebitda_usd=35_000_000)
+            self.assertEqual(
+                snap.peer_band_small_sample, band.small_sample, cat)
+        # No band → flag is None (not a misleading False).
+        none = compute_peer_snapshot(category="NO_SUCH_CATEGORY")
+        self.assertIsNone(none.peer_band_small_sample)
+        self.assertIsNone(none.to_dict()["peer_band_small_sample"])
+
+    def test_category_band_vintage_matches_accessor_and_flows(self):
+        from rcm_mc.market_intel import category_bands, find_comparables
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        expected = content_vintage("public_comps")["last_reviewed"]
+        self.assertIsNotNone(expected)
+        for cat, band in category_bands().items():
+            self.assertEqual(band.content_last_reviewed, expected, cat)
+        # find_comparables surfaces it both on the band and the envelope.
+        payload = find_comparables(
+            target_category="MULTI_SITE_ACUTE_HOSPITAL")
+        self.assertEqual(payload["content_last_reviewed"], expected)
+        self.assertEqual(
+            payload["band"]["content_last_reviewed"], expected)
+        self.assertIn("small_sample", payload["band"])
+
+    def test_turnover_stats_small_sample_and_vintage_re_derived(self):
+        from rcm_mc.market_intel import peer_physician_turnover_stats
+        from rcm_mc.market_intel.public_comps import (
+            TURNOVER_SMALL_SAMPLE_N, list_companies,
+        )
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        rates = sorted(
+            c.physician_turnover_disclosed for c in list_companies()
+            if c.physician_turnover_disclosed
+            and c.physician_turnover_disclosed > 0)
+        n = len(rates)
+        stats = peer_physician_turnover_stats()
+        self.assertEqual(stats["count"], n)
+        self.assertEqual(stats["small_sample"], n < TURNOVER_SMALL_SAMPLE_N)
+        self.assertEqual(
+            stats["content_last_reviewed"],
+            content_vintage("public_comps")["last_reviewed"])
+
+    def test_turnover_median_is_robust_to_right_skew(self):
+        # The disclosed-turnover panel is right-skewed (a couple of
+        # high-turnover operators), so the interpolated median sits below
+        # the mean — the exact reason the accessor reports the median,
+        # not the average, as the peer benchmark.
+        from rcm_mc.market_intel import peer_physician_turnover_stats
+        from rcm_mc.market_intel.public_comps import list_companies
+        rates = [
+            c.physician_turnover_disclosed for c in list_companies()
+            if c.physician_turnover_disclosed
+            and c.physician_turnover_disclosed > 0]
+        stats = peer_physician_turnover_stats()
+        self.assertLess(stats["median"], sum(rates) / len(rates))
+        self.assertLessEqual(stats["p25"], stats["median"])
+        self.assertLessEqual(stats["median"], stats["p75"])
+
 
 if __name__ == "__main__":
     unittest.main()

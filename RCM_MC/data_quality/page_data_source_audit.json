@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 192,
+    "pages": 194,
     "with_disclosure": 177,
-    "with_real_loader": 52,
-    "flagged_no_disclosure": 0,
+    "with_real_loader": 53,
+    "flagged_no_disclosure": 1,
     "by_tier": {
-      "green": 46,
+      "green": 48,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -281,6 +281,16 @@
       "uses_seed_corpus": true,
       "renders_data": true,
       "flag": ""
+    },
+    {
+      "route": "/connector-estate",
+      "file": "connector_estate_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": false,
+      "uses_seed_corpus": false,
+      "renders_data": true,
+      "flag": "NO_DISCLOSURE"
     },
     {
       "route": "/continuation-vehicle",
@@ -1029,6 +1039,16 @@
       "has_disclosure": true,
       "imports_real_loader": false,
       "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/market-scan",
+      "file": "market_scan_page.py",
+      "tier": "green",
+      "has_disclosure": false,
+      "imports_real_loader": true,
+      "uses_seed_corpus": false,
       "renders_data": true,
       "flag": ""
     },

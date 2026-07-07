@@ -5,11 +5,11 @@ analyzer pages that render figures with **no** data-source disclosure
 (no source/purpose header, illustrative banner, or DATA/EXPORT REQUIRED
 label). Cross-references the surface-status tier.
 
-- Pages: **192** · with disclosure: **177** · importing a real loader: **52** · **flagged (no disclosure): 0**
-- By tier: {'green': 46, 'navy': 73, 'yellow': 37, 'red': 0}
+- Pages: **194** · with disclosure: **177** · importing a real loader: **53** · **flagged (no disclosure): 1**
+- By tier: {'green': 48, 'navy': 73, 'yellow': 37, 'red': 0}
 
 ## Flagged — render data, disclose nothing (fix first)
 
 | Route | File | Tier | Real loader? | Flag |
 |---|---|---|---|---|
-| _(none — every data-rendering page discloses its basis)_ | | | | |
+| `/connector-estate` | connector_estate_page.py | green | no | NO_DISCLOSURE |

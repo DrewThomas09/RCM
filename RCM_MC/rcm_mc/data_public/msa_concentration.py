@@ -97,6 +97,12 @@ class MSAResult:
     # concentration — median is the robust central read. Additive
     # field; ``avg_hhi`` stays for back-compat.
     median_hhi: int = 0
+    # Median CR3 beside ``avg_cr3_pct`` for the same reason: the top-3
+    # concentration ratio is right-skewed by the handful of near-
+    # monopoly markets (0.72 fertility vs 0.12 derma), so the mean
+    # top-3 share reads more consolidated than the typical MSA. Additive
+    # field; ``avg_cr3_pct`` stays for back-compat.
+    median_cr3_pct: float = 0.0
 
 
 def _load_corpus() -> List[dict]:
@@ -220,6 +226,7 @@ def compute_msa_concentration() -> MSAResult:
     avg_hhi = int(sum(m.hhi for m in msas) / len(msas)) if msas else 0
     median_hhi = int(statistics.median(m.hhi for m in msas)) if msas else 0
     avg_cr3 = sum(m.cr3_pct for m in msas) / len(msas) if msas else 0
+    median_cr3 = statistics.median(m.cr3_pct for m in msas) if msas else 0.0
 
     return MSAResult(
         total_msas_analyzed=len(msas),
@@ -229,6 +236,7 @@ def compute_msa_concentration() -> MSAResult:
         avg_hhi=avg_hhi,
         median_hhi=median_hhi,
         avg_cr3_pct=round(avg_cr3, 4),
+        median_cr3_pct=round(median_cr3, 4),
         msa_details=msas,
         regimes=regimes,
         whitespace=whitespace,
