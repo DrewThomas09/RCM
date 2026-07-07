@@ -20,105 +20,169 @@ import html
 from typing import Any, Dict, List, Optional, Set
 
 from ..diligence.checklist import (
-    CHECKLIST_ITEMS, Category, ChecklistItem, ChecklistStatus,
-    DealChecklistState, DealObservations, ICReadinessGate, ItemStatus,
-    Owner, Priority, compute_ic_readiness, compute_status,
-    open_questions_for_ic_packet, summarize_coverage,
+    ChecklistItem, ChecklistStatus, DealChecklistState, DealObservations,
+    ICReadinessGate, ItemStatus, Priority, compute_ic_readiness,
+    compute_status, open_questions_for_ic_packet, summarize_coverage,
 )
-from ..diligence.checklist.items import build_checklist
 from ._chartis_kit import (
-    P, chartis_shell, ck_help_tooltip, ck_kpi_block, ck_next_section,
-    ck_page_title, ck_panel, ck_section_header, ck_section_intro,
-    ck_sticky_toc, ck_page_explainer)
+    P, chartis_shell, ck_affirm_empty, ck_editorial_head, ck_empty_state,
+    ck_fmt_percent, ck_help_tooltip, ck_kpi_block, ck_next_section,
+    ck_page_actions, ck_panel, ck_progress_dot_track, ck_section_header,
+    ck_severity_panel, ck_signal_badge, ck_sticky_toc,
+)
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
 
 
 # ────────────────────────────────────────────────────────────────────
-# Scoped styles
+# Scoped styles — only classes this page actually emits. Colors are
+# kit tokens (var(--sc-*)) with the canonical hex fallbacks; the
+# type families come from the shell, so no font-family override on
+# the page wrapper.
 # ────────────────────────────────────────────────────────────────────
 
 def _scoped_styles() -> str:
     css = """
-.dc-wrap{{font-family:var(--sc-sans,"Helvetica Neue",Arial,sans-serif);}}
-.dc-eyebrow{{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
-color:{tf};font-weight:600;}}
-.dc-h1{{font-size:26px;color:{tx};font-weight:600;line-height:1.15;
-margin:4px 0 0 0;letter-spacing:-.2px;}}
-.dc-callout{{background:{pa};padding:12px 16px;
-border-left:3px solid {ac};border-radius:0 3px 3px 0;
-font-size:12px;color:{td};line-height:1.65;max-width:880px;margin-top:12px;}}
-.dc-callout.alert{{border-left-color:{ne};color:{ne};font-weight:600;font-size:13px;}}
-.dc-callout.warn{{border-left-color:{wn};color:{wn};font-weight:600;font-size:13px;}}
-.dc-callout.good{{border-left-color:{po};color:{po};font-weight:600;font-size:13px;}}
-.dc-section-label{{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;
-font-weight:700;color:{tf};margin:22px 0 10px 0;}}
-.dc-kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-gap:14px;margin-top:18px;}}
-.dc-kpi{{background:{pn};border:1px solid {bd};border-radius:4px;
-padding:14px 16px;}}
-.dc-kpi__label{{font-size:9px;letter-spacing:1.4px;text-transform:uppercase;
-color:{tf};margin-bottom:6px;font-weight:600;}}
-.dc-kpi__val{{font-size:28px;line-height:1;font-family:"JetBrains Mono",monospace;
-font-variant-numeric:tabular-nums;font-weight:700;}}
-.dc-kpi__band{{font-size:10px;margin-top:4px;font-weight:600;}}
-.dc-phase{{background:{pn};border:1px solid {bd};border-radius:4px;
-padding:14px 18px;margin-bottom:12px;
-transition:border-color 140ms ease;}}
-.dc-phase:hover{{border-color:{tf};}}
-.dc-phase__head{{display:flex;justify-content:space-between;
-align-items:baseline;gap:14px;margin-bottom:8px;}}
-.dc-phase__title{{font-size:14px;color:{tx};font-weight:600;}}
-.dc-phase__count{{font-size:10px;color:{tf};letter-spacing:1.2px;
-text-transform:uppercase;font-weight:600;}}
-.dc-progress{{height:5px;background:{bdim};border-radius:3px;
-overflow:hidden;margin-top:6px;}}
-.dc-progress__fill{{height:100%;background:{po};}}
-.dc-progress__partial{{background:{wn};}}
-.dc-progress__low{{background:{ne};}}
-.dc-item{{display:grid;grid-template-columns:80px 70px 1fr 110px 90px 240px;
-gap:10px;align-items:baseline;padding:9px 2px;
-border-bottom:1px solid {bdim};font-size:12px;}}
-.dc-item:last-child{{border-bottom:0;}}
-.dc-item:hover{{background:{pa};}}
-.dc-item__status{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
-font-weight:700;text-align:center;padding:2px 0;border:1px solid currentColor;
-border-radius:3px;}}
-.dc-item__prio{{font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
-font-weight:700;text-align:center;padding:2px 0;border:1px solid currentColor;
-border-radius:3px;}}
-.dc-item__question{{color:{tx};line-height:1.45;}}
-.dc-item__owner{{color:{td};font-size:10px;letter-spacing:1px;
-text-transform:uppercase;font-weight:600;}}
-.dc-item__category{{color:{tf};font-size:10px;letter-spacing:1px;
-text-transform:uppercase;}}
-.dc-item__action{{text-align:right;white-space:nowrap;
-font-size:10px;color:{tf};letter-spacing:0.04em;}}
-.dc-item__action a{{color:{ac};font-size:10px;text-decoration:none;
-font-weight:600;white-space:nowrap;}}
-.dc-item__action a + a{{margin-left:4px;
-padding-left:8px;border-left:1px solid {bdim};}}
-.dc-item__action a:hover{{text-decoration:underline;}}
-.dc-item__note{{grid-column:3 / -1;font-size:11px;color:{tf};
-font-style:italic;margin-top:4px;}}
-.dc-oq-row{{padding:8px 0;border-bottom:1px solid {bdim};
-display:grid;grid-template-columns:40px 1fr 100px;gap:12px;
-align-items:baseline;font-size:12.5px;color:{td};line-height:1.5;}}
-.dc-oq-row__prio{{font-size:9px;font-weight:700;letter-spacing:1.3px;
-text-align:center;padding:2px 0;border:1px solid currentColor;
-border-radius:3px;text-transform:uppercase;}}
-.dc-oq-row__owner{{color:{tf};font-size:10px;letter-spacing:1px;
-text-transform:uppercase;text-align:right;font-weight:600;}}
-@media (max-width:960px){{.dc-item{{grid-template-columns:70px 60px 1fr;}}
-.dc-item__owner,.dc-item__category,.dc-item__action{{display:none;}}}}
-""".format(
-        tx=P["text"], td=P["text_dim"], tf=P["text_faint"],
-        pn=P["panel"], pa=P["panel_alt"],
-        bd=P["border"], bdim=P["border_dim"],
-        ac=P["accent"], po=P["positive"],
-        wn=P["warning"], ne=P["negative"],
-    )
+.dc-section-note{font-size:12.5px;color:var(--sc-text-dim,#465366);
+line-height:1.6;margin:2px 0 14px;max-width:72ch;}
+
+/* ── One chip idiom for status + priority, page-wide ─────────── */
+.dc-chip{display:inline-block;
+font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:9.5px;font-weight:700;letter-spacing:0.08em;
+text-transform:uppercase;text-align:center;padding:2px 7px;
+border:1px solid currentColor;border-radius:2px;white-space:nowrap;}
+.dc-chip.tone-positive{color:var(--sc-positive,#0a8a5f);}
+.dc-chip.tone-warning{color:var(--sc-warning,#b8732a);}
+.dc-chip.tone-negative{color:var(--sc-negative,#b5321e);}
+.dc-chip.tone-neutral{color:var(--sc-text-dim,#465366);}
+
+/* ── IC readiness gate ───────────────────────────────────────── */
+.dc-gate-verdict__row{display:flex;gap:12px;align-items:baseline;
+flex-wrap:wrap;}
+.dc-gate-verdict__word{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:22px;font-weight:700;letter-spacing:0.02em;}
+.dc-gate-verdict__word.tone-positive{color:var(--sc-positive,#0a8a5f);}
+.dc-gate-verdict__word.tone-warning{color:var(--sc-warning,#b8732a);}
+.dc-gate-verdict__word.tone-negative{color:var(--sc-negative,#b5321e);}
+.dc-gate-verdict__word.tone-neutral{color:var(--sc-text-dim,#465366);}
+.dc-gate-verdict__tag{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:9px;letter-spacing:0.14em;color:var(--sc-text-faint,#7a8699);
+text-transform:uppercase;}
+.dc-gate-verdict__cov{margin-left:auto;
+font-family:var(--sc-mono,'JetBrains Mono',monospace);font-size:11px;
+color:var(--sc-text-dim,#465366);font-variant-numeric:tabular-nums;}
+.dc-gate-verdict__why{font-size:12.5px;color:var(--sc-text-dim,#465366);
+line-height:1.6;margin:0;}
+.dc-verify__labels{display:flex;justify-content:space-between;gap:10px;
+font-family:var(--sc-mono,'JetBrains Mono',monospace);font-size:10px;
+color:var(--sc-text-dim,#465366);font-variant-numeric:tabular-nums;
+margin-bottom:3px;}
+.dc-verify__track{height:8px;border-radius:4px;overflow:hidden;
+background:var(--sc-rule,#d6cfc0);}
+.dc-verify__fill{height:100%;background:var(--sc-positive,#0a8a5f);}
+.dc-gate-group{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:10px;letter-spacing:0.12em;font-weight:700;
+text-transform:uppercase;}
+.dc-gate-group.tone-negative{color:var(--sc-negative,#b5321e);}
+.dc-gate-group.tone-warning{color:var(--sc-warning,#b8732a);}
+.dc-gate-row__meta{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.dc-gate-row__cat{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:9px;letter-spacing:0.08em;color:var(--sc-text-faint,#7a8699);
+text-transform:uppercase;}
+.dc-gate-row__verify{margin-left:auto;}
+.dc-gate-row__verify .ck-badge{font-size:9px;padding:2px 6px;}
+.dc-gate-row__q{font-size:12.5px;color:var(--sc-text,#1a2332);
+font-weight:500;line-height:1.5;}
+.dc-gate-row__crit{font-size:11px;color:var(--sc-text-dim,#465366);
+line-height:1.5;}
+.dc-gate-row__crit span{color:var(--sc-text-faint,#7a8699);}
+.dc-gate-row__evidence{color:var(--sc-teal,#155752);font-size:11px;
+font-weight:600;text-decoration:none;}
+.dc-gate-row__evidence:hover{text-decoration:underline;}
+.dc-gate-row__evidence:focus-visible{outline:2px solid var(--sc-teal,#155752);
+outline-offset:2px;}
+.dc-gate-row__manual{color:var(--sc-text-faint,#7a8699);font-size:11px;}
+
+/* ── Category progress chart ─────────────────────────────────── */
+.dc-catsvg{width:100%;max-width:660px;height:auto;display:block;}
+.dc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;}
+.dc-legend__key{display:inline-flex;align-items:center;gap:5px;
+font-size:10.5px;color:var(--sc-text-dim,#465366);}
+.dc-legend__swatch{width:9px;height:9px;display:inline-block;}
+.dc-legend__swatch.s-done{background:var(--sc-positive,#0a8a5f);}
+.dc-legend__swatch.s-wip{background:var(--sc-warning,#b8732a);}
+.dc-legend__swatch.s-open{background:var(--sc-text-faint,#7a8699);}
+.dc-legend__swatch.s-blocked{background:var(--sc-negative,#b5321e);}
+
+/* ── Phase cards + item rows ─────────────────────────────────── */
+.dc-phase{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);
+border-radius:2px;padding:14px 18px;margin-bottom:12px;
+transition:border-color 140ms ease;}
+.dc-phase:hover{border-color:var(--sc-rule-2,#bfb6a2);}
+.dc-phase__head{display:flex;justify-content:space-between;
+align-items:baseline;gap:14px;margin-bottom:8px;flex-wrap:wrap;}
+.dc-phase__title{font-size:14px;color:var(--sc-text,#1a2332);
+font-weight:600;}
+.dc-phase__meter{display:flex;align-items:center;gap:8px;}
+.dc-phase__count{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:11px;color:var(--sc-text-dim,#465366);letter-spacing:0.06em;
+text-transform:uppercase;font-variant-numeric:tabular-nums;}
+.dc-phase__items{margin-top:8px;}
+.dc-item{display:grid;
+grid-template-columns:84px 48px 1fr 110px 90px 200px;
+gap:10px;align-items:baseline;padding:9px 4px;
+border-bottom:1px solid var(--sc-rule,#d6cfc0);font-size:12px;}
+.dc-item:last-child{border-bottom:0;}
+.dc-item:hover{background:var(--bg-tint,#e8e0d0);}
+.dc-item__question{color:var(--sc-text,#1a2332);line-height:1.45;}
+.dc-item__owner{color:var(--sc-text-dim,#465366);font-size:10px;
+letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.dc-item__category{color:var(--sc-text-faint,#7a8699);font-size:10px;
+letter-spacing:1px;text-transform:uppercase;}
+.dc-item__action{text-align:right;white-space:nowrap;font-size:11px;}
+.dc-item__action a{color:var(--sc-teal,#155752);font-size:11px;
+text-decoration:none;font-weight:600;white-space:nowrap;padding:2px 3px;}
+.dc-item__action a + a{margin-left:2px;padding-left:8px;
+border-left:1px solid var(--sc-rule,#d6cfc0);}
+.dc-item__action a:hover{text-decoration:underline;}
+.dc-item__action a:focus-visible{outline:2px solid var(--sc-teal,#155752);
+outline-offset:1px;}
+.dc-item__note{grid-column:3/-1;font-size:11px;
+color:var(--sc-text-faint,#7a8699);font-style:italic;margin-top:4px;}
+.dc-override{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:8.5px;letter-spacing:0.08em;color:var(--sc-warning,#b8732a);
+border:1px solid currentColor;border-radius:2px;padding:1px 4px;
+margin-left:6px;text-transform:uppercase;vertical-align:1px;cursor:help;}
+
+/* ── Open questions for IC ───────────────────────────────────── */
+.dc-oq-summary{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:11px;letter-spacing:0.08em;color:var(--sc-text-dim,#465366);
+text-transform:uppercase;margin:0 0 6px;
+font-variant-numeric:tabular-nums;}
+.dc-oq-row{padding:8px 0;border-bottom:1px solid var(--sc-rule,#d6cfc0);
+display:grid;grid-template-columns:44px 1fr 100px;gap:12px;
+align-items:baseline;font-size:12.5px;color:var(--sc-text-dim,#465366);
+line-height:1.5;}
+.dc-oq-row:last-child{border-bottom:0;}
+.dc-oq-row--break{border-top:2px solid var(--sc-rule-2,#bfb6a2);}
+.dc-oq-row__owner{color:var(--sc-text-faint,#7a8699);font-size:10px;
+letter-spacing:1px;text-transform:uppercase;text-align:right;
+font-weight:600;}
+
+/* ── Flat table ──────────────────────────────────────────────── */
+.dc-itemid{font-family:var(--sc-mono,'JetBrains Mono',monospace);
+font-size:10.5px;color:var(--sc-text-faint,#7a8699);}
+.dc-flat-scroll{max-height:72vh;overflow:auto;}
+
+@media (max-width:960px){
+.dc-item{grid-template-columns:84px 48px 1fr;}
+.dc-item__owner,.dc-item__category{display:none;}
+.dc-item__action{grid-column:1/-1;text-align:left;}
+.dc-item__note{grid-column:1/-1;}
+}
+"""
     return f"<style>{css}</style>"
 
 
@@ -168,34 +232,41 @@ def _demo_observations() -> DealObservations:
 # Helpers
 # ────────────────────────────────────────────────────────────────────
 
-_STATUS_COLOR = {
+# One tone map, one chip idiom — the same DONE / IN PROGRESS / OPEN /
+# BLOCKED (and P0/P1/P2) treatment renders in the phase roster, the
+# gate punch-list, the open-questions panel, and the flat table.
+_STATUS_TONE = {
     ItemStatus.DONE: "positive",
     ItemStatus.IN_PROGRESS: "warning",
-    ItemStatus.OPEN: "text_faint",
+    ItemStatus.OPEN: "neutral",
     ItemStatus.BLOCKED: "negative",
 }
 
-_PRIORITY_COLOR = {
+_PRIORITY_TONE = {
     Priority.P0: "negative",
     Priority.P1: "warning",
-    Priority.P2: "text_faint",
+    Priority.P2: "neutral",
 }
 
 
-def _status_badge(status: ItemStatus) -> str:
-    c = P.get(_STATUS_COLOR[status], P["text_dim"])
-    return (
-        f'<span class="dc-item__status" style="color:{c};">'
-        f'{html.escape(status.value.replace("_", " "))}</span>'
+def _chip(text: str, tone: str) -> str:
+    """The page's single status/priority chip. Dense-row sibling of
+    ck_signal_badge — same border-pill grammar, mono + smaller so 40
+    rows of chips don't shout."""
+    tone = tone if tone in ("positive", "warning", "negative", "neutral") \
+        else "neutral"
+    return f'<span class="dc-chip tone-{tone}">{html.escape(text)}</span>'
+
+
+def _status_chip(status: ItemStatus) -> str:
+    return _chip(
+        status.value.replace("_", " "),
+        _STATUS_TONE.get(status, "neutral"),
     )
 
 
-def _priority_badge(p: Priority) -> str:
-    c = P.get(_PRIORITY_COLOR[p], P["text_dim"])
-    return (
-        f'<span class="dc-item__prio" style="color:{c};">'
-        f'{p.value}</span>'
-    )
+def _priority_chip(p: Priority) -> str:
+    return _chip(p.value, _PRIORITY_TONE.get(p, "neutral"))
 
 
 _PHASE_TITLES = {
@@ -312,18 +383,36 @@ def _action_link(item: ChecklistItem, qs: Dict[str, List[str]]) -> str:
         )
         return f"/diligence/checklist?{query}" if query else "/diligence/checklist"
 
+    # aria-labels tie each of the four repeated verbs back to its
+    # item for screen readers — 40 bare "Mark done" links otherwise
+    # read as an undifferentiated wall.
+    iid = html.escape(item.item_id, quote=True)
     return (
-        f'<a href="{_url_for("mark_done")}">Mark done</a>'
-        f'<a href="{_url_for("mark_blocked")}">Block</a>'
-        f'<a href="{_url_for("mark_in_progress")}">WIP</a>'
-        f'<a href="{_url_for("clear")}">Clear</a>'
+        f'<a href="{_url_for("mark_done")}" '
+        f'aria-label="Mark {iid} done">Mark done</a>'
+        f'<a href="{_url_for("mark_blocked")}" '
+        f'aria-label="Mark {iid} blocked">Block</a>'
+        f'<a href="{_url_for("mark_in_progress")}" title="In progress" '
+        f'aria-label="Mark {iid} in progress">WIP</a>'
+        f'<a href="{_url_for("clear")}" '
+        f'aria-label="Clear override on {iid}">Clear</a>'
     )
 
 
+# Verdict → (tone, tagline). Tone keys map onto the kit severity
+# tones (positive / warning / negative); the tagline is the mono
+# caps strap beside the verdict word. test_ic_readiness_gate pins
+# _GATE_TONE["READY"][1].
 _GATE_TONE = {
-    "READY": ("#0a8a5f", "CLEARS THE IC GATE"),
-    "CONDITIONAL": ("#b8732a", "CONDITIONAL — NAME OPEN P1s IN THE MEMO"),
-    "NOT_READY": ("#b5321e", "DO NOT SCHEDULE IC"),
+    "READY": ("positive", "CLEARS THE IC GATE"),
+    "CONDITIONAL": ("warning", "CONDITIONAL — NAME OPEN P1s IN THE MEMO"),
+    "NOT_READY": ("negative", "DO NOT SCHEDULE IC"),
+}
+
+_GATE_PANEL_TONE = {
+    "positive": "positive",
+    "warning": "amber",
+    "negative": "red",
 }
 
 
@@ -331,42 +420,35 @@ def _gate_blocker_row(b) -> str:
     """One punch-list row: the blocker, its completion criterion, the
     evidence link that closes it, and whether the platform can verify
     closure itself."""
-    pr_color = P["negative"] if b.priority == "P0" else P["warning"]
     status_label = "BLOCKED" if b.status == "blocked" else "OPEN"
+    status_tone = "negative" if b.status == "blocked" else "neutral"
     verify = (
-        f'<span style="color:{P["positive"]};font-size:10px;'
-        f'font-weight:600;">AUTO-VERIFIABLE</span>'
+        ck_signal_badge("AUTO-VERIFIABLE", tone="positive")
         if b.auto_verifiable else
-        f'<span style="color:{P["text_faint"]};font-size:10px;">'
-        f'MANUAL ATTESTATION</span>'
+        ck_signal_badge("MANUAL ATTESTATION", tone="neutral")
     )
     evidence = (
-        f'<a href="{html.escape(b.evidence_url, quote=True)}" '
-        f'style="color:{P["accent"]};font-size:11px;'
-        f'text-decoration:none;">Produce evidence →</a>'
+        f'<a class="dc-gate-row__evidence" '
+        f'href="{html.escape(b.evidence_url, quote=True)}">'
+        f'Produce evidence →</a>'
         if b.evidence_url else
-        f'<span style="color:{P["text_faint"]};font-size:11px;">'
-        f'manual workstream</span>'
+        '<span class="dc-gate-row__manual">manual workstream</span>'
     )
     crit = html.escape(b.completion_criteria or "—")
+    prio_tone = "negative" if b.priority == "P0" else "warning"
     return (
-        f'<div style="padding:10px 0;border-bottom:1px solid {P["border_dim"]};">'
-        f'<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">'
-        f'<span style="font-family:var(--ck-mono);font-size:9px;'
-        f'font-weight:700;letter-spacing:0.1em;color:{pr_color};">'
-        f'{b.priority} · {status_label}</span>'
-        f'<span style="font-size:9px;letter-spacing:0.08em;'
-        f'color:{P["text_faint"]};text-transform:uppercase;">'
-        f'{html.escape(b.category)}</span>'
-        f'<span style="margin-left:auto;">{verify}</span>'
-        f'</div>'
-        f'<div style="font-size:12.5px;color:{P["text"]};font-weight:500;'
-        f'margin-top:3px;">{html.escape(b.question)}</div>'
-        f'<div style="font-size:11px;color:{P["text_dim"]};margin-top:3px;'
-        f'line-height:1.5;"><span style="color:{P["text_faint"]};">'
-        f'Closes when: </span>{crit}</div>'
-        f'<div style="margin-top:4px;">{evidence}</div>'
-        f'</div>'
+        '<li class="dc-gate-row">'
+        '<div class="dc-gate-row__meta">'
+        f'{_chip(b.priority, prio_tone)}'
+        f'{_chip(status_label, status_tone)}'
+        f'<span class="dc-gate-row__cat">{html.escape(b.category)}</span>'
+        f'<span class="dc-gate-row__verify">{verify}</span>'
+        '</div>'
+        f'<div class="dc-gate-row__q">{html.escape(b.question)}</div>'
+        f'<div class="dc-gate-row__crit"><span>Closes when: </span>'
+        f'{crit}</div>'
+        f'<div>{evidence}</div>'
+        '</li>'
     )
 
 
@@ -379,89 +461,108 @@ def _ic_readiness_section(gate: ICReadinessGate) -> str:
     closes it, so the gate doubles as the to-do list and the audit
     trail of why the answer is what it is.
     """
-    tone, tagline = _GATE_TONE.get(gate.verdict, ("#7a8699", ""))
-    # Verifiability mini-bar: how much of the open work the platform
-    # can confirm from observations vs. needs a human sign-off.
+    tone, tagline = _GATE_TONE.get(gate.verdict, ("neutral", ""))
+    cov = provenance(
+        ck_fmt_percent(gate.p0_coverage),
+        source="compute_ic_readiness()",
+        formula="p0_done / p0_total",
+        detail=(
+            "The gate is a pure function of item statuses, so it can "
+            "never disagree with the checklist below it."
+        ),
+    )
+    verdict_li = (
+        '<li class="dc-gate-verdict">'
+        '<div class="dc-gate-verdict__row">'
+        f'<span class="dc-gate-verdict__word tone-{tone}">'
+        f'{html.escape(gate.verdict.replace("_", " "))}</span>'
+        f'<span class="dc-gate-verdict__tag">{html.escape(tagline)}</span>'
+        f'<span class="dc-gate-verdict__cov">'
+        f'P0 {gate.p0_done}/{gate.p0_total} · {cov}</span>'
+        '</div>'
+        f'<p class="dc-gate-verdict__why">{html.escape(gate.rationale)}</p>'
+        '</li>'
+    )
+    # Verifiability split: how much of the open work the platform can
+    # confirm from observations vs. needs a human sign-off. Positive
+    # fill over the kit rule-gray track.
     total_open = gate.auto_verifiable_open + gate.manual_attestation_open
-    auto_pct = (gate.auto_verifiable_open / total_open * 100.0) if total_open else 0.0
-    verify_bar = (
-        f'<div style="margin-top:10px;">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'font-size:10px;color:{P["text_faint"]};margin-bottom:3px;">'
-        f'<span>{gate.auto_verifiable_open} auto-verifiable from data</span>'
-        f'<span>{gate.manual_attestation_open} need partner attestation</span>'
-        f'</div>'
-        f'<div style="height:8px;border-radius:4px;overflow:hidden;'
-        f'background:{P["text_faint"]};background-opacity:0.2;display:flex;">'
-        f'<div style="width:{auto_pct:.0f}%;background:{P["positive"]};"></div>'
-        f'<div style="flex:1;background:{P["text_faint"]};opacity:0.35;"></div>'
-        f'</div></div>'
-    ) if total_open else ""
-
+    verify_li = ""
+    if total_open:
+        auto_pct = gate.auto_verifiable_open / total_open * 100.0
+        verify_li = (
+            '<li class="dc-verify">'
+            '<div class="dc-verify__labels">'
+            f'<span>{gate.auto_verifiable_open} auto-verifiable from data</span>'
+            f'<span>{gate.manual_attestation_open} need partner attestation</span>'
+            '</div>'
+            f'<div class="dc-verify__track" role="img" aria-label="'
+            f'{gate.auto_verifiable_open} of {total_open} open blockers '
+            f'auto-verifiable">'
+            f'<div class="dc-verify__fill" style="width:{auto_pct:.1f}%;">'
+            '</div></div>'
+            '</li>'
+        )
     p0_block = ""
     if gate.blocking_p0:
         p0_block = (
-            f'<div style="margin-top:14px;">'
-            f'<div style="font-family:var(--ck-mono);font-size:10px;'
-            f'letter-spacing:0.12em;color:{P["negative"]};font-weight:700;'
-            f'margin-bottom:4px;">P0 HARD STOPS · {len(gate.blocking_p0)}</div>'
+            '<li class="dc-gate-group tone-negative">'
+            f'P0 HARD STOPS · {len(gate.blocking_p0)}</li>'
             + "".join(_gate_blocker_row(b) for b in gate.blocking_p0)
-            + '</div>'
         )
     p1_block = ""
     if gate.blocking_p1:
         p1_block = (
-            f'<div style="margin-top:14px;">'
-            f'<div style="font-family:var(--ck-mono);font-size:10px;'
-            f'letter-spacing:0.12em;color:{P["warning"]};font-weight:700;'
-            f'margin-bottom:4px;">P1 — NAME IN MEMO · {len(gate.blocking_p1)}</div>'
+            '<li class="dc-gate-group tone-warning">'
+            f'P1 — NAME IN MEMO · {len(gate.blocking_p1)}</li>'
             + "".join(_gate_blocker_row(b) for b in gate.blocking_p1)
-            + '</div>'
         )
-    return (
-        f'<div class="ck-panel" style="border-left:4px solid {tone};">'
-        f'<div style="display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;">'
-        f'<span style="font-family:var(--ck-mono);font-size:22px;'
-        f'font-weight:700;color:{tone};letter-spacing:0.02em;">'
-        f'{html.escape(gate.verdict.replace("_", " "))}</span>'
-        f'<span style="font-family:var(--ck-mono);font-size:9px;'
-        f'letter-spacing:0.14em;color:{P["text_faint"]};">{tagline}</span>'
-        f'<span style="margin-left:auto;font-family:var(--ck-mono);'
-        f'font-size:11px;color:{P["text_dim"]};">'
-        f'P0 {gate.p0_done}/{gate.p0_total} · {gate.p0_coverage*100:.0f}%</span>'
-        f'</div>'
-        f'<p style="font-size:12.5px;color:{P["text_dim"]};line-height:1.6;'
-        f'margin:8px 0 0;">{html.escape(gate.rationale)}</p>'
-        f'{verify_bar}{p0_block}{p1_block}'
-        f'</div>'
+    return ck_severity_panel(
+        tone=_GATE_PANEL_TONE.get(tone, "neutral"),
+        label="IC readiness gate",
+        count=gate.total_blockers,
+        rows_html=f'{verdict_li}{verify_li}{p0_block}{p1_block}',
     )
 
 
-def _hero(state: DealChecklistState) -> str:
-    if state.open_p0 > 0:
-        banner_class = "alert"
-    elif state.open_p1 > 0:
-        banner_class = "warn"
-    else:
-        banner_class = "good"
+def _masthead(state: DealChecklistState, *, empty: bool) -> str:
+    """The page's single editorial deck — eyebrow, serif H1, honest
+    mono meta, italic-first-phrase lede, and an honest source note
+    (this default render is an illustrative demo fixture, not live
+    deal state)."""
     banner = summarize_coverage(state)
+    mode_tag = "EMPTY OBSERVATION SET" if empty else "DEMO SNAPSHOT"
+    source_note = (
+        "Empty observation set (?empty=1) — no analytics observed; "
+        "every item renders OPEN."
+        if empty else
+        "Illustrative demo snapshot — statuses derive from a fixed "
+        "observation set; wire a deal_id for live state."
+    )
+    return ck_editorial_head(
+        eyebrow="RCM DILIGENCE",
+        title="Diligence Checklist",
+        meta=(
+            f"{state.done}/{state.total} ITEMS DONE · "
+            f"{ck_fmt_percent(state.total_coverage)} COMPLETE · {mode_tag}"
+        ),
+        lede_italic_phrase="Coverage + open questions for IC.",
+        lede_body=(
+            f"{html.escape(banner)} Items tied to analytics auto-mark "
+            "DONE when the analytic runs; manual items (management "
+            "references, legal review) take an explicit override — the "
+            "Mark done link on each row. Every override is URL-encoded, "
+            "so copying the link shares this exact snapshot."
+        ),
+        source_note=source_note,
+    )
 
-    # KPI tiles
-    p0_color = (
-        P["negative"] if state.open_p0 > 0
-        else P["positive"]
-    )
-    p1_color = (
-        P["warning"] if state.open_p1 > 0
-        else P["positive"]
-    )
-    cov_color = (
-        P["positive"] if state.p0_coverage >= 1.0
-        else P["warning"] if state.p0_coverage >= 0.70
-        else P["negative"]
-    )
+
+def _kpi_strip(state: DealChecklistState) -> str:
+    """Four KPI tiles, every value provenance-wrapped so any figure a
+    partner might quote in the memo explains itself on hover."""
     cov_num = provenance(
-        f'{state.p0_coverage*100:.0f}%',
+        ck_fmt_percent(state.p0_coverage),
         source="compute_status()",
         formula="count(items where priority=P0 AND status=DONE) / count(P0 items)",
         detail=(
@@ -475,39 +576,25 @@ def _hero(state: DealChecklistState) -> str:
         formula="count(items where status=DONE)",
         detail="Total items covered across all phases and priorities.",
     )
-    # 2026-05-28 batch 21 · universal strict 5-block head.
-    # as_subhead=True (audit 2026-05-29): this page also renders a
-    # top-of-body ck_page_title (the H1). The editorial deck is
-    # the section head under that H1 — render as H2 so the page
-    # satisfies the One-H1 invariant.
-    from ._chartis_kit import ck_editorial_head
-    intro = ck_editorial_head(
-        eyebrow="DILIGENCE · CHECKLIST",
-        title="Diligence Checklist",
-        meta=(
-            f"{state.done}/{state.total} ITEMS DONE · "
-            f"AUTO-TRACKED · URL-SHARABLE STATE"
+    open_p0_num = provenance(
+        f'{state.open_p0}',
+        source="compute_status()",
+        formula="count(P0 items where status in (OPEN, BLOCKED))",
+        detail=(
+            "Hard stops — every open P0 must close before an IC slot "
+            "is scheduled."
         ),
-        lede_italic_phrase="Coverage + open questions for IC.",
-        lede_body=(
-            f"{html.escape(banner)} Auto-tracked from live analytics; "
-            "partner overrides URL-encoded so you can share a state "
-            "snapshot by copying the link."
+    )
+    open_p1_num = provenance(
+        f'{state.open_p1}',
+        source="compute_status()",
+        formula="count(P1 items where status in (OPEN, BLOCKED))",
+        detail=(
+            "Should-close items — an open P1 doesn't block the "
+            "meeting, but it must be named in the memo with an owner."
         ),
-        as_subhead=True,
     )
-    explainer = ck_panel(
-        '<p class="ck-section-body">'
-        '<strong>How to read:</strong> '
-        'P0 coverage is the single go/no-go gauge for IC. Items '
-        'tied to analytics auto-mark DONE when the analytic is run. '
-        'Manual items (management references, legal review) need an '
-        'explicit override — "Mark done" link on each row. All '
-        'overrides are URL-encoded so you can share a state snapshot '
-        'by copying the URL.</p>',
-        title="Coverage rules",
-    )
-    kpis = (
+    return (
         '<div class="ck-kpi-strip">'
         + ck_kpi_block(
             "P0 coverage", cov_num,
@@ -515,60 +602,70 @@ def _hero(state: DealChecklistState) -> str:
         )
         + ck_kpi_block(
             "Total done", done_num,
-            sub=f"{state.total_coverage*100:.0f}% of all items",
+            sub=f"{ck_fmt_percent(state.total_coverage)} of all items",
         )
         + ck_kpi_block(
-            "Open P0", f"{state.open_p0}",
+            "Open P0", open_p0_num,
             sub="must close before IC",
         )
         + ck_kpi_block(
-            "Open P1", f"{state.open_p1}",
+            "Open P1", open_p1_num,
             sub="assign owners",
         )
         + '</div>'
     )
-    return f'{intro}{explainer}{kpis}'
 
 
 def _phase_section(
     phase: int,
     items: List[ChecklistStatus],
     qs: Dict[str, List[str]],
+    overridden: Set[str],
 ) -> str:
     n_total = len(items)
     n_done = sum(1 for s in items if s.status == ItemStatus.DONE)
-    pct = (n_done / n_total * 100) if n_total > 0 else 0.0
-    if pct >= 85:
-        bar_cls = ""
-    elif pct >= 50:
-        bar_cls = "dc-progress__partial"
-    else:
-        bar_cls = "dc-progress__low"
+    frac = (n_done / n_total) if n_total > 0 else 0.0
     rows: List[str] = []
     for s in items:
         item = s.item
         evidence = ""
         if item.evidence_url:
+            ev_url = html.escape(item.evidence_url, quote=True)
             evidence = (
-                f'<a href="{html.escape(item.evidence_url)}" '
-                f'style="color:{P["accent"]};font-size:10px;'
-                f'text-decoration:none;">Open →</a> '
+                f'<a href="{ev_url}" title="Opens {ev_url}" '
+                f'aria-label="Open evidence for {html.escape(item.item_id, quote=True)}">'
+                f'Open →</a>'
             )
-        # Question tooltip: the completion_criteria
-        q_tooltip = (
-            f' title="{html.escape(item.completion_criteria)}"'
-            if item.completion_criteria else ''
-        )
+        # Completion criteria via the provenance idiom (dotted
+        # underline + cursor:help) instead of an invisible bare
+        # title attribute.
+        if item.completion_criteria:
+            q_html = provenance(
+                item.question,
+                source="completion_criteria",
+                detail=item.completion_criteria,
+            )
+        else:
+            q_html = html.escape(item.question)
+        # Honesty split at row level: manually-overridden rows carry
+        # a faint tag so a partner can tell attested state from
+        # auto-verified state without opening the gate.
+        override_tag = ""
+        if item.item_id in overridden:
+            override_tag = (
+                '<span class="dc-override" title="Partner override — '
+                'state set by hand, not auto-verified from '
+                'observations">override</span>'
+            )
         note_html = (
             f'<div class="dc-item__note">{html.escape(s.note)}</div>'
             if s.note else ''
         )
         rows.append(
-            f'<div class="dc-item">'
-            f'{_status_badge(s.status)}'
-            f'{_priority_badge(item.priority)}'
-            f'<div class="dc-item__question"{q_tooltip}>'
-            f'{html.escape(item.question)}</div>'
+            '<div class="dc-item">'
+            f'{_status_chip(s.status)}'
+            f'{_priority_chip(item.priority)}'
+            f'<div class="dc-item__question">{q_html}{override_tag}</div>'
             f'<div class="dc-item__category">'
             f'{html.escape(item.category.value.replace("_", " "))}</div>'
             f'<div class="dc-item__owner">'
@@ -576,7 +673,7 @@ def _phase_section(
             f'<div class="dc-item__action">'
             f'{evidence}{_action_link(item, qs)}</div>'
             f'{note_html}'
-            f'</div>'
+            '</div>'
         )
     phase_title = _PHASE_TITLES.get(phase, f"Phase {phase}")
     phase_help = _PHASE_HELP.get(phase)
@@ -584,61 +681,105 @@ def _phase_section(
         ck_help_tooltip(phase_title, phase_help)
         if phase_help else html.escape(phase_title)
     )
+    dots = ck_progress_dot_track(
+        n_done, n_total,
+        show_caption=False,
+        label_singular="item", label_plural="items",
+    )
     return (
-        f'<div class="dc-phase">'
-        f'<div class="dc-phase__head">'
-        f'<div class="dc-phase__title">'
-        f'{title_html}</div>'
-        f'<div class="dc-phase__count">{n_done}/{n_total} done · '
-        f'{pct:.0f}%</div>'
-        f'</div>'
-        f'<div class="dc-progress">'
-        f'<div class="dc-progress__fill {bar_cls}" '
-        f'style="width:{pct:.1f}%;"></div></div>'
-        f'<div style="margin-top:8px;">{"".join(rows)}</div>'
-        f'</div>'
+        '<div class="dc-phase">'
+        '<div class="dc-phase__head">'
+        f'<div class="dc-phase__title">{title_html}</div>'
+        '<div class="dc-phase__meter">'
+        f'{dots}'
+        f'<span class="dc-phase__count">{n_done}/{n_total} done · '
+        f'{ck_fmt_percent(frac)}</span>'
+        '</div>'
+        '</div>'
+        f'<div class="dc-phase__items">{"".join(rows)}</div>'
+        '</div>'
     )
 
 
-def _open_questions_block(state: DealChecklistState) -> str:
+def _open_questions_block(state: DealChecklistState, *, empty: bool) -> str:
     qs = open_questions_for_ic_packet(state)
     if not qs:
-        return ck_panel(
-            '<p class="ck-section-body">'
-            'All diligence items covered — no open questions for IC.'
-            '</p>',
-            title="Open questions for IC",
+        # All clear — an affirmative band, not a bare paragraph.
+        return ck_affirm_empty(
+            headline="All diligence items covered.",
+            body=(
+                "No open questions for IC — every P0 and P1 item is "
+                "closed. The IC Packet's Open Questions section will "
+                "print empty."
+            ),
+            cta_text="Assemble the IC packet",
+            cta_href="/diligence/ic-packet",
         )
+    # Empty-observation mode renders every item open — frame the wall
+    # of 39 rows as an onboarding state rather than a failure wall.
+    lead_in = ""
+    if empty and state.done == 0:
+        lead_in = ck_empty_state(
+            "Nothing observed yet.",
+            (
+                "No analytics have run for this deal, so every "
+                "checklist item is open. Start with CCD ingest or "
+                "open the diligence index to run the first analytic."
+            ),
+            eyebrow="EMPTY OBSERVATION SET",
+            cta_label="Open the diligence index",
+            cta_href="/diligence",
+            tone="neutral",
+        )
+    n_p0 = sum(1 for q in qs if q.priority == "P0")
+    n_p1 = sum(1 for q in qs if q.priority == "P1")
+    n_p2 = len(qs) - n_p0 - n_p1
+    summary_bits = [f"{n_p0} P0", f"{n_p1} P1"]
+    if n_p2:
+        summary_bits.append(f"{n_p2} P2")
+    summary = (
+        f'<div class="dc-oq-summary">{" · ".join(summary_bits)}</div>'
+    )
     rows: List[str] = []
+    prev_priority: Optional[str] = None
     for q in qs:
-        cls = (
-            "cad-neg" if q.priority == "P0"
-            else "cad-warn" if q.priority == "P1"
+        tone = (
+            "negative" if q.priority == "P0"
+            else "warning" if q.priority == "P1"
+            else "neutral"
+        )
+        # Subtle divider where the list steps down from P0s.
+        break_cls = (
+            " dc-oq-row--break"
+            if prev_priority is not None and q.priority != prev_priority
             else ""
         )
+        prev_priority = q.priority
         rows.append(
-            f'<div class="dc-oq-row">'
-            f'<span class="dc-oq-row__prio {cls}">'
-            f'{q.priority}</span>'
+            f'<div class="dc-oq-row{break_cls}">'
+            f'{_chip(q.priority, tone)}'
             f'<span>{html.escape(q.question)}</span>'
             f'<span class="dc-oq-row__owner">{html.escape(q.owner)}</span>'
-            f'</div>'
+            '</div>'
         )
     return ck_panel(
-        '<p class="ck-section-body">'
+        lead_in
+        + '<p class="ck-section-body">'
         'Every P0/P1 item that remains OPEN or BLOCKED. This list '
         'is what the IC Packet "Open Questions" section prints — '
         'close the loop on each before the memo ships.</p>'
-        f'{"".join(rows)}',
+        f'{summary}{"".join(rows)}',
         title=f"Open questions for IC ({len(qs)})",
     )
 
 
 def _flat_checklist_table(state: DealChecklistState) -> str:
-    """Sortable/filterable/exportable table of every item."""
+    """Sortable/filterable/exportable table of every item — the
+    partner-facing question leads; the internal item_id demotes to a
+    faint mono trailing column."""
     headers = [
-        "Item", "Phase", "Category", "Priority", "Status",
-        "Owner", "Question",
+        "Phase", "Category", "Question", "Priority", "Status",
+        "Owner", "Item ID",
     ]
     rows: List[List[str]] = []
     sort_keys: List[List[Any]] = []
@@ -649,29 +790,29 @@ def _flat_checklist_table(state: DealChecklistState) -> str:
     priority_rank = {Priority.P0: 0, Priority.P1: 1, Priority.P2: 2}
     for s in state.items:
         it = s.item
-        status_color = P.get(_STATUS_COLOR[s.status], P["text_dim"])
-        prio_color = P.get(_PRIORITY_COLOR[it.priority], P["text_dim"])
         rows.append([
-            it.item_id,
             str(it.phase),
-            it.category.value.replace("_", " "),
-            f'<span style="color:{prio_color};font-weight:600;">'
-            f'{it.priority.value}</span>',
-            f'<span style="color:{status_color};font-weight:600;">'
-            f'{s.status.value.replace("_", " ")}</span>',
-            it.default_owner.value,
-            it.question,
+            html.escape(it.category.value.replace("_", " ")),
+            html.escape(it.question),
+            _priority_chip(it.priority),
+            _status_chip(s.status),
+            html.escape(it.default_owner.value),
+            f'<span class="dc-itemid">{html.escape(it.item_id)}</span>',
         ])
         sort_keys.append([
-            it.item_id, it.phase, it.category.value,
+            it.phase, it.category.value, it.question,
             priority_rank[it.priority],
             status_rank[s.status],
             it.default_owner.value,
-            it.question,
+            it.item_id,
         ])
-    return sortable_table(
+    table = sortable_table(
         headers, rows, name="diligence_checklist", sort_keys=sort_keys,
+        table_class="cad-table cad-table-sticky",
     )
+    # Scroll container keeps the sticky header pinned while 40 rows
+    # scroll beneath it.
+    return f'<div class="dc-flat-scroll">{table}</div>'
 
 
 # ────────────────────────────────────────────────────────────────────
@@ -685,14 +826,17 @@ def _category_progress_svg(state, width: int = 660) -> str:
     cats = state.by_category()
     if not cats:
         return ""
-    tone = {"DONE": "#0a8a5f", "IN_PROGRESS": "#b8732a",
-            "OPEN": "#9aa3ad", "BLOCKED": "#b5321e"}
+    tone = {"DONE": P["positive"], "IN_PROGRESS": P["warning"],
+            "OPEN": P["text_faint"], "BLOCKED": P["negative"]}
     order = ["DONE", "IN_PROGRESS", "OPEN", "BLOCKED"]
+    legend_cls = {"DONE": "s-done", "IN_PROGRESS": "s-wip",
+                  "OPEN": "s-open", "BLOCKED": "s-blocked"}
     row_h, pad_l, pad_r = 24, 170, 86
     pw = width - pad_l - pad_r
     rows = list(cats.items())
     h = len(rows) * row_h + 6
-    parts = [f'<svg width="{width}" height="{h}" '
+    parts = [f'<svg viewBox="0 0 {width} {h}" '
+             'preserveAspectRatio="xMidYMid meet" class="dc-catsvg" '
              'xmlns="http://www.w3.org/2000/svg" role="img" '
              'aria-label="Checklist progress by category">']
     for i, (cat, items) in enumerate(rows):
@@ -704,7 +848,8 @@ def _category_progress_svg(state, width: int = 660) -> str:
         done = counts["DONE"]
         parts.append(
             f'<text x="{pad_l-8}" y="{y+12}" text-anchor="end" '
-            'font-family="monospace" font-size="9.5" fill="#465366">'
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'fill="{P["text_dim"]}">'
             f'{html.escape(cat.value.title()[:24])}</text>')
         x = pad_l
         for s in order:
@@ -720,18 +865,17 @@ def _category_progress_svg(state, width: int = 660) -> str:
             x += w
         parts.append(
             f'<text x="{pad_l+pw+8}" y="{y+12}" '
-            'font-family="monospace" font-size="9.5" fill="#465366">'
+            f'font-family="JetBrains Mono,monospace" font-size="9.5" '
+            f'fill="{P["text_dim"]}">'
             f'{done}/{len(items)}</text>')
     parts.append('</svg>')
     legend = "".join(
-        f'<span style="display:inline-flex;align-items:center;gap:4px;'
-        f'margin-right:12px;font-size:10.5px;color:#465366;">'
-        f'<span style="width:9px;height:9px;background:{c};'
-        f'display:inline-block;"></span>'
+        '<span class="dc-legend__key">'
+        f'<span class="dc-legend__swatch {legend_cls[s]}"></span>'
         f'{s.replace("_", " ").title()}</span>'
-        for s, c in tone.items())
+        for s in order)
     return ("".join(parts)
-            + f'<div style="margin:2px 0 14px;">{legend}</div>')
+            + f'<div class="dc-legend">{legend}</div>')
 
 
 def render_diligence_checklist_page(
@@ -742,6 +886,7 @@ def render_diligence_checklist_page(
     manual_done = _parse_id_set(qs, "mark_done")
     manual_blocked = _parse_id_set(qs, "mark_blocked")
     manual_in_progress = _parse_id_set(qs, "mark_in_progress")
+    overridden = manual_done | manual_blocked | manual_in_progress
 
     # If ?empty=1, start from a fully-empty observation set (useful
     # for demos + tests).
@@ -756,7 +901,7 @@ def render_diligence_checklist_page(
 
     by_phase = state.by_phase()
     phase_html = "".join(
-        _phase_section(phase, by_phase[phase], qs)
+        _phase_section(phase, by_phase[phase], qs, overridden)
         for phase in sorted(by_phase.keys())
     )
 
@@ -766,67 +911,57 @@ def render_diligence_checklist_page(
     _payload = state.to_dict()
     _payload["ic_readiness_gate"] = gate.to_dict()
 
-    # Wrap the hero + gate + open-questions in an export_json_panel so
-    # the partner can download the live state (incl. the gate) as JSON.
+    # Wrap the KPI strip + gate + open-questions in an
+    # export_json_panel so the partner can download the state
+    # (incl. the gate) as JSON.
     hero_and_oq = export_json_panel(
-        _hero(state)
+        _kpi_strip(state)
         + _ic_readiness_section(gate)
-        + _open_questions_block(state),
+        + _open_questions_block(state, empty=empty),
         payload=_payload,
         name="diligence_checklist_state",
     )
 
-    # Compute a quick completion ratio for the meta line — done over total.
-    _items = getattr(state, "items", []) or []
-    _done = sum(
-        1 for s in _items
-        if getattr(getattr(s, "status", None), "value", None) == "done"
+    chart_svg = _category_progress_svg(state)
+    chart_html = (
+        ck_panel(chart_svg, title="Progress by category",
+                 anchor_id="dc-chart")
+        if chart_svg else ""
     )
-    _pct = (_done / len(_items) * 100.0) if _items else 0.0
-    title = (
-        ck_page_title(
-        "Diligence Checklist",
-        eyebrow="RCM DILIGENCE",
-        meta=(
-            f"Orchestration layer · {_pct:.0f}% complete · "
-            "auto-tracked from live analytics"
-        ),
-    )
-        + ck_page_explainer(
-            'Diligence orchestration + open-questions tracker.',
-            "Tracks every diligence workstream (QoE, IT, HR, regulatory, commercial) by owner and deadline, plus the rolling list of open questions the partner has flagged. Used as the partner's daily standup view during the exclusivity window.",
-            source='Per-deal checklist + workflow state (live).',
-        )
-    )
-    # Sticky right-rail TOC — the checklist has three vertical
-    # sections (the hero + open questions, the phase-grouped item
-    # list, and the flat sortable table). Partners come back to a
-    # specific phase mid-diligence; the TOC lets them jump.
-    toc = ck_sticky_toc([
-        {"id": "dc-hero",   "title": "Open questions"},
+
+    # Sticky right-rail TOC — labels mirror the section content:
+    # coverage + gate hero, the at-a-glance category chart, the
+    # phase-grouped roster, and the flat all-items table.
+    toc_sections = [{"id": "dc-hero", "title": "Coverage & IC gate"}]
+    if chart_html:
+        toc_sections.append(
+            {"id": "dc-chart", "title": "Progress by category"})
+    toc_sections.extend([
         {"id": "dc-phases", "title": "Items by phase"},
-        {"id": "dc-flat",   "title": "Flat view · CSV"},
+        {"id": "dc-flat", "title": "All items"},
     ])
+    toc = ck_sticky_toc(toc_sections)
+
     body = (
         _scoped_styles()
-        + title
         + '<div class="dc-wrap">'
+        + _masthead(state, empty=empty)
         + '<div class="ck-toc-layout">'
         + toc
         + '<div class="ck-toc-content">'
         + f'<section id="dc-hero">{hero_and_oq}</section>'
-        + _category_progress_svg(state)
+        + chart_html
         + '<section id="dc-phases">'
-        + ck_section_header(
-            "Items by phase · click an evidence link to drill in",
-            eyebrow="PHASES",
-        )
+        + ck_section_header("Items by phase", eyebrow="PHASES")
+        + '<p class="dc-section-note">Each evidence link opens the '
+          'analytic that closes its item; the [?] on a phase header '
+          'explains what belongs in that phase.</p>'
         + phase_html
         + '</section>'
         + '<section id="dc-flat">'
         + ck_panel(
             _flat_checklist_table(state),
-            title="Flat view · sortable · filterable · CSV export",
+            title="Every item · export for the IC packet",
         )
         + '</section>'
         + '</div></div>'
@@ -838,13 +973,12 @@ def render_diligence_checklist_page(
             eyebrow="Up next",
             italic_word="deal",
         )
+        # ck_page_actions adds Copy share link + Back-to-top
+        # affordances. Idempotent JS guards.
+        + ck_page_actions()
     )
-    # 2026-05-28 wave-B: ck_page_actions adds Copy share link
-    # + Back-to-top affordances. Idempotent JS guards.
-    from ._chartis_kit import ck_page_actions
-    body = body + ck_page_actions()
     return chartis_shell(
         body, "RCM Diligence — Checklist",
         active_nav="/diligence/checklist",
-        subtitle="Orchestration layer · auto-tracked from live analytics",
+        subtitle="Coverage + IC readiness · URL-encoded state",
     )

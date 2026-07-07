@@ -4,8 +4,8 @@ Phase 14 of the UI v2 editorial rework wires every tab to live
 backends. Each tab accepts a ``?dataset=<fixture_name>`` query param;
 when set, the page runs the real pipeline (ingest → KPI → cohort →
 waterfall → advisory) and renders the results under the editorial
-shell. With no param, each tab renders a minimal "pick a fixture"
-selector so the analyst can drive without leaving the page.
+shell. With no param, each tab renders a "pick a fixture" empty state
+plus a selector so the analyst can drive without leaving the page.
 
 Available datasets (shipped as kpi_truth fixtures under
 ``tests/fixtures/kpi_truth/``):
@@ -22,6 +22,10 @@ Available datasets (shipped as kpi_truth fixtures under
 Auth-aware file uploads are deferred — this wiring uses the existing
 kpi_truth fixtures as the demo corpus, so the tabs are immediately
 usable without a partner touching the filesystem.
+
+Glossary note: CCD always means Canonical Claims Dataset (the
+versioned claim table produced by the Phase 1 ingester) — never the
+clinical-document CCD.
 """
 from __future__ import annotations
 
@@ -30,8 +34,23 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..ui._chartis_kit import chartis_shell, ck_page_title, ck_page_explainer
-from ..ui.brand import PALETTE
+from ..ui._chartis_kit import (
+    chartis_shell,
+    ck_affirm_empty,
+    ck_data_cell,
+    ck_data_table,
+    ck_editorial_head,
+    ck_empty_state,
+    ck_fmt_number,
+    ck_illustrative_note,
+    ck_kpi_block,
+    ck_next_section,
+    ck_panel,
+    ck_provenance_tooltip,
+    ck_section_header,
+    ck_severity_panel,
+    ck_signal_badge,
+)
 
 
 FIXTURE_ROOT = (
@@ -53,87 +72,31 @@ AVAILABLE_FIXTURES: List[Tuple[str, str]] = [
 ]
 
 
-# ── Shared fragments ────────────────────────────────────────────────
+# ── Shared page-scoped CSS ──────────────────────────────────────────
+#
+# Raw CSS (no <style> wrapper) — every page routes it through
+# chartis_shell's ``extra_css`` kwarg so it lands once in <head>.
+# The benchmarks route, which delegates its shell to another module,
+# wraps it in a <style> tag before splicing (see
+# ``render_benchmarks_page``). Kit CSS custom properties with
+# canonical fallbacks only — no ad-hoc hex.
 
-def _hero(
-    title: str, sub: str, *,
-    eyebrow: str = "RCM DILIGENCE",
-    explainer_headline: str = "",
-    explainer_body: str = "",
-    explainer_source: str = "",
-) -> str:
-    """Editorial hero for diligence pages. Replaces the old hand-
-    rolled inline-styled block with ck_page_title + a serif lede so
-    every diligence surface reads like the rest of v5. Emits the
-    shared diligence CSS the first time it's called per render —
-    multiple calls in one render are harmless duplicates the browser
-    coalesces, but most pages only use one hero.
+_ERROR_CSS = """
+  .ck-dil-error-row { font-family: var(--sc-sans, Inter, sans-serif);
+    font-size: 13px; line-height: 1.55; color: var(--sc-text, #1a2332); }
+  .ck-dil-error-detail { margin-top: 8px; }
+  .ck-dil-error-detail summary { cursor: pointer;
+    font-family: var(--sc-mono, monospace); font-size: 10.5px;
+    letter-spacing: .08em; text-transform: uppercase;
+    color: var(--sc-text-dim, #465366); }
+  .ck-dil-error-detail summary:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px; }
+  .ck-dil-error-detail code { display: block; margin-top: 6px;
+    font-family: var(--sc-mono, monospace); font-size: 11.5px;
+    color: var(--sc-negative, #b5321e); word-break: break-word; }
+"""
 
-    Pass ``explainer_headline`` + ``explainer_body`` (+ optional
-    ``explainer_source``) to emit a Portfolio-Heatmap-style explainer
-    paragraph below the lede. Tells the partner what data the page
-    uses, what it's telling them, and whether the data is live or
-    illustrative — the four things the diligence-pages-explainers
-    rollout calls for.
-    """
-    # Single intro paragraph below the title — not two. Earlier
-    # `_hero` rendered BOTH the `sub` lede AND the `ck_page_explainer`
-    # which produced the "two summaries" pattern partners flagged
-    # (HCRIS X-Ray, Ingestion, RCM Benchmarks, etc.). When the page
-    # supplies a real editorial explainer (headline + body), that
-    # carries the load — skip the `sub` lede so the page reads once,
-    # not twice. When no explainer is provided, render `sub` as the
-    # sole lede so titleless pages still get context.
-    if explainer_headline and explainer_body:
-        explainer = ck_page_explainer(
-            explainer_headline,
-            explainer_body,
-            source=explainer_source or None,
-        )
-        lede = ""
-    else:
-        explainer = ""
-        lede = (
-            f'<p class="ck-diligence-lede">{html.escape(sub)}</p>'
-            if sub else ""
-        )
-    return (
-        _DILIGENCE_CSS
-        + ck_page_title(title, eyebrow=eyebrow)
-        + lede
-        + explainer
-    )
-
-
-def _fixture_selector(current_tab_route: str, current_dataset: str = "") -> str:
-    """Editorial fixture picker — bone-bordered select + navy → teal
-    hover Load button. Used as the dataset-gate at the top of every
-    diligence tab so the partner can drive the page without leaving."""
-    options = "".join(
-        f'<option value="{html.escape(name)}"'
-        f'{" selected" if name == current_dataset else ""}>'
-        f'{html.escape(label)}</option>'
-        for name, label in AVAILABLE_FIXTURES
-    )
-    return (
-        f'<form method="GET" action="{html.escape(current_tab_route)}" '
-        f'class="ck-diligence-fixture">'
-        f'<label class="ck-diligence-fixture-label">Dataset</label>'
-        f'<select name="dataset" class="ck-diligence-fixture-select" '
-        f'aria-label="Dataset">'
-        f'<option value="">— pick a fixture —</option>{options}'
-        f'</select>'
-        f'<button type="submit" class="ck-diligence-fixture-go">'
-        f'Load &rarr;</button>'
-        f'</form>'
-    )
-
-
-_DILIGENCE_CSS = """
-<style>
-  .ck-diligence-lede { font-family: var(--sc-serif, Georgia, serif);
-    font-size: 14px; line-height: 1.6; color: var(--sc-text-dim, #465366);
-    margin: 0 0 18px; max-width: 72ch; }
+_DILIGENCE_CSS = _ERROR_CSS + """
   .ck-diligence-fixture { display: flex; align-items: center; gap: 12px;
     padding: 12px 16px; margin: 0 0 22px;
     background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
@@ -147,7 +110,8 @@ _DILIGENCE_CSS = """
     color: var(--sc-text, #1a2332);
     font-family: var(--sc-sans, Inter, sans-serif); font-size: 13px;
     border-radius: 2px; }
-  .ck-diligence-fixture-select:focus { outline: none;
+  .ck-diligence-fixture-select:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px;
     border-color: var(--sc-teal, #155752); }
   .ck-diligence-fixture-go { padding: 7px 16px;
     background: var(--sc-navy, #0b2341); color: #fff; border: 0;
@@ -155,79 +119,153 @@ _DILIGENCE_CSS = """
     font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
     cursor: pointer; border-radius: 2px; }
   .ck-diligence-fixture-go:hover { background: var(--sc-teal, #155752); }
-  .ck-diligence-info { padding: 14px 18px; margin: 0 0 18px;
+  .ck-diligence-fixture-go:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px; }
+  .ck-dil-info { padding: 14px 18px; margin: 0 0 18px;
     background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
     border-left: 3px solid var(--sc-teal, #155752); border-radius: 2px;
     font-family: var(--sc-serif, Georgia, serif); font-size: 13.5px;
     line-height: 1.6; color: var(--sc-text-dim, #465366);
     max-width: 72ch; }
-  .ck-diligence-error { padding: 14px 18px; margin: 0 0 18px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
-    border-left: 3px solid var(--sc-negative, #b5321e); border-radius: 2px; }
-  .ck-diligence-error h3 { font-family: var(--sc-mono, monospace);
-    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--sc-negative, #b5321e);
+  .ck-dil-note { font-family: var(--sc-mono, monospace);
+    font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--sc-text-dim, #465366); margin: 0 0 12px; }
+  .ck-dil-note-after { margin: 8px 0 18px; }
+  .ck-dil-files { margin: 14px 0 0; padding: 0 0 0 18px; }
+  .ck-dil-files li { font-family: var(--sc-mono, monospace);
+    font-size: 11px; color: var(--sc-text-dim, #465366);
+    line-height: 1.8; }
+  .ck-dil-chips { display: flex; flex-wrap: wrap; gap: 6px;
+    margin: 0 0 14px; }
+  .ck-dil-chip { display: inline-flex; align-items: center; gap: 8px;
+    padding: 3px 10px; background: #fff;
+    border: 1px solid var(--sc-rule, #d6cfc0); border-radius: 2px;
+    font-family: var(--sc-mono, monospace); font-size: 11px;
+    color: var(--sc-text, #1a2332); }
+  .ck-dil-chip b { color: var(--sc-teal, #155752); font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+  .ck-dil-panel { background: #fff;
+    border: 1px solid var(--sc-rule, #d6cfc0); border-radius: 2px;
+    padding: 16px 18px; margin: 0 0 18px; }
+  .ck-dil-pareto-row { margin-bottom: 12px; }
+  .ck-dil-pareto-row:last-child { margin-bottom: 2px; }
+  .ck-dil-pareto-meta { display: flex; justify-content: space-between;
+    gap: 12px; font-family: var(--sc-sans, Inter, sans-serif);
+    font-size: 12.5px; margin-bottom: 4px; }
+  .ck-dil-pareto-cat { color: var(--sc-text, #1a2332);
+    font-weight: 500; }
+  .ck-dil-pareto-num { font-family: var(--sc-mono, monospace);
+    font-variant-numeric: tabular-nums;
+    color: var(--sc-text-dim, #465366); white-space: nowrap; }
+  .ck-dil-pareto-track { background: var(--sc-bone, #efeadd);
+    height: 5px; border-radius: 1px; overflow: hidden; }
+  .ck-dil-pareto-fill { background: var(--sc-teal, #155752);
+    height: 100%; }
+  .ck-dil-total td { border-top: 2px solid var(--sc-rule-2, #c9c1ac);
+    font-weight: 700; }
+  .ck-dil-2col { display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin: 0 0 18px; }
+  .ck-dil-subhead { font-family: var(--sc-mono, monospace);
+    font-size: 10px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--sc-text-dim, #465366);
     margin: 0 0 6px; }
-  .ck-diligence-error p { font-family: var(--sc-mono, monospace);
-    font-size: 12px; color: var(--sc-text-dim, #465366); margin: 0;
-    word-break: break-word; }
-</style>
+"""
+
+_QOE_CSS = _ERROR_CSS + """
+  .qoe-form { max-width: 560px; }
+  .qoe-form label { display: block; margin: 14px 0 6px;
+    font-family: var(--sc-mono, JetBrains Mono, monospace);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--sc-text-dim, #465366); }
+  .qoe-form select, .qoe-form input { width: 100%; padding: 9px 12px;
+    font-size: 13.5px; border: 1px solid var(--sc-rule, #d6cfc0);
+    background: #fff; color: var(--sc-text, #1a2332); border-radius: 2px;
+    font-family: var(--sc-sans, Inter, sans-serif); }
+  .qoe-form select:focus-visible, .qoe-form input:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px;
+    border-color: var(--sc-teal, #155752); }
+  .qoe-form button { margin-top: 24px; padding: 10px 22px;
+    background: var(--sc-navy, #0b2341); color: #fff; border: 0;
+    font-size: 12px; cursor: pointer; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px;
+    font-family: var(--sc-sans, Inter, sans-serif); }
+  .qoe-form button:hover { background: var(--sc-teal, #155752); }
+  .qoe-form button:focus-visible {
+    outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px; }
+  .qoe-lead { font-family: var(--sc-serif, Georgia, serif);
+    font-size: 14.5px; line-height: 1.6;
+    color: var(--sc-text-dim, #465366);
+    max-width: 640px; margin: 0 0 24px; }
 """
 
 
-def _ccd_summary_card(ccd: Any) -> str:
-    """Compact one-card CCD summary: ingest_id, claim count, source
-    files, content hash."""
-    from .ingest.ccd import CanonicalClaimsDataset  # noqa: F401
-    # JetBrains Mono is used as a monospace fallback. The escaped
-    # quotes inside an f-string expression part trip Python 3.11 —
-    # build the font-family string once outside the f-string.
-    JBMONO = "'JetBrains Mono',monospace"
-    source_list = "".join(
-        f'<li style="font-family:{JBMONO};font-size:11px;'
-        f'color:{PALETTE["text_dim"]};">{html.escape(str(f))}</li>'
-        for f in (ccd.source_files or [])
+# ── Shared fragments ────────────────────────────────────────────────
+
+def _masthead(
+    *,
+    phase: int,
+    title: str,
+    meta: str,
+    lede_italic: str,
+    lede_body: str,
+    source_note: str = "",
+) -> str:
+    """Tier-1 editorial masthead for the diligence workflow pages.
+
+    One place owns the phase labeling (the eyebrow) so the H1 stays a
+    clean page name — the earlier 'Phase N — Title' H1s duplicated the
+    shell subtitle and let two surfaces both claim Phase 3. The
+    4-dot legend that ``ck_editorial_head`` ships doubles as the
+    live/illustrative honesty key for the synthetic demo sections.
+    """
+    return ck_editorial_head(
+        eyebrow=f"RCM DILIGENCE · PHASE {phase} OF 4",
+        title=html.escape(title),
+        meta=meta,
+        lede_italic_phrase=lede_italic,
+        lede_body=html.escape(lede_body),
+        source_note=source_note,
     )
-    # Pre-build the optional <ul> wrapper outside the f-string so the
-    # nested escaped quotes don't trip Python 3.11's parser.
-    source_block = (
-        '<ul style="margin:10px 0 0 20px;padding:0;">'
-        + source_list + '</ul>'
-        if source_list else ''
+
+
+def _fixture_meta(dataset_loaded: str = "") -> str:
+    """Mono meta line with the real fixture count + load state."""
+    n = len(AVAILABLE_FIXTURES)
+    if dataset_loaded:
+        return f"{n} fixtures · loaded {dataset_loaded}"
+    return f"{n} fixtures · no dataset loaded"
+
+
+def _fixture_selector(
+    current_tab_route: str,
+    current_dataset: str = "",
+    *,
+    select_id: str = "ck-dil-dataset",
+) -> str:
+    """Editorial fixture picker — bone-bordered select + navy → teal
+    hover Load button. Used as the dataset-gate at the top of every
+    diligence tab so the partner can drive the page without leaving.
+    ``select_id`` pairs the visible label with its control (a11y)."""
+    options = "".join(
+        f'<option value="{html.escape(name)}"'
+        f'{" selected" if name == current_dataset else ""}>'
+        f'{html.escape(label)}</option>'
+        for name, label in AVAILABLE_FIXTURES
     )
+    sid = html.escape(select_id)
     return (
-        f'<div style="background:{PALETTE["panel"]};'
-        f'border:1px solid {PALETTE["border"]};padding:14px 16px;'
-        f'margin:12px 0;">'
-        f'<div style="display:flex;justify-content:space-between;'
-        f'align-items:baseline;margin-bottom:10px;">'
-        f'<div style="font-size:13px;font-weight:600;color:{PALETTE["text"]};">'
-        f'Canonical Claims Dataset</div>'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
-        f'color:{PALETTE["text_faint"]};letter-spacing:.1em;">'
-        f'{html.escape(ccd.ingest_id)}</div>'
-        f'</div>'
-        f'<div style="display:grid;grid-template-columns:repeat(4,1fr);'
-        f'gap:12px;font-size:12px;">'
-        f'<div><div style="color:{PALETTE["text_faint"]};font-size:10px;'
-        f'letter-spacing:.14em;text-transform:uppercase;">Claims</div>'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:18px;'
-        f'color:{PALETTE["text"]};">{len(ccd.claims):,}</div></div>'
-        f'<div><div style="color:{PALETTE["text_faint"]};font-size:10px;'
-        f'letter-spacing:.14em;text-transform:uppercase;">Schema</div>'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;'
-        f'color:{PALETTE["text"]};">{html.escape(ccd.ccd_schema_version)}</div></div>'
-        f'<div><div style="color:{PALETTE["text_faint"]};font-size:10px;'
-        f'letter-spacing:.14em;text-transform:uppercase;">Source files</div>'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;'
-        f'color:{PALETTE["text"]};">{len(ccd.source_files)}</div></div>'
-        f'<div><div style="color:{PALETTE["text_faint"]};font-size:10px;'
-        f'letter-spacing:.14em;text-transform:uppercase;">Content hash</div>'
-        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:12px;'
-        f'color:{PALETTE["text"]};">{html.escape(ccd.content_hash()[:12])}…</div></div>'
-        f'</div>'
-        f'{source_block}'
-        f'</div>'
+        f'<form method="GET" action="{html.escape(current_tab_route)}" '
+        f'class="ck-diligence-fixture">'
+        f'<label class="ck-diligence-fixture-label" for="{sid}">'
+        f'Dataset</label>'
+        f'<select name="dataset" id="{sid}" '
+        f'class="ck-diligence-fixture-select" aria-label="Dataset">'
+        f'<option value="">— pick a fixture —</option>{options}'
+        f'</select>'
+        f'<button type="submit" class="ck-diligence-fixture-go">'
+        f'Load &rarr;</button>'
+        f'</form>'
     )
 
 
@@ -243,59 +281,88 @@ def _resolve_dataset(dataset: str) -> Optional[Path]:
     return path
 
 
-def _err_panel(title: str, msg: str) -> str:
-    return (
-        '<div class="ck-diligence-error">'
-        f'<h3>{html.escape(title)}</h3>'
-        f'<p>{html.escape(msg)}</p>'
-        '</div>'
+def _error_panel(headline: str, exc: Exception) -> str:
+    """Partner-readable failure panel. The raw exception is preserved
+    for the analyst inside a collapsed <details> block instead of
+    being dumped headline-level (a KeyError string is a debugging
+    artifact, not a partner message)."""
+    detail = html.escape(f"{type(exc).__name__}: {exc}")
+    row = (
+        '<li class="ck-dil-error-row">'
+        'This fixture could not be processed. Re-select the dataset '
+        'or check the source files, then reload the page.'
+        '<details class="ck-dil-error-detail">'
+        '<summary>Technical detail</summary>'
+        f'<code>{detail}</code>'
+        '</details></li>'
     )
+    return ck_severity_panel(
+        tone="red", label=headline, count=1, rows_html=row,
+    )
+
+
+def _note(text: str, *, after: bool = False) -> str:
+    """Quiet mono caption (truncation notices, ingest IDs, match
+    counts). ``after=True`` adds bottom margin for use under tables."""
+    cls = "ck-dil-note ck-dil-note-after" if after else "ck-dil-note"
+    return f'<div class="{cls}">{html.escape(text)}</div>'
 
 
 def _info_strip(text: str) -> str:
-    return (
-        f'<div class="ck-diligence-info">{html.escape(text)}</div>'
-    )
+    """Serif context footnote under a table/section — NOT an empty
+    state (empty states go through ck_empty_state/ck_affirm_empty)."""
+    return f'<div class="ck-dil-info">{html.escape(text)}</div>'
+
+
+def _next_dataset_qs(ds_path: Optional[Path], dataset: str) -> str:
+    """Carry a *validated* fixture name to the next phase's URL.
+
+    Only appended once ``_resolve_dataset`` accepted the value, so an
+    arbitrary query string never round-trips into the next href."""
+    return f"?dataset={dataset}" if ds_path is not None else ""
 
 
 # ── Phase 1: /diligence/ingest ─────────────────────────────────────
 
 def render_ingest_page(dataset: str = "") -> str:
+    ds_path = _resolve_dataset(dataset)
     body = [
-        _hero(
-            "Phase 1 — Ingestion & Normalization",
-            "Raw 837 / 835 EDI, Epic / Cerner / Athena exports, and "
-            "messy Excel funnelled into a single versioned Canonical "
-            "Claims Dataset (CCD). Every transformation is row-logged.",
-            explainer_headline=(
+        _masthead(
+            phase=1,
+            title="Ingestion & Normalization",
+            meta=_fixture_meta(dataset if ds_path is not None else ""),
+            lede_italic=(
                 "Ingest the source data, see every transformation."
             ),
-            explainer_body=(
-                "Loads the deal's CCD (consolidated clinical "
-                "document) or claims fixture, then renders the full "
-                "transformation log — field mappings, normalizations, "
-                "dropped rows, derived columns. Used to audit data "
-                "quality before any analytic surface trusts the "
+            lede_body=(
+                "Raw 837 / 835 EDI, Epic / Cerner / Athena exports, and "
+                "messy Excel funnel into a single versioned CCD "
+                "(Canonical Claims Dataset). The full transformation "
+                "log renders below — field mappings, normalizations, "
+                "dropped rows, derived columns — so data quality is "
+                "auditable before any analytic surface trusts the "
                 "ingested table."
             ),
-            explainer_source=(
+            source_note=(
                 "Fixture upload or CCD feed (per-deal); current "
                 "fixtures are synthetic for prototype."
             ),
         ),
-        '<div style="background:var(--sc-bone);border:1px solid var(--sc-rule);'
-        'border-left:3px solid var(--sc-teal);padding:12px 16px;margin:0 0 18px 0;'
-        'font-size:13px;">'
-        '<strong>New — live VDR upload.</strong> Upload real 835/837 files '
-        'or a VDR ZIP at '
-        '<a href="/diligence/snapshot" style="color:var(--sc-teal-ink);'
-        'font-weight:600;">/diligence/snapshot</a> for revenue-leakage '
-        'findings + a diligence memo (PHI-tokenized, aggregate output).'
-        '</div>',
-        _fixture_selector("/diligence/ingest", dataset),
+        (
+            '<div class="ck-dil-info">'
+            'Have real files? Upload 835/837 remittances or a full VDR '
+            'ZIP for revenue-leakage findings and a diligence memo '
+            '(PHI-tokenized, aggregate output). '
+            '<a class="ck-arrow" href="/diligence/snapshot">'
+            'Open Healthcare Snapshot</a>'
+            '</div>'
+        ),
+        _fixture_selector(
+            "/diligence/ingest", dataset,
+            select_id="ck-dil-dataset-ingest",
+        ),
     ]
 
-    ds_path = _resolve_dataset(dataset)
     if ds_path is not None:
         try:
             from . import ingest_dataset
@@ -303,95 +370,174 @@ def render_ingest_page(dataset: str = "") -> str:
             body.append(_ccd_summary_card(ccd))
             body.append(_transformation_log_preview(ccd))
         except Exception as exc:
-            body.append(_err_panel(
-                "Ingestion failed",
-                f"{type(exc).__name__}: {exc}",
-            ))
+            body.append(_error_panel("Ingestion failed", exc))
     else:
-        body.append(_info_strip(
-            "Pick a fixture above to run the Phase 1 ingester against "
-            "canonical truth data. Each fixture ships with an "
-            "expected.json contract; the regression suite locks the "
-            "ingester output against those values."
+        body.append(ck_empty_state(
+            "Pick a fixture to run the ingester.",
+            "Each fixture is canonical truth data with a locked "
+            "expected output, so the CCD summary and transformation "
+            "log below always reflect a verified pipeline run.",
+            eyebrow="NO DATASET LOADED",
+            icon="▦",
+            cta_label="Load the clean acute baseline",
+            cta_href="/diligence/ingest?dataset=hospital_01_clean_acute",
         ))
+
+    body.append(ck_next_section(
+        "Continue to Benchmarks",
+        "/diligence/benchmarks" + _next_dataset_qs(ds_path, dataset),
+        eyebrow="Phase 2 of 4",
+        italic_word="Benchmarks",
+    ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Ingestion",
+        active_nav="/diligence/ingest",
         subtitle="Phase 1 of 4 · Canonical Claims Dataset",
+        extra_css=_DILIGENCE_CSS,
+    )
+
+
+def _ccd_summary_card(ccd: Any) -> str:
+    """CCD summary as an editorial KPI grid — claims, schema, source
+    files, content hash (with provenance) — plus the ingest ID as a
+    quiet mono caption and the source-file inventory list."""
+    hash12 = html.escape(ccd.content_hash()[:12])
+    hash_value = ck_provenance_tooltip(
+        "Content hash",
+        f"{hash12}…",
+        explainer=(
+            "First 12 hex characters of the SHA-256 digest over the "
+            "canonical claim rows. Re-ingesting byte-identical source "
+            "files yields the same hash; any upstream edit changes it "
+            "— this is the audit anchor for the dataset version."
+        ),
+    )
+    kpis = (
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block(
+            "Claims", ck_fmt_number(len(ccd.claims)),
+            "canonical claim rows",
+        )
+        + ck_kpi_block(
+            "Schema", html.escape(ccd.ccd_schema_version),
+            "CCD schema version",
+        )
+        + ck_kpi_block(
+            "Source files", ck_fmt_number(len(ccd.source_files)),
+            "ingested this run",
+        )
+        + ck_kpi_block(
+            "Content hash", hash_value,
+            "SHA-256 · first 12 chars",
+        )
+        + '</div>'
+    )
+    files = "".join(
+        f'<li>{html.escape(str(f))}</li>'
+        for f in (ccd.source_files or [])
+    )
+    files_html = (
+        f'<ul class="ck-dil-files">{files}</ul>' if files else ""
+    )
+    return (
+        ck_section_header(
+            "Canonical Claims Dataset", eyebrow="PHASE 1 OUTPUT",
+        )
+        + _note(f"Ingest ID {ccd.ingest_id}")
+        + kpis
+        + files_html
     )
 
 
 def _transformation_log_preview(ccd: Any) -> str:
-    """Show the TransformationLog summary + first 20 entries."""
+    """Transformation-log summary chips + the first 20 entries as an
+    editorial data table with humanized headers and toned severity
+    badges. An empty log is the good outcome, so it renders as an
+    affirmative band rather than a bare notice."""
     summary = ccd.log.summary()
     if not summary:
-        return _info_strip("Transformation log is empty — this "
-                           "fixture's rows passed through without "
-                           "coercion.")
+        return ck_affirm_empty(
+            headline="No coercions logged.",
+            body=(
+                "Every row in this fixture passed through the ingester "
+                "without field coercion — the transformation log is "
+                "empty."
+            ),
+        )
     ranked = sorted(summary.items(), key=lambda kv: -kv[1])[:8]
     chips = "".join(
-        f'<span style="display:inline-flex;align-items:center;gap:6px;'
-        f'padding:3px 10px;background:{PALETTE["panel_alt"]};'
-        f'border:1px solid {PALETTE["border"]};font-size:11px;'
-        f'font-family:\'JetBrains Mono\',monospace;margin:2px;">'
-        f'<span style="color:{PALETTE["text"]};">{html.escape(rule)}</span>'
-        f'<span style="color:{PALETTE["text_faint"]};">{count}</span>'
-        f'</span>'
+        f'<span class="ck-dil-chip">{html.escape(rule)}'
+        f'<b>{count:,}</b></span>'
         for rule, count in ranked
     )
-    entries = ccd.log.entries[:20]
-    rows = "".join(
-        f'<tr>'
-        f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text_faint"]};">{html.escape(e.ccd_row_id)}</td>'
-        f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text_dim"]};">{html.escape(e.source_file)}</td>'
-        f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text_dim"]};">{e.source_row}</td>'
-        f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text"]};">{html.escape(e.rule)}</td>'
-        f'<td style="padding:4px 8px;font-size:11px;color:{PALETTE["text"]};">'
-        f'{html.escape(e.target_field)}</td>'
-        f'<td style="padding:4px 8px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text_faint"]};">'
-        f'{html.escape(e.severity)}</td>'
-        f'</tr>'
-        for e in entries
+    tone_map = {"INFO": "neutral", "WARN": "warning", "ERROR": "negative"}
+    rows = []
+    for e in ccd.log.entries[:20]:
+        sev = str(e.severity or "INFO").upper()
+        badge = ck_signal_badge(sev, tone=tone_map.get(sev, "neutral"))
+        rows.append(
+            "<tr>"
+            + ck_data_cell(html.escape(e.ccd_row_id), mono=True,
+                           tone="dim")
+            + ck_data_cell(html.escape(e.source_file), mono=True,
+                           tone="dim")
+            + ck_data_cell(html.escape(str(e.source_row)),
+                           align="right", mono=True)
+            + ck_data_cell(html.escape(e.rule), mono=True)
+            + ck_data_cell(html.escape(e.target_field))
+            + ck_data_cell(badge)
+            + "</tr>"
+        )
+    table = ck_data_table(
+        headers=[
+            {"label": "Row ID"},
+            {"label": "Source file"},
+            {"label": "Line", "align": "right"},
+            {"label": "Rule"},
+            {"label": "Target field"},
+            {"label": "Severity"},
+        ],
+        rows_html="".join(rows),
+    )
+    total = len(ccd.log.entries)
+    trunc = (
+        _note(
+            f"Showing 20 of {total:,} entries — every entry traces a "
+            "coerced value back to its source file and row.",
+            after=True,
+        )
+        if total > 20 else ""
     )
     return (
-        f'<div style="margin:16px 0;">'
-        f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
-        f'letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;">'
-        f'Transformation log · {len(ccd.log.entries):,} total · top rules:'
-        f'</div>'
-        f'<div style="margin-bottom:12px;">{chips}</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'background:{PALETTE["panel"]};border:1px solid {PALETTE["border"]};">'
-        f'<thead><tr style="background:{PALETTE["panel_alt"]};">'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">ccd_row_id</th>'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">source_file</th>'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">row</th>'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">rule</th>'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">target_field</th>'
-        f'<th style="padding:6px 8px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">severity</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table>'
-        f'{_info_strip(f"Showing 20 of {len(ccd.log.entries):,} entries; every entry traces a coerced value back to its source file + row.") if len(ccd.log.entries) > 20 else ""}'
-        f'</div>'
+        ck_section_header(
+            "Transformation log",
+            eyebrow="ROW-LEVEL AUDIT TRAIL",
+            count=total,
+        )
+        + f'<div class="ck-dil-chips">{chips}</div>'
+        + table
+        + trunc
     )
 
 
 # ── Phase 2: /diligence/benchmarks ─────────────────────────────────
+
+def _inject_after_main(page_html: str, fragment: str) -> str:
+    """Splice ``fragment`` immediately after the opening <main> tag.
+
+    Used by the benchmarks route, whose shell is rendered by
+    ``rcm_mc.ui.diligence_benchmarks`` (another owner). Both the
+    placeholder and the live branch go through this ONE helper so the
+    fixture selector lands in the same top-of-page position in every
+    state — it previously appended before </main> in the empty state
+    (bottom of page) and after <main> in the live state (top)."""
+    idx = page_html.find("<main")
+    if idx >= 0:
+        close = page_html.find(">", idx)
+        if close > 0:
+            return page_html[:close + 1] + fragment + page_html[close + 1:]
+    return page_html
+
 
 def render_benchmarks_page(
     dataset: str = "",
@@ -412,21 +558,20 @@ def render_benchmarks_page(
             cash_waterfall=cash_waterfall,
         )
 
+    # The delegated page's shell doesn't carry our extra_css, so the
+    # selector travels with its own <style> block.
+    selector = (
+        "<style>" + _DILIGENCE_CSS + "</style>"
+        + _fixture_selector(
+            "/diligence/benchmarks", dataset,
+            select_id="ck-dil-dataset-benchmarks",
+        )
+    )
+
     ds_path = _resolve_dataset(dataset)
     if ds_path is None:
         placeholder = _render()  # renders the placeholder
-        # Prepend _DILIGENCE_CSS to the selector — the placeholder
-        # page doesn't go through _hero() so the .ck-diligence-fixture
-        # styles aren't on the page yet; without this prepend the
-        # selector renders as unstyled raw form chrome (label / select /
-        # button floating with no panel border, padding, or alignment).
-        selector = _DILIGENCE_CSS + _fixture_selector(
-            "/diligence/benchmarks", dataset,
-        )
-        # Inject the selector into the placeholder body — crude but
-        # keeps the shell consistent with the ingest tab.
-        return placeholder.replace("</main>", selector + "</main>", 1) \
-            if "</main>" in placeholder else placeholder
+        return _inject_after_main(placeholder, selector)
 
     try:
         from . import (
@@ -440,31 +585,32 @@ def render_benchmarks_page(
         waterfall = compute_cash_waterfall(ccd.claims, as_of_date=as_of)
     except Exception as exc:
         err_body = (
-            _hero("Phase 2 — Benchmarks (error)",
-                  "Computation failed. See detail below.")
-            + _fixture_selector("/diligence/benchmarks", dataset)
-            + _err_panel(f"Pipeline error on {dataset!r}",
-                         f"{type(exc).__name__}: {exc}")
+            _masthead(
+                phase=2,
+                title="Benchmarks",
+                meta=_fixture_meta(),
+                lede_italic="Computation failed on this fixture.",
+                lede_body=(
+                    "The KPI pipeline could not complete. Pick another "
+                    "dataset, or expand the technical detail below."
+                ),
+            )
+            + _fixture_selector(
+                "/diligence/benchmarks", dataset,
+                select_id="ck-dil-dataset-benchmarks",
+            )
+            + _error_panel(f"Pipeline error on {dataset!r}", exc)
         )
         return chartis_shell(
             err_body, "RCM Diligence — Benchmarks",
+            active_nav="/diligence/benchmarks",
             subtitle="Phase 2 of 4",
+            extra_css=_DILIGENCE_CSS,
         )
 
     live_html = _render(bundle=bundle, cohort_report=cohort,
                         cash_waterfall=waterfall)
-    # Same _DILIGENCE_CSS prepend as the placeholder branch — the
-    # full-bundle renderer doesn't go through _hero() either, so the
-    # injected selector needs its styles to travel with it.
-    selector = _DILIGENCE_CSS + _fixture_selector(
-        "/diligence/benchmarks", dataset,
-    )
-    # Prepend the selector to the live page body.
-    if "<main" in live_html:
-        idx = live_html.find(">", live_html.find("<main"))
-        if idx > 0:
-            live_html = live_html[: idx + 1] + selector + live_html[idx + 1:]
-    return live_html
+    return _inject_after_main(live_html, selector)
 
 
 # ── Partner-signed QoE memo: /diligence/qoe-memo ───────────────────
@@ -627,115 +773,128 @@ def _qoe_memo_landing(dataset: str, error: Optional[str] = None) -> str:
     the editorial topbar + sub-nav + Cmd+K palette during the
     setup step. The rendered memo itself remains a standalone
     printable document — only this picker is editorial-chromed.
+
+    NOTE: the H1 markup ('Quality of Earnings <em>Memorandum</em>.')
+    is deliberately hand-built — tests pin the '<em>' structure, and
+    ``ck_page_title`` would escape it. Do not route it through the
+    helper.
     """
-    err_block = (
-        '<div class="cad-card" style="border-left:3px solid '
-        'var(--sc-negative,#b5321e);margin-bottom:18px;padding:14px 18px;">'
-        '<strong style="color:var(--sc-negative,#b5321e);">'
-        'Could not render memo:</strong> '
-        f'<span style="color:var(--sc-text-dim,#465366);">'
-        f'{html.escape(error)}</span></div>'
-        if error else ""
-    )
+    err_block = ""
+    if error:
+        detail = html.escape(error)
+        err_block = ck_severity_panel(
+            tone="red",
+            label="Could not render the memo",
+            count=1,
+            rows_html=(
+                '<li class="ck-dil-error-row">'
+                'The selected dataset did not produce a memo. Re-check '
+                'the fixture and the management-revenue inputs, then '
+                'render again.'
+                '<details class="ck-dil-error-detail">'
+                '<summary>Technical detail</summary>'
+                f'<code>{detail}</code>'
+                '</details></li>'
+            ),
+        )
     options = "".join(
         f'<option value="{html.escape(name)}"'
         f'{" selected" if name == dataset else ""}>'
         f'{html.escape(label)}</option>'
         for name, label in AVAILABLE_FIXTURES
     )
+    form = (
+        '<form class="qoe-form" method="GET" action="/diligence/qoe-memo">'
+        '<label for="qoe-dataset">Dataset</label>'
+        f'<select name="dataset" id="qoe-dataset" aria-label="Dataset">'
+        f'<option value="">— pick a fixture —</option>{options}</select>'
+        '<label for="qoe-deal-name">Deal name (shown on cover)</label>'
+        '<input name="deal_name" id="qoe-deal-name" '
+        'placeholder="Project Aurora">'
+        '<label for="qoe-engagement-id">Engagement ID</label>'
+        '<input name="engagement_id" id="qoe-engagement-id" '
+        'placeholder="RCM-2025-042">'
+        '<label for="qoe-partner-name">Partner name</label>'
+        '<input name="partner_name" id="qoe-partner-name" '
+        'placeholder="Partner A">'
+        '<label for="qoe-preparer-name">Preparer name</label>'
+        '<input name="preparer_name" id="qoe-preparer-name" '
+        'placeholder="Senior Associate B">'
+        '<label for="qoe-mgmt-cohort">Management cohort '
+        '(optional, e.g. 2024-03)</label>'
+        '<input name="mgmt_cohort" id="qoe-mgmt-cohort" '
+        'placeholder="2024-03">'
+        '<label for="qoe-mgmt-value">Management-reported revenue, USD '
+        '(optional)</label>'
+        '<input name="mgmt_value" id="qoe-mgmt-value" '
+        'placeholder="e.g. 6850.00">'
+        '<button type="submit">Render Memo &rarr;</button>'
+        '</form>'
+    )
     body = (
-        '<style>'
-        '.qoe-form{max-width:560px;}'
-        '.qoe-form label{display:block;margin:14px 0 6px;'
-        'font-family:var(--sc-mono,JetBrains Mono,monospace);'
-        'font-size:11px;font-weight:700;letter-spacing:0.1em;'
-        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
-        '.qoe-form select,.qoe-form input{width:100%;padding:9px 12px;'
-        'font-size:13.5px;border:1px solid var(--sc-rule,#d6cfc0);'
-        'background:#fff;color:var(--sc-text,#1a2332);border-radius:2px;'
-        'font-family:var(--sc-sans,Inter,sans-serif);}'
-        '.qoe-form select:focus,.qoe-form input:focus{outline:none;'
-        'border-color:var(--sc-teal,#155752);}'
-        '.qoe-form button{margin-top:24px;padding:10px 22px;'
-        'background:var(--sc-navy,#0b2341);color:#fff;border:0;'
-        'font-size:12px;cursor:pointer;font-weight:700;letter-spacing:0.1em;'
-        'text-transform:uppercase;border-radius:2px;'
-        'font-family:var(--sc-sans,Inter,sans-serif);}'
-        '.qoe-form button:hover{background:var(--sc-teal,#155752);}'
-        '.qoe-lead{font-family:var(--sc-serif,Georgia,serif);'
-        'font-size:14.5px;line-height:1.6;color:var(--sc-text-dim,#465366);'
-        'max-width:640px;margin:0 0 24px;}'
-        '</style>'
         '<header class="ck-page-title">'
-        '<div class="ck-eyebrow">QOE MEMO</div>'
+        '<div class="ck-eyebrow">RCM DILIGENCE · QOE MEMO</div>'
         '<h1>Quality of Earnings <em>Memorandum</em>.</h1>'
-        '<div class="ck-page-title-meta">Phase 3 deliverable · standalone printable HTML</div>'
+        '<div class="ck-page-title-meta">'
+        'Partner deliverable · standalone printable HTML</div>'
         '</header>'
         '<p class="qoe-lead">Pick a canonical claims dataset and '
         '(optionally) provide management-reported revenue for the QoR '
         'reconciliation. The memo renders as a standalone, printable '
         'HTML document. Use your browser&rsquo;s <em>Print → Save as '
         'PDF</em> to produce the partner deliverable.</p>'
-        f'{err_block}'
-        '<div class="cad-card" style="padding:24px 28px;">'
-        '<form class="qoe-form" method="GET" action="/diligence/qoe-memo">'
-        '<label>Dataset</label>'
-        f'<select name="dataset" aria-label="Dataset"><option value="">— pick —</option>{options}</select>'
-        '<label>Deal name (shown on cover)</label>'
-        '<input name="deal_name" placeholder="Project Aurora">'
-        '<label>Engagement ID</label>'
-        '<input name="engagement_id" placeholder="RCM-2025-042">'
-        '<label>Partner name</label>'
-        '<input name="partner_name" placeholder="Partner A">'
-        '<label>Preparer name</label>'
-        '<input name="preparer_name" placeholder="Senior Associate B">'
-        '<label>Management cohort (optional, e.g. 2024-03)</label>'
-        '<input name="mgmt_cohort" placeholder="2024-03">'
-        '<label>Management revenue USD (optional)</label>'
-        '<input name="mgmt_value" placeholder="6850.0">'
-        '<button type="submit">Render Memo &rarr;</button>'
-        '</form></div>'
+        + err_block
+        + ck_panel(form, title="Render parameters")
     )
     return chartis_shell(
         body, "QoE Memo",
         active_nav="/diligence/qoe-memo",
         subtitle="Pick a dataset to render the partner deliverable",
+        extra_css=_QOE_CSS,
     )
 
 
 # ── Phase 3: /diligence/root-cause ─────────────────────────────────
 
 def render_root_cause_page(dataset: str = "") -> str:
+    ds_path = _resolve_dataset(dataset)
     body = [
-        _hero(
-            "Phase 3 — Root Cause Analysis",
-            "Pareto drivers for every off-benchmark KPI. ZBA autopsy "
-            "surfaces recoverable write-offs. Every finding is one "
-            "click from the underlying rows in the CCD.",
-            explainer_headline=(
+        _masthead(
+            phase=3,
+            title="Root Cause Analysis",
+            meta=_fixture_meta(dataset if ds_path is not None else ""),
+            lede_italic=(
                 "Where the denial dollars actually come from."
             ),
-            explainer_body=(
-                "Decomposes the deal's denial-rate gap vs the segment "
-                "benchmark into the underlying causes: registration "
-                "errors, authorization gaps, coding, payer-policy "
-                "denials, timely-filing. Used to size the recoverable "
-                "denial bucket per workstream so the 100-day plan "
-                "targets the right initiatives."
+            lede_body=(
+                "Stratifies the deal's denied dollars by claim "
+                "adjustment reason code (CARC) category and lists "
+                "every zero-balance write-off with its charge → "
+                "allowed → adjustment trail preserved — sizing the "
+                "recoverable denial bucket per workstream before the "
+                "100-day plan is drafted."
             ),
-            explainer_source=(
+            source_note=(
                 "Per-deal denial ledger (live once a CCD is loaded)."
             ),
         ),
-        _fixture_selector("/diligence/root-cause", dataset),
+        _fixture_selector(
+            "/diligence/root-cause", dataset,
+            select_id="ck-dil-dataset-root-cause",
+        ),
     ]
 
-    ds_path = _resolve_dataset(dataset)
     if ds_path is None:
-        body.append(_info_strip(
-            "Pick a fixture above to run the denial stratification + "
-            "ZBA autopsy. Every driver row is one click from the "
-            "underlying claim IDs that fed it."
+        body.append(ck_empty_state(
+            "Pick a fixture to run the denial stratification.",
+            "The denial Pareto and ZBA autopsy below compute live "
+            "from the selected fixture's claim set.",
+            eyebrow="NO DATASET LOADED",
+            icon="◈",
+            cta_label="Load the denial-heavy fixture",
+            cta_href=(
+                "/diligence/root-cause?dataset=hospital_02_denial_heavy"
+            ),
         ))
     else:
         try:
@@ -746,13 +905,21 @@ def render_root_cause_page(dataset: str = "") -> str:
             body.append(_denial_pareto(bundle.denial_stratification))
             body.append(_zba_autopsy(ccd.claims))
         except Exception as exc:
-            body.append(_err_panel(
-                "Root-cause computation failed",
-                f"{type(exc).__name__}: {exc}",
+            body.append(_error_panel(
+                "Root-cause computation failed", exc,
             ))
+
+    body.append(ck_next_section(
+        "Continue to Value Creation",
+        "/diligence/value" + _next_dataset_qs(ds_path, dataset),
+        eyebrow="Phase 4 of 4",
+        italic_word="Value",
+    ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Root Cause",
+        active_nav="/diligence/root-cause",
         subtitle="Phase 3 of 4",
+        extra_css=_DILIGENCE_CSS,
     )
 
 
@@ -761,131 +928,171 @@ def _denial_pareto(rows) -> str:
     Phase 2 benchmarks surface; this is the compact Phase-3 view."""
     rows = list(rows or [])
     if not rows:
-        return _info_strip("No denials in this fixture's claim set.")
+        return ck_affirm_empty(
+            headline="No denials in this fixture's claim set.",
+            body=(
+                "Every claim in the selected fixture paid without a "
+                "denial event — there is no denial gap to decompose."
+            ),
+        )
     total = sum(r.dollars_denied for r in rows) or 1.0
     items = []
     for r in rows:
         pct = r.dollars_denied / total
         bar = max(pct * 100, 2)
         items.append(
-            f'<div style="margin-bottom:10px;">'
-            f'<div style="display:flex;justify-content:space-between;'
-            f'font-size:12px;margin-bottom:4px;">'
-            f'<span style="color:{PALETTE["text"]};font-weight:500;">'
+            '<div class="ck-dil-pareto-row">'
+            '<div class="ck-dil-pareto-meta">'
+            f'<span class="ck-dil-pareto-cat">'
             f'{html.escape(r.category)}</span>'
-            f'<span style="font-family:\'JetBrains Mono\',monospace;'
-            f'color:{PALETTE["text_dim"]};">'
-            f'${r.dollars_denied:,.0f} · {r.count} claims · {pct*100:.1f}%'
-            f'</span></div>'
-            f'<div style="background:{PALETTE["panel_alt"]};height:5px;">'
-            f'<div style="background:{PALETTE["accent"]};height:100%;'
-            f'width:{bar}%;"></div></div></div>'
+            f'<span class="ck-dil-pareto-num">'
+            f'${r.dollars_denied:,.2f} · {r.count:,} claims · '
+            f'{pct * 100:.1f}%</span>'
+            '</div>'
+            '<div class="ck-dil-pareto-track">'
+            f'<div class="ck-dil-pareto-fill" style="width:{bar:.1f}%">'
+            '</div></div>'
+            '</div>'
         )
     return (
-        f'<div style="margin:16px 0;">'
-        f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;">'
-        f'Denial Pareto by ANSI CARC category</div>'
-        f'<div style="background:{PALETTE["panel"]};'
-        f'border:1px solid {PALETTE["border"]};padding:14px 16px;">'
-        f'{"".join(items)}</div></div>'
+        ck_section_header(
+            "Denial Pareto",
+            eyebrow="BY CLAIM ADJUSTMENT REASON CODE (CARC) CATEGORY",
+            count=len(rows),
+        )
+        + '<div class="ck-dil-panel">' + "".join(items) + '</div>'
     )
 
 
 def _zba_autopsy(claims) -> str:
     """List every ZBA-flagged row — claims with nonzero adjustment +
-    zero paid — showing the preserved original balance."""
+    zero paid — showing the preserved original balance. Totals cover
+    the FULL set even when the table truncates at 50 rows."""
     zba = [c for c in claims
            if (c.paid_amount or 0) == 0
            and (c.adjustment_amount or 0) > 0]
     if not zba:
-        return _info_strip("No zero-balance write-offs in this fixture.")
-    rows = "".join(
-        f'<tr>'
-        f'<td style="padding:6px 10px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">'
-        f'{html.escape(c.claim_id)}</td>'
-        f'<td style="padding:6px 10px;font-size:11px;color:{PALETTE["text_dim"]};">'
-        f'{html.escape(c.payer_canonical or c.payer_raw or "—")}</td>'
-        f'<td style="padding:6px 10px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">${c.charge_amount or 0:,.2f}</td>'
-        f'<td style="padding:6px 10px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">${c.allowed_amount or 0:,.2f}</td>'
-        f'<td style="padding:6px 10px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["negative"]};">${c.adjustment_amount or 0:,.2f}</td>'
-        f'<td style="padding:6px 10px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:10px;color:{PALETTE["text_faint"]};">'
-        f'{html.escape(", ".join(c.adjustment_reason_codes or ()))}</td>'
-        f'</tr>'
-        for c in zba[:50]
+        return ck_affirm_empty(
+            headline="No zero-balance write-offs in this fixture.",
+            body=(
+                "No claim carries a nonzero adjustment with zero "
+                "payment — there is no silently written-off balance "
+                "to autopsy."
+            ),
+        )
+    rows = []
+    for c in zba[:50]:
+        carcs = ", ".join(c.adjustment_reason_codes or ()) or "—"
+        rows.append(
+            "<tr>"
+            + ck_data_cell(html.escape(c.claim_id), mono=True)
+            + ck_data_cell(
+                html.escape(c.payer_canonical or c.payer_raw or "—"),
+                tone="dim",
+            )
+            + ck_data_cell(f"${c.charge_amount or 0:,.2f}",
+                           align="right", mono=True)
+            + ck_data_cell(f"${c.allowed_amount or 0:,.2f}",
+                           align="right", mono=True)
+            + ck_data_cell(f"${c.adjustment_amount or 0:,.2f}",
+                           align="right", mono=True, tone="neg")
+            + ck_data_cell(html.escape(carcs), mono=True, tone="dim")
+            + "</tr>"
+        )
+    tot_charge = sum((c.charge_amount or 0) for c in zba)
+    tot_allowed = sum((c.allowed_amount or 0) for c in zba)
+    tot_adj = sum((c.adjustment_amount or 0) for c in zba)
+    rows.append(
+        '<tr class="ck-dil-total">'
+        + ck_data_cell(f"Total · {len(zba):,} write-offs", weight=700)
+        + ck_data_cell("")
+        + ck_data_cell(f"${tot_charge:,.2f}",
+                       align="right", mono=True, weight=700)
+        + ck_data_cell(f"${tot_allowed:,.2f}",
+                       align="right", mono=True, weight=700)
+        + ck_data_cell(f"${tot_adj:,.2f}",
+                       align="right", mono=True, tone="neg", weight=700)
+        + ck_data_cell("")
+        + "</tr>"
+    )
+    table = ck_data_table(
+        headers=[
+            {"label": "Claim"},
+            {"label": "Payer"},
+            {"label": "Charge", "align": "right"},
+            {"label": "Allowed", "align": "right"},
+            {"label": "Adjustment", "align": "right"},
+            {"label": "CARCs"},
+        ],
+        rows_html="".join(rows),
+    )
+    trunc = (
+        _note(
+            f"Showing 50 of {len(zba):,} write-offs — the totals row "
+            "covers the full set.",
+            after=True,
+        )
+        if len(zba) > 50 else ""
     )
     return (
-        f'<div style="margin:16px 0;">'
-        f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">'
-        f'ZBA Autopsy · {len(zba)} recoverable write-off(s) '
-        f'(charge + allowed + adjustment trail preserved)</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'background:{PALETTE["panel"]};border:1px solid {PALETTE["border"]};">'
-        f'<thead><tr style="background:{PALETTE["panel_alt"]};">'
-        f'<th style="padding:6px 10px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Claim</th>'
-        f'<th style="padding:6px 10px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Payer</th>'
-        f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Charge</th>'
-        f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Allowed</th>'
-        f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Adjustment</th>'
-        f'<th style="padding:6px 10px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">CARCs</th>'
-        f'</tr></thead><tbody>{rows}</tbody></table></div>'
+        ck_section_header(
+            "ZBA autopsy",
+            eyebrow="RECOVERABLE WRITE-OFFS · TRAIL PRESERVED",
+            count=len(zba),
+        )
+        + table
+        + trunc
+        + _info_strip(
+            "Each row preserves the original charge, allowed, and "
+            "adjustment amounts, so a written-off balance can be "
+            "re-pursued with its full trail."
+        )
     )
 
 
 # ── Phase 4: /diligence/value ──────────────────────────────────────
 
 def render_value_page(dataset: str = "") -> str:
+    ds_path = _resolve_dataset(dataset)
     body = [
-        _hero(
-            "Phase 4 — Value Creation Model",
-            "Per-root-cause recoverable EBITDA feeds the v2 value "
-            "bridge. Monte Carlo on payer behavior reuses the "
-            "existing two-source simulator. Contract re-pricer "
-            "supplies deal-specific payer leverage; the CMS advisory "
-            "overlay sets market posture.",
-            explainer_headline=(
+        _masthead(
+            phase=4,
+            title="Value Creation Model",
+            meta=_fixture_meta(dataset if ds_path is not None else ""),
+            lede_italic=(
                 "What the RCM levers are worth on this deal."
             ),
-            explainer_body=(
-                "Maps each of the 47 RCM initiative levers to its "
-                "expected EBITDA contribution on the focused deal, "
-                "given the deal's size, payer mix, and starting "
-                "denial profile. Used to prioritize the 100-day plan "
-                "and to underwrite the value-bridge that goes into "
-                "the IC memo."
+            lede_body=(
+                "Two previews render today: the contract re-pricer "
+                "derives payer-leverage factors by pricing the "
+                "fixture's claims against a demonstration contract "
+                "schedule, and a CMS advisory overlay demonstrates the "
+                "regime + consensus-rank classifiers on a synthetic "
+                "frame. Both are marked illustrative until a real "
+                "contract schedule and CMS extract are supplied."
             ),
-            explainer_source=(
-                "RCM initiative library (curated in code) + per-deal "
-                "sizing model that reads from the CCD."
+            source_note=(
+                "Demo contract schedule + synthetic CMS frame "
+                "(illustrative); claims from the selected fixture."
             ),
         ),
-        _fixture_selector("/diligence/value", dataset),
+        _fixture_selector(
+            "/diligence/value", dataset,
+            select_id="ck-dil-dataset-value",
+        ),
     ]
 
-    ds_path = _resolve_dataset(dataset)
     if ds_path is None:
-        body.append(_info_strip(
-            "Pick a fixture above to see the contract re-pricer's "
-            "derived payer leverage + a sample CMS advisory overlay. "
-            "Full bridge wiring into the packet is a follow-up."
+        body.append(ck_empty_state(
+            "Pick a fixture to derive payer leverage.",
+            "The contract re-pricer prices the selected fixture's "
+            "claims against a demonstration schedule; the CMS "
+            "advisory overlay previews market posture on a synthetic "
+            "frame.",
+            eyebrow="NO DATASET LOADED",
+            icon="⬦",
+            cta_label="Load the mixed-payer fixture",
+            cta_href="/diligence/value?dataset=hospital_04_mixed_payer",
         ))
     else:
         try:
@@ -894,19 +1101,26 @@ def render_value_page(dataset: str = "") -> str:
             body.append(_repricer_summary(ccd))
             body.append(_cms_advisory_summary())
         except Exception as exc:
-            body.append(_err_panel(
-                "Value computation failed",
-                f"{type(exc).__name__}: {exc}",
-            ))
+            body.append(_error_panel("Value computation failed", exc))
+
+    body.append(ck_next_section(
+        "Render the QoE Memorandum",
+        "/diligence/qoe-memo" + _next_dataset_qs(ds_path, dataset),
+        eyebrow="Partner deliverable",
+        italic_word="Memorandum",
+    ))
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Value Creation",
+        active_nav="/diligence/value",
         subtitle="Phase 4 of 4",
+        extra_css=_DILIGENCE_CSS,
     )
 
 
 def _repricer_summary(ccd: Any) -> str:
     """Run the contract re-pricer against a synthetic default schedule
-    just to demonstrate the derived-leverage output."""
+    to demonstrate the derived-leverage output. Honestly labeled: the
+    schedule is a demo, not the deal's contracts."""
     from .benchmarks import (
         ContractRate, ContractSchedule, payer_leverage_for_bridge,
         reprice_claims,
@@ -924,47 +1138,71 @@ def _repricer_summary(ccd: Any) -> str:
     schedule = ContractSchedule(rates=rates, name="demo_default")
     report = reprice_claims(ccd.claims, schedule)
     leverage = payer_leverage_for_bridge(report)
-    rows = "".join(
-        f'<tr>'
-        f'<td style="padding:6px 10px;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">{html.escape(pc)}</td>'
-        f'<td style="padding:6px 10px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">{lev:.3f}</td>'
-        f'</tr>'
-        for pc, lev in sorted(leverage.items(), key=lambda x: -x[1])
+    rows = []
+    for pc, lev in sorted(leverage.items(), key=lambda x: -x[1]):
+        rows.append(
+            "<tr>"
+            + ck_data_cell(html.escape(pc), mono=True)
+            + ck_data_cell(f"{lev:.2f}x", align="right", mono=True)
+            + "</tr>"
+        )
+    if not rows:
+        rows.append(
+            "<tr>"
+            + ck_data_cell(
+                "No matched claims — the demo schedule lacks rates "
+                "for this fixture's CPT codes.",
+                tone="dim",
+            )
+            + ck_data_cell("—", align="right", mono=True, tone="dim")
+            + "</tr>"
+        )
+    table = ck_data_table(
+        headers=[
+            {"label": "Payer class (bridge vocabulary)"},
+            {"label": "Leverage vs Commercial", "align": "right"},
+        ],
+        rows_html="".join(rows),
     )
-    # Pre-build the empty-state row outside the f-string so the
-    # nested escaped quotes don't trip Python 3.11's parser.
-    empty_row = (
-        '<tr><td colspan=2 style="padding:8px 10px;font-size:11px;'
-        'color:#7a8699;">No matched claims — contract lacks rates '
-        "for this fixture's CPTs.</td></tr>"
+    prov = ck_provenance_tooltip(
+        "Leverage vs Commercial",
+        "How leverage is derived",
+        explainer=(
+            "Per payer class: repriced allowed amounts under the demo "
+            "contract schedule, expressed as a multiple of the "
+            "Commercial payer class (Commercial = 1.00x). On a live "
+            "deal these factors feed the value bridge's payer revenue "
+            "assumptions."
+        ),
     )
     return (
-        f'<div style="margin:16px 0;">'
-        f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">'
-        f'Contract re-pricer · derived payer leverage '
-        f'({report.matched_claims} matched / {report.unmatched_claims} unmatched '
-        f'of {report.total_claims} claims)</div>'
-        f'<table style="width:66%;border-collapse:collapse;'
-        f'background:{PALETTE["panel"]};border:1px solid {PALETTE["border"]};">'
-        f'<thead><tr style="background:{PALETTE["panel_alt"]};">'
-        f'<th style="padding:6px 10px;text-align:left;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Payer class (bridge vocab)</th>'
-        f'<th style="padding:6px 10px;text-align:right;font-size:10px;'
-        f'color:{PALETTE["text_dim"]};letter-spacing:.1em;'
-        f'text-transform:uppercase;">Leverage vs Commercial</th>'
-        f'</tr></thead><tbody>{rows or empty_row}</tbody></table>'
-        f'{_info_strip("These values drop into BridgeAssumptions.payer_revenue_leverage; the v2 bridge uses them instead of the module-level defaults.")}'
-        f'</div>'
+        ck_section_header(
+            "Contract re-pricer",
+            eyebrow="DERIVED PAYER LEVERAGE",
+        )
+        + ck_illustrative_note(
+            "payer-leverage factors (priced against a demo contract "
+            "schedule, not this deal's contracts)"
+        )
+        + _note(
+            f"{report.matched_claims:,} matched · "
+            f"{report.unmatched_claims:,} unmatched of "
+            f"{report.total_claims:,} claims"
+        )
+        + table
+        + f'<div class="ck-dil-note ck-dil-note-after">{prov}</div>'
+        + _info_strip(
+            "Once a real contract schedule is attached, these "
+            "leverage factors feed the value bridge's payer revenue "
+            "assumptions directly."
+        )
     )
 
 
 def _cms_advisory_summary() -> str:
     """Run the CMS advisory pipeline on a small synthetic frame to
-    demonstrate the consensus rank + regime classifier."""
+    demonstrate the consensus rank + regime classifier. Honestly
+    labeled illustrative — the frame is fabricated in code."""
     try:
         import pandas as pd
         from ..pe.cms_advisory import (
@@ -997,50 +1235,71 @@ def _cms_advisory_summary() -> str:
         regimes = regime_classification(mom, vol)
         cons = consensus_rank(screen, mom, vol)
     except Exception as exc:
-        return _err_panel("CMS advisory demo failed",
-                          f"{type(exc).__name__}: {exc}")
+        return _error_panel("CMS advisory demo failed", exc)
 
-    # Render a two-column summary: regime + consensus rank.
     reg_rows = "".join(
-        f'<tr>'
-        f'<td style="padding:4px 8px;font-size:11px;color:{PALETTE["text"]};">'
-        f'{html.escape(str(r.get("provider_type", "")))}</td>'
-        f'<td style="padding:4px 8px;font-size:11px;color:{PALETTE["text_dim"]};">'
-        f'{html.escape(str(r.get("regime", "")))}</td>'
-        f'</tr>'
+        "<tr>"
+        + ck_data_cell(html.escape(str(r.get("provider_type", ""))))
+        + ck_data_cell(html.escape(str(r.get("regime", ""))),
+                       tone="dim")
+        + "</tr>"
         for _, r in regimes.iterrows()
     )
     cons_rows = "".join(
-        f'<tr>'
-        f'<td style="padding:4px 8px;font-size:11px;color:{PALETTE["text"]};">'
-        f'{html.escape(str(r.get("provider_type", "")))}</td>'
-        f'<td style="padding:4px 8px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text_dim"]};">'
-        f'{float(r.get("consensus_score", 0)):.3f}</td>'
-        f'<td style="padding:4px 8px;text-align:right;font-family:\'JetBrains Mono\',monospace;'
-        f'font-size:11px;color:{PALETTE["text"]};">#{int(r.get("consensus_rank", 0))}</td>'
-        f'</tr>'
+        "<tr>"
+        + ck_data_cell(html.escape(str(r.get("provider_type", ""))))
+        + ck_data_cell(f"{float(r.get('consensus_score', 0)):.2f}",
+                       align="right", mono=True, tone="dim")
+        + ck_data_cell(f"#{int(r.get('consensus_rank', 0))}",
+                       align="right", mono=True, weight=600)
+        + "</tr>"
         for _, r in cons.iterrows()
     )
+    reg_table = ck_data_table(
+        headers=[
+            {"label": "Provider type"},
+            {"label": "Regime"},
+        ],
+        rows_html=reg_rows,
+        scrollable=False,
+    )
+    cons_table = ck_data_table(
+        headers=[
+            {"label": "Provider type"},
+            {"label": "Score", "align": "right"},
+            {"label": "Rank", "align": "right"},
+        ],
+        rows_html=cons_rows,
+        scrollable=False,
+    )
+    prov = ck_provenance_tooltip(
+        "Consensus score",
+        "How the consensus score composes",
+        explainer=(
+            "Equal-weight blend of the growth screen, the multi-year "
+            "momentum profile, and payment volatility — higher scores "
+            "rank first. A screen-only leader with erratic payments "
+            "ranks below a steady compounder."
+        ),
+    )
     return (
-        f'<div style="margin:16px 0;">'
-        f'<div style="font-size:11px;color:{PALETTE["text_dim"]};'
-        f'letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;">'
-        f'CMS advisory overlay · synthetic 2-type × 3-year demo</div>'
-        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">'
-        f'<div><div style="font-size:10px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">'
-        f'Regime classification</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'background:{PALETTE["panel"]};border:1px solid {PALETTE["border"]};">'
-        f'{reg_rows}</table></div>'
-        f'<div><div style="font-size:10px;color:{PALETTE["text_faint"]};'
-        f'letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">'
-        f'Consensus rank</div>'
-        f'<table style="width:100%;border-collapse:collapse;'
-        f'background:{PALETTE["panel"]};border:1px solid {PALETTE["border"]};">'
-        f'{cons_rows}</table></div>'
-        f'</div>'
-        f'{_info_strip("Regime + consensus flow into packet.risk_flags via rcm_mc.pe.cms_advisory_bridge.")}'
-        f'</div>'
+        ck_section_header(
+            "CMS advisory overlay",
+            eyebrow="MARKET POSTURE · REGIME + CONSENSUS RANK",
+        )
+        + ck_illustrative_note(
+            "advisory rankings (synthetic two-specialty, three-year "
+            "CMS frame built in code)"
+        )
+        + '<div class="ck-dil-2col">'
+        + '<div><div class="ck-dil-subhead">Regime classification</div>'
+        + reg_table + '</div>'
+        + '<div><div class="ck-dil-subhead">Consensus rank</div>'
+        + cons_table + '</div>'
+        + '</div>'
+        + f'<div class="ck-dil-note ck-dil-note-after">{prov}</div>'
+        + _info_strip(
+            "On a live deal, the regime and consensus rank flow into "
+            "the deal's risk flags on the analysis packet."
+        )
     )
