@@ -416,7 +416,14 @@ _EM_LEVEL = {"99211": 1, "99212": 2, "99213": 3, "99214": 4, "99215": 5}
 _MIN_VISITS = 20
 
 
-def _coding_intensity(rows, hcpcs_i, npi_i) -> Optional[Dict[str, object]]:
+def _coding_intensity(rows, hcpcs_i, npi_i,
+                      basis: str = "billing") -> Optional[Dict[str, object]]:
+    """``basis`` labels which provider grain ``npi_i`` is: 'rendering'
+    (individual clinician — the grain that actually finds hot coders) or
+    'billing' (pay-to organization — in group practices hundreds of
+    clinicians collapse into one org NPI and the outlier screen washes
+    out). Renderers caption from ``provider_basis`` so the output never
+    overstates what was measured."""
     if hcpcs_i is None or npi_i is None:
         return None
     per_prov: Dict[str, List[int]] = {}
@@ -466,6 +473,7 @@ def _coding_intensity(rows, hcpcs_i, npi_i) -> Optional[Dict[str, object]]:
             "file_avg_level": round(file_avg, 2),
             "file_mix": {f"9921{i + 1}": file_mix[i] for i in range(5)},
             "providers_rated": rated,
+            "provider_basis": basis,
             "outliers": outliers[:15],
             "national_mix": national}
 
@@ -503,7 +511,15 @@ def build(headers: List[str], rows: List[List[str]], idx: Dict[str, object],
                   idx.get("patient_i"))
     if vol:
         out["volume"] = vol
-    ci = _coding_intensity(rows, idx.get("hcpcs_i"), idx.get("billing_idx"))
+    # Coding intensity prefers the rendering/attending clinician column
+    # ('rendering_i', when the engine detected one) over the billing org:
+    # per-provider E&M mix at org grain converges to the file mix in group
+    # practices, hiding exactly the hot coders the screen exists to find.
+    _rend_i = idx.get("rendering_i")
+    _prov_i = _rend_i if _rend_i is not None else idx.get("billing_idx")
+    ci = _coding_intensity(rows, idx.get("hcpcs_i"), _prov_i,
+                           basis=("rendering" if _rend_i is not None
+                                  else "billing"))
     if ci:
         out["coding_intensity"] = ci
     return out or None

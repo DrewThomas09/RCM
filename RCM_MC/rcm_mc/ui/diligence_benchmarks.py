@@ -320,12 +320,16 @@ def render_benchmarks_page(
 
     as_of = bundle.as_of_date.isoformat()
     dar = bundle.days_in_ar
-    meta_parts = ["Phase 2 of 4", f"as-of {as_of}"]
+    # Phase labeling lives in the eyebrow (as on every workspace phase
+    # page) — the meta strip carries only the data facts.
+    meta_parts = [f"as-of {as_of}"]
     if dar.sample_size:
         meta_parts.append(f"n={dar.sample_size:,} claims")
     meta_parts.append("HFMA MAP Key 2021 bands")
     head = ck_editorial_head(
-        eyebrow="RCM DILIGENCE — PHASE 2",
+        # Same eyebrow grammar as the sibling workspace phases
+        # (rcm_mc/diligence/_pages.py): middle-dot + "PHASE N OF 4".
+        eyebrow="RCM DILIGENCE · PHASE 2 OF 4",
         title="Benchmarks",
         meta=" · ".join(meta_parts),
         lede_italic_phrase="Did billed dollars become cash?",
@@ -349,13 +353,15 @@ def render_benchmarks_page(
         + _cohort_section(cohort_report)
         + _denial_pareto(bundle.denial_stratification)
         + _provenance_footer(bundle)
-        + ck_page_actions()
         + ck_next_section(
             "Open the bridge auditor",
             "/diligence/bridge-audit",
             eyebrow="Up next",
             italic_word="bridge",
         )
+        # Action pills come last — the site-wide order is
+        # content → next-section footer → ck_page_actions.
+        + ck_page_actions()
     )
     return chartis_shell(
         body,
@@ -368,9 +374,11 @@ def render_benchmarks_page(
 
 def _placeholder_page() -> str:
     head = ck_editorial_head(
-        eyebrow="RCM DILIGENCE — PHASE 2",
+        # Same eyebrow grammar as the sibling workspace phases
+        # (rcm_mc/diligence/_pages.py): middle-dot + "PHASE N OF 4".
+        eyebrow="RCM DILIGENCE · PHASE 2 OF 4",
         title="Benchmarks",
-        meta="Phase 2 of 4 · no dataset attached",
+        meta="No dataset attached",
         lede_italic_phrase="KPI benchmarking and stress testing",
         lede_body=(
             "— attach a Canonical Claims Dataset in Phase 1 to "
@@ -379,7 +387,7 @@ def _placeholder_page() -> str:
         ),
     )
     body = head + ck_empty_state(
-        "Attach a Canonical Claims Dataset",
+        "Attach a Canonical Claims Dataset.",
         body=(
             "Phase 2 computes the HFMA KPI scorecard, the "
             "quality-of-revenue cash waterfall, cohort liquidation "
@@ -573,7 +581,7 @@ def _cohort_section(report: Optional[CohortLiquidationReport]) -> str:
     )
     if report is None:
         return header + ck_empty_state(
-            "No cohort liquidation data yet",
+            "No cohort liquidation data yet.",
             body=(
                 "Cohort liquidation needs claim lifecycle fields — "
                 "date of service, payment dates, and paid amounts — "
@@ -813,7 +821,7 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
     )
     if not row_list:
         return header + ck_empty_state(
-            "No denial rows in this CCD",
+            "No denial rows in this CCD.",
             body=(
                 "The CCD contains no denied claims with CARC "
                 "categories — either denials weren't extracted in "
@@ -891,7 +899,7 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
     )
     if report is None:
         return header + ck_empty_state(
-            "No cash waterfall yet",
+            "No cash waterfall yet.",
             body=(
                 "Quality-of-Revenue analysis needs claim lifecycle "
                 "fields — gross charges, adjudication steps, and "

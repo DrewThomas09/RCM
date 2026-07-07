@@ -21,6 +21,7 @@ error and the fast deterministic results still stand.
 """
 from __future__ import annotations
 
+import os
 import threading
 import uuid
 from pathlib import Path
@@ -33,6 +34,36 @@ WORKDIR.mkdir(parents=True, exist_ok=True)
 # a real networked pass on a modest file, tight enough that a blocked network
 # fails the job in minutes instead of never.
 DEFAULT_TIMEOUT_S = 420
+
+# Preflight TCP-connect budget. On a no-egress box the old behavior held the
+# job's back-half progress bar for the full 7-minute watchdog before the
+# honest timeout message; a bounded connect answers the same question in
+# seconds.
+_PREFLIGHT_TIMEOUT_S = 4.0
+
+
+def _default_probe(timeout: float = _PREFLIGHT_TIMEOUT_S) -> bool:
+    """Can this box plausibly reach data.cms.gov? A single bounded TCP
+    connect — to the configured HTTPS proxy when one is set (requests would
+    route through it, so probing the origin directly would falsely fail),
+    otherwise to the origin itself. Never raises."""
+    import socket
+    from urllib.parse import urlparse
+    host, port = "data.cms.gov", 443
+    proxy = (os.environ.get("HTTPS_PROXY")
+             or os.environ.get("https_proxy") or "").strip()
+    if proxy:
+        try:
+            p = urlparse(proxy if "://" in proxy else "//" + proxy)
+            if p.hostname:
+                host, port = p.hostname, int(p.port or 3128)
+        except (ValueError, TypeError):
+            pass
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        return False
 
 
 def available() -> bool:
@@ -51,11 +82,17 @@ def run(
     data: bytes, src_name: str, *,
     timeout_s: int = DEFAULT_TIMEOUT_S,
     progress: Optional[Callable[[str, float], None]] = None,
+    probe: Optional[Callable[[], bool]] = None,
 ) -> Dict[str, object]:
     """Run the full pipeline with a timeout. Returns a structured dict:
 
         {"ok": bool, "error": str|None, "stats": {...},
          "workbook_path": str|None, "workbook_name": str}
+
+    ``probe`` (injectable for tests) is a fast reachability check run
+    BEFORE the worker spawns; when it returns False the run fails in
+    seconds with the honest no-egress message instead of burning the full
+    watchdog. The watchdog still guards the slow-but-reachable case.
 
     Never raises.
     """
@@ -78,6 +115,19 @@ def run(
     except Exception:  # noqa: BLE001
         out["error"] = ("Deep recovery needs the 'requests' package and the "
                         "v49 pipeline. Install requests to enable it.")
+        return out
+
+    # Fast no-egress preflight — fail in seconds, not after the watchdog.
+    try:
+        reachable = (probe or _default_probe)()
+    except Exception:  # noqa: BLE001 — a broken probe must not block a run
+        reachable = True
+    if not reachable:
+        out["error"] = (
+            "Deep recovery preflight could not reach data.cms.gov — this "
+            "environment may not allow outbound access. The deterministic "
+            "results above are unaffected.")
+        cb("preflight failed — no outbound access", 1.0)
         return out
 
     # Persist the upload to a file the pipeline can read (it takes a path).

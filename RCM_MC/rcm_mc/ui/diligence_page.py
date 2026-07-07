@@ -175,7 +175,7 @@ def render_diligence_questions(deal_id: str, deal_name: str,
             cta_href=f"/analysis/{deal_id}",
         )
         return chartis_shell(
-            _DLQ_CSS + head + nav + empty + ck_page_actions() + next_sec,
+            _DLQ_CSS + head + nav + empty + next_sec + ck_page_actions(),
             f"Diligence Questions — {html.escape(deal_name)}",
             active_nav="/analysis",
             subtitle="0 questions",
@@ -356,12 +356,14 @@ def render_diligence_questions(deal_id: str, deal_name: str,
         + ck_panel(cat_body, title="Category mix")
         + ck_panel(questions_table, title="Diligence Questions")
         + ck_panel(next_steps, title="Next steps")
+        + next_sec
+        # Action pills come last — the site-wide order is
+        # content → next-section footer → ck_page_actions.
         + ck_page_actions(extras_html=(
             f'<a href="/models/playbook/{did}" class="cad-btn">'
             'Value Creation Playbook</a>'
             f'<a href="/analysis/{did}" class="cad-btn">Full Analysis</a>'
         ))
-        + next_sec
     )
 
     return chartis_shell(
@@ -413,7 +415,7 @@ def render_playbook(deal_id: str, deal_name: str,
             cta_href=f"/models/denial/{deal_id}",
         )
         return chartis_shell(
-            _PLB_CSS + head + nav + empty + ck_page_actions() + next_sec,
+            _PLB_CSS + head + nav + empty + next_sec + ck_page_actions(),
             f"Playbook — {html.escape(deal_name)}",
             active_nav="/analysis",
             subtitle="0 initiatives",
@@ -614,6 +616,9 @@ def render_playbook(deal_id: str, deal_name: str,
         + lead_anchor
         + playbook_panel
         + ck_panel(takeaway, title="What This Means")
+        + next_sec
+        # Action pills come last — the site-wide order is
+        # content → next-section footer → ck_page_actions.
         + ck_page_actions(extras_html=(
             f'<a href="/models/bridge/{did}" class="cad-btn">'
             'EBITDA Bridge</a>'
@@ -624,7 +629,6 @@ def render_playbook(deal_id: str, deal_name: str,
             f'<a href="/deal/{did}" class="cad-btn cad-btn-primary">'
             'Deal Dashboard</a>'
         ))
-        + next_sec
     )
 
     subtitle = (

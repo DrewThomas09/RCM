@@ -8,14 +8,21 @@ HCPCS -> rate lookup. All public, no credentials.
 
   • ASPClient   — Medicare Part B drug payment limit (ASP + 6%), quarterly. THE
                   rate for buy-and-bill drugs. Proven working.
-  • PFSClient   — Physician Fee Schedule national amounts for administration /
-                  infusion codes (96365, 96413, ...). Optional; needs the RVU
-                  file or a national-payment export.
-  • OPPSClient  — OPPS Addendum B APC payment rates (the HOPD premium vs office).
+  • OPPSClient  — OPPS Addendum B APC payment rates (the HOPD premium vs
+                  office). HONESTY NOTE: the Addendum B parse is NOT
+                  implemented — rate() is always None and available() is 0.
+                  Consumers must treat the HOPD leg of any HOPD-vs-office
+                  comparison as absent, not zero.
+
+There is no PFSClient (a previous docstring promised one that was never
+written — the Physician Fee Schedule needs the RVU file or a national-payment
+export, neither of which is wired).
 
 If a landing page or file layout changes, the connector degrades gracefully
 (returns an empty lookup) rather than crashing the pipeline, and the user can
-always pass a downloaded file path explicitly.
+always pass a downloaded file path explicitly. An empty result is never
+written to the cache: caching the failure would poison every later run
+(including one made after the parser is fixed) with a permanent empty table.
 """
 
 import csv
@@ -67,8 +74,10 @@ class ASPClient:
     def _load(self):
         if self._lookup is not None:
             return self._lookup
+        # `if cached:` (not `is not None`): an empty dict cached by an older
+        # build is a poisoned entry, not a table — ignore it and retry.
         cached = self.cache.get("asp", "current")
-        if cached is not None:
+        if cached:
             self._lookup = cached
             return cached
         lookup = {}
@@ -112,7 +121,11 @@ class ASPClient:
                             }
             except Exception:
                 lookup = {}
-        self.cache.set("asp", "current", lookup)
+        # Cache only a real table. Caching the empty fallback made a single
+        # bad download permanent: every later call read the poisoned empty
+        # cache and reported available()==0 even once the network was back.
+        if lookup:
+            self.cache.set("asp", "current", lookup)
         self._lookup = lookup
         return lookup
 
@@ -148,20 +161,25 @@ class OPPSClient:
         cand = addb or links
         return "https://www.cms.gov" + cand[0] if cand else None
 
+    # Honest degradation: the Addendum B parse is not implemented, so this
+    # client's rate() is always None and available() is always 0. The one
+    # thing _load must NOT do is cache that empty dict — it used to write
+    # {} under ("opps", "current"), so even a future implementation would
+    # have read the poisoned empty cache first and stayed dead forever.
+    NOTE = ("OPPS Addendum B parse not implemented — HOPD rates are "
+            "absent, not zero; supply the file or skip the HOPD leg.")
+
     def _load(self):
         if self._lookup is not None:
             return self._lookup
         cached = self.cache.get("opps", "current")
-        if cached is not None:
+        if cached:  # only a REAL table (e.g. a user-supplied parse) counts
             self._lookup = cached
             return cached
-        # OPPS Addendum B layout varies by quarter; we attempt a best-effort parse
-        # and otherwise leave it empty (user can supply the file). Kept conservative
-        # so it never breaks the pipeline.
-        lookup = {}
-        self.cache.set("opps", "current", lookup)
-        self._lookup = lookup
-        return lookup
+        # OPPS Addendum B layout varies by quarter; until a parse ships the
+        # lookup stays empty for this process only — never cached.
+        self._lookup = {}
+        return self._lookup
 
     def rate(self, hcpcs):
         rec = self._load().get(_key(hcpcs))
@@ -169,3 +187,7 @@ class OPPSClient:
 
     def available(self):
         return len(self._load())
+
+    def note(self):
+        """Plain-language status for whatever consumes the rate table."""
+        return "" if self._load() else self.NOTE

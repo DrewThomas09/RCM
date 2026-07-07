@@ -45,6 +45,7 @@ from ..ui._chartis_kit import (
     ck_illustrative_note,
     ck_kpi_block,
     ck_next_section,
+    ck_page_actions,
     ck_panel,
     ck_provenance_tooltip,
     ck_section_header,
@@ -394,6 +395,9 @@ def render_ingest_page(dataset: str = "") -> str:
         eyebrow="Phase 2 of 4",
         italic_word="Benchmarks",
     ))
+    # Standard action pills at the page bottom — same placement as the
+    # rest of the diligence family (checklist, benchmarks, index).
+    body.append(ck_page_actions())
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Ingestion",
         active_nav="/diligence/ingest",
@@ -920,6 +924,9 @@ def render_root_cause_page(dataset: str = "") -> str:
         eyebrow="Phase 4 of 4",
         italic_word="Value",
     ))
+    # Standard action pills at the page bottom — same placement as the
+    # rest of the diligence family (checklist, benchmarks, index).
+    body.append(ck_page_actions())
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Root Cause",
         active_nav="/diligence/root-cause",
@@ -1114,6 +1121,9 @@ def render_value_page(dataset: str = "") -> str:
         eyebrow="Partner deliverable",
         italic_word="Memorandum",
     ))
+    # Standard action pills at the page bottom — same placement as the
+    # rest of the diligence family (checklist, benchmarks, index).
+    body.append(ck_page_actions())
     return chartis_shell(
         "\n".join(body), "RCM Diligence — Value Creation",
         active_nav="/diligence/value",

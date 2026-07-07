@@ -311,7 +311,7 @@ _UPLOAD_JS = r"""
   var count = document.getElementById("hs-drop-count");
   if (!drop || !input || !btn) return;
   form.classList.add("hs-js");
-  var MAX = 10485760; /* mirrors the server's 10 MB multipart cap */
+  var MAX = __HS_MAX_BYTES__; /* mirrors the server's 10 MB multipart cap */
   function fmtSize(n){
     if (n >= 1048576) return (n / 1048576).toFixed(1) + " MB";
     if (n >= 1024) return (n / 1024).toFixed(0) + " KB";
@@ -387,8 +387,18 @@ _UPLOAD_JS = r"""
     btn.textContent = "Analyzing…";
     if (prog) prog.classList.remove("hs-hidden");
   });
+  /* Back-button from the result page restores this page from the
+     back/forward cache with the closure state intact — without this
+     reset the button stays disabled on "Analyzing…" forever. */
+  window.addEventListener("pageshow", function(e){
+    if (!e.persisted) return;
+    submitted = false;
+    btn.textContent = "Run revenue-leakage analysis";
+    if (prog) prog.classList.add("hs-hidden");
+    refresh();
+  });
 })();
-"""
+""".replace("__HS_MAX_BYTES__", str(_MAX_UPLOAD_BYTES))
 
 _RESULT_JS = r"""
 (function(){
@@ -478,7 +488,8 @@ def render_snapshot_upload(*, notice: str = "", error: str = "") -> str:
             "findings with a Markdown diligence memo."),
         source_note=("Snapshot pipeline v2 — patient identifiers tokenized "
                      "on ingest; every output is aggregate-only."),
-        show_legend=False,
+        # Legend on: every RCM DILIGENCE masthead carries the 4-dot
+        # live/computed honesty key (ingest, benchmarks, checklist, …).
     )
     chips = "".join(ck_signal_badge(c) for c in _FORMAT_CHIPS)
     parts = [
@@ -532,6 +543,9 @@ def render_snapshot_upload(*, notice: str = "", error: str = "") -> str:
         'plus a Markdown memo — nothing is written to the database.</p>'
         '</form>'
         '</div>')
+    # Standard action pills at the page bottom — same placement and flags
+    # as the rest of the diligence family.
+    parts.append(ck_page_actions())
     return chartis_shell(
         "\n".join(parts), "RCM Diligence — Healthcare Snapshot",
         subtitle="Snapshot-based 835/837 revenue-leakage diligence",
@@ -649,7 +663,8 @@ def render_snapshot_result(result: "SnapshotResult", *,
     head = ck_editorial_head(
         eyebrow="RCM DILIGENCE · SNAPSHOT FINDINGS",
         title=f"Revenue-Leakage Findings — {safe_deal}",
-        meta=(f"{t.claim_count:,} CLAIM LINES · {n_findings} FINDINGS · "
+        meta=(f"{t.claim_count:,} CLAIM LINE{'S' if t.claim_count != 1 else ''}"
+              f" · {n_findings} FINDING{'S' if n_findings != 1 else ''} · "
               f"CONFIDENCE {c.score}/100"),
         lede_italic_phrase=f"{deal_name} shows",
         lede_body=(
@@ -658,11 +673,13 @@ def render_snapshot_result(result: "SnapshotResult", *,
             f"({_html.escape(ck_fmt_currency(t.gross_charges, precision=2))} "
             "gross charges). Figures are directional, aggregate-only, and "
             "subject to validation against source systems."),
-        source_note=(f"Parser: {result.parser_used or 'auto-detect'} · "
-                     "835/837 snapshot · aggregates only — no patient-level "
-                     "data is displayed."),
-        actions_html=ck_page_actions(glossary=False, methodology=False),
-        show_legend=False,
+        # ck_editorial_head prepends "Source: " — lead with the artifact,
+        # not another label, so the line doesn't read "Source: Parser: …".
+        source_note=("835/837 snapshot · parser "
+                     f"{result.parser_used or 'auto-detect'} · aggregates "
+                     "only — no patient-level data is displayed."),
+        # Legend on + no masthead action pills: matches every other
+        # RCM DILIGENCE masthead (the pills land at the page bottom).
     )
     score_tone = _score_cls(c.score)
     # ck_kpi_block value/sub are trusted server markup (B2 exemption in
@@ -719,6 +736,9 @@ def render_snapshot_result(result: "SnapshotResult", *,
         + ck_arrow_link("Open the diligence workspace", "/diligence")
         + '</p>',
         '</div>',
+        # Standard action pills at the page bottom — same placement and
+        # flags as the rest of the diligence family.
+        ck_page_actions(),
     ]
     return chartis_shell(
         "\n".join(parts), "RCM Diligence — Revenue-Leakage Findings",

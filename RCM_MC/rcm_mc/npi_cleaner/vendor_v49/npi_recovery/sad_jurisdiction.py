@@ -160,9 +160,21 @@ def classify_row(hcpcs, state, modifier, *, mac_map, sad_index) -> tuple[str, st
       ROUTE_AMBIGUOUS       route-dependent code with no modifier to decide
       UNKNOWN_JURISDICTION  state does not map to a known MAC in the snapshot
     """
-    code = str(hcpcs).strip().upper()
-    st = str(state).strip().upper()
-    mods = {m.strip().upper() for m in str(modifier or "").replace(",", " ").split() if m.strip()}
+    # NA-safe scalars: a standardized frame materializes unmapped columns as
+    # pandas NA, and `pd.NA or ""` raises ("boolean value of NA is
+    # ambiguous") while str(NA) is the literal "<NA>" — both poisoned the
+    # classification when the file had no modifier/state column.
+    def _s(v):
+        try:
+            if v is None or pd.isna(v):
+                return ""
+        except (TypeError, ValueError):
+            pass
+        return str(v)
+
+    code = _s(hcpcs).strip().upper()
+    st = _s(state).strip().upper()
+    mods = {m.strip().upper() for m in _s(modifier).replace(",", " ").split() if m.strip()}
     entry = sad_index.get(code)
     if entry is None:
         return "PART_B_ELIGIBLE", "code not on the SAD snapshot (provider-administered)"
@@ -199,11 +211,12 @@ def classify_frame(std: pd.DataFrame, *, ref_dir, allowed=None,
                                       "sad_exclusion_seed.csv and mac_jurisdictions_seed.csv"]})
     a = (pd.to_numeric(allowed, errors="coerce").fillna(0.0) if allowed is not None
          else pd.to_numeric(std.get("allowed_amt"), errors="coerce").fillna(0.0))
-    hc = std.get(hcpcs_col, pd.Series("", index=std.index))
-    stt = std.get(state_col, pd.Series("", index=std.index))
+    hc = std.get(hcpcs_col, pd.Series("", index=std.index)).fillna("")
+    stt = std.get(state_col, pd.Series("", index=std.index)).fillna("")
     mod_col = modifier_col or next(
         (c for c in ("modifier", "modifiers", "mod", "modifier_1") if c in std.columns), None)
-    md = std.get(mod_col, pd.Series("", index=std.index)) if mod_col else pd.Series("", index=std.index)
+    md = (std.get(mod_col, pd.Series("", index=std.index)) if mod_col
+          else pd.Series("", index=std.index)).fillna("")
 
     verdicts, rats = [], []
     for h, s, m in zip(hc, stt, md):
@@ -226,10 +239,21 @@ def classify_frame(std: pd.DataFrame, *, ref_dir, allowed=None,
     out.attrs["ambiguous_dollars"] = round(amb, 2)
     out.attrs["verdict_series"] = vs
     out.attrs["rationale_series"] = pd.Series(rats, index=std.index)
+    out.attrs["snapshot_codes"] = len(sad_index)
+    # A small shipped snapshot means PART_B_ELIGIBLE is a floor, not a
+    # clearance — codes outside the slice default to eligible. Disclose the
+    # coverage inline so a rollup rendered from this frame cannot read as
+    # authoritative when the seed is a 15-code slice of the ~1,502-row list.
+    coverage = ("" if len(sad_index) >= 1000 else
+                " Snapshot covers {} HCPCS codes — a curated slice of the "
+                "~1,502-row CMS SAD list; codes outside it read as "
+                "PART_B_ELIGIBLE, so treat eligibility as a floor. Refresh "
+                "via refresh_from_cms for full coverage.".format(len(sad_index)))
     out.attrs["note"] = (
         "Jurisdiction- and route-aware SAD read against the shipped CMS snapshot. "
         "ROUTE_AMBIGUOUS and UNKNOWN_JURISDICTION dollars ({}) are the lines to resolve "
-        "with a modifier or a state before treating them as Part B.".format(round(amb, 2)))
+        "with a modifier or a state before treating them as Part B.".format(round(amb, 2))
+        + coverage)
     return out
 
 

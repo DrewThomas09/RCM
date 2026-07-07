@@ -16,7 +16,7 @@ from rcm_mc.ui.data_public._benchmark_panels import data_required_panel
 # matching the kit's .ck-illus-note-body treatment.
 _EXTRA_CSS = (
     ".dv-chart-caption{font-family:var(--sc-mono,'JetBrains Mono',monospace);"
-    "font-size:11px;color:var(--sc-text-dim,#5C6878);margin:6px 0 18px;}"
+    "font-size:11px;color:var(--sc-text-dim,#465366);margin:6px 0 18px;}"
 )
 
 

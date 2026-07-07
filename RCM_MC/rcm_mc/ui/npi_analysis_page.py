@@ -199,10 +199,14 @@ _EXTRA_CSS = r"""
 .an-ctl input[type=checkbox]{accent-color:var(--green-deep,#154e36);
   width:15px;height:15px;cursor:pointer}
 
-/* ---- buttons ---- */
+/* ---- buttons ----
+   Same anatomy as the cleaner/history buttons (.npi-dl / .nh-btn):
+   2px radius, uppercase 12px/600 tracking — so the trio's controls
+   read as one tool. Cards/panels keep the 4px --an-r. */
 .an-btn{appearance:none;border:1px solid var(--sc-rule-2,#bfb6a2);
-  background:var(--paper-card,#fefcf3);border-radius:var(--an-r);
+  background:var(--paper-card,#fefcf3);border-radius:var(--sc-r-1,2px);
   padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
+  letter-spacing:.05em;text-transform:uppercase;
   color:var(--ink,#16263a);transition:all .12s;line-height:1.4;
   font-family:var(--sc-sans,'Inter Tight',sans-serif)}
 .an-btn:hover{border-color:var(--green-deep,#154e36);
@@ -445,18 +449,24 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
     cap_str = ck_fmt_number(_DATA_CAP)
     if not available:
         head = ck_editorial_head(
-            eyebrow="TOOLS · CLAIMS ANALYSIS",
+            # Eyebrow matches /npi-cleaner/history ("TOOLS · NPI CLAIMS
+            # CLEANER") so the cleaner → pivot → history trio reads as
+            # one tool family.
+            eyebrow="TOOLS · NPI CLAIMS CLEANER",
             title="Pivot Workbench",
             meta="SESSION EXPIRED OR JOB NOT FOUND",
             lede_italic_phrase="This analysis session is gone",
             lede_body=(
                 " — pivot sessions live in the in-memory job store, and the "
                 "store resets whenever the server restarts."),
-            actions_html=ck_page_actions(glossary=False, methodology=False),
+            # Masthead actions carry only page-specific quick links; the
+            # standard action pills land at the page bottom, matching the
+            # site-wide ck_page_actions placement.
+            actions_html='<a href="/npi-cleaner">← Back to NPI Cleaner</a>',
             show_legend=False,
         )
         empty = ck_empty_state(
-            "This analysis session has expired",
+            "This analysis session has expired.",
             ("The cleaning job was not found — the in-memory job store "
              "resets when the server restarts. Re-run the cleaner and open "
              "the analysis again from the scorecard."),
@@ -466,12 +476,15 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             cta_href="/npi-cleaner",
             tone="warning",
         )
-        return f"{head}\n{empty}"
+        return (f"{head}\n{empty}\n"
+                + ck_page_actions(glossary=False, methodology=False))
 
     safe_job = _h.escape(job_id)
     safe_name = _h.escape(src_name or "cleaned data")
     head = ck_editorial_head(
-        eyebrow="TOOLS · CLAIMS ANALYSIS",
+        # Eyebrow matches /npi-cleaner/history so the trio reads as one
+        # tool family under the NPI Claims Cleaner umbrella.
+        eyebrow="TOOLS · NPI CLAIMS CLEANER",
         title="Pivot Workbench",
         meta=f"IN-BROWSER PIVOT ENGINE · FIRST {cap_str} ROWS · CSV + PNG EXPORT",
         lede_italic_phrase="Slice the cleaned file",
@@ -482,9 +495,10 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
         source_note=(
             f"In-browser aggregation over the cleaned output; the data feed "
             f"is capped at the first {cap_str} rows."),
-        actions_html=ck_page_actions(
-            glossary=False, methodology=False,
-            extras_html='<a href="/npi-cleaner">← Back to NPI Cleaner</a>'),
+        # Only the page-specific quick link lives in the masthead; the
+        # standard ck_page_actions row lands at the page bottom like
+        # every other editorial page (exports, source, diligence family).
+        actions_html='<a href="/npi-cleaner">← Back to NPI Cleaner</a>',
         show_legend=False,
     )
     meta_prov = ck_provenance_tooltip(
@@ -624,7 +638,8 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
     </div>
   </div>
   <span class="an-tip" id="an-tip" aria-hidden="true"></span>
-</div>"""
+</div>
+{ck_page_actions(glossary=False, methodology=False)}"""
 
 
 _EXTRA_JS = r"""

@@ -288,18 +288,15 @@ def _clean_npi_cell(v: str) -> Tuple[str, List[str]]:
         rules.append("npi-excel-float")
     if _NPI_SCI_RE.match(v.strip()):
         # Spreadsheet scientific notation ("1.679576722E+09"). Recover ONLY
-        # when the float round-trips to a full 10-digit integer — otherwise
-        # the mantissa lost digits and stripping non-digits would fabricate
-        # a 12-digit junk value ("1.68E+09" → "16809"). The lossy case is
+        # when the mantissa carries ALL 10 digits — "1.68E+09" could have
+        # been any NPI starting 168, so expanding it would fabricate an
+        # identifier ("1680000000") and stripping non-digits would
+        # fabricate a 12-digit junk value ("16809"). The lossy case is
         # left untouched for the npi-scientific-lossy flag (see the row
         # loop) so the user learns the export destroyed identifiers.
-        try:
-            _n = int(float(v.strip()))
-        except (ValueError, OverflowError):
-            _n = 0
-        if 1_000_000_000 <= _n <= 9_999_999_999 and \
-                float(v.strip()) == float(_n):
-            return str(_n), rules + ["npi-scientific-notation"]
+        _mant = v.strip().upper().split("E", 1)[0].replace(".", "")
+        if len(_mant) == 10 and _mant.isdigit():
+            return _mant, rules + ["npi-scientific-notation"]
         return v, rules
     digits = "".join(ch for ch in v if ch.isdigit())
     if digits != v and v != "":
@@ -1168,13 +1165,19 @@ def _digits(v: object) -> str:
 
 
 def classify_npi(raw: object) -> str:
-    """One of: ``blank`` · ``malformed`` (not 10 digits) · ``checksum`` (10
-    digits but Luhn-fails) · ``valid``."""
+    """One of: ``blank`` · ``malformed`` (not 10 digits, or an implausible
+    first digit) · ``checksum`` (10 digits but Luhn-fails) · ``valid``.
+
+    CMS only ever issues NPIs beginning with 1 (individual/entity) or 2
+    (reserved) — a Luhn-valid 10-digit value starting 3-9 cannot be a real
+    NPI and reads ``malformed`` rather than lending false confidence."""
     s = str(raw).strip() if raw is not None else ""
     if s == "" or s.lower() in ("nan", "none", "null", "na"):
         return "blank"
     d = _digits(s)
     if len(d) != 10:
+        return "malformed"
+    if d[0] not in "12":
         return "malformed"
     return "valid" if luhn_npi_valid(d) else "checksum"
 
@@ -1337,7 +1340,10 @@ class CleanResult:
                        "discharge-status-invalid", "admission-type-invalid",
                        "modifier-unknown", "icd10-unknown-code",
                        "hcpcs-unknown-code", "admission-source-invalid",
-                       "ndc-malformed", "taxonomy-unknown-code")
+                       "ndc-malformed", "taxonomy-unknown-code",
+                       "date-unparseable", "ragged-row",
+                       "npi-scientific-lossy", "modifier-malformed",
+                       "leie-excluded-npi")
     _CONSISTENCY_RULES = ("allowed-exceeds-billed", "paid-exceeds-allowed",
                           "paid-exceeds-billed", "negative-allowed",
                           "negative-paid", "nonpositive-units",
@@ -1349,7 +1355,8 @@ class CleanResult:
                           "anesthesia-units-implausible",
                           "revenue-tob-mismatch", "timely-filing-risk",
                           "service-date-order", "discharge-status-final-bill",
-                          "units-exceed-threshold")
+                          "units-exceed-threshold", "npi-name-conflict",
+                          "drg-on-professional")
 
     def quality(self) -> Dict[str, object]:
         """The 0-100 data-quality report card over the five classic DQ
@@ -1601,13 +1608,13 @@ def zip_batch_members_ex(data: bytes) -> Tuple[
             "archive and upload in parts.")
     out = []
     budget = _BATCH_MAX_UNCOMPRESSED
-    for info in members:
+    for m_info in members:
         try:
             # Chunked read with a hard cap: declared sizes can be forged,
             # so never trust file_size alone.
             chunks = []
             got = 0
-            with zf.open(info) as fh:
+            with zf.open(m_info) as fh:
                 while True:
                     chunk = fh.read(1 << 20)
                     if not chunk:
@@ -1620,7 +1627,8 @@ def zip_batch_members_ex(data: bytes) -> Tuple[
                             "decompress further.")
                     chunks.append(chunk)
             budget -= got
-            out.append((info.filename.rsplit("/", 1)[-1], b"".join(chunks)))
+            out.append((m_info.filename.rsplit("/", 1)[-1],
+                        b"".join(chunks)))
         except ValueError:
             raise
         except Exception:  # noqa: BLE001 — skip the unreadable member
@@ -1806,8 +1814,17 @@ def _shape_rows(all_rows: List[List[str]]
     notes: List[str] = []
     skipped = 0
     while (skipped < 3 and len(all_rows) >= 4
-           and _populated_cells(all_rows[0]) <= 2
-           and all(_populated_cells(r) >= 4 for r in all_rows[1:4])):
+           and _populated_cells(all_rows[0]) <= 2):
+        # Row 0 is a title only when a STABLE ≥4-wide table starts within
+        # the next few rows: everything before the first wide row is
+        # narrow (more title lines), everything from it on is wide. An
+        # ordinary 2-column file never matches (no wide row follows).
+        widths = [_populated_cells(r) for r in all_rows[1:5]]
+        wide_at = next((i for i, w in enumerate(widths) if w >= 4), None)
+        if (wide_at is None
+                or any(w > 2 for w in widths[:wide_at])
+                or any(w < 4 for w in widths[wide_at:])):
+            break
         all_rows = all_rows[1:]
         skipped += 1
     if skipped:
@@ -1997,7 +2014,7 @@ def _sniff_npi_columns(headers: List[str], rows: List[List[str]],
             populated += 1
             if len(cell) == 10 and cell.isdigit():
                 ten += 1
-                if luhn_npi_valid(cell):
+                if cell[0] in "12" and luhn_npi_valid(cell):
                     luhn += 1
         if (populated >= _NPI_SNIFF_MIN_POPULATED
                 and ten / populated >= _NPI_SNIFF_TEN_FRAC
@@ -2214,6 +2231,11 @@ def clean_bytes(
             "270/276 inquiry can't be cleaned as claims.")
         res.out_name = _out_name(src_name)
         _write_output(res, headers, [])
+        if not _stream_chunk:
+            # This early return used to bypass the auto-file loop, so the
+            # most common "we can't handle your file" outcome never
+            # reached the backlog.
+            _autofile_gaps(res)
         cb("Done", 1.0)
         return res
     if not headers:
@@ -3458,16 +3480,22 @@ def clean_bytes(
     # analysis page's box plot, so the two agree.
     _out_total = 0
     _out_detail: List[Dict[str, object]] = []
-    for _code, _vals in _code_charges.items():
-        if len(_vals) < 10:
+    _out_rows: List[int] = []
+    for _code, _pairs in _code_charges.items():
+        if len(_pairs) < 10:
             continue
-        _vals.sort()
+        _vals = sorted(a for a, _r in _pairs)
         _q1, _q3 = _quantile(_vals, 0.25), _quantile(_vals, 0.75)
         _iqr = _q3 - _q1
         if _iqr <= 0:
             continue
         _lo, _hi = (_q1 - _iqr_mult * _iqr, _q3 + _iqr_mult * _iqr)
-        _n_out = sum(1 for v in _vals if v < _lo or v > _hi)
+        _n_out = 0
+        for _a, _r in _pairs:
+            if _a < _lo or _a > _hi:
+                _n_out += 1
+                if len(_out_rows) < _WORKLIST_CAP:
+                    _out_rows.append(_r)
         if _n_out:
             _out_total += _n_out
             _out_detail.append({
@@ -3476,6 +3504,7 @@ def clean_bytes(
                 "max": round(_vals[-1], 2)})
     if _out_total:
         res.sanity["charge-outlier"] = _out_total
+        res.flag_rows["charge-outlier"] = sorted(_out_rows)[:_WORKLIST_CAP]
         _out_detail.sort(key=lambda d: -int(d["outliers"]))  # type: ignore[arg-type]
         res.outliers = _out_detail[:8]
 
@@ -3738,7 +3767,9 @@ def _autofile_gaps(res: "CleanResult") -> None:
     per completed run, beside history recording."""
     try:
         gaps: List[Dict[str, str]] = []
-        if not res.npi_columns:
+        # Headers must exist for "no NPI column" to be meaningful — an X12
+        # ack or empty file has no columns to detect anything in.
+        if res.headers and not res.npi_columns:
             gaps.append({
                 "category": "field",
                 "title": "Detector found no NPI column in an upload",
@@ -3761,6 +3792,66 @@ def _autofile_gaps(res: "CleanResult") -> None:
                         "details": f"{label} codes are failing the installed "
                                    "reference set at a high rate; refreshing "
                                    "the pack may resolve it."})
+        # Signals the survey found completing runs WITHOUT leaving a trace
+        # on the backlog: header hints an NPI sniff had to rescue, ragged
+        # files, unparseable date formats, headerless/X12-mismatch shapes,
+        # zip members skipped. Titles are generic (dedupe-by-title, no PHI
+        # or filenames); headers are metadata and ride in the details.
+        _sniffed = res.structure.get("npi_sniffed_columns") or []
+        if _sniffed:
+            gaps.append({
+                "category": "field",
+                "title": "NPI column detected by value under a non-NPI "
+                         "header",
+                "details": "The value sniff adopted column(s) the header "
+                           "hints missed: "
+                           + ", ".join(str(s) for s in _sniffed[:5])
+                           + ". Consider extending the NPI header hints."})
+        rows_in = res.n_rows_in or 0
+        _rr = res.structure.get("ragged_rows") or {}
+        _rr_n = int(_rr.get("padded") or 0) + int(_rr.get("truncated") or 0)
+        if rows_in >= 100 and _rr_n and _rr_n / rows_in >= 0.05:
+            gaps.append({
+                "category": "format",
+                "title": "High ragged-row rate on an upload",
+                "details": "Many rows had a different cell count than the "
+                           "header — a delimiter/quoting defect in the "
+                           "source export. A smarter re-alignment repair "
+                           "may be worth building."})
+        _du = int(res.sanity.get("date-unparseable") or 0)
+        if rows_out >= 200 and _du and _du / rows_out >= 0.05:
+            gaps.append({
+                "category": "format",
+                "title": "High date-unparseable rate — an unrecognized "
+                         "date format",
+                "details": "Date cells failed every parser (ISO, US, "
+                           "Excel serial, CCYYMMDD) at a high rate; the "
+                           "source may use a format worth adding."})
+        _wblob = " ".join(res.warnings)
+        if "no 837 claim" in _wblob:
+            gaps.append({
+                "category": "format",
+                "title": "X12 upload carried no 837/835 claims",
+                "details": "An X12 interchange without CLM/CLP segments "
+                           "was uploaded (999/270/276 …). Support for "
+                           "more transaction sets may be wanted."})
+        if "no header row" in _wblob:
+            gaps.append({
+                "category": "format",
+                "title": "Headerless file cleaned with synthesized "
+                         "column names",
+                "details": "A file with no header row was cleaned as "
+                           "column_1..N. A saved mapping template for "
+                           "this source would restore role detection."})
+        _bs = res.structure.get("batch_skipped") or {}
+        if _bs:
+            gaps.append({
+                "category": "format",
+                "title": "Zip batch members were skipped",
+                "details": f"{_bs.get('unsupported', 0)} unsupported-format "
+                           f"member(s) and {_bs.get('over_cap', 0)} over "
+                           "the batch cap were not cleaned. Batch-format "
+                           "support / a bigger cap may be wanted."})
         if not gaps:
             return
         from . import wishlist as _wishlist
@@ -3771,14 +3862,17 @@ def _autofile_gaps(res: "CleanResult") -> None:
 
 
 def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
-                 cb) -> "CleanResult":
+                 cb, skip_info: Optional[Dict[str, object]] = None
+                 ) -> "CleanResult":
     """Clean every member of a zip batch and merge into one parent result.
 
     Each file runs through the full single-file pipeline (its own history
     record included); the parent carries summed counters so the report
     card blends all rows, plus per-file grades in ``batch``. Online modes
     (enrich/deep) are deliberately off in batch — one upload must not fan
-    out into N network sweeps.
+    out into N network sweeps. ``skip_info`` (from zip_batch_members_ex)
+    names the members that were NOT cleaned so the banner never implies
+    full coverage of a partially-processed archive.
     """
     import zipfile as _zf
     res = CleanResult(delimiter="zip", headers=[])
@@ -3815,6 +3909,30 @@ def _clean_batch(members, src_name, *, drop_duplicates, deid, profile,
             for _dc in sub.deid_columns:
                 if _dc not in res.deid_columns:
                     res.deid_columns.append(_dc)
+    # Skipped members surface BEFORE the banner: a mixed archive must never
+    # imply full coverage. Unsupported formats are named (capped); the
+    # member cap is stated with the count over it.
+    _skips: List[str] = []
+    _si = skip_info or {}
+    _uns = list(_si.get("skipped_unsupported") or [])
+    _over = int(_si.get("over_cap") or 0)
+    if _uns:
+        _named = ", ".join(str(u) for u in _uns[:8])
+        if len(_uns) > 8:
+            _named += f", … ({len(_uns) - 8} more)"
+        _skips.append(f"{len(_uns)} member(s) in an unsupported format "
+                      f"were not cleaned: {_named} — export those as CSV "
+                      "and re-upload.")
+    if _over:
+        _skips.append(f"{_over} member(s) over the "
+                      f"{_si.get('cap', _BATCH_MEMBER_CAP)}-file batch cap "
+                      "were not cleaned — split the archive and upload "
+                      "the rest separately.")
+    if _uns or _over:
+        res.structure["batch_skipped"] = {"unsupported": len(_uns),
+                                          "over_cap": _over}
+    for _sk in reversed(_skips):
+        res.warnings.insert(0, _sk)
     res.warnings.insert(0, (
         f"Batch mode: {n} file(s) cleaned from the zip — per-file grades "
         "on the Quality tab; the download is a zip of the cleaned files. "

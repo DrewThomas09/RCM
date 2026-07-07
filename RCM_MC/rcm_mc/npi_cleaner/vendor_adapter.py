@@ -35,6 +35,27 @@ from typing import Dict, List, Optional
 # sized for real large files, not just demos.
 _MAX_SUGGESTIONS = 50_000
 
+# What each v49 coding-edit screen needs in order to run at all —
+# rendered as an honest note when a screen is absent from the results
+# (clean_all drops non-applicable screens without a trace). PTP is also
+# dropped when it ran and found zero pairs, so its wording covers both.
+_SCREEN_REQUIREMENTS: Dict[str, str] = {
+    "mue_units": ("Screen did not run — needs a HCPCS/procedure column "
+                  "and a units column."),
+    "icd_dos_validity": ("Screen did not run — needs a diagnosis "
+                         "(ICD-10) column."),
+    "age_sex_conflict": ("Screen did not run — needs patient age and "
+                         "sex columns."),
+    "jw_jz_wastage": ("Screen did not run — needs a HCPCS column "
+                      "(single-dose drug codes)."),
+    "npi_deactivated": ("Screen did not run — needs a billing NPI "
+                        "column."),
+    "ptp_pairs": ("No PTP conflicts found, or the screen could not run "
+                  "(needs a HCPCS column). Reference is a 4,376-pair "
+                  "sample of the ~4M-pair NCCI set — absence of "
+                  "conflicts is a floor, not a clearance."),
+}
+
 
 def available() -> bool:
     """True when pandas and the vendored v49 offline engine import."""
@@ -181,14 +202,37 @@ def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dic
 
     # Screen flag counts (frames that carry a per-row "row" column), plus a
     # capped sample of the actual offending rows per screen for drill-down.
+    # ``screen_details`` carries what the bare counts used to drop: each
+    # screen's own frame.attrs disclosure (e.g. "Seed is a sample of the
+    # full CMS file") and its reference-data source — without it a
+    # "0 rows" line read as a clean pass when coverage was <2%.
+    # ``screens`` stays a name → int map for back-compat.
     screens = res.get("screens", {}) or {}
     payload["screens"] = {}
+    payload["screen_details"] = {}
     issue_rows: Dict[str, dict] = {}
     for name, frame in screens.items():
         cols = getattr(frame, "columns", [])
-        if not (hasattr(frame, "columns") and "row" in cols):
+        if not hasattr(frame, "columns"):
+            continue
+        attrs = getattr(frame, "attrs", {}) or {}
+        # Per-row screens carry "row"; the PTP screen carries code PAIRS
+        # (col1/col2) instead and used to be dropped entirely — its
+        # conflicts never reached the page even when it fired.
+        if "row" not in cols and not ("col1" in cols and "col2" in cols):
+            # A note-only frame is a screen explaining why it could NOT
+            # run (missing column / missing reference file) — surface
+            # that honestly instead of silently dropping the screen.
+            if "note" in cols and len(frame):
+                payload.setdefault("screen_notes", {})[name] = str(
+                    frame["note"].iloc[0])
             continue
         payload["screens"][name] = int(len(frame))
+        payload["screen_details"][name] = {
+            "n": int(len(frame)),
+            "note": str(attrs.get("note", "") or ""),
+            "source": str(attrs.get("source", "") or ""),
+        }
         show = [c for c in cols if c not in ("verdict",)][:8]
         sample = []
         for _, r in frame.head(15).iterrows():
@@ -196,6 +240,14 @@ def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dic
         if sample:
             issue_rows[name] = {"columns": show, "rows": sample}
     payload["issue_rows"] = issue_rows
+
+    # Screens that did NOT run (clean_all silently drops a screen whose
+    # required column or reference file is absent). "npi_deactivated: 0"
+    # vs "npi_deactivated: did not run" is exactly the honesty gap a
+    # compliance-adjacent surface cannot leave open.
+    for name, req in _SCREEN_REQUIREMENTS.items():
+        if name not in payload["screens"]:
+            payload.setdefault("screen_notes", {}).setdefault(name, req)
 
     # Sized issues (the headline: rows, $ exposure, systematic verdict).
     issues: List[dict] = []
@@ -238,7 +290,106 @@ def run(data: bytes, overrides: Optional[Dict[str, str]] = None) -> Optional[dic
     # modifier economics, provider concentration). Each is guarded.
     payload["extended"] = _extended_screens(std, mapping, pd)
 
+    # Offline recovery views — SAD jurisdiction classification and the
+    # dollar-ranked gap inventory. Both are fully offline pandas modules
+    # with vendored seeds, but their only call site used to be the
+    # networked deep pipeline, so a no-egress deployment could never see
+    # them despite everything needed being on disk.
+    try:
+        payload.update(_offline_recovery(std, mapping, pd))
+    except Exception:  # noqa: BLE001 — recovery views never block the run
+        pass
+
+    # Machine-readable reference/connector data status, so the scorecard
+    # (and everything rendered from it) can say which sources were real,
+    # which were samples, and which were absent on THIS run.
+    try:
+        from . import connectors as _connectors
+        payload["reference_status"] = _connectors.connector_status()
+    except Exception:  # noqa: BLE001
+        pass
+
     return payload
+
+
+def _records(frame, pd, cap: int = 50) -> List[dict]:
+    """First ``cap`` rows of a frame as plain-JSON records."""
+    out: List[dict] = []
+    for _, r in frame.head(cap).iterrows():
+        rec = {}
+        for c in frame.columns:
+            v = r[c]
+            if pd.isna(v):
+                rec[c] = ""
+            elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                rec[c] = float(v) if isinstance(v, float) else int(v)
+            else:
+                rec[c] = str(v)
+        out.append(rec)
+    return out
+
+
+def _offline_recovery(std, mapping, pd) -> Dict[str, object]:
+    """SAD jurisdiction rollup + recoverable-gap inventory from the
+    vendored v49 modules — offline, guarded, empty dict on any miss."""
+    out: Dict[str, object] = {}
+    try:
+        from .vendor_v49.npi_recovery.coding_edits import _default_ref
+        ref = _default_ref()
+    except Exception:  # noqa: BLE001
+        return out
+    cols = getattr(std, "columns", [])
+    allowed_col = (mapping or {}).get("allowed_amt")
+    allowed = (pd.to_numeric(std[allowed_col], errors="coerce")
+               if allowed_col and allowed_col in cols else None)
+
+    # --- SAD jurisdiction / route classification (needs a HCPCS column) ---
+    try:
+        hc = (mapping or {}).get("hcpcs")
+        if hc and hc in cols:
+            from .vendor_v49.npi_recovery import sad_jurisdiction as SAD
+            cls = SAD.classify_frame(
+                std, ref_dir=ref, allowed=allowed, hcpcs_col=hc,
+                state_col=((mapping or {}).get("state") or "state"),
+                modifier_col=(mapping or {}).get("modifiers"))
+            if (hasattr(cls, "columns") and "verdict" in cls.columns
+                    and len(cls)):
+                sad: Dict[str, object] = {
+                    "rollup": _records(cls, pd),
+                    "ambiguous_dollars": float(
+                        cls.attrs.get("ambiguous_dollars") or 0.0),
+                    "snapshot_codes": int(
+                        cls.attrs.get("snapshot_codes") or 0),
+                    "note": str(cls.attrs.get("note", "") or ""),
+                    "source": "vendored CMS SAD snapshot + MAC roster "
+                              "(sad_jurisdiction v39)",
+                }
+                amb = SAD.ambiguous_lines(std, cls, allowed=allowed,
+                                          hcpcs_col=hc, top_n=15)
+                if hasattr(amb, "columns") and "hcpcs" in amb.columns:
+                    sad["ambiguous"] = _records(amb, pd, cap=15)
+                out["sad"] = sad
+    except Exception:  # noqa: BLE001
+        pass
+
+    # --- Recoverable-gap inventory + executable resolution plan ---
+    try:
+        from .vendor_v49.npi_recovery import missing_resolver as MR
+        inv = MR.gap_inventory(std, allowed=allowed, ref_dir=ref)
+        if hasattr(inv, "columns") and "gap" in inv.columns and len(inv):
+            gaps: Dict[str, object] = {
+                "inventory": _records(inv, pd),
+                "total_gap_dollars": float(
+                    inv.attrs.get("total_gap_dollars") or 0.0),
+                "note": str(inv.attrs.get("note", "") or ""),
+            }
+            plan = MR.resolution_plan(std, allowed=allowed, ref_dir=ref)
+            if hasattr(plan, "columns") and "gap" in plan.columns:
+                gaps["plan"] = _records(plan, pd)
+            out["gaps"] = gaps
+    except Exception:  # noqa: BLE001
+        pass
+    return out
 
 
 def _extended_screens(std, mapping, pd) -> List[dict]:

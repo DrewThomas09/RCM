@@ -31,7 +31,13 @@ def default_cache_dir():
 
 
 class BulkTable:
-    """One bulk reference dataset, cached locally and joined in-process."""
+    """One bulk reference dataset, cached locally and joined in-process.
+
+    ``url`` may be a single URL, a list of candidate URLs (tried in order,
+    newest-first), or a zero-arg callable returning either — because CMS
+    rotates the deactivated-report filename per release and NUCC versions
+    the taxonomy per half-year, a pinned URL rots within weeks and the
+    table silently degrades to a stale cache or None."""
 
     def __init__(self, name, url, key_col, loader, cache_dir=None, refresh_days=7):
         self.name = name
@@ -42,6 +48,18 @@ class BulkTable:
         self.cache_dir = Path(cache_dir) if cache_dir else default_cache_dir()
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._df = None
+
+    def _url_candidates(self):
+        """The download candidates, newest-first, as a list of strings."""
+        u = self.url
+        try:
+            if callable(u):
+                u = u()
+        except Exception:
+            return []
+        if isinstance(u, (list, tuple)):
+            return [str(x) for x in u if x]
+        return [str(u)] if u else []
 
     @property
     def _slug(self):
@@ -109,21 +127,28 @@ class BulkTable:
         try:
             import requests
             sess = session or requests
-            r = sess.get(self.url, timeout=180)
-            r.raise_for_status()
-            df = self.loader(r.content)
-            if df is None or df.empty or self.key_col not in df.columns:
-                return self._load_stale()
-            df[self.key_col] = df[self.key_col].astype("string").str.strip()
-            df = df.dropna(subset=[self.key_col])
-            fmt = self._write_cache(df)
-            self._meta.write_text(json.dumps(
-                {"fetched_at": time.time(), "url": self.url, "rows": int(len(df)),
-                 "name": self.name, "fmt": fmt}))
-            self._df = df
-            return df
         except Exception:
             return self._load_stale()
+        # Try each candidate in order; the first that downloads AND parses
+        # wins, and the meta records which one so the provenance is real.
+        for cand in self._url_candidates():
+            try:
+                r = sess.get(cand, timeout=180)
+                r.raise_for_status()
+                df = self.loader(r.content)
+                if df is None or df.empty or self.key_col not in df.columns:
+                    continue
+                df[self.key_col] = df[self.key_col].astype("string").str.strip()
+                df = df.dropna(subset=[self.key_col])
+                fmt = self._write_cache(df)
+                self._meta.write_text(json.dumps(
+                    {"fetched_at": time.time(), "url": cand, "rows": int(len(df)),
+                     "name": self.name, "fmt": fmt}))
+                self._df = df
+                return df
+            except Exception:
+                continue
+        return self._load_stale()
 
     def _load_stale(self):
         """A stale snapshot beats nothing; only None when there is no cache."""
@@ -281,16 +306,52 @@ def load_fda_ndc(content):
     return out.dropna(subset=["ndc"]).drop_duplicates(subset=["ndc"])
 
 
+def nucc_taxonomy_urls():
+    """Candidate NUCC taxonomy URLs, newest-first. NUCC releases version
+    X.0 each January and X.1 each July, named nucc_taxonomy_<major><minor>
+    with major = (year - 2000) — a pinned filename 404s within six months."""
+    import datetime as _dt
+    year = _dt.datetime.now(_dt.timezone.utc).year
+    out = []
+    for major in (year - 2000, year - 2001, year - 2002):
+        for minor in ("1", "0"):
+            out.append("https://www.nucc.org/images/stories/CSV/"
+                       f"nucc_taxonomy_{major}{minor}.csv")
+    return out
+
+
+def deactivated_npi_urls(weeks_back=10):
+    """Candidate CMS deactivated-NPI report URLs, newest-first. CMS dates
+    the filename per release (MMDDYY, published Mondays), so a pinned name
+    rots in a week; walk back over recent Mondays and keep the last
+    known-good name as the final fallback."""
+    import datetime as _dt
+    today = _dt.datetime.now(_dt.timezone.utc).date()
+    monday = today - _dt.timedelta(days=today.weekday())
+    urls = []
+    for i in range(int(weeks_back)):
+        d = monday - _dt.timedelta(weeks=i)
+        urls.append("https://download.cms.gov/nppes/"
+                    "NPPES_Deactivated_NPI_Report_"
+                    + d.strftime("%m%d%y") + ".zip")
+    urls.append("https://download.cms.gov/nppes/"
+                "NPPES_Deactivated_NPI_Report_060925.zip")
+    return urls
+
+
 # Registry of the bulk connectors v7 ships. NPPES-full and PECOS-bulk use the
 # same engine in production; they are not pre-registered here because their
 # multi-GB downloads are validated out-of-sandbox (the live clients remain the
-# long-tail fallback until a snapshot is staged).
+# long-tail fallback until a snapshot is staged). The rotating-filename
+# sources register candidate GENERATORS (see BulkTable._url_candidates), not
+# pinned URLs — the pinned form 404'd on every deployment with egress and
+# silently zeroed the deactivation/taxonomy joins.
 REGISTRY = {
     "nucc_taxonomy": dict(
-        url="https://www.nucc.org/images/stories/CSV/nucc_taxonomy_250.csv",
+        url=nucc_taxonomy_urls,
         key_col="taxonomy_code", loader=load_nucc_taxonomy, refresh_days=90),
     "deactivated_npi": dict(
-        url="https://download.cms.gov/nppes/NPPES_Deactivated_NPI_Report_060925.zip",
+        url=deactivated_npi_urls,
         key_col="npi", loader=load_deactivated_npi, refresh_days=30),
     "fda_ndc": dict(
         url="https://www.accessdata.fda.gov/cder/ndctext.zip",

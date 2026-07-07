@@ -12,9 +12,16 @@ Sheets:
     workbook; a note row states when it was truncated.
   * **NPI health** — per-column valid / blank / malformed / checksum tallies.
   * **Issues** — the real vendored field + consistency screen findings.
+  * **Denials / Compliance / Charge outliers / Dictionary** — the denial mix
+    with the playbook, the OIG LEIE + PECOS screens, the per-HCPCS charge
+    outliers, and the data dictionary (guarded; present when the run
+    produced them) so the forwarded workbook carries the same verdict as
+    the web UI, not a thinner one.
   * **NPPES** — live verification counts + recovered candidate NPIs (only when
     the cross-check ran).
   * **Scorecard** — the headline totals.
+  * **WL &lt;rule&gt;** — per-rule worklists that lead with why-flagged +
+    what-to-do and keep the largest-billed rows when a charge column exists.
 
 Text cells are written as inline strings, which Excel never evaluates as
 formulas, so the workbook is inherently safe from CSV-injection.
@@ -52,10 +59,23 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         ["Rows", f"{res.n_rows_in} in → {res.n_rows_out} out"],
         ["Duplicates removed", res.n_dupes_removed],
         ["Deterministic fixes applied", sum(res.repairs.values())],
-        ["Rows flagged (all findings)",
+        # Rule HITS, not rows — a row firing three rules contributes 3, so
+        # the old "Rows flagged" label could exceed rows_out and read as
+        # broken arithmetic next to the row counts above.
+        ["Findings (rule hits, all rules)",
          sum((sc.get("sanity") or {}).values())],
         ["Source format", sc["delimiter"]],
     ]
+    _fr0 = getattr(res, "flag_rows", None) or {}
+    if _fr0:
+        _distinct_flagged = len(set().union(*_fr0.values()))
+        exec_rows.insert(6, ["Rows with ≥1 finding (worklist-capped)",
+                             _distinct_flagged])
+    _trend0 = sc.get("trend_alerts") or []
+    if _trend0:
+        exec_rows.append(_header(["Change vs previous run of this file", ""]))
+        for _ta in _trend0[:8]:
+            exec_rows.append([str(_ta), ""])
     _clm0 = sc.get("claims") or {}
     if _clm0.get("n_claims"):
         exec_rows.append(
@@ -181,6 +201,22 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
                              _ci.get("established_visits", 0)])
             pop_rows.append(["File average level",
                              _ci.get("file_avg_level", "—")])
+            if _ci.get("provider_basis"):
+                pop_rows.append(["Provider grain",
+                                 f"{_ci['provider_basis']} NPI"])
+            # File-vs-national established-visit mix — computed on every
+            # run (refdata.EM_ESTABLISHED_NATIONAL_MIX) but previously
+            # rendered nowhere.
+            _fm = _ci.get("file_mix") or {}
+            _nm = _ci.get("national_mix") or {}
+            if _fm and _nm:
+                _fm_tot = sum(int(v or 0) for v in _fm.values()) or 1
+                pop_rows.append(_header(["E&M level", "File %",
+                                         "National %"]))
+                for _lvl in ("99211", "99212", "99213", "99214", "99215"):
+                    _fp = round(100.0 * int(_fm.get(_lvl) or 0) / _fm_tot, 1)
+                    _np = round(100.0 * float(_nm.get(_lvl) or 0.0), 1)
+                    pop_rows.append([_lvl, f"{_fp}%", f"{_np}%"])
             if _ci.get("outliers"):
                 pop_rows.append(_header(["High-intensity NPI", "Avg level"]))
                 for o in _ci["outliers"][:10]:
@@ -221,6 +257,112 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
                        "(or pandas engine unavailable)", "", "", "", "", ""])
     sheets.append(Sheet("Issues", issues, col_widths=[26, 13, 9, 14, 8, 52]))
 
+    try:
+        from . import refdata as _rd
+    except Exception:  # noqa: BLE001
+        _rd = None
+
+    # ---- Denials (CARC mix + playbook) — present in the exec HTML but the
+    #      forwarded .xlsx never carried it. ----
+    _den = sc.get("denials") or {}
+    if _den.get("top"):
+        den_rows: List[List[object]] = [
+            _header(["Denial / adjustment reasons", "", "", ""]),
+        ]
+        if _den.get("preventable_pct") is not None:
+            den_rows.append(
+                [f"{_den['preventable_pct']}% of classified denial volume "
+                 "was preventable by a pre-submission screen", "", "", ""])
+        den_rows.append(_header(["Code", "Meaning", "Rows", "Playbook"]))
+        import re as _re
+        _pfx = _re.compile(r"^(?:CO|OA|PI|PR|CR)[-\s]?(?=[A-Z]?\d)")
+        for d in _den["top"][:15]:
+            code = str(d.get("code") or "").strip().upper()
+            bare = _pfx.sub("", code)
+            meaning = ""
+            if _rd is not None:
+                meaning = (_rd.carc_description(code)
+                           or _rd.carc_description(bare) or "")
+            pb = ""
+            if d.get("category"):
+                pb = f"[{d['category']}] {d.get('action', '')}"
+            elif _rd is not None and bare != code:
+                pb2 = _rd.carc_playbook(bare)
+                if pb2:
+                    pb = f"[{pb2['category']}] {pb2.get('action', '')}"
+            den_rows.append([d.get("code"), meaning,
+                             int(d.get("count") or 0), pb])
+        sheets.append(Sheet("Denials", den_rows,
+                            col_widths=[10, 48, 10, 52]))
+
+    # ---- Compliance (OIG LEIE + PECOS) — a workbook that says nothing
+    #      about excluded billing NPIs is not "the same verdict as the
+    #      web UI". Guarded: only when the screens ran. ----
+    _comp = res.compliance or []
+    comp_rows: List[List[object]] = []
+    for s in _comp:
+        if not isinstance(s, dict) or s.get("id") == "error":
+            continue
+        comp_rows.append(_header([str(s.get("label") or s.get("id")), ""]))
+        comp_rows.append(["Available",
+                          "yes" if s.get("available") else "no"])
+        comp_rows.append(["NPIs checked", int(s.get("checked") or 0)])
+        if "excluded" in s:
+            comp_rows.append(["Excluded (OIG match)",
+                              int(s.get("excluded") or 0)])
+        if "not_enrolled" in s:
+            comp_rows.append(["Not enrolled (PECOS)",
+                              int(s.get("not_enrolled") or 0)])
+        if "opted_out" in s:
+            comp_rows.append(["Opted out", int(s.get("opted_out") or 0)])
+        if s.get("excluded_billed_total") is not None:
+            comp_rows.append(["Billed $ via excluded NPIs",
+                              round(float(s["excluded_billed_total"]), 2)])
+        if s.get("note"):
+            comp_rows.append(["Note", str(s.get("note"))])
+        for m in (s.get("matches") or [])[:25]:
+            bits = [str(m.get("npi") or "")]
+            for k in ("name", "excl_type", "excl_date"):
+                if m.get(k):
+                    bits.append(str(m[k]))
+            if m.get("billed") is not None:
+                bits.append(f"billed ${float(m['billed']):,.2f}")
+            comp_rows.append(["  ⚠ excluded", " · ".join(bits)])
+        comp_rows.append(["", ""])
+    if comp_rows:
+        sheets.append(Sheet("Compliance", comp_rows, col_widths=[30, 64]))
+
+    # ---- Charge outliers (per-HCPCS 3×IQR screen) — web-UI-only before. ----
+    _outl = res.outliers or []
+    if _outl:
+        out_rows: List[List[object]] = [
+            _header(["HCPCS", "Lines", "Outliers", "Median $", "Max $"])]
+        for o in _outl:
+            out_rows.append([o.get("code"), int(o.get("n") or 0),
+                             int(o.get("outliers") or 0),
+                             round(float(o.get("median") or 0.0), 2),
+                             round(float(o.get("max") or 0.0), 2)])
+        out_rows.append(["Fences are Tukey far-out (3×IQR) within each "
+                         "HCPCS code seen ≥10 times.", "", "", "", ""])
+        sheets.append(Sheet("Charge outliers", out_rows,
+                            col_widths=[10, 10, 10, 12, 12]))
+
+    # ---- Data dictionary — previously only a separate CSV download. ----
+    _dict = res.dictionary or []
+    if _dict:
+        dict_rows: List[List[object]] = [
+            _header(["Column", "Detected role", "Fill %", "Distinct",
+                     "Sample values"])]
+        for e in _dict:
+            dict_rows.append([
+                e.get("column"), e.get("role") or "—",
+                e.get("fill_pct"),
+                e.get("distinct") if e.get("distinct") is not None
+                else ">1000",
+                " · ".join(str(s) for s in (e.get("samples") or [])[:3])])
+        sheets.append(Sheet("Dictionary", dict_rows,
+                            col_widths=[26, 16, 8, 10, 44]))
+
     # ---- Suggested fixes companion (v49 suggested_fixes) ----
     recs = res.suggestions_records
     if recs:
@@ -231,19 +373,69 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         sheets.append(Sheet("Suggested fixes", fix_rows,
                             col_widths=[12] * min(len(cols), 12)))
 
-    # ---- Per-rule worklist tabs: just the flagged rows, ready to hand to
-    #      the source-system owner (top 5 rules, 200 rows each). ----
+    # ---- Per-rule worklist tabs: the flagged rows, ready to hand to the
+    #      source-system owner (top 5 rules, 200 rows each). Each tab
+    #      leads with WHY the rows are here and WHAT to do, and when a
+    #      billed/charge column is detectable the 200-row cap keeps the
+    #      LARGEST-billed rows (dollar-ranked) instead of arbitrary early
+    #      file order. ----
     flag_rows = getattr(res, "flag_rows", None) or {}
+    _row_billed: dict = {}
+    if flag_rows and headers:
+        try:
+            # Lazy + guarded: a detection failure degrades to file order,
+            # never breaks the workbook.
+            from .engine import _detect_one as _det_one, _to_number as _to_n
+            _billed_ci = _det_one(list(headers),
+                                  ("billedamt", "billed", "chargeamt",
+                                   "charge", "submittedamt", "amount"))
+            if _billed_ci is not None:
+                for _i, _r in enumerate(rows, start=1):
+                    if _billed_ci < len(_r):
+                        _v = _to_n(_r[_billed_ci])
+                        if _v is not None:
+                            _row_billed[_i] = _v
+        except Exception:  # noqa: BLE001
+            _row_billed = {}
+    try:
+        from . import rules as _rules2
+    except Exception:  # noqa: BLE001
+        _rules2 = None
     for rule, idxs in sorted(flag_rows.items(),
                              key=lambda kv: -len(kv[1]))[:5]:
-        idx_set = set(idxs[:200])
-        wl = [_header(["_row"] + list(headers))]
+        sel = list(idxs)
+        by_dollars = bool(_row_billed)
+        if by_dollars:
+            sel.sort(key=lambda i: -_row_billed.get(i, 0.0))
+        sel = sel[:200]
+        idx_set = set(sel)
+        by_idx = {}
         for i, r in enumerate(rows, start=1):
             if i in idx_set:
-                wl.append([i] + list(r))
-        if len(wl) > 1:
-            sheets.append(Sheet(("WL " + rule)[:28], wl,
-                                col_widths=[7] + [14] * min(len(headers), 11)))
+                by_idx[i] = r
+        if not by_idx:
+            continue
+        wl: List[list] = []
+        info = _rules2.describe(rule) if _rules2 else {}
+        if info:
+            wl.append([(f"[{info.get('severity', '')}] "
+                        f"{info.get('title') or rule}", _H)])
+            _rem = (info.get("remediation") or "").strip()
+            if _rem:
+                wl.append(["What to do: " + _rem])
+        wl.append(_header(["_row"] + list(headers)))
+        for i in sel:
+            if i in by_idx:
+                wl.append([i] + list(by_idx[i]))
+        if len(idxs) > 200 or by_dollars:
+            note = ("Sorted by billed $ descending. " if by_dollars else "")
+            if len(idxs) > 200:
+                note += (f"{len(idxs) - 200} more flagged row(s) in the "
+                         "full worklist CSV download.")
+            if note.strip():
+                wl.append([note.strip()])
+        sheets.append(Sheet(("WL " + rule)[:28], wl,
+                            col_widths=[7] + [14] * min(len(headers), 11)))
 
     # ---- NPPES verify + recover (only when it ran) ----
     nppes = res.nppes or {}

@@ -16,6 +16,7 @@ no PHI, just metadata about each run.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -25,8 +26,21 @@ from typing import Dict, List, Optional
 
 from .engine import WORKDIR
 
-_DB_PATH = Path(WORKDIR) / "npi_cleaner_history.sqlite3"
+_DB_NAME = "npi_cleaner_history.sqlite3"
+_DB_PATH = Path(WORKDIR) / _DB_NAME
 _LOCK = threading.Lock()
+
+
+def _db_path() -> Path:
+    """The store lives under /tmp by default, which any reboot or tmp
+    cleaner wipes — silently erasing the longitudinal memory this module
+    promises. RCM_MC_NPI_WORKDIR points the store at a persistent
+    directory; read per-call so deployments can set it without an import
+    cycle and tests can still monkeypatch ``_DB_PATH``."""
+    root = (os.environ.get("RCM_MC_NPI_WORKDIR") or "").strip()
+    if root:
+        return Path(root) / _DB_NAME
+    return _DB_PATH
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
@@ -48,7 +62,9 @@ CREATE INDEX IF NOT EXISTS idx_runs_ts ON runs (ts DESC);
 
 
 def _conn() -> sqlite3.Connection:
-    con = sqlite3.connect(_DB_PATH)
+    p = _db_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(p)
     con.execute("PRAGMA busy_timeout = 5000")
     con.executescript(_SCHEMA)
     # Migration: population metrics (PMPM / readmit / encounters / top
@@ -168,6 +184,11 @@ def trend_alerts(scorecard: Dict[str, object], file_name: str) -> List[str]:
     if prev_score - score >= 5:
         alerts.append(f"Quality score dropped {prev_score} → {score} vs "
                       "the previous run of this file.")
+    elif score - prev_score >= 5:
+        # The narrative was one-sided: regressions alerted, recoveries were
+        # silent — so a team that fixed its feed never saw the payoff.
+        alerts.append(f"Quality score recovered {prev_score} → {score} vs "
+                      "the previous run of this file.")
     prev_san = prev.get("sanity") or {}
     cur_san = scorecard.get("sanity") or {}
     for rule in sorted(cur_san):
@@ -187,7 +208,8 @@ def get_run(run_id: str) -> Optional[Dict[str, object]]:
         with _LOCK, _conn() as con:
             r = con.execute(
                 "SELECT run_id, ts, file_name, rows_in, rows_out, dupes,"
-                " score, letter, dimensions, repairs, sanity, changes"
+                " score, letter, dimensions, repairs, sanity, changes,"
+                " population"
                 " FROM runs WHERE run_id = ?", (run_id,)).fetchone()
     except Exception:  # noqa: BLE001
         return None
@@ -199,12 +221,16 @@ def get_run(run_id: str) -> Optional[Dict[str, object]]:
             "dimensions": json.loads(r[8] or "{}"),
             "repairs": json.loads(r[9] or "{}"),
             "sanity": json.loads(r[10] or "{}"),
-            "changes": r[11]}
+            "changes": r[11],
+            "population": json.loads(r[12] or "{}") if len(r) > 12 else {}}
 
 
 def compare_runs(a_id: str, b_id: str) -> Optional[Dict[str, object]]:
     """Run-over-run delta: score movement plus per-rule flag changes —
-    "did this feed get better after the source fix?" in one payload."""
+    "did this feed get better after the source fix?" in one payload.
+    ``dimension_delta`` and ``population_delta`` are additive keys so the
+    per-dimension and PMPM/readmit/E&M movement (recorded on every run but
+    previously compared nowhere) reach the compare surface."""
     a, b = get_run(a_id), get_run(b_id)
     if not a or not b:
         return None
@@ -216,6 +242,62 @@ def compare_runs(a_id: str, b_id: str) -> Optional[Dict[str, object]]:
         if av != bv:
             rule_delta.append({"rule": k, "a": av, "b": bv, "delta": bv - av})
     rule_delta.sort(key=lambda d: abs(int(d["delta"])), reverse=True)
+
+    dim_delta: Dict[str, float] = {}
+    for k in sorted(set(a["dimensions"]) | set(b["dimensions"])):
+        try:
+            dim_delta[k] = round(float(b["dimensions"].get(k, 0.0))
+                                 - float(a["dimensions"].get(k, 0.0)), 1)
+        except (TypeError, ValueError):
+            continue
+
+    pop_delta: Dict[str, float] = {}
+    pa = a.get("population") or {}
+    pb = b.get("population") or {}
+    for k in sorted(set(pa) | set(pb)):
+        va, vb = pa.get(k), pb.get(k)
+        if not isinstance(va, (int, float)) or not isinstance(vb, (int, float)):
+            continue        # top_setting etc. — strings don't delta
+        nd = 2 if k == "median_observed_pmpm" else (
+            1 if k.endswith("_pct") else 2)
+        pop_delta[k] = round(float(vb) - float(va), nd)
+
     return {"a": a, "b": b,
             "score_delta": int(b["score"]) - int(a["score"]),
-            "rule_delta": rule_delta}
+            "rule_delta": rule_delta,
+            "dimension_delta": dim_delta,
+            "population_delta": pop_delta}
+
+
+def streaks(file_name: str) -> Optional[Dict[str, object]]:
+    """Run-over-run streaks for one file: how many consecutive runs the
+    quality score has been improving (or declining), the best/worst score
+    on record, and the latest movement — the "is this feed trending the
+    right way" answer the per-run deltas can't give. Never raises."""
+    try:
+        with _LOCK, _conn() as con:
+            rows = con.execute(
+                "SELECT score FROM runs WHERE file_name = ?"
+                " ORDER BY ts ASC", (file_name,)).fetchall()
+    except Exception:  # noqa: BLE001
+        return None
+    scores = [int(r[0]) for r in rows]
+    if not scores:
+        return None
+    improving = declining = 0
+    for i in range(len(scores) - 1, 0, -1):
+        d = scores[i] - scores[i - 1]
+        if d > 0 and declining == 0:
+            improving += 1
+        elif d < 0 and improving == 0:
+            declining += 1
+        else:
+            break
+    return {"runs": len(scores),
+            "improving_streak": improving,
+            "declining_streak": declining,
+            "best_score": max(scores),
+            "worst_score": min(scores),
+            "latest_score": scores[-1],
+            "latest_delta": (scores[-1] - scores[-2]
+                             if len(scores) >= 2 else None)}

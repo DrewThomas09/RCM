@@ -205,9 +205,10 @@ def _category_bar_svg(by_category: dict) -> str:
         parts.append(
             f'<text x="{pad_l - 8}" y="{y + bar_h - 3}" text-anchor="end" '
             f'fill="{P["text_dim"]}">{_html.escape(cat)}</text>')
+        n_label = f"{len(items)} item" + ("s" if len(items) != 1 else "")
         parts.append(
             f'<text x="{x_off + 6:.1f}" y="{y + bar_h - 3}" '
-            f'fill="{P["text_dim"]}">{len(items)} items</text>')
+            f'fill="{P["text_dim"]}">{n_label}</text>')
 
     parts.append("</svg>")
     return "\n".join(parts)
@@ -293,9 +294,10 @@ def _checklist_section(category: str, items: list) -> str:
         ],
         rows_html="".join(rows),
     )
+    n_label = f"{len(items)} item" + ("s" if len(items) != 1 else "")
     return ck_panel(
         table,
-        title=f"{category} · {len(items)} items",
+        title=f"{category} · {n_label}",
         anchor_id=_slug(category),
     )
 
@@ -304,14 +306,20 @@ def _open_questions_panel(questions: list) -> str:
     """The engine's drafted follow-up list — the same centerpiece the
     /diligence/checklist workspace prints into the IC packet."""
     if not questions:
-        return ck_affirm_empty(
-            headline="No open questions for IC.",
-            body=(
-                "Every rule the engine can evaluate on this profile "
-                "passes — nothing to chase before the memo."
-            ),
-            cta_text="Open the live checklist workspace",
-            cta_href="/diligence/checklist",
+        # Keep the jump-rail's #sec-open-questions anchor live even in
+        # the all-clear state, so the last rail link never dead-ends.
+        return (
+            '<div id="sec-open-questions">'
+            + ck_affirm_empty(
+                headline="No open questions for IC.",
+                body=(
+                    "Every rule the engine can evaluate on this profile "
+                    "passes — nothing to chase before the memo."
+                ),
+                cta_text="Open the live checklist workspace",
+                cta_href="/diligence/checklist",
+            )
+            + '</div>'
         )
     rows = []
     for i, q in enumerate(questions, 1):
@@ -387,8 +395,9 @@ def _editorial_head(sector: str, r, ev_mm: float, comm_pct: float,
     lede_body = (
         "the rule engine evaluates a hypothetical "
         f"{_html.escape(sector)} profile into six diligence sections — "
-        "every verdict, finding, and open question below is computed "
-        "from the profile above. This is the sector-template generator "
+        "every verdict, finding, and open question below is recomputed "
+        "from the deal profile you set in the form below. This is the "
+        "sector-template generator "
         "on public data; the "
         '<a href="/diligence/checklist">live checklist workspace</a> '
         "tracks evidence for a named deal."
@@ -473,6 +482,25 @@ def _kpi_strip(r, real_corpus: bool) -> str:
     )
 
 
+def _help_sort_guard() -> str:
+    """The kit's click-to-sort JS binds the whole ``<th>``, so
+    clicking (or keying Enter/Space on) the "Risk Wt." help trigger
+    would also re-sort the table under the open popover. Stop the
+    trigger's events from bubbling to the header — the CSS popover
+    itself works on hover/focus and needs no JS."""
+    return (
+        "<script>(function(){"
+        "var ts=document.querySelectorAll("
+        "'.dpc-sections th .ck-help-trigger');"
+        "Array.prototype.forEach.call(ts,function(b){"
+        "b.addEventListener('click',function(e){e.stopPropagation();});"
+        "b.addEventListener('keydown',function(e){"
+        "if(e.key==='Enter'||e.key===' ')e.stopPropagation();});"
+        "});"
+        "})();</script>"
+    )
+
+
 def _footnote(real_corpus: bool) -> str:
     corpus_sentence = (
         "Returns benchmarks (MOIC/IRR/leverage vs corpus) and the "
@@ -553,6 +581,7 @@ def render_diligence_checklist(params: dict) -> str:
             chart
             + anchors
             + f'<div class="dpc-sections">{sections}</div>'
+            + _help_sort_guard()
             + _footnote(real_corpus)
             + _open_questions_panel(r.open_questions)
         )

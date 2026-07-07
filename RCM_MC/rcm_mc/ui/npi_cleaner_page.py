@@ -162,31 +162,29 @@ _EXTRA_CSS = r"""
   color:var(--green-deep,#154e36);cursor:pointer;background:none;border:0;
   padding:0;text-decoration:underline;text-underline-offset:3px}
 .npi-again:hover{color:var(--green-2,#2d8964)}
-/* ============ Chips — one toned system for the whole page ============ */
+/* ============ Chips — one toned system for the whole page ============
+   Status/severity chips follow the kit's .ck-badge anatomy (outline in
+   currentColor, 2px radius, uppercase) so cleaner chips read the same
+   as the grade badges on /npi-cleaner/history and the status chips on
+   the diligence family. Count badges (.npi-badge) stay quietly tinted —
+   they are tallies, not statuses. */
 .npi-chip,.npi-badge{display:inline-flex;align-items:center;gap:5px;
   font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;padding:2px 8px;border-radius:var(--sc-r-2,4px);
-  white-space:nowrap;color:var(--sc-text-dim,#465366);
-  background:color-mix(in srgb,var(--ink,#16263a) 6%,transparent)}
+  text-transform:uppercase;padding:2px 8px;border-radius:var(--sc-r-1,2px);
+  white-space:nowrap;color:var(--sc-text-dim,#465366)}
+.npi-chip{border:1px solid currentColor}
 .npi-badge{margin-left:6px;vertical-align:middle;
   color:var(--green-deep,#154e36);
   background:color-mix(in srgb,var(--green-deep,#154e36) 10%,transparent)}
-.npi-chip.tone-positive{color:var(--sc-positive,#0a8a5f);
-  background:color-mix(in srgb,var(--sc-positive,#0a8a5f) 12%,transparent)}
-.npi-chip.tone-warning{color:color-mix(in srgb,var(--sc-warning,#b8732a) 80%,var(--ink,#16263a));
-  background:color-mix(in srgb,var(--sc-warning,#b8732a) 14%,transparent)}
-.npi-chip.tone-negative{color:var(--sc-negative,#b5321e);
-  background:color-mix(in srgb,var(--sc-negative,#b5321e) 11%,transparent)}
-.npi-chip.tone-critical{color:var(--sc-critical,#8a1e0e);
-  background:color-mix(in srgb,var(--sc-critical,#8a1e0e) 12%,transparent)}
-.npi-chip.tone-accent{color:var(--green-deep,#154e36);
-  background:color-mix(in srgb,var(--green-deep,#154e36) 10%,transparent)}
+.npi-chip.tone-positive{color:var(--sc-positive,#0a8a5f)}
+.npi-chip.tone-warning{color:color-mix(in srgb,var(--sc-warning,#b8732a) 80%,var(--ink,#16263a))}
+.npi-chip.tone-negative{color:var(--sc-negative,#b5321e)}
+.npi-chip.tone-critical{color:var(--sc-critical,#8a1e0e)}
+.npi-chip.tone-accent{color:var(--green-deep,#154e36)}
 .npi-chip.dot::before{content:"";width:6px;height:6px;border-radius:50%;
   background:currentColor}
-.npi-chip.dot.on{color:var(--green-deep,#154e36);
-  background:color-mix(in srgb,var(--green-deep,#154e36) 12%,transparent)}
-.npi-chip.dot.off{color:var(--sc-text-dim,#465366);
-  background:color-mix(in srgb,var(--ink,#16263a) 6%,transparent)}
+.npi-chip.dot.on{color:var(--green-deep,#154e36)}
+.npi-chip.dot.off{color:var(--sc-text-dim,#465366)}
 .npi-pill{display:inline-block;font-size:10px;font-family:var(--mono);
   padding:1px 6px;border-radius:var(--sc-r-1,2px);
   background:color-mix(in srgb,var(--ink,#16263a) 7%,transparent);
@@ -579,7 +577,6 @@ def _body() -> str:
         source_note=(
             "Deterministic v49 cleaning engine validated against CMS "
             "reference tables."),
-        actions_html=ck_page_actions(glossary=False, methodology=False),
         show_legend=False,
     )
     format_badges = "".join(ck_signal_badge(f) for f in _FORMATS)
@@ -1021,6 +1018,7 @@ def _body() -> str:
     offline results stand. No data leaves the server unless online mode is on.
   </div>
 </div>
+{ck_page_actions(glossary=False, methodology=False)}
 """
 
 

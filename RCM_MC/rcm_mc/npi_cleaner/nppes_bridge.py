@@ -49,16 +49,27 @@ def _digits(v: object) -> str:
     return "".join(ch for ch in str(v) if ch.isdigit())
 
 
-def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY) -> Dict[str, object]:
+def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY,
+                weights: Optional[Dict[str, float]] = None,
+                ) -> Dict[str, object]:
     """Look distinct 10-digit NPIs up in NPPES via the shared client.
 
     Returns a summary dict: counts plus a per-NPI verdict for the ones checked.
     Never raises — a network failure yields ``{"error": ...}`` with whatever was
     resolved before the failure.
+
+    ``weights`` (optional) maps NPI → summed dollars: when supplied, the
+    per-run cap spends its lookups on the HIGHEST-dollar distinct NPIs
+    instead of whichever happened to appear first in the file. On a
+    multi-thousand-provider extract the cap covers <1% of NPIs — first-seen
+    order made that 1% arbitrary, leaving the billers carrying most of the
+    dollars unverified. Encounter order is the tie-break and the fallback
+    when no weights are given, so small files behave exactly as before.
     """
     out: Dict[str, object] = {
         "checked": 0, "active": 0, "not_found": 0, "errors": 0,
         "capped": False, "records": {}, "note": "",
+        "ranked_by_dollars": False,
     }
     try:
         from ..data_public import nppes_api_client as nppes
@@ -71,6 +82,20 @@ def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY) -> Dict[str, object]
         d = _digits(raw)
         if len(d) == 10 and d not in seen:
             seen.append(d)
+    if weights:
+        w: Dict[str, float] = {}
+        for k, v in weights.items():
+            d = _digits(k)
+            if len(d) != 10:
+                continue
+            try:
+                w[d] = w.get(d, 0.0) + float(v)
+            except (TypeError, ValueError):
+                continue
+        if w:
+            order = {n: i for i, n in enumerate(seen)}
+            seen.sort(key=lambda n: (-w.get(n, 0.0), order[n]))
+            out["ranked_by_dollars"] = True
     if len(seen) > cap:
         out["capped"] = True
         seen = seen[:cap]
@@ -97,6 +122,21 @@ def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY) -> Dict[str, object]
                 "state": prov.state,
             }
     out["records"] = records
+    # Row-level coverage for the scorecard: of the input CELLS carrying a
+    # 10-digit NPI, how many landed on an NPI this run actually checked —
+    # the honest denominator behind "verified", independent of the cap.
+    _checked_npis = {n for n, r in records.items()
+                     if r.get("status") in ("active", "not_found")}
+    rows_seen = 0
+    rows_covered = 0
+    for raw in npis:
+        d = _digits(raw)
+        if len(d) == 10:
+            rows_seen += 1
+            if d in _checked_npis:
+                rows_covered += 1
+    out["rows_seen"] = rows_seen
+    out["rows_covered"] = rows_covered
     _checked = int(out["checked"])
     _errs = int(out["errors"])
     if seen and _checked == 0 and _errs:
@@ -114,7 +154,9 @@ def verify_npis(npis: List[str], *, cap: int = _MAX_VERIFY) -> Dict[str, object]
     if out["not_found"]:
         parts.append(f"{out['not_found']} not found (unassigned or deactivated)")
     if out["capped"]:
-        parts.append(f"checked the first {cap} distinct NPIs")
+        parts.append(f"checked the top {cap} distinct NPIs by dollars"
+                     if out["ranked_by_dollars"]
+                     else f"checked the first {cap} distinct NPIs")
     if _errs:
         parts.append(f"{_errs} lookup errors (skipped; the rest verified)")
     out["note"] = "; ".join(parts) + "."

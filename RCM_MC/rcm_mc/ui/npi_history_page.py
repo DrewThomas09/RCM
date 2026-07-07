@@ -685,7 +685,10 @@ def render_npi_history() -> str:
             "aggregate scorecard (counts only: no claim rows, no PHI). "
             "Scan the ledger below, then pick two runs to see exactly "
             "which rules moved."),
-        actions_html=ck_page_actions(glossary=False, methodology=False),
+        # Masthead carries only the page-specific quick link; the standard
+        # ck_page_actions row lands at the page bottom, matching the
+        # site-wide placement (exports, source, diligence family).
+        actions_html='<a href="/npi-cleaner">← Back to NPI Cleaner</a>',
         show_legend=False,
     )
 
@@ -742,6 +745,9 @@ def render_npi_history() -> str:
         .replace("{rule_header}", rule_header)
         .replace("{wish_header}", wish_header)
     )
+    # Standard action pills at the page bottom — same placement as every
+    # other editorial page (the masthead only carries the back link).
+    body = body + ck_page_actions(glossary=False, methodology=False)
     return chartis_shell(
         body,
         title="Run history — NPI Claims Cleaner",
