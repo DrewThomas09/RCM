@@ -4988,3 +4988,36 @@ test_library_editorial_and_search + test_sticky_and_backtotop (28),
 chartis-integration/page-actions/model-card/research/ui-rework/provenance-
 tooltip (136 + 6 skipped), seekingchartis_v2 + guide-metric + screener-AR
 (24 + 6 skipped).
+
+## W4-008 (2026-07-07) — BACKLOG #34: P13 bullets on /metro-markets + /county-explorer
+Closes the P13 long-tail item. /metro-markets had its two guarded bullets
+land earlier ("refill #34" commit); this pass adds the county half and
+completes the verification plan ("figures re-derived in tests exactly") on
+BOTH pages.
+- **/county-explorer (`_county_insights`)**: three templates, recomputed
+  from the SAME `explorer_rows` rows + population-weighted footer the table
+  and its tfoot render from — never a second data path. (1) population
+  concentration — top county's share of the state total, guard ≥20% share
+  ("Maricopa County alone holds 61.8% of Arizona's 7.4M residents (4.6M) —
+  metro-first entry math for any statewide build-out"); (2) oldest county
+  vs the state weighted mean, guard ≥3pp over; (3) highest-uninsured county
+  vs the state weighted mean, guard ≥3pp over (the bad-debt screen). Every
+  distributional claim needs ≥8 counties with data — Delaware (3 counties)
+  renders NO insights block, not an empty shell; `ck_insight_bullets`
+  already returns '' when nothing passes (silence over noise) and carries
+  the copy-to-clipboard affordance for free. County names html-escaped.
+- **Guard calibration**: OH is the honest case — Franklin County holds only
+  11.2% of Ohio, so the concentration bullet is suppressed while the aged
+  (Noble Co. 29.8% 65+ vs 18.4% wtd mean) and uninsured (Holmes Co. 28.9%
+  vs 7.8%) bullets fire; the page states only what the spread supports.
+**Verify**: tests/test_county_explorer.py (+5: OH aged/uninsured figures
+re-derived exactly — weighted mean recomputed independently in the test as
+Σ(rate×pop)/Σpop, top county by max(); AZ concentration share re-derived and
+guard bound asserted; OH concentration suppression pinned; synthetic 0.4pp
+tails → '' — the tiny-delta guard; empty rows + real thin-data DE → no
+ck-insights block at all). tests/test_metro_markets.py (+3 and one deepened:
+median now re-derived exactly for BOTH metro bullets; synthetic 0.4pp tails
+→ ''; empty rows → ''). Full run: test_county_explorer (12) +
+test_metro_markets (10) + test_insight_bullets (7) = 29 green. Pre-existing
+unrelated red in test_guide_context_sufficiency (/connector-estate,
+/market-scan guide-blind — another workstream's routes) noted, not touched.

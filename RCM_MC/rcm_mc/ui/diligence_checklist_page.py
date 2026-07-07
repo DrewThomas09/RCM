@@ -117,7 +117,8 @@ font-size:10.5px;color:var(--sc-text-dim,#465366);}
 .dc-legend__swatch.s-blocked{background:var(--sc-negative,#b5321e);}
 
 /* ── Phase cards + item rows ─────────────────────────────────── */
-.dc-phase{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);
+.dc-phase{background:var(--paper,#ffffff);
+border:1px solid var(--sc-rule,#d6cfc0);
 border-radius:2px;padding:14px 18px;margin-bottom:12px;
 transition:border-color 140ms ease;}
 .dc-phase:hover{border-color:var(--sc-rule-2,#bfb6a2);}
@@ -131,7 +132,7 @@ font-size:11px;color:var(--sc-text-dim,#465366);letter-spacing:0.06em;
 text-transform:uppercase;font-variant-numeric:tabular-nums;}
 .dc-phase__items{margin-top:8px;}
 .dc-item{display:grid;
-grid-template-columns:84px 48px 1fr 110px 90px 200px;
+grid-template-columns:84px 48px 1fr 110px 90px 230px;
 gap:10px;align-items:baseline;padding:9px 4px;
 border-bottom:1px solid var(--sc-rule,#d6cfc0);font-size:12px;}
 .dc-item:last-child{border-bottom:0;}
@@ -141,7 +142,7 @@ border-bottom:1px solid var(--sc-rule,#d6cfc0);font-size:12px;}
 letter-spacing:1px;text-transform:uppercase;font-weight:600;}
 .dc-item__category{color:var(--sc-text-faint,#7a8699);font-size:10px;
 letter-spacing:1px;text-transform:uppercase;}
-.dc-item__action{text-align:right;white-space:nowrap;font-size:11px;}
+.dc-item__action{text-align:right;font-size:11px;line-height:1.9;}
 .dc-item__action a{color:var(--sc-teal,#155752);font-size:11px;
 text-decoration:none;font-weight:600;white-space:nowrap;padding:2px 3px;}
 .dc-item__action a + a{margin-left:2px;padding-left:8px;
