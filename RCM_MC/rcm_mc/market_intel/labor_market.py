@@ -11,7 +11,7 @@ the wage-inflation EBITDA stress for a target's labor base × role mix
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -35,10 +35,13 @@ class RoleEconomics:
         hold and replace. Equal-weight blend of turnover, vacancy, and
         wage pressure, each scaled against the worst plausible value
         (40% turnover / 15% vacancy / 6% wage growth) so the score
-        reads absolutely, not relative to the current panel."""
-        t = min(self.turnover_pct / 40.0, 1.0)
-        v = min(self.vacancy_pct / 15.0, 1.0)
-        w = min(self.wage_yoy_pct / 6.0, 1.0)
+        reads absolutely, not relative to the current panel. Each
+        component is clamped to [0, 1] — a wage-deflation year must
+        floor its component at zero, not drag the composite below the
+        documented 0-100 range."""
+        t = min(max(self.turnover_pct / 40.0, 0.0), 1.0)
+        v = min(max(self.vacancy_pct / 15.0, 0.0), 1.0)
+        w = min(max(self.wage_yoy_pct / 6.0, 0.0), 1.0)
         return round((t + v + w) / 3 * 100, 1)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -81,6 +84,14 @@ class LaborStress:
     annual_cost_increase_usd: float
     ebitda_margin_impact_bps: float   # on the revenue base, if given
     per_role: List[Dict[str, Any]]
+    # Share of the supplied mix that matched no role in the panel.
+    # Disclosed because the blend renormalizes over the KNOWN roles:
+    # reasonable for a query-string typo, but if 40% of labor spend is
+    # an unrecognized role the whole labor base is inflated at the
+    # known-roles blend and the caller must be told 40% of the mix was
+    # unmatched rather than silently misattributed.
+    unrecognized_share_pct: float = 0.0
+    unrecognized_codes: List[str] = field(default_factory=list)
 
 
 def labor_cost_stress(
@@ -94,13 +105,27 @@ def labor_cost_stress(
     ``role_mix`` maps role code -> share of labor spend (normalized, so
     percentages or fractions both work). Margin impact in bps is
     computed only when a revenue base is supplied — labor inflation
-    uncompensated by rate is pure margin compression."""
+    uncompensated by rate is pure margin compression.
+
+    Unknown role codes are dropped and the remaining weights
+    renormalized; the dropped mass is reported via
+    ``unrecognized_share_pct`` / ``unrecognized_codes`` so a
+    genuinely-different mix can't masquerade as a fully-priced one."""
     known = {k.upper(): v for k, v in role_mix.items() if v and v > 0}
     roles = {r.role: r for r in list_roles()}
     rows = [(k, v, roles[k]) for k, v in known.items() if k in roles]
+    unrecognized = sorted(k for k in known if k not in roles)
+    input_total = sum(known.values())
+    unrecognized_share = (
+        round(sum(v for k, v in known.items() if k not in roles)
+              / input_total * 100, 1)
+        if input_total > 0 else 0.0
+    )
     total = sum(v for _, v, _ in rows)
     if not rows or total <= 0:
-        return LaborStress(labor_cost_usd, 0.0, 0.0, 0.0, [])
+        return LaborStress(labor_cost_usd, 0.0, 0.0, 0.0, [],
+                           unrecognized_share_pct=unrecognized_share,
+                           unrecognized_codes=unrecognized)
 
     per_role: List[Dict[str, Any]] = []
     blended = 0.0
@@ -125,4 +150,6 @@ def labor_cost_stress(
         annual_cost_increase_usd=increase,
         ebitda_margin_impact_bps=bps,
         per_role=per_role,
+        unrecognized_share_pct=unrecognized_share,
+        unrecognized_codes=unrecognized,
     )

@@ -896,11 +896,15 @@ def render_power_chart(
             for si, s in enumerate(series)
         ],
     }
+    # "</" → "<\/" inside the JSON payload: identical once JSON-parsed,
+    # but a series name / x label containing "</script>" can no longer
+    # terminate the inline <script> block early (html.escape rule —
+    # this is the script-context equivalent).
+    config_json = json.dumps(config, default=str).replace("</", "<\\/")
     js = (_CHART_JS
           .replace("%CHART_ID_JSON%",
                    json.dumps(chart_id))
-          .replace("%CONFIG_JSON%",
-                   json.dumps(config, default=str)))
+          .replace("%CONFIG_JSON%", config_json))
 
     return (
         f'<div id="{chart_id}-root" '
