@@ -3034,16 +3034,14 @@ def render_dashboard(db_path: str, *,
         + _wc.sortable_table_js()
         + ck_page_actions()
     )
+    # NB: do NOT also pass editorial_intro= here. The body already
+    # renders its own ck_editorial_head masthead (class="ck-eh", with
+    # the real-count meta line + italic lede). Passing editorial_intro
+    # makes chartis_shell inject a SECOND ck_page_title (a duplicate
+    # <h1>Dashboard</h1>) plus a ck_section_intro deck on top, because
+    # the shell's dedup guard keys off class="ck-page-title" — which
+    # ck_editorial_head does not emit. That produced a triple-stacked
+    # masthead with two competing <h1>s. One masthead only.
     return chartis_shell(
         body, "Dashboard", active_nav="/dashboard",
-        editorial_intro={
-            "eyebrow": "MORNING BRIEFING",
-            "headline": "The whole book, before coffee.",
-            "italic_word": "whole",
-            "body": (
-                "Portfolio pulse, overnight changes, triage, and "
-                "one-click analyses — every number on this page reads "
-                "from the same live database the deal pages use."
-            ),
-        },
     )
