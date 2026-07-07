@@ -49,7 +49,15 @@ def lookup_taxonomy(store: NpiStore, code: str, *, limit: int = 200
     the flattened provider dimension for a compact result list.
     """
     code = str(code).strip()
-    lim = max(1, min(int(limit), 1000))
+    # Clamp like every other integer param on the /v1 surface: junk
+    # degrades to the default instead of a ValueError (a 500) — this
+    # handler is reachable with a caller-supplied ?limit= through the
+    # unified lookup binder.
+    try:
+        lim = int(limit)
+    except (TypeError, ValueError):
+        lim = 200
+    lim = max(1, min(lim, 1000))
     providers = _rows(
         store,
         "SELECT p.npi, p.enumeration_type, p.first_name, p.last_name, "

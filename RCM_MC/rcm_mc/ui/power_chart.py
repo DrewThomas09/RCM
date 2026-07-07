@@ -92,6 +92,7 @@ _THEMES: Dict[str, Dict[str, Any]] = {
                 "font-size:11px;cursor:pointer;"),
         "export_bg": "#ffffff",
         "tooltip_head": "#1a2332",
+        "focus": "#155752",
     },
     "dark": {
         "palette": list(_DEFAULT_PALETTE),
@@ -110,6 +111,7 @@ _THEMES: Dict[str, Dict[str, Any]] = {
                 "font-size:11px;cursor:pointer;"),
         "export_bg": "#1a2332",
         "tooltip_head": "#1a2332",
+        "focus": "#60a5fa",
     },
 }
 
@@ -613,10 +615,14 @@ def render_power_chart(
     if y_min == y_max:
         y_min -= 1
         y_max += 1
-    # Pad by 5%
+    # Pad by 5% — but never pad PAST the zero baseline on a bar chart:
+    # an all-positive bar chart used to float its shared baseline ~5%
+    # above the plot floor (a dead band under every bar), and the
+    # mirror-image for all-negative data. The zero edge stays exact;
+    # only the data edge gets breathing room.
     pad = (y_max - y_min) * 0.05
-    y_min -= pad
-    y_max += pad
+    y_min -= 0.0 if (has_bar and y_min == 0.0) else pad
+    y_max += 0.0 if (has_bar and y_max == 0.0) else pad
 
     # Plot area
     margin_l = 60
@@ -829,9 +835,11 @@ def render_power_chart(
             for s in series)
         + '</div>')
 
-    # Toolbar
+    # Toolbar — .pc-toolbar so the print stylesheet can drop it: the
+    # zoom hint and export buttons are interaction chrome with no
+    # meaning on paper (the legend stays — it names the series).
     toolbar_html = (
-        f'<div style="display:flex;gap:8px;'
+        f'<div class="pc-toolbar" style="display:flex;gap:8px;'
         f'margin-bottom:8px;align-items:center;">'
         f'<div style="flex:1;color:{tokens["hint"]};font-size:11px;">'
         f'Drag x-axis to zoom · double-click to reset</div>'
@@ -906,9 +914,24 @@ def render_power_chart(
                    json.dumps(chart_id))
           .replace("%CONFIG_JSON%", config_json))
 
+    # Per-instance chrome CSS (id-scoped, so multiple charts coexist):
+    # a visible keyboard focus ring on the toolbar/legend buttons and
+    # drilldown points (they had none — inline styles can't express
+    # :focus-visible), and print rules that drop the interaction
+    # toolbar/tooltip while keeping the chart + legend legible.
+    style_html = (
+        f'<style>'
+        f'#{chart_id}-root button:focus-visible,'
+        f'#{chart_id}-root .point:focus-visible'
+        f'{{outline:2px solid {tokens["focus"]};outline-offset:2px;}}'
+        f'@media print{{#{chart_id}-root .pc-toolbar{{display:none;}}'
+        f'#{chart_id}-root #{chart_id}-tooltip{{display:none !important;}}}}'
+        f'</style>')
+
     return (
         f'<div id="{chart_id}-root" '
         f'style="position:relative;">'
+        + style_html
         + toolbar_html
         + svg
         + legend_html

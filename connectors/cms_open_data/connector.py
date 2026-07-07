@@ -41,6 +41,7 @@ from .normalize import (
     normalize_catalog,
     normalize_curated,
     normalize_generic,
+    slice_signature,
     slugify,
 )
 from .transport import CmsOpenDataTransport, Opener
@@ -265,10 +266,19 @@ class CmsOpenDataConnector:
         rows = normalize_generic(dataset_key, res.rows,
                                  start_idx=res.start_offset,
                                  slice_params=slice_params)
-        n = store.upsert(GENERIC_TABLE, rows)
+        replaced = res.start_offset == 0 and not res.truncated
+        if replaced:
+            # Complete pull from offset 0 → replace the slice atomically,
+            # so a shrunken upstream dataset can't strand stale trailing
+            # row_idx rows from an earlier, larger pull.
+            n = store.replace_slice(GENERIC_TABLE, dataset_key, rows,
+                                    slice_sig=slice_signature(slice_params))
+        else:
+            n = store.upsert(GENERIC_TABLE, rows)
         return {"dataset": dataset_key, "table": GENERIC_TABLE,
                 "uuid": res.uuid, "fetched": len(res.rows), "upserted": n,
-                "pages": res.pages, "truncated": res.truncated}
+                "pages": res.pages, "truncated": res.truncated,
+                "replaced": replaced}
 
     # ── internals ─────────────────────────────────────────────────────
     def _fetch_pages(

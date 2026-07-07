@@ -23,7 +23,7 @@ contradicted the yearly projection that held margin flat.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 
@@ -121,6 +121,12 @@ class PayerShiftResult:
     # page (exports, assistant context, future APIs) inherits the
     # caveat instead of unlabelled numbers.
     is_illustrative: bool = True
+    # Missing-mass disclosure: payer codes in the caller's mixes that
+    # have no benchmark row are silently priced at the default 0.70
+    # rate / 0.90 collection — fine for a typo, wrong to hide when a
+    # material slice of the book is an unmodelled payer. The codes are
+    # listed so the caller can see exactly which mass got defaulted.
+    unknown_payers: List[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +165,14 @@ def _build_mix(mix_dict: Dict[str, float]) -> List[PayerMix]:
 
 
 def _weighted_yield(mix: Dict[str, float]) -> float:
+    """Mix-weighted collected yield vs commercial=1.00.
+
+    Unknown payer keys are priced at 0.70 rate / 0.90 collection
+    (roughly the government-payer middle) rather than raised — the
+    callers are page/query inputs and a typo shouldn't 500 — but the
+    defaulted codes are surfaced via ``PayerShiftResult.unknown_payers``
+    so the substitution is disclosed, not silent.
+    """
     return sum(pct * _PAYER_RATE_INDEX.get(p, 0.7) * _PAYER_COLLECTION_RATE.get(p, 0.9)
                for p, pct in mix.items())
 
@@ -324,6 +338,13 @@ def compute_payer_shift(
             "self_pay": 0.10,
         }
 
+    # Disclose every payer code we had to price at the defaults (see
+    # PayerShiftResult.unknown_payers).
+    unknown_payers = sorted(
+        p for p in set(starting_mix) | set(target_mix)
+        if p not in _PAYER_RATE_INDEX
+    )
+
     start_mix_rows = _build_mix(starting_mix)
     target_mix_rows = _build_mix(target_mix)
     scenarios = _build_scenarios(starting_mix, revenue_mm, ebitda_margin, exit_multiple)
@@ -357,4 +378,5 @@ def compute_payer_shift(
         total_ebitda_impact_mm=round(total_ebitda_impact, 2),
         total_ev_impact_mm=round(total_ev_impact, 1),
         corpus_deal_count=len(corpus),
+        unknown_payers=unknown_payers,
     )

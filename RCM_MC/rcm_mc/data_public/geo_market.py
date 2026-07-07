@@ -23,6 +23,7 @@ while being disconnected from it — fake even by illustrative standards.
 """
 from __future__ import annotations
 
+import statistics
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -158,6 +159,12 @@ class CompetitiveTier:
     avg_hhi: int
     avg_growth: float
     recommended_action: str
+    # Median beside the mean: tier populations span 19.5M (NYC) to
+    # 1.5M (Raleigh), so an average population is dragged by whichever
+    # mega-metro lands in the tier and misdescribes the typical member.
+    # Additive with a default so existing positional construction and
+    # consumers keep working.
+    median_population_k: float = 0.0
 
 
 @dataclass
@@ -397,6 +404,8 @@ def _build_tiers(markets: List[MarketRow]) -> List[CompetitiveTier]:
             avg_hhi=int(sum(m.hhi for m in ms) / len(ms)),
             avg_growth=round(sum(m.growth_5yr_pct for m in ms) / len(ms), 4),
             recommended_action=actions[tier],
+            median_population_k=round(
+                statistics.median(m.population_k for m in ms), 0),
         ))
     return rows
 

@@ -674,5 +674,272 @@ class ChartKitSvgExportTests(unittest.TestCase):
         self.assertIn("__ckChartDL", assets)   # still idempotent
 
 
+# ═════════════════════ round 2 ══════════════════════════════════════
+# Combo signed axes, small-multiple gaps/signed floor, hover-title
+# parity across every cdd mark type, legend wrap in _chart_kit, bar
+# baseline flush with the plot floor, print/focus-visible chrome.
+
+
+class CddComboSignedTests(unittest.TestCase):
+    TABLE = ("Q\tGrowth\tMargin\n2021\t10\t5\n"
+             "2022\t-30\t-8\n2023\t20\t12")
+
+    def _rects(self, svg):
+        return [tuple(float(v) for v in m) for m in re.findall(
+            r'<rect x="(-?[\d.]+)" y="(-?[\d.]+)" '
+            r'width="([\d.]+)" height="([\d.]+)"', svg)]
+
+    def test_negative_bar_hangs_below_zero_inside_plot(self):
+        svg = render_cdd_chart("combo", parse_table(self.TABLE), {})
+        # vmax=20, vmin=-30 → zero line at y1 - (0-(-30))/50*(y1-y0).
+        zero_y = _CDD_Y1 - (30.0 / 50.0) * (_CDD_Y1 - _CDD_Y0)
+        # Bars only (width > 100 at band ~210); excludes legend swatches.
+        rects = [r for r in self._rects(svg) if r[2] > 100]
+        self.assertEqual(len(rects), 6)   # 3 bars × (base + sheen)
+        neg = [r for r in rects if abs(r[1] - zero_y) < 0.15]
+        self.assertTrue(neg, "negative bar must start AT the zero line")
+        for _x, y, _w, h in rects:
+            self.assertGreaterEqual(y, _CDD_Y0 - 0.5)
+            self.assertLessEqual(y + h, _CDD_Y1 + 0.5)
+        # The old code clamped the -30 bar to height 0 at the baseline.
+        heights = sorted(r[3] for r in set(rects))
+        self.assertGreater(min(heights), 60)
+
+    def test_negative_line_points_stay_on_canvas(self):
+        svg = render_cdd_chart("combo", parse_table(self.TABLE), {})
+        circles = [(float(a), float(b)) for a, b in re.findall(
+            r'<circle cx="(-?[\d.]+)" cy="(-?[\d.]+)"', svg)]
+        self.assertEqual(len(circles), 3)
+        for _cx, cy in circles:
+            self.assertGreaterEqual(cy, _CDD_Y0 - 0.5)
+            self.assertLessEqual(cy, _CDD_Y1 + 0.5)
+
+    def test_right_axis_discloses_negative_ticks(self):
+        svg = render_cdd_chart("combo", parse_table(self.TABLE), {})
+        # Line scale is lmin=-8 … lmax=15; the right-edge ticks must
+        # include a negative label so the signed scale is legible.
+        right = re.findall(
+            r'<text x="697\.0"[^>]*text-anchor="start"[^>]*>'
+            r'(-?[\d,.]+)</text>', svg)
+        self.assertEqual(len(right), 6)
+        self.assertTrue(any(t.startswith("-") for t in right), right)
+
+    def test_all_positive_combo_ticks_unchanged(self):
+        svg = render_cdd_chart("combo", parse_table(
+            "Q\tRev\tMargin\n2021\t100\t10\n2022\t130\t12"), {})
+        # lmin=0 keeps the legacy lmax*i/5 tick lattice (12 → lmax 15).
+        for want in ("0", "3", "6", "9", "12", "15"):
+            self.assertIn(f'font-size="9.5" fill="#1F7A75">{want}<',
+                          svg)
+
+
+class CddSmallMultTests(unittest.TestCase):
+    def test_gap_is_not_plotted_as_zero(self):
+        t = parse_table("Year\tRev\n2021\t100\n2022\t\n2023\t120")
+        svg = render_cdd_chart("smallmult", t, {})
+        self.assertNotIn("None", svg)
+        # One panel, gap in the middle → isolated single-point runs get
+        # dots, never a polyline through a fabricated zero at the floor.
+        pts = re.findall(r'<polyline points="([^"]+)"', svg)
+        for p in pts:
+            ys = [float(pair.split(",")[1]) for pair in p.split()]
+            # panel floor is the category-axis line; a zero-dip would
+            # touch it (yof(0) == iy1 when vmin == 0).
+            self.assertTrue(all(y < 380 for y in ys))
+
+    def test_trailing_blank_labels_last_real_value(self):
+        t = parse_table("Year\tRev\n2021\t100\n2022\t130\n2023\t")
+        svg = render_cdd_chart("smallmult", t, {})
+        self.assertIn(">130</text>", svg)      # last REAL point
+        self.assertNotIn(">0</text>", svg)     # no fabricated zero
+
+    def test_negative_values_stay_inside_panel_with_zero_line(self):
+        t = parse_table("Year\tGrowth\n2021\t10\n2022\t-20\n2023\t15")
+        svg = render_cdd_chart("smallmult", t, {})
+        pts = re.findall(r'<polyline points="([^"]+)"', svg)
+        self.assertEqual(len(pts), 1)
+        ys = [float(pair.split(",")[1]) for pair in pts[0].split()]
+        # All points inside the frame (H=450) and the panel body.
+        self.assertTrue(all(58 <= y <= 424 for y in ys), ys)
+        # Per-panel zero line drawn for signed data.
+        self.assertIn('stroke-width="0.7"', svg)
+
+    def test_pinned_sample_still_three_polylines(self):
+        t = parse_table("Year\tRev\tEBITDA\tCapex\n2021\t100\t22\t8\n"
+                        "2022\t130\t31\t9\n2023\t165\t43\t12")
+        svg = render_cdd_chart("smallmult", t, {})
+        self.assertEqual(svg.count("<polyline"), 3)
+
+
+class CddHoverTitleParityTests(unittest.TestCase):
+    """Every mark type carries a <title> hover — the affordance the bar
+    family gained in round 1 now covers the whole 30-type family."""
+
+    CASES = [
+        ("pie", "Seg\tShare\nBig\t95\nTiny\t5",
+         "<title>Tiny: 5 (5%)</title>"),
+        ("marimekko", "Seg\tIP\tOP\nMedicare\t40\t25\nComm\t30\t35",
+         "<title>IP · Medicare: 40 ("),
+        ("tornado", "Driver\tImpact\nRate\t12\nVolume\t-8",
+         "<title>Volume: -8</title>"),
+        ("radar", "Dim\tA\nQual\t3\nCost\t4\nSpeed\t5",
+         "<title>A: Qual 3 · Cost 4 · Speed 5</title>"),
+        ("bullet", "KPI\tActual\tTarget\nDAR\t42\t38",
+         "<title>DAR: 42 · target 38</title>"),
+        ("dot", "X\tV\nAlpha\t5\nBeta\t9",
+         "<title>Alpha: 5</title>"),
+        ("matrix", "Co\tX\tY\nAcme\t3\t4\nBeta\t5\t2",
+         "<title>Acme: (3, 4)</title>"),
+        ("heatmap", "Row\tC1\tC2\nR1\t1\t2\nR2\t3\t4",
+         "<title>R1 · C1: 1</title>"),
+        ("slope", "M\tBefore\tAfter\nMargin\t18\t26",
+         "<title>Margin: 18 → 26</title>"),
+        ("gantt", "Task\tStart\tEnd\nKickoff\t0\t4",
+         "<title>Kickoff: 0–4</title>"),
+        ("dumbbell", "M\tEntry\tExit\nMargin\t18\t26",
+         "<title>Margin · Entry: 18</title>"),
+        ("boxplot", "Site\tJ\tF\tM\nNorth\t42\t45\t39",
+         "median"),
+        ("area", "Y\tA\tB\n2021\t1\t2\n2022\t2\t3",
+         "<title>A</title>"),
+        ("funnel", "Stage\tN\nTAM\t100\nSAM\t40",
+         "<title>SAM: 40 · 40%</title>"),
+    ]
+
+    def test_every_mark_type_has_hover_title(self):
+        for ctype, data, want in self.CASES:
+            svg = render_cdd_chart(ctype, parse_table(data), {})
+            self.assertIn(want, svg, ctype)
+            self.assertNotIn("None", svg, ctype)
+
+    def test_missing_heatmap_cell_gets_no_title(self):
+        svg = render_cdd_chart(
+            "heatmap", parse_table("Row\tC1\tC2\nR1\t1\t\nR2\t3\t4"),
+            {})
+        self.assertNotIn("None", svg)
+        self.assertNotIn(": </title>", svg)
+
+
+class CddPctPrecisionTests(unittest.TestCase):
+    def test_default_stays_zero_dp(self):
+        svg = render_cdd_chart(
+            "pie", parse_table("S\tV\nA\t2\nB\t1"), {})
+        self.assertIn(">67%<", svg)
+        self.assertNotIn("66.7%", svg)
+
+    def test_opt_in_house_one_dp(self):
+        t = parse_table("S\tV\nA\t2\nB\t1")
+        svg = render_cdd_chart("pie", t, {"pct_precision": 1})
+        self.assertIn("66.7%", svg)
+        svg = render_cdd_chart("pareto", parse_table(
+            "R\tN\nAuth\t340\nElig\t210\nCoding\t160"),
+            {"pct_precision": 1})
+        self.assertIn("100.0%", svg)
+
+
+class CddSignedFloorTests(unittest.TestCase):
+    """Signed axes snap the floor so the even-fifths lattice is round
+    (raw data minima used to print ticks like -8, -3.4, 1.2 …)."""
+
+    def test_signed_line_axis_ticks_are_round(self):
+        svg = render_cdd_chart("line", parse_table(
+            "Q\tG\n2021\t10\n2022\t-8\n2023\t15"), {})
+        ticks = re.findall(
+            r'text-anchor="end" font-family="[^"]+" font-size="10" '
+            r'fill="#7a8699">(-?[\d,.]+)</text>', svg)
+        self.assertEqual(ticks, ["-10", "-5", "0", "5", "10", "15"])
+
+    def test_positive_axis_lattice_untouched(self):
+        # The pinned builder sample (100/130 → 0..150 by 30s, no 100).
+        svg = render_cdd_chart("column", parse_table(
+            "Y\tR\n2021\t100\n2022\t130"), {"show_values": False})
+        ticks = re.findall(
+            r'text-anchor="end" font-family="[^"]+" font-size="10" '
+            r'fill="#7a8699">(-?[\d,.]+)</text>', svg)
+        self.assertEqual(ticks, ["0", "30", "60", "90", "120", "150"])
+
+    def test_float_noise_negative_gets_no_band(self):
+        svg = render_cdd_chart("line", parse_table(
+            "Q\tG\n2021\t10\n2022\t15"), {})
+        base = re.findall(r'fill="#7a8699">(-?[\d,.]+)</text>', svg)
+        self.assertNotIn("-", "".join(base))
+
+
+class ChartKitLegendWrapTests(unittest.TestCase):
+    def test_overflowing_legend_wraps_to_second_row(self):
+        out = ck_grouped_bar(
+            "T", ["A", "B"],
+            [(f"Series name number {i}", [1, 2], None)
+             for i in range(6)])
+        rows = sorted({m for m in re.findall(
+            r'<rect x="[\d.]+" y="(\d+)" width="9"', out)})
+        self.assertEqual(rows, ["14", "27"])
+
+    def test_short_legend_keeps_single_row_layout(self):
+        out = ck_grouped_bar(
+            "T", ["A", "B"],
+            [("S1", [1, 2], None), ("S2", [2, 1], None)])
+        self.assertIn('y="14" width="9"', out)
+        self.assertNotIn('y="27"', out)
+
+
+class PowerChartBaselineTests(unittest.TestCase):
+    def test_all_positive_bars_sit_flush_on_plot_floor(self):
+        html = render_power_chart(
+            chart_id="flush",
+            series=[ChartSeries("A", [("Q1", 30), ("Q2", 38)],
+                                kind="bar")])
+        for _x, y, _w, h in _point_rects(html):
+            self.assertAlmostEqual(y + h, _MT + _PH, delta=0.11)
+
+    def test_all_negative_bars_hang_flush_from_plot_top(self):
+        html = render_power_chart(
+            chart_id="hang",
+            series=[ChartSeries("A", [("Q1", -30), ("Q2", -38)],
+                                kind="bar")])
+        for _x, y, _w, _h in _point_rects(html):
+            self.assertAlmostEqual(y, _MT, delta=0.11)
+
+    def test_mixed_sign_keeps_padding_both_sides(self):
+        html = render_power_chart(
+            chart_id="mixed",
+            series=[ChartSeries("A", [("Q1", -10), ("Q2", 5)],
+                                kind="bar")])
+        rects = _point_rects(html)
+        tops = min(r[1] for r in rects)
+        bottoms = max(r[1] + r[3] for r in rects)
+        self.assertGreater(tops, _MT + 1)          # padded above
+        self.assertLess(bottoms, _MT + _PH - 1)    # padded below
+
+
+class PrintAndFocusChromeTests(unittest.TestCase):
+    def test_chart_kit_assets_carry_print_and_focus_rules(self):
+        assets = ck_chart_assets()
+        self.assertIn("@media print{.ck-chart-dl{display:none;}", assets)
+        self.assertIn("break-inside:avoid", assets)
+        self.assertIn(".ck-chart-dl:focus-visible", assets)
+
+    def test_cdd_toolbar_hidden_in_print_with_focus_ring(self):
+        tb = chart_export_toolbar("out", "file")
+        self.assertIn('class="cd-export-tb"', tb)
+        self.assertIn("@media print{.cd-export-tb{display:none;}}", tb)
+        self.assertIn(".cd-export-tb button:focus-visible", tb)
+
+    def test_power_chart_toolbar_hidden_in_print_with_focus_ring(self):
+        html = render_power_chart(
+            chart_id="chrome",
+            series=[ChartSeries("A", [("Q1", 1), ("Q2", 2)])])
+        self.assertIn('class="pc-toolbar"', html)
+        self.assertIn("@media print{#chrome-root .pc-toolbar"
+                      "{display:none;}", html)
+        self.assertIn("#chrome-root button:focus-visible", html)
+        # Theme-correct ring color (editorial teal / dark blue).
+        self.assertIn("outline:2px solid #155752", html)
+        dark = render_power_chart(
+            chart_id="chromed", theme="dark",
+            series=[ChartSeries("A", [("Q1", 1), ("Q2", 2)])])
+        self.assertIn("outline:2px solid #60a5fa", dark)
+
+
 if __name__ == "__main__":
     unittest.main()

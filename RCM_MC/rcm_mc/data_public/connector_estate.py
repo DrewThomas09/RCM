@@ -402,11 +402,15 @@ def sample_rows(dataset_id: str, limit: int = 10,
 
 def aggregate(dataset_id: str, group_by: Any,
               filters: dict[str, Any] | None = None,
-              limit: int = 20) -> dict[str, Any]:
+              limit: int = 20,
+              metrics: list[Any] | None = None) -> dict[str, Any]:
     """Group-by/count aggregate as ``AggregateResult.as_dict()``, or ``{}``.
 
-    ``group_by`` may be a single column name or a list. Same degrade
-    contract as :func:`sample_rows`.
+    ``group_by`` may be a single column name or a list. ``metrics`` are
+    optional ``"func:field"`` specs (sum/avg/min/max over CAST-to-REAL
+    values — the engines' uniform grammar); omitted, the result keeps
+    the historical count-only shape. Same degrade contract as
+    :func:`sample_rows`.
     """
     if isinstance(group_by, str):
         group_by = [group_by]
@@ -420,10 +424,16 @@ def aggregate(dataset_id: str, group_by: Any,
         return {}
     adapter, store = handle
     try:
+        kwargs: dict[str, Any] = {}
+        if metrics:
+            # Only passed when requested, so an older engine copy
+            # without the kwarg keeps working for count-only callers.
+            kwargs["metrics"] = list(metrics)
         result = adapter.aggregate(store, dataset_id,
                                    group_by=list(group_by),
                                    filters=filters or {},
-                                   limit=_clamp(limit, 20, 1, 100))
+                                   limit=_clamp(limit, 20, 1, 100),
+                                   **kwargs)
         return result.as_dict()
     except Exception:
         return {}

@@ -509,6 +509,17 @@ def _fmt(v: Optional[float], suffix: str = "") -> str:
     return f"{v:g}{suffix}"
 
 
+def _pct_str(pct: float, opts: Dict[str, Any]) -> str:
+    """Share/percentage label formatter for on-mark labels.
+
+    Defaults to 0 decimals — the long-pinned rendering of pie slice %,
+    marimekko cell %, pareto cumulative % and funnel conversion % —
+    while ``opts["pct_precision"] = 1`` opts a chart into the house
+    1-decimal percentage rule where the caller controls its own pins."""
+    p = int(opts.get("pct_precision", 0) or 0)
+    return f"{pct:.{p}f}%"
+
+
 def _nice_max(v: float) -> float:
     if v <= 0:
         return 1.0
@@ -519,6 +530,32 @@ def _nice_max(v: float) -> float:
         if m * base >= v:
             return m * base
     return 10 * base
+
+
+def _signed_floor(vmax: float, vmin: float) -> Tuple[float, float]:
+    """Snap a negative axis floor so the even-fifths tick lattice lands
+    on round numbers — and exactly on zero.
+
+    The signed axes added for growth/margin-delta data put raw data
+    minima straight into the lattice (vmin=-8 → ticks -8, -3.4, 1.2 …),
+    which reads as a rendering glitch next to the nice positive fifths.
+    Positive-only axes (vmin == 0) pass through untouched — their
+    lattice is pinned by builder tests. The floor becomes a multiple of
+    a 1/1.5/2/…×10^k step with vmax stretched to floor+5·step, so every
+    tick (including 0) is a step multiple."""
+    if vmin >= 0:
+        return vmax, vmin
+    if -vmin < (vmax or 1.0) * 1e-9:
+        # Float noise (a -1e-15 from the growth/index calcs), not a real
+        # negative — don't manufacture a whole below-zero band for it.
+        return vmax, 0.0
+    import math
+    step = _nice_max((vmax - vmin) / 5)
+    while True:
+        floor = -math.ceil(-vmin / step) * step
+        if floor + 5 * step >= vmax:
+            return floor + 5 * step, floor
+        step = _nice_max(step * 1.2)
 
 
 def _frame_open(opts: Dict[str, Any]) -> str:
@@ -614,7 +651,10 @@ def _y_axis(x0, y0, x1, y1, vmax, vmin, opts, suffix=""):
     1/2/5-step grid always lands a tick on 100, which a pinned test
     forbids for the 100/130 sample table), so the grid here must remain
     the even-fifths lattice. When the scale dips negative a solid zero
-    line separates gains from losses."""
+    line separates gains from losses, and the floor snaps to a round
+    step multiple (``_signed_floor``) so the fifths stay legible —
+    positive-only axes are byte-identical."""
+    vmax, vmin = _signed_floor(vmax, vmin)
     span = (vmax - vmin) or 1
 
     def yof(v):
@@ -965,7 +1005,8 @@ def _lines(table, opts):
                                for i in range(n - 1, -1, -1))
             col = colors[si % len(colors)]
             body += (f'<polygon points="{pts_top} {pts_bot}" '
-                     f'fill="url(#cdar{uid}-{si})"/>'
+                     f'fill="url(#cdar{uid}-{si})">'
+                     f'<title>{_esc(s["name"])}</title></polygon>'
                      f'<polyline points="{pts_top}" fill="none" '
                      f'stroke="{col}" stroke-width="2" '
                      f'stroke-linejoin="round"/>')
@@ -1121,16 +1162,22 @@ def _pie(table, opts):
         x1p, y1p = cx + R * math.cos(ang), cy + R * math.sin(ang)
         x2p, y2p = cx + R * math.cos(a2), cy + R * math.sin(a2)
         col = colors[i % len(colors)]
+        # <title> hover on every slice: a thin slice's on-slice % label is
+        # suppressed (frac <= 0.04) and the legend carries no values, so
+        # without this the number was unrecoverable — the same affordance
+        # the bar family already carries.
         body += (f'<path d="M {cx:.1f} {cy:.1f} L {x1p:.1f} {y1p:.1f} '
                  f'A {R:.1f} {R:.1f} 0 {large} 1 {x2p:.1f} {y2p:.1f} Z" '
-                 f'fill="{col}" stroke="#fff" stroke-width="1.5"/>')
+                 f'fill="{col}" stroke="#fff" stroke-width="1.5">'
+                 f'<title>{_esc(lab)}: {_fmt(v, opts.get("suffix", ""))} '
+                 f'({_pct_str(frac * 100, opts)})</title></path>')
         mid = (ang + a2) / 2
         lx, ly = cx + R * 0.62 * math.cos(mid), cy + R * 0.62 * math.sin(mid)
         if frac > 0.04:
             body += (f'<text x="{lx:.1f}" y="{ly+3:.1f}" '
                      f'text-anchor="middle" font-family="{_SANS}" '
                      f'font-size="11" font-weight="600" fill="#fff">'
-                     f'{frac*100:.0f}%</text>')
+                     f'{_pct_str(frac * 100, opts)}</text>')
         ang = a2
     # Spherical sheen overlay — gives the disk dimensional lift.
     body += (f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{R:.1f}" '
@@ -1221,13 +1268,20 @@ def _marimekko(table, opts):
             frac = v / t
             h = frac * (y1 - y0)
             yy = y0 + cum
+            # Small/narrow cells suppress their % label (frac <= 0.08 or
+            # w <= 26) — the <title> keeps the number hoverable, matching
+            # the bar family's affordance.
             body += (f'<rect x="{cx:.1f}" y="{yy:.1f}" '
                      f'width="{max(w-1.2,0):.1f}" height="{h:.1f}" '
-                     f'fill="{colors[si % len(colors)]}"/>')
+                     f'fill="{colors[si % len(colors)]}">'
+                     f'<title>{_esc(s["name"])} · {_esc(c)}: '
+                     f'{_fmt(v, opts.get("suffix", ""))} '
+                     f'({_pct_str(frac * 100, opts)})</title></rect>')
             if frac > 0.08 and w > 26:
                 body += (f'<text x="{cx+w/2:.1f}" y="{yy+h/2+3:.1f}" '
                          f'text-anchor="middle" font-family="{_SANS}" '
-                         f'font-size="9.5" fill="#fff">{frac*100:.0f}%</text>')
+                         f'font-size="9.5" fill="#fff">'
+                         f'{_pct_str(frac * 100, opts)}</text>')
             cum += h
         body += (f'<text x="{cx+w/2:.1f}" y="{y1+14:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
@@ -1249,10 +1303,17 @@ def _combo(table, opts):
         return _hint(opts, "Combo needs a value column")
     bar_s = series[0]
     line_s = series[1] if len(series) > 1 else None
+    # Signed bar axis — combo was the last chart family still clamping
+    # negative bars to zero-height rects at the baseline (the sibling
+    # _bars fix never crossed over), so a growth/margin-delta bar series
+    # silently read as zeros. vmin mirrors _bars: min(0, data).
+    bvals = [v for v in bar_s["values"] if v is not None]
     vmax = _ref_scaled_max(
-        _nice_max(max((v or 0) for v in bar_s["values"]) or 1), opts)
+        _nice_max(max(max(bvals, default=0.0), 0.0) or 1), opts)
+    vmin = min(0.0, min(bvals, default=0.0))
     body = _frame_open(opts)
-    grid, yof = _y_axis(x0, y0, x1, y1, vmax, 0, opts, opts.get("suffix", ""))
+    grid, yof = _y_axis(x0, y0, x1, y1, vmax, vmin, opts,
+                        opts.get("suffix", ""))
     body += grid
     body += _overlay_svg(opts, yof, x0, x1, y0, cats, bar_s["values"],
                          opts.get("suffix", ""))
@@ -1261,26 +1322,35 @@ def _combo(table, opts):
         v = bar_s["values"][i]
         if v is None:
             continue
-        h = (v / vmax) * (y1 - y0)
+        h = abs(yof(v) - yof(0.0))
         gx = x0 + band * i + band * 0.2
-        body += _depth_bar(opts, gx, yof(max(v, 0)), band * 0.6, max(h, 0),
+        body += _depth_bar(opts, gx, yof(max(v, 0.0)), band * 0.6, max(h, 0),
                            colors[0], rx=1.5, vertical=True, shadow=True,
                            title=f'{bar_s["name"]} · {cats[i]}: '
                                  f'{_fmt(v, opts.get("suffix", ""))}')
     if line_s:
         lcol = colors[1 % len(colors)]
-        lmax = _nice_max(max((v or 0) for v in line_s["values"]) or 1)
+        # Signed line axis too — a negative line point used to map BELOW
+        # the plot floor (through the x-labels and off-canvas), because
+        # the right-hand scale was anchored at zero. When the line data
+        # is all-positive the mapping (and every tick string) is
+        # unchanged.
+        lvals = [v for v in line_s["values"] if v is not None]
+        lmax = _nice_max(max(max(lvals, default=0.0), 0.0) or 1)
+        lmin = min(0.0, min(lvals, default=0.0))
+        lmax, lmin = _signed_floor(lmax, lmin)
+        lspan = (lmax - lmin) or 1
 
         def xof(i):
             return x0 + band * (i + 0.5)
 
         def yl(v):
-            return y1 - (v / lmax) * (y1 - y0)
+            return y1 - (v - lmin) / lspan * (y1 - y0)
         # Right-hand axis for the line series (in the line's colour) — a
         # second scale the reader can't see is a dual-axis chart lying by
         # omission; the line used to be scaled to an undisclosed max.
         for gi in range(6):
-            lv = lmax * gi / 5
+            lv = lmin + lspan * gi / 5
             body += (f'<text x="{x1+5:.1f}" y="{yl(lv)+3:.1f}" '
                      f'text-anchor="start" font-family="{_SANS}" '
                      f'font-size="9.5" fill="{lcol}">'
@@ -1332,9 +1402,12 @@ def _funnel(table, opts):
         yt, yb = y0 + sh * i + 3, y0 + sh * (i + 1) - 3
         pts = (f"{cx-w_top/2:.1f},{yt:.1f} {cx+w_top/2:.1f},{yt:.1f} "
                f"{cx+w_bot/2:.1f},{yb:.1f} {cx-w_bot/2:.1f},{yb:.1f}")
+        conv = (f" · {_pct_str(v / vals[0] * 100, opts)}"
+                if vals[0] else "")
         body += (f'<polygon points="{pts}" fill="{colors[i % len(colors)]}" '
-                 f'fill-opacity="0.95" filter="url(#cdsh{_uid_of(opts)})"/>')
-        conv = f" · {v/vals[0]*100:.0f}%" if vals[0] else ""
+                 f'fill-opacity="0.95" filter="url(#cdsh{_uid_of(opts)})">'
+                 f'<title>{_esc(c)}: {_fmt(v, suffix)}{_esc(conv)}</title>'
+                 f'</polygon>')
         body += (f'<text x="{cx:.1f}" y="{(yt+yb)/2+4:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
                  f'font-size="12" font-weight="700" fill="#fff">'
@@ -1368,7 +1441,8 @@ def _tornado(table, opts):
         bx = cxx if val >= 0 else cxx - w
         body += (f'<rect x="{bx:.1f}" y="{yy:.1f}" width="{w:.1f}" '
                  f'height="{band*0.6:.1f}" fill="{pos if val>=0 else neg}" '
-                 f'rx="1"/>')
+                 f'rx="1"><title>{_esc(lab)}: {_fmt(val, suffix)}'
+                 f'</title></rect>')
         tx = cxx + w + 4 if val >= 0 else cxx - w - 4
         anc = "start" if val >= 0 else "end"
         body += (f'<text x="{tx:.1f}" y="{yy+band*0.42:.1f}" '
@@ -1417,8 +1491,15 @@ def _radar(table, opts):
             f"{x:.1f},{y:.1f}" for x, y in
             (pt(i, (s["values"][i] or 0) / vmax) for i in range(n)))
         col = colors[si % len(colors)]
+        # Radar is the one shape whose values are never printed anywhere —
+        # the hover <title> is the only way to recover the numbers.
+        tip = " · ".join(
+            f"{cats[i]} {_fmt(s['values'][i], opts.get('suffix', ''))}"
+            for i in range(n) if s["values"][i] is not None)
         body += (f'<polygon points="{poly}" fill="{col}" '
-                 f'fill-opacity="0.18" stroke="{col}" stroke-width="2"/>')
+                 f'fill-opacity="0.18" stroke="{col}" stroke-width="2">'
+                 f'<title>{_esc(s["name"])}: {_esc(tip)}</title>'
+                 f'</polygon>')
     body += _legend(series, colors, opts) + "</svg>"
     return body
 
@@ -1445,10 +1526,13 @@ def _bullet(table, opts):
         body += (f'<rect x="{x0:.1f}" y="{yy:.1f}" width="{x1-x0:.1f}" '
                  f'height="{bh:.1f}" fill="#ece5d6" rx="2"/>')
         a = actual[i] or 0
+        t = target[i]
+        tip = f'{c}: {_fmt(a, suffix)}' + (
+            f' · target {_fmt(t, suffix)}' if t is not None else "")
         body += (f'<rect x="{x0:.1f}" y="{yy+bh*0.2:.1f}" '
                  f'width="{a/vmax*(x1-x0):.1f}" height="{bh*0.6:.1f}" '
-                 f'fill="{colors[0]}" rx="1"/>')
-        t = target[i]
+                 f'fill="{colors[0]}" rx="1"><title>{_esc(tip)}</title>'
+                 f'</rect>')
         if t is not None:
             tx = x0 + t / vmax * (x1 - x0)
             body += (f'<line x1="{tx:.1f}" y1="{yy-2:.1f}" x2="{tx:.1f}" '
@@ -1484,7 +1568,8 @@ def _dot(table, opts):
         body += (f'<line x1="{x0:.1f}" y1="{yy:.1f}" x2="{vx:.1f}" '
                  f'y2="{yy:.1f}" stroke="{_GRID}" stroke-width="2"/>'
                  f'<circle cx="{vx:.1f}" cy="{yy:.1f}" r="5.5" '
-                 f'fill="{colors[0]}"/>'
+                 f'fill="{colors[0]}"><title>{_esc(lab)}: '
+                 f'{_fmt(val, suffix)}</title></circle>'
                  f'<text x="{x0-4:.1f}" y="{yy+3.5:.1f}" text-anchor="end" '
                  f'font-family="{_SANS}" font-size="10.5" fill="{_DIM}">'
                  f'{_esc(lab)}</text>'
@@ -1577,7 +1662,8 @@ def _matrix(table, opts):
         r = (7 + 20 * ((sz / smax) ** 0.5)) if sz else 7
         body += (f'<circle cx="{xof(xv):.1f}" cy="{yof(yv):.1f}" r="{r:.1f}" '
                  f'fill="{colors[i % len(colors)]}" fill-opacity="0.72" '
-                 f'stroke="#fff" stroke-width="1.2"/>'
+                 f'stroke="#fff" stroke-width="1.2"><title>{_esc(lab)}: '
+                 f'({_fmt(xv)}, {_fmt(yv)})</title></circle>'
                  f'<text x="{xof(xv):.1f}" y="{yof(yv)-r-3:.1f}" '
                  f'text-anchor="middle" font-family="{_SANS}" '
                  f'font-size="10" font-weight="600" fill="{_INK}">'
@@ -1639,9 +1725,17 @@ def _heatmap(table, opts):
             fill = _heat_color((v - lo) / rng) if v is not None else "#f3efe4"
             tcol = "#fff" if (v is not None and (v - lo) / rng > 0.55) \
                 else _INK
-            body += (f'<rect x="{cx+1:.1f}" y="{ry+1:.1f}" '
-                     f'width="{cw-2:.1f}" height="{ch-2:.1f}" rx="2" '
-                     f'fill="{fill}"/>')
+            col_name = headers[j + 1] if j + 1 < len(headers) else s["name"]
+            tip = (f'<title>{_esc(c)} · {_esc(col_name)}: '
+                   f'{_fmt(v, suffix)}</title>') if v is not None else ""
+            if tip:
+                body += (f'<rect x="{cx+1:.1f}" y="{ry+1:.1f}" '
+                         f'width="{cw-2:.1f}" height="{ch-2:.1f}" rx="2" '
+                         f'fill="{fill}">{tip}</rect>')
+            else:
+                body += (f'<rect x="{cx+1:.1f}" y="{ry+1:.1f}" '
+                         f'width="{cw-2:.1f}" height="{ch-2:.1f}" rx="2" '
+                         f'fill="{fill}"/>')
             if v is not None:
                 body += (f'<text x="{cx+cw/2:.1f}" y="{ry+ch/2+3.5:.1f}" '
                          f'text-anchor="middle" font-family="{_SANS}" '
@@ -1688,10 +1782,15 @@ def _slope(table, opts):
             continue
         col = colors[i % len(colors)]
         ya, yb = yof(va), yof(vb)
+        tip = (f'<title>{_esc(c)}: {_fmt(va, suffix)} → '
+               f'{_fmt(vb, suffix)}</title>')
         body += (f'<line x1="{lx:.1f}" y1="{ya:.1f}" x2="{rx:.1f}" '
-                 f'y2="{yb:.1f}" stroke="{col}" stroke-width="2.2"/>'
-                 f'<circle cx="{lx:.1f}" cy="{ya:.1f}" r="4" fill="{col}"/>'
-                 f'<circle cx="{rx:.1f}" cy="{yb:.1f}" r="4" fill="{col}"/>'
+                 f'y2="{yb:.1f}" stroke="{col}" stroke-width="2.2">'
+                 f'{tip}</line>'
+                 f'<circle cx="{lx:.1f}" cy="{ya:.1f}" r="4" fill="{col}">'
+                 f'{tip}</circle>'
+                 f'<circle cx="{rx:.1f}" cy="{yb:.1f}" r="4" fill="{col}">'
+                 f'{tip}</circle>'
                  f'<text x="{lx-9:.1f}" y="{ya+3.5:.1f}" text-anchor="end" '
                  f'font-family="{_SANS}" font-size="10.5" fill="{_INK}">'
                  f'{_esc(c)} {_fmt(va, suffix)}</text>'
@@ -1733,9 +1832,13 @@ def _gantt(table, opts):
     for i, (lab, s, e) in enumerate(tasks):
         yy = y0 + band * i + band * 0.22
         bx, bw = xof(s), xof(e) - xof(s)
+        # Gantt bars carry no value labels at all — the <title> is the
+        # only way to read a task's start/end off the chart.
         body += (f'<rect x="{bx:.1f}" y="{yy:.1f}" '
                  f'width="{max(bw,2):.1f}" height="{band*0.56:.1f}" rx="3" '
-                 f'fill="{colors[i % len(colors)]}"/>'
+                 f'fill="{colors[i % len(colors)]}">'
+                 f'<title>{_esc(lab)}: {_fmt(s, opts.get("suffix", ""))}–'
+                 f'{_fmt(e, opts.get("suffix", ""))}</title></rect>'
                  f'<text x="{x0-6:.1f}" y="{yy+band*0.42:.1f}" '
                  f'text-anchor="end" font-family="{_SANS}" font-size="10.5" '
                  f'fill="{_DIM}">{_esc(lab)}</text>')
@@ -1788,7 +1891,7 @@ def _pareto(table, opts):
                  f'fill="{accent}"/>'
                  f'<text x="{px:.1f}" y="{py-7:.1f}" text-anchor="middle" '
                  f'font-family="{_SANS}" font-size="9" fill="{_DIM}">'
-                 f'{frac*100:.0f}%</text>')
+                 f'{_pct_str(frac * 100, opts)}</text>')
     body += _x_labels(cats, x0, x1, y1, opts) + "</svg>"
     return body
 
@@ -1885,10 +1988,15 @@ def _box(table, opts):
             f'<line x1="{cx-bw*0.3:.1f}" y1="{yof(mx):.1f}" '
             f'x2="{cx+bw*0.3:.1f}" y2="{yof(mx):.1f}" stroke="{_DIM}" '
             f'stroke-width="1.2"/>'
-            # IQR box + median.
+            # IQR box + median — five-number summary in the hover title
+            # (only the median is printed beside the box).
             f'<rect x="{cx-bw/2:.1f}" y="{yof(q3):.1f}" width="{bw:.1f}" '
             f'height="{max(yof(q1)-yof(q3),1):.1f}" fill="{col}" '
-            f'fill-opacity="0.30" stroke="{col}" stroke-width="1.4" rx="2"/>'
+            f'fill-opacity="0.30" stroke="{col}" stroke-width="1.4" rx="2">'
+            f'<title>{_esc(lab)}: min {_fmt(round(mn, 1))} · '
+            f'Q1 {_fmt(round(q1, 1))} · median {_fmt(round(med, 1))} · '
+            f'Q3 {_fmt(round(q3, 1))} · max {_fmt(round(mx, 1))}'
+            f'</title></rect>'
             f'<line x1="{cx-bw/2:.1f}" y1="{yof(med):.1f}" '
             f'x2="{cx+bw/2:.1f}" y2="{yof(med):.1f}" stroke="{col}" '
             f'stroke-width="2.4"/>'
@@ -1934,12 +2042,16 @@ def _dumbbell(table, opts):
             continue
         yy = y0 + band * (i + 0.5)
         xa, xb = xof(va), xof(vb)
+        pa_n = headers[1] if len(headers) > 1 else "Before"
+        pb_n = headers[2] if len(headers) > 2 else "After"
         body += (f'<line x1="{xa:.1f}" y1="{yy:.1f}" x2="{xb:.1f}" '
                  f'y2="{yy:.1f}" stroke="{_GRID}" stroke-width="3"/>'
                  f'<circle cx="{xa:.1f}" cy="{yy:.1f}" r="5.5" '
-                 f'fill="{ca}"/>'
+                 f'fill="{ca}"><title>{_esc(c)} · {_esc(pa_n)}: '
+                 f'{_fmt(va, suffix)}</title></circle>'
                  f'<circle cx="{xb:.1f}" cy="{yy:.1f}" r="5.5" '
-                 f'fill="{cb}"/>'
+                 f'fill="{cb}"><title>{_esc(c)} · {_esc(pb_n)}: '
+                 f'{_fmt(vb, suffix)}</title></circle>'
                  f'<text x="{x0-6:.1f}" y="{yy+3.5:.1f}" text-anchor="end" '
                  f'font-family="{_SANS}" font-size="10.5" fill="{_DIM}">'
                  f'{_esc(c)}</text>'
@@ -2022,9 +2134,13 @@ def _smallmult(table, opts):
     pw = (x1 - x0 - gap * (cols - 1)) / cols
     ph = (y1 - y0 - gap * (rows_n - 1)) / rows_n
     # One shared y scale so the panels are comparable — the point of
-    # small multiples.
-    vmax = _nice_max(max((max((v or 0) for v in s["values"])
-                          for s in series), default=1))
+    # small multiples. Signed floor, same convention as _lines: a
+    # negative point used to plot below its panel's floor and bleed
+    # into the neighbouring tile / x-caption band.
+    finite = [v for s in series for v in s["values"] if v is not None]
+    vmax = _nice_max(max(max(finite, default=0.0), 0.0) or 1)
+    vmin = min(0.0, min(finite, default=0.0))
+    vspan = (vmax - vmin) or 1
     suffix = opts.get("suffix", "")
     nc = len(cats)
     for si, s in enumerate(series):
@@ -2038,7 +2154,7 @@ def _smallmult(table, opts):
             return ix0 + (ix1 - ix0) * (i / max(nc - 1, 1))
 
         def yof(v):
-            return iy1 - (v / vmax) * (iy1 - iy0)
+            return iy1 - (v - vmin) / vspan * (iy1 - iy0)
         body += (f'<rect x="{px:.1f}" y="{py:.1f}" width="{pw:.1f}" '
                  f'height="{ph:.1f}" fill="#fbf9f4" stroke="{_GRID}" '
                  f'rx="4"/>'
@@ -2047,17 +2163,47 @@ def _smallmult(table, opts):
                  f'fill="{col}">{_esc(s["name"])}</text>'
                  f'<line x1="{ix0:.1f}" y1="{iy1:.1f}" x2="{ix1:.1f}" '
                  f'y2="{iy1:.1f}" stroke="{_GRID}" stroke-width="0.8"/>')
-        pts = " ".join(f"{xof(i):.1f},{yof(s['values'][i] or 0):.1f}"
-                       for i in range(nc))
-        last = s["values"][nc - 1] or 0
-        body += (f'<polyline points="{pts}" fill="none" stroke="{col}" '
-                 f'stroke-width="2" stroke-linejoin="round"/>'
-                 f'<circle cx="{xof(nc-1):.1f}" cy="{yof(last):.1f}" '
-                 f'r="3" fill="{col}"/>'
-                 f'<text x="{xof(nc-1)+6:.1f}" y="{yof(last)+3.5:.1f}" '
-                 f'font-family="{_SANS}" font-size="10" font-weight="700" '
-                 f'fill="{col}">{_fmt(last, suffix)}</text>'
-                 f'<text x="{ix0:.1f}" y="{iy1+11:.1f}" '
+        if vmin < 0:
+            # Per-panel zero line so signed sparklines read against zero,
+            # not against the (now negative) panel floor.
+            zy = yof(0.0)
+            body += (f'<line x1="{ix0:.1f}" y1="{zy:.1f}" x2="{ix1:.1f}" '
+                     f'y2="{zy:.1f}" stroke="{_FAINT}" '
+                     f'stroke-width="0.7"/>')
+        # A missing (None) cell is a GAP, not a zero — same segmented-
+        # polyline treatment as _lines/_combo, so all three shapes mean
+        # the same thing by a blank cell. Isolated points (a run of one)
+        # get a small dot so they don't vanish entirely.
+        segs: List[List[Tuple[float, float]]] = [[]]
+        for i in range(nc):
+            v = s["values"][i]
+            if v is None:
+                if segs[-1]:
+                    segs.append([])
+                continue
+            segs[-1].append((xof(i), yof(v)))
+        for seg in segs:
+            if len(seg) >= 2:
+                pts = " ".join(f"{sx:.1f},{sy:.1f}" for sx, sy in seg)
+                body += (f'<polyline points="{pts}" fill="none" '
+                         f'stroke="{col}" stroke-width="2" '
+                         f'stroke-linejoin="round"/>')
+            elif len(seg) == 1:
+                body += (f'<circle cx="{seg[0][0]:.1f}" '
+                         f'cy="{seg[0][1]:.1f}" r="2" fill="{col}"/>')
+        # End marker + value label at the LAST REAL point (a trailing
+        # blank cell used to print a fabricated 0).
+        li = next((i for i in range(nc - 1, -1, -1)
+                   if s["values"][i] is not None), None)
+        if li is not None:
+            last = s["values"][li]
+            body += (f'<circle cx="{xof(li):.1f}" cy="{yof(last):.1f}" '
+                     f'r="3" fill="{col}"/>'
+                     f'<text x="{xof(li)+6:.1f}" y="{yof(last)+3.5:.1f}" '
+                     f'font-family="{_SANS}" font-size="10" '
+                     f'font-weight="700" '
+                     f'fill="{col}">{_fmt(last, suffix)}</text>')
+        body += (f'<text x="{ix0:.1f}" y="{iy1+11:.1f}" '
                  f'font-family="{_SANS}" font-size="8.5" fill="{_FAINT}">'
                  f'{_esc(cats[0])}</text>'
                  f'<text x="{ix1:.1f}" y="{iy1+11:.1f}" text-anchor="end" '
@@ -2079,7 +2225,8 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
            "background:#fff;color:#0b2341;font-size:12px;font-weight:600;"
            "cursor:pointer;")
     return (
-        f'<div style="display:flex;gap:8px;justify-content:center;'
+        f'<div class="cd-export-tb" '
+        f'style="display:flex;gap:8px;justify-content:center;'
         f'margin-top:10px;flex-wrap:wrap;">'
         f'<button type="button" style="{btn}" '
         f'onclick="ckDlSvg(\'{tid}\',\'{fn}\')">⬇ SVG</button>'
@@ -2087,6 +2234,14 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
         f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (3×)</button>'
         f'<button type="button" style="{btn}" '
         f'onclick="ckCopySvg(\'{tid}\',this)">⧉ Copy SVG</button></div>'
+        # Print fidelity + keyboard affordance: download buttons are
+        # meaningless on paper (and used to print as grey pills under
+        # every chart), and the inline-styled buttons had no visible
+        # focus ring. Style rules ride with each toolbar instance
+        # (duplicates are inert), matching _chart_kit's chrome.
+        '<style>@media print{.cd-export-tb{display:none;}}'
+        '.cd-export-tb button:focus-visible{outline:2px solid #155752;'
+        'outline-offset:2px;}</style>'
         # The helpers are installed ONCE per page behind a window guard —
         # a page embedding several toolbars used to redefine the same four
         # globals per instance (harmless but sloppy, and a hazard if two

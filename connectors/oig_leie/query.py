@@ -44,6 +44,10 @@ _OPS = {
 }
 _DEFAULT_LIMIT = 50
 _MAX_LIMIT = 1000
+# SQL aggregate functions reachable through the uniform ``metrics`` grammar
+# (``"sum:field"``). A fixed whitelist: the interpolated SQL token always
+# comes from this dict, never from caller input.
+_METRIC_FUNCS = {"sum": "SUM", "avg": "AVG", "min": "MIN", "max": "MAX"}
 
 
 class QueryError(ValueError):
@@ -228,17 +232,54 @@ def _build_order(sort: Optional[List[str]], colset: set) -> str:
 class AggregateResult:
     dataset: str
     group_by: List[str]
-    rows: List[Dict[str, Any]]      # each: {group cols..., "count": n}
+    rows: List[Dict[str, Any]]      # each: {group cols..., "count": n, metrics...}
     limit: int
+    metrics: Optional[List[str]] = None   # canonical "func:field" specs, if any
 
     def as_dict(self) -> Dict[str, Any]:
         return {
             "dataset": self.dataset,
             "group_by": self.group_by,
             "limit": self.limit,
+            "metrics": list(self.metrics or []),
             "count": len(self.rows),
             "rows": self.rows,
         }
+
+
+def _build_metrics(metrics: Optional[List[Any]], group_by: List[str],
+                   colset: set) -> Tuple[str, List[str]]:
+    """SQL select fragments + canonical spec names for ``metrics``.
+
+    Each entry is ``"func:field"`` (the HTTP/CLI form, e.g. ``sum:tot_clms``)
+    or a ``(func, field)`` pair. The function name must be in the fixed
+    :data:`_METRIC_FUNCS` whitelist and the field in the table's column
+    set, so every interpolated identifier is validated — never raw caller
+    input. Values are ``CAST`` to REAL over the all-TEXT storage (the same
+    trade-off as the numeric range operators: non-numeric junk reads as
+    0.0). Result columns are aliased ``{func}_{field}``.
+    """
+    frags: List[str] = []
+    names: List[str] = []
+    for m in metrics or []:
+        if isinstance(m, (list, tuple)) and len(m) == 2:
+            func, col = str(m[0]).strip(), str(m[1]).strip()
+        else:
+            func, _, col = str(m).partition(":")
+            func, col = func.strip(), col.strip()
+        func = func.lower()
+        if func not in _METRIC_FUNCS:
+            raise QueryError(
+                f"unknown metric function {func!r} (use sum/avg/min/max)")
+        if col not in colset:
+            raise QueryError(f"unknown metric field {col!r}")
+        alias = f"{func}_{col}"
+        if alias in group_by or alias == "count":
+            raise QueryError(
+                f"metric alias {alias!r} collides with a result column")
+        frags.append(f"{_METRIC_FUNCS[func]}(CAST({col} AS REAL)) AS {alias}")
+        names.append(f"{func}:{col}")
+    return ", ".join(frags), names
 
 
 def aggregate(
@@ -249,6 +290,7 @@ def aggregate(
     filters: Optional[Dict[str, Any]] = None,
     limit: Any = _DEFAULT_LIMIT,
     descending: bool = True,
+    metrics: Optional[List[Any]] = None,
     registry: Optional[Dict[str, RegistryRow]] = None,
 ) -> AggregateResult:
     """Uniform group-by/count aggregate over a registered dataset.
@@ -270,11 +312,15 @@ def aggregate(
         if g not in colset:
             raise QueryError(f"unknown group_by field {g!r}")
     where_sql, args = _build_where(row, filters or {}, colset)
+    metric_sql, metric_names = _build_metrics(metrics, list(group_by), colset)
     lim = _clamp_int(limit, _DEFAULT_LIMIT, 1, _MAX_LIMIT)
     cols = ", ".join(group_by)
     order = "DESC" if descending else "ASC"
-    sql = (f"SELECT {cols}, COUNT(*) AS count FROM {table} {where_sql} "
+    select_cols = f"{cols}, COUNT(*) AS count"
+    if metric_sql:
+        select_cols += f", {metric_sql}"
+    sql = (f"SELECT {select_cols} FROM {table} {where_sql} "
            f"GROUP BY {cols} ORDER BY count {order} LIMIT ?")
     rows = [dict(r) for r in store.fetchall(sql, (*args, lim))]
     return AggregateResult(dataset=dataset_id, group_by=list(group_by),
-                           rows=rows, limit=lim)
+                           rows=rows, limit=lim, metrics=metric_names)

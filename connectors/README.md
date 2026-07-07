@@ -42,7 +42,9 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
 data.cdc.gov ~1,500, healthdata.gov 23,080), each with a generic
-fetched-rows slot so **any** catalog dataset can be pulled on demand and
+fetched-rows slot so **any** catalog dataset can be pulled on demand
+(a complete re-pull replaces its slice atomically, so a shrunken upstream
+dataset never strands stale trailing rows) and
 queried through the same uniform surface. See the live list with
 `python -m connectors.cli datasets` (the counts above are pinned to the
 live registry by `connectors/tests/test_estate_invariants.py`).
@@ -82,7 +84,7 @@ them as a single database:
 /v1/datasets                         every dataset (merged registries)
 /v1/status                           per-connector fetch state: db_present, total_rows, last_ingested_at
 /v1/query/{dataset}?<filters>&select=&sort=&limit=&offset=
-/v1/query/{dataset}/aggregate?group_by=a,b&<filters>&limit=
+/v1/query/{dataset}/aggregate?group_by=a,b&metric=sum:f,avg:g&<filters>&limit=
 /v1/lookup/{noun}/{id}               drug｜device｜company｜document｜contractor｜provider｜taxonomy｜code｜category
                                      ｜practice｜prescriber｜facility-cost｜facility-universe｜ownership｜cms-dataset
                                      ｜hospital｜nursing-home｜home-health｜hospice｜dialysis｜clinician｜pdc-dataset
@@ -102,6 +104,18 @@ The uniform filter grammar (every dataset): `{"field": v}` equality, or
 numerically when the value is a number (the canonical storage is TEXT, so
 the engines `CAST` explicitly); `in` and `between` take comma-joined
 values over HTTP/CLI (`state__in=MD,VA`) or real lists via the Python API.
+
+Aggregates count rows per group by default; optional **metrics** add
+`sum/avg/min/max` over any whitelisted column, `CAST` to REAL —
+`?metric=sum:tot_clms,avg:tot_clms` over HTTP, repeatable
+`--metric sum:tot_clms` on every connector CLI's `aggregate` verb, or
+`metrics=["sum:tot_clms"]` via the Python API. Results carry the specs in a
+`metrics` key and per-group values as `{func}_{field}` columns; the
+count-only shape is unchanged when no metric is requested.
+
+Every standalone connector server also exposes its own `/v1/status` with the
+same row shape as the unified route (plus a per-table row-count breakdown),
+so fetch state reads identically whichever surface a caller hits.
 
 ## Usage
 

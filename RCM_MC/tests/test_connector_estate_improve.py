@@ -215,6 +215,53 @@ class BrokenEstatePageTests(_EnvGuard):
             self.assertNotIn("Connector estate failed to load", h)
 
 
+class BridgeAggregateMetricsTests(_EnvGuard):
+    """Round 2: the bridge exposes the engines' new ``metrics`` grammar."""
+
+    _STAMP = "2026-07-01T08:00:00+00:00"
+
+    def setUp(self):
+        super().setUp()
+        self._tmp = tempfile.TemporaryDirectory()
+        os.environ["RCM_MC_CONNECTORS_DB"] = self._tmp.name
+        adapter = est.adapter_for("icd10")
+        self.assertIsNotNone(adapter)
+        store = adapter.open_store(os.path.join(self._tmp.name, "icd10.db"))
+        try:
+            store.upsert("dim_icd10_code", [
+                {"code_key": "cm:E11.9", "code_type": "cm", "code": "E11.9",
+                 "name": "n1", "chapter": "4", "billable": "1",
+                 "source_endpoint": "cm", "ingested_at": self._STAMP},
+                {"code_key": "cm:E11.65", "code_type": "cm", "code": "E11.65",
+                 "name": "n2", "chapter": "4", "billable": "1",
+                 "source_endpoint": "cm", "ingested_at": self._STAMP},
+            ])
+        finally:
+            store.close()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+        super().tearDown()
+
+    def test_metrics_ride_through_the_bridge(self):
+        out = est.aggregate("icd10_cm", "chapter",
+                            metrics=["sum:billable", "avg:billable"])
+        self.assertEqual(out.get("metrics"), ["sum:billable", "avg:billable"])
+        row = out["rows"][0]
+        self.assertEqual(row["count"], 2)
+        self.assertEqual(row["sum_billable"], 2.0)
+        self.assertEqual(row["avg_billable"], 1.0)
+
+    def test_count_only_shape_unchanged_without_metrics(self):
+        out = est.aggregate("icd10_cm", "chapter")
+        self.assertEqual(out["rows"][0], {"chapter": "4", "count": 2})
+
+    def test_bad_metric_degrades_to_empty_like_other_bridge_errors(self):
+        self.assertEqual(
+            est.aggregate("icd10_cm", "chapter", metrics=["median:billable"]),
+            {})
+
+
 class SingleComputationTests(_EnvGuard):
     def test_overview_computes_ingested_counts_once_per_request(self):
         # Instrument the real function with a counting pass-through (the

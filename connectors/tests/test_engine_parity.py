@@ -140,6 +140,57 @@ class EngineParityTests(unittest.TestCase):
             self.assertEqual(counts.get("9"), 1, name)
             self.assertEqual(len(res.rows), 4, name)
 
+    def test_aggregate_metrics_sum_avg_min_max_over_cast(self):
+        # ``metrics`` rides the same all-TEXT storage as the numeric range
+        # operators: values CAST to REAL ('' reads as 0.0), aliased
+        # ``{func}_{field}``, requested as "func:field" strings or
+        # (func, field) pairs — identically in all 16 engines.
+        for name, adapter, store, dataset, pk, col in self._each():
+            res = adapter.aggregate(
+                store, dataset, group_by=[pk],
+                metrics=[f"sum:{col}", f"avg:{col}", ("min", col),
+                         f"MAX:{col}"])
+            d = res.as_dict()
+            self.assertEqual(d["metrics"],
+                             [f"sum:{col}", f"avg:{col}", f"min:{col}",
+                              f"max:{col}"], name)
+            by_pk = {r[pk]: r for r in d["rows"]}
+            for func in ("sum", "avg", "min", "max"):
+                self.assertEqual(by_pk["k3"][f"{func}_{col}"], 40.0, name)
+            self.assertEqual(by_pk["k1"][f"sum_{col}"], 9.0, name)
+            # Documented CAST trade-off: the empty-string row reads 0.0.
+            self.assertEqual(by_pk["k4"][f"sum_{col}"], 0.0, name)
+            for r in d["rows"]:
+                self.assertEqual(r["count"], 1, name)
+
+    def test_aggregate_metrics_roll_up_within_groups(self):
+        for name, adapter, store, dataset, pk, col in self._each():
+            res = adapter.aggregate(store, dataset, group_by=[col],
+                                    filters={f"{col}__in": "9,10,40"},
+                                    metrics=[f"sum:{col}"])
+            got = {r[col]: r[f"sum_{col}"] for r in res.rows}
+            self.assertEqual(got, {"9": 9.0, "10": 10.0, "40": 40.0}, name)
+
+    def test_aggregate_without_metrics_shape_unchanged(self):
+        for name, adapter, store, dataset, pk, col in self._each():
+            res = adapter.aggregate(store, dataset, group_by=[col])
+            d = res.as_dict()
+            self.assertEqual(d["metrics"], [], name)
+            for r in d["rows"]:
+                self.assertEqual(set(r), {col, "count"}, name)
+
+    def test_aggregate_metric_validation_raises_query_error(self):
+        for name, adapter, store, dataset, pk, col in self._each():
+            with self.assertRaises(adapter.QueryError, msg=name):
+                adapter.aggregate(store, dataset, group_by=[col],
+                                  metrics=[f"median:{col}"])
+            with self.assertRaises(adapter.QueryError, msg=name):
+                adapter.aggregate(store, dataset, group_by=[col],
+                                  metrics=["sum:definitely_not_a_column"])
+            with self.assertRaises(adapter.QueryError, msg=name):
+                adapter.aggregate(store, dataset, group_by=[col],
+                                  metrics=["sum"])  # no field part
+
     def test_every_registered_dataset_queries_cleanly_when_empty(self):
         # The declarative long tail: a misspelled target_table or bad
         # source_filter in any registry row would break here without a

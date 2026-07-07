@@ -124,7 +124,7 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
             filters[k] = v
     try:
         res = aggregate(store, args.dataset, group_by=args.group_by.split(","),
-                        filters=filters, limit=args.limit)
+                        filters=filters, metrics=args.metric, limit=args.limit)
     except QueryError as exc:
         print(f"aggregate error: {exc}", file=sys.stderr)
         return 2
@@ -182,6 +182,8 @@ def build_parser() -> argparse.ArgumentParser:
     agg.add_argument("dataset")
     agg.add_argument("--group-by", required=True, help="comma-separated columns")
     agg.add_argument("--filter", action="append")
+    agg.add_argument("--metric", action="append",
+                     help="func:field metric (sum/avg/min/max; repeatable)")
     agg.add_argument("--limit", type=int, default=50)
     agg.set_defaults(func=cmd_aggregate)
 

@@ -123,6 +123,70 @@ class HttpGrammarTests(_ServerCase):
                          {"r1", "r2"})
 
 
+class MetricsOverHttpTests(_ServerCase):
+    def _seed_events(self):
+        self.stores["openfda"].upsert("fact_drug_adverse_event", [
+            {"safetyreportid": "r1", "patient_age": "9",
+             "occurcountry": "US", "source_endpoint": "drug_event"},
+            {"safetyreportid": "r2", "patient_age": "10",
+             "occurcountry": "US", "source_endpoint": "drug_event"},
+            {"safetyreportid": "r3", "patient_age": "40",
+             "occurcountry": "FR", "source_endpoint": "drug_event"},
+        ])
+
+    def test_metric_param_computes_sum_avg_over_http(self):
+        self._seed_events()
+        status, body = self._get(
+            "/v1/query/openfda_drug_event/aggregate"
+            "?group_by=occurcountry&metric=sum:patient_age,avg:patient_age")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["metrics"],
+                         ["sum:patient_age", "avg:patient_age"])
+        by_country = {r["occurcountry"]: r for r in body["rows"]}
+        self.assertEqual(by_country["US"]["count"], 2)
+        self.assertEqual(by_country["US"]["sum_patient_age"], 19.0)
+        self.assertEqual(by_country["US"]["avg_patient_age"], 9.5)
+        self.assertEqual(by_country["FR"]["sum_patient_age"], 40.0)
+
+    def test_metric_param_absent_keeps_count_only_shape(self):
+        self._seed_events()
+        status, body = self._get(
+            "/v1/query/openfda_drug_event/aggregate?group_by=occurcountry")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["metrics"], [])
+        for r in body["rows"]:
+            self.assertEqual(set(r), {"occurcountry", "count"})
+
+    def test_bad_metric_specs_return_400_with_error_shape(self):
+        self._seed_events()
+        for q in ("metric=median:patient_age", "metric=sum:nope",
+                  "metric=sum"):
+            status, body = self._get(
+                f"/v1/query/openfda_drug_event/aggregate"
+                f"?group_by=occurcountry&{q}")
+            self.assertEqual(status, 400, q)
+            self.assertIn("error", body, q)
+
+
+class ParamHardeningTests(_ServerCase):
+    def test_junk_limit_on_lookup_route_never_500s(self):
+        # npi_registry's taxonomy lookup takes ?limit= through the unified
+        # binder; a non-numeric value must clamp, not ValueError → 500.
+        status, body = self._get("/v1/lookup/taxonomy/207Q00000X?limit=abc")
+        self.assertEqual(status, 200)
+        self.assertIsInstance(body, dict)
+
+    def test_junk_limit_on_query_clamps_to_default(self):
+        status, body = self._get("/v1/query/openfda_drug_event?limit=abc")
+        self.assertEqual(status, 200)
+        self.assertEqual(body["limit"], 50)
+
+    def test_unknown_filter_field_is_a_400_not_500(self):
+        status, body = self._get("/v1/query/openfda_drug_event?bogus=1")
+        self.assertEqual(status, 400)
+        self.assertIn("error", body)
+
+
 class LookupBinderCoverageTests(_ServerCase):
     def test_every_lookup_route_binds_through_the_unified_server(self):
         # Data-driven over the live route tables so the 17th connector is

@@ -34,7 +34,7 @@ from ._spi import (
     CONNECTOR_NAMES, Adapter, invoke_handler, load_all, match_template,
 )
 
-_RESERVED = {"select", "sort", "limit", "offset", "group_by"}
+_RESERVED = {"select", "sort", "limit", "offset", "group_by", "metric"}
 
 
 def _parse_query(qs: Dict[str, List[str]]) -> Dict[str, Any]:
@@ -47,6 +47,7 @@ def _parse_query(qs: Dict[str, List[str]]) -> Dict[str, Any]:
         "limit": flat.get("limit", 50),
         "offset": flat.get("offset", 0),
         "group_by": flat["group_by"].split(",") if flat.get("group_by") else None,
+        "metrics": flat["metric"].split(",") if flat.get("metric") else None,
     }
 
 
@@ -187,7 +188,8 @@ def build_handler(stores: Dict[str, Any],
                 if not p["group_by"]:
                     return self._send(400, {"error": "aggregate requires group_by"})
                 res = adapter.aggregate(store, dataset, group_by=p["group_by"],
-                                        filters=p["filters"], limit=p["limit"])
+                                        filters=p["filters"], limit=p["limit"],
+                                        metrics=p.get("metrics"))
                 return self._send(200, res.as_dict())
             if len(parts) == 3:
                 res = adapter.query(store, dataset, filters=p["filters"],

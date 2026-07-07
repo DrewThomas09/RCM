@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional
 from .connector import CensusAcsConnector
 from .endpoints import DEFAULT_YEAR
 from .lookup import lookup_county_demographics, lookup_state_demographics
-from .query import QueryError, query
+from .query import QueryError, aggregate, query
 from .registry import registry_as_dicts
 from .tables import CensusAcsStore
 from .transport import CensusAcsApiError
@@ -92,6 +92,27 @@ def cmd_query(args: argparse.Namespace) -> int:
     _print(res.as_dict())
     return 0
 
+def cmd_aggregate(args: argparse.Namespace) -> int:
+    store = CensusAcsStore(args.db)
+    filters: Dict[str, Any] = {}
+    for f in args.filter or []:
+        if "=" not in f:
+            print(f"bad --filter {f!r}; expected field=value or field__op=value",
+                  file=sys.stderr)
+            return 2
+        k, v = f.split("=", 1)
+        filters[k] = v
+    try:
+        res = aggregate(store, args.dataset, group_by=args.group_by.split(","),
+                        filters=filters, metrics=args.metric, limit=args.limit)
+    except QueryError as exc:
+        print(f"aggregate error: {exc}", file=sys.stderr)
+        return 2
+    finally:
+        store.close()
+    _print(res.as_dict())
+    return 0
+
 
 def cmd_lookup_county(args: argparse.Namespace) -> int:
     store = CensusAcsStore(args.db)
@@ -145,6 +166,15 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--limit", type=int, default=50)
     q.add_argument("--offset", type=int, default=0)
     q.set_defaults(func=cmd_query)
+
+    agg = sub.add_parser("aggregate")
+    agg.add_argument("dataset")
+    agg.add_argument("--group-by", required=True, help="comma-separated columns")
+    agg.add_argument("--filter", action="append")
+    agg.add_argument("--metric", action="append",
+                     help="func:field metric (sum/avg/min/max; repeatable)")
+    agg.add_argument("--limit", type=int, default=50)
+    agg.set_defaults(func=cmd_aggregate)
 
     lc = sub.add_parser("lookup-county")
     lc.add_argument("fips5")

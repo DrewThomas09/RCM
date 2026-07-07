@@ -134,13 +134,24 @@ def sponsor_activity(
     )
 
 
-def multiple_band_by_specialty() -> Dict[str, Dict[str, float]]:
+#: Specialty rollups with fewer observed multiples than this carry
+#: ``small_sample: True`` — the curated library holds a handful of
+#: deals per specialty, and a "median" of two or three multiples is a
+#: reference point, not a market statistic. The count was already
+#: disclosed; the flag encodes the floor so consumers don't each pick
+#: their own.
+SMALL_SAMPLE_N: int = 5
+
+
+def multiple_band_by_specialty() -> Dict[str, Dict[str, Any]]:
     """Roll-up: per specialty, median / min / max of observed
     EV/EBITDA multiples in the library.
 
     ``statistics.median`` (not the upper middle element) because the
     per-specialty samples here are tiny — on n=2 with 8.0x/12.0x the
     upper-element pick read 12.0x, overstating the median by two turns.
+    Each rollup carries ``count`` and ``small_sample`` (n <
+    ``SMALL_SAMPLE_N``) so the tiny-n caveat travels with the number.
     """
     by_sp: Dict[str, List[float]] = {}
     for t in list_transactions():
@@ -148,7 +159,7 @@ def multiple_band_by_specialty() -> Dict[str, Dict[str, float]]:
             by_sp.setdefault(t.specialty, []).append(
                 float(t.ev_ebitda_multiple),
             )
-    out: Dict[str, Dict[str, float]] = {}
+    out: Dict[str, Dict[str, Any]] = {}
     for sp, mults in by_sp.items():
         mults.sort()
         out[sp] = {
@@ -156,5 +167,6 @@ def multiple_band_by_specialty() -> Dict[str, Dict[str, float]]:
             "median": statistics.median(mults),
             "min": mults[0],
             "max": mults[-1],
+            "small_sample": len(mults) < SMALL_SAMPLE_N,
         }
     return out

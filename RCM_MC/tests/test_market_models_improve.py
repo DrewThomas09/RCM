@@ -922,5 +922,315 @@ class ContentContractTests(unittest.TestCase):
             self.assertGreaterEqual(r.replacement_weeks, 0, r.role)
 
 
+# ════════════════════════════════════════════════════════════════════
+# ROUND 2 — n= disclosure, vintage flow, missing-mass, median-vs-mean
+# ════════════════════════════════════════════════════════════════════
+
+class R2NDisclosureTests(unittest.TestCase):
+    """Every percentile/share statistic must carry its n and a
+    documented small-sample floor."""
+
+    def test_category_band_payload_carries_constituent_count(self):
+        from rcm_mc.market_intel import category_bands
+        bands = category_bands()
+        for cat, band in bands.items():
+            d = band.to_dict()
+            self.assertEqual(
+                d["constituent_count"], len(band.constituents), cat)
+        # The fixture's own worst case: a single-ticker "range".
+        self.assertEqual(
+            bands["RURAL_ACUTE_HOSPITAL"].constituent_count, 1)
+
+    def test_peer_snapshot_discloses_band_n_and_indicative_flag(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        single = compute_peer_snapshot(
+            category="RURAL_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000)
+        self.assertEqual(single.peer_constituent_count, 1)
+        self.assertTrue(single.peer_band_indicative)
+        self.assertIn("single public constituent", single.summary)
+        d = single.to_dict()
+        self.assertEqual(d["peer_constituent_count"], 1)
+        self.assertTrue(d["peer_band_indicative"])
+
+        multi = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000)
+        self.assertEqual(multi.peer_constituent_count, 3)
+        self.assertFalse(multi.peer_band_indicative)
+        self.assertNotIn("single public constituent", multi.summary)
+
+    def test_peer_snapshot_without_band_leaves_n_none(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(category="NO_SUCH_CATEGORY")
+        self.assertIsNone(s.peer_constituent_count)
+        self.assertIsNone(s.peer_band_indicative)
+
+    def test_transaction_band_small_sample_re_derived(self):
+        from rcm_mc.market_intel import SMALL_SAMPLE_FLOOR
+        from rcm_mc.market_intel.transaction_multiples import (
+            _load, list_specialty_bands,
+        )
+        specialties = {
+            str(r.get("specialty", "")).upper()
+            for r in _load().get("bands") or ()
+        }
+        checked = 0
+        for sp in specialties:
+            for band in list_specialty_bands(sp):
+                self.assertEqual(
+                    band.small_sample,
+                    band.sample_size < SMALL_SAMPLE_FLOOR,
+                    f"{sp}/{band.deal_size_band}")
+                self.assertIn("small_sample", band.to_dict())
+                checked += 1
+        self.assertGreater(checked, 10)
+
+    def test_small_sample_true_and_false_both_occur_in_fixture(self):
+        from rcm_mc.market_intel import transaction_multiple
+        em = transaction_multiple(specialty="EMERGENCY_MEDICINE")
+        self.assertTrue(em.small_sample)          # n=4 in the fixture
+        big = transaction_multiple(specialty="MULTI_SITE_PHYSICIAN_GROUP")
+        self.assertFalse(big.small_sample)        # n=42 largest sample
+
+    def test_small_sample_flows_into_peer_snapshot_band_payload(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+            specialty="EMERGENCY_MEDICINE")
+        self.assertIn("small_sample", s.transaction_band)
+        self.assertTrue(s.transaction_band["small_sample"])
+
+    def test_pe_library_rollup_small_sample_re_derived(self):
+        from rcm_mc.market_intel.pe_transactions import (
+            SMALL_SAMPLE_N, multiple_band_by_specialty,
+        )
+        bands = multiple_band_by_specialty()
+        self.assertTrue(bands)
+        for sp, row in bands.items():
+            self.assertEqual(
+                row["small_sample"], row["count"] < SMALL_SAMPLE_N, sp)
+        # The curated library is tiny per specialty — the floor must
+        # actually bite somewhere or the flag is decorative.
+        self.assertTrue(any(r["small_sample"] for r in bands.values()))
+
+    def test_fit_panel_n_disclosed_on_every_row(self):
+        from rcm_mc.data_public.market_concentration import (
+            state_growth_summary, state_portfolio_fit,
+        )
+        df = pd.DataFrame([
+            {"state": s, "year": y, "total_medicare_payment_amt": v}
+            for s, vals in {"TX": [100, 120], "CA": [200, 210],
+                            "NY": [300, 280]}.items()
+            for y, v in zip([2022, 2023], vals)
+        ])
+        fit = state_portfolio_fit(
+            state_growth_summary(df), pd.DataFrame(), pd.DataFrame())
+        self.assertIn("fit_panel_n", fit.columns)
+        self.assertTrue((fit["fit_panel_n"] == 3).all())
+
+
+class R2VintageFlowTests(unittest.TestCase):
+    """The curated YAMLs' review dates must travel WITH the numbers —
+    a payload without its as-of date reads as live market data."""
+
+    def test_labor_stress_carries_content_vintage(self):
+        from rcm_mc.market_intel import labor_cost_stress
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        expected = content_vintage("labor_market")["last_reviewed"]
+        self.assertIsNotNone(expected)
+        s = labor_cost_stress(1_000_000, {"RN": 100})
+        self.assertEqual(s.content_last_reviewed, expected)
+        # Empty-mix early return carries it too.
+        empty = labor_cost_stress(1_000_000, {"NOPE": 100})
+        self.assertEqual(empty.content_last_reviewed, expected)
+
+    def test_blended_impact_vintage_only_for_curated_calendar(self):
+        from rcm_mc.market_intel import blended_rate_impact
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        from rcm_mc.market_intel.rate_environment import (
+            RateUpdate, SettingRates,
+        )
+        expected = content_vintage("rate_updates")["last_reviewed"]
+        self.assertIsNotNone(expected)
+        b = blended_rate_impact(1_000_000, {"IPPS": 100})
+        self.assertEqual(b.content_last_reviewed, expected)
+        # Injected settings: the YAML's vintage says nothing about
+        # them, so a false as-of date must NOT be stamped.
+        injected = [SettingRates(
+            setting="IPPS", label="x", cycle="FY",
+            updates=[RateUpdate("FY2027", 2.0, "FINAL")])]
+        b2 = blended_rate_impact(
+            1_000_000, {"IPPS": 100}, settings=injected)
+        self.assertIsNone(b2.content_last_reviewed)
+
+    def test_footprint_payload_carries_vintage_on_both_paths(self):
+        from rcm_mc.market_intel import footprint_exposure
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        expected = content_vintage("ma_penetration")["last_reviewed"]
+        self.assertEqual(
+            footprint_exposure(["FL", "TX"])["content_last_reviewed"],
+            expected)
+        self.assertEqual(
+            footprint_exposure(["ZZ"])["content_last_reviewed"],
+            expected)
+
+    def test_find_comparables_carries_vintage_on_both_paths(self):
+        from rcm_mc.market_intel import find_comparables
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        expected = content_vintage("public_comps")["last_reviewed"]
+        hit = find_comparables(target_category="DIALYSIS")
+        self.assertEqual(hit["content_last_reviewed"], expected)
+        miss = find_comparables(target_category="NO_SUCH_CATEGORY")
+        self.assertEqual(miss["content_last_reviewed"], expected)
+
+    def test_peer_snapshot_vintages_match_accessor(self):
+        from rcm_mc.market_intel import compute_peer_snapshot
+        from rcm_mc.market_intel.content_vintage import content_vintage
+        s = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+            specialty="ANESTHESIOLOGY")
+        self.assertEqual(
+            set(s.content_vintages),
+            {"public_comps", "news_feed", "transaction_multiples"})
+        for name, v in s.content_vintages.items():
+            self.assertEqual(
+                v["last_reviewed"],
+                content_vintage(name)["last_reviewed"], name)
+            self.assertIn("stale", v)
+        # Present in the JSON payload the API forwards.
+        self.assertIn("content_vintages", s.to_dict())
+        # Without a specialty only the comps YAML is read.
+        s2 = compute_peer_snapshot(
+            category="MULTI_SITE_ACUTE_HOSPITAL",
+            target_ev_usd=350_000_000, target_ebitda_usd=35_000_000)
+        self.assertEqual(set(s2.content_vintages), {"public_comps"})
+
+    def test_vendor_adapter_band_not_stamped_with_fixture_vintage(self):
+        """A vendor adapter serves its own data — stamping the curated
+        YAML's date on it would be a false provenance claim."""
+        from rcm_mc.market_intel import compute_peer_snapshot, set_adapter
+        from rcm_mc.market_intel.transaction_multiples import MultipleBand
+
+        class FakeVendorAdapter:
+            def public_comps(self):
+                return []
+
+            def transaction_multiple(self, *, specialty, ev_usd=None):
+                return MultipleBand(
+                    specialty=specialty, deal_size_band="VENDOR",
+                    p25_ev_ebitda=7.0, p50_ev_ebitda=9.0,
+                    p75_ev_ebitda=11.0, sample_size=99)
+
+            def news_for_target(self, *, specialty=None, tickers=None,
+                                limit=20):
+                return []
+
+        prev = set_adapter(FakeVendorAdapter())
+        try:
+            s = compute_peer_snapshot(
+                category="MULTI_SITE_ACUTE_HOSPITAL",
+                target_ev_usd=350_000_000, target_ebitda_usd=35_000_000,
+                specialty="ANESTHESIOLOGY")
+            self.assertNotIn("transaction_multiples", s.content_vintages)
+            self.assertIn("public_comps", s.content_vintages)
+        finally:
+            set_adapter(prev)
+
+
+class R2MissingMassTests(unittest.TestCase):
+    """Share math over observed mass only must disclose the excluded
+    mass — a pull where 20% of the dollars carry no category cannot
+    masquerade as a full-coverage HHI."""
+
+    def _df(self):
+        return pd.DataFrame([
+            {"state": "TX", "year": 2023, "provider_type": "Cardiology",
+             "npi": "1", "total_medicare_payment_amt": 100.0},
+            {"state": "TX", "year": 2023, "provider_type": "Ortho",
+             "npi": "2", "total_medicare_payment_amt": 300.0},
+            # Known dollars, unknown category/provider — the missing
+            # mass under test.
+            {"state": "TX", "year": 2023, "provider_type": None,
+             "npi": None, "total_medicare_payment_amt": 100.0},
+            {"state": "CA", "year": 2023, "provider_type": "Cardiology",
+             "npi": "3", "total_medicare_payment_amt": 50.0},
+        ])
+
+    def test_mix_summary_excluded_mass_re_derived(self):
+        from rcm_mc.data_public import market_concentration_summary
+        out = market_concentration_summary(self._df())
+        tx = out[out["state"] == "TX"].iloc[0]
+        # Shares over OBSERVED mass: 100/400 and 300/400.
+        self.assertAlmostEqual(tx["hhi"], 0.25 ** 2 + 0.75 ** 2)
+        self.assertAlmostEqual(tx["total_payment"], 400.0)
+        self.assertAlmostEqual(tx["excluded_payment"], 100.0)
+        # Excluded ÷ (observed + excluded) = 100/500.
+        self.assertAlmostEqual(tx["excluded_payment_share"], 0.2)
+        ca = out[out["state"] == "CA"].iloc[0]
+        self.assertAlmostEqual(ca["excluded_payment"], 0.0)
+        self.assertAlmostEqual(ca["excluded_payment_share"], 0.0)
+
+    def test_competitor_summary_excluded_mass_re_derived(self):
+        from rcm_mc.data_public import competitor_concentration_summary
+        out = competitor_concentration_summary(self._df())
+        tx = out[out["state"] == "TX"].iloc[0]
+        self.assertEqual(int(tx["provider_count"]), 2)
+        self.assertAlmostEqual(tx["excluded_payment"], 100.0)
+        self.assertAlmostEqual(tx["excluded_payment_share"], 0.2)
+
+    def test_no_missing_mass_reports_zero(self):
+        from rcm_mc.data_public import market_concentration_summary
+        df = self._df().dropna(subset=["provider_type"])
+        out = market_concentration_summary(df)
+        self.assertTrue((out["excluded_payment"] == 0.0).all())
+        self.assertTrue((out["excluded_payment_share"] == 0.0).all())
+
+    def test_export_available_from_data_public_package(self):
+        import rcm_mc.data_public as dp
+        self.assertTrue(callable(dp.competitor_concentration_summary))
+        self.assertIn("competitor_concentration_summary", dp.__all__)
+
+    def test_payer_shift_unknown_payers_disclosed(self):
+        from rcm_mc.data_public.payer_shift import (
+            _PAYER_RATE_INDEX, compute_payer_shift,
+        )
+        r = compute_payer_shift(
+            starting_mix={"commercial": 0.5, "space_credits": 0.5})
+        self.assertEqual(r.unknown_payers, ["space_credits"])
+        self.assertNotIn("space_credits", _PAYER_RATE_INDEX)
+        # Defaults are all modelled payers — nothing to disclose.
+        self.assertEqual(compute_payer_shift().unknown_payers, [])
+
+
+class R2MedianVsMeanTests(unittest.TestCase):
+    """Skewed panels need the median beside the mean."""
+
+    def test_msa_median_hhi_re_derived(self):
+        from rcm_mc.data_public.msa_concentration import (
+            compute_msa_concentration,
+        )
+        r = compute_msa_concentration()
+        expected = int(statistics.median(m.hhi for m in r.msa_details))
+        self.assertEqual(r.median_hhi, expected)
+        # The panel's fertility outlier (4,250) drags the mean above
+        # the median — the exact skew the median is there to resist.
+        self.assertGreater(r.avg_hhi, r.median_hhi)
+
+    def test_geo_tier_median_population_re_derived(self):
+        from rcm_mc.data_public.geo_market import compute_geo_market
+        r = compute_geo_market()
+        self.assertTrue(r.tiers)
+        by_tier = {}
+        for m in r.markets:
+            by_tier.setdefault(m.tier, []).append(m.population_k)
+        for t in r.tiers:
+            self.assertEqual(
+                t.median_population_k,
+                round(statistics.median(by_tier[t.tier]), 0), t.tier)
+
+
 if __name__ == "__main__":
     unittest.main()

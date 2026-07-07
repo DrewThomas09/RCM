@@ -93,8 +93,22 @@ class CategoryBand:
     constituents: List[str] = field(default_factory=list)
     note: Optional[str] = None
 
+    @property
+    def constituent_count(self) -> int:
+        """How many named public constituents anchor this band.
+
+        Disclosed because the p25/median/p75 "peer range" reads like a
+        distribution, but several categories on the lattice are backed
+        by one or two tickers (RURAL_ACUTE_HOSPITAL is a single CYH) —
+        at that n the band is a curated analyst curve, not observed
+        spread, and every consumer of the range needs the n to say so.
+        """
+        return len(self.constituents)
+
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__.copy()
+        d = self.__dict__.copy()
+        d["constituent_count"] = self.constituent_count
+        return d
 
 
 def _load() -> Dict[str, Any]:
@@ -235,7 +249,15 @@ def find_comparables(
     When ``target_revenue_usd`` is supplied, we also score by
     absolute-revenue-difference to surface size-proximate comps
     first; otherwise we return all same-category comps.
+
+    The envelope carries ``content_last_reviewed`` (the curated
+    YAML's review date) so every consumer inherits the vintage with
+    the numbers — a comps table without its as-of date reads as live
+    market data when it is a quarterly-refreshed fixture.
     """
+    from .content_vintage import content_vintage
+
+    reviewed = content_vintage("public_comps")["last_reviewed"]
     all_comps = list_companies()
     category = (target_category or "").upper()
     matches = [c for c in all_comps if c.category == category]
@@ -249,6 +271,7 @@ def find_comparables(
                 f"{category!r}. Refer to transaction_multiples for "
                 f"private-market benchmarks."
             ),
+            "content_last_reviewed": reviewed,
         }
     if target_revenue_usd and target_revenue_usd > 0:
         target_rev_bn = target_revenue_usd / 1_000_000_000
@@ -261,4 +284,5 @@ def find_comparables(
         "category": category,
         "comps": [c.to_dict() for c in matches[:top_n]],
         "band": band.to_dict() if band else None,
+        "content_last_reviewed": reviewed,
     }

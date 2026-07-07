@@ -112,6 +112,12 @@ class BlendedImpact:
     # a material slice of the revenue base is an unrecognized setting.
     unrecognized_share_pct: float = 0.0
     unrecognized_codes: List[str] = field(default_factory=list)
+    # Review date of the curated rate calendar the blend was priced
+    # from — ``None`` when the caller injected its own ``settings``
+    # (the YAML's vintage says nothing about injected data, and a
+    # false as-of date is worse than none). Carried on the payload so
+    # the dollar impact travels with its refresh date.
+    content_last_reviewed: Optional[str] = None
 
 
 def blended_rate_impact(
@@ -137,6 +143,12 @@ def blended_rate_impact(
     YAML — the current calendar is all-FINAL, which is precisely when
     a status-dropping regression would go unnoticed.
     """
+    from .content_vintage import content_vintage
+
+    reviewed = (
+        content_vintage("rate_updates")["last_reviewed"]
+        if settings is None else None
+    )
     known = {k.upper(): v for k, v in setting_mix.items() if v and v > 0}
     rates = {s.setting: s for s in (settings if settings is not None
                                     else list_settings())}
@@ -152,7 +164,8 @@ def blended_rate_impact(
     if not rows or total_share <= 0:
         return BlendedImpact(medicare_revenue_usd, 0.0, 0.0, [],
                              unrecognized_share_pct=unrecognized_share,
-                             unrecognized_codes=unrecognized)
+                             unrecognized_codes=unrecognized,
+                             content_last_reviewed=reviewed)
 
     per_setting: List[Dict[str, Any]] = []
     blended = 0.0
@@ -185,4 +198,5 @@ def blended_rate_impact(
         has_proposed=has_proposed,
         unrecognized_share_pct=unrecognized_share,
         unrecognized_codes=unrecognized,
+        content_last_reviewed=reviewed,
     )

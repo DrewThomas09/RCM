@@ -92,6 +92,12 @@ class LaborStress:
     # unmatched rather than silently misattributed.
     unrecognized_share_pct: float = 0.0
     unrecognized_codes: List[str] = field(default_factory=list)
+    # Review date of the curated wage panel the blend was priced from.
+    # Carried on the payload because the stress number reads as a live
+    # market read while the panel refreshes quarterly — the vintage
+    # must travel with the dollars, not sit in a separate accessor the
+    # page may never call.
+    content_last_reviewed: Optional[str] = None
 
 
 def labor_cost_stress(
@@ -111,6 +117,9 @@ def labor_cost_stress(
     renormalized; the dropped mass is reported via
     ``unrecognized_share_pct`` / ``unrecognized_codes`` so a
     genuinely-different mix can't masquerade as a fully-priced one."""
+    from .content_vintage import content_vintage
+
+    reviewed = content_vintage("labor_market")["last_reviewed"]
     known = {k.upper(): v for k, v in role_mix.items() if v and v > 0}
     roles = {r.role: r for r in list_roles()}
     rows = [(k, v, roles[k]) for k, v in known.items() if k in roles]
@@ -125,7 +134,8 @@ def labor_cost_stress(
     if not rows or total <= 0:
         return LaborStress(labor_cost_usd, 0.0, 0.0, 0.0, [],
                            unrecognized_share_pct=unrecognized_share,
-                           unrecognized_codes=unrecognized)
+                           unrecognized_codes=unrecognized,
+                           content_last_reviewed=reviewed)
 
     per_role: List[Dict[str, Any]] = []
     blended = 0.0
@@ -152,4 +162,5 @@ def labor_cost_stress(
         per_role=per_role,
         unrecognized_share_pct=unrecognized_share,
         unrecognized_codes=unrecognized,
+        content_last_reviewed=reviewed,
     )

@@ -477,18 +477,26 @@ def ck_grouped_bar(
             f'text-anchor="middle" font-family="{_MONO}" font-size="10.5" '
             f'fill="{_DIM}">{_html.escape(_trunc(cat, 12))}</text>'
         )
-    # legend (top)
-    lx = L
+    # legend (top) — wraps to a second row instead of walking off the
+    # 560px frame when many/long series names overflow (the row-1 layout
+    # is byte-identical whenever one row fits; row 2 still clears the
+    # plot top at T=40).
+    lx, swatch_y, text_y = L, 14.0, 22.0
     for name, _vals, color in series:
+        item_w = 22 + min(16, len(name)) * 6.2
+        if lx > L and lx + item_w > W - R:
+            lx, swatch_y, text_y = L, swatch_y + 13.0, text_y + 13.0
         parts.append(
-            f'<rect x="{lx:.1f}" y="14" width="9" height="9" rx="1.5" fill="{color}"/>'
+            f'<rect x="{lx:.1f}" y="{swatch_y:g}" width="9" height="9" '
+            f'rx="1.5" fill="{color}"/>'
         )
         parts.append(
-            f'<text x="{lx + 13:.1f}" y="22" font-family="{_MONO}" font-size="10" '
+            f'<text x="{lx + 13:.1f}" y="{text_y:g}" font-family="{_MONO}" '
+            f'font-size="10" '
             f'fill="{_DIM}"><title>{_html.escape(name)}</title>'
             f'{_html.escape(_trunc(name, 16))}</text>'
         )
-        lx += 22 + min(16, len(name)) * 6.2
+        lx += item_w
     parts.append("</svg>")
     return ck_chart_card(
         title, "".join(parts), source=source, subtitle=subtitle,
@@ -660,10 +668,13 @@ letter-spacing:.04em;text-transform:uppercase;color:""" + _TEAL + """;
 background:transparent;border:1px solid """ + _RULE + """;border-radius:3px;
 padding:3px 9px;cursor:pointer;transition:background 90ms,color 90ms;white-space:nowrap;}
 .ck-chart-dl:hover{background:""" + _TEAL + """;color:#fff;border-color:""" + _TEAL + """;}
+.ck-chart-dl:focus-visible{outline:2px solid """ + _TEAL + """;outline-offset:2px;}
 .ck-chart-src{font-family:""" + _MONO + """;font-size:9px;color:""" + _FAINT + """;
 margin-top:7px;}
 .ck-chart-note{font-size:11px;color:""" + _DIM + """;margin-top:6px;line-height:1.5;}
 @media (max-width:640px){.ck-chart-grid{grid-template-columns:1fr;}}
+@media print{.ck-chart-dl{display:none;}
+.ck-chart-card{break-inside:avoid;page-break-inside:avoid;}}
 </style>
 <script>
 (function(){

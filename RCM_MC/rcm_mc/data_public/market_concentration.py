@@ -63,6 +63,18 @@ def market_concentration_summary(df: pd.DataFrame) -> pd.DataFrame:
     use the 10,000-point convention — a consumer joining the two tables
     misread 0.18 vs 1,800 by four orders of magnitude before ``hhi_10k``
     was added.
+
+    Missing-mass disclosure: rows whose payment is known but whose
+    ``provider_type`` is missing are EXCLUDED from the share
+    denominator, so the shares (and therefore HHI/CR3/CR5) describe
+    only the categorised dollars. Each market row carries
+    ``excluded_payment`` (those known-but-uncategorised dollars) and
+    ``excluded_payment_share`` (excluded ÷ (observed + excluded)) so a
+    pull where 30% of the money has no category cannot masquerade as a
+    full-coverage concentration read. Rows CMS suppressed at source
+    never reach the frame at all — observed shares are upper bounds on
+    true shares, which the caller must remember when reading HHI as
+    precise.
     """
     required = {"state", "provider_type", "total_medicare_payment_amt"}
     if not required.issubset(df.columns):
@@ -72,6 +84,14 @@ def market_concentration_summary(df: pd.DataFrame) -> pd.DataFrame:
     if "year" not in work.columns:
         work["year"] = "all"
     _to_numeric_cols(work, ["total_medicare_payment_amt"])
+    # Ledger of known-but-uncategorised mass, per market (see
+    # docstring) — computed before the dropna that discards it.
+    payment_known = work.dropna(subset=["state", "total_medicare_payment_amt"])
+    dropped = payment_known[payment_known["provider_type"].isna()]
+    excluded_by_market = (
+        dropped.groupby(["state", "year"])["total_medicare_payment_amt"].sum()
+        if not dropped.empty else {}
+    )
     work = work.dropna(subset=["state", "provider_type", "total_medicare_payment_amt"])
     if work.empty:
         return pd.DataFrame()
@@ -88,6 +108,10 @@ def market_concentration_summary(df: pd.DataFrame) -> pd.DataFrame:
             continue
         shares = (g["total_medicare_payment_amt"] / total).sort_values(ascending=False)
         hhi = float((shares ** 2).sum())
+        excluded = (
+            float(excluded_by_market.get((state, year), 0.0))
+            if len(excluded_by_market) else 0.0
+        )
         rows.append(
             {
                 "state": state,
@@ -98,6 +122,10 @@ def market_concentration_summary(df: pd.DataFrame) -> pd.DataFrame:
                 "cr3": float(shares.head(3).sum()),
                 "cr5": float(shares.head(5).sum()),
                 "total_payment": float(total),
+                "excluded_payment": excluded,
+                "excluded_payment_share": float(
+                    excluded / (total + excluded)
+                ),
             }
         )
 
@@ -124,8 +152,17 @@ def competitor_concentration_summary(
     number masquerading as a competitor screen.
 
     Output columns mirror :func:`market_concentration_summary`
-    (``hhi`` 0-1, ``hhi_10k``, ``cr3``, ``cr5``, ``total_payment``)
-    with ``provider_count`` in place of ``provider_type_count``.
+    (``hhi`` 0-1, ``hhi_10k``, ``cr3``, ``cr5``, ``total_payment``,
+    ``excluded_payment``, ``excluded_payment_share``) with
+    ``provider_count`` in place of ``provider_type_count``.
+
+    Missing-mass disclosure matters MORE here than in the mix summary:
+    CMS suppresses low-volume providers at source and rows with a
+    payment but no provider id are excluded from the share
+    denominator, both of which overstate the observed players' shares
+    — so this HHI is an upper bound. ``excluded_payment_share``
+    quantifies the second effect per market; the first is invisible in
+    the input and stays a documented caveat.
     """
     required = {"state", provider_col, "total_medicare_payment_amt"}
     if not required.issubset(df.columns):
@@ -135,6 +172,12 @@ def competitor_concentration_summary(
     if "year" not in work.columns:
         work["year"] = "all"
     _to_numeric_cols(work, ["total_medicare_payment_amt"])
+    payment_known = work.dropna(subset=["state", "total_medicare_payment_amt"])
+    dropped = payment_known[payment_known[provider_col].isna()]
+    excluded_by_market = (
+        dropped.groupby(["state", "year"])["total_medicare_payment_amt"].sum()
+        if not dropped.empty else {}
+    )
     work = work.dropna(subset=["state", provider_col, "total_medicare_payment_amt"])
     if work.empty:
         return pd.DataFrame()
@@ -151,6 +194,10 @@ def competitor_concentration_summary(
             continue
         shares = (g["total_medicare_payment_amt"] / total).sort_values(ascending=False)
         hhi = float((shares ** 2).sum())
+        excluded = (
+            float(excluded_by_market.get((state, year), 0.0))
+            if len(excluded_by_market) else 0.0
+        )
         rows.append(
             {
                 "state": state,
@@ -161,6 +208,10 @@ def competitor_concentration_summary(
                 "cr3": float(shares.head(3).sum()),
                 "cr5": float(shares.head(5).sum()),
                 "total_payment": float(total),
+                "excluded_payment": excluded,
+                "excluded_payment_share": float(
+                    excluded / (total + excluded)
+                ),
             }
         )
 
@@ -325,6 +376,10 @@ def state_portfolio_fit(
     Missing component values rank neutral (0.5) rather than dragging a
     state to the floor. ``state_fit_score`` is therefore bounded 0-1;
     ``state_fit_percentile`` remains the stable cross-version output.
+    ``fit_panel_n`` discloses how many states were ranked — a "90th
+    percentile" over a three-state pull is a rank among three, and the
+    memo consumer can only weigh the percentile correctly with the n
+    beside it.
 
     Note the fragmentation input is the provider-type MIX HHI from
     :func:`market_concentration_summary` — a service-line-diversity
@@ -383,6 +438,8 @@ def state_portfolio_fit(
         + 0.10 * fit["fragmentation_rank"]
     )
     fit["state_fit_percentile"] = _percentile_rank(fit["state_fit_score"])
+    # n= disclosure for the percentile columns (see docstring).
+    fit["fit_panel_n"] = len(fit)
     return fit.sort_values("state_fit_score", ascending=False).reset_index(drop=True)
 
 

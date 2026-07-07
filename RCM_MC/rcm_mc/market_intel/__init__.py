@@ -63,11 +63,13 @@ from .pe_transactions import (
     sponsor_activity, transactions_for_specialty,
 )
 from .transaction_multiples import (
-    MultipleBand, list_specialty_bands, transaction_multiple,
+    SMALL_SAMPLE_FLOOR, MultipleBand, list_specialty_bands,
+    transaction_multiple,
 )
 
 __all__ = [
     "ASSUMED_EBITDA_MARGIN",
+    "SMALL_SAMPLE_FLOOR",
     "AnalystCoverage",
     "CategoryBand",
     "content_freshness_report",

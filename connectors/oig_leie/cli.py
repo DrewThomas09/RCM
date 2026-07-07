@@ -38,7 +38,7 @@ from typing import Any, Dict, List, Optional
 from .connector import DEFAULT_MAX_ROWS, OigLeieConnector
 from .endpoints import ENDPOINTS
 from .lookup import lookup_exclusion, lookup_exclusion_name
-from .query import QueryError, query
+from .query import QueryError, aggregate, query
 from .registry import registry_as_dicts
 from .tables import OigLeieStore
 
@@ -120,6 +120,25 @@ def cmd_query(args: argparse.Namespace) -> int:
     _print(res.as_dict())
     return 0
 
+def cmd_aggregate(args: argparse.Namespace) -> int:
+    store = _store(args)
+    filters: Dict[str, Any] = {}
+    for f in args.filter or []:
+        if "=" not in f:
+            print(f"bad --filter {f!r}; expected field=value or field__op=value",
+                  file=sys.stderr)
+            return 2
+        k, v = f.split("=", 1)
+        filters[k] = v
+    try:
+        res = aggregate(store, args.dataset, group_by=args.group_by.split(","),
+                        filters=filters, metrics=args.metric, limit=args.limit)
+    except QueryError as exc:
+        print(f"aggregate error: {exc}", file=sys.stderr)
+        return 2
+    _print(res.as_dict())
+    return 0
+
 
 def cmd_lookup_exclusion(args: argparse.Namespace) -> int:
     _print(lookup_exclusion(_store(args), args.npi, args.limit))
@@ -173,6 +192,15 @@ def build_parser() -> argparse.ArgumentParser:
     q.add_argument("--limit", type=int, default=50)
     q.add_argument("--offset", type=int, default=0)
     q.set_defaults(func=cmd_query)
+
+    agg = sub.add_parser("aggregate")
+    agg.add_argument("dataset")
+    agg.add_argument("--group-by", required=True, help="comma-separated columns")
+    agg.add_argument("--filter", action="append")
+    agg.add_argument("--metric", action="append",
+                     help="func:field metric (sum/avg/min/max; repeatable)")
+    agg.add_argument("--limit", type=int, default=50)
+    agg.set_defaults(func=cmd_aggregate)
 
     le = sub.add_parser("lookup-exclusion")
     le.add_argument("npi")

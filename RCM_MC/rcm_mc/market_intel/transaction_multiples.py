@@ -10,6 +10,15 @@ import yaml
 
 CONTENT_DIR = Path(__file__).parent / "content"
 
+#: Bands whose trailing-12-month sample is below this are flagged
+#: ``small_sample`` — p25/p75 quartiles over a single-digit deal count
+#: identify a neighborhood, not a distribution, and several fixture
+#: rows sit at n=4-9 (EMERGENCY_MEDICINE is 4). The flag travels with
+#: the band (peer snapshot ``transaction_band``, API) so a consumer
+#: can render "directional" instead of quoting the quartiles as if
+#: they were market structure.
+SMALL_SAMPLE_FLOOR: int = 10
+
 
 @dataclass
 class MultipleBand:
@@ -30,6 +39,9 @@ class MultipleBand:
     # OVER_500M band reads as "the" multiple to downstream consumers
     # (peer snapshot, API) unless the mismatch travels with the row.
     match_basis: str = "size_band"
+    # n= disclosure: True when sample_size < SMALL_SAMPLE_FLOOR — see
+    # the constant's note for why quartiles need this caveat.
+    small_sample: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__.copy()
@@ -59,14 +71,16 @@ def list_specialty_bands(specialty: str) -> List[MultipleBand]:
     for row in data.get("bands") or ():
         if str(row.get("specialty", "")).upper() != sp:
             continue
+        n = int(row.get("sample_size_trailing_12_mo", 0) or 0)
         out.append(MultipleBand(
             specialty=sp,
             deal_size_band=str(row.get("deal_size_band", "")),
             p25_ev_ebitda=float(row.get("p25_ev_ebitda", 0)),
             p50_ev_ebitda=float(row.get("p50_ev_ebitda", 0)),
             p75_ev_ebitda=float(row.get("p75_ev_ebitda", 0)),
-            sample_size=int(row.get("sample_size_trailing_12_mo", 0) or 0),
+            sample_size=n,
             note=row.get("note"),
+            small_sample=n < SMALL_SAMPLE_FLOOR,
         ))
     return out
 

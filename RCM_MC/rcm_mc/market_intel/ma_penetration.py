@@ -109,11 +109,20 @@ def footprint_exposure(
     shouldn't 500 the page). Weights are renormalized over the
     recognized states; states missing from a supplied ``weights``
     mapping get zero weight (they contribute footprint presence but no
-    revenue)."""
+    revenue).
+
+    The payload carries ``content_last_reviewed`` (the curated KFF/CMS
+    cut's review date) — the one-number exposure read must travel with
+    its vintage, because penetration shifts every annual enrollment
+    cycle and a year-old read silently misprices the MA regime."""
+    from .content_vintage import content_vintage
+
+    reviewed = content_vintage("ma_penetration")["last_reviewed"]
     rows = [s for s in (get_state(st) for st in states) if s is not None]
     if not rows:
         return {"states": [], "avg_penetration_pct": 0.0, "band": "LOW",
-                "vs_national_pp": 0.0, "weighting": "equal"}
+                "vs_national_pp": 0.0, "weighting": "equal",
+                "content_last_reviewed": reviewed}
 
     weighting = "equal"
     state_dicts = [s.to_dict() for s in rows]
@@ -138,4 +147,5 @@ def footprint_exposure(
         "band": _band(avg),
         "vs_national_pp": round(avg - national_penetration_pct(), 1),
         "weighting": weighting,
+        "content_last_reviewed": reviewed,
     }

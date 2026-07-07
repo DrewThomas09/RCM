@@ -33,7 +33,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .endpoints import (CATALOG_PATH, ENDPOINTS, EndpointSpec,
                         datastore_path)
-from .normalize import normalize
+from .normalize import normalize, slice_signature
 from .transport import (DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, Opener,
                         ProviderDataTransport)
 
@@ -249,6 +249,7 @@ class ProviderDataConnector:
         result = self.fetch(dataset, params, opener=opener,
                             max_pages=max_pages, page_size=page_size,
                             conditions=conditions)
+        replace_sig = None
         if spec.kind == "curated":
             norm = normalize(spec, result.rows)
         else:
@@ -263,12 +264,23 @@ class ProviderDataConnector:
             norm = normalize(spec, result.rows, dataset_key=identifier,
                              start_idx=result.start_offset,
                              slice_params=slice_params)
-        written = store.upsert(spec.target_table,
-                               norm.rows.get(spec.target_table, []))
+            if result.start_offset == 0 and not result.truncated:
+                # Complete pull from offset 0 → replace the slice
+                # atomically (see replace_slice) instead of stranding
+                # stale trailing row_idx rows from a larger earlier pull.
+                replace_sig = slice_signature(slice_params)
+        if replace_sig is not None:
+            written = store.replace_slice(
+                spec.target_table, identifier,
+                norm.rows.get(spec.target_table, []), slice_sig=replace_sig)
+        else:
+            written = store.upsert(spec.target_table,
+                                   norm.rows.get(spec.target_table, []))
         return {"dataset_id": spec.dataset_id, "table": spec.target_table,
                 "dataset_key": identifier, "fetched": len(result.rows),
                 "upserted": written, "total": result.total,
                 "pages": result.pages, "truncated": result.truncated,
+                "replaced": replace_sig is not None,
                 "unmapped": dict(norm.unmapped)}
 
 

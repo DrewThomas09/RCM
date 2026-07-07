@@ -12,6 +12,7 @@ merger-guideline convention).
 """
 from __future__ import annotations
 
+import statistics
 from dataclasses import dataclass
 from typing import List
 
@@ -90,6 +91,12 @@ class MSAResult:
     # UI page (exports, assistant context, future APIs) inherits the
     # caveat instead of unlabelled numbers.
     is_illustrative: bool = True
+    # Median HHI beside the mean: the panel's HHI distribution is
+    # right-skewed (a 4,250 fertility market against a 380 home-health
+    # market), so the mean overstates the typical market's
+    # concentration — median is the robust central read. Additive
+    # field; ``avg_hhi`` stays for back-compat.
+    median_hhi: int = 0
 
 
 def _load_corpus() -> List[dict]:
@@ -211,6 +218,7 @@ def compute_msa_concentration() -> MSAResult:
     high = sum(1 for m in msas if m.market_structure == "highly concentrated")
 
     avg_hhi = int(sum(m.hhi for m in msas) / len(msas)) if msas else 0
+    median_hhi = int(statistics.median(m.hhi for m in msas)) if msas else 0
     avg_cr3 = sum(m.cr3_pct for m in msas) / len(msas) if msas else 0
 
     return MSAResult(
@@ -219,6 +227,7 @@ def compute_msa_concentration() -> MSAResult:
         moderately_concentrated_count=moderate,
         highly_concentrated_count=high,
         avg_hhi=avg_hhi,
+        median_hhi=median_hhi,
         avg_cr3_pct=round(avg_cr3, 4),
         msa_details=msas,
         regimes=regimes,
