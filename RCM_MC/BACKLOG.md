@@ -19,7 +19,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | 7 | **P13 insight-bullet primitive** — template+significance-guard engine (suppress <0.5pp deltas); apply to /portfolio + state market page; copy-to-clipboard | 31 | 10 bullets read against panels: zero unsupported claims; guard test (tiny delta → no bullet) |
 | 8 | **P1 deal switcher** — active-deal context in nav (cookie/session), screener/X-Ray/market pre-scope to deal geography; deal home links back | 31 | Create real-CCN deal, confirm 3 modules open pre-scoped; tests on context carry |
 | 9 | **B in-UI model card** — holdout coverage + calibration summary for ridge+conformal on /methodology + predictive screener footer ("90% conformal band covered 89.3% on 2024 holdout") | 30 | Numbers reproduced by a checked-in script; never claims AI/LLM; test asserts wording |
-| 10 | **H demo-deal realism** — rebuild 1 of 5 seeded demo deals on a real named CCN (real HCRIS metrics as observed_metrics; ENTERED→ACTUAL relabel where sourced) | 29 | Seeded deal's metrics match HCRIS row for that CCN; provenance chip names CCN; walker clean |
+| 10 | ✅ DONE — H demo-deal realism (sth rebuilt as White Plains Hospital, CCN 330304: HCRIS values as sourced observed_metrics; ENTERED→ACTUAL relabel where sourced; CCN named on deal surfaces) | — | LOG W4-006 |
 | 11 | ✅ DONE — P12 entity jump (Cmd-K 6-digit CCN → HCRIS X-Ray); name search deferred (needs backend index) | — | LOG #17 |
 | 12 | ✅ DONE — P5 ExhibitFactory v1 (+ corpus-seed batching perf fix found in pre-commit suite) | — | LOG #11 |
 | 13 | ✅ DONE — P9 vintage-diff snapshots on saved screens (+ fixed session-username bug that hid the whole owner panel) | — | LOG #18 |

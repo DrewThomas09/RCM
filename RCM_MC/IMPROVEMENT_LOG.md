@@ -4907,3 +4907,38 @@ three-valued-logic guards.
 **Verify**: F601/F602/B033 now clear across `rcm_mc`; `compileall` clean;
 `classify_carc("18")` → PAYER_BEHAVIOR; data-universe/chartis-kit/denial/
 benchmark/monte-carlo suites **1292 passed** (785 + 507) / 2 skipped.
+
+## W4-006 (2026-07-07) — BACKLOG #10: demo-deal realism — sth rebuilt on real CCN 330304
+One of the five demo.py deals is now a REAL facility, not a fiction: `sth`
+IS **White Plains Hospital** (CCN 330304, NY, FY2022) — graduated from the
+composite-anchor treatment to a full rebuild.
+- **demo.py**: at seed time the deal's name + financial observed_metrics
+  load from the live vendored HCRIS frame (never hardcoded copies that can
+  drift): net_revenue $884.69M, 292 beds, +8.7% patient-basis operating
+  margin ((NPR − opex)/NPR, the screener's formula), 39.4% Medicare share.
+  Each carries the nested ObservedMetric shape with `source="HCRIS"` +
+  `source_detail="CMS HCRIS CCN 330304 FY2022"`, plus flat copies for the
+  flat-key readers; `hcris_ccn`/`hcris_fy`/`metrics_basis="ACTUAL — …"`
+  recorded. RCM workflow metrics (denial/collection) stay explicitly
+  illustrative — HCRIS files no such fields. Frame-unavailable → fictional
+  fallback so the demo always boots.
+- **ENTERED→ACTUAL relabel where sourced**: deal_quick_view + deal_dashboard
+  now badge a metric ACTUAL iff its observed_metrics entry names a filing
+  source (HCRIS/IRS990) — per-metric, never per-deal, so the illustrative
+  denial rate on the SAME deal keeps its ENTERED badge. Sub-lines/chips name
+  the CCN ("filed HCRIS · CCN 330304"); the quick view gains a "Real
+  facility" provenance card (X-Ray-linked CCN + which metrics are filed);
+  the snapshot deal page's identity meta names "HCRIS CCN 330304 · FY2022".
+  dev/seed.py's mvm_2026 (CCN 450358) gains the same sourced
+  observed_metrics shape so both seeders agree on provenance.
+- **Found + fixed while verifying (route walker)**: /portfolio rendered a
+  literal "nan" in Avg Denial / Avg Days-in-AR once ANY deal carried nested
+  observed_metrics — `_expand_profiles` adds every profile-metric column
+  (possibly all-empty), and `mean()` of an empty column is NaN, which is
+  truthy AND passes `is not None`. KPI aggregation now maps NaN→None ("—").
+**Verify**: tests/test_demo_real_ccn.py (13: seeded values == HCRIS row
+loaded independently; relabel only where sourced; CCN chips on quick view /
+dashboard / snapshot page; portfolio nan guard); test_dev_seed extended for
+the sourced shape. demo/seed/renderer suites 57 + 29 + 78 + 68 passed; HTTP
+E2E on a demo-seeded server (/deal/sth, /analysis/sth, /portfolio: 200s, CCN
+named, no leaks); full route walk re-run clean of the nan finding.

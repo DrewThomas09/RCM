@@ -687,16 +687,30 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     snaps = list_snapshots(store, deal_id=deal_id)
 
     # Friendly deal-name lookup so the page title reads
-    # "Cypress Crossing Health" instead of "ccf".
+    # "Cypress Crossing Health" instead of "ccf". Workstream H: a deal
+    # rebuilt on a real CCN also carries hcris_ccn/hcris_fy in its
+    # profile — surfaced in the identity meta below so the filed
+    # provenance is on the page, not just on the model dashboard.
     deal_name = deal_id
+    _hcris_ccn = ""
+    _hcris_fy = None
     try:
         with store.connect() as _con:
             row = _con.execute(
-                "SELECT name FROM deals WHERE deal_id = ? LIMIT 1",
+                "SELECT name, profile_json FROM deals "
+                "WHERE deal_id = ? LIMIT 1",
                 (deal_id,),
             ).fetchone()
             if row and row["name"]:
                 deal_name = row["name"]
+            if row and row["profile_json"]:
+                import json as _ddj
+                _prof = _ddj.loads(row["profile_json"]) or {}
+                _hcris_ccn = str(_prof.get("hcris_ccn") or "")
+                try:
+                    _hcris_fy = int(_prof.get("hcris_fy"))
+                except (TypeError, ValueError):
+                    _hcris_fy = None
     except Exception:
         pass
 
@@ -955,6 +969,13 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
             f"{deal_id} · "
             f"stage: {str(stage).title()} · "
             f"{len(snaps)} snapshot{'s' if len(snaps) != 1 else ''}"
+            # Workstream H — a real-CCN deal names its filing in the
+            # identity line: the numbers trace to a cost report.
+            + (
+                f" · HCRIS CCN {html.escape(_hcris_ccn)}"
+                + (f" · FY{_hcris_fy}" if _hcris_fy else "")
+                if _hcris_ccn else ""
+            )
         ),
     )
     action_row = (
