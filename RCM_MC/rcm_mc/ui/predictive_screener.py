@@ -177,7 +177,8 @@ def _model_card_line() -> str:
         'color:var(--sc-text-dim,#6a7480);">Modeling discipline: the '
         f'platform&rsquo;s margin model publishes a holdout model card — its '
         f'{nominal:.0%} conformal band covered {cov:.1%} on {n:,} held-out '
-        f'filings (<a class="ck-link" href="/methodology">model card</a>). '
+        f'filings (<a class="ck-link" href="/methodology/calculations">'
+        f'model card</a>). '
         'The Est. columns on THIS page are simpler screening formulas — '
         'each column&rsquo;s &ldquo;?&rdquo; shows the exact math.</span>')
 

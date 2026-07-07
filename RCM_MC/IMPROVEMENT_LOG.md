@@ -5106,3 +5106,56 @@ caveat wording; no external calls with rings on; state-detail plumb-
 through for "15"/bogus/none). Existing pin-map families untouched and
 green: 43 passed (new + test_hospital_coords + test_market_data_map +
 test_market_data_drilldown); broad map/market sweep 664 passed.
+
+## W4-011 (2026-07-07) — completeness audit: the whole scored backlog is closed
+A multi-agent audit re-verified every BACKLOG.md item against the actual
+code and a PASSING real-path test (no trusting checkmarks), then closed the
+one gap it found. The top scored block (#2–#9, #15) is now marked
+✅ DONE in-place with the verifying test/route beside each row, so the file
+no longer reads half-open.
+- **All 9 top-block scored specs VERIFIED against real routes + real data**
+  (not smoke imports): #2 CIM Cross-Check (tests/test_cim_crosscheck.py, 30
+  passed; claims at ±7/18/40% fire green/yellow/red exactly on real TX
+  HCRIS, every estimate row sourced, memo+CSV export, no LLM) →
+  /diligence/cim-crosscheck; #3 Roll-Up Builder
+  (tests/test_rollup_scenario.py, 13 passed; combined beds/days/NPR + HHI
+  before/after hand-matched to raw TX CCNs 450076/450068/450358) →
+  /pipeline/rollup; #4 percentile chip (tests/test_peer_percentile.py, 10
+  passed; ties half-credit + NaN-drop + n<8 honesty guard) → deal
+  quick-view + CIM P4b chip; #5 DQ dashboard (tests/test_data_quality_page
+  .py + _gap_chart, 15 passed; every gap row == `rcm-mc data gaps`, live
+  row counts == loaders) → /data-quality; #6 facility→rule exposure
+  (tests/test_regulatory_exposure.py, 7 passed; provider-type + state
+  scoping, every headline cites a rule URL) → /diligence/hcris-xray; #7
+  insight-bullet primitive (tests/test_insight_bullets.py, 7 passed;
+  <0.5pp deltas suppressed at the 0.15/0.6pp boundary, copy-to-clipboard,
+  4 pages wired) → /portfolio + state market + metro/county; #8 deal
+  switcher (tests/test_deal_context.py + _prefill, 15 passed; real-CCN deal
+  opens 4 modules pre-scoped, open-redirect guard, params-win) →
+  /deal-context; #15 empty-state sweep (tests/test_empty_state_sweep.py, 3
+  passed; permanent gate over empty-db + ?state=ZZ variants via
+  route_walker markers).
+- **One gap found and finished — #9 in-UI model card.** Implementation
+  (methodology panel + screener footer, numbers reproduced by
+  scripts/eval_margin_model.py) was present but lacked an explicit test
+  pinning the "never claims AI/LLM" wording the spec requires. Added
+  tests/test_model_card_no_ai.py (drives render_methodology / the screener
+  footer and asserts the card content carries no AI/LLM claim, distinct
+  from unrelated Cmd-K palette chrome) and a small predictive_screener.py
+  touch. Combined model-card run now 12 passed. #9 → VERIFIED.
+- **Refill rows (#16–#36) confirmed still DONE** with their existing
+  LOG/W-refs; nothing ambiguous remained.
+- **Remaining open work is legitimately NETWORK-GATED, not parked** (kept
+  intact in BACKLOG.md "Groomed-out / blocked"): (1) Medicaid S-3 re-ingest
+  + POS bed backfill — loaders + data.cms.gov URLs named in
+  gap_fill_registry, runnable when egress opens; (2) ONC CHPL HCIT wiring —
+  api named in FEATURE_MATRIX E, page renders ck_illustrative_note until a
+  source connects; (3) P9 per-CCN CHOW diff alerts — vendored snf_chow is
+  state×year aggregate, per-CCN feed named in the gap registry. A meta-scan
+  of BACKLOG/FEATURE_MATRIX/IMPROVEMENT_LOG + a TODO/FIXME/NotImplementedError
+  grep over rcm_mc/ surfaced no other offline-actionable backlog work; the
+  remaining stubs are phase-tagged deferrals or external-connector shapes.
+**Net:** every non-network-gated backlog item is VERIFIED against a passing
+real-path test. Report-only auditors edited nothing; the only code change
+was the #9 no-AI test (+ its screener touch); this reconcile pass edited
+BACKLOG.md and this log.
