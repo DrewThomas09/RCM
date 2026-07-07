@@ -432,6 +432,12 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
 
 
 def _stats(cfg: Dict[str, Any]) -> str:
+    """Summary KPI strip — ``ck_kpi_block`` row replacing the legacy
+    hand-rolled mini-tiles. Mean and median are BOTH formatted to 1dp
+    (they used to mix ``round(x, 1)`` with raw ``%g``, so '50.5' could
+    sit beside '50'). ``ck_kpi_block`` does not escape value/sub, so
+    the two user-derived state codes pass through ``html.escape``
+    here, upstream."""
     vals = {k: v for k, v in cfg["values"].items() if v is not None}
     if not vals:
         return ""
@@ -441,91 +447,258 @@ def _stats(cfg: Dict[str, Any]) -> str:
     median = (nums[n // 2] if n % 2 else (nums[n // 2 - 1] + nums[n // 2]) / 2)
     hi_code = max(vals, key=lambda k: vals[k])
     lo_code = min(vals, key=lambda k: vals[k])
-
-    def _cell(label: str, value: str) -> str:
-        return (
-            f'<div style="border:1px solid #d6cfc0;border-radius:6px;'
-            f'background:#fbf9f4;padding:8px 14px;min-width:108px;">'
-            f'<div style="font-size:10px;letter-spacing:0.06em;'
-            f'color:#7a8699;font-weight:700;">{label}</div>'
-            f'<div class="num" style="font-family:{_SERIF};font-size:17px;'
-            f'font-weight:700;color:#1a2332;">{value}</div></div>')
+    coverage = ck_provenance_tooltip(
+        "States covered",
+        f'{ck_fmt_number(n)}<span class="em-kpi-of"> / '
+        f'{len(STATE_NAMES)}</span>',
+        explainer=(
+            f"Jurisdictions with a supplied value, out of the "
+            f"{len(STATE_NAMES)} the map draws (50 states + DC + PR). "
+            "States without a value render in neutral grey."),
+    )
+    mean_v = ck_provenance_tooltip(
+        "Mean", f"{ck_fmt_number(mean, precision=1)}%",
+        explainer=(
+            "Unweighted arithmetic mean of the supplied values — states "
+            "are not population-weighted."),
+        inject_css=False,
+    )
+    median_v = ck_provenance_tooltip(
+        "Median", f"{ck_fmt_number(median, precision=1)}%",
+        explainer=(
+            "Middle of the sorted supplied values (mean of the two "
+            "middle values when the count is even)."),
+        inject_css=False,
+    )
     return (
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">'
-        + _cell("STATES", f"{n} / {len(STATE_NAMES)}")
-        + _cell("HIGHEST", f"{html.escape(hi_code)} · {_fmt(vals[hi_code])}")
-        + _cell("LOWEST", f"{html.escape(lo_code)} · {_fmt(vals[lo_code])}")
-        + _cell("MEAN", _fmt(round(mean, 1)))
-        + _cell("MEDIAN", _fmt(median))
+        '<div class="ck-kpi-grid em-kpis">'
+        + ck_kpi_block("States", coverage, "with a supplied value")
+        + ck_kpi_block(
+            "Highest",
+            f"{html.escape(hi_code)} · {_fmt(vals[hi_code])}%",
+            html.escape(STATE_NAMES.get(hi_code, "")))
+        + ck_kpi_block(
+            "Lowest",
+            f"{html.escape(lo_code)} · {_fmt(vals[lo_code])}%",
+            html.escape(STATE_NAMES.get(lo_code, "")))
+        + ck_kpi_block("Mean", mean_v, "unweighted")
+        + ck_kpi_block("Median", median_v, "50th percentile")
         + '</div>')
 
 
 def _form(cfg: Dict[str, Any]) -> str:
-    def _color(label, name, val):
+    """Configure-map panel — kit-styled via the namespaced ``.em-form``
+    classes emitted in ``_map_css_js``. The GET method IS the product
+    feature (config-in-URL sharing), so the action and every input
+    name are contract: ``low``/``mid``/``high`` colour pickers,
+    ``lo``/``midv``/``hi`` domain, ``title``, ``data`` paste — as is
+    the 'Render map' submit copy (pinned by tests)."""
+    def _color(label: str, name: str, val: str) -> str:
         return (
-            f'<label style="display:flex;flex-direction:column;gap:3px;'
-            f'font-size:11px;color:#465366;">{label}'
-            f'<input type="color" name="{name}" value="{html.escape(val)}" '
-            f'style="width:54px;height:30px;border:1px solid #c9c1ac;'
-            f'border-radius:4px;padding:0;background:#fff;"></label>')
+            f'<label class="em-field"><span class="em-field-label">'
+            f'{label}</span>'
+            f'<input type="color" name="{name}" '
+            f'value="{html.escape(val)}"></label>')
 
-    def _num(label, name, val):
+    def _num(label: str, name: str, val: float) -> str:
         return (
-            f'<label style="display:flex;flex-direction:column;gap:3px;'
-            f'font-size:11px;color:#465366;">{label}'
-            f'<input type="text" name="{name}" value="{html.escape(_fmt(val))}" '
-            f'inputmode="decimal" style="width:70px;height:28px;'
-            f'border:1px solid #c9c1ac;border-radius:4px;padding:0 6px;'
-            f'font-family:{_SERIF};"></label>')
+            f'<label class="em-field"><span class="em-field-label">'
+            f'{label}</span>'
+            f'<input type="text" class="em-num-input" name="{name}" '
+            f'value="{html.escape(_fmt(val))}" inputmode="decimal">'
+            f'</label>')
     return (
-        f'<form method="get" action="/excel-mapping" '
-        f'style="border:1px solid #d6cfc0;border-radius:6px;padding:14px 16px;'
-        f'background:#fbf9f4;margin-bottom:16px;">'
-        f'<div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">'
+        '<form method="get" action="/excel-mapping" class="em-form">'
+        + ck_eyebrow("Configure map")
+        + '<div class="em-form-grid">'
         + _color("Low colour", "low", cfg["c_low"])
         + _color("Mid colour", "mid", cfg["c_mid"])
         + _color("High colour", "high", cfg["c_high"])
         + _num("Low value", "lo", cfg["lo"])
         + _num("Mid value", "midv", cfg["mid"])
         + _num("High value", "hi", cfg["hi"])
-        + f'<label style="display:flex;flex-direction:column;gap:3px;'
-        f'font-size:11px;color:#465366;flex:1 1 180px;">Map title (optional, '
-        f'drawn on the export)'
-        f'<input type="text" name="title" value="{html.escape(cfg["title"])}" '
-        f'maxlength="80" placeholder="e.g. MA penetration by state, 2025" '
-        f'style="height:28px;border:1px solid #c9c1ac;border-radius:4px;'
-        f'padding:0 8px;font-family:{_SERIF};"></label>'
+        + '<label class="em-field em-title-field">'
+          '<span class="em-field-label">Map title · drawn on the '
+          'export</span>'
+          f'<input type="text" class="em-title-input" name="title" '
+          f'value="{html.escape(cfg["title"])}" maxlength="80" '
+          f'placeholder="e.g. MA penetration by state, 2025"></label>'
         + '</div>'
-        + f'<div style="margin-top:12px;"><label style="font-size:11px;'
-        f'color:#465366;">Percentages (paste from Excel — '
-        f'<code>STATE&nbsp;VALUE</code> per line; tab, comma, or space)'
-        f'<textarea name="data" rows="5" style="width:100%;margin-top:4px;'
-        f'font-family:ui-monospace,Menlo,monospace;font-size:12px;'
-        f'border:1px solid #c9c1ac;border-radius:4px;padding:8px;" '
-        f'placeholder="TX\t61&#10;CA\t63&#10;New York\t60">'
-        f'{html.escape(cfg["data_text"])}</textarea></label></div>'
-        + f'<button type="submit" style="margin-top:10px;padding:8px 18px;'
-        f'background:#0b2341;color:#fff;border:none;border-radius:4px;'
-        f'font-weight:600;cursor:pointer;">Render map</button>'
-        f'<a href="/excel-mapping" style="margin-left:10px;font-size:12px;'
-        f'color:#1F7A75;">Reset to defaults</a>'
-        f'</form>')
+        + '<label class="em-data-label">'
+          '<span class="em-field-label">Percentages · one state per '
+          'line</span> '
+          '<span class="em-data-hint">TX&nbsp;61 · TX,61 · '
+          'Texas&nbsp;61 · trailing % ok</span>'
+          f'<textarea name="data" rows="5" '
+          f'placeholder="TX\t61&#10;CA\t63&#10;New York\t60">'
+          f'{html.escape(cfg["data_text"])}</textarea></label>'
+        + '<div class="em-actions">'
+          '<button type="submit" class="em-submit">Render map</button>'
+          '<a class="em-reset" href="/excel-mapping">Reset to defaults</a>'
+          '</div>'
+        + '</form>')
 
 
 def _map_css_js() -> str:
+    """One namespaced ``<style>`` block for the whole page layer (kit
+    vars with canonical fallbacks — no page hexes off the palette)
+    plus the map's vanilla-JS behaviour. The JS binds by id to
+    ``mapOut`` / ``emTip`` / ``emSel`` / ``emLabelsToggle`` — those
+    ids are contract with the markup in ``render_excel_mapping_page``.
+    Keyboard users get the tooltip on path FOCUS (anchored to the
+    state's bounding box), not just on Enter/Space pick."""
     css = (
         '<style>'
-        '#mapOut{position:relative;}'
-        '#mapOut .em-state{transition:filter .12s,stroke .12s;cursor:pointer;}'
-        '#mapOut .em-state:hover{filter:brightness(.9);stroke:#0b2341;'
-        'stroke-width:1.4;}'
-        '#mapOut .em-state:focus-visible{outline:none;stroke:#1F7A75;'
-        'stroke-width:2;}'
-        '#mapOut .em-state.em-selected{stroke:#0b2341;stroke-width:2.4;}'
+        '.em-wrap{max-width:1010px;}'
+        # — Configure-map form —
+        '.em-form{background:var(--paper-card,#fefcf3);'
+        'border:1px solid var(--sc-rule,#d6cfc0);border-radius:6px;'
+        'padding:16px 18px 14px;margin:18px 0 16px;}'
+        '.em-form .ck-eyebrow{margin-bottom:12px;}'
+        '.em-form-grid{display:flex;gap:16px;flex-wrap:wrap;'
+        'align-items:flex-end;}'
+        '.em-field{display:flex;flex-direction:column;gap:4px;}'
+        '.em-field-label{font-family:var(--sc-mono,monospace);'
+        'font-size:10px;font-weight:600;letter-spacing:.08em;'
+        'text-transform:uppercase;color:var(--sc-text-dim,#465366);}'
+        '.em-form input[type=color]{width:54px;height:32px;'
+        'border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        'padding:2px;background:#fff;cursor:pointer;}'
+        '.em-num-input{width:78px;height:30px;padding:0 8px;'
+        'border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        'background:#fff;color:var(--ink,#16263a);'
+        'font-family:var(--sc-mono,monospace);font-size:12.5px;'
+        'font-variant-numeric:tabular-nums;}'
+        '.em-title-field{flex:1 1 200px;}'
+        '.em-title-input{height:30px;padding:0 10px;'
+        'border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        'background:#fff;color:var(--ink,#16263a);'
+        "font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);"
+        'font-size:13.5px;}'
+        '.em-data-label{display:block;margin-top:14px;}'
+        '.em-data-hint{font-family:var(--sc-mono,monospace);'
+        'font-size:10.5px;letter-spacing:.03em;'
+        'color:var(--sc-text-faint,#7a8699);}'
+        '.em-form textarea{width:100%;margin-top:5px;padding:8px 10px;'
+        'border:1px solid var(--sc-rule,#c9c1ac);border-radius:3px;'
+        'background:#fff;color:var(--ink,#16263a);'
+        'font-family:var(--sc-mono,monospace);font-size:12px;'
+        'line-height:1.55;box-sizing:border-box;}'
+        '.em-form input:focus-visible,.em-form textarea:focus-visible,'
+        '.em-form button:focus-visible,.em-form a:focus-visible'
+        '{outline:2px solid var(--green-deep,#154e36);outline-offset:2px;}'
+        '.em-actions{display:flex;align-items:center;gap:14px;'
+        'margin-top:12px;}'
+        '.em-submit{padding:8px 20px;background:var(--green-deep,#154e36);'
+        'color:#fff;border:none;border-radius:3px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:13px;'
+        'font-weight:600;letter-spacing:.02em;cursor:pointer;}'
+        '.em-submit:hover{background:var(--sc-teal,#155752);}'
+        '.em-reset{font-family:var(--sc-mono,monospace);font-size:10.5px;'
+        'font-weight:600;letter-spacing:.06em;text-transform:uppercase;'
+        'color:var(--sc-text-dim,#465366);text-decoration:none;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+        'padding-bottom:1px;}'
+        '.em-reset:hover{color:var(--sc-teal,#155752);'
+        'border-color:var(--sc-teal,#155752);}'
+        # — Parse-confidence strip —
+        '.em-parse{display:flex;align-items:center;gap:12px;'
+        'flex-wrap:wrap;margin:0 0 12px;}'
+        '.em-parse-note{font-family:var(--sc-mono,monospace);'
+        'font-size:11px;letter-spacing:.02em;'
+        'color:var(--sc-text-dim,#465366);}'
+        '.em-parse-note.warn{color:var(--sc-warning,#b8732a);}'
+        # — Meta / legend row —
+        '.em-metarow{display:flex;gap:14px;align-items:center;'
+        'flex-wrap:wrap;margin:0 0 8px;}'
+        '.em-toggle{display:inline-flex;align-items:center;gap:6px;'
+        'cursor:pointer;font-family:var(--sc-sans,Inter,sans-serif);'
+        'font-size:12.5px;color:var(--ink-2,#2b3e54);}'
+        '.em-toggle input{accent-color:var(--green-deep,#154e36);}'
+        '#emSel{display:none;font-family:var(--sc-mono,monospace);'
+        'font-size:11px;font-weight:600;letter-spacing:.04em;'
+        'color:var(--green-deep,#154e36);'
+        'background:var(--paper-card,#fefcf3);'
+        'border:1px solid var(--green-deep,#154e36);border-radius:2px;'
+        'padding:3px 10px;}'
+        '.em-hint{font-family:var(--sc-mono,monospace);font-size:11px;'
+        'letter-spacing:.02em;color:var(--sc-text-dim,#465366);}'
+        # — Map card (the SVG keeps its own inline frame so SVG/PNG
+        #   exports stay self-contained; the card is the on-page mat) —
+        '.em-mapcard{background:var(--paper-card,#fefcf3);'
+        'border:1px solid var(--sc-rule,#d6cfc0);border-radius:6px;'
+        'padding:14px 14px 10px;}'
+        '.em-chart-caption{margin-top:9px;'
+        'font-family:var(--sc-mono,monospace);font-size:10px;'
+        'letter-spacing:.08em;text-transform:uppercase;'
+        'color:var(--sc-text-dim,#5C6878);text-align:center;}'
+        '#mapOut{position:relative;'
+        "font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);}"
+        '#mapOut .em-state{transition:filter .12s,stroke .12s;'
+        'cursor:pointer;}'
+        '#mapOut .em-state:hover{filter:brightness(.9);'
+        'stroke:var(--sc-navy,#0b2341);stroke-width:1.4;}'
+        '#mapOut .em-state:focus-visible{outline:none;'
+        'stroke:var(--sc-teal,#1F7A75);stroke-width:2;}'
+        '#mapOut .em-state.em-selected{stroke:var(--sc-navy,#0b2341);'
+        'stroke-width:2.4;}'
         '#emTip{display:none;position:absolute;pointer-events:none;'
-        'background:#0b2341;color:#fff;font-size:12px;padding:5px 10px;'
-        'border-radius:4px;white-space:nowrap;z-index:5;'
-        'box-shadow:0 2px 8px rgba(11,35,65,.25);}'
+        'background:var(--sc-navy,#0b2341);color:#fff;'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:12px;'
+        'padding:5px 10px;border-radius:4px;white-space:nowrap;'
+        'z-index:5;box-shadow:0 2px 8px rgba(11,35,65,.25);}'
+        # — KPI strip —
+        '.em-kpis{margin:16px 0 4px;}'
+        '.em-kpi-of{font-size:14px;color:var(--sc-text-faint,#7a8699);'
+        'font-weight:400;}'
+        # — Values table —
+        '.em-tablewrap{max-height:480px;overflow-y:auto;'
+        'border:1px solid var(--sc-rule,#d6cfc0);border-radius:4px;'
+        'background:var(--paper-card,#fefcf3);margin-top:10px;}'
+        '.em-table{border-collapse:collapse;width:100%;font-size:12.5px;'
+        'font-family:var(--sc-sans,Inter,sans-serif);}'
+        '.em-table thead th{position:sticky;top:0;z-index:1;'
+        'background:var(--paper-card,#fefcf3);'
+        'font-family:var(--sc-mono,monospace);font-size:9.5px;'
+        'font-weight:600;letter-spacing:.08em;text-transform:uppercase;'
+        'color:var(--sc-text-dim,#465366);text-align:left;padding:8px;'
+        'border-bottom:2px solid var(--sc-rule,#c9c1ac);}'
+        '.em-table thead th.num,.em-table td.num{text-align:right;}'
+        '.em-table td{padding:4px 8px;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+        'color:var(--ink,#16263a);}'
+        '.em-table tbody tr:nth-child(even){'
+        'background:var(--sc-bone,#f2ede3);}'
+        '.em-table tbody tr:hover{background:var(--bg,#efeadd);}'
+        '.em-td-rank{font-family:var(--sc-mono,monospace);'
+        'font-variant-numeric:tabular-nums;'
+        'color:var(--sc-text-faint,#7a8699);}'
+        '.em-td-val{font-family:var(--sc-mono,monospace);font-weight:600;'
+        'font-variant-numeric:tabular-nums;}'
+        '.em-swatch{display:inline-block;width:11px;height:11px;'
+        'border-radius:2px;border:1px solid var(--sc-rule,#c9c1ac);'
+        'margin-right:7px;vertical-align:-1px;}'
+        '.em-state-name{color:var(--sc-text-dim,#465366);'
+        'font-size:11.5px;}'
+        '.em-bar{display:block;width:72px;height:3px;'
+        'margin:3px 0 1px auto;border-radius:2px;'
+        'background:var(--sc-bone,#f2ede3);overflow:hidden;}'
+        '.em-bar-fill{display:block;height:100%;border-radius:2px;}'
+        # — Bottom grid + help prose —
+        '.em-grid2{display:grid;'
+        'grid-template-columns:repeat(auto-fit,minmax(340px,1fr));'
+        'gap:28px;margin-top:26px;align-items:start;}'
+        '.em-help p{'
+        "font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);"
+        'font-size:13.5px;line-height:1.65;color:var(--ink,#16263a);'
+        'margin:10px 0 0;max-width:64ch;}'
+        '.em-help code{font-family:var(--sc-mono,monospace);'
+        'font-size:12px;background:var(--sc-bone,#f2ede3);'
+        'padding:1px 4px;border-radius:2px;}'
+        '.em-help em{color:var(--green-deep,#154e36);}'
+        '@media print{.em-form,.em-metarow{display:none;}'
+        '#mapOut svg{print-color-adjust:exact;'
+        '-webkit-print-color-adjust:exact;}}'
         '</style>')
     js = (
         "<script>(function(){"
@@ -543,6 +716,15 @@ def _map_css_js() -> str:
         "tip.style.left=(e.clientX-r.left+16)+'px';"
         "tip.style.top=(e.clientY-r.top-8)+'px';});"
         "p.addEventListener('mouseleave',function(){"
+        "tip.style.display='none';});"
+        # focus/blur — keyboard parity with the mouse hover readout.
+        "p.addEventListener('focus',function(){"
+        "tip.textContent=tipText(p);tip.style.display='block';"
+        "var r=root.getBoundingClientRect();"
+        "var b=p.getBoundingClientRect();"
+        "tip.style.left=(b.left-r.left+b.width/2)+'px';"
+        "tip.style.top=(b.top-r.top-10)+'px';});"
+        "p.addEventListener('blur',function(){"
         "tip.style.display='none';});"
         "function pick(){var was=p.classList.contains('em-selected');"
         "root.querySelectorAll('.em-selected').forEach(function(o){"
@@ -562,101 +744,184 @@ def _map_css_js() -> str:
 
 
 def _data_table(cfg: Dict[str, Any]) -> str:
+    """Ranked 51-row values table, kit idiom: sticky mono-caps header
+    (the wrapper div scrolls, so the header must pin), zebra rows,
+    right-aligned mono tabular-nums values, and — per row — the
+    gradient swatch plus a proportional micro-bar keyed to the SAME
+    gradient, so the column scans without reading every number. The
+    two per-row ``style=`` attributes carry the computed gradient
+    colour / bar width; everything static lives in ``_map_css_js``."""
+    lo, hi = cfg["lo"], cfg["hi"]
+    span = (hi - lo) or 1.0
     rows = ""
     ordered = sorted(cfg["values"].items(),
                      key=lambda kv: -(kv[1] if kv[1] is not None else -1))
     for rank, (code, v) in enumerate(ordered, start=1):
-        sw = gradient_color(v, cfg["lo"], cfg["mid"], cfg["hi"],
-                            cfg["c_low"], cfg["c_mid"], cfg["c_high"])
+        sw = html.escape(gradient_color(
+            v, lo, cfg["mid"], hi,
+            cfg["c_low"], cfg["c_mid"], cfg["c_high"]))
+        if v is None:
+            val_txt, pct = "—", 0.0
+        else:
+            val_txt = _fmt(v)
+            pct = max(2.0, min(100.0, (v - lo) / span * 100.0))
         rows += (
-            f'<tr style="border-bottom:1px solid #e8e1d0;">'
-            f'<td class="num" style="padding:3px 8px;color:#7a8699;'
-            f'text-align:right;">{rank}</td>'
-            f'<td style="padding:3px 8px;"><span style="display:inline-block;'
-            f'width:11px;height:11px;border-radius:2px;background:{sw};'
-            f'border:1px solid #c9c1ac;margin-right:6px;vertical-align:-1px;">'
-            f'</span>{html.escape(code)} '
-            f'<span style="color:#7a8699;">'
+            f'<tr><td class="num em-td-rank">{rank}</td>'
+            f'<td><span class="em-swatch" style="background:{sw};">'
+            f'</span>{html.escape(code)} <span class="em-state-name">'
             f'{html.escape(STATE_NAMES.get(code, ""))}</span></td>'
-            f'<td class="num" style="padding:3px 8px;text-align:right;'
-            f'font-family:{_SERIF};font-weight:600;">{_fmt(v)}</td></tr>')
+            f'<td class="num em-td-val">{val_txt}'
+            f'<span class="em-bar"><span class="em-bar-fill" '
+            f'style="width:{pct:.0f}%;background:{sw};"></span></span>'
+            f'</td></tr>')
     return (
-        f'<table style="border-collapse:collapse;font-size:12px;width:100%;">'
-        f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:#7a8699;">'
-        f'<th style="text-align:right;padding:3px 8px;">#</th>'
-        f'<th style="text-align:left;padding:3px 8px;">State</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Value</th>'
+        '<table class="em-table"><thead><tr>'
+        '<th class="num" scope="col" '
+        'title="Rank — highest value first">Rank</th>'
+        '<th scope="col">State</th>'
+        '<th class="num" scope="col">Value (%)</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>')
+
+
+def _parse_status(qs: Optional[Dict[str, Any]],
+                  cfg: Dict[str, Any]) -> Tuple[str, bool]:
+    """Confidence cue for the paste path: how many pasted rows the
+    parser recognised, and why the rest were dropped. The silent skip
+    in ``parse_values_text`` is deliberate (a stray header row must
+    not kill the map) — but the page has to SAY what it skipped, or a
+    malformed paste reads as an inexplicably grey map. Returns
+    ``(html, zero_parsed)``; ``zero_parsed`` is True when a paste was
+    supplied and nothing survived (caller swaps in the empty state)."""
+    raw = _qs1(qs, "data", "")
+    if not raw.strip():
+        return "", False          # defaults path — nothing to report
+    supplied = sum(
+        1 for ln in raw.replace("\r", "\n").split("\n") if ln.strip())
+    parsed = len(cfg["values"])
+    if parsed == 0:
+        return "", True
+    if parsed >= supplied:
+        return (
+            '<div class="em-parse">'
+            + ck_signal_badge(
+                f"{parsed} of {supplied} rows recognised", tone="positive")
+            + '<span class="em-parse-note">Every pasted row parsed '
+              'cleanly.</span></div>', False)
+    dropped = supplied - parsed
+    noun = "row" if dropped == 1 else "rows"
+    return (
+        '<div class="em-parse">'
+        + ck_signal_badge(
+            f"{parsed} of {supplied} rows recognised", tone="warning")
+        + f'<span class="em-parse-note warn">{dropped} {noun} dropped '
+          '— unrecognised state code, non-numeric value, or duplicate '
+          'state (last one wins).</span></div>', False)
 
 
 def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
     """Render the Excel-mapping choropleth page from the form inputs (or
     the Python defaults)."""
     cfg = resolve_inputs(qs)
-    body = (
-        ck_page_title(
-            "Excel Mapping",
-            eyebrow="UTILITY · STATE CHOROPLETH",
-            meta="Real-geography US map — set low / mid / high colours + a "
-                 "value per state; gradient fills + black serif labels.",
+    # Page-local unit: the form asks for percentages, so the in-SVG
+    # legend says so too. Other _map_svg embeds (infusion, MA
+    # penetration) build their own cfg dicts and are unaffected.
+    cfg["legend_suffix"] = "%"
+    parse_html, zero_parsed = _parse_status(qs, cfg)
+    n_vals = len(cfg["values"])
+    head = ck_editorial_head(
+        "RESEARCH · STATE CHOROPLETH",
+        "Excel Mapping",
+        meta=(f"{n_vals} OF {len(STATE_NAMES)} JURISDICTIONS · "
+              f"DOMAIN {_fmt(cfg['lo'])}–{_fmt(cfg['hi'])} · "
+              "CONFIG LIVES IN THE URL"),
+        lede_italic_phrase="Paste a column from Excel,",
+        lede_body=(
+            "pick three gradient stops, and the page colours real "
+            "Census geography by interpolating low → mid → high. "
+            "Every setting — colours, domain, title, data — lives in "
+            "the URL, so the finished map travels as a link and "
+            "exports straight into a deck."),
+        source_note=("User-supplied values · the defaults are "
+                     "illustrative placeholders"),
+        actions_html=ck_copy_share_link_button() + ck_print_view_button(),
+        show_legend=False,
+    )
+    if zero_parsed:
+        # A paste was supplied but no row parsed: an all-grey map with
+        # a blank stats row explains nothing — say what happened and
+        # how to fix it instead.
+        map_block = ck_empty_state(
+            "No rows parsed from that paste.",
+            body=("Accepted formats, one state per line: 'TX 61', "
+                  "'TX,61', a tab-separated Excel column, or full "
+                  "names like 'Texas 61'. A trailing % is fine."),
+            eyebrow="NO ROWS PARSED",
+            cta_label="Reset to defaults",
+            cta_href="/excel-mapping",
+            icon="▦",
+            tone="warning",
         )
-        + ck_source_purpose(
-            purpose="A generic US-state choropleth (real Census geography, "
-                    "Albers projection) you drive from a "
-                    "{state: percentage} dict or an Excel paste.",
-            universe="user-supplied",
-            source="Your inputs. Default values are example placeholders "
-                   "— overwrite them with your own numbers.",
-        )
-        + '<div class="ts-wrap" style="max-width:1010px;">'
-        + _form(cfg)
-        + '<div style="display:flex;gap:14px;align-items:center;'
-          'flex-wrap:wrap;margin-bottom:6px;">'
-          '<label style="font-size:12px;color:#465366;display:inline-flex;'
-          'align-items:center;gap:6px;cursor:pointer;">'
-          '<input type="checkbox" id="emLabelsToggle" checked>Show labels'
-          '</label>'
-          '<span id="emSel" style="display:none;font-size:12px;'
-          'font-weight:600;color:#0b2341;background:#fbf9f4;'
-          'border:1px solid #d6cfc0;border-radius:4px;padding:3px 10px;">'
-          '</span>'
-          '<span style="font-size:11px;color:#7a8699;">Hover a state for '
-          'detail · click to pin · the URL captures this exact map, so '
-          'copy it to share.</span></div>'
-        + f'<div id="mapOut" style="font-family:{_SERIF};">{_map_svg(cfg)}'
-        f'<div id="emTip"></div></div>'
-        + _map_css_js()
-        + _stats(cfg)
-        + chart_export_toolbar("mapOut", "state-map")
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;'
-          'margin-top:18px;align-items:start;">'
-        + '<div><div style="font-size:10px;letter-spacing:0.06em;'
-          'color:#7a8699;font-weight:700;margin-bottom:4px;">VALUES BY '
-          'STATE</div>'
-        + _data_table(cfg) + '</div>'
-        + '<div style="font-size:12px;color:#465366;line-height:1.7;">'
-          '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
-          'font-weight:700;margin-bottom:4px;">HOW TO USE</div>'
-          # Admin note: the map can also be driven from Python by editing
-          # DEFAULT_STATE_VALUES and the three DEFAULT_*_COLOR constants
-          # in excel_mapping_page.py.
+        stats_block = ""
+        table_section = ""
+    else:
+        map_block = (
+            '<div class="em-metarow">'
+            '<label class="em-toggle">'
+            '<input type="checkbox" id="emLabelsToggle" checked>'
+            'Show labels</label>'
+            '<span id="emSel"></span>'
+            '<span class="em-hint">Hover a state for detail · click '
+            'to pin</span></div>'
+            f'<div class="em-mapcard"><div id="mapOut">{_map_svg(cfg)}'
+            '<div id="emTip"></div></div>'
+            '<div class="em-chart-caption">US choropleth · Albers '
+            'projection · Census state boundaries · values as supplied'
+            '</div></div>'
+            + chart_export_toolbar("mapOut", "state-map"))
+        stats_block = _stats(cfg)
+        table_section = (
+            '<section>'
+            + ck_section_header(
+                "Every state, ranked",
+                eyebrow="VALUES BY STATE", count=n_vals)
+            + f'<div class="em-tablewrap">{_data_table(cfg)}</div>'
+            + '</section>')
+    help_section = (
+        '<section>'
+        + ck_section_header(
+            "Drive it from a paste — or a URL", eyebrow="HOW TO USE")
+        + '<div class="em-help">'
+        # Admin note: the map can also be driven from Python by editing
+        # DEFAULT_STATE_VALUES and the three DEFAULT_*_COLOR constants
+        # in excel_mapping_page.py.
           '<p><strong>In the page:</strong> pick '
           'the three colours, optionally set the low/mid/high value '
           'domain (blank = auto from your data) and a map title, and '
           'paste <code>STATE&nbsp;VALUE</code> rows from Excel. The '
-          'gradient interpolates low→mid→high; each state shows its '
-          'value in black serif text.</p>'
-          '<p style="margin-top:6px;"><strong>Geography:</strong> real US '
+          'gradient interpolates low → mid → high; each state prints '
+          'its value in <em>black serif text</em> on the shape.</p>'
+          '<p><strong>Geography:</strong> real US '
           'Census state boundaries (Albers projection, public domain). '
           'Alaska and Hawaii are bottom-left insets, Puerto Rico a '
           'bottom-right inset; the nine small Northeast jurisdictions '
           '(VT NH MA RI CT NJ DE MD DC) are labelled in the swatch '
           'column beside the Atlantic coast because their shapes are '
           'too small to hold text.</p>'
-          '<p style="margin-top:6px;"><strong>Export:</strong> the '
+          '<p><strong>Export:</strong> the '
           'SVG/PNG downloads include the legend and title, so the file '
-          'drops straight into a deck.</p></div>'
-        + '</div></div>')
+          'drops straight into a deck — and the URL captures this '
+          'exact map, so copying the link shares it.</p></div>'
+        + '</section>')
+    body = (
+        head
+        + '<div class="em-wrap">'
+        + _form(cfg)
+        + parse_html
+        + map_block
+        + _map_css_js()
+        + stats_block
+        + f'<div class="em-grid2">{table_section}{help_section}</div>'
+        + '</div>')
     return chartis_shell(
         body, "Excel Mapping", active_nav="/research",
         subtitle="State choropleth utility")

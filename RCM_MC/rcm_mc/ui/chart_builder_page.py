@@ -8,6 +8,11 @@ the same data across every chart type so you can pick the right one.
 All rendering is in ``cdd_chart_kit``; this page is the form + layout.
 Driven entirely by the query string so a configured chart is a
 shareable URL.
+
+Layout is the v5 chartis editorial idiom: ck_editorial_head masthead,
+two ck_panel cards (composer + rendered chart), ck_section_intro
+section heads, and one page-scoped ``.cb-*`` stylesheet (no inline
+style attributes) built on the kit's CSS custom properties.
 """
 from __future__ import annotations
 
@@ -15,16 +20,16 @@ import html
 import json
 from typing import Any, Dict, Optional
 
-from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from ._chartis_kit import (
+    chartis_shell, ck_arrow_link, ck_editorial_head, ck_fmt_number,
+    ck_page_actions, ck_panel, ck_section_intro, ck_source_purpose,
+)
 from .saved_charts_page import save_chart_form as _save_chart_form
 from .cdd_chart_kit import (
     CHART_TYPES, PALETTES, SIZE_PRESETS, TRANSFORM_CALCS, TRANSFORM_GROUPS,
     parse_table, render_cdd_chart, table_to_tsv, transform_table,
     chart_export_toolbar, _series,
 )
-
-_SERIF = ("'Source Serif 4', 'Iowan Old Style', Georgia, "
-          "'Times New Roman', serif")
 
 # Sensible example tables per chart family (overwrite with your own).
 _EXAMPLE_TS = ("Year\tRevenue\tEBITDA\n2021\t100\t22\n2022\t130\t31\n"
@@ -110,6 +115,155 @@ def _qsbool(qs, key, default=True):
     return v not in ("0", "false", "off", "no")
 
 
+# Chart-type families for the picker. Presentation-only grouping — the
+# chips stay <button type="submit" name="type"> either way, so the form
+# contract is untouched. Keys missing from CHART_TYPES are skipped;
+# CHART_TYPES keys not claimed here land in a trailing "More" row so a
+# newly-registered chart type always gets a chip.
+_CHIP_GROUPS: list[tuple[str, tuple[str, ...]]] = [
+    ("Comparison", ("column", "column_stacked", "column_100", "bar",
+                    "bar_stacked", "dot")),
+    ("Trend", ("line", "area", "slope", "combo", "smallmult")),
+    ("Composition", ("pie", "donut", "waffle", "marimekko")),
+    ("Bridge & flow", ("waterfall", "funnel", "tornado")),
+    ("Distribution", ("histogram", "boxplot", "pareto")),
+    ("Relationship", ("scatter", "bubble", "matrix", "radar", "heatmap")),
+    ("Tracking", ("bullet", "gauge", "dumbbell", "gantt")),
+]
+
+# How each chart reads the pasted table — the reference copy that used
+# to be a 25-line <p> wall, restructured as scannable term/definition
+# pairs inside a <details> so the page stays calm.
+_FORMAT_NOTES: list[tuple[str, str]] = [
+    ("Waterfall", 'One value column of deltas; label a row with '
+                  '"total"/"net"/"=" to draw an absolute total bar.'),
+    ("Scatter / Bubble", "Columns are X, Y, [size]."),
+    ("Pie / Donut / Marimekko", "Use the first value column(s)."),
+    ("Pareto", "One value column — sorted bars plus a cumulative-% line "
+               "with an 80% marker."),
+    ("Histogram", "Bins the first value column (one raw value per row)."),
+    ("Box plot", "Each row is a category, each column a sample — "
+                 "quartiles are computed for you."),
+    ("Dumbbell", "Two value columns = before/after per category."),
+    ("Waffle", "The first value column as a 10×10 share grid "
+               "(1 cell = 1%)."),
+    ("Small multiples", "One mini line panel per series on a shared "
+                        "y-scale."),
+    ("Everything else", "A category column + one column per series."),
+    ("Data shaping", "Runs before the chart: aggregate duplicate labels "
+                     "(sum/mean/max/min/count), sort, keep top-N and lump "
+                     'the rest into "Other", or switch the values to % of '
+                     "total / cumulative / moving average / "
+                     "growth-vs-prior / indexed-to-100."),
+    ("Annotations", "Drawn on value-axis charts: a reference/target line "
+                    "with a label, a dotted average line, and a CAGR tag "
+                    "computed first→last on the first series."),
+]
+
+# Page-scoped stylesheet (injected via chartis_shell extra_css). Every
+# rule is built on the kit tokens with their canonical fallbacks — no
+# ad-hoc hexes, and every interactive control gets :hover +
+# :focus-visible states the old inline style attributes couldn't carry.
+_PAGE_CSS = """
+.cb-wrap{max-width:1040px;}
+.cb-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:22px;align-items:start;}
+@media(max-width:900px){.cb-grid{grid-template-columns:1fr;}}
+.cb-kicker{display:flex;align-items:center;gap:8px;font-family:var(--sc-mono,monospace);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-text-dim,#465366);margin:0 0 3px;}
+.cb-kicker::before{content:"";flex:0 0 18px;height:1px;background:var(--green-deep,#154e36);}
+.cb-sub{font-family:var(--sc-sans,sans-serif);font-size:11.5px;color:var(--sc-text-faint,#7a8699);margin:0 0 9px;}
+.cb-typegroups{display:flex;flex-direction:column;gap:6px;margin:6px 0 18px;}
+.cb-typegroup{display:flex;gap:12px;align-items:flex-start;}
+.cb-typegroup-kicker{flex:0 0 96px;text-align:right;padding-top:6px;font-family:var(--sc-mono,monospace);font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-faint,#7a8699);}
+@media(max-width:700px){.cb-typegroup{flex-direction:column;gap:3px;}.cb-typegroup-kicker{flex:none;text-align:left;padding-top:0;}}
+.cb-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.cb-chip{padding:4px 9px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;color:var(--sc-text-dim,#465366);font-family:var(--sc-mono,monospace);font-size:10px;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;}
+.cb-chip:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.cb-chip.sel{background:var(--sc-navy,#0b2341);border-color:var(--sc-navy,#0b2341);color:var(--sc-on-navy,#e9eef5);}
+.cb-field{display:block;font-family:var(--sc-mono,monospace);font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+.cb-hint{display:block;margin:2px 0 0;font-family:var(--sc-sans,sans-serif);font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--sc-text-faint,#7a8699);}
+.cb-input,.cb-select,.cb-textarea{box-sizing:border-box;width:100%;margin-top:4px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;color:var(--ink,#16263a);font-family:var(--sc-sans,sans-serif);font-size:12px;}
+.cb-input{height:30px;padding:0 8px;}
+.cb-select{height:30px;padding:0 4px;}
+.cb-textarea{padding:8px;font-family:var(--sc-mono,ui-monospace,Menlo,monospace);line-height:1.5;}
+.cb-input-serif{font-family:var(--sc-serif,'Source Serif 4',Georgia,serif);}
+.cb-parse-note{margin-top:5px;font-family:var(--sc-mono,monospace);font-size:10.5px;letter-spacing:.03em;font-variant-numeric:tabular-nums;color:var(--sc-text-faint,#7a8699);}
+.cb-parse-note.warn{color:var(--sc-warning,#b8732a);}
+.cb-check{display:flex;align-items:center;gap:5px;font-family:var(--sc-sans,sans-serif);font-size:11.5px;color:var(--sc-text-dim,#465366);}
+.cb-shaping{margin-top:12px;padding:10px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--sc-parchment,#f2ede3);}
+.cb-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.cb-flex1{flex:1;min-width:108px;}
+.cb-w96{width:96px;}
+.cb-w110{width:110px;}
+.cb-minw120{flex:1;min-width:120px;}
+.cb-opts{display:flex;flex-direction:column;gap:11px;}
+.cb-push{margin-left:auto;}
+.cb-wauto{width:auto;margin-top:0;}
+.cb-colors{display:flex;flex-wrap:wrap;gap:8px;}
+.cb-color{display:flex;align-items:center;gap:5px;font-family:var(--sc-sans,sans-serif);font-size:11px;color:var(--sc-text-dim,#465366);}
+.cb-color input[type=color]{width:34px;height:26px;padding:0;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;cursor:pointer;}
+.cb-actions{display:flex;align-items:center;gap:18px;margin-top:4px;}
+.cb-btn{padding:9px 20px;border:1px solid var(--sc-navy,#0b2341);border-radius:2px;background:var(--sc-navy,#0b2341);color:var(--sc-on-navy,#e9eef5);font-family:var(--sc-sans,sans-serif);font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;}
+.cb-btn:hover{background:var(--sc-navy-2,#132e53);border-color:var(--sc-navy-2,#132e53);}
+.cb-reset{font-family:var(--sc-mono,monospace);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sc-teal,#155752);text-decoration:none;}
+.cb-reset:hover{color:var(--sc-navy,#0b2341);text-decoration:underline;}
+.cb-ds-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 var(--sc-s-6,28px);}
+.cb-ds-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);color:var(--sc-teal-ink,#0f3d39);font-family:var(--sc-sans,sans-serif);font-size:12px;font-weight:600;text-decoration:none;}
+.cb-ds-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sc-teal,#155752);}
+.cb-ds-chip:hover{border-color:var(--sc-teal,#155752);background:#fff;}
+.cb-canvas{text-align:center;}
+.cb-canvas-actions{margin-top:14px;padding-top:14px;border-top:1px solid var(--sc-rule,#d6cfc0);}
+.cb-btn-ghost{margin-left:14px;padding:6px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:#fff;color:var(--sc-navy,#0b2341);font-family:var(--sc-sans,sans-serif);font-size:11.5px;font-weight:600;cursor:pointer;}
+.cb-btn-ghost:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+.cb-hidden{display:none;}
+.cb-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;}
+.cb-gallery-card{display:block;padding:6px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);text-decoration:none;}
+.cb-gallery-card:hover{border-color:var(--sc-teal,#155752);}
+.cb-gallery-card.sel{border-color:var(--sc-navy,#0b2341);box-shadow:inset 0 0 0 1px var(--sc-navy,#0b2341);}
+.cb-gallery-cap{display:block;margin-top:4px;text-align:center;font-family:var(--sc-mono,monospace);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-faint,#7a8699);}
+.cb-notes{margin-top:var(--sc-s-6,28px);border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);}
+.cb-notes summary{padding:10px 14px;cursor:pointer;font-family:var(--sc-mono,monospace);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-text-dim,#465366);}
+.cb-notes summary:hover{color:var(--sc-teal,#155752);}
+.cb-notes[open] summary{border-bottom:1px solid var(--sc-rule,#d6cfc0);}
+.cb-notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px 26px;margin:0;padding:14px;}
+.cb-note dt{font-family:var(--sc-sans,sans-serif);font-size:11.5px;font-weight:600;color:var(--ink,#16263a);}
+.cb-note dd{margin:2px 0 0;font-family:var(--sc-serif,Georgia,serif);font-size:13px;line-height:1.5;color:var(--sc-text-dim,#465366);}
+.cb-chip:focus-visible,.cb-btn:focus-visible,.cb-btn-ghost:focus-visible,.cb-reset:focus-visible,.cb-ds-chip:focus-visible,.cb-gallery-card:focus-visible,.cb-input:focus-visible,.cb-select:focus-visible,.cb-textarea:focus-visible,.cb-check input:focus-visible,.cb-color input:focus-visible,.cb-notes summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
+"""
+
+
+def _chip_groups_html(ctype: str) -> str:
+    """Grouped chart-type picker. Every chip stays a submit button
+    carrying name="type" — clicking one switches the chart without
+    losing the rest of the form state."""
+    labels = dict(CHART_TYPES)
+    claimed: set[str] = set()
+    groups: list[tuple[str, list[str]]] = []
+    for gname, keys in _CHIP_GROUPS:
+        present = [k for k in keys if k in labels]
+        claimed.update(present)
+        groups.append((gname, present))
+    leftover = [k for k, _ in CHART_TYPES if k not in claimed]
+    if leftover:
+        groups.append(("More", leftover))
+    out = ['<div class="cb-typegroups" role="group" '
+           'aria-label="Chart type">']
+    for gname, keys in groups:
+        if not keys:
+            continue
+        chips = "".join(
+            f'<button type="submit" name="type" value="{k}" '
+            f'class="cb-chip{" sel" if k == ctype else ""}" '
+            f'aria-pressed="{"true" if k == ctype else "false"}">'
+            f'{html.escape(labels[k])}</button>'
+            for k in keys)
+        out.append(
+            f'<div class="cb-typegroup">'
+            f'<span class="cb-typegroup-kicker">{html.escape(gname)}</span>'
+            f'<span class="cb-chips">{chips}</span></div>')
+    out.append('</div>')
+    return "".join(out)
+
+
 def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     ctype = _qs1(qs, "type", "column")
     if ctype not in dict(CHART_TYPES):
@@ -135,6 +289,15 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     if not data_text.strip():
         data_text = _example_for(ctype)
     table = parse_table(data_text)
+    # Parse feedback for the strip under the textarea — computed on the
+    # RAW paste (before shaping) so a malformed paste explains itself
+    # instead of silently rendering a distorted chart. Copy avoids the
+    # word None: a literal >None< anywhere in page HTML trips the
+    # route-walker nan/None-leak gate.
+    raw_rows = len(table.get("rows", []))
+    raw_series = len(_series(table))
+    raw_has_blanks = any(
+        v is None for _lab, vals in table.get("rows", []) for v in vals)
     # Data shaping — the Excel prep steps as dropdowns.
     group = _qs1(qs, "group", "")
     if group not in TRANSFORM_GROUPS:
@@ -199,26 +362,10 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
     color_pickers = ""
     for i, lab in enumerate(color_labels[:10]):
         color_pickers += (
-            f'<label style="display:flex;align-items:center;gap:5px;'
-            f'font-size:11px;color:#465366;">'
+            f'<label class="cb-color" title="{html.escape(str(lab))}">'
             f'<input type="color" name="sc{i}" '
-            f'value="{html.escape(series_colors[i])}" style="width:34px;'
-            f'height:26px;border:1px solid #c9c1ac;border-radius:4px;'
-            f'padding:0;background:#fff;cursor:pointer;">'
+            f'value="{html.escape(series_colors[i])}">'
             f'{html.escape(str(lab))[:18]}</label>')
-
-    # Chart-type selector (chips).
-    chips = ""
-    for key, label in CHART_TYPES:
-        sel = key == ctype
-        chips += (
-            f'<button type="submit" name="type" value="{key}" '
-            f'style="padding:5px 11px;border-radius:14px;cursor:pointer;'
-            f'font-size:11.5px;border:1px solid '
-            f'{"#0b2341" if sel else "#c9c1ac"};'
-            f'background:{"#0b2341" if sel else "#fff"};'
-            f'color:{"#fff" if sel else "#465366"};">{html.escape(label)}'
-            f'</button>')
 
     pal_opts = "".join(
         f'<option value="{p}"{" selected" if p == palette else ""}>{p}'
@@ -226,42 +373,35 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
 
     def _toggle(name, label, on):
         return (
-            f'<label style="font-size:11.5px;color:#465366;display:flex;'
-            f'align-items:center;gap:5px;"><input type="checkbox" '
+            f'<label class="cb-check"><input type="checkbox" '
             f'name="{name}" value="1"{" checked" if on else ""}>{label}'
             f'</label>')
 
-    _sel = ('height:28px;border:1px solid #c9c1ac;border-radius:5px;'
-            'width:100%;font-size:11.5px;')
-
-    def _shaping_select(name, label, options, current):
+    def _shaping_select(name, label, options, current, cls="cb-flex1"):
         opts_html = "".join(
             f'<option value="{html.escape(v, quote=True)}"'
             f'{" selected" if v == current else ""}>{html.escape(lab)}'
             f'</option>' for v, lab in options)
-        return (f'<label style="font-size:10.5px;color:#465366;flex:1;'
-                f'min-width:108px;">{label}'
-                f'<select name="{name}" style="{_sel}">{opts_html}'
+        return (f'<label class="cb-field {cls}">{label}'
+                f'<select name="{name}" class="cb-select">{opts_html}'
                 f'</select></label>')
 
     shaping = (
-        '<div style="margin-top:8px;border:1px solid #d6cfc0;'
-        'border-radius:6px;padding:8px 10px;background:#faf7f0;">'
-        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
-        'font-weight:700;margin-bottom:5px;">DATA SHAPING (applied before '
-        'the chart — no Excel prep needed)</div>'
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:'
-        'flex-end;">'
+        '<div class="cb-shaping">'
+        '<div class="cb-kicker">DATA SHAPING</div>'
+        '<div class="cb-sub">Applied before the chart — no Excel prep '
+        'needed.</div>'
+        '<div class="cb-row">'
         + _shaping_select("group", "Group duplicate labels",
                           [("", "Off")] + [(g, f"Aggregate: {g}")
                                            for g in TRANSFORM_GROUPS], group)
         + _shaping_select("sort", "Sort by first series",
                           [("", "Keep order"), ("desc", "Largest first"),
                            ("asc", "Smallest first")], sort)
-        + (f'<label style="font-size:10.5px;color:#465366;width:96px;">'
-           f'Top N (+ Other)<input type="number" name="topn" min="1" '
-           f'max="50" value="{topn if topn else ""}" style="{_sel}'
-           f'padding:0 6px;"></label>')
+        + (f'<label class="cb-field cb-w96">Top N (+ Other)'
+           f'<input type="number" name="topn" min="1" '
+           f'max="50" value="{topn if topn else ""}" class="cb-input">'
+           f'</label>')
         + _shaping_select("calc", "Calculation",
                           # "Off", never "None": a literal >None< in page HTML
                           # trips the route-walker nan/None-leak gate (same
@@ -270,96 +410,89 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         + _toggle("trend", "Trendline + R² (line/scatter)", trend)
         + '</div></div>'
         # Annotations — overlays on the value axis (column/line/combo).
-        + '<div style="margin-top:8px;border:1px solid #d6cfc0;'
-        'border-radius:6px;padding:8px 10px;background:#faf7f0;">'
-        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
-        'font-weight:700;margin-bottom:5px;">ANNOTATIONS (column / bar / '
-        'line / area / combo)</div>'
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:'
-        'flex-end;">'
-        + (f'<label style="font-size:10.5px;color:#465366;width:110px;">'
-           f'Reference line at<input type="number" step="any" '
+        + '<div class="cb-shaping">'
+        '<div class="cb-kicker">ANNOTATIONS</div>'
+        '<div class="cb-sub">Overlays for column / bar / line / area / '
+        'combo charts.</div>'
+        '<div class="cb-row">'
+        + (f'<label class="cb-field cb-w110">Reference line at'
+           f'<input type="number" step="any" '
            f'name="refval" value="{html.escape(refval_s)}" '
-           f'placeholder="e.g. 98" style="{_sel}padding:0 6px;"></label>')
-        + (f'<label style="font-size:10.5px;color:#465366;flex:1;'
-           f'min-width:120px;">Reference label'
+           f'placeholder="e.g. 98" class="cb-input"></label>')
+        + (f'<label class="cb-field cb-minw120">Reference label'
            f'<input type="text" name="reflabel" '
            f'value="{html.escape(reflabel)}" placeholder="Target" '
-           f'style="{_sel}padding:0 6px;"></label>')
+           f'class="cb-input"></label>')
         + _toggle("cagr", "CAGR tag (first→last)", show_cagr)
         + _toggle("avg", "Average line", show_avg)
         + '</div></div>')
 
+    parse_note = (
+        f'<div class="cb-parse-note{" warn" if raw_has_blanks else ""}">'
+        f'Parsed {ck_fmt_number(raw_rows)} '
+        f'row{"s" if raw_rows != 1 else ""} × '
+        f'{ck_fmt_number(raw_series)} '
+        f'series{" · non-numeric cells ignored" if raw_has_blanks else ""}'
+        f'</div>')
+
     form = (
-        f'<form method="get" action="/chart-builder">'
+        '<form method="get" action="/chart-builder">'
         # Marks a real form submit so absent checkboxes read as
         # unchecked (links without fs keep default-on toggles).
-        f'<input type="hidden" name="fs" value="1">'
-        f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'
-        f'{chips}</div>'
-        f'<input type="hidden" name="type" value="{ctype}">'
-        f'<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;'
-        f'align-items:start;">'
+        '<input type="hidden" name="fs" value="1">'
+        '<div class="cb-kicker">CHART TYPE</div>'
+        + _chip_groups_html(ctype)
+        + f'<input type="hidden" name="type" value="{ctype}">'
+        f'<div class="cb-grid">'
         # Left: data
-        f'<div><label style="font-size:11px;color:#465366;font-weight:600;">'
-        f'Data (paste from Excel — headers in row 1, category column + one '
-        f'column per series)'
-        f'<textarea name="data" rows="9" style="width:100%;margin-top:4px;'
-        f'font-family:ui-monospace,Menlo,monospace;font-size:12px;'
-        f'border:1px solid #c9c1ac;border-radius:5px;padding:8px;">'
+        f'<div><label class="cb-field">Data'
+        f'<span class="cb-hint">Paste from Excel — headers in row 1, a '
+        f'category column + one column per series.</span>'
+        f'<textarea name="data" rows="9" class="cb-textarea">'
         f'{html.escape(data_text)}</textarea></label>'
+        f'{parse_note}'
         f'{shaping}</div>'
         # Right: options
-        f'<div style="display:flex;flex-direction:column;gap:9px;">'
-        f'<label style="font-size:11px;color:#465366;">Title'
+        f'<div class="cb-opts">'
+        f'<label class="cb-field">Title'
         f'<input type="text" name="title" value="{html.escape(title)}" '
-        f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
-        f'border-radius:5px;padding:0 7px;font-family:{_SERIF};"></label>'
-        f'<label style="font-size:11px;color:#465366;">Subtitle'
+        f'class="cb-input cb-input-serif"></label>'
+        f'<label class="cb-field">Subtitle'
         f'<input type="text" name="subtitle" value="{html.escape(subtitle)}" '
-        f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
-        f'border-radius:5px;padding:0 7px;"></label>'
-        f'<label style="font-size:11px;color:#465366;">Source / footnote'
+        f'class="cb-input"></label>'
+        f'<label class="cb-field">Source / footnote'
         f'<input type="text" name="footnote" value="{html.escape(footnote)}" '
-        f'placeholder="Source: …" style="width:100%;height:30px;border:1px '
-        f'solid #c9c1ac;border-radius:5px;padding:0 7px;"></label>'
-        f'<div style="display:flex;gap:10px;">'
-        f'<label style="font-size:11px;color:#465366;flex:1;">Palette'
-        f'<select name="palette" style="width:100%;height:30px;'
-        f'border:1px solid #c9c1ac;border-radius:5px;">{pal_opts}</select>'
+        f'placeholder="Source: …" class="cb-input"></label>'
+        f'<div class="cb-row">'
+        f'<label class="cb-field cb-flex1">Palette'
+        f'<select name="palette" class="cb-select">{pal_opts}</select>'
         f'</label>'
-        f'<label style="font-size:11px;color:#465366;width:88px;">Unit'
+        f'<label class="cb-field cb-w96">Unit'
         f'<input type="text" name="suffix" value="{html.escape(suffix)}" '
-        f'placeholder="% or $" style="width:100%;height:30px;'
-        f'border:1px solid #c9c1ac;border-radius:5px;padding:0 7px;"></label>'
-        f'<label style="font-size:11px;color:#465366;width:88px;">'
-        f'Bins (hist.)'
+        f'placeholder="% or $" class="cb-input"></label>'
+        f'<label class="cb-field cb-w110">Histogram bins'
         f'<input type="number" name="bins" min="2" max="24" '
         f'value="{bins if bins else ""}" placeholder="auto" '
-        f'style="width:100%;height:30px;border:1px solid #c9c1ac;'
-        f'border-radius:5px;padding:0 7px;"></label>'
+        f'class="cb-input"></label>'
         f'</div>'
-        f'<div style="display:flex;gap:14px;margin-top:2px;align-items:center;">'
+        f'<div class="cb-row">'
         f'{_toggle("values", "Show values", show_values)}'
         f'{_toggle("legend", "Legend", legend)}'
-        f'<label style="font-size:11px;color:#465366;display:flex;gap:5px;'
-        f'align-items:center;margin-left:auto;">Size'
-        f'<select name="size" style="height:28px;border:1px solid #c9c1ac;'
-        f'border-radius:5px;">' + "".join(
-            f'<option value="{k}"{" selected" if k == size else ""}>{k}'
-            f'</option>' for k, _w in SIZE_PRESETS)
+        f'<label class="cb-check cb-push">Size'
+        f'<select name="size" class="cb-select cb-wauto">' + "".join(
+            f'<option value="{k}"{" selected" if k == size else ""}>'
+            f'{k} · {w}px</option>' for k, w in SIZE_PRESETS)
         + '</select></label></div>'
-        + (f'<div style="margin-top:4px;"><div style="font-size:10px;'
-           f'letter-spacing:0.06em;color:#7a8699;font-weight:700;'
-           f'margin-bottom:4px;">SERIES COLOURS (override the palette)</div>'
-           f'<div style="display:flex;flex-wrap:wrap;gap:8px;">'
-           f'{color_pickers}</div></div>' if color_pickers else "")
-        + f'<button type="submit" style="margin-top:6px;padding:9px 18px;'
-        f'background:#0b2341;color:#fff;border:none;border-radius:5px;'
-        f'font-weight:600;cursor:pointer;">Render chart</button>'
-        f'<a href="/chart-builder?type={ctype}" style="font-size:11.5px;'
-        f'color:#1F7A75;">Reset to example data</a>'
-        f'</div></div></form>'
+        + (f'<div><div class="cb-kicker">SERIES COLOURS</div>'
+           f'<div class="cb-sub">Override the palette per series — picking '
+           f'a new palette re-seeds these.</div>'
+           f'<div class="cb-colors">{color_pickers}</div></div>'
+           if color_pickers else "")
+        + '<div class="cb-actions">'
+        '<button type="submit" class="cb-btn">Render chart</button>'
+        + f'<a href="/chart-builder?type={ctype}" class="cb-reset">'
+        f'Reset to example data</a>'
+        f'</div></div></div></form>'
         # When the palette changes, re-seed the per-series colour pickers
         # so the dropdown stays meaningful (pickers otherwise override it).
         f'<script>var CKPAL={json.dumps(PALETTES)};'
@@ -382,42 +515,90 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
                 f'&data={_urlq(d["tsv"])}')
         ds_chips += (
             f'<a href="{html.escape(href, quote=True)}" '
-            f'style="padding:5px 11px;border-radius:14px;font-size:11.5px;'
-            f'border:1px solid #9bc1bc;background:#fff;color:#155752;'
-            f'text-decoration:none;">{html.escape(d["label"])}</a>')
+            f'class="cb-ds-chip">{html.escape(d["label"])}</a>')
     datasets_strip = (
-        '<div style="margin-top:14px;">'
-        '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
-        'font-weight:700;margin-bottom:6px;">PLATFORM DATA — REAL CMS '
-        'AGGREGATES (one click to load, then shape and restyle freely)'
-        '</div>'
-        '<div style="display:flex;flex-wrap:wrap;gap:6px;">'
-        + ds_chips + '</div></div>')
+        ck_section_intro(
+            "PLATFORM DATA", "Real CMS aggregates, one click away.",
+            italic_word="one",
+            body="Load a finished table from the platform's public-data "
+                 "layer, then shape and restyle it freely — the configured "
+                 "chart stays a shareable URL.")
+        + f'<div class="cb-ds-chips">{ds_chips}</div>')
 
     # Gallery — the same data across a few chart types.
     gallery = ""
     gtypes = ["column", "column_stacked", "column_100", "bar", "pareto",
               "line", "area", "waterfall", "pie", "donut", "marimekko",
               "combo"]
+    type_labels = dict(CHART_TYPES)
     for gt in gtypes:
         gdata = table
         gsvg = render_cdd_chart(
-            gt, gdata, {"title": dict(CHART_TYPES).get(gt, gt),
+            gt, gdata, {"title": type_labels.get(gt, gt),
                         "palette": palette, "W": 330, "H": 210,
                         "px_h": 180, "legend": False, "show_values": False})
+        glabel = type_labels.get(gt, gt)
         gallery += (
             f'<a href="/chart-builder?type={gt}&palette={palette}&data='
             f'{html.escape(_urlq(data_text), quote=True)}" '
-            f'style="display:block;border:1px solid '
-            f'{"#0b2341" if gt == ctype else "#d6cfc0"};border-radius:6px;'
-            f'padding:4px;background:#fff;text-decoration:none;">{gsvg}</a>')
+            f'class="cb-gallery-card{" sel" if gt == ctype else ""}" '
+            f'aria-label="Switch to {html.escape(glabel, quote=True)}">'
+            f'{gsvg}'
+            f'<span class="cb-gallery-cap">{html.escape(glabel)}</span>'
+            f'</a>')
+
+    # Rendered chart + its quiet action row (export toolbar, send to
+    # Exhibit Composer, shaped-TSV copy-out, save-to-library) in one
+    # ck_panel so the canvas has a panel identity like every other
+    # editorial surface.
+    exhibit_href = (
+        f'/exhibit?t0={ctype}'
+        f'&pt0={_urlq(title or dict(CHART_TYPES).get(ctype, ""))}'
+        f'&pal0={_urlq(palette)}'
+        + (f'&source={_urlq(footnote)}' if footnote else "")
+        + f'&d0={_urlq(table_to_tsv(table))}')
+    canvas_body = (
+        f'<div class="cb-canvas"><div id="chartOut">{chart_svg}</div>'
+        + chart_export_toolbar("chartOut", "chart-" + ctype)
+        # The shaped table travels, not the raw paste — what you see is
+        # what lands on the slide.
+        + '<div class="cb-canvas-actions">'
+        + ck_arrow_link("Send to Exhibit Composer (as panel 1)",
+                        exhibit_href)
+        # The shaped table (group/sort/top-N/calc applied) copies
+        # back out as a paste-ready TSV — the Excel round-trip OUT.
+        + f'<textarea id="shapedTsv" class="cb-hidden">'
+        f'{html.escape(table_to_tsv(table))}</textarea>'
+        '<button type="button" class="cb-btn-ghost" onclick="var b=this;'
+        'navigator.clipboard.writeText(document.getElementById('
+        "'shapedTsv').value).then(function(){var t=b.textContent;"
+        'b.textContent=&quot;✓ Copied&quot;;setTimeout(function()'
+        '{b.textContent=t;},1200);});">⧉ Copy shaped table'
+        '</button>'
+        + _save_chart_form("/chart-builder")
+        + '</div></div>')
+
+    notes_items = "".join(
+        f'<div class="cb-note"><dt>{html.escape(term)}</dt>'
+        f'<dd>{html.escape(desc)}</dd></div>'
+        for term, desc in _FORMAT_NOTES)
+    notes = (
+        '<details class="cb-notes">'
+        '<summary>Notes · how each chart reads your table</summary>'
+        f'<dl class="cb-notes-grid">{notes_items}</dl>'
+        '</details>')
 
     body = (
-        ck_page_title(
+        ck_editorial_head(
+            "RESEARCH · CDD CHART KIT",
             "Chart Builder",
-            eyebrow="UTILITY · CDD CHART KIT",
-            meta="The Excel chart family — column, stacked, waterfall, "
-                 "marimekko, bubble & more — Chartis-styled.",
+            meta=f"{ck_fmt_number(len(CHART_TYPES))} CHART TYPES · "
+                 f"{ck_fmt_number(len(PALETTES))} PALETTES · SHAREABLE URL",
+            lede_italic_phrase="Every chart a CDD deck needs,",
+            lede_body="rendered from a pasted table — pick a type, shape "
+                      "the data, set the palette, and export or send "
+                      "straight to the Exhibit Composer.",
+            show_legend=False,
         )
         + ck_source_purpose(
             purpose="Build the charts a CDD deck needs from a pasted "
@@ -426,72 +607,23 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
             source="Your pasted data. Example tables are placeholders — "
                    "overwrite with your own.",
         )
-        + '<div class="ts-wrap" style="max-width:1040px;">'
-        + form
+        + '<div class="cb-wrap">'
+        + ck_panel(form, title="Compose the chart",
+                   code="GET /chart-builder")
         + datasets_strip
-        + '<div style="margin-top:18px;border:1px solid #d6cfc0;'
-          'border-radius:8px;padding:16px;background:#fff;text-align:center;">'
-        + f'<div id="chartOut">{chart_svg}</div>'
-        + chart_export_toolbar("chartOut", "chart-" + ctype)
-        # The shaped table travels, not the raw paste — what you see is
-        # what lands on the slide.
-        + (f'<div style="margin-top:8px;"><a href="/exhibit?t0={ctype}'
-           f'&pt0={_urlq(title or dict(CHART_TYPES).get(ctype, ""))}'
-           f'&pal0={_urlq(palette)}'
-           + (f'&source={_urlq(footnote)}' if footnote else "")
-           + f'&d0={_urlq(table_to_tsv(table))}" '
-           f'style="font-size:12px;color:#155752;font-weight:600;">'
-           f'→ Send to Exhibit Composer (as panel 1)</a>'
-           # The shaped table (group/sort/top-N/calc applied) copies
-           # back out as a paste-ready TSV — the Excel round-trip OUT.
-           f'<textarea id="shapedTsv" style="display:none;">'
-           f'{html.escape(table_to_tsv(table))}</textarea>'
-           f'<button type="button" style="margin-left:14px;padding:5px '
-           f'11px;border:1px solid #c9c1ac;border-radius:5px;'
-           f'background:#fff;color:#0b2341;font-size:11.5px;'
-           f'font-weight:600;cursor:pointer;" onclick="var b=this;'
-           f'navigator.clipboard.writeText(document.getElementById('
-           f"'shapedTsv').value).then(function(){{var t=b.textContent;"
-           f'b.textContent=&quot;✓ Copied&quot;;setTimeout(function()'
-           f'{{b.textContent=t;}},1200);}});">⧉ Copy shaped table'
-           f'</button></div>')
-        + _save_chart_form("/chart-builder")
-        + '</div>'
-        + '<div style="font-size:10px;letter-spacing:0.06em;color:#7a8699;'
-          'font-weight:700;margin:18px 0 6px;">GALLERY — YOUR DATA IN EVERY '
-          'CHART (click to switch)</div>'
-        + '<div style="display:grid;grid-template-columns:repeat(auto-fill,'
-          'minmax(250px,1fr));gap:10px;">' + gallery + '</div>'
-        + '<div style="font-size:12px;color:#465366;line-height:1.7;'
-          'margin-top:16px;"><div style="font-size:10px;letter-spacing:'
-          '0.06em;color:#7a8699;font-weight:700;margin-bottom:3px;">NOTES'
-          '</div><p><strong>Waterfall:</strong> one value column of deltas; '
-          'label a row with "total"/"net"/"=" to draw an absolute total '
-          'bar. <strong>Scatter/Bubble:</strong> columns are X, Y, [size]. '
-          '<strong>Pie/Donut/Marimekko:</strong> use the first value '
-          'column(s). <strong>Pareto:</strong> one value column — sorted '
-          'bars + cumulative-% line with an 80% marker. '
-          '<strong>Histogram:</strong> bins the first value column (one '
-          'raw value per row). <strong>Box plot:</strong> each row is a '
-          'category, each column a sample — quartiles are computed for '
-          'you. <strong>Dumbbell:</strong> two value columns = '
-          'before/after per category. Everything else takes a category '
-          'column + one column per series. <strong>Waffle:</strong> the '
-          'first value column as a 10×10 share grid (1 cell = 1%). '
-          '<strong>Small multiples:</strong> one mini line panel per '
-          'series on a shared y-scale. <strong>Data shaping</strong> '
-          'runs before the chart: aggregate duplicate labels '
-          '(sum/mean/max/min/count), sort, keep top-N and lump the rest '
-          'into "Other", or switch the values to % of total / cumulative '
-          '/ moving average / growth-vs-prior / indexed-to-100. '
-          '<strong>Annotations</strong> draw on value-axis charts: a '
-          'reference/target line with a label, a dotted average line, '
-          'and a CAGR tag computed first→last on the first series.'
-          '</p></div>'
+        + ck_panel(canvas_body, title="Rendered chart", code=ctype)
+        + ck_section_intro(
+            "GALLERY", "Your data in every chart.",
+            italic_word="every",
+            body="The same table rendered across the deck family — click "
+                 "a card to switch the builder to that type.")
+        + f'<div class="cb-gallery">{gallery}</div>'
+        + notes
+        + ck_page_actions()
         + '</div>')
     return chartis_shell(
         body, "Chart Builder", active_nav="/research",
-        subtitle="CDD chart kit")
+        subtitle="CDD chart kit", extra_css=_PAGE_CSS)
 
 
 def _urlq(s: str) -> str:
