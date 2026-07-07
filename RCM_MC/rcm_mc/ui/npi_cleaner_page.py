@@ -895,7 +895,7 @@ def _body() -> str:
     <section class="npi-panel" data-panel="connectors" id="npi-panel-connectors"
          role="tabpanel" aria-labelledby="npi-tab-connectors">
       <div id="npi-conn-plan"></div>
-      <div id="npi-deep"></div>
+      <div id="npi-deep-out"></div>
       <div id="npi-compliance"></div>
       <div id="npi-order-referring"></div>
       <div id="npi-nppes"></div>
@@ -2048,8 +2048,11 @@ _EXTRA_JS = r"""
     box.innerHTML=html;
   }
 
+  // NB: the output div is npi-deep-out — id "npi-deep" belongs to the
+  // upload-stage checkbox, and getElementById on the old duplicate id
+  // silently resolved to that checkbox, so deep results never rendered.
   function renderDeep(deep, dl, wbName){
-    var box=$("npi-deep");
+    var box=$("npi-deep-out");
     if(!deep){ box.innerHTML=""; return; }
     var html='<div class="npi-conn"><div class="top">'+
       '<span class="nm">Deep recovery — full v49 pipeline</span>'+

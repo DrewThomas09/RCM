@@ -365,6 +365,15 @@ table.an-ptbl{border-collapse:collapse;width:100%;
 .an-ptbl tbody tr td.an-cor-4{background:color-mix(in srgb,var(--sc-negative,#b5321e) 24%,var(--paper-card,#fefcf3))}
 .an-ptbl tbody tr td.an-cor-5{background:color-mix(in srgb,var(--sc-negative,#b5321e) 55%,var(--paper-card,#fefcf3))}
 .an-ptbl tbody tr td.an-cor-6{background:color-mix(in srgb,var(--sc-negative,#b5321e) 88%,var(--paper-card,#fefcf3))}
+/* the −1…+1 legend ramp reuses the same classes on bare swatch spans,
+   which the td-scoped rules above cannot reach */
+.an-legend .sw.an-cor-0{background:color-mix(in srgb,var(--sc-data-2,#3a6fb0) 88%,var(--paper-card,#fefcf3))}
+.an-legend .sw.an-cor-1{background:color-mix(in srgb,var(--sc-data-2,#3a6fb0) 55%,var(--paper-card,#fefcf3))}
+.an-legend .sw.an-cor-2{background:color-mix(in srgb,var(--sc-data-2,#3a6fb0) 24%,var(--paper-card,#fefcf3))}
+.an-legend .sw.an-cor-3{background:var(--paper-card,#fefcf3);border:1px solid var(--sc-rule,#d6cfc0)}
+.an-legend .sw.an-cor-4{background:color-mix(in srgb,var(--sc-negative,#b5321e) 24%,var(--paper-card,#fefcf3))}
+.an-legend .sw.an-cor-5{background:color-mix(in srgb,var(--sc-negative,#b5321e) 55%,var(--paper-card,#fefcf3))}
+.an-legend .sw.an-cor-6{background:color-mix(in srgb,var(--sc-negative,#b5321e) 88%,var(--paper-card,#fefcf3))}
 /* strong heat / strong |r| cells flip to white text for contrast */
 .an-ptbl tbody tr td.an-heat-4,.an-ptbl tbody tr td.an-heat-5,
 .an-ptbl tbody tr td.an-heat-6,.an-ptbl tbody tr td.str{color:#fff}
@@ -667,7 +676,7 @@ _EXTRA_JS = r"""
 
   fetch("/npi-cleaner/data/"+job).then(function(r){return r.json();}).then(function(j){
     if(j.error){ $("an-meta").textContent=j.error;
-      $("an-tiles").innerHTML="";
+      $("an-tiles").innerHTML=""; $("an-fieldlist").innerHTML="";
       $("an-ptbl").innerHTML=emptyState("!","Could not load data",
         'The cleaned file for this job could not be fetched — the server may '+
         'have restarted. <a href="/npi-cleaner">Re-run the cleaner</a> and '+
@@ -686,7 +695,7 @@ _EXTRA_JS = r"""
     populateScatterSelects();
     renderStats(); renderFields(); renderZones(); recompute();
   }).catch(function(){ $("an-meta").textContent="Could not load data.";
-    $("an-tiles").innerHTML="";
+    $("an-tiles").innerHTML=""; $("an-fieldlist").innerHTML="";
     $("an-ptbl").innerHTML=emptyState("!","Could not load data",
       'The data feed did not respond — the server may have restarted. '+
       '<a href="/npi-cleaner">Re-run the cleaner</a> and open the analysis again.');

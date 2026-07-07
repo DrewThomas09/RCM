@@ -642,6 +642,10 @@ _BODY = """
         if(el) el.innerHTML=emptyBlock(null, "Could not load history.",
           null, null, null, true);
       });
+      // No data → the Rule picker has nothing to offer; hide its row so
+      // an empty enabled <select> doesn't sit above the error card.
+      var ctl=document.querySelector(".nh-ctl");
+      if(ctl) ctl.classList.add("nh-hide");
     });
 })();
 </script>
