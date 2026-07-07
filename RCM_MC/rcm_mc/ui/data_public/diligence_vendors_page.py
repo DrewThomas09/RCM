@@ -315,7 +315,7 @@ def _panel_read(r, tier_1_count: int) -> str:
             f" Spend concentrates in the {deep.phase} phase at "
             f"${deep.typical_spend_mm:,.2f}M typical over {deep.timeline_weeks} weeks."
         )
-    return ck_section_header("Panel Read") + ck_narrative_band("".join(parts))
+    return ck_section_header("Panel read") + ck_narrative_band("".join(parts))
 
 
 def render_diligence_vendors(params: dict = None) -> str:
@@ -354,14 +354,18 @@ def render_diligence_vendors(params: dict = None) -> str:
         inject_css=False,
     )
 
+    # Labels are kept to one line at the 8-up strip's tile width — a
+    # wrapped label pushes its value below the siblings' baseline and
+    # the whole number row reads ragged ("Vendors on Panel" and
+    # "Pipeline Vendors" both wrapped at 1440).
     kpi_strip = (
-        ck_kpi_block("Vendors on Panel", str(r.total_vendors), "active across the firm", "") +
+        ck_kpi_block("Panel Vendors", str(r.total_vendors), "active across the firm", "") +
         ck_kpi_block("Deals Covered", str(r.total_deals_covered), "engagements over 24 mo", "") +
         ck_kpi_block("Total Spend", spend_value, "over 24 mo", "") +
         ck_kpi_block("Avg NPS", nps_value, "deal-team surveys", "") +
-        ck_kpi_block("Tier 1 Vendors", str(tier_1_count), f"of {r.total_vendors} on panel", "") +
+        ck_kpi_block("Tier 1", str(tier_1_count), f"of {r.total_vendors} on panel", "") +
         ck_kpi_block("Categories", str(len(r.categories)), "diligence workstreams", "") +
-        ck_kpi_block("Pipeline Vendors", str(len(r.pipeline)), "in vetting", "") +
+        ck_kpi_block("In Pipeline", str(len(r.pipeline)), "vendors in vetting", "") +
         ck_kpi_block("Corpus Deals", corpus_value, "calibration corpus", "")
     )
 
@@ -374,9 +378,13 @@ def render_diligence_vendors(params: dict = None) -> str:
         tone="teal",
     )
 
+    # Section h2s are sentence-case — the diligence-family convention
+    # ("Items by phase", "Transformation log", "Diligence memo"); Title
+    # Case stays reserved for pinned product terms (e.g. the QoE memo's
+    # "Quality of Revenue" sections on /diligence/benchmarks).
     if r.vendors:
         vendors_section = (
-            ck_section_header("Active Vendor Panel",
+            ck_section_header("Active vendor panel",
                               "Ranked by 24-month deal engagements", len(r.vendors))
             + _vendors_chart(r.vendors) + _vendors_table(r.vendors)
         )
@@ -391,7 +399,7 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     if r.categories:
         categories_section = (
-            ck_section_header("Category Spend Analysis",
+            ck_section_header("Category spend analysis",
                               "Panel spend by diligence workstream", len(r.categories))
             + _categories_chart(r.categories) + _categories_table(r.categories)
         )
@@ -403,7 +411,7 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     if r.scorecards:
         scorecards_section = (
-            ck_section_header("Top Vendor Scorecards",
+            ck_section_header("Top vendor scorecards",
                               "Post-engagement survey scores", len(r.scorecards))
             + _scorecards_scatter(r.scorecards) + _scorecards_table(r.scorecards)
         )
@@ -415,7 +423,7 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     if r.pipeline:
         pipeline_section = (
-            ck_section_header("New Vendor Pipeline",
+            ck_section_header("New vendor pipeline",
                               "Prospects in vetting", len(r.pipeline))
             + _pipeline_table(r.pipeline)
         )
@@ -427,7 +435,7 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     if r.phase_spend:
         phases_section = (
-            ck_section_header("Spend by Deal Phase",
+            ck_section_header("Spend by deal phase",
                               "Typical diligence budget through the deal lifecycle")
             + _phases_table(r.phase_spend)
         )
@@ -439,7 +447,10 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     page_title = ck_page_title(
         "Diligence Vendor Directory",
-        eyebrow="DILIGENCE VENDORS",
+        # "DILIGENCE · X" eyebrow taxonomy — matches the data_public
+        # diligence siblings (/diligence-checklist "DILIGENCE · CHECKLIST
+        # GENERATOR", antitrust screener, board governance).
+        eyebrow="DILIGENCE · VENDOR PANEL",
         # Short scannable fragments — the meta row is CSS-uppercased mono,
         # so a full sentence renders as a dense all-caps block.
         meta=(f"{r.total_vendors} vendors · {len(r.categories)} categories · "
@@ -467,7 +478,16 @@ def render_diligence_vendors(params: dict = None) -> str:
 
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link
     # + Back-to-top affordances. Idempotent JS guards.
-    from .._chartis_kit import ck_page_actions
+    from .._chartis_kit import ck_next_section, ck_page_actions
+    # "Up next" chapter footer — every diligence-family page chains to
+    # the next logical surface; the vendor panel hands off to the
+    # public checklist generator (its /diligence-checklist sibling).
+    body = body + ck_next_section(
+        "Generate a diligence checklist",
+        "/diligence-checklist",
+        eyebrow="Up next",
+        italic_word="checklist",
+    )
     body = body + ck_page_actions()
     # NOTE for the kit owner: "/diligence-vendors" is not in
     # _SUB_SECTION_MAP, so no breadcrumbs / sub-nav rail resolve for this

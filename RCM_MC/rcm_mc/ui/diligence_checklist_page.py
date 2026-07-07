@@ -47,11 +47,14 @@ def _scoped_styles() -> str:
 .dc-section-note{font-size:12.5px;color:var(--sc-text-dim,#465366);
 line-height:1.6;margin:2px 0 14px;max-width:72ch;}
 
-/* ── One chip idiom for status + priority, page-wide ─────────── */
+/* ── One chip idiom for status + priority, page-wide ───────────
+   Metrics match the .npi-chip spec on the NPI-cleaner family
+   (mono 10px/600, .07em tracking, 2px 8px padding) so status chips
+   read identically across the diligence + tools surfaces. */
 .dc-chip{display:inline-block;
 font-family:var(--sc-mono,'JetBrains Mono',monospace);
-font-size:9.5px;font-weight:700;letter-spacing:0.08em;
-text-transform:uppercase;text-align:center;padding:2px 7px;
+font-size:10px;font-weight:600;letter-spacing:0.07em;
+text-transform:uppercase;text-align:center;padding:2px 8px;
 border:1px solid currentColor;border-radius:2px;white-space:nowrap;}
 .dc-chip.tone-positive{color:var(--sc-positive,#0a8a5f);}
 .dc-chip.tone-warning{color:var(--sc-warning,#b8732a);}
@@ -428,14 +431,28 @@ def _gate_blocker_row(b) -> str:
         if b.auto_verifiable else
         ck_signal_badge("MANUAL ATTESTATION", tone="neutral")
     )
-    evidence = (
-        f'<a class="dc-gate-row__evidence" '
-        f'href="{html.escape(b.evidence_url, quote=True)}">'
-        f'Produce evidence →</a>'
-        if b.evidence_url else
-        '<span class="dc-gate-row__manual">manual workstream</span>'
+    if b.evidence_url:
+        evidence = (
+            f'<a class="dc-gate-row__evidence" '
+            f'href="{html.escape(b.evidence_url, quote=True)}">'
+            f'Produce evidence →</a>'
+        )
+    elif b.auto_verifiable:
+        # Auto-verifiable but no analytic link registered yet — saying
+        # "manual workstream" here would contradict the badge above.
+        evidence = (
+            '<span class="dc-gate-row__manual">'
+            'auto-checks when the analytic runs</span>'
+        )
+    else:
+        evidence = '<span class="dc-gate-row__manual">manual workstream</span>'
+    # Omit the criterion line entirely when the registry has none —
+    # a bare "Closes when: —" reads like a rendering bug.
+    crit_html = (
+        f'<div class="dc-gate-row__crit"><span>Closes when: </span>'
+        f'{html.escape(b.completion_criteria)}</div>'
+        if b.completion_criteria else ""
     )
-    crit = html.escape(b.completion_criteria or "—")
     prio_tone = "negative" if b.priority == "P0" else "warning"
     return (
         '<li class="dc-gate-row">'
@@ -446,8 +463,7 @@ def _gate_blocker_row(b) -> str:
         f'<span class="dc-gate-row__verify">{verify}</span>'
         '</div>'
         f'<div class="dc-gate-row__q">{html.escape(b.question)}</div>'
-        f'<div class="dc-gate-row__crit"><span>Closes when: </span>'
-        f'{crit}</div>'
+        f'{crit_html}'
         f'<div>{evidence}</div>'
         '</li>'
     )
@@ -541,7 +557,10 @@ def _masthead(state: DealChecklistState, *, empty: bool) -> str:
         "observation set; wire a deal_id for live state."
     )
     return ck_editorial_head(
-        eyebrow="RCM DILIGENCE",
+        # Family cadence: every RCM DILIGENCE masthead carries a
+        # qualifier after the dot (PHASE N OF 4, SNAPSHOT INGEST,
+        # QOE MEMO) — the checklist names its surface the same way.
+        eyebrow="RCM DILIGENCE · IC CHECKLIST",
         title="Diligence Checklist",
         meta=(
             f"{state.done}/{state.total} ITEMS DONE · "
@@ -727,7 +746,9 @@ def _open_questions_block(state: DealChecklistState, *, empty: bool) -> str:
                 "checklist item is open. Start with CCD ingest or "
                 "open the diligence index to run the first analytic."
             ),
-            eyebrow="EMPTY OBSERVATION SET",
+            # "NO … YET" state-descriptor voice, matching the family's
+            # empty states ("NO DATA YET", "NO DATASET LOADED").
+            eyebrow="NO OBSERVATIONS YET",
             cta_label="Open the diligence index",
             cta_href="/diligence",
             tone="neutral",

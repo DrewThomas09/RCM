@@ -63,7 +63,7 @@ def _scoped_styles() -> str:
     only; no inline style attributes anywhere on the page."""
     css = """
 /* ── Deal-profile form ───────────────────────────────────────── */
-.dpc-form{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);
+.dpc-form{background:var(--paper,#ffffff);border:1px solid var(--sc-rule,#d6cfc0);
 border-radius:2px;padding:12px 16px 16px;margin:0 0 var(--sc-s-5,16px);}
 .dpc-fieldset{border:0;margin:0;padding:0;min-width:0;}
 .dpc-form-legend{font-family:var(--sc-mono,'JetBrains Mono',monospace);
@@ -408,7 +408,11 @@ def _editorial_head(sector: str, r, ev_mm: float, comm_pct: float,
         "Diligence rule engine · no corpus deals loaded"
     )
     return ck_editorial_head(
-        eyebrow="PUBLIC DATA · DILIGENCE",
+        # "DILIGENCE · X" eyebrow taxonomy — matches the data_public
+        # diligence siblings (vendor panel, antitrust screener, board
+        # governance) and distinguishes this public generator from the
+        # per-deal "RCM DILIGENCE · IC CHECKLIST" workspace.
+        eyebrow="DILIGENCE · CHECKLIST GENERATOR",
         title=_html.escape(f"Diligence Checklist — {sector}"),
         meta=meta,
         lede_italic_phrase="A checklist generated, not tracked:",
@@ -592,7 +596,9 @@ def render_diligence_checklist(params: dict) -> str:
                 "The rule engine returned no evaluable items for this "
                 "profile. Adjust the deal profile above and regenerate."
             ),
-            eyebrow="EMPTY RESULT",
+            # "NO … " state-descriptor voice, matching the family's empty
+            # states ("NO DATA YET", "NO DATASET LOADED").
+            eyebrow="NO ITEMS GENERATED",
             cta_label="Reset to defaults",
             cta_href="/diligence-checklist",
         )

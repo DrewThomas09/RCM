@@ -136,6 +136,15 @@ _DB_STYLES = """
 .db-hero .ck-kpi-value{font-size:34px;}
 .db-hero .ck-kpi-sub,.db-kpis .ck-kpi-sub{
   color:var(--sc-text-dim,#465366);line-height:1.7;}
+/* The kit's .ck-help wrapper is white-space:nowrap so a term never
+   separates from its [?] trigger. Inside the 7-up scorecard grid the
+   tiles are ~160px wide and the longer KPI names (FIRST-PASS DENIAL
+   RATE, NET REVENUE REALIZATION) overflowed into the neighbouring
+   tile. Let scorecard labels wrap; the trigger simply follows the
+   last word. */
+.db-hero .ck-kpi-label .ck-help,
+.db-kpis .ck-kpi-label .ck-help{white-space:normal;}
+.db-kpis .ck-kpi-label{overflow-wrap:break-word;}
 .db-hero-note{max-width:72ch;}
 .db-mono{font-family:var(--sc-mono,'JetBrains Mono',monospace);
   font-variant-numeric:tabular-nums;font-size:11px;
@@ -302,6 +311,8 @@ def render_benchmarks_page(
     bundle: Optional[KPIBundle] = None,
     cohort_report: Optional[CohortLiquidationReport] = None,
     cash_waterfall: Optional[CashWaterfallReport] = None,
+    *,
+    prelude_html: str = "",
 ) -> str:
     """Render the full Phase 2 page.
 
@@ -314,9 +325,15 @@ def render_benchmarks_page(
     KPI scorecard. The QoR waterfall is the partner's headline
     exhibit — KPIs and cohorts support it, not the other way
     around. Absent, the section renders a designed empty state.
+
+    ``prelude_html`` renders directly beneath the editorial head —
+    the benchmarks route threads the fixture selector through here so
+    every workspace phase shares the same cadence (head first,
+    controls second); it used to be spliced above the head, which
+    made Phase 2 open differently from Phases 1/3/4.
     """
     if bundle is None:
-        return _placeholder_page()
+        return _placeholder_page(prelude_html=prelude_html)
 
     as_of = bundle.as_of_date.isoformat()
     dar = bundle.days_in_ar
@@ -347,6 +364,7 @@ def render_benchmarks_page(
     body = (
         _DB_STYLES
         + head
+        + prelude_html
         + _hero(bundle)
         + _cash_waterfall_section(cash_waterfall)
         + _kpi_scorecard(bundle)
@@ -372,7 +390,7 @@ def render_benchmarks_page(
 
 # ── Section builders ────────────────────────────────────────────────
 
-def _placeholder_page() -> str:
+def _placeholder_page(*, prelude_html: str = "") -> str:
     head = ck_editorial_head(
         # Same eyebrow grammar as the sibling workspace phases
         # (rcm_mc/diligence/_pages.py): middle-dot + "PHASE N OF 4".
@@ -386,7 +404,7 @@ def _placeholder_page() -> str:
             "curves, and denial-stratification Pareto on this tab."
         ),
     )
-    body = head + ck_empty_state(
+    body = head + prelude_html + ck_empty_state(
         "Attach a Canonical Claims Dataset.",
         body=(
             "Phase 2 computes the HFMA KPI scorecard, the "

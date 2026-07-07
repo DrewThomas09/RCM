@@ -36,7 +36,6 @@ from ._chartis_kit import (
     ck_page_actions,
     ck_provenance_tooltip,
     ck_section_header,
-    ck_section_intro,
     ck_signal_badge,
 )
 from ..npi_cleaner.rules import catalog as _rule_catalog
@@ -322,6 +321,10 @@ _EXTRA_CSS = r"""
 .npi-flag a,.npi-wl{color:var(--green-deep,#154e36);text-decoration:underline;
   text-underline-offset:2px}
 .npi-subhd{font-weight:600;font-size:12.5px;margin-top:10px}
+/* Section-lede note under a ck_section_header — same spec as the
+   diligence checklist's .dc-section-note so section decks read alike. */
+.npi-secnote{font-size:12.5px;color:var(--sc-text-dim,#465366);
+  line-height:1.6;margin:2px 0 14px;max-width:72ch}
 /* ============ Issues tab chrome ============ */
 .npi-adv{margin-top:6px}
 .npi-eng{font-size:11px;color:var(--sc-text-dim,#465366);font-family:var(--mono);
@@ -562,7 +565,12 @@ def _body() -> str:
     n_flags = sum(1 for r in cat if r.get("kind") == "flag")
     n_repairs = sum(1 for r in cat if r.get("kind") == "repair")
     head = ck_editorial_head(
-        eyebrow="TOOLS · DATA HYGIENE",
+        # Consistency sweep: /npi-cleaner/analyze and /npi-cleaner/history
+        # both carry "TOOLS · NPI CLAIMS CLEANER", so the hub page carries
+        # the identical eyebrow and the cleaner → pivot → history trio
+        # reads as one tool family (the eyebrow repeating the H1 tool name
+        # follows the exports-page idiom).
+        eyebrow="TOOLS · NPI CLAIMS CLEANER",
         title="NPI Claims Cleaner",
         meta=(f"OFFLINE ENGINE · {ck_fmt_number(n_flags)} SCREENS · "
               f"{ck_fmt_number(n_repairs)} REPAIRS · "
@@ -637,15 +645,23 @@ def _body() -> str:
                    "IDs, embedded text, or Excel float mangling."),
         inject_css=False)
     method_link = ck_arrow_link("How these are computed", "#npi-method")
-    pop_intro = ck_section_intro(
-        "POPULATION · OFFLINE MARTS",
-        "What the file means, not just whether it's clean.",
-        italic_word="means",
-        body=("Where care happened, how lines group into visits, what "
-              "conditions the population carries, whether any month of data "
-              "is missing, and who codes hotter than the file. Computed "
-              "offline from the cleaned table — the class of output "
-              "Tuva-style pipelines need a warehouse for."))
+    # Section head, not ck_section_intro: a mid-body ck-section-intro
+    # makes chartis_shell auto-prepend a second ck_page_title H1 above
+    # the page's own ck_editorial_head H1 (the shell's missing-title
+    # heuristic keys on the intro class), stacking two "NPI Claims
+    # Cleaner" mastheads. The header + note pair also matches every
+    # other section head on this page (Confirm columns, Feature
+    # requests, Reference data packs).
+    pop_intro = (
+        ck_section_header(
+            "What the file means, not just whether it's clean.",
+            eyebrow="POPULATION · OFFLINE MARTS")
+        + '<p class="npi-secnote">'
+          "Where care happened, how lines group into visits, what "
+          "conditions the population carries, whether any month of data "
+          "is missing, and who codes hotter than the file. Computed "
+          "offline from the cleaned table — the class of output "
+          "Tuva-style pipelines need a warehouse for.</p>")
     wishlist_head = ck_section_header(
         "Missing something? Tell us and we'll build it.",
         eyebrow="FEEDBACK · BUILD BACKLOG")

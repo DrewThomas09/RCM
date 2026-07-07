@@ -100,14 +100,14 @@ _ERROR_CSS = """
 _DILIGENCE_CSS = _ERROR_CSS + """
   .ck-diligence-fixture { display: flex; align-items: center; gap: 12px;
     padding: 12px 16px; margin: 0 0 22px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
+    background: var(--paper, #ffffff); border: 1px solid var(--sc-rule, #d6cfc0);
     border-radius: 2px; box-shadow: var(--sc-shadow-1);
     flex-wrap: wrap; }
   .ck-diligence-fixture-label { font-family: var(--sc-mono, monospace);
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--sc-text-dim, #465366); }
   .ck-diligence-fixture-select { padding: 7px 12px; min-width: 320px;
-    border: 1px solid var(--sc-rule, #d6cfc0); background: #fff;
+    border: 1px solid var(--sc-rule, #d6cfc0); background: var(--paper, #ffffff);
     color: var(--sc-text, #1a2332);
     font-family: var(--sc-sans, Inter, sans-serif); font-size: 13px;
     border-radius: 2px; }
@@ -123,7 +123,7 @@ _DILIGENCE_CSS = _ERROR_CSS + """
   .ck-diligence-fixture-go:focus-visible {
     outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px; }
   .ck-dil-info { padding: 14px 18px; margin: 0 0 18px;
-    background: #fff; border: 1px solid var(--sc-rule, #d6cfc0);
+    background: var(--paper, #ffffff); border: 1px solid var(--sc-rule, #d6cfc0);
     border-left: 3px solid var(--sc-teal, #155752); border-radius: 2px;
     font-family: var(--sc-serif, Georgia, serif); font-size: 13.5px;
     line-height: 1.6; color: var(--sc-text-dim, #465366);
@@ -144,13 +144,13 @@ _DILIGENCE_CSS = _ERROR_CSS + """
   .ck-dil-chips { display: flex; flex-wrap: wrap; gap: 6px;
     margin: 0 0 14px; }
   .ck-dil-chip { display: inline-flex; align-items: center; gap: 8px;
-    padding: 3px 10px; background: #fff;
+    padding: 3px 10px; background: var(--paper, #ffffff);
     border: 1px solid var(--sc-rule, #d6cfc0); border-radius: 2px;
     font-family: var(--sc-mono, monospace); font-size: 11px;
     color: var(--sc-text, #1a2332); }
   .ck-dil-chip b { color: var(--sc-teal, #155752); font-weight: 700;
     font-variant-numeric: tabular-nums; }
-  .ck-dil-panel { background: #fff;
+  .ck-dil-panel { background: var(--paper, #ffffff);
     border: 1px solid var(--sc-rule, #d6cfc0); border-radius: 2px;
     padding: 16px 18px; margin: 0 0 18px; }
   .ck-dil-pareto-row { margin-bottom: 12px; }
@@ -186,7 +186,7 @@ _QOE_CSS = _ERROR_CSS + """
     text-transform: uppercase; color: var(--sc-text-dim, #465366); }
   .qoe-form select, .qoe-form input { width: 100%; padding: 9px 12px;
     font-size: 13.5px; border: 1px solid var(--sc-rule, #d6cfc0);
-    background: #fff; color: var(--sc-text, #1a2332); border-radius: 2px;
+    background: var(--paper, #ffffff); color: var(--sc-text, #1a2332); border-radius: 2px;
     font-family: var(--sc-sans, Inter, sans-serif); }
   .qoe-form select:focus-visible, .qoe-form input:focus-visible {
     outline: 2px solid var(--sc-teal, #155752); outline-offset: 2px;
@@ -531,23 +531,6 @@ def _transformation_log_preview(ccd: Any) -> str:
 
 # ── Phase 2: /diligence/benchmarks ─────────────────────────────────
 
-def _inject_after_main(page_html: str, fragment: str) -> str:
-    """Splice ``fragment`` immediately after the opening <main> tag.
-
-    Used by the benchmarks route, whose shell is rendered by
-    ``rcm_mc.ui.diligence_benchmarks`` (another owner). Both the
-    placeholder and the live branch go through this ONE helper so the
-    fixture selector lands in the same top-of-page position in every
-    state — it previously appended before </main> in the empty state
-    (bottom of page) and after <main> in the live state (top)."""
-    idx = page_html.find("<main")
-    if idx >= 0:
-        close = page_html.find(">", idx)
-        if close > 0:
-            return page_html[:close + 1] + fragment + page_html[close + 1:]
-    return page_html
-
-
 def render_benchmarks_page(
     dataset: str = "",
     *,
@@ -568,7 +551,9 @@ def render_benchmarks_page(
         )
 
     # The delegated page's shell doesn't carry our extra_css, so the
-    # selector travels with its own <style> block.
+    # selector travels with its own <style> block. It threads through
+    # ``prelude_html`` so it renders beneath the editorial head — the
+    # same cadence (head first, controls second) as Phases 1/3/4.
     selector = (
         "<style>" + _DILIGENCE_CSS + "</style>"
         + _fixture_selector(
@@ -579,8 +564,7 @@ def render_benchmarks_page(
 
     ds_path = _resolve_dataset(dataset)
     if ds_path is None:
-        placeholder = _render()  # renders the placeholder
-        return _inject_after_main(placeholder, selector)
+        return _render(prelude_html=selector)  # renders the placeholder
 
     try:
         from . import (
@@ -617,9 +601,8 @@ def render_benchmarks_page(
             extra_css=_DILIGENCE_CSS,
         )
 
-    live_html = _render(bundle=bundle, cohort_report=cohort,
-                        cash_waterfall=waterfall)
-    return _inject_after_main(live_html, selector)
+    return _render(bundle=bundle, cohort_report=cohort,
+                   cash_waterfall=waterfall, prelude_html=selector)
 
 
 # ── Partner-signed QoE memo: /diligence/qoe-memo ───────────────────

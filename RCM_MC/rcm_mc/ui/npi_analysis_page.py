@@ -203,7 +203,7 @@ _EXTRA_CSS = r"""
    Same anatomy as the cleaner/history buttons (.npi-dl / .nh-btn):
    2px radius, uppercase 12px/600 tracking — so the trio's controls
    read as one tool. Cards/panels keep the 4px --an-r. */
-.an-btn{appearance:none;border:1px solid var(--sc-rule-2,#bfb6a2);
+.an-btn{appearance:none;border:1px solid var(--sc-rule,#d6cfc0);
   background:var(--paper-card,#fefcf3);border-radius:var(--sc-r-1,2px);
   padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;
   letter-spacing:.05em;text-transform:uppercase;
@@ -293,12 +293,14 @@ table.an-ptbl{border-collapse:collapse;width:100%;
   border-bottom:1px solid var(--rule-soft,#ddd1ac)}
 .an-ptbl td{font-size:12px;color:var(--ink,#16263a);
   font-family:var(--sc-mono,'JetBrains Mono',monospace)}
-/* sticky header row */
+/* sticky header row — sans/dim header labels matching the family table
+   idiom (.npi-tbl th on /npi-cleaner and the kit's .ck-table thead th);
+   the mono stays reserved for the numeric cells below */
 .an-ptbl thead th{position:sticky;top:0;z-index:2;
-  background:var(--paper-card,#fefcf3);color:var(--ink-2,#2b3e54);
-  font-weight:600;font-size:10px;text-transform:uppercase;
-  letter-spacing:.06em;padding-top:9px;padding-bottom:9px;
-  font-family:var(--sc-mono,'JetBrains Mono',monospace);
+  background:var(--paper-card,#fefcf3);color:var(--sc-text-dim,#465366);
+  font-weight:600;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.07em;padding-top:9px;padding-bottom:9px;
+  font-family:var(--sc-sans,'Inter Tight',sans-serif);
   border-bottom:1.5px solid var(--sc-rule-2,#bfb6a2)}
 /* sticky row-label column — labels stay in the UI sans */
 .an-ptbl th.k,.an-ptbl td.k{position:sticky;left:0;text-align:left;
@@ -307,8 +309,7 @@ table.an-ptbl{border-collapse:collapse;width:100%;
   background:var(--paper-card,#fefcf3);
   border-right:1.5px solid var(--sc-rule,#d6cfc0);max-width:300px;
   overflow:hidden;text-overflow:ellipsis}
-.an-ptbl thead th.k{z-index:3;
-  font-family:var(--sc-mono,'JetBrains Mono',monospace);font-size:10px}
+.an-ptbl thead th.k{z-index:3;font-size:10.5px}
 .an-ptbl tbody td.k{z-index:1}
 /* zebra striping */
 .an-ptbl tbody tr:nth-child(even) td{
@@ -470,7 +471,9 @@ def _body(job_id: str, available: bool, src_name: str) -> str:
             ("The cleaning job was not found — the in-memory job store "
              "resets when the server restarts. Re-run the cleaner and open "
              "the analysis again from the scorecard."),
-            eyebrow="NPI CLEANER",
+            # State-descriptor eyebrow, matching the empty-state voice on
+            # the sibling pages ("NO RUNS RECORDED YET", "NO DATA YET").
+            eyebrow="SESSION EXPIRED",
             icon="⟳",
             cta_label="Re-run the cleaner",
             cta_href="/npi-cleaner",
@@ -1382,14 +1385,14 @@ _EXTRA_JS = r"""
       else series.forEach(function(_,si){maxV=Math.max(maxV,valOf(rk,si));}); });
     maxV=maxV||1; var ticks=4;
     function sy(v){ return T+ih-(v/maxV)*ih; }
-    var chartName=aggLabel()+
+    var chartName=aggLabel()+(state.pct?" · % of total":"")+
       (state.cols.length?" by "+(state.rows.join(", ")||"all")+" × "+state.cols[0]
         :" by "+(state.rows.join(", ")||"all"));
     var svg=svgOpen(W,H,chartName);
-    // gridlines
+    // gridlines (disp() so the axis flips to % when "% of total" is on)
     for(var t=0;t<=ticks;t++){ var gv=maxV*t/ticks, gy=sy(gv);
       svg+='<line x1="'+L+'" y1="'+gy+'" x2="'+(W-R)+'" y2="'+gy+'" '+GRID+'/>';
-      svg+=axisText(L-6,gy+3,"end",fmtNum(gv)); }
+      svg+=axisText(L-6,gy+3,"end",disp(gv)); }
     var bw=iw/rKeys.length;
     rKeys.forEach(function(rk,ri){
       var x0=L+ri*bw;
@@ -1403,7 +1406,7 @@ _EXTRA_JS = r"""
             '" fill="'+pal[si%pal.length]+'" rx="2" data-tip="'+esc(rk+" · "+sname+": "+fmtNum(v))+'"/>';
         });
         if(rKeys.length<=16&&acc>0)
-          svg+=valLabel(x0+bw/2,sy(acc)-5,fmtNum(acc));
+          svg+=valLabel(x0+bw/2,sy(acc)-5,disp(acc));
       } else { // grouped
         var gw=bw*0.8/series.length;
         series.forEach(function(sname,si){ var v=valOf(rk,si);
@@ -1411,7 +1414,7 @@ _EXTRA_JS = r"""
           svg+='<rect x="'+bx+'" y="'+by+'" width="'+Math.max(1,gw-2)+'" height="'+Math.max(0,(T+ih)-by)+
             '" fill="'+pal[si%pal.length]+'" rx="2" data-tip="'+esc(rk+" · "+sname+": "+fmtNum(v))+'"/>';
           if(labelOK&&v>0)
-            svg+=valLabel(bx+Math.max(1,gw-2)/2,by-4,fmtNum(v));
+            svg+=valLabel(bx+Math.max(1,gw-2)/2,by-4,disp(v));
         });
       }
       // x label
@@ -1427,8 +1430,11 @@ _EXTRA_JS = r"""
         pts.forEach(function(pp,ri){ svg+='<circle cx="'+pp[0]+'" cy="'+pp[1]+'" r="3.5" fill="'+
           pal[si%pal.length]+'" stroke="var(--paper-card,#fefcf3)" stroke-width="1.5" data-tip="'+
           esc(rKeys[ri]+" · "+sname+": "+fmtNum(valOf(rKeys[ri],si)))+'"/>';
-          if(labelOK)
-            svg+=valLabel(pp[0],pp[1]-8,fmtNum(valOf(rKeys[ri],si))); });
+          // Zero points keep their dot but drop the label — matches the
+          // grouped-bar rule and keeps the baseline uncluttered.
+          var lv=valOf(rKeys[ri],si);
+          if(labelOK&&lv>0)
+            svg+=valLabel(pp[0],pp[1]-8,disp(lv)); });
       });
     }
     // axis baseline
