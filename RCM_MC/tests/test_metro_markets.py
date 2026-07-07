@@ -57,7 +57,8 @@ class MetroMarketsTests(unittest.TestCase):
 
 
 class MetroInsightTests(unittest.TestCase):
-    """P13 bullets recompute from the same rows the table renders."""
+    """P13 bullets recompute from the same rows the table renders
+    (backlog #34): figures re-derived exactly, trivia suppressed."""
 
     def test_oldest_market_bullet_rederives(self):
         from rcm_mc.ui.data_public.metro_markets_page import (
@@ -66,10 +67,37 @@ class MetroInsightTests(unittest.TestCase):
         aged = [(r["cbsa_title"], r["pct_age_65_plus"]) for r in rows
                 if r.get("pct_age_65_plus") is not None]
         top = max(aged, key=lambda x: x[1])
+        med = sorted(x[1] for x in aged)[len(aged) // 2]
         h = render_metro_markets({})
         self.assertIn("Metropolitan areas — the read", h)
         self.assertIn(top[0][:40], h)
         self.assertIn(f"{top[1]*100:.1f}% 65+", h)
+        self.assertIn(f"a {med*100:.1f}% median across {len(aged)}", h)
+
+    def test_uninsured_bullet_rederives(self):
+        from rcm_mc.ui.data_public.metro_markets_page import (
+            metro_rows, render_metro_markets)
+        rows = metro_rows("Metropolitan", "population")
+        unins = [(r["cbsa_title"], r["uninsured_rate"]) for r in rows
+                 if r.get("uninsured_rate") is not None]
+        hi = max(unins, key=lambda x: x[1])
+        med = sorted(x[1] for x in unins)[len(unins) // 2]
+        h = render_metro_markets({})
+        self.assertIn(hi[0][:40], h)
+        self.assertIn(f"at {hi[1]*100:.1f}% vs a {med*100:.1f}% median", h)
+
+    def test_tiny_deltas_suppressed(self):
+        # 0.4pp over the median clears neither guard → no bullets at all.
+        from rcm_mc.ui.data_public.metro_markets_page import _metro_insights
+        rows = [{"cbsa_title": f"M{i}", "pct_age_65_plus": 0.180,
+                 "uninsured_rate": 0.080} for i in range(10)]
+        rows[0]["pct_age_65_plus"] = 0.184
+        rows[0]["uninsured_rate"] = 0.084
+        self.assertEqual(_metro_insights(rows, "Metropolitan"), "")
+
+    def test_empty_rows_render_nothing(self):
+        from rcm_mc.ui.data_public.metro_markets_page import _metro_insights
+        self.assertEqual(_metro_insights([], "Metropolitan"), "")
 
 
 if __name__ == "__main__":
