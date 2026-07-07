@@ -56,7 +56,7 @@ Each item lists: score / rationale / verification plan. Re-groomed every refill.
 | # | Item | Score | Verification plan |
 |---|---|---|---|
 | 31 | ◐ PARTIAL — state-detail pin map shipped (no-fake-points); remaining nub: catchment radius option | 12 | verified 2026-06-12 |
-| 32 | **P10 provenance-coverage metric** — static scan: % of ck_kpi_block call sites carrying provenance affordance (tooltip/source/basis) per page; publish on /methodology | 22 | scan reproducible by test; number matches hand-count on 2 pages |
+| 32 | ✅ DONE — P10 provenance-coverage metric (static AST scan of ck_kpi_block call sites; per-page + overall % published live on /methodology) | — | LOG W4-007 |
 | 33 | ✅ DONE — all-hospital peer sets link → /pipeline/rollup?ccns= | — | W2-211 |
 | 34 | **P13 long-tail: bullets on /metro-markets + /county-explorer** — same guarded recompute pattern | 20 | figures re-derived in tests exactly |
 | 35 | **Glossary long-tail: predictive-screener + X-Ray metric headers** — metric_label_link adoption | 18 | links resolve; no dead anchors (helper guard); tests |

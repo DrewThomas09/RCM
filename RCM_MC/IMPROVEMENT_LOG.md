@@ -4942,3 +4942,49 @@ dashboard / snapshot page; portfolio nan guard); test_dev_seed extended for
 the sourced shape. demo/seed/renderer suites 57 + 29 + 78 + 68 passed; HTTP
 E2E on a demo-seeded server (/deal/sth, /analysis/sth, /portfolio: 200s, CCN
 named, no leaks); full route walk re-run clean of the nan finding.
+
+## W4-007 (2026-07-07) — BACKLOG #32: provenance-coverage metric live on /methodology
+The methodology hub now applies its own standard ("where the platform shows
+its work") to the platform itself: what % of `ck_kpi_block` stat blocks let a
+partner trace the number to its origin. **16.7% overall — 346 of 2,077 call
+sites across 325 page renderers** at ship time (a live number, recomputed
+each deploy — the point is to watch it climb).
+- **`rcm_mc/ui/_provenance_coverage.py`**: one importable scan function
+  (`scan_provenance_coverage`) consumed by BOTH the /methodology renderer and
+  the tests — no duplicated logic, no hand-maintained number that can drift
+  (same reasoning as W4-006's no-hardcoded-copies rule). Static AST scan of
+  `rcm_mc/ui/**/*.py` (multi-line calls handled natively; `def` lookalikes
+  and `__pycache__`/`static` excluded). A call site counts as covered when
+  it carries a **tooltip** (`help={"definition": …}` gloss, or a
+  `ck_provenance_tooltip`/`provenance_tooltip`/`ck_help_tooltip` call in an
+  argument), a **source** (`ck_source_link(...)`, or a `Source:` string
+  marker), or a **basis** note (`basis:` marker; CSS `flex-basis:` excluded
+  by lookbehind). ONE hop of local-name resolution — pages routinely build
+  `value = ck_provenance_tooltip(...)` a line above the block (source_page),
+  and a human hand count sees that tooltip, so the scanner must too. Explicit
+  `help=None` stays uncovered (the deliberate opt-out spelling). Unparseable
+  files (concurrent editor mid-save) are reported in `skipped`, never fatal.
+  `python3 -m rcm_mc.ui._provenance_coverage` prints a worst-first
+  leaderboard for hand verification (v5_fidelity_audit precedent).
+- **/methodology (library_page.py)**: "Provenance Coverage" appendix after
+  the catalog sections — one-line definition of what counts, three
+  `ck_kpi_block`s (call sites / with provenance / coverage %, all carrying
+  `help=` glosses — the section dogfoods its own metric), and a scrollable
+  worst-first per-page table (page · call sites · with provenance ·
+  coverage, 1dp; zero-coverage rows in coral). Hidden under an active `?q=`
+  filter (the partner asked for matching entries, not a 300-row scan table).
+  Scan cached per process (`lru_cache`) — ~2 s once, not per request; the
+  hot path stayed hot by materializing AST scope children once per scope
+  instead of a recursive generator (a 10x scan speedup found while timing).
+**Verify**: tests/test_provenance_coverage.py (17: synthetic fixture tree
+with 10 known call sites → exactly 6 covered incl. one-hop/f-string/attr-call
+boundaries + flex-basis and help=None non-matches; scan-twice reproducibility
+on an isolated tree; hand-count pins on two stable pages —
+exports_index_page.py 2/2 = 100.0%, source_page.py 2 of 3 = 66.7%; live-tree
+internal consistency without pinning the moving global %; /methodology
+renders the SAME cached report's numbers, per-page rows match, appendix
+hidden under ?q=). Existing methodology/library suites re-run green:
+test_library_editorial_and_search + test_sticky_and_backtotop (28),
+chartis-integration/page-actions/model-card/research/ui-rework/provenance-
+tooltip (136 + 6 skipped), seekingchartis_v2 + guide-metric + screener-AR
+(24 + 6 skipped).
