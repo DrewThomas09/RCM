@@ -35,16 +35,26 @@ import html
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from ._chartis_kit import chartis_shell, ck_page_title, ck_source_purpose
+from ._chartis_kit import (
+    chartis_shell, ck_copy_share_link_button, ck_editorial_head,
+    ck_empty_state, ck_eyebrow, ck_fmt_number, ck_kpi_block,
+    ck_print_view_button, ck_provenance_tooltip, ck_section_header,
+    ck_signal_badge,
+)
 from ._us_geo_paths import US_STATE_PATHS
 from .cdd_chart_kit import chart_export_toolbar
 
 # ── Editable config (drive the map from Python here) ─────────────────
 
-#: Gradient stops — low value → mid value → high value.
-DEFAULT_LOW_COLOR = "#fde0dd"     # light
-DEFAULT_MID_COLOR = "#fa9fb5"     # midpoint
-DEFAULT_HIGH_COLOR = "#7a0177"    # high
+#: Gradient stops — low value → mid value → high value. The defaults
+#: follow the kit's documented sequential chart ramp (see "Inline-SVG
+#: editorial charts" in rcm_mc/ui/README.md): soft-green → teal →
+#: teal-deep, so a fresh page (and the /visuals hub thumbnail, which
+#: inherits these via ``resolve_inputs(None)``) opens on the house
+#: palette rather than an ad-hoc one. The pickers still override.
+DEFAULT_LOW_COLOR = "#7ED3A8"     # soft-green (low)
+DEFAULT_MID_COLOR = "#1F7A75"     # teal (midpoint)
+DEFAULT_HIGH_COLOR = "#155752"    # teal-deep (high)
 
 #: EXAMPLE values — edit this dict / paste your own per state (percent).
 #: Placeholders only; replace with your real numbers.
@@ -296,7 +306,10 @@ def _svg_legend(cfg: Dict[str, Any]) -> str:
         f'<stop offset="0%" stop-color="{html.escape(cfg["c_low"])}"/>'
         f'<stop offset="50%" stop-color="{html.escape(cfg["c_mid"])}"/>'
         f'<stop offset="100%" stop-color="{html.escape(cfg["c_high"])}"/>')
-    tick = (f'font-family="{_SERIF}" font-size="11" fill="#1a2332" '
+    # Literal ink hex (not var()) — the legend is baked into SVG/PNG
+    # exports, which must stay self-contained. #16263a is the kit's
+    # canonical --ink fallback.
+    tick = (f'font-family="{_SERIF}" font-size="11" fill="#16263a" '
             f'pointer-events="none"')
     # Per-render gradient id: two compact maps on one page (or a page
     # plus the visuals-hub thumbnail) must not share a <defs> id.
@@ -358,7 +371,7 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
             f'<path class="em-state" data-state="{code}" '
             f'data-name="{html.escape(name)}" '
             f'data-value="{html.escape(label)}"{rank_attr} '
-            f'd="{rec["d"]}" fill="{fill}" stroke="{stroke}" '
+            f'd="{rec["d"]}" fill="{html.escape(fill)}" stroke="{stroke}" '
             f'stroke-width="{sw}" tabindex="0" role="button" '
             f'aria-label="{html.escape(tip)}">'
             f'<title>{html.escape(tip)}</title></path>')
@@ -387,7 +400,7 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
             callouts += (
                 f'<g class="em-callout" data-state="{code}">'
                 f'<rect x="{cx}" y="{y}" width="15" height="15" rx="2.5" '
-                f'fill="{fill}" stroke="#ffffff" stroke-width="0.7">'
+                f'fill="{html.escape(fill)}" stroke="#ffffff" stroke-width="0.7">'
                 f'<title>{html.escape(STATE_NAMES[code])}: '
                 f'{html.escape(label)}</title></rect>'
                 f'<text x="{cx + 22}" y="{y + 11.5}" text-anchor="start" '
