@@ -84,9 +84,16 @@ def _to_float(v: Any) -> Optional[float]:
         return None
 
 
+#: title() lowercases acronym words ("days_in_ar" → "Days In Ar");
+#: fix the domain acronyms a partner would trip over.
+_ACRONYMS = {"Ar": "AR", "Ebitda": "EBITDA", "Rcm": "RCM",
+             "Npsr": "NPSR", "Kpi": "KPI"}
+
+
 def _prettify_key(v: Any) -> str:
     """"denial_rate" → "Denial Rate" for lever / pattern keys."""
-    return str(v or "").replace("_", " ").strip().title()
+    pretty = str(v or "").replace("_", " ").strip().title()
+    return " ".join(_ACRONYMS.get(w, w) for w in pretty.split(" "))
 
 
 # ── Page-scoped CSS (classes, never style= attributes) ─────────────
@@ -114,6 +121,11 @@ _DLQ_CSS = (
 
 _PLB_CSS = (
     "<style>"
+    # .dlq-dim is shared by both renderers but each page injects only
+    # its own <style> block, so the rule must live in both (the
+    # playbook page otherwise renders its dashes/category column in
+    # full-strength ink).
+    ".dlq-dim{color:var(--sc-text-dim);}"
     ".plb-title{font-weight:500;}"
     ".plb-rec{display:block;font-weight:400;font-size:12px;"
     "color:var(--sc-text-dim);max-width:64ch;margin-top:3px;}"
@@ -214,7 +226,9 @@ def render_diligence_questions(deal_id: str, deal_name: str,
         context = str(q.get("context") or "")
         if not rationale_src:
             rationale_src, context = context, ""
-        rationale = html.escape(rationale_src)
+        # Em-dash the empty cell (matches the playbook's missing-field
+        # treatment) instead of leaving a blank td.
+        rationale = html.escape(rationale_src) if rationale_src else "—"
         context_attr = f' title="{html.escape(context)}"' if context else ""
         # Machine-readable firing pattern ("denial_rate=14.5%") —
         # every question shows what fired it, in mono under the text.

@@ -319,9 +319,14 @@ _CSS = (
     '.sc-head .meta{font:500 11px/1 var(--sc-mono,monospace);'
     'letter-spacing:.14em;text-transform:uppercase;'
     'color:var(--muted,#7a8595);margin:0 0 18px;}'
-    '.sc-head .lede{font:400 16.5px/1.6 var(--sc-serif,Georgia),serif;'
+    # Whole-lede italic with the green-deep <em> phrase — same idiom as
+    # ck_editorial_head and the sibling section landings; the second
+    # (explainer) paragraph drops to roman via .roman, mirroring the
+    # shared head's explainer treatment.
+    '.sc-head .lede{font:400 italic 16.5px/1.6 var(--sc-serif,Georgia),serif;'
     'color:var(--ink-2,#2b3e54);max-width:68ch;margin:0 0 14px;}'
     '.sc-head .lede em{color:var(--green-deep,#154e36);font-style:italic;}'
+    '.sc-head .lede.roman{font-style:normal;}'
     '.sc-head .source-note{font:500 10px/1.4 var(--sc-mono,monospace);'
     'letter-spacing:.14em;text-transform:uppercase;'
     'color:var(--muted-2,#9a9e8a);margin:0 0 18px;max-width:72ch;}'
@@ -513,7 +518,7 @@ def _head(n_surfaces: int, n_pillars: int, tiers: Counter) -> str:
         'the target, frame the thesis, size the market, stress the '
         'assumptions, then synthesize for IC — with the codified '
         'partner-judgment toolkit alongside.</p>'
-        '<p class="lede">Each row names a surface and the one-line job '
+        '<p class="lede roman">Each row names a surface and the one-line job '
         'it does. The status dot is derived from the surface-status '
         'registry on every render — green for live data, ink for a '
         'model computed off your inputs, coral where your data upload '
@@ -646,7 +651,8 @@ def _link_row(link: Mapping[str, str]) -> str:
         f'<a class="dlx-link" href="{_html.escape(link["href"], quote=True)}">'
         '<div class="dlx-row">'
         f'<span class="sc-dot {cls}" role="img" '
-        f'aria-label="{_html.escape(label, quote=True)}"></span>'
+        f'aria-label="{_html.escape(label, quote=True)}" '
+        f'title="{_html.escape(label, quote=True)}"></span>'
         f'<span class="dlx-label">{_html.escape(link["label"])}</span>'
         f'{tag}'
         '<span class="dlx-arrow" aria-hidden="true">&rarr;</span>'

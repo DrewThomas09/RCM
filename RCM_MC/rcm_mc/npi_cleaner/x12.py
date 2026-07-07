@@ -23,7 +23,8 @@ from typing import Dict, List, Optional, Tuple
 # TOB domain check, PatientName → de-id target, …).
 HEADERS: List[str] = [
     "ClaimID", "PayerName", "BillingProviderName", "BillingNPI",
-    "RenderingNPI", "AttendingNPI", "PatientName", "DateOfService",
+    "RenderingNPI", "AttendingNPI", "ReferringNPI", "OrderingNPI",
+    "OperatingNPI", "PatientName", "DateOfService",
     "PlaceOfService", "TypeOfBill", "RevenueCode", "HCPCS", "Modifiers",
     "DiagnosisCode", "Units", "BilledAmt",
 ]
@@ -32,12 +33,24 @@ HEADERS: List[str] = [
 def looks_like_x12(data: bytes) -> bool:
     """An interchange starts with "ISA" + a one-byte element separator.
     The separator is never alphanumeric, which cheaply rejects CSVs whose
-    first header happens to start with "ISA…"."""
+    first header happens to start with "ISA…" — EXCEPT when the separator
+    itself is a CSV delimiter ("ISA,BillingNPI" / "ISA\\tBillingNPI").
+    For those, the full ISA envelope shape is required: a real ISA carries
+    16 elements (≥16 separators) before its first line break, while a CSV
+    header cell named "ISA" is followed by a newline long before that."""
     head = data.lstrip()[:4]
     if len(head) < 4 or not head.startswith(b"ISA"):
         return False
     sep = head[3:4]
-    return not sep.isalnum() and sep not in (b" ",)
+    if sep.isalnum() or sep in (b" ",):
+        return False
+    if sep in (b",", b";", b"|", b"\t"):
+        probe = data.lstrip()[:200]
+        nl = probe.find(b"\n")
+        window = probe if nl < 0 else probe[:nl]
+        if window.count(sep) < 16:
+            return False
+    return True
 
 
 def _separators(text: str) -> Tuple[str, str, str]:
@@ -135,19 +148,41 @@ def x12_to_table(data: bytes) -> Optional[Tuple[List[str], List[List[str]]]]:
                 if id_qual == "XX":
                     ctx["billing_npi"] = ident
             elif qual == "82" and id_qual == "XX":  # rendering
-                ctx["rendering_npi"] = ident
+                # A line-level 2420A rendering provider overrides the
+                # claim-level 2310B for THAT LINE ONLY — stored on the open
+                # line (cleared at flush) so it can't leak onto subsequent
+                # lines of the same claim that lack their own 2420A.
+                if line is not None:
+                    line["rendering"] = ident
+                else:
+                    ctx["rendering_npi"] = ident
             elif qual == "71" and id_qual == "XX":  # attending (837I)
                 ctx["attending_npi"] = ident
+            elif qual in ("DN", "P3") and id_qual == "XX":  # referring
+                if line is not None:               # 2420F line-level
+                    line["referring"] = ident
+                else:                              # 2310A claim-level
+                    ctx["referring_npi"] = ident
+            elif qual == "DK" and id_qual == "XX":  # ordering (2420E)
+                if line is not None:
+                    line["ordering"] = ident
+                else:
+                    ctx["ordering_npi"] = ident
+            elif qual == "72" and id_qual == "XX":  # operating (837I)
+                ctx["operating_npi"] = ident
             elif qual == "PR":                     # payer
                 ctx["payer"] = last_or_org
             elif qual in ("IL", "QC") and is_person:
                 ctx["patient"] = name
         elif tag == "CLM" and len(seg) > 1:
             flush_claim()
-            # Rendering/attending live in the 2310 loops AFTER their CLM —
-            # they must not leak forward into the next claim.
+            # Per-claim provider loops (2310) live AFTER their CLM — they
+            # must not leak forward into the next claim.
             ctx.pop("rendering_npi", None)
             ctx.pop("attending_npi", None)
+            ctx.pop("referring_npi", None)
+            ctx.pop("ordering_npi", None)
+            ctx.pop("operating_npi", None)
             claim = {"claim_id": seg[1],
                      "total": seg[2] if len(seg) > 2 else ""}
             # CLM05 composite: facility/POS code : qualifier : frequency.
@@ -347,8 +382,13 @@ def _row(ctx: Dict[str, str], claim: Dict[str, str],
         ctx.get("payer", ""),
         ctx.get("billing_name", ""),
         ctx.get("billing_npi", ""),
-        ctx.get("rendering_npi", ""),
+        # Line-level 2420 providers win over the claim-level 2310 loop for
+        # their own line only (see the NM1 handler).
+        line.get("rendering") or ctx.get("rendering_npi", ""),
         ctx.get("attending_npi", ""),
+        line.get("referring") or ctx.get("referring_npi", ""),
+        line.get("ordering") or ctx.get("ordering_npi", ""),
+        ctx.get("operating_npi", ""),
         ctx.get("patient", ""),
         line.get("dos") or claim.get("dos", ""),
         line.get("pos") or claim.get("pos", ""),

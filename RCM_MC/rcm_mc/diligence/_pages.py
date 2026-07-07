@@ -131,6 +131,11 @@ _DILIGENCE_CSS = _ERROR_CSS + """
     font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase;
     color: var(--sc-text-dim, #465366); margin: 0 0 12px; }
   .ck-dil-note-after { margin: 8px 0 18px; }
+  /* The provenance-tooltip card inherits the note's uppercase +
+     tracking when the trigger sits inside .ck-dil-note — reset so
+     the methodology explainer reads as sentence case, not caps. */
+  .ck-dil-note .ck-prov-tt-card { text-transform: none;
+    letter-spacing: normal; }
   .ck-dil-files { margin: 14px 0 0; padding: 0 0 0 18px; }
   .ck-dil-files li { font-family: var(--sc-mono, monospace);
     font-size: 11px; color: var(--sc-text-dim, #465366);
@@ -157,11 +162,11 @@ _DILIGENCE_CSS = _ERROR_CSS + """
   .ck-dil-pareto-num { font-family: var(--sc-mono, monospace);
     font-variant-numeric: tabular-nums;
     color: var(--sc-text-dim, #465366); white-space: nowrap; }
-  .ck-dil-pareto-track { background: var(--sc-bone, #efeadd);
+  .ck-dil-pareto-track { background: var(--sc-bone, #ece5d6);
     height: 5px; border-radius: 1px; overflow: hidden; }
   .ck-dil-pareto-fill { background: var(--sc-teal, #155752);
     height: 100%; }
-  .ck-dil-total td { border-top: 2px solid var(--sc-rule-2, #c9c1ac);
+  .ck-dil-total td { border-top: 2px solid var(--sc-rule-2, #bfb6a2);
     font-weight: 700; }
   .ck-dil-2col { display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

@@ -967,13 +967,16 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
             for s in cohort.steps:
                 is_terminal = s.name == "realized_cash"
                 is_addback = s.name == "appeals_recovered"
+                is_base = s.name == "gross_charges"
                 step_tone = ("pos" if is_terminal
                              else "dim" if is_addback else None)
                 cell_tone = ("pos" if is_terminal
                              else "dim" if is_addback else None)
-                sign = ("+" if is_addback
-                        else "" if (is_terminal or s.amount_usd == 0)
-                        else "−")
+                # The opening base and the terminal cash row are levels,
+                # not flows — no sign. Zero amounts (e.g. no appeals
+                # recovered) show a bare $0.00, never "+$0.00"/"−$0.00".
+                sign = ("" if (is_terminal or is_base or s.amount_usd == 0)
+                        else "+" if is_addback else "−")
                 parts.append(
                     "<tr>"
                     + ck_data_cell(
