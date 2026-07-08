@@ -358,6 +358,13 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
                     help="also write <stem>_bundle.zip with every artifact "
                          "(cleaned file, workbook, change log, exec report, "
                          "scorecard JSON, data dictionary, worklists)")
+    ap.add_argument("--understatement", action="store_true",
+                    help="analyze why the claims file UNDERSTATES the business "
+                         "(volume / price / scale) and print a labeled, MODELED "
+                         "gross-up scorecard + diligence asks, then exit")
+    ap.add_argument("--understatement-html", default=None, metavar="FILE",
+                    help="with --understatement, also write the scorecard as a "
+                         "standalone HTML one-pager to FILE")
     # Management (CRUD) subcommands — profiles / mapping templates / run
     # history / wishlist, usable from cron and scripts, not just the web UI.
     # Each is optional, short-circuits, and returns an exit code, exactly
@@ -458,6 +465,28 @@ def main(argv: Optional[list] = None, prog: str = "rcm-mc npi-clean") -> int:
     if not src.is_file():
         sys.stderr.write(f"error: no such file: {src}\n")
         return 2
+
+    # Understatement analysis — the "why claims understate, and a labeled
+    # gross-up to fix it" layer. Short-circuits like the other analysis flags:
+    # it reads the file, runs the offline detector, and prints/writes the
+    # scorecard without invoking the full cleaning pipeline.
+    if args.understatement:
+        from . import understatement as _und
+        from . import understatement_report as _undr
+        data = src.read_bytes()
+        result = _und.analyze_bytes(data, src.name)
+        if args.json:
+            _emit_json(result.as_dict())
+        else:
+            sys.stdout.write(_undr.render_text(result, src.name) + "\n")
+        if args.understatement_html:
+            from datetime import datetime, timezone
+            html = _undr.build_report(
+                result, src.name,
+                datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
+            Path(args.understatement_html).write_text(html, encoding="utf-8")
+            sys.stdout.write(f"wrote {args.understatement_html}\n")
+        return 0
 
     from . import engine
     prof_cfg = None
