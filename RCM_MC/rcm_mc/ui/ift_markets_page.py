@@ -702,12 +702,31 @@ def render_ift_markets() -> str:
               "post-acute density, the competitive insource-vs-outsource read, "
               "and the moat verdict."))
 
+    download = (
+        '<div style="margin:14px 0 6px;padding:14px 18px;border:1px solid '
+        'var(--sc-border,#e4dccb);border-left:3px solid var(--sc-teal,#155752);'
+        'border-radius:4px;background:var(--sc-surface,#faf7f1);display:flex;'
+        'flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">'
+        '<div style="font-family:var(--sc-serif,Georgia,serif);font-size:14px;'
+        'color:var(--sc-text,#1a2332);max-width:78ch;">'
+        '<strong>Investor data pack.</strong> Every sourced figure — the '
+        'TAM&nbsp;&rarr;&nbsp;SAM&nbsp;&rarr;&nbsp;SOM build, each target market\'s '
+        'facility structure and sizing, the clinical demand spine, and the '
+        'competitive / insourcing / moat / three-lever layers — in one auditable '
+        'workbook, every cell carrying its honesty basis.</div>'
+        '<a href="/api/ift/markets.xlsx" download '
+        'style="flex:none;font-family:var(--sc-mono,Consolas,monospace);'
+        'font-size:12px;font-weight:600;letter-spacing:0.04em;text-decoration:none;'
+        'color:#fff;background:var(--sc-teal,#155752);padding:9px 16px;'
+        'border-radius:3px;">Download Excel &darr;</a></div>')
+
     parts: List[str] = [
         _styles(),
         ck_eyebrow("IFT Target Markets"),
         head,
         _legend_row(),
         kpi_strip,
+        download,
         intro,
         # National overview
         ck_section_intro(
