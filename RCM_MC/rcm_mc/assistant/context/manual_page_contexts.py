@@ -14007,6 +14007,53 @@ _MANUAL.extend([
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/ift-study", "IFT Market Study",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="The investor-ready IFT market study — four dimensions "
+        "(market context taxonomy, the IFT ecosystem, the health-system POV on "
+        "operating models, and company positioning) synthesizing the sized IFT "
+        "pages, with MMT as the deep-dive subject.",
+        primary_purpose="Answer the market-study questions an investor asks: what "
+        "IFT is (vs 911/NEMT/air/CCT), how the ecosystem works, how health systems "
+        "insource/outsource/hybrid and buy it, and how MMT is positioned vs the "
+        "competitive field.",
+        common_questions=[
+            "How is IFT different from 911, NEMT, CCT, and air transport?",
+            "What are the insourced / outsourced / hybrid operating models?",
+            "How do health systems procure transportation and what are the pain points?",
+            "How is MMT positioned vs national EMS, regional privates, and insourced programs?",
+            "Where does each competitor operate across the footprint?",
+        ],
+        inputs=["The IFT module spine (ift_study + ift_geo/analytics/clinical/"
+                "competitive/insourcing/tracking) + a ?company= selector."],
+        outputs=["A four-dimension study: the taxonomy matrix, the patient-journey "
+                 "ecosystem, the operating-model + procurement + pain framework, "
+                 "and per-company positioning (MMT deep-dive by default)."],
+        key_metrics=["Transport-modality taxonomy", "Insource/outsource/hybrid mix",
+                     "Competitive footprint by metro", "TAM / SAM / SOM"],
+        data_sources=["Authored market taxonomy (ACADEMIC/ILLUSTRATIVE, GOV anchors "
+                      "named) + the SOURCED IFT spine (ift_geo footprints, clinical "
+                      "scenarios, CMS post-acute counts); company facts public-web."],
+        model_logic_summary="Synthesizes the sized IFT modules into the SOW's four "
+        "dimensions; classifies operating models by delivered VOLUME not billing; "
+        "MMT positioning + archetype contrast reused from ift_competitive.",
+        why_it_matters="It is the investor narrative layer — the market education "
+        "(IFT is its own market) plus the MMT differentiation and whitespace thesis.",
+        diligence_use_cases=["Investor market education; competitive positioning; "
+                             "underwriting the dedicated-IFT-partner thesis."],
+        interpretation_guidance=[
+            "Read the basis chip on every figure; the taxonomy is authored market "
+            "knowledge with GOV anchors named inside.",
+            "Insourcing is classified by delivered transport volume, not asset "
+            "ownership or who bills.",
+        ],
+        limitations=["Company facts are public-web, labelled; offline the "
+                     "quantitative anchors degrade to honest notes."],
+        related_routes=["/ift-markets", "/ift-clinical", "/market"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/ift-markets", "Interfacility Transport — Target Markets",
         category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The ground interfacility-transport (IFT) market, sized "

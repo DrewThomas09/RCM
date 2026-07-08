@@ -269,6 +269,18 @@ class TestIFTClinicalPage(unittest.TestCase):
                        "volume driver"):
             self.assertIn(marker, self.html, f"section missing: {marker}")
 
+    def test_exactly_one_page_title(self):
+        self.assertEqual(self.html.count("<h1"), 1,
+                         "IFT clinical page must render exactly one <h1>")
+
+    def test_has_chart_visuals_with_export(self):
+        self.assertIn("ck-chart-card", self.html)
+        self.assertIn("ck-chart-dl", self.html)         # PNG export button
+        self.assertGreaterEqual(self.html.count("<svg"), 3)
+        for probe in ("Projected volume growth by condition",
+                      "National volume by condition", "Mission-acuity mix"):
+            self.assertIn(probe, self.html, f"missing chart: {probe}")
+
     def test_growth_takeaway_and_real_supply_counts(self):
         self.assertIn("structural", self.html)
         self.assertIn("tailwind", self.html)
