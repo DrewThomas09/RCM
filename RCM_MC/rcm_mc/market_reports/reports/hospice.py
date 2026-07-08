@@ -9,9 +9,10 @@ economics, and the program-integrity crackdown that reset valuations.
 from __future__ import annotations
 
 from .. import (
-    Competition, Connection, HowItWorks, Kpi, MarketReport, MarketSize,
-    Regulatory, Reimbursement, Risk, Rule, Segment, Source, TamHeadline,
-    UnitEconomics, default_connections, live_figures_from_dive, register,
+    CmsTrend, Competition, Connection, CostDriver, GrowthLever, HowItWorks,
+    Kpi, MarketReport, MarketSize, Regulatory, Reimbursement, Risk, Rule,
+    Segment, Source, TamHeadline, UnitEconomics, VolumeDriver,
+    default_connections, live_figures_from_dive, register,
 )
 
 REPORT = MarketReport(
@@ -322,6 +323,109 @@ REPORT = MarketReport(
                "/diligence/tam-sam?template=hospice"),
     ],
     live_figures=live_figures_from_dive("hospice"),
+    trends=(
+        "Hospice ran the hottest post-acute roll-up of the last decade: for-"
+        "profit ownership climbed past 70% and PE multiples peaked around 2021 "
+        "at double-digit EBITDA. Two forces then reshaped the trajectory. "
+        "First, a new-license glut — concentrated in California and the Sun "
+        "Belt — manufactured a class of shell/flip agencies, saturating "
+        "referral markets. Second, the government caught up: OIG vulnerability "
+        "reports, CMS new-provider moratoria in glut markets, and the 2025 "
+        "Hospice Special Focus Program moved geography and license vintage from "
+        "footnotes to first-order underwriting inputs. Demand keeps rising on "
+        "the boomer mortality curve and climbing decedent penetration, and "
+        "dementia/non-cancer diagnoses lengthen stays (good for revenue, worse "
+        "for cap and audit exposure) — but quality-of-earnings now centers on "
+        "aggregate-cap headroom and eligibility durability, not census growth."),
+    growth_levers=[
+        GrowthLever(
+            "65+ decedent growth (boomer mortality curve)",
+            "The demographic engine — annual Medicare deaths rise as the boomer "
+            "cohort ages into terminal illness.",
+            "+2.0%/yr deaths", "GOV"),
+        GrowthLever(
+            "Election-rate penetration of decedents",
+            "The share of Medicare decedents who elect the hospice benefit "
+            "keeps rising off a base already above ~50%.",
+            "+1.5%/yr penetration", "GOV"),
+        GrowthLever(
+            "Length-of-stay mix (dementia / non-cancer)",
+            "Non-cancer diagnoses lengthen stays, adding high-margin routine-"
+            "home-care days per admission — until aggregate-cap liability bites.",
+            "+1.0%/yr LOS mix", "ILLUSTRATIVE"),
+        GrowthLever(
+            "Annual hospice payment update",
+            "The four per-diems step up with the annual Final Rule and wage "
+            "index.",
+            "+2.5%/yr rate", "GOV"),
+        GrowthLever(
+            "Program-integrity drag",
+            "OIG/CMS scrutiny, the Special Focus Program, and Sun Belt "
+            "moratoria remove supply and reprice long-stay economics.",
+            "−1.5%/yr", "GOV"),
+    ],
+    volume_growth_driver=VolumeDriver(
+        driver="65+ deaths × the hospice election rate",
+        analysis=(
+            "The dominant demand driver is the number of Medicare decedents who "
+            "elect the benefit — roughly 1.7M annual hospice users today. Two "
+            "multiplicands compound it: deaths grow ~2%/yr on the boomer "
+            "mortality curve, and election penetration of decedents is already "
+            "above 50% and still climbing. Diagnosis mix amplifies both — "
+            "dementia and other non-cancer conditions expand the eligible pool "
+            "and lengthen stays, adding high-margin routine-home-care days per "
+            "admission. The offsetting drag is the late-referral short stay "
+            "(often cancer), which is visit-heavy at admission and death with "
+            "little profitable middle — good clinically, poor economically."),
+        basis="GOV"),
+    cost_drivers=[
+        CostDriver(
+            "Interdisciplinary visit labor (RN, aide, MSW, chaplain)",
+            "~55-65% of cost",
+            "The core cost — the interdisciplinary group. It concentrates at "
+            "admission and the final days of life, leaving the quiet middle of "
+            "a long stay high-margin.", "ILLUSTRATIVE"),
+        CostDriver(
+            "24/7 on-call & clinical management",
+            "~10-15% of cost",
+            "Round-the-clock nursing availability and medical direction — a "
+            "fixed cost that scale spreads across more census.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Drugs, DME & supplies (folded into the per-diem)",
+            "~10-15% of cost",
+            "Comfort-focused medications, oxygen, and equipment are bundled "
+            "into the per-diem — the provider absorbs them, so utilization "
+            "management is margin.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Room-and-board pass-through (nursing facility / GIP)",
+            "varies by site mix",
+            "Nursing-facility room-and-board and contracted General Inpatient "
+            "beds — pass-throughs that draw Anti-Kickback and referral "
+            "scrutiny.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Bereavement, QA & compliance (HQRP / HOPE)",
+            "~5-10% of cost",
+            "Mandated bereavement services plus quality reporting and audit-"
+            "defense overhead.", "ILLUSTRATIVE"),
+    ],
+    cms_trend=CmsTrend(
+        takeaway=(
+            "Our provider roll shows hospice certifications accelerating "
+            "hardest in the 2020s — the fastest post-acute build in our files, "
+            "and the fingerprint of the for-profit expansion and the Sun Belt "
+            "license glut. That same build wave is what drew the OIG, the "
+            "moratoria, and the 2025 Special Focus Program: the supply curve "
+            "and the integrity-risk curve are the same curve. Read the newest "
+            "cohorts as both the M&A pool and the audit pool."),
+        chart_kind="bars"),
+    state_breakdown=(
+        "California and Texas dominate — together ~46% of providers, with "
+        "California alone near 30%, the signature of the Sun Belt new-license "
+        "glut rather than proportional demand. For-profit ownership runs ~78% "
+        "and peaks near 95% in California; that concentration is simultaneously "
+        "the acquisition pool and the program-integrity-risk pool. The CMS "
+        "hospice file carries no operator/chain field, so chain HHI is honestly "
+        "omitted — fragmentation is the structure."),
 )
 
 register(REPORT)

@@ -8,9 +8,10 @@ strategic-buyer crowding that reshaped the sector.
 from __future__ import annotations
 
 from .. import (
-    Competition, Connection, HowItWorks, Kpi, MarketReport, MarketSize,
-    Regulatory, Reimbursement, Risk, Rule, Segment, Source, TamHeadline,
-    UnitEconomics, default_connections, live_figures_from_dive, register,
+    CmsTrend, Competition, Connection, CostDriver, GrowthLever, HowItWorks,
+    Kpi, MarketReport, MarketSize, Regulatory, Reimbursement, Risk, Rule,
+    Segment, Source, TamHeadline, UnitEconomics, VolumeDriver,
+    default_connections, live_figures_from_dive, register,
 )
 
 REPORT = MarketReport(
@@ -324,6 +325,114 @@ REPORT = MarketReport(
                "/diligence/tam-sam?template=home_health"),
     ],
     live_figures=live_figures_from_dive("home_health"),
+    trends=(
+        "The defining event is PDGM (2020): 30-day periods replaced 60-day "
+        "episodes, therapy volume stopped paying, and case-mix moved to "
+        "clinical grouping, admission source, timing, functional level, and "
+        "comorbidity — agencies that didn't re-engineer staffing were crushed. "
+        "Since then two vectors dominate the trajectory. First, CMS's permanent "
+        "and temporary behavioral-adjustment clawbacks cut the FFS rate every "
+        "cycle on the assertion that PDGM overpaid. Second, Medicare Advantage "
+        "penetration has pushed past half of volume at many agencies, and MA "
+        "pays 80-90% of FFS with prior-auth friction — so the blended rate "
+        "falls even when FFS holds. Meanwhile the top of the market "
+        "consolidated into payers (UnitedHealth/Optum absorbed LHC Group and "
+        "Amedisys; Humana verticalized CenterWell), and hospital-at-home is "
+        "opening a new acute-adjacent referral surface. Net trajectory: volume "
+        "up on demographics, rate structurally down."),
+    growth_levers=[
+        GrowthLever(
+            "Aging-in-place demand (65+ growth)",
+            "The demographic floor — a growing 65+ population plus a strong "
+            "preference to recover at home lifts referrable episode volume.",
+            "+3.0%/yr", "GOV"),
+        GrowthLever(
+            "Site-of-care shift to home",
+            "Payers and patients steer post-acute recovery out of SNF/IRF into "
+            "the home; discharge planners increasingly default to home health.",
+            "+4.0%/yr", "ILLUSTRATIVE"),
+        GrowthLever(
+            "Hospital-at-home adjacency",
+            "The Acute Hospital Care at Home waiver and acute-at-home "
+            "partnerships open a new, higher-acuity referral surface for home-"
+            "based clinicians.",
+            "emerging · waiver-dependent", "GOV"),
+        GrowthLever(
+            "PDGM behavioral-adjustment clawback",
+            "CMS recoups asserted PDGM overpayment via permanent + temporary "
+            "FFS cuts every rule cycle — a persistent rate headwind, not a "
+            "volume one.",
+            "−1.5%/yr rate", "GOV"),
+        GrowthLever(
+            "Medicare Advantage penetration",
+            "MA pays 80-90% of FFS and keeps taking share; the blended rate "
+            "falls structurally as penetration rises.",
+            "−0.5%/yr blended-rate drag", "ILLUSTRATIVE"),
+    ],
+    volume_growth_driver=VolumeDriver(
+        driver="Hospital-discharge (post-acute) referrals on the 65+ aging curve",
+        analysis=(
+            "The dominant volume driver is the hospital-discharge referral: "
+            "roughly 62% of episodes originate from a post-acute discharge, and "
+            "the discharge relationship (often a hospital JV or preferred-"
+            "network alignment) is simultaneously the moat and the single point "
+            "of failure. Underneath it sits the demographic floor — the 65+ "
+            "population growing ~3%/yr — feeding ~3.3M annual Medicare home-"
+            "health users at ~2.9 thirty-day periods each (MedPAC). The two "
+            "throttles on converting that demand are clinician labor supply "
+            "(you can't staff the referral you can't fill) and MA prior "
+            "authorization, which gates a rising share of episodes. Referral "
+            "concentration on one or two systems is the first diligence risk."),
+        basis="GOV"),
+    cost_drivers=[
+        CostDriver(
+            "Clinician visit labor (RN, PT, OT, ST, aide, MSW)",
+            "~55-65% of cost",
+            "The dominant cost — wages times the number of visits delivered per "
+            "period. Margin is the spread between the case-mix period payment "
+            "and the visits actually required.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Back office (OASIS coding, intake, billing, QA)",
+            "~10-15% of cost",
+            "OASIS coding accuracy and NOA timely-filing live here; scale earns "
+            "its keep in this layer more than in clinical unit cost.",
+            "ILLUSTRATIVE"),
+        CostDriver(
+            "Travel / mileage & scheduling",
+            "~5-10% of cost",
+            "Windshield time between homes — a real productivity tax in rural "
+            "and low-density territories that compresses visits per clinician-"
+            "day.", "ILLUSTRATIVE"),
+        CostDriver(
+            "LUPA leakage (opportunity cost)",
+            "8-12% of periods",
+            "Periods below the clinical-group visit threshold drop to low per-"
+            "visit rates — a margin leak managed operationally rather than a "
+            "line item.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Compliance & G&A (RCD, HHVBP)",
+            "~5-10% of cost",
+            "Pre-claim review burden in Review Choice Demonstration states plus "
+            "HHVBP quality operations that put ±5% of payment at risk.",
+            "ILLUSTRATIVE"),
+    ],
+    cms_trend=CmsTrend(
+        takeaway=(
+            "Our agency roll shows certifications still climbing into the 2020s "
+            "— the site-of-care shift keeps minting agencies even as the rate "
+            "compresses. Read it against the economics: a rising agency count "
+            "and rising volume can coexist with falling economic profit as PDGM "
+            "clawbacks and MA displacement pull the blended rate down. The "
+            "vintage curve is supply momentum, not margin."),
+        chart_kind="bars"),
+    state_breakdown=(
+        "The market is strikingly concentrated in a few states — California and "
+        "Texas alone hold ~40% of certified agencies, with the top-5 states "
+        "over 60%, a footprint shaped as much by historically low entry "
+        "barriers and fraud-hotspot dynamics as by demand. Proprietary (for-"
+        "profit) ownership dominates at ~87%, and that proprietary tail is the "
+        "platform-tuck-in pool. The CMS agency file carries no operator/chain "
+        "field, so chain concentration is honestly omitted."),
 )
 
 register(REPORT)

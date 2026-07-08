@@ -198,6 +198,45 @@ class UnitEconomics:
     margin_profile: str             # paragraph
 
 
+# ── Deep-section records (the "one hour and you have the whole idea" layer) ──
+# All OPTIONAL on MarketReport (default None / empty) so existing modules keep
+# validating; a figure-bearing record carries a basis label, checked below.
+@dataclass
+class GrowthLever:
+    """One distinct engine of growth, with its mechanism and rough magnitude."""
+    lever: str
+    mechanism: str
+    magnitude: str                  # e.g. "+1.8%/yr", "primary", "−1.5%/yr"
+    basis: str = "ILLUSTRATIVE"     # one of BASIS_LABELS (magnitude's basis)
+
+
+@dataclass
+class VolumeDriver:
+    """The single dominant demand driver, isolated and analyzed."""
+    driver: str                     # e.g. "ESRD prevalence"
+    analysis: str                   # paragraph
+    basis: str = "GOV"              # one of BASIS_LABELS
+
+
+@dataclass
+class CostDriver:
+    """One line of the ranked cost structure — what actually moves margin."""
+    driver: str                     # e.g. "Clinical labor"
+    share_or_rank: str              # e.g. "~55% of cost" or "#1"
+    note: str
+    basis: str = "ILLUSTRATIVE"     # one of BASIS_LABELS
+
+
+@dataclass
+class CmsTrend:
+    """A real trended CMS series + its written takeaway. The SERIES itself is
+    computed at render time (``analytics.supply_trend(slug)``) so it stays
+    SOURCED and never hand-typed; the author supplies the reading."""
+    takeaway: str                   # "what this shows"
+    source_label: str = ""          # renderer fills from analytics if blank
+    chart_kind: str = "bars"        # bars | line
+
+
 @dataclass
 class MarketReport:
     """A complete, authored, honestly-sourced subsector dossier.
@@ -225,6 +264,20 @@ class MarketReport:
     sources: List[Source]
     naics: Optional[str] = None
     live_figures: List[LiveFigure] = field(default_factory=list)
+
+    # ── Deep sections (all OPTIONAL — absent = fine, backward compatible) ────
+    # The multi-year trajectory, the growth engine breakdown, the isolated
+    # volume driver, the ranked cost structure, the real CMS trend + takeaway,
+    # and an optional authored supplement to the computed state breakdown. The
+    # state-breakdown TABLE + its computed insight always come from
+    # ``analytics.state_breakdown(slug)`` at render; ``state_breakdown`` here is
+    # only an optional authored note layered on top.
+    trends: Optional[str] = None
+    growth_levers: List[GrowthLever] = field(default_factory=list)
+    volume_growth_driver: Optional[VolumeDriver] = None
+    cost_drivers: List[CostDriver] = field(default_factory=list)
+    cms_trend: Optional[CmsTrend] = None
+    state_breakdown: Optional[str] = None
 
     # ── Integrity ──────────────────────────────────────────────────────────
     def validate(self) -> None:
@@ -270,6 +323,31 @@ class MarketReport:
                 errs.append(f"{label} is empty")
         if not self.insider_lens:
             errs.append("insider_lens must carry at least one non-obvious note")
+        # ── Deep-section basis labels (checked only when present) ──
+        for gl in self.growth_levers:
+            if gl.basis not in BASIS_LABELS:
+                errs.append(
+                    f"growth_lever {gl.lever!r} basis {gl.basis!r} not in "
+                    f"{BASIS_LABELS}")
+            if not gl.lever.strip() or not gl.mechanism.strip():
+                errs.append(f"growth_lever {gl.lever!r} missing lever/mechanism")
+        if self.volume_growth_driver is not None:
+            vd = self.volume_growth_driver
+            if vd.basis not in BASIS_LABELS:
+                errs.append(
+                    f"volume_growth_driver basis {vd.basis!r} not in "
+                    f"{BASIS_LABELS}")
+            if not vd.driver.strip() or not vd.analysis.strip():
+                errs.append("volume_growth_driver missing driver/analysis")
+        for cd in self.cost_drivers:
+            if cd.basis not in BASIS_LABELS:
+                errs.append(
+                    f"cost_driver {cd.driver!r} basis {cd.basis!r} not in "
+                    f"{BASIS_LABELS}")
+            if not cd.driver.strip() or not cd.share_or_rank.strip():
+                errs.append(f"cost_driver {cd.driver!r} missing driver/share")
+        if self.cms_trend is not None and not self.cms_trend.takeaway.strip():
+            errs.append("cms_trend.takeaway is empty")
         if errs:
             raise ValueError(
                 f"MarketReport({self.slug!r}) failed validation:\n  - "

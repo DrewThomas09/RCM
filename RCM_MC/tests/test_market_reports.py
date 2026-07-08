@@ -39,6 +39,12 @@ _SECTION_HEADS = (
     "Competition", "Unit economics", "Risks", "Diligence questions",
     "Insider lens", "Our data connections", "Sources",
 )
+# The deep-analysis sections added on top of the base dossier — every flagship
+# must render all six (real data where it exists, an honest note otherwise).
+_DEEP_HEADS = (
+    "Multi-year trends", "Key growth levers", "What drives volume",
+    "Cost structure", "CMS data, trended", "State breakdown",
+)
 # Container tags our renderer always opens+closes explicitly. HTMLParser puts
 # <script>/<style> bodies in CDATA mode, so tag-looking text inside them is not
 # counted — this is a real structural balance check, not a string count.
@@ -246,6 +252,133 @@ class WiringTests(unittest.TestCase):
         self.assertIn("/market", routes)
         research = {e["href"] for e in _SUB_NAV["research"]}
         self.assertIn("/market", research)
+
+
+class AnalyticsTests(unittest.TestCase):
+    """The shared analytics helpers must return real, sane numbers from our
+    vendored provider rolls — and honest unavailable markers off-file."""
+
+    def test_state_breakdown_dialysis_is_real_and_sane(self):
+        from rcm_mc.market_reports.analytics import state_breakdown
+        sb = state_breakdown("dialysis")
+        self.assertTrue(sb.available)
+        self.assertGreater(sb.n_states, 50, "expected >50 states")
+        self.assertGreater(sb.n_facilities, 7000, "expected the full DFC roll")
+        self.assertEqual(len(sb.rows), sb.n_states)
+        # Rows sorted descending by facility count.
+        counts = [r.facilities for r in sb.rows]
+        self.assertEqual(counts, sorted(counts, reverse=True))
+        # For-profit share is a real fraction in (0,1].
+        self.assertIsNotNone(sb.national_for_profit_share)
+        self.assertTrue(0.5 < sb.national_for_profit_share <= 1.0)
+        # Top-5 concentration is a fraction of the base.
+        self.assertTrue(0.2 < sb.top5_share < 0.6)
+        # Dialysis carries a named-operator column → a real chain HHI + duopoly.
+        self.assertIsNotNone(sb.chain_hhi)
+        self.assertGreater(sb.chain_hhi, 1000)  # concentrated
+        self.assertTrue(sb.top_chains)
+        self.assertIn(sb.top_chains[0][0],
+                      ("DaVita", "Fresenius Medical Care"))
+        self.assertTrue(sb.insight.strip())
+        self.assertTrue(sb.source_label.startswith("SOURCED"))
+
+    def test_supply_trend_dialysis_has_plausible_cagr_and_inflection(self):
+        from rcm_mc.market_reports.analytics import supply_trend
+        st = supply_trend("dialysis")
+        self.assertTrue(st.available)
+        self.assertGreater(st.n_facilities, 7000)
+        self.assertTrue(st.points and st.cohorts)
+        self.assertIsNotNone(st.cagr)
+        self.assertTrue(0.0 < st.cagr < 0.30, f"implausible CAGR {st.cagr}")
+        self.assertIsNotNone(st.inflection_year)
+        self.assertTrue(1990 <= st.inflection_year <= 2025,
+                        f"inflection {st.inflection_year} out of range")
+        self.assertLess(st.window_start, st.window_end)
+        self.assertTrue(st.source_label.startswith("SOURCED"))
+        self.assertTrue(st.takeaway.strip())
+
+    def test_every_provider_backed_slug_computes_a_state_breakdown(self):
+        from rcm_mc.market_reports.analytics import (
+            provider_backed_slugs, state_breakdown, supply_trend)
+        for slug in provider_backed_slugs():
+            sb = state_breakdown(slug)
+            self.assertTrue(sb.available, f"{slug}: no state breakdown")
+            self.assertGreater(sb.n_states, 40, f"{slug}: too few states")
+            st = supply_trend(slug)
+            self.assertTrue(st.available, f"{slug}: no supply trend")
+            self.assertIsNotNone(st.cagr, f"{slug}: no CAGR")
+
+    def test_deals_only_slug_returns_honest_unavailable_markers(self):
+        # cardiology is canonical but deals-only (no vendored facility file).
+        from rcm_mc.market_reports.analytics import (
+            state_breakdown, supply_trend)
+        sb = state_breakdown("cardiology")
+        st = supply_trend("cardiology")
+        self.assertFalse(sb.available)
+        self.assertFalse(st.available)
+        self.assertTrue(sb.note.strip())
+        self.assertTrue(st.note.strip())
+        self.assertEqual(sb.rows, [])
+
+
+class DeepSectionRenderTests(unittest.TestCase):
+    """The new deep sections must render on real data, well-formed, chipped —
+    and fall back to an honest note (never a fake chart) when data is absent."""
+
+    def test_each_flagship_renders_every_deep_section(self):
+        for slug in _FLAGSHIPS:
+            html = render_market_report(slug)
+            for head in _DEEP_HEADS:
+                self.assertIn(head, html, f"{slug}: deep section {head!r} missing")
+
+    def test_cms_trend_svg_is_well_formed_and_sourced(self):
+        html = render_market_report("dialysis")
+        # A real inline-SVG chart card from the chart kit.
+        self.assertIn("ck-chart-card", html)
+        self.assertIn("certification-vintage cohort", html)
+        self.assertGreaterEqual(html.count("<svg"), 1)
+        self.assertEqual(html.count("<svg"), html.count("</svg>"),
+                         "unbalanced <svg> tags")
+        # The takeaway carries a SOURCED basis chip beside the series.
+        self.assertIn("ck-mr-chip-sourced", html)
+
+    def test_state_breakdown_renders_table_and_choropleth_with_real_states(self):
+        html = render_market_report("dialysis")
+        self.assertIn("usgeo-svg", html)          # the choropleth
+        self.assertIn("HOW THE MARKET DIFFERS BY STATE", html)  # section eyebrow
+        # Real top states from the DFC roll appear in the table.
+        self.assertIn(">TX<", html)
+        self.assertIn(">CA<", html)
+
+    def test_new_figures_carry_basis_chips(self):
+        # Growth levers + cost drivers ship ILLUSTRATIVE/GOV chips; the
+        # computed state/trend figures ship SOURCED chips.
+        for slug in _FLAGSHIPS:
+            html = render_market_report(slug)
+            self.assertIn("ck-mr-chip-illustrative", html)
+            self.assertIn("ck-mr-chip-sourced", html)
+
+    def test_missing_data_deep_sections_render_honest_note_not_fake_chart(self):
+        # Exercise the renderer's honest-note branch directly with a stub full
+        # report on a deals-only slug (no vendored facility file).
+        from rcm_mc.ui.market_report_page import (
+            _cms_trend_section, _state_breakdown_section)
+
+        class _Stub:
+            slug = "cardiology"
+            name = "Cardiology"
+            cms_trend = None
+            state_breakdown = None
+
+        cms = _cms_trend_section(_Stub())
+        geo = _state_breakdown_section(_Stub())
+        self.assertIn("CMS data, trended", cms)
+        self.assertIn("State breakdown", geo)
+        # Honest omission, never a fabricated chart/map.
+        self.assertNotIn("<svg", cms)
+        self.assertNotIn("usgeo-svg", geo)
+        self.assertIn("unavailable offline", cms)
+        self.assertIn("deals-only", geo)
 
 
 class HttpRouteTests(unittest.TestCase):

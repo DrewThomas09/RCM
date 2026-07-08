@@ -16,13 +16,16 @@ import html as _html
 from typing import List, Optional
 
 from .. import market_reports as _mr
+from ._chart_kit import ck_bar_chart, ck_chart_assets
 from ._chartis_kit import (
     P, chartis_shell, ck_arrow_link, ck_editorial_head, ck_empty_state,
     ck_eyebrow, ck_fmt_number, ck_fmt_percent, ck_narrative_band,
     ck_next_section, ck_page_actions, ck_panel, ck_provenance_tooltip,
     ck_section_header, ck_section_intro,
 )
+from .us_geo_map import render_us_geo_map
 from ..market_reports import MarketReport
+from ..market_reports.analytics import state_breakdown, supply_trend
 
 
 def _esc(x: object) -> str:
@@ -312,6 +315,222 @@ def render_market_report(slug: str) -> str:
     return _render_full(rep)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  Deep sections — the "one hour and you have the whole idea" layer
+# ═══════════════════════════════════════════════════════════════════════════
+def _trends_section(rep: MarketReport) -> str:
+    if not rep.trends:
+        return ""
+    return (ck_section_header("Multi-year trends", eyebrow="WHERE IT'S HEADING")
+            + ck_panel(f'<p class="ck-mr-prose">{_esc(rep.trends)}</p>'))
+
+
+def _growth_levers_section(rep: MarketReport) -> str:
+    if not rep.growth_levers:
+        return ""
+    rows = "".join(
+        "<tr>"
+        f"<td>{_esc(g.lever)}</td>"
+        f"<td>{_esc(g.mechanism)}</td>"
+        f'<td class="ck-mr-num">{_esc(g.magnitude)}</td>'
+        f"<td>{_basis_chip(g.basis)}</td>"
+        "</tr>"
+        for g in rep.growth_levers)
+    body = (
+        '<p class="ck-mr-prose">The distinct engines of growth — each with its '
+        'mechanism and rough magnitude.</p>'
+        '<table class="ck-mr-table"><thead><tr>'
+        '<th>Lever</th><th>Mechanism</th><th>Magnitude</th><th>Basis</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>')
+    return (ck_section_header("Key growth levers", eyebrow="WHAT DRIVES GROWTH",
+                              count=len(rep.growth_levers))
+            + ck_panel(body))
+
+
+def _volume_driver_section(rep: MarketReport) -> str:
+    vd = rep.volume_growth_driver
+    if vd is None:
+        return ""
+    body = (
+        f'<p class="ck-mr-prose"><strong>{_esc(vd.driver)}</strong> '
+        f'{_basis_chip(vd.basis)}</p>'
+        f'<p class="ck-mr-prose">{_esc(vd.analysis)}</p>')
+    return (ck_section_header("What drives volume",
+                              eyebrow="THE DOMINANT DEMAND DRIVER")
+            + ck_panel(body))
+
+
+def _cost_drivers_section(rep: MarketReport) -> str:
+    if not rep.cost_drivers:
+        return ""
+    rows = "".join(
+        "<tr>"
+        f"<td>{_esc(c.driver)}</td>"
+        f'<td class="ck-mr-num">{_esc(c.share_or_rank)}</td>'
+        f"<td>{_esc(c.note)}</td>"
+        f"<td>{_basis_chip(c.basis)}</td>"
+        "</tr>"
+        for c in rep.cost_drivers)
+    body = (
+        '<p class="ck-mr-prose">The ranked cost structure — the big line items '
+        'that actually move margin.</p>'
+        '<table class="ck-mr-table"><thead><tr>'
+        '<th>Cost driver</th><th>Share / rank</th><th>Note</th><th>Basis</th>'
+        f'</tr></thead><tbody>{rows}</tbody></table>'
+        '<p class="ck-mr-src">Shares/ranks are ILLUSTRATIVE cost-structure '
+        'benchmarks unless chipped otherwise — confirm against the target’s '
+        'own cost report.</p>')
+    return (ck_section_header("Cost structure", eyebrow="WHAT MOVES MARGIN",
+                              count=len(rep.cost_drivers))
+            + ck_panel(body))
+
+
+def _cms_trend_section(rep: MarketReport) -> str:
+    """A REAL trended CMS series (computed via analytics.supply_trend) rendered
+    as an inline-SVG chart PLUS a written takeaway. Missing data → an honest
+    note, never a fabricated chart."""
+    st = supply_trend(rep.slug)
+    ct = rep.cms_trend
+    header = ck_section_header("CMS data, trended",
+                              eyebrow="REAL SERIES + TAKEAWAY")
+    if not st.available:
+        note = st.note or ("A trended CMS series is unavailable offline for "
+                           "this subsector.")
+        body = f'<p class="ck-mr-prose">{_esc(note)}</p>'
+        if ct and ct.takeaway:
+            body += ('<p class="ck-mr-prose"><strong>Reading</strong> — '
+                     f'{_esc(ct.takeaway)}</p>')
+        return header + ck_panel(body)
+
+    src = (ct.source_label if (ct and ct.source_label) else st.source_label)
+    items = [(c.label, float(c.net_adds), "teal") for c in st.cohorts]
+    chart = ck_bar_chart(
+        "Facility supply by certification-vintage cohort", items,
+        value_fmt=lambda v: f"{int(v):,}",
+        source=src,
+        subtitle=("Net adds to the currently-open facility stock, by 5-year "
+                  "certification cohort"),
+        chart_id=f"mr-supply-{rep.slug}")
+
+    facts: List[str] = []
+    if st.cagr is not None and st.window_start and st.window_end:
+        facts.append(f'cumulative CAGR <b>{st.cagr * 100:+.1f}%/yr</b> '
+                     f'({st.window_start}–{st.window_end})')
+    if st.inflection_year:
+        facts.append(f'peak-build year <b>{st.inflection_year}</b>')
+    if st.peak_cohort:
+        facts.append(f'heaviest cohort <b>{_esc(st.peak_cohort)}</b>')
+    facts_line = (
+        '<div class="ck-mr-mast">' + " &middot; ".join(facts)
+        + f' {_basis_chip("SOURCED")}</div>') if facts else ""
+
+    authored = (f'<p class="ck-mr-prose">{_esc(ct.takeaway)}</p>'
+                if (ct and ct.takeaway) else "")
+    body = (
+        ck_chart_assets()
+        + chart
+        + facts_line
+        + '<p class="ck-mr-prose"><strong>What this shows</strong> '
+        + _source_chip(src) + '</p>'
+        + f'<p class="ck-mr-prose">{_esc(st.takeaway)}</p>'
+        + authored
+        + f'<p class="ck-mr-src">{_esc(st.note)}</p>')
+    return header + ck_panel(body)
+
+
+def _state_breakdown_section(rep: MarketReport) -> str:
+    """Per-state facility density, for-profit mix, and chain concentration —
+    a computed table (+ a low-risk choropleth) with a written insight. Missing
+    data → an honest note, never a fabricated map."""
+    sb = state_breakdown(rep.slug)
+    header = ck_section_header(
+        "State breakdown", eyebrow="HOW THE MARKET DIFFERS BY STATE",
+        count=(sb.n_states if sb.available else None))
+    if not sb.available:
+        body = f'<p class="ck-mr-prose">{_esc(sb.note)}</p>'
+        if rep.state_breakdown:
+            body += f'<p class="ck-mr-prose">{_esc(rep.state_breakdown)}</p>'
+        return header + ck_panel(body)
+
+    top = sb.rows[:12]
+    has_chain = any(r.chain_top_share is not None for r in sb.rows)
+
+    def _fp(r) -> str:
+        return ("—" if r.for_profit_share is None
+                else f"{r.for_profit_share * 100:.0f}%")
+
+    def _ct(r) -> str:
+        return ("—" if r.chain_top_share is None
+                else f"{r.chain_top_share * 100:.0f}%")
+
+    head_cells = ("<th>State</th><th>Facilities</th><th>% of US</th>"
+                  "<th>For-profit</th>")
+    if has_chain:
+        head_cells += "<th>Top operator (local)</th>"
+    body_rows = "".join(
+        "<tr>"
+        f"<td>{_esc(r.state)}</td>"
+        f'<td class="ck-mr-num">{ck_fmt_number(r.facilities)}</td>'
+        f'<td class="ck-mr-num">{r.facilities_share * 100:.1f}%</td>'
+        f'<td class="ck-mr-num">{_fp(r)}</td>'
+        + (f'<td class="ck-mr-num">{_ct(r)}</td>' if has_chain else "")
+        + "</tr>"
+        for r in top)
+    table = ('<table class="ck-mr-table"><thead><tr>' + head_cells
+             + f'</tr></thead><tbody>{body_rows}</tbody></table>')
+
+    the_map = render_us_geo_map(
+        {r.state: float(r.facilities) for r in sb.rows},
+        metric_label="facilities",
+        value_format=lambda v: f"{int(v):,}",
+        map_title=f"{rep.name}: Medicare-certified facilities by state",
+        exposure_label="Facility count (low&nbsp;→&nbsp;high)",
+        accent_label="—",
+        caveat_text=(
+            "Approximate Albers-projected US state map (public-domain Census "
+            "boundaries). Shading is the count of vendored Medicare-certified "
+            "facilities per state — real counts, not a facility-location map."),
+        empty_message="")
+
+    fp_nat = ("" if sb.national_for_profit_share is None
+              else f'{sb.for_profit_label} <b>'
+                   f'{sb.national_for_profit_share * 100:.1f}%</b> &middot; ')
+    hhi = ("" if sb.chain_hhi is None
+           else f'chain HHI <b>{sb.chain_hhi:,.0f}</b> &middot; ')
+    stat = (
+        '<div class="ck-mr-mast">'
+        f'{ck_fmt_number(sb.n_states)} states &middot; '
+        f'{ck_fmt_number(sb.n_facilities)} facilities &middot; '
+        f'top-5 <b>{sb.top5_share * 100:.1f}%</b> &middot; {fp_nat}{hhi}'
+        f'{_basis_chip("SOURCED")}</div>')
+
+    extra = (f'<p class="ck-mr-prose">{_esc(rep.state_breakdown)}</p>'
+             if rep.state_breakdown else "")
+    body = (
+        f'<p class="ck-mr-prose">{_esc(sb.insight)} '
+        + _source_chip(sb.source_label) + '</p>'
+        + stat
+        + the_map
+        + table
+        + '<p class="ck-mr-src">Top 12 states by facility count; for-profit '
+        'share is over facilities with reported ownership. '
+        + _esc(sb.source_label) + '</p>'
+        + extra)
+    return header + ck_panel(body)
+
+
+def _deep_sections(rep: MarketReport) -> str:
+    """The ordered deep-analysis block, inserted after Market size. Each part
+    renders only when its data/field is present (honest omission otherwise)."""
+    return (
+        _trends_section(rep)
+        + _growth_levers_section(rep)
+        + _volume_driver_section(rep)
+        + _cost_drivers_section(rep)
+        + _cms_trend_section(rep)
+        + _state_breakdown_section(rep))
+
+
 def _render_full(rep: MarketReport) -> str:
     th = rep.tam_headline
     naics = f"NAICS {_esc(rep.naics)} · " if rep.naics else ""
@@ -409,6 +628,10 @@ def _render_full(rep: MarketReport) -> str:
     )
     parts.append(ck_section_header("Market size", eyebrow="HOW BIG"))
     parts.append(ck_panel(size_body))
+
+    # ── Deep sections — trends, growth levers, volume driver, cost structure,
+    #    the CMS trend chart, and the state breakdown (computed from our data) ──
+    parts.append(_deep_sections(rep))
 
     # ── Reimbursement ──
     reimb = rep.reimbursement

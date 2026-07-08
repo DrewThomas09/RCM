@@ -8,9 +8,10 @@ whole economic model turns on the ~10% of commercial patients.
 from __future__ import annotations
 
 from .. import (
-    Competition, Connection, HowItWorks, Kpi, MarketReport, MarketSize,
-    Regulatory, Reimbursement, Risk, Rule, Segment, Source, TamHeadline,
-    UnitEconomics, default_connections, live_figures_from_dive, register,
+    CmsTrend, Competition, Connection, CostDriver, GrowthLever, HowItWorks,
+    Kpi, MarketReport, MarketSize, Regulatory, Reimbursement, Risk, Rule,
+    Segment, Source, TamHeadline, UnitEconomics, VolumeDriver,
+    default_connections, live_figures_from_dive, register,
 )
 
 REPORT = MarketReport(
@@ -322,6 +323,114 @@ REPORT = MarketReport(
                "/diligence/tam-sam?template=dialysis"),
     ],
     live_figures=live_figures_from_dive("dialysis"),
+    trends=(
+        "The in-center trajectory bends around three policy events. The 2011 "
+        "ESRD PPS bundle folded the once-lucrative separately-billable drugs "
+        "(ESAs, IV iron) into a single per-treatment rate and reset the whole "
+        "P&L around efficiency and utilization. The 2021 Medicare Advantage "
+        "carve-in (21st Century Cures) let ESRD patients enroll in MA, which "
+        "has been steadily eroding the ~10% commercial pool that carries clinic "
+        "margin. And the mandatory ESRD Treatment Choices (ETC) model is CMS "
+        "paying to move volume out of the in-center chair toward home dialysis "
+        "and transplant. Underneath, in-center is a mature, consolidation-"
+        "exhausted duopoly; the live capital has migrated upstream to value-"
+        "based nephrology (owning the CKD-to-ESRD transition) and sideways to "
+        "home and SNF-based dialysis. The demand base keeps growing ~2%/yr, but "
+        "every structural policy vector points volume and margin the other way."),
+    growth_levers=[
+        GrowthLever(
+            "ESRD prevalence (diabetes / hypertension / aging)",
+            "The prevalent dialysis-dependent population expands structurally "
+            "as diabetes, hypertension, and aging drive incident ESRD — non-"
+            "discretionary demand.",
+            "+1.8%/yr incidence", "GOV"),
+        GrowthLever(
+            "PPS + commercial rate updates",
+            "The bundle base rate and commercial multiples step up with the "
+            "annual ESRD PPS Final Rule and payer negotiations.",
+            "+2.2%/yr rate", "ILLUSTRATIVE"),
+        GrowthLever(
+            "Home-modality shift (ETC model)",
+            "CMS pays to move patients from the in-center chair to home HD/PD — "
+            "grows the home segment while shrinking the in-center asset base a "
+            "buy-and-build thesis is priced on.",
+            "−1.5%/yr in-center", "GOV"),
+        GrowthLever(
+            "MA carve-in (2021 Cures Act)",
+            "ESRD patients may now enroll in Medicare Advantage, reshaping the "
+            "payer mix and shrinking the commercial pool that funds margin.",
+            "mix shift · margin drag", "GOV"),
+        GrowthLever(
+            "Home & SNF-based whitespace",
+            "Dialyze Direct-style SNF dialysis and value-based nephrology risk "
+            "models are the live growth pockets versus a mature in-center core.",
+            "platform-dependent", "ILLUSTRATIVE"),
+    ],
+    volume_growth_driver=VolumeDriver(
+        driver="ESRD prevalence (via diabetes, hypertension, and aging)",
+        analysis=(
+            "The single dominant demand driver is the prevalent ESRD "
+            "population, not a discretionary utilization choice: once a patient "
+            "reaches end-stage renal disease they need thrice-weekly renal "
+            "replacement to live. USRDS counts well over 800,000 prevalent ESRD "
+            "patients with roughly 70% on dialysis (the rest transplanted), and "
+            "incidence grows ~1.8%/yr — diabetes alone accounts for ~45-47% of "
+            "incident cases, with hypertension the next largest. That makes the "
+            "demand curve demographic and highly predictable. The two credible "
+            "long-run offsets are both slow: GLP-1 / SGLT2 adoption may blunt "
+            "CKD-to-ESRD progression, and kidney-transplant supply growth pulls "
+            "a small share out of the dialysis pool — neither bites materially "
+            "within a typical hold."),
+        basis="GOV"),
+    cost_drivers=[
+        CostDriver(
+            "Clinical labor (RNs, patient-care techs, dietitians)",
+            "~40-50% of cost",
+            "The dominant, largely fixed cost — techs and nurses run the "
+            "chairs. Wage inflation and staffing caps directly limit chair "
+            "utilization and de novo growth.", "ILLUSTRATIVE"),
+        CostDriver(
+            "In-bundle drugs (ESAs, IV iron, calcimimetics)",
+            "~20-25% of cost",
+            "Anemia and mineral-bone agents plus oral calcimimetics are folded "
+            "into the PPS bundle — a cost the clinic absorbs rather than bills "
+            "separately, so drug-management efficiency is pure margin.",
+            "ILLUSTRATIVE"),
+        CostDriver(
+            "Facility & machines (rent, RO water, dialysis machines)",
+            "~10-15% of cost",
+            "The fixed chassis — real estate, reverse-osmosis water treatment, "
+            "and the dialysis machines. De novo capex and water-system "
+            "compliance gate expansion.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Consumable supplies (dialyzers, tubing, saline)",
+            "~10-15% of cost",
+            "Per-treatment consumables — the main variable cost, scaling "
+            "directly with treatment volume.", "ILLUSTRATIVE"),
+        CostDriver(
+            "Medical direction & G&A",
+            "~5-10% of cost",
+            "Nephrologist medical-director fees (Stark / Anti-Kickback-"
+            "sensitive) plus corporate overhead.", "ILLUSTRATIVE"),
+    ],
+    cms_trend=CmsTrend(
+        takeaway=(
+            "The policy inflection is the 2011 ESRD PPS bundle, which folded "
+            "the separately-billable drugs into one per-treatment rate and "
+            "reset clinic economics around efficiency. Our facility roll shows "
+            "the in-center build wave cresting in the mid-2010s and "
+            "decelerating after — the fingerprint of a mature, consolidation-"
+            "exhausted market where CMS is now actively pushing volume home via "
+            "the ETC model rather than into new chairs."),
+        chart_kind="bars"),
+    state_breakdown=(
+        "The South and Sun Belt anchor the chair base (Texas, California, "
+        "Florida, Georgia lead), for-profit ownership is near-universal "
+        "(~90%), and the chain layer is a genuine duopoly — DaVita and "
+        "Fresenius together hold roughly three-quarters of facilities, the "
+        "highest chain concentration in post-acute. The acquirable pool is the "
+        "thin independent and nephrologist-JV tail, concentrated in a handful "
+        "of large states."),
 )
 
 register(REPORT)
