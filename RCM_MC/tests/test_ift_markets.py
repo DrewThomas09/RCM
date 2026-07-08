@@ -72,6 +72,24 @@ class RenderTests(unittest.TestCase):
     def test_tags_are_balanced(self):
         _assert_balanced(self, self.html, "ift-markets")
 
+    def test_exactly_one_page_title(self):
+        # Regression: the page used ck_editorial_head (a ck-eh <h1>) AND
+        # ck_section_intro, which made the shell auto-inject a SECOND ck_page_title
+        # <h1> — a duplicate title. There must be exactly one <h1>.
+        self.assertEqual(self.html.count("<h1"), 1,
+                         "IFT markets page must render exactly one <h1>")
+
+    def test_has_chart_visuals_with_export(self):
+        # The 'at a glance' strip renders real SVG charts (funnel, growth levers,
+        # per-metro SOM, moat composite) with PNG-export affordances.
+        self.assertIn("At a glance", self.html)
+        self.assertIn("ck-chart-card", self.html)
+        self.assertIn("ck-chart-dl", self.html)         # export button
+        self.assertGreaterEqual(self.html.count("<svg"), 4)
+        for probe in ("TAM → SAM → SOM", "Three growth levers",
+                      "Footprint SOM by metro", "Moat composite by metro"):
+            self.assertIn(probe, self.html, f"missing chart: {probe}")
+
     def test_no_template_token_leaks(self):
         # Markers that indicate an unrendered template / repr leak in OUR
         # content (bare "{}" and "nan" occur legitimately in the shell's inline

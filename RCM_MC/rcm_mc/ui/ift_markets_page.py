@@ -41,6 +41,9 @@ from ._chartis_kit import (
     ck_page_actions, ck_panel, ck_provenance_tooltip, ck_section_header,
     ck_section_intro,
 )
+from ._chart_kit import (
+    ck_bar_chart, ck_chart_assets, ck_chart_grid, ck_hbar_chart,
+)
 from .us_geo_map import render_us_geo_map
 from ..market_reports import ift_analytics as _an
 from ..market_reports import ift_geo as _geo
@@ -913,6 +916,97 @@ def _region_sections(structures, sam_by_name: Dict[str, float]) -> str:
 # ═══════════════════════════════════════════════════════════════════════════
 #  Page
 # ═══════════════════════════════════════════════════════════════════════════
+def _charts_section(sam_by_name: Dict[str, float]) -> str:
+    """The visual 'at a glance' strip — SVG charts for the funnel, the three
+    growth levers, the per-metro SOM ranking, and the per-metro moat composite.
+    Every chart degrades to '' (dropped by ck_chart_grid) if its data is
+    unavailable, so this never raises and never leaves an empty hole."""
+    cards: List[str] = []
+
+    # 1) TAM -> SAM -> SOM funnel (all in $M so the three tiers share a scale).
+    try:
+        tam = _an.ground_tam()
+        hs = _an.health_system_sam()
+        if tam.available and hs.available:
+            funnel = [
+                ("TAM · all ground IFT", tam.allpayer_tam_bn_central * 1000.0, "navy"),
+                ("SAM · health systems", hs.sam_central_bn * 1000.0, "teal"),
+                ("SOM · footprint", hs.som_central_m, "positive"),
+            ]
+            cards.append(ck_hbar_chart(
+                "TAM → SAM → SOM ($M)", funnel,
+                value_fmt=lambda v: (f"${v/1000:,.1f}B" if v >= 1000
+                                     else f"${v:,.0f}M"),
+                subtitle="The funnel, one scale — SAM is the structural prize, "
+                         "SOM the current footprint (ILLUSTRATIVE).",
+                source="ift_analytics · ILLUSTRATIVE build on GOV/SOURCED anchors",
+                label_w=170.0))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 2) The three growth levers (%/yr; consolidation is a share-shift).
+    try:
+        from ..market_reports import ift_tracking as _t
+        gb = _t.growth_bridge()
+        if gb.available:
+            levers = [
+                ("Price / reimbursement", gb.price_central_pct, "teal"),
+                ("Volume / demographics", gb.volume_central_pct, "positive"),
+                ("Consolidation (share-shift)",
+                 gb.consolidation_share_shift_central_pct, "navy"),
+            ]
+            cards.append(ck_bar_chart(
+                "Three growth levers (%/yr)", levers,
+                value_fmt=lambda v: f"{v:+.1f}%",
+                subtitle="Price × volume compound to organic market growth; "
+                         "consolidation is a platform share-shift, not organic.",
+                source="ift_tracking · GOV AIF anchor + ILLUSTRATIVE composites"))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 3) Per-metro SOM ranking (top markets by serviceable dollars).
+    try:
+        if sam_by_name:
+            top = sorted(sam_by_name.items(), key=lambda kv: kv[1],
+                         reverse=True)[:12]
+            items = [(name, val / 1e6, "teal") for name, val in top]
+            cards.append(ck_hbar_chart(
+                "Footprint SOM by metro ($M)", items,
+                value_fmt=lambda v: f"${v:,.1f}M",
+                subtitle="Where the current-footprint serviceable dollars "
+                         "concentrate (bottom-up, ILLUSTRATIVE).",
+                source="ift_analytics.sam_formula · SOURCED structure × "
+                       "ILLUSTRATIVE levers", label_w=150.0))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # 4) Per-metro moat composite (ordinal 1.00-3.00).
+    try:
+        from ..market_reports import ift_moat as _mo
+        board = _mo.market_moat_scores()
+        rows = [r for r in getattr(board, "rows", [])
+                if getattr(r, "available", True)]
+        if rows:
+            rows = sorted(rows, key=lambda r: r.composite_index, reverse=True)[:12]
+            items = [(r.name, r.composite_index, "navy") for r in rows]
+            cards.append(ck_hbar_chart(
+                "Moat composite by metro (1.00–3.00)", items,
+                value_fmt=lambda v: f"{v:.2f}",
+                reference=("mid", 2.0),
+                subtitle="Higher = stickier incumbency (first-call, density, "
+                         "switching costs) — ordinal, ILLUSTRATIVE composite.",
+                source="ift_moat · ift_geo reads × SOURCED density",
+                label_w=150.0))
+    except Exception:  # noqa: BLE001
+        pass
+
+    grid = ck_chart_grid(*cards)
+    if not grid:
+        return ""
+    return (ck_section_header("At a glance", eyebrow="THE NUMBERS, VISUALLY")
+            + grid)
+
+
 def render_ift_markets() -> str:
     """Render the IFT geographic deep-dive page. Degrades to an honest note if
     the offline structure is unavailable — never raises."""
@@ -1016,10 +1110,12 @@ def render_ift_markets() -> str:
 
     parts: List[str] = [
         _styles(),
+        ck_chart_assets(),
         ck_eyebrow("IFT Target Markets"),
         head,
         _legend_row(),
         kpi_strip,
+        _charts_section(sam_by_name),
         download,
         intro,
         # Chapter one — teach the market: IFT is its own thing (not 911/NEMT/air).
@@ -1053,6 +1149,11 @@ def render_ift_markets() -> str:
                   "behind the demand, who runs the transfers today, and the "
                   "moat that makes the incumbent hard to displace.")),
         _region_sections(structures, sam_by_name),
+        ck_next_section(
+            "Read the full investor market study (taxonomy, ecosystem, "
+            "health-system POV, MMT vs the field)",
+            "/ift-study",
+            eyebrow="Investor study", italic_word="investor"),
         ck_next_section(
             "See the clinical acute-transfer demand engine behind this volume",
             "/ift-clinical",

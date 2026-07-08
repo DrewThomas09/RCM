@@ -7523,6 +7523,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
     {"id": "market-reports", "title": "Market Reports · in-depth per-subsector dossiers (value chain, reimbursement, consolidation, insider lens) wired to our real data", "route": "/market"},
+    {"id": "ift-study",     "title": "Interfacility Transport · investor market study (taxonomy, ecosystem, health-system POV, MMT vs the field)", "route": "/ift-study"},
     {"id": "ift-markets",   "title": "Interfacility Transport · geographic markets (TAM/SAM/SOM, per-metro origin→destination structure)", "route": "/ift-markets"},
     {"id": "ift-clinical",  "title": "Interfacility Transport · clinical acute-transfer demand engine (cases → codes → destination → volume growth)", "route": "/ift-clinical"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
@@ -12086,6 +12087,7 @@ def chartis_shell(
         title
         and title != "PE Desk"
         and 'class="ck-page-title"' not in body_html
+        and "<h1" not in body_html  # ck_editorial_head already supplied an h1
         and 'class="ck-section-intro"' in body_html
         and not intro_html
     ):

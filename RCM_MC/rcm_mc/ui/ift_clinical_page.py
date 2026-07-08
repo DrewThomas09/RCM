@@ -33,7 +33,72 @@ from ._chartis_kit import (
     ck_page_title,
     ck_signal_badge,
 )
+from ._chart_kit import (
+    ck_bar_chart, ck_chart_assets, ck_chart_grid, ck_hbar_chart,
+)
 from ..market_reports import ift_clinical_demand as M
+
+
+def _clinical_charts() -> str:
+    """Visual 'at a glance' strip for the clinical demand engine — growth by
+    condition, volume by condition, and the mission-acuity mix. Each card
+    degrades to '' if data is unavailable; never raises."""
+    cards: List[str] = []
+    try:
+        ranked = M.growth_ranked()
+    except Exception:  # noqa: BLE001
+        ranked = []
+    # 1) Top conditions by projected demographic CAGR.
+    try:
+        top_g = [c for c in ranked if getattr(c, "growth", None)][:12]
+        if top_g:
+            items = [(c.name, c.growth.cagr * 100.0, "positive") for c in top_g]
+            cards.append(ck_hbar_chart(
+                "Projected volume growth by condition (%/yr)", items,
+                value_fmt=lambda v: f"{v:+.1f}%",
+                subtitle="Demographic CAGR (aging cohorts), incidence held "
+                         "constant — the IFT volume thesis (ILLUSTRATIVE).",
+                source="ift_clinical_demand · demand_forecast age-band CAGRs",
+                label_w=220.0))
+    except Exception:  # noqa: BLE001
+        pass
+    # 2) Top conditions by published national volume.
+    try:
+        with_vol = [c for c in ranked if getattr(c, "national_volume", None)]
+        with_vol = sorted(
+            with_vol, key=lambda c: c.national_volume.value, reverse=True)[:12]
+        if with_vol:
+            items = [(c.name, float(c.national_volume.value) / 1000.0, "teal")
+                     for c in with_vol]
+            cards.append(ck_hbar_chart(
+                "National volume by condition (000s/yr)", items,
+                value_fmt=lambda v: f"{v:,.0f}k",
+                subtitle="Published national case volumes (GOV/ACADEMIC) — the "
+                         "acute-transfer demand pool.",
+                source="ift_clinical_demand · published CMS/CDC/AHRQ volumes",
+                label_w=220.0))
+    except Exception:  # noqa: BLE001
+        pass
+    # 3) Mission-acuity mix (volume-weighted).
+    try:
+        mm = M.mission_mix()
+        if mm and mm.get("total_weighting_volume"):
+            items = [
+                ("CCT / SCT (high)", mm["high_acuity_share"] * 100.0, "navy"),
+                ("ALS (mid)", mm["mid_acuity_share"] * 100.0, "teal"),
+                ("BLS (low)", mm["low_acuity_share"] * 100.0, "muted"),
+            ]
+            cards.append(ck_bar_chart(
+                "Mission-acuity mix (% of escalation volume)", items,
+                value_fmt=lambda v: f"{v:.1f}%",
+                subtitle="The escalation book skews high-acuity — which crews "
+                         "the demand requires (volume-weighted).",
+                source="ift_clinical_demand.mission_mix · GOV volumes × "
+                       "authored acuity tiers"))
+    except Exception:  # noqa: BLE001
+        pass
+    grid = ck_chart_grid(*cards)
+    return grid or ""
 
 
 # ---------------------------------------------------------------------------
@@ -638,6 +703,8 @@ def _tie_note() -> str:
         '<a href="/ift-markets" style="color:var(--sc-teal,#155752);'
         'font-weight:600;text-decoration:none;">Geographic markets &amp; '
         'TAM/SAM/SOM &rarr;</a>'
+        '<a href="/ift-study" style="color:var(--sc-teal,#155752);'
+        'font-weight:600;text-decoration:none;">Investor market study &rarr;</a>'
         '</div></section>')
 
 
@@ -671,10 +738,12 @@ def render_ift_clinical(qs: Optional[Dict[str, List[str]]] = None) -> str:
                "published volumes, demand_forecast growth model")
 
     body = "".join([
+        ck_chart_assets(),
         head,
         explainer,
         _kpi_row(),
         _demand_signal_band(),
+        _clinical_charts(),
         _section("matrix", "Origin → destination",
                  "The acute-transfer matrix",
                  "Where each acute scenario must move: origin family × "

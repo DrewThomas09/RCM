@@ -5221,6 +5221,13 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/ift-clinical":
             from .ui.ift_clinical_page import render_ift_clinical
             return self._send_html(render_ift_clinical())
+        # IFT investor market study — the 4-dimension synthesis (market context,
+        # ecosystem, health-system POV, company positioning). ?company=<slug>
+        # swaps the Dimension-4 subject (default MMT). See ui/ift_study_page.py.
+        if path == "/ift-study":
+            from .ui.ift_study_page import render_ift_study
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_study(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
