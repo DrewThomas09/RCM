@@ -939,15 +939,17 @@ def sam_formula(f_ift: float = _F_IFT[1],
                                "carries the super-rural +22.6% add-on)"},
         },
         source_label=("SOURCED market structure (ift_geo: HCRIS beds + SNF beds per "
-                      "metro) × ILLUSTRATIVE SAM levers (f_IFT, λ_return, s(m), r_IFT) "
+                      "metro) × ILLUSTRATIVE SOM levers (f_IFT, λ_return, s(m), r_IFT) "
                       "× GOV-anchored TAM cross-check"),
         method="bottom_up_footprint",
-        note=("SAM is built bottom-up from the real footprint origins/destinations, "
-              "NOT as a % of TAM. Central footprint SAM reconciles against (footprint "
-              "beds / national beds) × TAM × s_avg to within an order of magnitude; "
-              "the serviceable-mission total is a plausible slice of the ~4-5M "
-              "national ground-IFT volume. All dollar levers are ILLUSTRATIVE, "
-              "labelled; the bed/discharge structure is SOURCED."))
+        note=("The SOM is built bottom-up from the real footprint "
+              "origins/destinations — the serviceable-obtainable market in the "
+              "operator's CURRENT metros, not the structural SAM. Central footprint "
+              "SOM reconciles against (footprint beds / national beds) × TAM × s_avg "
+              "to within an order of magnitude; the serviceable-mission total is a "
+              "plausible slice of the ~4-5M national ground-IFT volume. All dollar "
+              "levers are ILLUSTRATIVE, labelled; the bed/discharge structure is "
+              "SOURCED."))
 
 
 # ── SAM = MULTI-HOSPITAL HEALTH SYSTEMS (the structural addressable market) ───
@@ -1192,10 +1194,11 @@ def health_system_sam() -> HealthSystemSam:
         operator_share_of_sam=_OPERATOR_SHARE_OF_SAM,
         operator_current_revenue_m=op_rev_m, sam_over_som_multiple=sam_over_som,
         steps=steps,
-        source_label=("GOV-anchored ground-IFT TAM × ILLUSTRATIVE multi-hospital-"
-                      "system share + health-system-biller insource ceiling; "
-                      "bottoms-up scaled from the SOURCED footprint (ift_geo/HCRIS) "
-                      "bed structure — the offline proxy for the Komodo claims build"),
+        source_label=("ILLUSTRATIVE · GOV-anchored ground-IFT TAM × ILLUSTRATIVE "
+                      "multi-hospital-system share + health-system-biller insource "
+                      "ceiling; bottoms-up scaled from the SOURCED footprint "
+                      "(ift_geo/HCRIS) bed structure — the offline proxy for the "
+                      "Komodo claims build"),
         headline=headline,
         note=("SAM is the STRUCTURAL market (multi-hospital health systems), NOT the "
               "footprint — the footprint is the SOM. Two methods bracket it: the "
