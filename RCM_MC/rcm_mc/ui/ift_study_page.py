@@ -361,6 +361,7 @@ def _study_charts(pos) -> str:
 def _crosslinks() -> str:
     return (
         '<div class="ist-links">'
+        '<a href="/ift-research">Market research brief (20 topics) &rarr;</a>'
         '<a href="/ift-markets">Geographic markets &amp; TAM/SAM/SOM &rarr;</a>'
         '<a href="/ift-clinical">Clinical demand engine &rarr;</a>'
         '<a href="/market/interfacility_transport">Full IFT market report &rarr;</a>'
