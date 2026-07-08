@@ -5228,6 +5228,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_study_page import render_ift_study
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_study(_qs))
+        # IFT market-level research brief — the deep, market-focused 20-topic
+        # research (definition, taxonomy, journey, operating models, procurement,
+        # pain, metrics, reimbursement, economics, competition, technology,
+        # regulatory, growth, segmentation, sizing, evidence). See ui/ift_research_page.py.
+        if path == "/ift-research":
+            from .ui.ift_research_page import render_ift_research
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_research(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())

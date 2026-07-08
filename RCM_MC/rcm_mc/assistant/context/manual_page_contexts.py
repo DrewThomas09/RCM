@@ -14007,6 +14007,58 @@ _MANUAL.extend([
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/ift-research", "IFT Market Research Brief",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="A deep, MARKET-level research brief on ground "
+        "interfacility transport — definition/taxonomy, industry structure, "
+        "patient journeys, operating models, procurement, pain points, KPIs, "
+        "reimbursement, unit economics, competition by type, technology, "
+        "regulatory, growth, segmentation, sizing methodology, and evidence "
+        "quality. No company-specific analysis.",
+        primary_purpose="Answer the full market-research brief on IFT at the "
+        "market level, with every table honesty-labelled (GOV / ACADEMIC / "
+        "ILLUSTRATIVE / FRAMEWORK).",
+        common_questions=[
+            "How is IFT defined and bounded vs 911 / NEMT / CCT / air?",
+            "How should IFT performance be measured (KPIs)?",
+            "How does reimbursement and payer mix work for IFT?",
+            "What drives IFT unit economics and margins?",
+            "How can the IFT market be sized, and what are the assumptions?",
+        ],
+        inputs=["The IFT module spine (definition/taxonomy/ecosystem/operating "
+                "models) + authored market-research sections + the IBISWorld "
+                "industry-structure frame."],
+        outputs=["A ToC-navigated brief: definition, industry structure, journey, "
+                 "operating models + procurement + pain, competition by type, and "
+                 "authored sections for metrics, reimbursement, economics, "
+                 "technology, regulatory, segmentation, sizing, growth, evidence."],
+        key_metrics=["Transport taxonomy", "KPI hierarchy", "Reimbursement by tier",
+                     "Unit-economics drivers", "Sizing methodology & assumptions"],
+        data_sources=["Medicare AFS + statute (GOV), Census aging CAGRs (GOV), "
+                      "ED-throughput literature (ACADEMIC), the IBISWorld industry "
+                      "report (ACADEMIC), and modeled market frameworks "
+                      "(ILLUSTRATIVE/FRAMEWORK); no fabricated figures."],
+        model_logic_summary="Reuses the sized IFT modules for the quantitative "
+        "anchors and adds authored market frameworks for the uncovered sections; "
+        "market-level only (company positioning lives on /ift-study).",
+        why_it_matters="It is the reference research layer — the defensible, "
+        "labelled market answers behind the sizing and the thesis.",
+        diligence_use_cases=["Market education; sizing methodology; reimbursement "
+                             "and unit-economics diligence; evidence review."],
+        interpretation_guidance=[
+            "Read the basis chip on every table; GOV/ACADEMIC are published, "
+            "ILLUSTRATIVE/FRAMEWORK are modeled/analytic.",
+            "Numeric anchors are GOV/market-research; the IBISWorld report's own "
+            "figures are not reproduced (chart images).",
+        ],
+        limitations=["Market-level only — no company specifics; some quantities "
+                     "(off-claims facility spend, denial rates) are modeled, not "
+                     "measured."],
+        related_routes=["/ift-study", "/ift-markets", "/ift-clinical"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/ift-study", "IFT Market Study",
         category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The investor-ready IFT market study — four dimensions "
