@@ -18,8 +18,8 @@ Every figure carries a basis chip:
   * ``ACADEMIC``     — published epidemiologic estimate.
   * ``ILLUSTRATIVE`` — modeled projection with a named basis (the growth CAGRs).
 
-Route wiring (/ift-clinical + cross-links) is deferred to the main loop; this
-module only exposes ``render_ift_clinical`` and does NOT touch server.py.
+Wired at ``/ift-clinical`` (server.py), in the Cmd+K palette, and cross-linked
+both ways with the IFT market report and the ``/ift-markets`` sizing model.
 """
 from __future__ import annotations
 
@@ -628,7 +628,17 @@ def _tie_note() -> str:
         'model. Read it alongside the IFT report\'s occupancy / capacity signal '
         '(the throughput driver) and the ground-IFT TAM (the dollars): this is '
         'the <em>why the missions exist</em>, and the aging-driven growth '
-        'outlook is the structural tailwind under the sizing.</p></section>')
+        'outlook is the structural tailwind under the sizing.</p>'
+        '<div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:18px;'
+        'font-family:var(--sc-mono,Consolas,monospace);font-size:11px;'
+        'letter-spacing:0.04em;">'
+        '<a href="/market/interfacility_transport" style="color:var(--sc-teal,'
+        '#155752);font-weight:600;text-decoration:none;">Full IFT market report '
+        '&rarr;</a>'
+        '<a href="/ift-markets" style="color:var(--sc-teal,#155752);'
+        'font-weight:600;text-decoration:none;">Geographic markets &amp; '
+        'TAM/SAM/SOM &rarr;</a>'
+        '</div></section>')
 
 
 # ---------------------------------------------------------------------------

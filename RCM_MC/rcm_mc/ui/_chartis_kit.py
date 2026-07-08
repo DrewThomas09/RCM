@@ -7523,6 +7523,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
     {"id": "market-reports", "title": "Market Reports · in-depth per-subsector dossiers (value chain, reimbursement, consolidation, insider lens) wired to our real data", "route": "/market"},
+    {"id": "ift-markets",   "title": "Interfacility Transport · geographic markets (TAM/SAM/SOM, per-metro origin→destination structure)", "route": "/ift-markets"},
+    {"id": "ift-clinical",  "title": "Interfacility Transport · clinical acute-transfer demand engine (cases → codes → destination → volume growth)", "route": "/ift-clinical"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
     {"id": "hc-unit-econ",  "title": "Cross-Vertical Unit Economics", "route": "/healthcare-verticals/unit-economics"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},

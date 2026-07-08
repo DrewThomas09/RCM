@@ -5198,6 +5198,12 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/ift-markets":
             from .ui.ift_markets_page import render_ift_markets
             return self._send_html(render_ift_markets())
+        # IFT clinical acute-transfer demand engine — the volume driver
+        # (acute cases -> ICD-10/MS-DRG codes -> destination -> demographic growth).
+        # See rcm_mc/ui/ift_clinical_page.py + market_reports/ift_clinical_demand.py.
+        if path == "/ift-clinical":
+            from .ui.ift_clinical_page import render_ift_clinical
+            return self._send_html(render_ift_clinical())
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())

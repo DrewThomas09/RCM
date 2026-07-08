@@ -450,6 +450,7 @@ CANONICAL_SUBSECTORS: List[Tuple[str, str, str]] = [
     ("sterile_processing", "Sterile Processing", "Other services"),
     ("perfusion", "Perfusion", "Other services"),
     ("orthotics_prosthetics", "Orthotics & Prosthetics (O&P)", "Other services"),
+    ("interfacility_transport", "Interfacility Transport (IFT) — Ground", "Other services"),
 ]
 
 _CANONICAL_SLUGS = {s for s, _, _ in CANONICAL_SUBSECTORS}

@@ -87,7 +87,11 @@ class RegistryIntegrityTests(unittest.TestCase):
         # The taxonomy is the TAM/SAM template key AND the deep-dive key —
         # they must line up 1:1 so every subsector has a live data connection.
         from rcm_mc.diligence.industry_deep_dive import DEEP_DIVES
-        self.assertEqual(set(mr.canonical_slugs()), set(DEEP_DIVES))
+        # Every deep-dive-backed subsector is canonical, plus interfacility_transport
+        # — a report-backed subsector whose live data comes from ift_analytics /
+        # ift_geo / ift_clinical_demand rather than a diligence deep_dive.
+        self.assertEqual(set(mr.canonical_slugs()),
+                         set(DEEP_DIVES) | {"interfacility_transport"})
         self.assertEqual(len(mr.canonical_slugs()), len(set(mr.canonical_slugs())))
 
     def test_every_canonical_slug_has_a_care_setting(self):
@@ -215,14 +219,15 @@ class FlagshipRenderTests(unittest.TestCase):
 
 
 class ScaffoldRenderTests(unittest.TestCase):
-    def test_known_slug_without_report_renders_scaffold(self):
-        # cardiology is canonical but has no authored report yet.
+    def test_known_canonical_slug_renders_full_report(self):
+        # Every canonical subsector is now authored, so a known slug
+        # renders a full report — never the scaffold "authoring queue".
         html = render_market_report("cardiology")
         self.assertGreater(len(html), 2000)
-        self.assertIn("authoring queue", html)
+        self.assertNotIn("authoring queue", html)
         self.assertIn("Cardiology", html)
         self.assertIn("/market", html)       # link back
-        _assert_balanced(self, html, "cardiology-scaffold")
+        _assert_balanced(self, html, "cardiology-full")
 
     def test_scaffold_offers_live_data_connections(self):
         html = render_market_report("cardiology")
@@ -424,7 +429,9 @@ class HttpRouteTests(unittest.TestCase):
         self.assertIn("Reimbursement", body)
 
     def test_scaffold_serves_200(self):
-        resp = self._get("/market/cardiology")
+        # An unknown (non-canonical) slug still renders the scaffold
+        # "authoring queue" at 200, never a 404.
+        resp = self._get("/market/totally-made-up")
         self.assertEqual(resp.status, 200)
         self.assertIn("authoring queue", resp.read().decode())
 

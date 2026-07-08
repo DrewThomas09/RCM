@@ -26,11 +26,10 @@ The geographic deep-dive — every metro, its anchor systems, its insource-vs-
 outsource read and its moat — lives on the NEW ``/ift-markets`` page (a separate
 renderer), linked from Connections.
 
-Collision note: ``interfacility_transport`` is intentionally NOT yet in
-``CANONICAL_SUBSECTORS`` — the main loop adds that taxonomy row as a later
-integration step, and this module must not edit ``__init__.py``. So it registers
-only once the slug is canonical (see the guard at the bottom); until then the
-route renders the honest scaffold, never a 404.
+``interfacility_transport`` is a canonical subsector (a ``CANONICAL_SUBSECTORS``
+row under "Other services"), so the dossier registers and renders in FULL at
+``/market/interfacility_transport``, is listed on the ``/market`` index, and
+never falls back to the scaffold.
 """
 from __future__ import annotations
 
@@ -38,7 +37,7 @@ from .. import (
     CmsTrend, Competition, Connection, CostDriver, GrowthLever, HowItWorks,
     Kpi, MarketReport, MarketSize, Regulatory, Reimbursement, Risk, Rule,
     Segment, Source, TamHeadline, UnitEconomics, VolumeDriver,
-    canonical_slugs, register,
+    register,
 )
 from .. import ift_analytics as _ift
 from .. import ift_geo as _geo
@@ -825,15 +824,12 @@ REPORT = MarketReport(
 )
 
 
-# ── Collision-safe self-registration ────────────────────────────────────────
-# ``interfacility_transport`` is deliberately NOT in CANONICAL_SUBSECTORS yet —
-# the main loop adds that taxonomy row as a separate, later integration step, and
-# this module must not edit __init__.py (a concurrent fan-out owns it). Because
-# register() -> validate() rejects a not-yet-canonical slug and the package
-# autoloader would record that rejection as an error (tripping
-# test_market_reports' "reports load without error" invariant), we register only
-# once the slug IS canonical. The autoloader reloads this module after the
-# taxonomy row lands, at which point the full dossier registers and
-# /market/interfacility_transport renders in full instead of the honest scaffold.
-if REPORT.slug in set(canonical_slugs()):
-    register(REPORT)
+# ── Registration ─────────────────────────────────────────────────────────────
+# ``interfacility_transport`` is a canonical subsector (see CANONICAL_SUBSECTORS
+# in ``__init__.py``, added at the task-#16 integration step), so ``validate()``
+# accepts the slug and this registers the full dossier straight away:
+#   * report_for('interfacility_transport') returns the full dossier;
+#   * /market/interfacility_transport renders the dossier, not the scaffold;
+#   * the /market index lists it under "Other services";
+#   * autoload_errors() stays [] — register() never raises.
+register(REPORT)

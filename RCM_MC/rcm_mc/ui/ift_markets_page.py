@@ -632,6 +632,10 @@ def render_ift_markets() -> str:
                   "moat that makes the incumbent hard to displace.")),
         _region_sections(structures, sam_by_name),
         ck_next_section(
+            "See the clinical acute-transfer demand engine behind this volume",
+            "/ift-clinical",
+            eyebrow="Demand driver", italic_word="clinical"),
+        ck_next_section(
             "Read the full Interfacility Transport market report",
             "/market/interfacility_transport",
             eyebrow="Up next", italic_word="full"),
