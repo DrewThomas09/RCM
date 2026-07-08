@@ -709,6 +709,27 @@ def _moat_section() -> str:
         '<div class="ift-table-wrap"><table class="ift-table">'
         + _th("Factor", "Definition", "Why it matters", "Target")
         + f"<tbody>{frows}</tbody></table></div>")
+    if board and getattr(board, "rows", None):
+        fnames = [f.name for f in factors]
+        srows = ""
+        for mk in board.rows:
+            if not getattr(mk, "available", True):
+                continue
+            by_name = {fs.factor_name: fs.score for fs in mk.factors}
+            cells = "".join(
+                f'<td>{_esc(by_name.get(n, "—"))}</td>' for n in fnames)
+            srows += (
+                "<tr>"
+                f"<td><strong>{_esc(mk.name)}</strong></td>"
+                f"{cells}"
+                f'<td class="ift-num">{mk.composite_index:.2f}</td>'
+                f"<td>{_esc(mk.overall_verdict)}</td></tr>")
+        body += (
+            '<p class="ift-sub">Per-market moat scores (ordinal; composite '
+            '1.00-3.00, ILLUSTRATIVE)</p>'
+            '<div class="ift-table-wrap"><table class="ift-table">'
+            + _th("Metro", *([n for n in fnames] + ["Composite", "Verdict"]))
+            + f"<tbody>{srows}</tbody></table></div>")
     if proofs and getattr(proofs, "points", None):
         prows = ""
         for pt in proofs.points:

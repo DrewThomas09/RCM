@@ -384,9 +384,16 @@ def _competitive_sheet() -> Optional[Sheet]:
              ("Archetype mix", _H), ("MMT present", _H), ("First-call today", _H),
              ("Contestability", _H), ("Nodes", _H), ("Density tier", _H)],
         ]
+        def _mix(m):
+            # archetype_mix is a tuple of (label, count) pairs.
+            try:
+                return "; ".join(f"{lbl} x{n}" for lbl, n in m)
+            except (TypeError, ValueError):
+                return _join(m)
+
         for r in comp.rows:
             rows.append([r.name, r.region_label, _join(r.operators),
-                         _join(r.archetype_mix), "yes" if r.mmt_present else "no",
+                         _mix(r.archetype_mix), "yes" if r.mmt_present else "no",
                          r.first_call_today, r.contestability_tier,
                          (r.n_nodes, "num"), r.density_tier])
     return Sheet("Competitive", rows, col_widths=[22, 18, 16, 40, 40, 40, 44])
@@ -483,7 +490,7 @@ def _moat_sheet() -> Optional[Sheet]:
     for f in factors:
         rows.append([f.name, f.definition, f.why_it_matters, f.target or "—",
                      f.basis])
-    if board and getattr(board, "markets", None):
+    if board and getattr(board, "rows", None):
         fnames = [f.name for f in factors]
         rows += [
             [],
@@ -492,7 +499,7 @@ def _moat_sheet() -> Optional[Sheet]:
             [("Metro", _H)] + [(n, _H) for n in fnames]
             + [("Composite", _H), ("Verdict", _H)],
         ]
-        for mk in board.markets:
+        for mk in board.rows:
             if not getattr(mk, "available", True):
                 continue
             by_name = {fs.factor_name: fs.score for fs in mk.factors}
