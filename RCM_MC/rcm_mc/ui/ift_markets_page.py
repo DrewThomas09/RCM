@@ -304,24 +304,26 @@ def _tam_section() -> str:
 
 def _sam_section(rollup, sam) -> str:
     header = ck_section_header(
-        "Footprint SAM — bottom-up from the real market structure",
-        eyebrow="THE SERVICEABLE MARKET, STRUCTURAL")
+        "Footprint SOM — bottom-up from the real market structure",
+        eyebrow="THE SERVICEABLE-OBTAINABLE FOOTPRINT")
     if not (rollup and rollup.available) or not (sam and sam.available):
         return header + ck_panel(
-            '<p class="ift-prose">The footprint SAM build is unavailable '
+            '<p class="ift-prose">The footprint SOM build is unavailable '
             'offline.</p>')
 
     crosscheck = (_usd_m(sam.sam_crosscheck_dollars)
                   if sam.sam_crosscheck_dollars is not None else "—")
     body = (
-        '<p class="ift-prose">SAM is <em>not</em> a percentage of TAM. It is '
+        '<p class="ift-prose">This is the <strong>SOM</strong> — what is '
+        'serviceable-obtainable inside the operator\'s CURRENT footprint, not the '
+        'structural SAM above. It is <em>not</em> a percentage of TAM: it is '
         'built bottom-up from the real origins and destinations inside the '
-        "target operator's actual footprint — the hospitals (IFT origins) and "
-        'post-acute facilities (discharge destinations) in each metro, the '
+        "target operator's actual metros — the hospitals (IFT origins) and "
+        'post-acute facilities (discharge destinations), the '
         'transfer/discharge volume they generate that needs ground IFT, and a '
         'realistically-serviceable share s(m) keyed to the insource-vs-outsource '
         'structure of each market. Per metro: '
-        '<strong>SAM(m) = [ discharge&nbsp;base &times; f_IFT + SNF&nbsp;legs ] '
+        '<strong>SOM(m) = [ discharge&nbsp;base &times; f_IFT + SNF&nbsp;legs ] '
         '&times; s(m) &times; r_IFT(m)</strong>.</p>'
         # footprint counts
         '<p class="ift-sub">Footprint at a glance (SOURCED)</p>'
@@ -350,11 +352,11 @@ def _sam_section(rollup, sam) -> str:
         f'of <b>{_num(rollup.snf_beds_national)}</b> '
         f'= <b>{_pct(rollup.snf_beds_national_share)}</b> '
         f'{_basis_chip("SOURCED")}</p>'
-        # SAM dollars
-        '<p class="ift-sub">Serviceable market (ILLUSTRATIVE levers on the '
-        'SOURCED structure)</p>'
+        # SOM dollars
+        '<p class="ift-sub">Serviceable-obtainable footprint (ILLUSTRATIVE levers '
+        'on the SOURCED structure)</p>'
         '<div class="ift-kpi-grid">'
-        + _kpi("SAM — central", _usd_m(sam.sam_dollars_central),
+        + _kpi("SOM — central", _usd_m(sam.sam_dollars_central),
                f"range {_usd_m(sam.sam_dollars_low)}–{_usd_m(sam.sam_dollars_high)}")
         + _kpi("Ground-IFT demand", _num(sam.total_demand_missions) + " mis/yr",
                "acute discharges + SNF recurring legs")
@@ -375,6 +377,85 @@ def _sam_section(rollup, sam) -> str:
         'insource-vs-outsource archetype; r_IFT = blended all-payer net revenue '
         'per transport (rural carries the super-rural mileage uplift). '
         + _basis_chip("ILLUSTRATIVE") + '</p>'
+    )
+    return header + ck_panel(body)
+
+
+def _health_system_sam_section() -> str:
+    """SAM = multi-hospital health systems — the STRUCTURAL addressable market,
+    triangulated top-down (ratio) × bottoms-up (structure), ±MSA, with the
+    health-system-biller insource ceiling and the ~1% nascent operator share."""
+    header = ck_section_header(
+        "National SAM — multi-hospital health systems",
+        eyebrow="THE STRUCTURAL MARKET, TWO WAYS")
+    try:
+        hs = _an.health_system_sam()
+    except Exception:  # noqa: BLE001
+        hs = None
+    if not (hs and hs.available):
+        return header + ck_panel(
+            '<p class="ift-prose">The structural SAM build is unavailable '
+            'offline.</p>')
+
+    step_rows = "".join(
+        "<tr>"
+        f"<td>{_esc(s.label)}</td>"
+        f'<td class="ift-num">{_esc(s.value)}</td>'
+        f"<td>{_basis_chip(s.basis)}</td>"
+        f"<td>{_esc(s.detail)}</td>"
+        "</tr>"
+        for s in hs.steps)
+
+    body = (
+        f'<p class="ift-prose"><strong>{_esc(hs.headline)}</strong></p>'
+        '<p class="ift-prose">The <strong>SAM</strong> is the market the operator '
+        'actually competes for — the ground IFT of <em>multi-hospital health '
+        'systems</em> that is addressable by an outsourced provider. It is sized '
+        '<strong>two independent ways</strong> and triangulated: '
+        '<strong>(A) top-down</strong>, a ratio build off the TAM '
+        '(× the multi-hospital-system share of IFT dollars × the addressable '
+        'share, where addressable = 1 − the health-system-biller insource '
+        'ceiling); and <strong>(B) bottoms-up</strong>, the structure proxy for a '
+        'claims-driven build — the SOURCED footprint SAM-per-bed scaled to the '
+        'national multi-hospital-system bed base. The true bottoms-up build sums '
+        'the claims whose origin or destination NPI sits in a multi-hospital '
+        'system, split by billing-NPI ownership; that needs claims we do not hold '
+        'offline, so (B) is the honest stand-in and reads low.</p>'
+        # dual-method KPI band
+        '<div class="ift-kpi-grid">'
+        + _kpi("SAM — triangulated", _usd_b(hs.sam_central_bn),
+               f"range {_usd_b(hs.sam_low_bn)}–{_usd_b(hs.sam_high_bn)}")
+        + _kpi("(A) top-down ratio", _usd_b(hs.sam_td_central_bn),
+               f"MSA-restricted {_usd_b(hs.sam_td_msa_central_bn)}")
+        + _kpi("(B) bottoms-up structure",
+               _usd_b(hs.sam_bu_central_bn) if hs.sam_bu_central_bn else "—",
+               "Komodo-claims proxy (structure-extrapolated)")
+        + _kpi("Insource ceiling ι",
+               f"{hs.insource_ceiling[0]*100:.0f}–{hs.insource_ceiling[2]*100:.0f}%",
+               "health-system-biller upper bound (non-addressable)")
+        + '</div>'
+        # the build steps
+        '<p class="ift-sub">The funnel, step by step</p>'
+        '<div class="ift-table-wrap"><table class="ift-table"><thead><tr>'
+        '<th>Step</th><th>Value</th><th>Basis</th><th>Detail</th>'
+        f'</tr></thead><tbody>{step_rows}</tbody></table></div>'
+        # the nascent-share read
+        '<p class="ift-sub">TAM &rarr; SAM &rarr; SOM, and where the operator sits</p>'
+        '<div class="ift-kpi-grid">'
+        + _kpi("TAM (all ground IFT)", _usd_b(hs.tam_central_bn),
+               "no 911, no air, no NEMT")
+        + _kpi("SAM (health systems)", _usd_b(hs.sam_central_bn),
+               "structural, addressable")
+        + _kpi("SOM (current footprint)", _usd_m(hs.som_central_m * 1e6),
+               f"~{_pct(hs.operator_share_of_sam)} held today ≈ "
+               f"{_usd_m(hs.operator_current_revenue_m * 1e6)}")
+        + _kpi("SAM ÷ SOM headroom",
+               (f"{hs.sam_over_som_multiple:.0f}×"
+                if hs.sam_over_som_multiple else "—"),
+               "structural headroom beyond the current metros")
+        + '</div>'
+        f'<p class="ift-mono-src">{_source_chip(hs.source_label)}</p>'
+        f'<p class="ift-prose">{_esc(hs.note)}</p>'
     )
     return header + ck_panel(body)
 
@@ -554,13 +635,19 @@ def render_ift_markets() -> str:
                    if (tam and tam.available) else "—")
     sam_central = (_usd_m(sam.sam_dollars_central)
                    if (sam and sam.available) else "—")
+    try:
+        _hs = _an.health_system_sam()
+    except Exception:  # noqa: BLE001
+        _hs = None
+    samhs_central = (_usd_b(_hs.sam_central_bn)
+                     if (_hs and _hs.available) else "—")
 
     head = ck_editorial_head(
         "INTERFACILITY TRANSPORT · TARGET MARKETS",
         "Interfacility Transport — Target Markets",
         meta=(f"{_num(rollup.n_metros)} METROS · {_num(rollup.n_regions)} STATE "
               f"REGIONS · {_num(rollup.n_hospitals)} HOSPITALS · TAM {tam_central} · "
-              f"SAM {sam_central}"),
+              f"SAM {samhs_central} · SOM {sam_central}"),
         lede_italic_phrase="Ground IFT, market by market —",
         lede_body=("the anchor health systems that generate the transfers, the "
                    "real hospital and post-acute density behind the demand, and "
@@ -577,15 +664,23 @@ def render_ift_markets() -> str:
         "US ground-IFT TAM", f'{tam_central} {_basis_chip("ILLUSTRATIVE")}',
         explainer=(tam.headline if (tam and tam.available)
                    else "Top-down from the GOV MedPAC anchor, ex-NEMT ex-air."))
+    kpi_samhs = ck_provenance_tooltip(
+        "SAM — health systems", f'{samhs_central} {_basis_chip("ILLUSTRATIVE")}',
+        explainer=(_hs.headline if (_hs and _hs.available)
+                   else "Multi-hospital-health-system IFT, addressable by an "
+                   "outsourced operator — top-down ratio × bottoms-up structure."),
+        inject_css=False)
     kpi_sam = ck_provenance_tooltip(
-        "Footprint SAM", f'{sam_central} {_basis_chip("ILLUSTRATIVE")}',
-        explainer=("Bottom-up from the real origins/destinations in the target "
-                   "metros × labelled serviceable-share levers."),
+        "Footprint SOM", f'{sam_central} {_basis_chip("ILLUSTRATIVE")}',
+        explainer=("Serviceable-obtainable in the current footprint — bottom-up "
+                   "from the real origins/destinations in the target metros × "
+                   "labelled serviceable-share levers."),
         inject_css=False)
     kpi_strip = (
         '<div class="ift-kpi-grid">'
         + _kpi("US ground-IFT TAM", kpi_tam, "top-down, ex-NEMT ex-air")
-        + _kpi("Footprint SAM", kpi_sam, "bottom-up, structural")
+        + _kpi("SAM — health systems", kpi_samhs, "structural, addressable")
+        + _kpi("Footprint SOM", kpi_sam, "current markets, serviceable")
         + _kpi("Target metros", _num(rollup.n_metros),
                f"across {_num(rollup.n_regions)} state regions")
         + _kpi("Hospitals (origins)", _num(rollup.n_hospitals),
@@ -599,11 +694,13 @@ def render_ift_markets() -> str:
         "HOW TO READ THIS",
         "National frame first, then every metro up close.",
         italic_word="every",
-        body=("Start with the TAM (all US ground IFT, top-down) and the "
-              "footprint SAM (bottom-up from the real market structure). Then "
-              "each target metro gets a deep-dive: its anchor systems and their "
-              "transfer network, its SOURCED hospital + post-acute density, the "
-              "competitive insource-vs-outsource read, and the moat verdict."))
+        body=("Start with the funnel — TAM (all US ground IFT), SAM (the "
+              "multi-hospital-health-system market, sized two ways), and SOM (the "
+              "operator's current footprint, bottom-up from the real market "
+              "structure). Then each target metro gets a deep-dive: its anchor "
+              "systems and their transfer network, its SOURCED hospital + "
+              "post-acute density, the competitive insource-vs-outsource read, "
+              "and the moat verdict."))
 
     parts: List[str] = [
         _styles(),
@@ -614,12 +711,16 @@ def render_ift_markets() -> str:
         intro,
         # National overview
         ck_section_intro(
-            "NATIONAL OVERVIEW", "The market, sized two ways.",
-            italic_word="two",
-            body=("TAM top-down from the GOV anchor; SAM bottom-up from the "
-                  "footprint structure. SAM is the focus — it reflects the real "
-                  "market the operator actually competes in.")),
+            "NATIONAL OVERVIEW", "The funnel: TAM → SAM → SOM.",
+            italic_word="funnel",
+            body=("TAM is all US ground IFT (no 911, no air, no NEMT). SAM is the "
+                  "structural market — the multi-hospital-health-system IFT that an "
+                  "outsourced operator can address, sized top-down (ratio) and "
+                  "bottoms-up (claims-structure proxy), ±MSA. SOM is what is "
+                  "serviceable in the operator's current footprint; the operator "
+                  "holds ~1% of SAM today.")),
         _tam_section(),
+        _health_system_sam_section(),
         _sam_section(rollup, sam),
         _footprint_table(structures, sam_by_name),
         _footprint_map(structures),

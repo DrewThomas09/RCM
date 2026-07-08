@@ -5,8 +5,9 @@ Pins four things, all against the real code path (no mocks of our own code):
   1. ``render_ift_markets()`` returns a full, non-trivial, tag-balanced,
      leak-free editorial page that lists every target metro with its real
      (SOURCED) facility counts and the honesty basis chips.
-  2. The national overview renders both the top-down TAM and the bottom-up
-     footprint SAM, and the honest data caveats surface.
+  2. The national overview renders the TAM → SAM → SOM funnel — the top-down
+     TAM, the structural multi-hospital-health-system SAM (dual method), and the
+     bottom-up footprint SOM — and the honest data caveats surface.
   3. The ``/ift-markets`` route is wired into ``server.py`` and the renderer
      symbol imports.
   4. ``ift_geo`` / ``ift_analytics`` return sane per-market numbers offline.
@@ -106,14 +107,28 @@ class RenderTests(unittest.TestCase):
         self.assertIn("Every figure is labelled", self.html)
 
     def test_national_overview_tam_and_sam(self):
-        # TAM (top-down) headline dollars + SAM (bottom-up) both render.
+        # The funnel renders: TAM (top-down) → SAM (multi-hospital health systems,
+        # dual method) → SOM (footprint, bottom-up).
         self.assertIn("National TAM", self.html)
-        self.assertIn("Footprint SAM", self.html)
+        self.assertIn("National SAM", self.html)
+        self.assertIn("multi-hospital health systems", self.html)
+        self.assertIn("Footprint SOM", self.html)
         # the excluded-from-TAM discipline is stated
         self.assertIn("NEMT", self.html)
         self.assertIn("air", self.html.lower())
-        # the SAM formula spine is shown
+        # the SOM formula spine is shown
         self.assertIn("s(m)", self.html)
+
+    def test_structural_sam_dual_method_and_nascent_share(self):
+        # SAM = multi-hospital health systems, sized two ways (top-down ratio +
+        # bottoms-up structure proxy), with the health-system-biller insource
+        # ceiling and the ~1% nascent operator share.
+        self.assertIn("top-down", self.html)
+        self.assertIn("bottoms-up", self.html)
+        self.assertIn("Insource ceiling", self.html)
+        self.assertIn("MSA-restricted", self.html)
+        # the funnel headline naming appears
+        self.assertIn("TAM → SAM → SOM", self.html)
 
     def test_per_metro_deep_dive_content(self):
         # Each card carries anchor systems, an insource-vs-outsource read and a
@@ -196,6 +211,41 @@ class GeoAnalyticsSanityTests(unittest.TestCase):
             self.assertGreaterEqual(r.serviceable_share, 0.10, r.name)
             self.assertLessEqual(r.serviceable_share, 0.35, r.name)
             self.assertGreater(r.sam_dollars, 0.0, r.name)
+
+    def test_health_system_sam_is_coherent(self):
+        # SAM = multi-hospital health systems, the structural addressable market:
+        # TAM → SAM → SOM funnel with a nascent ~1% operator share.
+        hs = _an.health_system_sam()
+        self.assertTrue(hs.available)
+        tam = _an.ground_tam()
+        som = _an.sam_formula()
+        # top-down = TAM × system-share × addressable, so 0 < SAM_td < TAM
+        self.assertGreater(hs.sam_td_central_bn, 0.0)
+        self.assertLess(hs.sam_td_central_bn, tam.allpayer_tam_bn_central)
+        # addressable = 1 - insource ceiling; ceiling is a real (0,1) band
+        for i in range(3):
+            self.assertGreater(hs.insource_ceiling[i], 0.0)
+            self.assertLess(hs.insource_ceiling[i], 1.0)
+            self.assertAlmostEqual(
+                hs.addressable_share[i] + hs.insource_ceiling[2 - i], 1.0, places=3)
+        # MSA-restricted SAM is a strict subset of the all-geography SAM
+        self.assertLess(hs.sam_td_msa_central_bn, hs.sam_td_central_bn)
+        # bottoms-up structure proxy exists offline and reads low vs top-down
+        self.assertIsNotNone(hs.sam_bu_central_bn)
+        self.assertLess(hs.sam_bu_central_bn, hs.sam_td_central_bn)
+        # triangulated central sits between the two methods
+        self.assertGreaterEqual(hs.sam_central_bn, hs.sam_bu_central_bn)
+        self.assertLessEqual(hs.sam_central_bn, hs.sam_td_central_bn)
+        # SOM = footprint (in $M); SAM (in $B) dwarfs it, and the operator holds ~1%
+        self.assertAlmostEqual(hs.som_central_m,
+                               som.sam_dollars_central / 1e6, places=1)
+        self.assertGreater(hs.sam_over_som_multiple, 1.0)
+        self.assertAlmostEqual(
+            hs.operator_current_revenue_m,
+            hs.sam_central_bn * 1e3 * hs.operator_share_of_sam, places=1)
+        # every build step carries an honesty basis chip
+        for st in hs.steps:
+            self.assertIn(st.basis, ("GOV", "ILLUSTRATIVE", "SOURCED", "unavailable"))
 
     def test_unknown_metro_degrades_without_raising(self):
         s = _geo.metro_structure("Nowhere")

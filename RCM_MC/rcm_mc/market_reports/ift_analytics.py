@@ -948,3 +948,260 @@ def sam_formula(f_ift: float = _F_IFT[1],
               "the serviceable-mission total is a plausible slice of the ~4-5M "
               "national ground-IFT volume. All dollar levers are ILLUSTRATIVE, "
               "labelled; the bed/discharge structure is SOURCED."))
+
+
+# ── SAM = MULTI-HOSPITAL HEALTH SYSTEMS (the structural addressable market) ───
+# The MMT thesis frames the funnel as TAM → SAM → SOM, and the SAM is NOT the
+# operator's current footprint (that is the SOM) — it is the STRUCTURAL market:
+# the ground IFT generated within/between MULTI-HOSPITAL HEALTH SYSTEMS that is
+# addressable by an outsourced operator. Two independent methods triangulate it:
+#
+#   (A) TOP-DOWN (ratio-driven): TAM × multi-hospital-system share of IFT $ ×
+#       addressable (outsourceable) share. The addressable share is 1 − the
+#       insource ceiling, where the insource ceiling uses the transcript's proxy:
+#       "if the health system is billing the transport, it must be insourced."
+#       So the UPPER BOUND on insourcing is the share of ground-IFT $ billed by
+#       health-system-affiliated NPIs — the true value comes from a claims build
+#       (billing-NPI ownership), which is network-gated offline, so we carry an
+#       ILLUSTRATIVE ceiling anchored to how little ground fleet hospitals own.
+#
+#   (B) BOTTOMS-UP (structure-extrapolated): the offline proxy for the Komodo
+#       claims-driven build. Take the SOURCED footprint SAM-$/bed from
+#       :func:`sam_formula` and scale it to the NATIONAL multi-hospital-system bed
+#       base (national HCRIS beds × the AHA multi-system bed share). The true
+#       bottoms-up build sums IFT claims whose origin OR destination NPI sits in a
+#       multi-hospital system, split by billing-NPI ownership — that needs claims
+#       we do not have offline, so this structure-extrapolation stands in and is
+#       labelled as the proxy. It reads LOW vs the top-down because the footprint
+#       over-samples insourced-heavy metros (Twin Cities, Rochester).
+#
+# Both are ±MSA-cut: the transcript's "with or without an MSA restriction" — we
+# also report the metro-restricted SAM (× the in-MSA share of system IFT $).
+#
+# SOM = the operator's current footprint (:func:`sam_formula`); the operator's
+# current revenue is ~1% of SAM — a nascent share with the SAM ~20-30× the SOM.
+_MULTI_SYSTEM_IFT_SHARE = (0.50, 0.60, 0.70)   # ILLUSTRATIVE — share of ground-IFT $
+#   generated within/between multi-hospital health systems. Anchored to AHA 2023
+#   (~68% of community hospitals are in a system) AND the fact that acute up-
+#   transfers concentrate at system-owned tertiary/quaternary HUBS, so IFT over-
+#   indexes on system involvement vs the raw hospital count.
+_MULTI_SYSTEM_BED_SHARE = 0.65                 # GOV-magnitude (AHA 2023) — share of
+#   US hospital beds in MULTI-hospital systems (system hospitals skew larger, so
+#   the bed share exceeds the ~68% hospital-count share only modestly once the
+#   single-hospital systems are removed).
+_INSOURCE_CEILING = (0.18, 0.25, 0.32)         # ILLUSTRATIVE — health-system-biller
+#   UPPER BOUND on insourcing. Hospitals rarely own ground fleets; the big-IDN
+#   captive-fleet exceptions (Cleveland Clinic, Mayo, Geisinger, Intermountain)
+#   set the ceiling. The claims-driven proxy ("billed by a system NPI ⇒ insourced")
+#   would pin this precisely; offline it is a labelled band.
+_MSA_SHARE_OF_SYSTEM_IFT = 0.82                # ILLUSTRATIVE — share of multi-system
+#   IFT $ inside MSAs (systems concentrate in metros; rural is critical-access +
+#   independent).
+_OPERATOR_SHARE_OF_SAM = 0.01                  # the nascent operator's ~1% current
+#   share of the structural SAM (MMT kickoff framing) — used to derive the implied
+#   current revenue and the headroom multiple.
+
+
+@dataclass
+class HealthSystemSam:
+    """SAM = multi-hospital health systems — the structural addressable market,
+    triangulated top-down (ratio) × bottoms-up (structure), ±MSA, with the SOM and
+    the ~1% nascent operator share hung off it. Every dollar is ILLUSTRATIVE,
+    labelled; the bed base and the footprint spine are SOURCED."""
+    available: bool
+    method: str = "top_down_ratio × bottoms_up_structure (±MSA)"
+    tam_central_bn: float = 0.0
+    # ratio levers (low/central/high)
+    multi_system_ift_share: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    insource_ceiling: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    addressable_share: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    multi_system_bed_share: float = 0.0
+    msa_share_of_system_ift: float = 0.0
+    # (A) top-down SAM ($B)
+    sam_td_low_bn: float = 0.0
+    sam_td_central_bn: float = 0.0
+    sam_td_high_bn: float = 0.0
+    sam_td_msa_central_bn: float = 0.0
+    # (B) bottoms-up structure-extrapolated SAM ($B), the offline Komodo proxy
+    sam_bu_central_bn: Optional[float] = None
+    sam_bu_msa_central_bn: Optional[float] = None
+    footprint_bed_share: Optional[float] = None
+    # triangulated headline central ($B) — geometric blend of (A) and (B)
+    sam_central_bn: float = 0.0
+    sam_low_bn: float = 0.0
+    sam_high_bn: float = 0.0
+    # SOM (footprint) + nascent operator share
+    som_central_m: float = 0.0
+    som_low_m: float = 0.0
+    som_high_m: float = 0.0
+    operator_share_of_sam: float = 0.0
+    operator_current_revenue_m: float = 0.0
+    sam_over_som_multiple: Optional[float] = None
+    steps: List[TamStep] = field(default_factory=list)
+    source_label: str = ""
+    headline: str = ""
+    note: str = ""
+
+
+def health_system_sam() -> HealthSystemSam:
+    """SAM = multi-hospital health systems — the structural addressable market for
+    ground IFT, triangulated two ways and framed against the SOM (footprint) and
+    the operator's ~1% nascent share.
+
+    Method A (top-down ratio):  SAM = TAM · σ_system · (1 − ι)
+      σ_system = share of ground-IFT $ generated within/between multi-hospital
+      health systems (ILLUSTRATIVE, AHA-anchored); ι = the health-system-biller
+      insource CEILING (ILLUSTRATIVE — the claims proxy "billed by a system NPI ⇒
+      insourced"); (1 − ι) = the addressable/outsourceable share.
+
+    Method B (bottoms-up structure):  SAM = (footprint SAM-$/bed) · (national beds
+      · β_system), the offline stand-in for the Komodo claims build, where
+      β_system is the multi-hospital-system share of national beds. Reads LOW vs A
+      because the footprint over-samples insourced-heavy metros.
+
+    Both are also reported ±MSA (× the in-MSA share of system IFT $). Degrades to
+    available=False if the TAM/footprint spines are unavailable — never raises."""
+    tam = ground_tam()
+    som = sam_formula()
+    if not tam.available:
+        return HealthSystemSam(
+            available=False,
+            source_label="GOV-anchored TAM × ILLUSTRATIVE system/insource ratios",
+            note="The ground-IFT TAM spine is unavailable, so the structural SAM "
+                 "cannot be built.")
+
+    tam_c = tam.allpayer_tam_bn_central
+    tam_lo = tam.allpayer_tam_bn_low
+    tam_hi = tam.allpayer_tam_bn_high
+    sig_lo, sig_c, sig_hi = _MULTI_SYSTEM_IFT_SHARE
+    ins_lo, ins_c, ins_hi = _INSOURCE_CEILING
+    addr = (round(1 - ins_hi, 3), round(1 - ins_c, 3), round(1 - ins_lo, 3))
+
+    # (A) top-down ratio build — extremes multiply low×low×low and high×high×high.
+    sam_td_lo = round(tam_lo * sig_lo * addr[0], 3)
+    sam_td_c = round(tam_c * sig_c * addr[1], 3)
+    sam_td_hi = round(tam_hi * sig_hi * addr[2], 3)
+    sam_td_msa_c = round(sam_td_c * _MSA_SHARE_OF_SYSTEM_IFT, 3)
+
+    # (B) bottoms-up structure-extrapolation — the offline Komodo proxy.
+    sam_bu_c: Optional[float] = None
+    sam_bu_msa_c: Optional[float] = None
+    fp_bed_share = som.bed_share_of_national if som.available else None
+    if (som.available and fp_bed_share and fp_bed_share > 0
+            and som.sam_dollars_central > 0):
+        # footprint SAM-$/bed scaled to the national multi-system bed base:
+        #   SAM_bu = (SOM_$ / footprint_beds) · (national_beds · β_system)
+        #          = SOM_$ · β_system / bed_share
+        sam_bu_c = round(
+            som.sam_dollars_central * _MULTI_SYSTEM_BED_SHARE
+            / fp_bed_share / 1e9, 3)
+        sam_bu_msa_c = round(sam_bu_c * _MSA_SHARE_OF_SYSTEM_IFT, 3)
+
+    # Triangulated headline: geometric mean of the two central methods when both
+    # exist (respects the order-of-magnitude spread without letting either method
+    # dominate); else the top-down central. Band spans B-central → A-high.
+    if sam_bu_c and sam_bu_c > 0:
+        sam_central = round((sam_td_c * sam_bu_c) ** 0.5, 3)
+        sam_low = round(min(sam_bu_c, sam_td_lo), 3)
+    else:
+        sam_central = sam_td_c
+        sam_low = sam_td_lo
+    sam_high = sam_td_hi
+
+    # SOM + nascent operator share.
+    som_c_m = (som.sam_dollars_central / 1e6) if som.available else 0.0
+    som_lo_m = (som.sam_dollars_low / 1e6) if som.available else 0.0
+    som_hi_m = (som.sam_dollars_high / 1e6) if som.available else 0.0
+    op_rev_m = round(sam_central * 1e3 * _OPERATOR_SHARE_OF_SAM, 1)  # $B→$M ×1%
+    sam_over_som = (round(sam_central * 1e3 / som_c_m, 1)
+                    if som_c_m > 0 else None)
+
+    steps = [
+        TamStep("TAM — all US ground IFT (ex-911, ex-air, ex-NEMT)",
+                f"${tam_c:.1f}B", "ILLUSTRATIVE",
+                f"range ${tam_lo:.0f}-{tam_hi:.0f}B; the GOV-anchored ground-IFT "
+                "TAM from ground_tam()."),
+        TamStep("→ × multi-hospital-system share of IFT $ (σ)",
+                f"{sig_lo*100:.0f}-{sig_hi*100:.0f}% (central {sig_c*100:.0f}%)",
+                "ILLUSTRATIVE",
+                "AHA 2023 ~68% of hospitals are in a system, and acute up-"
+                "transfers concentrate at system-owned tertiary/quaternary hubs, "
+                "so IFT $ over-indexes on system involvement."),
+        TamStep("→ × addressable (outsourceable) share (1 − insource ceiling ι)",
+                f"{addr[0]*100:.0f}-{addr[2]*100:.0f}% (central {addr[1]*100:.0f}%)",
+                "ILLUSTRATIVE",
+                f"insource ceiling ι = {ins_lo*100:.0f}-{ins_hi*100:.0f}% — the "
+                "health-system-biller proxy: $ billed by a system NPI is treated "
+                "as insourced (non-addressable). Hospitals rarely own ground "
+                "fleets, so the ceiling is low."),
+        TamStep("(A) TOP-DOWN SAM = TAM · σ · (1 − ι)",
+                f"${sam_td_c:.1f}B (${sam_td_lo:.1f}-{sam_td_hi:.1f}B)",
+                "ILLUSTRATIVE",
+                f"MSA-restricted ${sam_td_msa_c:.1f}B (× {_MSA_SHARE_OF_SYSTEM_IFT*100:.0f}% "
+                "in-MSA share)."),
+    ]
+    if sam_bu_c:
+        steps.append(TamStep(
+            "(B) BOTTOMS-UP SAM = footprint SAM-$/bed × national multi-system beds",
+            f"${sam_bu_c:.1f}B", "ILLUSTRATIVE",
+            f"the offline Komodo-claims proxy: SOM ${som_c_m:,.0f}M scaled by "
+            f"β_system {_MULTI_SYSTEM_BED_SHARE*100:.0f}% ÷ footprint bed-share "
+            f"{fp_bed_share*100:.1f}%. Reads low — the footprint over-samples "
+            "insourced-heavy metros; the true build sums claims by origin/"
+            "destination system NPI split by billing-NPI ownership."))
+    steps.append(TamStep(
+        "SAM (triangulated)", f"${sam_central:.1f}B (${sam_low:.1f}-{sam_high:.1f}B)",
+        "ILLUSTRATIVE",
+        "geometric blend of the two central methods." if sam_bu_c
+        else "top-down central (bottoms-up proxy unavailable offline)."))
+    steps.append(TamStep(
+        "SOM — operator footprint (serviceable, current markets)",
+        f"${som_c_m:,.0f}M (${som_lo_m:,.0f}-{som_hi_m:,.0f}M)",
+        "ILLUSTRATIVE" if som.available else "unavailable",
+        "the bottom-up footprint SAM from sam_formula() — reframed as the SOM: "
+        "what is serviceable in the operator's CURRENT metros, not the structural "
+        "market."))
+    steps.append(TamStep(
+        f"Operator current revenue ≈ {_OPERATOR_SHARE_OF_SAM*100:.0f}% of SAM",
+        f"~${op_rev_m:,.0f}M", "ILLUSTRATIVE",
+        f"the nascent ~{_OPERATOR_SHARE_OF_SAM*100:.0f}% share (MMT framing); SAM "
+        + (f"is ~{sam_over_som:.0f}× the SOM" if sam_over_som else "dwarfs the SOM")
+        + " — the headroom is structural, not just in-footprint."))
+
+    headline = (
+        f"SAM (multi-hospital health systems) ≈ ${sam_central:.1f}B triangulated "
+        f"(${sam_low:.1f}-{sam_high:.1f}B): top-down ${sam_td_c:.1f}B = "
+        f"${tam_c:.1f}B TAM × {sig_c*100:.0f}% system-share × {addr[1]*100:.0f}% "
+        f"addressable"
+        + (f", bottoms-up ${sam_bu_c:.1f}B (structure proxy)." if sam_bu_c else ".")
+        + f" SOM (footprint) ${som_c_m:,.0f}M; operator ~{_OPERATOR_SHARE_OF_SAM*100:.0f}% "
+        f"of SAM (~${op_rev_m:,.0f}M) — a nascent share.")
+
+    return HealthSystemSam(
+        available=True, tam_central_bn=tam_c,
+        multi_system_ift_share=_MULTI_SYSTEM_IFT_SHARE,
+        insource_ceiling=_INSOURCE_CEILING, addressable_share=addr,
+        multi_system_bed_share=_MULTI_SYSTEM_BED_SHARE,
+        msa_share_of_system_ift=_MSA_SHARE_OF_SYSTEM_IFT,
+        sam_td_low_bn=sam_td_lo, sam_td_central_bn=sam_td_c,
+        sam_td_high_bn=sam_td_hi, sam_td_msa_central_bn=sam_td_msa_c,
+        sam_bu_central_bn=sam_bu_c, sam_bu_msa_central_bn=sam_bu_msa_c,
+        footprint_bed_share=fp_bed_share,
+        sam_central_bn=sam_central, sam_low_bn=sam_low, sam_high_bn=sam_high,
+        som_central_m=som_c_m, som_low_m=som_lo_m, som_high_m=som_hi_m,
+        operator_share_of_sam=_OPERATOR_SHARE_OF_SAM,
+        operator_current_revenue_m=op_rev_m, sam_over_som_multiple=sam_over_som,
+        steps=steps,
+        source_label=("GOV-anchored ground-IFT TAM × ILLUSTRATIVE multi-hospital-"
+                      "system share + health-system-biller insource ceiling; "
+                      "bottoms-up scaled from the SOURCED footprint (ift_geo/HCRIS) "
+                      "bed structure — the offline proxy for the Komodo claims build"),
+        headline=headline,
+        note=("SAM is the STRUCTURAL market (multi-hospital health systems), NOT the "
+              "footprint — the footprint is the SOM. Two methods bracket it: the "
+              "top-down ratio build and the bottoms-up structure-extrapolation "
+              "(the offline stand-in for the claims-driven Komodo build, which "
+              "splits IFT by origin/destination system NPI and billing-NPI "
+              "ownership). The insource ceiling is the health-system-biller upper "
+              "bound; the addressable market is what an outsourced operator can "
+              "win. Every dollar is ILLUSTRATIVE; the bed base is SOURCED."))
