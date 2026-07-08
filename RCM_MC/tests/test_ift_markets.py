@@ -130,6 +130,27 @@ class RenderTests(unittest.TestCase):
         # the funnel headline naming appears
         self.assertIn("TAM → SAM → SOM", self.html)
 
+    def test_market_education_boundary(self):
+        # Chapter one teaches IFT is its own market — not 911 / NEMT / air.
+        self.assertIn("MARKET EDUCATION", self.html)
+        self.assertIn("What IFT is", self.html)
+        for excl in ("911", "NEMT", "Air ambulance"):
+            self.assertIn(excl, self.html, f"boundary term {excl} missing")
+
+    def test_investor_layers_present(self):
+        # The four deepened analytic layers each render a section.
+        self.assertIn("three levers", self.html)            # growth tracker
+        self.assertIn("Competitive landscape", self.html)   # competition
+        self.assertIn("MMT positioning", self.html)
+        self.assertIn("Insource vs outsource", self.html)   # addressability
+        self.assertIn("claims UNDERCOUNT", self.html)
+        self.assertIn("moat scorecard", self.html)          # defensibility
+        self.assertIn("proof points", self.html.lower())
+
+    def test_excel_download_offered(self):
+        self.assertIn("/api/ift/markets.xlsx", self.html)
+        self.assertIn("Download Excel", self.html)
+
     def test_per_metro_deep_dive_content(self):
         # Each card carries anchor systems, an insource-vs-outsource read and a
         # moat verdict — check the section scaffolding + real operator names.
