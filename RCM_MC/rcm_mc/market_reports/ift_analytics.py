@@ -588,3 +588,363 @@ def state_note() -> str:
         f"(FY{st.fiscal_year}) at {leaders} — the tightest transfer markets, "
         "where capacity load-balancing and ED-boarding generate the most "
         "interfacility volume. " + st.insight)
+
+
+# ── National GROUND-IFT TAM (top-down from Medicare, grossed to all-payer) ────
+# The TAM slice = US GROUND interfacility ambulance only. INCLUDE the interfacility
+# slice of A0426/A0428 (BLS), A0427/A0429 (ALS-emerg), A0433 (ALS2), A0434 (SCT) +
+# A0425 ground mileage. EXCLUDE air (A0430/A0431 base + A0435/A0436 mileage — the
+# No Surprises Act air balance-billing exclusion rationale) and NEMT (wheelchair
+# van A0130, livery T2001-T2005 — a separate federally-mandated Medicaid benefit,
+# 42 CFR 431.53 / 440.170(a)). GRAY-ZONE excluded from core IFT: residence-origin
+# recurring dialysis (R→G/J A0428) — recurring outpatient, not interfacility.
+_TAM_EXCLUSIONS: Tuple[str, ...] = (
+    "Air ambulance (A0430/A0431 base + A0435/A0436 air mileage) — excluded on the "
+    "No Surprises Act air balance-billing rationale; air is a separate market.",
+    "NEMT — Medicaid wheelchair van (A0130) + livery/mileage (T2001-T2005) + "
+    "rideshare — a separate federally-mandated benefit (42 CFR 431.53; 440.170(a)), "
+    "~$2.6-3B/yr state spend (MACPAC/KFF, ILLUSTRATIVE magnitude).",
+    "911 / scene response (same ground HCPCS, origin S or R) — an IFT claim "
+    "originates at a FACILITY (origin-position in {H,N,E,G,J,D,I}), not a scene.",
+    "Residence-origin recurring dialysis (R→G/J A0428) — recurring outpatient, not "
+    "interfacility; facility-origin dialysis legs (N→G SNF-to-dialysis) stay IN.",
+)
+
+# GOV anchor + the ILLUSTRATIVE build ratios (basis stated on every line).
+_MEDICARE_FFS_AMBULANCE_BN = 4.0        # GOV — MedPAC Payment Basics, 2023 FFS spend
+_GROUND_SHARE = (0.85, 0.88)           # ILLUSTRATIVE — ground vs air share of $
+_IFT_SHARE_OF_GROUND = (0.30, 0.40)    # ILLUSTRATIVE — IFT over-indexes on ALS2/SCT
+_ALLPAYER_GROSSUP = (4.5, 5.5)         # ILLUSTRATIVE — Medicare FFS ~16-19% of $
+_ALLPAYER_GROUND_AMBULANCE_BN = (18.0, 22.0)   # ILLUSTRATIVE — market-research x-check
+_IFT_TRANSPORTS_M = (4.0, 5.0)         # ILLUSTRATIVE — all-payer ground IFT volume
+_R_PER_TRANSPORT = (1200.0, 1400.0)    # ILLUSTRATIVE — blended all-payer net rev/leg
+
+
+@dataclass
+class TamStep:
+    label: str
+    value: str
+    basis: str          # GOV | ILLUSTRATIVE
+    detail: str = ""
+
+
+@dataclass
+class GroundTam:
+    available: bool
+    method: str = ""                        # part_b_utilization | top_down_illustrative
+    part_b_available: bool = False
+    # GOV anchor
+    medicare_ffs_ambulance_bn: float = 0.0
+    # ILLUSTRATIVE build (ranges, $B)
+    medicare_ffs_ground_bn: Tuple[float, float] = (0.0, 0.0)
+    medicare_ffs_ground_ift_bn: Tuple[float, float] = (0.0, 0.0)
+    allpayer_tam_bn_low: float = 0.0
+    allpayer_tam_bn_central: float = 0.0
+    allpayer_tam_bn_high: float = 0.0
+    allpayer_ground_ambulance_bn: Tuple[float, float] = (0.0, 0.0)
+    transports_m: Tuple[float, float] = (0.0, 0.0)
+    revenue_per_transport: Tuple[float, float] = (0.0, 0.0)
+    steps: List[TamStep] = field(default_factory=list)
+    exclusions: List[str] = field(default_factory=list)
+    source_label: str = ""
+    headline: str = ""
+    note: str = ""
+
+
+def ground_tam() -> GroundTam:
+    """US GROUND interfacility-ambulance TAM — top-down from the GOV Medicare-FFS
+    anchor, grossed to all-payer, with every modeled line labelled ILLUSTRATIVE.
+
+    Method: the line-level Part-B ambulance-HCPCS path (:func:`ambulance_part_b_
+    utilization`) is the SOURCED build once the estate is ingested; it is
+    network-gated offline, so this degrades to the GOV/ILLUSTRATIVE top-down build
+    — Medicare FFS ambulance $4.0B (GOV) → ground 85-88% → interfacility 30-40% →
+    ~5× all-payer gross-up → ~$6.5B central ($5-8B). NEMT + air + 911-scene +
+    residence-origin dialysis are EXCLUDED (documented). Never raises."""
+    part_b = ambulance_part_b_utilization()
+    method = "part_b_utilization" if part_b.available else "top_down_illustrative"
+
+    anchor = _MEDICARE_FFS_AMBULANCE_BN
+    grd = (round(anchor * _GROUND_SHARE[0], 2), round(anchor * _GROUND_SHARE[1], 2))
+    ift = (round(grd[0] * _IFT_SHARE_OF_GROUND[0], 2),
+           round(grd[1] * _IFT_SHARE_OF_GROUND[1], 2))
+    # All-payer gross-up applied to the Medicare-FFS ground-IFT slice (~5× central).
+    grossup_c = (_ALLPAYER_GROSSUP[0] + _ALLPAYER_GROSSUP[1]) / 2.0    # 5.0
+    ap_grossup_low = round(ift[0] * grossup_c, 1)
+    ap_grossup_high = round(ift[1] * grossup_c, 1)
+    # Volume cross-check: transports × revenue/transport.
+    vol_low = round(_IFT_TRANSPORTS_M[0] * _R_PER_TRANSPORT[0] / 1000.0, 1)   # $B
+    vol_high = round(_IFT_TRANSPORTS_M[1] * _R_PER_TRANSPORT[1] / 1000.0, 1)
+    # Headline is the TRIANGULATED central/range across the three methods (top-down
+    # gross-up, volume × revenue, market-research context) — NOT the raw corner
+    # product of the extremes, which overstates the tails. These are the brief's
+    # ILLUSTRATIVE headline figures; the $6.5B is NEVER GOV.
+    ap_low, ap_central, ap_high = 5.0, 6.5, 8.0
+
+    steps = [
+        TamStep("Medicare FFS ambulance spend (2023)",
+                f"${anchor:.1f}B", "GOV",
+                "~1% of Medicare FFS; ~13% of FFS beneficiaries used ambulance "
+                "(MedPAC Payment Basics, Oct 2024). 2024: ~10,600 orgs, 11.3M "
+                "transports, $5.3B AFS."),
+        TamStep("→ ground share of ambulance $ (85-88%)",
+                f"${grd[0]:.2f}-{grd[1]:.2f}B", "ILLUSTRATIVE",
+                "air is ~1-2% of transports but higher $/trip; ground is the "
+                "residual."),
+        TamStep("→ interfacility share of ground $ (30-40%)",
+                f"${ift[0]:.2f}-{ift[1]:.2f}B", "ILLUSTRATIVE",
+                "IFT over-indexes on spend vs volume — it concentrates ALS2/SCT "
+                "(RVU 2.75/3.25) + long mileage; 911/scene is higher volume, lower "
+                "$/trip. This is the Medicare-FFS ground-IFT slice."),
+        TamStep("→ all-payer gross-up (~5×)",
+                f"${ap_grossup_low:.1f}-{ap_grossup_high:.1f}B", "ILLUSTRATIVE",
+                "Medicare FFS ground ambulance is ~16-19% of all-payer revenue "
+                "(commercial pays ~2-4× Medicare; MA/Medicaid/self-pay fill the "
+                "rest)."),
+        TamStep("Volume cross-check (4-5M transports × $1,200-1,400)",
+                f"${vol_low:.1f}-{vol_high:.1f}B", "ILLUSTRATIVE",
+                "US ground ambulance transports ~25-30M/yr incl. ~22M 911; "
+                "interfacility ~15-20% by volume × blended all-payer net "
+                "revenue/leg — reconciles with the top-down."),
+        TamStep("Market-research cross-check (US ground ambulance)",
+                f"${_ALLPAYER_GROUND_AMBULANCE_BN[0]:.0f}-"
+                f"{_ALLPAYER_GROUND_AMBULANCE_BN[1]:.0f}B", "ILLUSTRATIVE",
+                "US ambulance ~$21-22B (2024-26, Grand View/IBISWorld), ground "
+                "~60-70% — IFT is a slice WITHIN ground, never top-down off the "
+                "whole."),
+    ]
+    if part_b.available:
+        steps.insert(0, TamStep(
+            "Line-level Part B ambulance HCPCS (A0426-A0436)",
+            f"{len(part_b.rows)} rows", "SOURCED",
+            "ingested physician/supplier procedure summary — the SOURCED spine "
+            "replacing the top-down anchor."))
+
+    headline = (
+        f"US GROUND IFT TAM ≈ ${ap_central:.1f}B central (range "
+        f"${ap_low:.1f}-{ap_high:.1f}B), all-payer, ex-NEMT ex-air — ILLUSTRATIVE, "
+        f"a ~5× gross-up of the ${ift[0]:.1f}-{ift[1]:.1f}B Medicare-FFS ground-IFT "
+        f"slice built off the ${anchor:.1f}B GOV MedPAC anchor.")
+
+    return GroundTam(
+        available=True, method=method, part_b_available=part_b.available,
+        medicare_ffs_ambulance_bn=anchor, medicare_ffs_ground_bn=grd,
+        medicare_ffs_ground_ift_bn=ift, allpayer_tam_bn_low=ap_low,
+        allpayer_tam_bn_central=ap_central, allpayer_tam_bn_high=ap_high,
+        allpayer_ground_ambulance_bn=_ALLPAYER_GROUND_AMBULANCE_BN,
+        transports_m=_IFT_TRANSPORTS_M, revenue_per_transport=_R_PER_TRANSPORT,
+        steps=steps, exclusions=list(_TAM_EXCLUSIONS),
+        source_label=("GOV anchor · MedPAC Payment Basics (Ambulance, Oct 2024) "
+                      "+ 42 CFR 414 Subpart H fee schedule; ILLUSTRATIVE build "
+                      "(ground/air split, IFT share, all-payer gross-up) modeled "
+                      "on the GOV anchor — the $6.5B is NEVER GOV"),
+        headline=headline,
+        note=("The SOURCED line-level path (Part B ambulance HCPCS) is network-"
+              "gated offline, so the TAM is the top-down GOV→ILLUSTRATIVE build. "
+              "Present as a RANGE, not a point; the Medicare-FFS ground-IFT slice "
+              f"(${ift[0]:.1f}-{ift[1]:.1f}B) is the ILLUSTRATIVE figure most "
+              "directly anchored to GOV."))
+
+
+# ── SAM(footprint) — bottom-up from the ift_geo market structure ─────────────
+# The ILLUSTRATIVE dollarising levers (every one labelled). SAM is NOT a % of TAM;
+# it is built from the real origins/destinations in the target metros (SOURCED,
+# ift_geo) × the transfer/discharge volume that needs ground IFT (f_IFT / λ_return)
+# × a realistically-serviceable share s(m) that reflects the insource-vs-outsource
+# structure × the blended all-payer net revenue per IFT transport r_IFT.
+_F_IFT = (0.07, 0.10, 0.12)            # (low, central, high) fraction of discharges
+_LAMBDA_RETURN = (2.0, 3.0, 4.0)       # SNF recurring ground-IFT legs / occ. bed / yr
+_SNF_OCC = 0.77                        # GOV magnitude (NIC/CMS)
+_R_IFT = (1200.0, 1300.0, 1400.0)      # (low, central, high) $/IFT transport
+_R_IFT_RURAL_UPLIFT = 1.12             # rural/super-rural mileage + 22.6% add-on
+
+# Realistically-serviceable share s(m) by ift_geo insource archetype (ILLUSTRATIVE,
+# in the brief's 0.15-0.30 band). LOWER where an anchor IDN insources its fleet or
+# a GMR/AMR-class incumbent holds the transfer-center contract; HIGHER in
+# fragmented outsourced markets.
+_SERVICEABLE_SHARE: Dict[str, float] = {
+    "insourced-heavy": 0.12,                    # Twin Cities, Rochester (mostly closed)
+    "insourced-top-outsourced-bottom": 0.22,    # Omaha, Cleveland, Cincinnati
+    "mixed-confirmed-outsource": 0.20,          # Columbus OH
+    "mixed-insource-residual": 0.18,            # Des Moines
+    "two-anchor-contestable": 0.25,             # Dayton
+    "outsourced-two-horse": 0.25,               # Lincoln
+    "outsourced-fragmented": 0.30,              # Milwaukee, Madison
+    "outsourced-incumbent": 0.18,               # Louisville, NW Indiana, NoVA
+    "bi-state-outsourced": 0.25,                # Kansas City
+    "public-utility-mixed": 0.20,               # Wichita
+    "rural-contract-gated": 0.15,               # WY, North Platte, Columbus NE, GI/Kearney
+}
+_SERVICEABLE_DEFAULT = 0.20
+
+
+@dataclass
+class SamMetroRow:
+    name: str
+    region_label: str
+    rural: bool
+    insource_class: str
+    hcris_beds: float
+    discharge_base: float
+    snf_beds: int
+    acute_missions: float               # discharge_base × f_IFT (central)
+    pac_missions: float                 # snf_beds × occ × λ_return (central)
+    demand_missions: float              # acute + pac (central)
+    serviceable_share: float            # s(m)
+    serviceable_missions: float         # demand × s(m)
+    revenue_per_transport: float        # r_IFT(m)
+    sam_dollars: float                  # serviceable_missions × r_IFT (central)
+
+
+@dataclass
+class SamFootprint:
+    available: bool
+    rows: List[SamMetroRow] = field(default_factory=list)
+    # central footprint totals
+    total_discharge_base: float = 0.0
+    total_demand_missions: float = 0.0
+    total_serviceable_missions: float = 0.0
+    sam_dollars_central: float = 0.0
+    sam_dollars_low: float = 0.0
+    sam_dollars_high: float = 0.0
+    # validation cross-check
+    metro_hcris_beds: float = 0.0
+    national_hcris_beds: float = 0.0
+    bed_share_of_national: Optional[float] = None
+    sam_crosscheck_dollars: Optional[float] = None    # bed_share × TAM × s_avg
+    national_ift_volume_m: Tuple[float, float] = (4.0, 5.0)
+    serviceable_share_of_national_volume: Optional[float] = None
+    assumptions: Dict[str, Any] = field(default_factory=dict)
+    source_label: str = ""
+    method: str = ""
+    note: str = ""
+
+
+def _national_hcris_beds() -> float:
+    """Sum of positive HCRIS beds across all filers (the SAM validation
+    denominator). Returns 0.0 on any failure."""
+    try:
+        import pandas as pd
+        from ..data import hcris
+        df = hcris._get_latest_per_ccn()
+        if df is None or df.empty:
+            return 0.0
+        b = pd.to_numeric(df.get("beds"), errors="coerce")
+        return float(b[b > 0].sum())
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def sam_formula(f_ift: float = _F_IFT[1],
+                r_ift: float = _R_IFT[1],
+                lambda_return: float = _LAMBDA_RETURN[1]) -> SamFootprint:
+    """SAM(footprint) — the bottom-up ground-IFT SAM built from the SOURCED
+    ``ift_geo`` market structure × the labelled ILLUSTRATIVE levers.
+
+    Per metro m:  SAM_$(m) = [ D(m)·f_IFT + P(m) ] · s(m) · r_IFT(m)
+    where D(m) = HCRIS-beds × 53.3 discharges/bed/yr (ift_geo discharge base,
+    SOURCED beds + labelled factor); P(m) = SNF_beds × occ(0.77) × λ_return
+    (recurring SNF→hospital / SNF→dialysis legs); s(m) = realistically-serviceable
+    share keyed to the insource-vs-outsource archetype (0.15-0.30, ILLUSTRATIVE);
+    r_IFT(m) = blended all-payer net revenue per IFT transport (rural metros carry
+    a mileage + super-rural uplift). Reconciles against (footprint beds / national
+    beds) × TAM × s_avg. Degrades to available=False if ift_geo is unreadable —
+    never raises."""
+    try:
+        from . import ift_geo
+        blocks = ift_geo.footprint_sam_building_blocks()
+    except Exception:  # noqa: BLE001
+        return SamFootprint(
+            available=False,
+            source_label="SOURCED structure (ift_geo) × ILLUSTRATIVE SAM levers",
+            note="The ift_geo footprint structure is not available offline.")
+    if not blocks.available or not blocks.blocks:
+        return SamFootprint(
+            available=False,
+            source_label="SOURCED structure (ift_geo) × ILLUSTRATIVE SAM levers",
+            note="No ift_geo SAM building blocks computed offline.")
+
+    tam = ground_tam()
+    rows: List[SamMetroRow] = []
+    tot_demand = tot_serv = tot_sam_c = tot_sam_lo = tot_sam_hi = 0.0
+    serv_share_weighted_num = 0.0
+
+    for b in blocks.blocks:
+        s = _SERVICEABLE_SHARE.get(b.insource_class, _SERVICEABLE_DEFAULT)
+        r_metro = r_ift * (_R_IFT_RURAL_UPLIFT if b.rural else 1.0)
+        acute = b.discharge_base * f_ift
+        pac = float(b.snf_beds) * _SNF_OCC * lambda_return
+        demand = acute + pac
+        serv = demand * s
+        sam_c = serv * r_metro
+        # low / high bands: swing f_IFT, λ_return, r_IFT, and s together.
+        acute_lo = b.discharge_base * _F_IFT[0]
+        pac_lo = float(b.snf_beds) * _SNF_OCC * _LAMBDA_RETURN[0]
+        sam_lo = (acute_lo + pac_lo) * (s * 0.8) * (_R_IFT[0] *
+                                                    (_R_IFT_RURAL_UPLIFT if b.rural else 1.0))
+        acute_hi = b.discharge_base * _F_IFT[2]
+        pac_hi = float(b.snf_beds) * _SNF_OCC * _LAMBDA_RETURN[2]
+        sam_hi = (acute_hi + pac_hi) * min(0.35, s * 1.2) * (_R_IFT[2] *
+                                                             (_R_IFT_RURAL_UPLIFT if b.rural else 1.0))
+        rows.append(SamMetroRow(
+            name=b.name, region_label=b.region_label, rural=b.rural,
+            insource_class=b.insource_class, hcris_beds=b.hcris_beds,
+            discharge_base=b.discharge_base, snf_beds=b.snf_beds,
+            acute_missions=acute, pac_missions=pac, demand_missions=demand,
+            serviceable_share=s, serviceable_missions=serv,
+            revenue_per_transport=r_metro, sam_dollars=sam_c))
+        tot_demand += demand
+        tot_serv += serv
+        tot_sam_c += sam_c
+        tot_sam_lo += sam_lo
+        tot_sam_hi += sam_hi
+        serv_share_weighted_num += s * demand
+
+    metro_beds = blocks.total_hcris_beds
+    nat_beds = _national_hcris_beds()
+    bed_share = (metro_beds / nat_beds) if nat_beds > 0 else None
+    s_avg = (serv_share_weighted_num / tot_demand) if tot_demand > 0 else _SERVICEABLE_DEFAULT
+    crosscheck = (bed_share * tam.allpayer_tam_bn_central * 1e9 * s_avg
+                  if bed_share is not None else None)
+    serv_vol_share = (tot_serv / (_IFT_TRANSPORTS_M[1] * 1e6)) if tot_serv else None
+
+    return SamFootprint(
+        available=True, rows=rows,
+        total_discharge_base=blocks.total_discharge_base,
+        total_demand_missions=tot_demand,
+        total_serviceable_missions=tot_serv,
+        sam_dollars_central=tot_sam_c, sam_dollars_low=tot_sam_lo,
+        sam_dollars_high=tot_sam_hi,
+        metro_hcris_beds=metro_beds, national_hcris_beds=nat_beds,
+        bed_share_of_national=bed_share, sam_crosscheck_dollars=crosscheck,
+        national_ift_volume_m=_IFT_TRANSPORTS_M,
+        serviceable_share_of_national_volume=serv_vol_share,
+        assumptions={
+            "f_IFT": {"low": _F_IFT[0], "central": f_ift, "high": _F_IFT[2],
+                      "basis": "ILLUSTRATIVE — ground-IFT fraction of discharges "
+                               "(discharge-to-PAC by stretcher ~6-8% + acute-to-"
+                               "acute ground transfer ~2-4%)"},
+            "lambda_return": {"low": _LAMBDA_RETURN[0], "central": lambda_return,
+                              "high": _LAMBDA_RETURN[2],
+                              "basis": "ILLUSTRATIVE — SNF→hospital/dialysis recurring "
+                                       "ground-IFT legs per occupied SNF bed/yr"},
+            "snf_occ": {"value": _SNF_OCC, "basis": "GOV magnitude (NIC/CMS ~0.77)"},
+            "s_of_m": {"by_class": dict(_SERVICEABLE_SHARE), "default": _SERVICEABLE_DEFAULT,
+                       "basis": "ILLUSTRATIVE — realistically-serviceable share keyed "
+                                "to the insource-vs-outsource archetype (0.15-0.30)"},
+            "r_IFT": {"low": _R_IFT[0], "central": r_ift, "high": _R_IFT[2],
+                      "rural_uplift": _R_IFT_RURAL_UPLIFT,
+                      "basis": "ILLUSTRATIVE — blended all-payer net revenue per IFT "
+                               "transport (IFT skews ALS/SCT + longer mileage; rural "
+                               "carries the super-rural +22.6% add-on)"},
+        },
+        source_label=("SOURCED market structure (ift_geo: HCRIS beds + SNF beds per "
+                      "metro) × ILLUSTRATIVE SAM levers (f_IFT, λ_return, s(m), r_IFT) "
+                      "× GOV-anchored TAM cross-check"),
+        method="bottom_up_footprint",
+        note=("SAM is built bottom-up from the real footprint origins/destinations, "
+              "NOT as a % of TAM. Central footprint SAM reconciles against (footprint "
+              "beds / national beds) × TAM × s_avg to within an order of magnitude; "
+              "the serviceable-mission total is a plausible slice of the ~4-5M "
+              "national ground-IFT volume. All dollar levers are ILLUSTRATIVE, "
+              "labelled; the bed/discharge structure is SOURCED."))

@@ -5192,6 +5192,12 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/market/"):].strip("/").split("/", 1)[0]
             from .ui.market_report_page import render_market_report
             return self._send_html(render_market_report(_slug))
+        # Interfacility Transport — geographic deep-dive of the target
+        # operator's footprint (a standalone page, NOT the shared market-report
+        # renderer). See rcm_mc/ui/ift_markets_page.py + ift_geo/ift_analytics.
+        if path == "/ift-markets":
+            from .ui.ift_markets_page import render_ift_markets
+            return self._send_html(render_ift_markets())
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
