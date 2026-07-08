@@ -460,6 +460,300 @@ def _health_system_sam_section() -> str:
     return header + ck_panel(body)
 
 
+def _th(*cols: str) -> str:
+    return ("<thead><tr>"
+            + "".join(f"<th>{_esc(c)}</th>" for c in cols) + "</tr></thead>")
+
+
+def _market_education_section() -> str:
+    """Chapter one of the SOW: IFT is its own market — not 911, not NEMT, not air.
+    Investors mis-price MMT when they anchor to 911 EMS or low-acuity brokers."""
+    header = ck_section_header(
+        "What IFT is — and what it is not",
+        eyebrow="MARKET EDUCATION / THE BOUNDARY")
+    body = (
+        '<p class="ift-prose"><strong>IFT is ambulance transport BETWEEN '
+        'healthcare facilities, ordered by hospitals and health systems.</strong> '
+        'It is a health-system operating function — a bed-clearing, '
+        'throughput-protecting service with its own customers, purchasing '
+        'decisions, operating requirements, and reimbursement dynamics. It is the '
+        'market MMT is actually in.</p>'
+        '<div class="ift-table-wrap"><table class="ift-table">'
+        + _th("IFT is", "IFT is NOT", "Why the distinction matters")
+        + '<tbody>'
+        '<tr><td>Hospital-to-hospital up-transfers to higher acuity (stroke, STEMI, '
+        'trauma, NICU)</td><td><strong>911 / scene response</strong> — dispatched '
+        'to a scene, not a facility; a different network, customer, and payer.</td>'
+        '<td rowspan="4">Investors mis-price the asset when they compare MMT to '
+        '911 EMS or low-acuity brokers. IFT has different customers (health-system '
+        'transfer centers, not municipalities), different operating requirements '
+        '(dedicated, scheduled, higher-acuity), and different reimbursement '
+        '(ALS/CCT-skewed + commercial). Sizing off the whole ambulance or NEMT '
+        'market is the single biggest error.</td></tr>'
+        '<tr><td>Hospital-to-post-acute discharge legs (SNF / IRF / LTCH)</td>'
+        '<td><strong>NEMT</strong> — Medicaid wheelchair van / livery / rideshare; '
+        'a separate federally-mandated benefit, low acuity.</td></tr>'
+        '<tr><td>Facility-origin critical-care / specialty transport (SCT, ECMO, '
+        'neonatal)</td><td><strong>Air ambulance</strong> — a separate market with '
+        'its own economics and balance-billing dynamics.</td></tr>'
+        '<tr><td>Dedicated, scheduled, health-system-integrated ground missions</td>'
+        '<td><strong>Generic medical logistics</strong> — organ / courier / '
+        'non-patient transport.</td></tr>'
+        '</tbody></table></div>'
+        '<p class="ift-mono-src">Boundary held throughout this study: TAM counts '
+        'ONLY US ground IFT. ' + _basis_chip("ILLUSTRATIVE") + '</p>')
+    return header + ck_panel(body)
+
+
+def _growth_levers_section() -> str:
+    """The three things to TRACK: price/reimbursement inflation, volume/demographics,
+    and consolidation (big systems getting bigger)."""
+    header = ck_section_header(
+        "Why the market grows — the three levers",
+        eyebrow="GROWTH / PRICE x VOLUME + CONSOLIDATION")
+    try:
+        from ..market_reports import ift_tracking as _t
+        bridge = _t.growth_bridge()
+        levers = _t.all_levers()
+    except Exception:  # noqa: BLE001
+        bridge = levers = None
+    if not (bridge and getattr(bridge, "available", False)):
+        return header + ck_panel(
+            '<p class="ift-prose">The growth-lever build is unavailable offline.</p>')
+
+    def _pc(v):
+        return f"{v:.1f}%/yr" if isinstance(v, (int, float)) else "—"
+
+    kpis = (
+        '<div class="ift-kpi-grid">'
+        + _kpi("Price / reimbursement", _pc(bridge.price_central_pct),
+               "AFS AIF + commercial OON + escalators")
+        + _kpi("Volume / demographics", _pc(bridge.volume_central_pct),
+               "aging + acuity + ED boarding + post-acute")
+        + _kpi("= Organic market growth", _pc(bridge.market_growth_central_pct),
+               f"range {_pc(bridge.market_growth_low_pct)}"
+               f"-{bridge.market_growth_high_pct:.1f}%")
+        + _kpi("+ Consolidation (share-shift)",
+               _pc(bridge.consolidation_share_shift_central_pct),
+               "big systems getting bigger — NOT organic")
+        + _kpi("= Platform growth", _pc(bridge.platform_growth_central_pct),
+               "what a well-positioned operator compounds")
+        + '</div>')
+    lever_rows = ""
+    for lv in (levers or []):
+        if not getattr(lv, "available", False):
+            continue
+        for comp in getattr(lv, "components", []):
+            lever_rows += (
+                "<tr>"
+                f"<td>{_esc(comp.name)}</td>"
+                f'<td class="ift-num">{_esc(comp.value)}</td>'
+                f"<td>{_basis_chip(str(comp.basis).split()[0] if comp.basis else 'ILLUSTRATIVE')}</td>"
+                f"<td>{_esc(comp.detail)}</td></tr>")
+    table = (
+        '<p class="ift-sub">Lever detail</p>'
+        '<div class="ift-table-wrap"><table class="ift-table">'
+        + _th("Driver", "Value", "Basis", "Detail")
+        + f"<tbody>{lever_rows}</tbody></table></div>"
+        f'<p class="ift-mono-src">{_source_chip(bridge.source_label)}</p>'
+        f'<p class="ift-prose">{_esc(bridge.note)}</p>')
+    return header + ck_panel(
+        f'<p class="ift-prose"><strong>{_esc(bridge.headline)}</strong></p>'
+        + kpis + table)
+
+
+def _competitive_section() -> str:
+    """Competitive archetypes + MMT positioning — MMT is not competing against many
+    pure-play IFT platforms; most alternatives are 911-heavy / mixed / subscale."""
+    header = ck_section_header(
+        "Competitive landscape — archetypes & MMT's position",
+        eyebrow="COMPETITION / WHERE MMT WINS")
+    try:
+        from ..market_reports import ift_competitive as _c
+        arch = _c.competitive_archetypes()
+        pos = _c.mmt_positioning()
+    except Exception:  # noqa: BLE001
+        arch = pos = None
+    if not (arch and getattr(arch, "archetypes", None)):
+        return header + ck_panel(
+            '<p class="ift-prose">The competitive build is unavailable offline.</p>')
+    arows = ""
+    for a in arch.archetypes:
+        arows += (
+            "<tr>"
+            f"<td><strong>{_esc(a.name)}</strong></td>"
+            f"<td>{_esc(a.ift_posture)}</td>"
+            f"<td>{_esc(a.scale_magnitude)}</td>"
+            f"<td>{_esc('; '.join(a.example_operators) if isinstance(a.example_operators,(list,tuple)) else a.example_operators)}</td>"
+            f"<td>{_esc(a.mmt_advantage)}</td></tr>")
+    body = (
+        '<p class="ift-prose">MMT is the <strong>dedicated outsourced IFT '
+        'partner</strong> for health systems. Most alternatives are 911-heavy, '
+        'mixed-model, regional, or subscale — the whitespace is a pure-play, '
+        'health-system-integrated ground-IFT platform.</p>'
+        '<div class="ift-table-wrap"><table class="ift-table">'
+        + _th("Archetype", "IFT posture", "Scale", "Example operators (public)",
+              "MMT advantage")
+        + f"<tbody>{arows}</tbody></table></div>")
+    if pos and getattr(pos, "pillars", None):
+        prows = ""
+        for p in pos.pillars:
+            prows += (
+                "<tr>"
+                f"<td><strong>{_esc(p.pillar)}</strong></td>"
+                f"<td>{_esc(p.mmt_stance)}</td>"
+                f"<td>{_esc(p.vs_alternatives)}</td></tr>")
+        body += (
+            '<p class="ift-sub">MMT positioning</p>'
+            '<div class="ift-table-wrap"><table class="ift-table">'
+            + _th("Pillar", "MMT stance", "vs alternatives")
+            + f"<tbody>{prows}</tbody></table></div>")
+    body += ('<p class="ift-mono-src">Operator names are public / company-web, '
+             'named honestly; scale &amp; contestability reads are '
+             + _basis_chip("ILLUSTRATIVE") + '; density is '
+             + _basis_chip("SOURCED") + '.</p>')
+    return header + ck_panel(body)
+
+
+def _insourcing_section() -> str:
+    """The SOW's trickiest topic: classify by transport VOLUME, not asset ownership;
+    the biller proxy is the insource ceiling; gross up claims for direct-bill/unbilled."""
+    header = ck_section_header(
+        "Insource vs outsource — and why claims undercount",
+        eyebrow="ADDRESSABILITY / THE CLAIMS NUANCE")
+    try:
+        from ..market_reports import ift_insourcing as _i
+        fw = _i.insourcing_framework()
+        proxy = _i.biller_proxy()
+        gross = _i.claims_grossup()
+    except Exception:  # noqa: BLE001
+        fw = proxy = gross = None
+    if not (fw and getattr(fw, "bands", None)):
+        return header + ck_panel(
+            '<p class="ift-prose">The insourcing build is unavailable offline.</p>')
+    brows = ""
+    for b in fw.bands:
+        share = f"{b.volume_share_low*100:.0f}-{b.volume_share_high*100:.0f}%"
+        brows += (
+            "<tr>"
+            f"<td><strong>{_esc(b.name)}</strong></td>"
+            f'<td class="ift-num">{_esc(share)}</td>'
+            f"<td>{_esc(b.definition)}</td>"
+            f"<td>{_esc(b.addressable_read)}</td></tr>")
+    body = (
+        '<p class="ift-prose"><strong>Classify by transport VOLUME, not asset '
+        'ownership.</strong> A system that owns a few ambulances but outsources '
+        'most of its IFT is hybrid-mostly-outsourced, not insourced — the '
+        'addressable residual is real.</p>'
+        '<div class="ift-table-wrap"><table class="ift-table">'
+        + _th("Band (by volume share insourced)", "Insourced vol", "Definition",
+              "Addressable read")
+        + f"<tbody>{brows}</tbody></table></div>")
+    if proxy and getattr(proxy, "available", False):
+        body += (
+            '<p class="ift-sub">The biller proxy = the insource ceiling</p>'
+            f'<p class="ift-prose">{_esc(proxy.proxy_rule)}</p>'
+            '<div class="ift-kpi-grid">'
+            + _kpi("Insource ceiling", _pct(proxy.ceiling_central),
+                   f"{_pct(proxy.ceiling_low)}-{_pct(proxy.ceiling_high)} "
+                   "(health-system-biller upper bound)")
+            + _kpi("Addressable (1 - ceiling)", _pct(proxy.addressable_central),
+                   "what an outsourced operator can win")
+            + '</div>')
+    if gross and getattr(gross, "available", False):
+        body += (
+            '<p class="ift-sub">Why claims UNDERCOUNT — the gross-up</p>'
+            f'<p class="ift-prose">{_esc(gross.headline)}</p>'
+            '<div class="ift-kpi-grid">'
+            + _kpi("Claims-observed", _usd_b(gross.claims_observed_bn),
+                   "what claims alone show")
+            + _kpi("Gross-up multiple",
+                   f"{gross.multiplier_central:.2f}x",
+                   "direct-bill (mom-and-pop -> hospital) + unbilled")
+            + _kpi("True market", _usd_b(gross.true_market_bn),
+                   "grossed up for the undercount")
+            + '</div>'
+            f'<p class="ift-mono-src">{_source_chip(gross.source_label)}</p>')
+    return header + ck_panel(body)
+
+
+def _moat_section() -> str:
+    """Stickiness = first-call + 85%+ share-of-wallet + co-located assets + workflow
+    integration + local density + switching costs + cross-market proof. Not software."""
+    header = ck_section_header(
+        "Why MMT is sticky — the moat scorecard",
+        eyebrow="DEFENSIBILITY / 7 FACTORS + PROOF")
+    try:
+        from ..market_reports import ift_moat as _mo
+        factors = _mo.moat_factors()
+        board = _mo.market_moat_scores()
+        proofs = _mo.proof_points()
+    except Exception:  # noqa: BLE001
+        factors = board = proofs = None
+    if not factors:
+        return header + ck_panel(
+            '<p class="ift-prose">The moat build is unavailable offline.</p>')
+    frows = ""
+    for f in factors:
+        frows += (
+            "<tr>"
+            f"<td><strong>{_esc(f.name)}</strong></td>"
+            f"<td>{_esc(f.definition)}</td>"
+            f"<td>{_esc(f.why_it_matters)}</td>"
+            f"<td>{_esc(f.target or '—')}</td></tr>")
+    body = (
+        '<p class="ift-prose">Stickiness is not software alone. It compounds from '
+        'first-call volume, 85%+ share-of-wallet, co-located dedicated assets, '
+        'health-system workflow integration, local operating density, and high '
+        'switching costs — evidenced across multiple markets.</p>'
+        '<div class="ift-table-wrap"><table class="ift-table">'
+        + _th("Factor", "Definition", "Why it matters", "Target")
+        + f"<tbody>{frows}</tbody></table></div>")
+    if board and getattr(board, "rows", None):
+        fnames = [f.name for f in factors]
+        srows = ""
+        for mk in board.rows:
+            if not getattr(mk, "available", True):
+                continue
+            by_name = {fs.factor_name: fs.score for fs in mk.factors}
+            cells = "".join(
+                f'<td>{_esc(by_name.get(n, "—"))}</td>' for n in fnames)
+            srows += (
+                "<tr>"
+                f"<td><strong>{_esc(mk.name)}</strong></td>"
+                f"{cells}"
+                f'<td class="ift-num">{mk.composite_index:.2f}</td>'
+                f"<td>{_esc(mk.overall_verdict)}</td></tr>")
+        body += (
+            '<p class="ift-sub">Per-market moat scores (ordinal; composite '
+            '1.00-3.00, ILLUSTRATIVE)</p>'
+            '<div class="ift-table-wrap"><table class="ift-table">'
+            + _th("Metro", *([n for n in fnames] + ["Composite", "Verdict"]))
+            + f"<tbody>{srows}</tbody></table></div>")
+    if proofs and getattr(proofs, "points", None):
+        prows = ""
+        for pt in proofs.points:
+            fns = ("; ".join(pt.factor_names)
+                   if isinstance(pt.factor_names, (list, tuple)) else pt.factor_names)
+            prows += (
+                "<tr>"
+                f"<td><strong>{_esc(pt.market)}</strong></td>"
+                f"<td>{_esc(fns)}</td>"
+                f"<td>{_esc(pt.claim)}</td>"
+                f"<td>{_esc(pt.evidence)}</td></tr>")
+        body += (
+            '<p class="ift-sub">Cross-market proof points — a new entrant cannot '
+            'easily replace the incumbent</p>'
+            '<div class="ift-table-wrap"><table class="ift-table">'
+            + _th("Market", "Factors proven", "Claim", "Evidence")
+            + f"<tbody>{prows}</tbody></table></div>")
+    body += ('<p class="ift-mono-src">Density is ' + _basis_chip("SOURCED")
+             + '; the other factor reads + the composite are ordinal '
+             + _basis_chip("ILLUSTRATIVE")
+             + '; proof-point evidence is analyst/public-web, named honestly.</p>')
+    return header + ck_panel(body)
+
+
 def _footprint_table(structures, sam_by_name: Dict[str, float]) -> str:
     """Every target metro, its SOURCED facility counts, and its ILLUSTRATIVE
     per-metro SAM — one scannable table (the per-state numeric table)."""
@@ -702,13 +996,34 @@ def render_ift_markets() -> str:
               "post-acute density, the competitive insource-vs-outsource read, "
               "and the moat verdict."))
 
+    download = (
+        '<div style="margin:14px 0 6px;padding:14px 18px;border:1px solid '
+        'var(--sc-border,#e4dccb);border-left:3px solid var(--sc-teal,#155752);'
+        'border-radius:4px;background:var(--sc-surface,#faf7f1);display:flex;'
+        'flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">'
+        '<div style="font-family:var(--sc-serif,Georgia,serif);font-size:14px;'
+        'color:var(--sc-text,#1a2332);max-width:78ch;">'
+        '<strong>Investor data pack.</strong> Every sourced figure — the '
+        'TAM&nbsp;&rarr;&nbsp;SAM&nbsp;&rarr;&nbsp;SOM build, each target market\'s '
+        'facility structure and sizing, the clinical demand spine, and the '
+        'competitive / insourcing / moat / three-lever layers — in one auditable '
+        'workbook, every cell carrying its honesty basis.</div>'
+        '<a href="/api/ift/markets.xlsx" download '
+        'style="flex:none;font-family:var(--sc-mono,Consolas,monospace);'
+        'font-size:12px;font-weight:600;letter-spacing:0.04em;text-decoration:none;'
+        'color:#fff;background:var(--sc-teal,#155752);padding:9px 16px;'
+        'border-radius:3px;">Download Excel &darr;</a></div>')
+
     parts: List[str] = [
         _styles(),
         ck_eyebrow("IFT Target Markets"),
         head,
         _legend_row(),
         kpi_strip,
+        download,
         intro,
+        # Chapter one — teach the market: IFT is its own thing (not 911/NEMT/air).
+        _market_education_section(),
         # National overview
         ck_section_intro(
             "NATIONAL OVERVIEW", "The funnel: TAM → SAM → SOM.",
@@ -722,6 +1037,12 @@ def render_ift_markets() -> str:
         _tam_section(),
         _health_system_sam_section(),
         _sam_section(rollup, sam),
+        # The investor questions: why it grows, who competes, is it addressable,
+        # and why the incumbent is sticky.
+        _growth_levers_section(),
+        _competitive_section(),
+        _insourcing_section(),
+        _moat_section(),
         _footprint_table(structures, sam_by_name),
         _footprint_map(structures),
         # Per-metro deep-dives, grouped by state

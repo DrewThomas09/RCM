@@ -13963,6 +13963,7 @@ _MANUAL.extend([
 _MANUAL.extend([
     _ctx(
         "/market", "Market Reports",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The index of in-depth per-subsector market dossiers — "
         "84 healthcare subsectors, each a full report (value chain, reimbursement, "
         "volume/cost drivers, consolidation, CMS trends, an insider lens).",
@@ -14007,6 +14008,7 @@ _MANUAL.extend([
     ),
     _ctx(
         "/ift-markets", "Interfacility Transport — Target Markets",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The ground interfacility-transport (IFT) market, sized "
         "as a funnel: TAM (all US ground IFT) → SAM (multi-hospital health "
         "systems) → SOM (the operator's current metro footprint), then every "
@@ -14051,6 +14053,7 @@ _MANUAL.extend([
     ),
     _ctx(
         "/ift-clinical", "Interfacility Transport — Clinical Demand",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The clinical acute-transfer demand engine behind IFT "
         "volume: each acute scenario mapped from presenting picture → ICD-10-CM / "
         "MS-DRG codes → transfer type → destination capability → national volume → "
@@ -14096,6 +14099,7 @@ _MANUAL.extend([
     ),
     _ctx(
         "/connector-estate", "Connector Estate",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="The repo-root public healthcare API estate — every "
         "registered public dataset (openFDA, CMS, Medicaid, CDC, HRSA, NIH, "
         "Census) behind one uniform query surface, with per-connector status.",
@@ -14107,6 +14111,7 @@ _MANUAL.extend([
             "Which datasets does each connector expose?",
             "What is the vintage / fetch state of a connector?",
             "Is a given source live offline or network-gated?",
+            "Which connectors back the market and geo pages?",
         ],
         inputs=["The connector registry at the repo root + each connector's "
                 "declared datasets and ingested-at status."],
@@ -14136,6 +14141,7 @@ _MANUAL.extend([
     ),
     _ctx(
         "/market-scan", "Market Scan",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
         short_description="A one-input PE market brief for any state or county — "
         "demographics, disease burden, HPSA shortage, Medicare spend / MA share, "
         "facility stars, Open Payments, NIH awards, OIG exclusions, and QCEW labor "
@@ -14147,6 +14153,7 @@ _MANUAL.extend([
             "How much Medicare spend / MA share is here?",
             "Is this a provider-shortage (HPSA) area?",
             "What is the local labor and facility-quality picture?",
+            "Which public sources feed this brief?",
         ],
         inputs=["A single state/county selector joined across the public-data "
                 "estate (Census, CMS, HRSA, CDC, OIG, Open Payments, QCEW)."],

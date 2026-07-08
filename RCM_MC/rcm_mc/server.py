@@ -5198,6 +5198,23 @@ class RCMHandler(BaseHTTPRequestHandler):
         if path == "/ift-markets":
             from .ui.ift_markets_page import render_ift_markets
             return self._send_html(render_ift_markets())
+        # IFT market-study workbook — every sourced figure, by market, one .xlsx.
+        if path == "/api/ift/markets.xlsx":
+            from .market_reports.ift_excel import ift_workbook_xlsx
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _data = ift_workbook_xlsx(_qs)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="ift_market_study.xlsx"')
+            self.send_header("Content-Length", str(len(_data)))
+            self.end_headers()
+            self.wfile.write(_data)
+            return
         # IFT clinical acute-transfer demand engine — the volume driver
         # (acute cases -> ICD-10/MS-DRG codes -> destination -> demographic growth).
         # See rcm_mc/ui/ift_clinical_page.py + market_reports/ift_clinical_demand.py.
