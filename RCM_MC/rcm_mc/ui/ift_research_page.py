@@ -260,35 +260,29 @@ def _operating_models_block() -> str:
 
 
 def _competitive_types_block() -> str:
-    """Section 5 — competitive landscape by provider TYPE (market-level)."""
-    try:
-        from ..market_reports import ift_competitive as _co
-        arch = _co.competitive_archetypes()
-    except Exception:  # noqa: BLE001
+    """Section 5 — competitive landscape by provider TYPE (market-level, no
+    company names; company-specific positioning stays on /ift-study)."""
+    ct = _rs.competitor_types()
+    if not (ct and ct.available and ct.rows):
         return ""
-    if not (arch and getattr(arch, "available", False) and arch.archetypes):
-        return ""
-    rows = ""
-    for a in arch.archetypes:
-        rows += (f'<tr><td>{_esc(a.name)}</td><td>{_esc(a.ift_posture)}</td>'
-                 f'<td>{_esc("; ".join(a.pros[:2]))}</td>'
-                 f'<td>{_esc("; ".join(a.cons[:2]))}</td></tr>')
+    head = "".join(f"<th>{_esc(c)}</th>" for c in ct.columns)
+    rows = "".join(
+        "<tr>" + "".join(f"<td>{_esc(cell)}</td>" for cell in r) + "</tr>"
+        for r in ct.rows)
     return (
         '<div id="rs-competitive">'
         + ck_section_header("5. Competitive landscape by provider type",
                             eyebrow="MARKET RESEARCH")
         + ck_panel(
-            '<p class="irs-prose">The IFT field by provider TYPE (market-level; '
-            'company-specific positioning is on the '
+            '<p class="irs-prose">The IFT field by provider TYPE. Most '
+            'alternatives are 911-heavy, mixed-model, or subscale; dedicated IFT '
+            'competes on facility integration and local density. This brief stays '
+            'at the type level — company-specific positioning is on the '
             '<a href="/ift-study" style="color:var(--sc-teal,#155752);">investor '
-            'study</a>). Most alternatives are 911-heavy, mixed-model, or '
-            'subscale; dedicated IFT competes on facility integration and density. '
-            + _chip("FRAMEWORK") + '</p>'
+            'study</a>. ' + _chip("FRAMEWORK") + '</p>'
             '<div class="irs-wrap"><table class="irs-tab"><thead><tr>'
-            '<th>Provider type</th><th>IFT posture</th><th>Strengths</th>'
-            '<th>Weaknesses</th></tr></thead>'
-            f'<tbody>{rows}</tbody></table></div>'
-            f'<p class="irs-src">Source: {_esc(arch.source_label)}</p>')
+            f'{head}</tr></thead><tbody>{rows}</tbody></table></div>'
+            f'<p class="irs-src">Source: {_esc(ct.source_label)}</p>')
         + '</div>')
 
 

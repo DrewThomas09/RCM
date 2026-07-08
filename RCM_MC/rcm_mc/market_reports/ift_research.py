@@ -89,6 +89,64 @@ except Exception:  # noqa: BLE001 — degrade to no authored sections, never rai
     _AUTHORED_SECTIONS: List[Dict[str, Any]] = []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Competitive landscape BY PROVIDER TYPE (market-level — NO company names).
+# The company-specific positioning (named operators, deals, footprints) lives on
+# /ift-study; this brief stays strictly at the provider-TYPE level.
+# ─────────────────────────────────────────────────────────────────────────────
+_COMPETITOR_TYPES: Tuple[Tuple[str, str, str, str], ...] = (
+    ("National EMS platform",
+     "911-anchored / mixed — IFT shares trucks with emergency response",
+     "National scale, contracting breadth, capital, air+ground reach",
+     "911 is the priority, so scheduled IFT reliability is deprioritized; "
+     "thin local dedication"),
+    ("Scaled regional private",
+     "Dedicated IFT-capable within a region",
+     "Local density (low deadhead / high unit-hour utilization), first-call "
+     "transfer-center relationships, CCT capability",
+     "Bounded geography; capital constraints to scale beyond the region"),
+    ("Mom-and-pop local private",
+     "Single-market, often part-time IFT",
+     "Local familiarity, low overhead, willing to take marginal trips",
+     "Subscale capacity, no dedicated units, weak dispatch tech / reporting / "
+     "after-hours coverage"),
+    ("Hospital-owned program",
+     "Insourced captive fleet (usually high-acuity CCT)",
+     "Full control of the captive high-acuity stream, tight clinical integration",
+     "Rarely sized to cover the full transfer book, so the routine/discharge "
+     "residual is outsourced; capital and labor burden on the system"),
+    ("Municipal / fire-based / public EMS",
+     "911 mandate first; IFT is a secondary, often ceded, line",
+     "Jurisdictional coverage, public subsidy, existing crews",
+     "IFT is subordinate to the emergency mandate; limited scheduled-transport "
+     "commitment and reporting"),
+    ("NEMT / managed-transportation broker",
+     "Non-ambulance, low-acuity only — adjacent, not a substitute",
+     "Low cost for ambulatory patients; broad wheelchair/livery networks",
+     "Cannot serve ambulance-level (BLS+) interfacility transport; a separate "
+     "Medicaid benefit, not the IFT market"),
+)
+
+
+@dataclass(frozen=True)
+class CompetitorTypes:
+    available: bool
+    columns: Tuple[str, ...] = ()
+    rows: Tuple[Tuple[str, str, str, str], ...] = ()
+    source_label: str = ""
+
+
+def competitor_types() -> CompetitorTypes:
+    """The IFT competitive field by provider TYPE — market-level, NO company
+    names (company positioning is on /ift-study). Authored framework."""
+    return CompetitorTypes(
+        available=True,
+        columns=("Provider type", "IFT posture", "Strengths", "Weaknesses"),
+        rows=_COMPETITOR_TYPES,
+        source_label=("Authored provider-type framework (FRAMEWORK) — type-level "
+                      "only; company-specific positioning lives on /ift-study"))
+
+
 @dataclass(frozen=True)
 class ResearchBrief:
     available: bool

@@ -81,7 +81,7 @@ _TAXONOMY_ROWS: Tuple[Tuple[str, Tuple[str, ...]], ...] = (
         "Medicare/commercial; AIR is the one modality COVERED by the No "
         "Surprises Act (balance-billing curbed).",
         "Medicaid NEMT benefit (42 CFR 431.53) — a separate federally-mandated "
-        "program, ~$5B/yr.",
+        "program (~$3-5B/yr estimated).",
     )),
     ("Dispatch workflow", (
         "911 PSAP → nearest available unit → scene → nearest ED. Speed is "
