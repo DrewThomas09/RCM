@@ -13957,5 +13957,226 @@ _MANUAL.extend([
     ),
 ])
 
+# ── Market Reports + IFT deep-dive + estate/market-scan (added with the 84-
+#    subsector fan-out, the IFT deep-dive, and the connector-estate round). These
+#    are live /tools-index pages, so the Guide must be able to answer from them. ──
+_MANUAL.extend([
+    _ctx(
+        "/market", "Market Reports",
+        short_description="The index of in-depth per-subsector market dossiers — "
+        "84 healthcare subsectors, each a full report (value chain, reimbursement, "
+        "volume/cost drivers, consolidation, CMS trends, an insider lens).",
+        primary_purpose="Give a partner a diligence-grade market read on any "
+        "healthcare subsector — how the money flows, what drives volume and cost, "
+        "who is consolidating, and where the risks are — wired to our real data.",
+        common_questions=[
+            "What subsector market reports are available?",
+            "How does reimbursement work in <subsector>?",
+            "What drives volume vs cost growth in this subsector?",
+            "Which figures are sourced vs illustrative?",
+            "Where is the interfacility-transport (IFT) deep-dive?",
+        ],
+        inputs=["The canonical subsector taxonomy + each report's authored "
+                "sections, joined to our vendored CMS/provider data."],
+        outputs=["A browsable index and, per subsector, a full report with a "
+                 "TAM headline, value chain, reimbursement, growth/volume/cost "
+                 "drivers, consolidation, CMS trends, risks, and connections."],
+        key_metrics=["TAM ($B)", "Growth rate (%)", "Reimbursement mix",
+                     "Consolidation / HHI signals"],
+        data_sources=["Authored subsector knowledge + our vendored CMS provider "
+                      "rolls, HCRIS, and the demand-forecast model; every figure "
+                      "carries an honesty basis chip (SOURCED / GOV / ACADEMIC / "
+                      "ILLUSTRATIVE)."],
+        model_logic_summary="Each report is a validated MarketReport dossier; "
+        "unlabeled figures are rejected at registration. Non-authored slugs render "
+        "an honest scaffold, never a 404.",
+        why_it_matters="It is the market-map layer of diligence — the fast read "
+        "on any subsector before underwriting a deal in it.",
+        diligence_use_cases=["Subsector screening; sizing a market; understanding "
+                             "reimbursement and consolidation before an IC memo."],
+        interpretation_guidance=[
+            "Read the basis chip on every figure: SOURCED/GOV are real; "
+            "ILLUSTRATIVE is modeled with a named basis.",
+            "Ranges, not points — market sizing is presented as a band.",
+        ],
+        limitations=["Offline build: network-gated connectors degrade to honest "
+                     "GOV/ILLUSTRATIVE fallbacks rather than fabricating data."],
+        related_routes=["/ift-markets", "/market-scan"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/ift-markets", "Interfacility Transport — Target Markets",
+        short_description="The ground interfacility-transport (IFT) market, sized "
+        "as a funnel: TAM (all US ground IFT) → SAM (multi-hospital health "
+        "systems) → SOM (the operator's current metro footprint), then every "
+        "target metro up close.",
+        primary_purpose="Size the ground-IFT opportunity structurally and "
+        "geographically — the addressable multi-hospital-health-system market and "
+        "the serviceable footprint — with an insource-vs-outsource read per metro.",
+        common_questions=[
+            "What is the TAM / SAM / SOM for ground IFT?",
+            "Why is SAM the multi-hospital-health-system market?",
+            "How is the insource ceiling estimated?",
+            "What is the operator's current market share?",
+            "Which metros are in the footprint and who runs the transfers there?",
+        ],
+        inputs=["SOURCED per-metro hospital + post-acute structure (ift_geo / "
+                "HCRIS + CMS rolls) × labelled ILLUSTRATIVE sizing levers."],
+        outputs=["A TAM→SAM→SOM funnel (top-down ratio × bottoms-up structure, "
+                 "±MSA), the health-system-biller insource ceiling, and per-metro "
+                 "anchor systems, density, competitive read, and moat verdict."],
+        key_metrics=["TAM ($B)", "SAM ($B, health systems)", "SOM ($M, footprint)",
+                     "Insource ceiling (%)", "Operator share of SAM (~1%)"],
+        data_sources=["GOV-anchored ground-IFT TAM (MedPAC ambulance) + AHA "
+                      "system-share ratios (ILLUSTRATIVE) + SOURCED HCRIS/CMS bed "
+                      "structure; the Komodo claims build is the offline proxy."],
+        model_logic_summary="SAM = TAM · multi-system share · (1 − insource "
+        "ceiling), triangulated with a bottoms-up bed-structure extrapolation; SOM "
+        "is the bottom-up footprint SAM from ift_analytics.sam_formula().",
+        why_it_matters="It frames the IFT investment thesis — a nascent ~1% share "
+        "of a structural multi-hospital-system market ~20× the current footprint.",
+        diligence_use_cases=["IFT platform sizing; roll-up target-market "
+                             "prioritization; insource-vs-outsource screening."],
+        interpretation_guidance=[
+            "TAM excludes 911, air, and NEMT — reading a whole-ambulance number "
+            "is the biggest sizing error.",
+            "Every dollar is ILLUSTRATIVE (labelled); the bed structure is SOURCED.",
+        ],
+        limitations=["The true bottoms-up SAM needs claims (billing-NPI ownership) "
+                     "we do not hold offline; the structure proxy reads low."],
+        related_routes=["/market", "/ift-clinical"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/ift-clinical", "Interfacility Transport — Clinical Demand",
+        short_description="The clinical acute-transfer demand engine behind IFT "
+        "volume: each acute scenario mapped from presenting picture → ICD-10-CM / "
+        "MS-DRG codes → transfer type → destination capability → national volume → "
+        "demographic growth.",
+        primary_purpose="Explain WHY the IFT missions exist and where volume grows "
+        "— the case-level clinical demand that a ground-IFT operator's revenue "
+        "equals.",
+        common_questions=[
+            "What clinical cases drive interfacility transfers?",
+            "Which ICD-10 / MS-DRG codes map to IFT?",
+            "Where do these patients need to move (destination capability)?",
+            "Which conditions have the strongest volume-growth outlook?",
+            "What is the transport-acuity (mission) mix?",
+        ],
+        inputs=["A validated acute-scenario registry (codes, destinations, "
+                "published volumes) + the demographic demand-forecast growth model."],
+        outputs=["An origin→destination transfer matrix, per-condition "
+                 "cases→codes→volume→growth table, a growth-ranked outlook, the "
+                 "mission mix, and SOURCED post-acute destination supply counts."],
+        key_metrics=["Acute scenarios", "Projected volume growth (CAGR)",
+                     "Mission-acuity mix", "Destination supply counts"],
+        data_sources=["ICD-10-CM/MS-DRG validated offline, published national "
+                      "volumes (GOV/ACADEMIC), demand_forecast growth (ILLUSTRATIVE), "
+                      "and SOURCED CMS post-acute provider counts."],
+        model_logic_summary="Maps each scenario through the clinical pathway to a "
+        "published volume, then applies the demographic-age-band CAGR from the "
+        "demand-forecast model.",
+        why_it_matters="Volume is the primary IFT value driver; this is its "
+        "clinical, growth-bearing backbone.",
+        diligence_use_cases=["Underwriting IFT volume growth; validating the "
+                             "demand story behind a sizing model."],
+        interpretation_guidance=[
+            "Destination-capability designations are authored clinical reference; "
+            "only the post-acute destination COUNT is SOURCED.",
+            "Growth is demographic (aging), a structural tailwind, not a forecast "
+            "of a specific operator's book.",
+        ],
+        limitations=["Published volumes are national; not every code has a "
+                     "vendored facility roll offline."],
+        related_routes=["/ift-markets", "/market"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/connector-estate", "Connector Estate",
+        short_description="The repo-root public healthcare API estate — every "
+        "registered public dataset (openFDA, CMS, Medicaid, CDC, HRSA, NIH, "
+        "Census) behind one uniform query surface, with per-connector status.",
+        primary_purpose="Give one honest, uniform view of every public-data "
+        "connector the platform can query — what is registered, its vintage, and "
+        "its fetch state — so a partner knows what data is live.",
+        common_questions=[
+            "What public data connectors are available?",
+            "Which datasets does each connector expose?",
+            "What is the vintage / fetch state of a connector?",
+            "Is a given source live offline or network-gated?",
+        ],
+        inputs=["The connector registry at the repo root + each connector's "
+                "declared datasets and ingested-at status."],
+        outputs=["A uniform estate table: per-connector datasets, query surface, "
+                 "vintage, and fetch-state honesty."],
+        key_metrics=["Registered connectors", "Datasets per connector",
+                     "Vintage / ingested-at", "Fetch-state coverage"],
+        data_sources=["The vendored connector estate (openFDA, CMS, Medicaid, "
+                      "CDC, HRSA, NIH, Census); offline connectors degrade to an "
+                      "honest status, never a fabricated row."],
+        model_logic_summary="Reads the connector registry and rolls per-row "
+        "ingested-at into a registry-level status; it inventories, it does not "
+        "model.",
+        why_it_matters="It is the provenance backbone — knowing exactly which "
+        "public sources feed the analytics and how current they are.",
+        diligence_use_cases=["Data-provenance checks; confirming a market or "
+                             "geo read is backed by a live, current source."],
+        interpretation_guidance=[
+            "Fetch-state is honest: 'network-gated offline' means the source is "
+            "registered but not ingested in this environment, not that it's empty.",
+        ],
+        limitations=["No usable network egress offline — network-gated connectors "
+                     "show status, not live rows."],
+        related_routes=["/market-scan"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/market-scan", "Market Scan",
+        short_description="A one-input PE market brief for any state or county — "
+        "demographics, disease burden, HPSA shortage, Medicare spend / MA share, "
+        "facility stars, Open Payments, NIH awards, OIG exclusions, and QCEW labor "
+        "in a single scan.",
+        primary_purpose="Turn one geography input into a fast, multi-source market "
+        "brief so a partner can size and stress a local market before diligence.",
+        common_questions=[
+            "What does a market look like in <state/county>?",
+            "How much Medicare spend / MA share is here?",
+            "Is this a provider-shortage (HPSA) area?",
+            "What is the local labor and facility-quality picture?",
+        ],
+        inputs=["A single state/county selector joined across the public-data "
+                "estate (Census, CMS, HRSA, CDC, OIG, Open Payments, QCEW)."],
+        outputs=["A composed market brief: demographics, disease burden, shortage "
+                 "designation, Medicare spend/MA share, facility stars, payments, "
+                 "NIH awards, exclusions, and labor."],
+        key_metrics=["Population / age mix", "Medicare spend & MA share",
+                     "HPSA shortage", "Facility star ratings", "QCEW labor"],
+        data_sources=["The vendored public-data estate (Census ACS, CMS, HRSA "
+                      "HPSA, CDC, OIG exclusions, CMS Open Payments, BLS QCEW); "
+                      "each panel cites its source."],
+        model_logic_summary="Fans one geography key across the registered "
+        "connectors and composes their reads into a brief; it aggregates real "
+        "public data, it does not simulate.",
+        why_it_matters="It compresses local-market reconnaissance from hours of "
+        "portal-trawling into one scan.",
+        diligence_use_cases=["Local-market screening; site-selection and "
+                             "roll-up geography prioritization."],
+        interpretation_guidance=[
+            "Panels are real public data at the vendored vintage — read each "
+            "panel's cited source and year.",
+            "Absent panels reflect a network-gated source offline, not a zero.",
+        ],
+        limitations=["Only as current as the vendored public-data vintage; "
+                     "network-gated panels degrade to an honest note."],
+        related_routes=["/connector-estate", "/market"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}
