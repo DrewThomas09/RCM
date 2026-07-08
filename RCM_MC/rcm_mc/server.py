@@ -5181,6 +5181,29 @@ class RCMHandler(BaseHTTPRequestHandler):
             _slug = path[len("/industry/"):].strip("/").split("/", 1)[0]
             from .ui.data_public.industry_page import render_industry
             return self._send_html(render_industry(_slug))
+        # Market Reports — in-depth per-subsector dossiers (parallel to the
+        # licensed /industry system; do not disturb that one). /market is the
+        # editorial index; /market/<slug> renders the dossier or an honest
+        # scaffold. See rcm_mc/market_reports/ + ui/market_report_page.py.
+        if path == "/market":
+            from .ui.market_report_page import render_market_index
+            return self._send_html(render_market_index())
+        if path.startswith("/market/"):
+            _slug = path[len("/market/"):].strip("/").split("/", 1)[0]
+            from .ui.market_report_page import render_market_report
+            return self._send_html(render_market_report(_slug))
+        # Interfacility Transport — geographic deep-dive of the target
+        # operator's footprint (a standalone page, NOT the shared market-report
+        # renderer). See rcm_mc/ui/ift_markets_page.py + ift_geo/ift_analytics.
+        if path == "/ift-markets":
+            from .ui.ift_markets_page import render_ift_markets
+            return self._send_html(render_ift_markets())
+        # IFT clinical acute-transfer demand engine — the volume driver
+        # (acute cases -> ICD-10/MS-DRG codes -> destination -> demographic growth).
+        # See rcm_mc/ui/ift_clinical_page.py + market_reports/ift_clinical_demand.py.
+        if path == "/ift-clinical":
+            from .ui.ift_clinical_page import render_ift_clinical
+            return self._send_html(render_ift_clinical())
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
