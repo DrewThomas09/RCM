@@ -141,6 +141,27 @@ class TestDestinationSupply(unittest.TestCase):
         self.assertIsNone(d["national"])
         self.assertIn("authored", d["source_label"])
 
+    def test_no_arg_returns_national_rollup(self):
+        # destination_supply() with no setting must return the whole-supply
+        # snapshot (not None, not a crash): national = sum of every SOURCED file.
+        d = m.destination_supply()
+        self.assertIsNotNone(d)
+        self.assertIsNone(d["setting"])
+        self.assertTrue(d["source_label"].startswith(m.LABEL_SOURCED))
+        self.assertEqual(set(d["by_setting"]), set(m._SETTING_CSV))
+        self.assertEqual(d["national"], sum(d["by_setting"].values()))
+        self.assertEqual(
+            d["national"],
+            sum(m.destination_supply(k)["national"] for k in m._SETTING_CSV),
+        )
+        self.assertEqual(sum(d["per_state"].values()), d["national"])
+
+    def test_no_arg_with_state(self):
+        d = m.destination_supply(state="TX")
+        self.assertEqual(d["state"], "TX")
+        self.assertGreater(d["state_count"], 0)
+        self.assertLessEqual(d["state_count"], d["national"])
+
 
 class TestMissionMixAndSummary(unittest.TestCase):
     def test_mission_mix_skews_high_acuity(self):

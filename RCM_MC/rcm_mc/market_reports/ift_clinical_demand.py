@@ -841,7 +841,7 @@ def _supply_rows(csv_name: str) -> Tuple[Tuple[str, ...], ...]:
     return tuple(out)
 
 
-def destination_supply(setting: str, state: Optional[str] = None) -> Dict:
+def destination_supply(setting: Optional[str] = None, state: Optional[str] = None) -> Dict:
     """Real post-acute destination SUPPLY (SOURCED) from our provider CSVs.
 
     Counts SNF / IRF / LTACH / HHA / hospice providers nationally and, if
@@ -849,7 +849,34 @@ def destination_supply(setting: str, state: Optional[str] = None) -> Dict:
     Stroke Center, Level I Trauma, PCI, NICU III/IV) are NOT in any vendored
     file, so a non-post-acute setting returns ``national=None`` with an honest
     authored-reference label rather than a fabricated count.
+
+    Called with **no ``setting``** it returns the national post-acute supply
+    roll-up (``national`` = total across every SOURCED destination file, plus a
+    ``by_setting`` breakdown) — the "all destinations" snapshot. This keeps
+    ``destination_supply()`` a valid no-arg call so callers/health-checks can
+    ask for the whole supply universe without hand-listing every setting key.
     """
+    if setting is None:
+        by_setting: Dict[str, int] = {}
+        per_state_all: Dict[str, int] = {}
+        for name, csv_name in _SETTING_CSV.items():
+            rows = _supply_rows(csv_name)
+            by_setting[name] = len(rows)
+            for (st,) in rows:
+                per_state_all[st] = per_state_all.get(st, 0) + 1
+        result = {
+            "setting": None,
+            "national": sum(by_setting.values()),
+            "by_setting": by_setting,
+            "per_state": per_state_all,
+            "source_label": "SOURCED · CMS Care Compare / Provider-of-Services facility file",
+        }
+        if state is not None:
+            st = state.strip().upper()
+            result["state"] = st
+            result["state_count"] = per_state_all.get(st, 0)
+        return result
+
     csv_name = _SETTING_CSV.get(setting)
     if csv_name is None:
         return {
