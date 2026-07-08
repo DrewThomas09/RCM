@@ -206,7 +206,6 @@ class TestIFTClinicalPage(unittest.TestCase):
     def setUpClass(cls):
         from rcm_mc.ui.ift_clinical_page import render_ift_clinical
         from rcm_mc.ui._chartis_kit import chartis_shell
-        cls.render = staticmethod(render_ift_clinical)
         cls.html = render_ift_clinical()
         # Bare-shell baseline — the shared shell's JS/CSS templates carry a
         # fixed set of unclosed <table>/<tr>/… tokens and a harmless "NaN".
@@ -270,8 +269,9 @@ class TestIFTClinicalPage(unittest.TestCase):
                              f"content adds tag imbalance for <{tag}>")
 
     def test_render_accepts_query_variants(self):
+        from rcm_mc.ui.ift_clinical_page import render_ift_clinical
         for qs in (None, {}, {"state": ["TX"]}):
-            html = self.render(qs)
+            html = render_ift_clinical(qs)
             self.assertIn("Interfacility Transport", html)
 
 
