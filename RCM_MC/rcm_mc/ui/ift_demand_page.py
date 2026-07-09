@@ -23,6 +23,7 @@ from ._chartis_kit import (
 )
 from ._chart_kit import ck_bar_chart, ck_chart_assets, ck_chart_grid, ck_hbar_chart
 from ..market_reports import ift_demand as _dm
+from ..market_reports import ift_clinical_demand as _cd
 
 
 def _esc(x: object) -> str:
@@ -259,6 +260,75 @@ def _prevalence_section(ep) -> str:
 
 
 # ── Time series ──────────────────────────────────────────────────────────────
+def _yoy_section() -> str:
+    """Demand by condition, year over year — each condition's case volume grown at
+    its demographic CAGR, the YoY growth, and the aggregate trajectory."""
+    try:
+        proj = _cd.condition_yoy_projection(5)
+        agg = _cd.aggregate_demand_yoy(5)
+        esc = _cd.aggregate_demand_yoy(5, family=_cd.FAMILY_ESCALATION)
+    except Exception:  # noqa: BLE001
+        return ""
+    if not proj:
+        return ""
+    # Aggregate trajectory (relative years) + the escalation book.
+    kpis = ""
+    if agg.available:
+        kpis = (
+            '<div class="ifd-kpi-grid">'
+            + _kpi("Blended demand CAGR", _pct(agg.blended_cagr * 100),
+                   "vol-weighted across conditions")
+            + _kpi("Book today → Y+5",
+                   f"{_num(agg.base_volume)} → {_num(agg.end_volume)}",
+                   f"+{_num(agg.end_volume - agg.base_volume)} cases/yr added")
+            + _kpi("Escalation book CAGR",
+                   _pct((esc.blended_cagr if esc.available else 0) * 100),
+                   "the acute up-transfer demand")
+            + _kpi("Conditions modeled", _num(agg.n_conditions),
+                   "with an enumerated national volume")
+            + '</div>')
+    agg_rows = []
+    if agg.available:
+        for pt in agg.points:
+            agg_rows.append((f"Y+{pt.year}", _num(pt.volume),
+                             (f"+{pt.yoy_growth_pct:.2f}%" if pt.yoy_growth_pct
+                              else "—"),
+                             (f"+{_num(pt.added_cases)}" if pt.added_cases else "—")))
+    # Per-condition YoY table (top 16 by CAGR).
+    crows = []
+    for p in proj[:16]:
+        traj = " → ".join(_num(pt.volume) for pt in p.points)
+        crows.append((_esc(p.name), _esc(p.family), _esc(p.transport_acuity),
+                      f"{_num(p.base_volume)} ({p.base_year})",
+                      _pct(p.cagr * 100), _num(p.end_volume),
+                      "+" + _num(p.added_cases), _esc(traj)))
+    body = (
+        '<p class="ifd-prose">Every condition\'s demand grown <strong>year over '
+        'year</strong> at its own demographic CAGR (age-band population growth, '
+        'incidence held constant), with the implied YoY case growth. The book '
+        '<strong>compounds and the YoY rate accelerates</strong> as the 75-84 / '
+        '85+ cohorts age in.</p>'
+        + kpis)
+    if agg_rows:
+        body += (
+            '<p class="ifd-sub">Aggregate trajectory (all conditions, relative '
+            'years) ' + _chip("ILLUSTRATIVE") + '</p>'
+            + _table(("Year", "Cases/yr", "YoY growth", "Added vs prior"), agg_rows))
+    body += (
+        '<p class="ifd-sub">By condition — YoY trend (top 16 by growth)</p>'
+        + _table(("Condition", "Family", "Acuity", "Base (year)", "CAGR",
+                  "Y+5 cases", "Added / 5y", "Trajectory"), crows)
+        + f'<p class="ifd-src">Base volumes GOV/ACADEMIC; the forward YoY '
+        f'projection {_chip("ILLUSTRATIVE")} (Census age-band CAGRs, incidence '
+        'held constant). This is a demographic projection, not observed '
+        'multi-year history (a HCUP time series is the to-source refinement); some '
+        'base counts are cohort denominators pending a transfer-rate haircut.</p>')
+    return (
+        ck_section_header("Demand by condition — year over year",
+                          eyebrow="STEP 4 · TRENDED YoY", count=len(proj))
+        + ck_panel(body))
+
+
 def _timeseries_section(ts) -> str:
     if not (ts and ts.available):
         return ""
@@ -437,6 +507,31 @@ def _charts(regions, hc, ts) -> str:
                 source="ift_mmt.mmt_growth_projection"))
     except Exception:  # noqa: BLE001
         pass
+    try:
+        agg = _cd.aggregate_demand_yoy(5)
+        if agg.available:
+            items = [(f"Y+{pt.year}", pt.volume / 1e6, "teal") for pt in agg.points]
+            cards.append(ck_bar_chart(
+                "Demand book trajectory (M cases/yr)", items,
+                value_fmt=lambda v: f"{v:,.1f}M",
+                subtitle=f"All conditions grown YoY at their demographic CAGR "
+                         f"(blended {agg.blended_cagr * 100:.1f}%/yr, ILLUSTRATIVE).",
+                source="ift_clinical_demand.aggregate_demand_yoy"))
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        proj = _cd.condition_yoy_projection(5)
+        if proj:
+            items = [(p.name, p.cagr * 100, "navy") for p in proj[:10]]
+            cards.append(ck_hbar_chart(
+                "Fastest-growing conditions (CAGR %/yr)", items,
+                value_fmt=lambda v: f"{v:.1f}%",
+                subtitle="The aging-cohort demand — hip fx, hospice, sepsis, "
+                         "stroke, HF lead (ILLUSTRATIVE demographic CAGR).",
+                source="ift_clinical_demand.condition_yoy_projection",
+                label_w=200.0))
+    except Exception:  # noqa: BLE001
+        pass
     grid = ck_chart_grid(*cards)
     if not grid:
         return ""
@@ -482,12 +577,14 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
             italic_word="exact",
             body=("National demand base & demographics → the CMS codes by acuity "
                   "type and emergency split → the emergency/non-emergency "
-                  "prevalence → the series over time → the regional roll-up → and "
-                  "MMT's counties, customers, and growth.")),
+                  "prevalence → demand by condition trended year over year → the "
+                  "series over time → the regional roll-up → and MMT's counties, "
+                  "customers, and growth.")),
         _charts(regions, hc, ts),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),
+        _yoy_section(),
         _timeseries_section(ts),
         _regional_section(regions),
         _mmt_section(),

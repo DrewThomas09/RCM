@@ -156,19 +156,40 @@ def _norm(code: str) -> str:
 # Growth model (ILLUSTRATIVE projection off the SOURCED demand_forecast model)
 # ---------------------------------------------------------------------------
 
+# Published US age-band 5-yr population CAGRs (Census projections magnitude) —
+# the labelled fallback used when the demand_forecast model can't be imported
+# (its package __init__ pulls in the deals corpus, which needs pandas and is
+# absent in lightweight/offline environments). Kept in sync with
+# demand_forecast._POP_GROWTH_BY_AGE so condition growth is REAL, not zero,
+# everywhere. Basis ILLUSTRATIVE (Census-projection magnitude).
+_POP_GROWTH_FALLBACK: Dict[str, Dict[str, float]] = {
+    "0-17":  {"cagr_5yr": 0.002},
+    "18-44": {"cagr_5yr": 0.008},
+    "45-64": {"cagr_5yr": 0.012},
+    "65-74": {"cagr_5yr": 0.032},
+    "75-84": {"cagr_5yr": 0.048},
+    "85+":   {"cagr_5yr": 0.045},
+}
+
+
 @lru_cache(maxsize=1)
 def _pop_growth() -> Dict[str, Dict[str, float]]:
-    """Age-band 5-yr population CAGRs from the real demand_forecast model.
+    """Age-band 5-yr population CAGRs from the real demand_forecast model, with a
+    labelled published fallback.
 
-    Read-only import at call time (never at module import) so a demand_forecast
-    failure degrades to an empty map (every condition then reads 0.0 growth)
-    instead of breaking the whole taxonomy.
+    Read-only import at call time (never at module import). The demand_forecast
+    module lives under a package whose ``__init__`` imports the deals corpus
+    (pandas-dependent), so the import fails in offline/lightweight environments —
+    previously that zeroed every condition's growth. We now fall back to the
+    published Census age-band CAGRs so the demographic trend is real everywhere.
     """
     try:
         from rcm_mc.data_public.demand_forecast import _POP_GROWTH_BY_AGE
-        return dict(_POP_GROWTH_BY_AGE)
-    except Exception:
-        return {}
+        if _POP_GROWTH_BY_AGE:
+            return dict(_POP_GROWTH_BY_AGE)
+    except Exception:  # noqa: BLE001
+        pass
+    return {k: dict(v) for k, v in _POP_GROWTH_FALLBACK.items()}
 
 
 def compute_condition_cagr(age_skew: Tuple[Tuple[str, float], ...], horizon: int = 10) -> float:
@@ -824,6 +845,127 @@ def growth_ranked() -> List[Condition]:
     the fastest-aging clinical cohort.
     """
     return sorted(_registry(), key=lambda c: c.growth.cagr, reverse=True)
+
+
+# ---------------------------------------------------------------------------
+# Year-over-year demand projection — per condition and in aggregate
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class YoYPoint:
+    year: int
+    volume: int
+    yoy_growth_pct: float        # vs the prior year (= the CAGR for a geometric run)
+    added_cases: int             # absolute case adds vs the prior year
+
+
+@dataclass(frozen=True)
+class ConditionYoY:
+    name: str
+    family: str
+    transfer_type: str
+    transport_acuity: str
+    measure: str
+    base_year: int
+    base_volume: int
+    cagr: float
+    points: Tuple[YoYPoint, ...]
+    end_volume: int
+    added_cases: int             # end − base over the horizon
+    basis: str
+
+
+def condition_yoy_projection(horizon: int = 5) -> Tuple[ConditionYoY, ...]:
+    """Per-condition YoY case trajectory: each condition's published base national
+    volume grown forward at its demographic CAGR (incidence held constant), with
+    the implied YoY growth (% and absolute adds) each year. Conditions with no
+    separately-enumerated national count (value<=0) are skipped. Sorted by CAGR
+    descending. The base year is the condition's own volume vintage — this is a
+    forward demographic projection, not observed multi-year history (which needs a
+    HCUP time series, a to-source item). Never raises."""
+    out: List[ConditionYoY] = []
+    for c in _registry():
+        v0 = int(getattr(c.national_volume, "value", 0) or 0)
+        if v0 <= 0:
+            continue
+        cagr = float(c.growth.cagr)
+        base_year = int(getattr(c.national_volume, "year", 0) or 0)
+        pts: List[YoYPoint] = []
+        prev: Optional[int] = None
+        for k in range(0, horizon + 1):
+            vol = int(round(v0 * ((1.0 + cagr) ** k)))
+            if prev is None or prev == 0:
+                yoy = 0.0
+                add = 0
+            else:
+                yoy = round((vol / prev - 1.0) * 100.0, 2)
+                add = vol - prev
+            pts.append(YoYPoint(year=base_year + k, volume=vol,
+                                yoy_growth_pct=yoy, added_cases=add))
+            prev = vol
+        end = pts[-1].volume
+        out.append(ConditionYoY(
+            name=c.name, family=c.family, transfer_type=c.transfer_type,
+            transport_acuity=c.transport_acuity,
+            measure=getattr(c.national_volume, "measure", ""),
+            base_year=base_year, base_volume=v0, cagr=round(cagr, 4),
+            points=tuple(pts), end_volume=end, added_cases=end - v0,
+            basis=getattr(c.growth, "basis", "")))
+    out.sort(key=lambda x: x.cagr, reverse=True)
+    return tuple(out)
+
+
+@dataclass(frozen=True)
+class AggregateYoY:
+    available: bool
+    horizon: int = 0
+    base_volume: int = 0
+    points: Tuple[YoYPoint, ...] = ()      # index 0 = Y+0 (relative)
+    blended_cagr: float = 0.0
+    end_volume: int = 0
+    n_conditions: int = 0
+    source_label: str = ""
+    note: str = ""
+
+
+def aggregate_demand_yoy(horizon: int = 5, family: Optional[str] = None) -> AggregateYoY:
+    """The whole book's YoY demand trajectory — every condition's volume grown at
+    its own CAGR and summed per RELATIVE year offset (Y+0..Y+horizon), with the
+    blended YoY growth. ``family`` optionally restricts to one family (e.g.
+    ``FAMILY_ESCALATION``). Never raises."""
+    projs = condition_yoy_projection(horizon)
+    if family:
+        projs = tuple(p for p in projs if p.family == family)
+    if not projs:
+        return AggregateYoY(available=False, horizon=horizon)
+    totals = [0] * (horizon + 1)
+    for p in projs:
+        for i, pt in enumerate(p.points):
+            if i <= horizon:
+                totals[i] += pt.volume
+    pts: List[YoYPoint] = []
+    prev: Optional[int] = None
+    for i, tot in enumerate(totals):
+        if prev is None or prev == 0:
+            yoy = 0.0
+            add = 0
+        else:
+            yoy = round((tot / prev - 1.0) * 100.0, 2)
+            add = tot - prev
+        pts.append(YoYPoint(year=i, volume=tot, yoy_growth_pct=yoy,
+                            added_cases=add))
+        prev = tot
+    base = totals[0]
+    end = totals[-1]
+    blended = ((end / base) ** (1.0 / horizon) - 1.0) if base > 0 and horizon else 0.0
+    return AggregateYoY(
+        available=True, horizon=horizon, base_volume=base, points=tuple(pts),
+        blended_cagr=round(blended, 4), end_volume=end, n_conditions=len(projs),
+        source_label=("GOV/ACADEMIC base volumes × ILLUSTRATIVE demographic CAGRs "
+                      "(Census age-band growth, incidence held constant)"),
+        note=("Volume-weighted forward trajectory across the enumerated conditions "
+              "— the demand book compounds at the blended demographic CAGR as the "
+              "75-84 / 85+ cohorts age in. Relative-year (Y+0..Y+N) because the "
+              "conditions carry different base-year vintages."))
 
 
 @lru_cache(maxsize=None)

@@ -108,6 +108,15 @@ class TestDemandPage(unittest.TestCase):
         # customer concentration
         self.assertIn("Where customers concentrate", self.html)
 
+    def test_condition_yoy_trend_rendered(self):
+        # demand by condition, trended year over year
+        self.assertIn("Demand by condition — year over year", self.html)
+        self.assertIn("Aggregate trajectory", self.html)
+        self.assertIn("YoY growth", self.html)
+        self.assertIn("Blended demand CAGR", self.html)
+        self.assertIn("Fastest-growing conditions", self.html)   # chart
+        self.assertIn("Hip fracture", self.html)
+
     def test_has_charts(self):
         self.assertIn("ck-chart-card", self.html)
         self.assertGreaterEqual(self.html.count("<svg"), 2)
