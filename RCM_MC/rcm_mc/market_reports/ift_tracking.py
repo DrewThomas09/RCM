@@ -95,11 +95,15 @@ LEVERS = (LEVER_PRICE, LEVER_VOLUME, LEVER_CONSOLIDATION)
 
 # ── PRICE lever constants ────────────────────────────────────────────────────
 # The Medicare Ambulance Inflation Factor (AIF) — the annual Ambulance-Fee-Schedule
-# update = CPI-U (12 mo ending prior June) minus a multifactor-productivity
+# update = CPI-U (12 mo ending prior June) minus a multifactor-productivity (MFP)
 # adjustment. These are the PUBLISHED (GOV) annual factors; CY2023's 8.7% was the
-# post-COVID inflation spike, CY2025 settles back to ~2.4%.
+# post-COVID inflation spike. The last three updates DECELERATE — CY2024 2.6%
+# (CPI-U 3.0% − MFP 0.4%), CY2025 2.4%, CY2026 2.0% (CPI-U 2.7% − MFP 0.7%) — so
+# any price lever above ~2.0-2.6% now sits ABOVE the GOV floor and is carried by
+# commercial OON + escalators, not the AIF.
 _AIF_TREND: Tuple[Tuple[int, float], ...] = (
-    (2020, 0.9), (2021, 0.2), (2022, 5.1), (2023, 8.7), (2024, 3.0), (2025, 2.4),
+    (2020, 0.9), (2021, 0.2), (2022, 5.1), (2023, 8.7), (2024, 2.6), (2025, 2.4),
+    (2026, 2.0),
 )
 
 # The statutory temporary ground add-ons (a LEVEL effect on the base rate, not an
@@ -107,7 +111,10 @@ _AIF_TREND: Tuple[Tuple[int, float], ...] = (
 # Congress. GOV percentages; their extension is a recurring policy-risk item.
 _GROUND_ADDON_URBAN = 2.0            # GOV — urban ground add-on (%)
 _GROUND_ADDON_RURAL = 3.0           # GOV — rural ground add-on (%)
-_GROUND_ADDON_SUPERRURAL = 22.6     # GOV — super-rural bonus (%)
+# Super-rural: a +22.6% increase to the ground BASE RATE where the point of pickup
+# is in the lowest 25% of rural population by density (42 CFR 414 Subpart H) — a
+# base-rate bump, not a per-mile bump.
+_GROUND_ADDON_SUPERRURAL = 22.6     # GOV — super-rural base-rate increase (%)
 
 # Illustrative pay-mix blend for the composite. Medicare/Medicaid/MA grow ~at the
 # AIF; commercial grows faster via OON leverage (ground ambulance is NSA-excluded)
@@ -287,7 +294,10 @@ def _price_from(cf: Optional[float]) -> PriceLever:
             f"rural / +{_GROUND_ADDON_SUPERRURAL:.1f}% super-rural", LABEL_GOV,
             "42 U.S.C. 1395m(l)(12)-(13) statutory add-ons on the base rate — a "
             "recurring must-extend rider; a level effect, not an annual growth "
-            "rate, and the extension cliff is a policy-risk item to track."),
+            "rate. Most recently extended by Section 6203 of the Consolidated "
+            "Appropriations Act, 2026 through Dec 31, 2027 (from the prior Jan 31, "
+            "2026 expiry); absent new legislation they lapse Jan 1, 2028 — a dated "
+            "policy-risk cliff to track."),
         LeverComponent(
             "Commercial out-of-network (OON) leverage",
             f"~{_COMMERCIAL_MEDICARE_MULTIPLE[0]:.0f}-"

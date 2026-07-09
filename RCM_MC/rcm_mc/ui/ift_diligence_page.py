@@ -38,9 +38,12 @@ _BASIS_TITLES = {
     "CONNECTOR": "A registered connector dataset — ingest-ready, honest fallback "
                  "offline.",
     "GOV": "A published government anchor (CMS, MedPAC, BLS, statute).",
+    "ACADEMIC": "Authored market knowledge / a published study.",
+    "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
 }
 _BASIS_CLASS = {"FRAMEWORK": "framework", "SOURCED": "sourced",
-                "CONNECTOR": "connector", "GOV": "gov"}
+                "CONNECTOR": "connector", "GOV": "gov",
+                "ACADEMIC": "academic", "ILLUSTRATIVE": "illustrative"}
 
 
 def _chip(basis: str) -> str:
@@ -99,6 +102,371 @@ def _bullets(items, *, heading: str) -> str:
             f'<ul class="ifq-list ifq-list-plain">{lis}</ul>')
 
 
+# ── Inline ANSWERS — pulled from the SAME sized modules the other pages read, so
+#    each slide is question + answer in one place. Every builder degrades to ""
+#    (never raises) and carries an honesty basis + source line. ────────────────
+def _usd_b(x) -> str:
+    try:
+        return f"${float(x):,.2f}B"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _usd_m(x) -> str:
+    try:
+        return f"${float(x) / 1e6:,.1f}M"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _pct(x) -> str:
+    try:
+        return f"{float(x) * 100:.1f}%"
+    except (TypeError, ValueError):
+        return "—"
+
+
+def _stat(value: str, label: str) -> str:
+    return (f'<div class="ifq-stat"><div class="ifq-stat-v">{value}</div>'
+            f'<div class="ifq-stat-l">{_esc(label)}</div></div>')
+
+
+def _ans_wrap(inner: str, *, basis: str = "FRAMEWORK", source: str = "") -> str:
+    if not inner:
+        return ""
+    src = (f'<p class="ifq-prompt" style="margin-top:2px;">Answer source: '
+           f'{_esc(source)}</p>' if source else "")
+    return ('<div class="ifq-ans"><span class="ifq-ans-lab">The answer, in this '
+            f'study {_chip(basis)}</span>' + inner + src + '</div>')
+
+
+def _ans_table(headers, rows, *, ift_col=None) -> str:
+    def _cell(tag, i, v):
+        cls = ' class="ifq-ift"' if ift_col is not None and i == ift_col else ""
+        return f'<{tag}{cls}>{_esc(v)}</{tag}>'
+    head = "".join(_cell("th", i, h) for i, h in enumerate(headers))
+    body = "".join(
+        "<tr>" + "".join(_cell("td", i, v) for i, v in enumerate(r)) + "</tr>"
+        for r in rows)
+    return ('<div class="ifq-wrap"><table class="ifq-tab"><thead><tr>'
+            f'{head}</tr></thead><tbody>{body}</tbody></table></div>')
+
+
+def _ans_cards(pairs) -> str:
+    return ('<div class="ifq-grid">' + "".join(
+        f'<div class="ifq-card"><h4>{_esc(t)}</h4><p>{_esc(d)}</p></div>'
+        for t, d in pairs) + '</div>')
+
+
+def _ans_cover() -> str:
+    return _ans_wrap(
+        '<p class="ifq-prose">This is a <strong>market-definition + '
+        'commercial-diligence</strong> study with a company overlay: it defines '
+        'the IFT market, sizes it, shows how health systems buy it, and positions '
+        '<strong>MMT</strong> as the dedicated partner. Intended audience: the '
+        'deal team / IC. Subject operator: MMT.</p>',
+        basis="FRAMEWORK",
+        source="Study framing (full synthesis on /ift-study)")
+
+
+def _ans_vocabulary() -> str:
+    from ..market_reports import ift_study as _st
+    tm = _st.taxonomy_matrix()
+    if not tm.available:
+        return ""
+    use = dict(tm.rows).get("Key use cases") or tm.rows[0][1]
+    rows = [(col, use[i]) for i, col in enumerate(tm.columns)]
+    return _ans_wrap(
+        '<p class="ifq-prose">The five transport categories the study fixes as '
+        'shared vocabulary — IFT is the facility-ordered, between-sites middle '
+        'tier, distinct from 911, CCT (a tier <em>within</em> IFT), air, and '
+        'NEMT.</p>'
+        + _ans_table(("Category", "What it means — the key use case"), rows),
+        basis="ACADEMIC", source=tm.source_label)
+
+
+def _ans_definition() -> str:
+    from ..market_reports import ift_study as _st
+    tm = _st.taxonomy_matrix()
+    tam_line = ""
+    try:
+        from ..market_reports import ift_analytics as _an
+        t = _an.ground_tam()
+        if getattr(t, "available", False):
+            tam_line = (
+                '<p class="ifq-prose">Sized boundary: TAM = all US ground '
+                'interfacility ambulance = <strong>'
+                f'{_usd_b(t.allpayer_tam_bn_central)}</strong> {_chip("ILLUSTRATIVE")}'
+                ' — excludes 911, air, and NEMT.</p>')
+    except Exception:  # noqa: BLE001
+        pass
+    inside = ("Hospital→hospital up-transfers (stroke, STEMI, trauma, NICU); "
+              "hospital→post-acute discharge legs (SNF / IRF / LTCH); "
+              "facility-origin CCT / SCT; repatriation return legs.")
+    outside = ("911 / scene response; air ambulance; Medicaid NEMT / "
+               "wheelchair van; residence-origin and courier / organ transport.")
+    return _ans_wrap(
+        '<p class="ifq-prose"><strong>IFT is ambulance transport BETWEEN '
+        'healthcare facilities, ordered by hospitals and health systems</strong> — '
+        'defined by origin/destination and the hospital-as-buyer, not by vehicle '
+        'type alone.</p>' + tam_line
+        + _ans_table(("Inside core IFT", "Outside / adjacent"),
+                     [(inside, outside)]),
+        basis="FRAMEWORK",
+        source=(tm.source_label if tm.available else ""))
+
+
+def _ans_taxonomy() -> str:
+    from ..market_reports import ift_study as _st
+    tm = _st.taxonomy_matrix()
+    if not tm.available:
+        return ""
+    headers = ("Dimension",) + tuple(tm.columns)
+    rows = [(label,) + tuple(cells) for label, cells in tm.rows]
+    return _ans_wrap(
+        f'<p class="ifq-prose">{_esc(tm.note)}</p>'
+        + _ans_table(headers, rows, ift_col=tm.ift_col_index + 1),
+        basis="ACADEMIC", source=tm.source_label)
+
+
+def _ans_markets_contrast() -> str:
+    from ..market_reports import ift_study as _st
+    tm = _st.taxonomy_matrix()
+    if not tm.available:
+        return ""
+    idx = [0, tm.ift_col_index, len(tm.columns) - 1]      # 911 · IFT · NEMT
+    headers = ("Dimension",) + tuple(tm.columns[i] for i in idx)
+    rows = [(label,) + tuple(cells[i] for i in idx) for label, cells in tm.rows]
+    return _ans_wrap(
+        '<p class="ifq-prose">The three commercial markets side by side — same '
+        'trucks, different customers, buyers, dispatch, payers, and failure '
+        'modes.</p>' + _ans_table(headers, rows, ift_col=2),
+        basis="ACADEMIC", source=tm.source_label)
+
+
+def _ans_why_dedicated() -> str:
+    from ..market_reports import ift_study as _st
+    tm = _st.taxonomy_matrix()
+    cards = _ans_cards(tm.why_dedicated_different) if (
+        tm.available and tm.why_dedicated_different) else ""
+    moat = ""
+    try:
+        from ..market_reports import ift_moat as _mo
+        mf = _mo.moat_factors()
+        if mf:
+            moat = ('<p class="ifq-sub">The moat, factor by factor '
+                    + _chip("ILLUSTRATIVE") + '</p>'
+                    + _ans_table(("Factor", "Why it makes the incumbent sticky"),
+                                 [(f.name, f.why_it_matters) for f in mf]))
+    except Exception:  # noqa: BLE001
+        pass
+    if not (cards or moat):
+        return ""
+    return _ans_wrap(cards + moat, basis="FRAMEWORK",
+                     source=(tm.source_label if tm.available else ""))
+
+
+def _ans_journey() -> str:
+    from ..market_reports import ift_study as _st
+    eco = _st.ecosystem()
+    if not eco.available:
+        return ""
+    tbl = _ans_table(("Site of care", "Role", "What IFT does"),
+                     list(eco.journey))
+    anchor = ""
+    if eco.n_acute_scenarios or eco.postacute_destinations:
+        anchor = (f'<p class="ifq-prose">{_chip("SOURCED")} Anchored to '
+                  f'<strong>{eco.n_acute_scenarios}</strong> mapped acute-transfer '
+                  f'scenarios and <strong>{eco.postacute_destinations:,}</strong> '
+                  'real post-acute destinations.</p>')
+    return _ans_wrap(tbl + anchor, basis="FRAMEWORK", source=eco.source_label)
+
+
+def _ans_participants() -> str:
+    from ..market_reports import ift_study as _st
+    eco = _st.ecosystem()
+    if not eco.available:
+        return ""
+    return _ans_wrap(_ans_cards(eco.participants), basis="FRAMEWORK",
+                     source=eco.source_label)
+
+
+def _ans_operating() -> str:
+    from ..market_reports import ift_study as _st
+    om = _st.operating_models()
+    if not (om.available and om.bands):
+        return ""
+    rows = []
+    for b in om.bands:
+        lo = getattr(b, "volume_share_low", None)
+        hi = getattr(b, "volume_share_high", None)
+        share = (f"{lo * 100:.0f}–{hi * 100:.0f}%"
+                 if lo is not None and hi is not None else "—")
+        rows.append((getattr(b, "name", ""), share,
+                     getattr(b, "definition", ""),
+                     getattr(b, "addressable_read", "")))
+    return _ans_wrap(
+        f'<p class="ifq-prose"><strong>{_esc(om.classification_note)}</strong></p>'
+        + _ans_table(("Model", "Volume insourced", "Definition",
+                      "Addressable read"), rows),
+        basis="ILLUSTRATIVE", source=om.source_label)
+
+
+def _ans_procurement() -> str:
+    from ..market_reports import ift_study as _st
+    om = _st.operating_models()
+    if not (om.available and om.procurement):
+        return ""
+    return _ans_wrap(_ans_cards(om.procurement), basis="FRAMEWORK",
+                     source=om.source_label)
+
+
+def _ans_challenges() -> str:
+    from ..market_reports import ift_study as _st
+    om = _st.operating_models()
+    if not (om.available and om.pain_points):
+        return ""
+    return _ans_wrap(_ans_cards(om.pain_points), basis="FRAMEWORK",
+                     source=om.source_label)
+
+
+def _ans_mmt() -> str:
+    from ..market_reports import ift_study as _st
+    pos = _st.company_positioning("mmt")
+    if not pos.available:
+        return ""
+    c = pos.subject
+    fp = ", ".join(c.footprint_markets) if c.footprint_markets else "—"
+    svc = "".join(f"<li>{_esc(s)}</li>" for s in c.services)
+    body = (
+        '<div class="ifq-card" style="border-left-width:4px;">'
+        f'<h4>{_esc(c.name)} — {_esc(c.archetype)}</h4>'
+        f'<p><strong>HQ.</strong> {_esc(c.hq)}<br>'
+        f'<strong>Footprint.</strong> {_esc(c.footprint)}<br>'
+        f'<strong>In-footprint metros.</strong> {_esc(fp)}<br>'
+        f'<strong>Operating model.</strong> {_esc(c.operating_model)}<br>'
+        f'<strong>Customers.</strong> {_esc(c.customer_relationships)}<br>'
+        f'<strong>Dedicated vs EMS.</strong> {_esc(c.dedicated_vs_ems)}<br>'
+        f'<strong>Strategic role.</strong> {_esc(c.strategic_role)}</p>'
+        '<p style="margin-top:6px;"><strong>Services.</strong></p>'
+        f'<ul class="ifq-list" style="margin-left:16px;">{svc}</ul></div>')
+    return _ans_wrap(body, basis="FRAMEWORK", source=pos.source_label)
+
+
+def _ans_dedicated() -> str:
+    from ..market_reports import ift_study as _st
+    pos = _st.company_positioning("mmt")
+    if not pos.available:
+        return ""
+    parts: List[str] = []
+    mp = pos.mmt_positioning
+    if mp is not None and getattr(mp, "available", False) and mp.pillars:
+        rows = [(getattr(p, "pillar", ""), getattr(p, "mmt_stance", ""),
+                 getattr(p, "vs_alternatives", "")) for p in mp.pillars]
+        parts.append('<p class="ifq-sub">The dedicated-partnership pillars</p>'
+                     + _ans_table(("Pillar", "MMT stance", "vs alternatives"),
+                                  rows))
+    if pos.field_:
+        frows = [(f.name + (" ★" if f.is_subject else ""), f.archetype,
+                  str(len(f.footprint_markets)), f.dedicated_vs_ems)
+                 for f in pos.field_]
+        parts.append('<p class="ifq-sub">The competitive field, positioned</p>'
+                     + _ans_table(("Company", "Archetype", "Footprint metros",
+                                   "Dedicated vs EMS"), frows))
+    if not parts:
+        return ""
+    return _ans_wrap("".join(parts), basis="FRAMEWORK", source=pos.source_label)
+
+
+def _ans_strategic() -> str:
+    rows = [
+        ("Call-around across many vendors", "One accountable dedicated partner"),
+        ("Unknown ETA / reactive escalation", "Integrated dispatch + ETA "
+         "visibility"),
+        ("No accountability, no SLAs", "Contracted SLAs + performance reporting"),
+        ("Delayed discharge / blocked beds", "Protected throughput + bed "
+         "turnover"),
+        ("A transactional ride", "Infrastructure for care transitions"),
+    ]
+    growth = ""
+    try:
+        from ..market_reports import ift_tracking as _tr
+        gb = _tr.growth_bridge()
+        if getattr(gb, "available", False):
+            growth = (
+                '<p class="ifq-prose">Why the capability compounds: price '
+                f'{gb.price_central_pct:.1f}%/yr × volume '
+                f'{gb.volume_central_pct:.1f}%/yr = ~{gb.market_growth_central_pct:.1f}% '
+                'organic market growth; plus consolidation → ~'
+                f'{gb.platform_growth_central_pct:.1f}% platform growth. '
+                + _chip("ILLUSTRATIVE") + '</p>')
+    except Exception:  # noqa: BLE001
+        pass
+    return _ans_wrap(
+        _ans_table(("Transactional vendor — the old view",
+                    "Strategic capability — the new view"), rows) + growth,
+        basis="FRAMEWORK",
+        source="Authored transformation framing; growth bridge from ift_tracking")
+
+
+_ANSWER_BUILDERS = {
+    "cover": _ans_cover,
+    "vocabulary": _ans_vocabulary,
+    "definition": _ans_definition,
+    "taxonomy": _ans_taxonomy,
+    "markets-contrast": _ans_markets_contrast,
+    "why-dedicated": _ans_why_dedicated,
+    "patient-journey": _ans_journey,
+    "participants": _ans_participants,
+    "operating-models": _ans_operating,
+    "procurement": _ans_procurement,
+    "challenges": _ans_challenges,
+    "mmt-positioning": _ans_mmt,
+    "dedicated-model": _ans_dedicated,
+    "strategic-capability": _ans_strategic,
+}
+
+
+def _answer_for(slug: str) -> str:
+    """Render the inline answer for a slide, or '' for dividers / on any failure
+    (degrade, never raise)."""
+    fn = _ANSWER_BUILDERS.get(slug)
+    if not fn:
+        return ""
+    try:
+        return fn() or ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _market_glance() -> str:
+    """The study's headline sized answer — TAM / SAM / SOM up top, so the page
+    opens with the number, not just the questions. Degrades to '' offline."""
+    try:
+        from ..market_reports import ift_analytics as _an
+        t = _an.ground_tam()
+        h = _an.health_system_sam()
+    except Exception:  # noqa: BLE001
+        return ""
+    if not (getattr(t, "available", False) and getattr(h, "available", False)):
+        return ""
+    stats = (
+        '<div class="ifq-stats">'
+        + _stat(_usd_b(t.allpayer_tam_bn_central), "TAM · all US ground IFT")
+        + _stat(_usd_b(h.sam_central_bn), "SAM · health systems")
+        + _stat(_usd_m(h.som_central_m * 1e6), "SOM · current footprint")
+        + _stat(_pct(getattr(h, "operator_share_of_sam", None)),
+                "operator share of SAM")
+        + '</div>')
+    return (
+        '<div class="ifq-ans" style="border-left-color:var(--sc-navy,#0b2341);">'
+        '<span class="ifq-ans-lab">The market, sized — the study\'s headline '
+        f'answer {_chip("ILLUSTRATIVE")}</span>'
+        '<p class="ifq-prose">All figures exclude 911, air, and NEMT; the full '
+        'build is on <a href="/ift-markets" style="color:var(--sc-teal,#155752);">'
+        '/ift-markets</a>.</p>' + stats + '</div>')
+
+
 # ── Scoped stylesheet ────────────────────────────────────────────────────────
 _STYLES = """<style>
 .ifq-chip{display:inline-block;font-family:var(--sc-mono,Consolas,monospace);
@@ -108,6 +476,8 @@ vertical-align:middle;}
 .ifq-chip-sourced{background:#e7efe9;color:#154e36;}
 .ifq-chip-connector{background:#eef1f5;color:#31465e;border:1px solid #cdd6e2;}
 .ifq-chip-gov{background:#e7efe9;color:#154e36;}
+.ifq-chip-academic{background:#efeae0;color:#6b5426;}
+.ifq-chip-illustrative{background:#f3ecd9;color:#7a5c1a;}
 .ifq-prose{font-family:var(--sc-serif,Georgia,serif);font-size:14px;line-height:1.62;
 color:var(--sc-text,#1a2332);max-width:90ch;margin:0 0 10px;}
 .ifq-sub{font-family:var(--sc-mono,Consolas,monospace);font-size:11px;font-weight:600;
@@ -192,12 +562,30 @@ font-family:var(--sc-mono,Consolas,monospace);font-size:11px;font-weight:600;}
 .ifq-dl a{display:inline-block;font-family:var(--sc-mono,Consolas,monospace);
 font-size:12px;font-weight:600;letter-spacing:.04em;text-decoration:none;color:#fff;
 background:var(--sc-teal,#155752);padding:8px 15px;border-radius:3px;margin-top:6px;}
+.ifq-ans{border:1px solid var(--sc-border,#e4dccb);border-left:3px solid
+var(--sc-teal,#155752);border-radius:4px;background:#fff;padding:12px 14px;
+margin:8px 0 12px;}
+.ifq-ans-lab{display:block;font-family:var(--sc-mono,Consolas,monospace);
+font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+color:var(--sc-teal,#155752);margin:0 0 8px;}
+.ifq-tab td.ifq-ift,.ifq-tab th.ifq-ift{background:#eef5f1;}
+.ifq-tab thead th.ifq-ift{background:#12463a;}
+.ifq-stats{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 2px;}
+.ifq-stat{flex:1 1 130px;background:var(--sc-surface,#faf7f1);
+border:1px solid var(--sc-border,#e4dccb);border-radius:4px;padding:8px 12px;}
+.ifq-stat-v{font-family:var(--sc-mono,Consolas,monospace);font-size:18px;
+font-weight:700;color:var(--sc-navy,#0b2341);font-variant-numeric:tabular-nums;
+line-height:1.15;}
+.ifq-stat-l{font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;
+color:var(--sc-muted,#6b6357);margin-top:3px;}
 </style>"""
 
 
 def _crosslinks() -> str:
     return (
         '<div class="ifq-links-lg">'
+        '<a href="/ift-demand">Demand deep-dive (national→subcounty) &rarr;</a>'
+        '<a href="/ift-sourcing">Sourcing prompts — Part 1 &rarr;</a>'
         '<a href="/ift-study">Investor market study (4 dimensions) &rarr;</a>'
         '<a href="/ift-research">Market research brief (20 topics) &rarr;</a>'
         '<a href="/ift-markets">Geographic markets &amp; TAM/SAM/SOM &rarr;</a>'
@@ -262,13 +650,19 @@ def _slide_panel(s, ce) -> str:
         f'<span class="ifq-slidehd">SLIDE {s.num} · {_esc(s.kind.upper())}</span>',
         f'<p class="ifq-prompt"><b>SOW prompt</b> — {_esc(s.prompt)}</p>',
         f'<p class="ifq-mq">{_esc(s.main_question)}</p>',
+        # The ANSWER, inline — pulled from the same sized modules the other pages
+        # render, so the question and its answer sit together.
+        _answer_for(s.slug),
     ]
+    if s.groups:
+        parts.append('<p class="ifq-sub" style="color:var(--sc-navy,#0b2341);">'
+                     'The sub-questions behind it</p>')
     for g in s.groups:
         parts.append(_qgroup(g))
     parts.append(_bullets(s.data_needed, heading="Data & evidence needed"))
     parts.append(_bullets(s.visuals, heading="Helpful visuals"))
     parts.append(_connector_chips(s.connector_keys, ce))
-    parts.append(_link_row(s.answered_by, label="Answered on this platform"))
+    parts.append(_link_row(s.answered_by, label="Go deeper on the sized pages"))
     return ck_panel("".join(p for p in parts if p),
                     title=f"{s.num}. {s.title}",
                     anchor_id=f"ifq-slide-{s.slug}")
@@ -280,13 +674,13 @@ def _slides_section(sa, ce) -> str:
     out = [
         ck_section_intro(
             "THE SLIDES, DECOMPOSED",
-            "Every slide broken into its question tree, evidence, and answer.",
-            italic_word="question",
-            body=("For each SOW slide: the main diligence question, the "
-                  "sub-question tree beneath it, the data / evidence that proves "
-                  "the point, the persuasive visuals, the connector datasets that "
-                  "feed it, and a live link to where the answer already lives on "
-                  "this platform.")),
+            "Every slide: the question, then the answer, in one place.",
+            italic_word="answer",
+            body=("For each SOW slide: the main diligence question, the actual "
+                  "answer rendered inline from our sized modules, the sub-question "
+                  "tree beneath it, the data / evidence that proves the point, the "
+                  "persuasive visuals, the connector datasets that feed it, and a "
+                  "link to go deeper on the sized pages.")),
     ]
     for s in sa.slides:
         out.append(_slide_panel(s, ce))
@@ -436,23 +830,25 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
     summ = _dg.diligence_summary()
 
     meta = (f"{summ['n_slides']} slides · {summ['n_questions']} diligence "
-            f"questions · {summ['n_connector_hooks']} connector hooks / "
-            f"{summ['n_connectors']} sources · every answer cross-linked")
+            f"questions · answered inline · {summ['n_connector_hooks']} connector "
+            f"hooks / {summ['n_connectors']} sources")
     head = ck_page_title(
         "IFT Diligence — Question Architecture",
         eyebrow="INTERFACILITY TRANSPORT · HOW THE STUDY IS INTERROGATED",
         meta=meta)
     explainer = (
-        '<p class="ifq-prose" style="font-size:15px;">The <strong>question '
-        'architecture</strong> behind the IFT market study — not just the answers, '
-        'but the underlying diligence questions, the sub-question tree beneath each '
-        'slide, the data / evidence that would prove each point, and the visuals '
-        'that make it persuasive. The value add over a static outline: every '
-        'question is wired to <strong>where the answer already lives on this '
-        'platform</strong> and to the real <strong>connector datasets</strong> '
-        'that feed the evidence. Content is authored diligence knowledge '
-        f'{_chip("FRAMEWORK")}; the connector references resolve live against the '
-        f'estate {_chip("SOURCED")} {_chip("CONNECTOR")}.</p>')
+        '<p class="ifq-prose" style="font-size:15px;">The <strong>question and the '
+        'answer, in one place</strong>. For every slide in the IFT market study: '
+        'the underlying diligence question, the sub-question tree beneath it, and — '
+        'rendered inline — <strong>the actual answer</strong>, pulled from the same '
+        'sized modules the other pages read (the taxonomy matrix, the patient '
+        'journey, the operating-model bands, MMT positioning, the TAM/SAM/SOM). '
+        'Each slide also carries the data / evidence that proves it, the persuasive '
+        'visuals, the real <strong>connector datasets</strong> that feed it, and a '
+        'link to go deeper. Questions are authored diligence knowledge '
+        f'{_chip("FRAMEWORK")}; answers carry their own basis — {_chip("ACADEMIC")} '
+        f'{_chip("ILLUSTRATIVE")} {_chip("SOURCED")} — and the connector references '
+        f'resolve live {_chip("CONNECTOR")}.</p>')
 
     body = "".join([
         _STYLES,
@@ -460,16 +856,18 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
         explainer,
         _crosslinks(),
         _story(),
+        _market_glance(),
         ck_section_intro(
             "HOW TO READ THIS",
-            "Master tree first, then every slide, then the evidence and visuals.",
+            "Master tree first, then every slide — question and answer together.",
             italic_word="every",
             body=("Start with the three-branch master question tree (what the "
                   "market is, why it matters to health systems, and why a "
-                  "dedicated provider may win). Then each SOW slide is decomposed "
-                  "into its question tree with a live answer link and the "
-                  "connectors that feed it. The estate, evidence plan, visual "
-                  "package, and nuances close the loop.")),
+                  "dedicated provider may win). Then each SOW slide gives its "
+                  "main question, the answer rendered inline from our sized "
+                  "modules, the finer sub-questions, the evidence and visuals, "
+                  "and the connectors that feed it. The estate, evidence plan, "
+                  "visual package, and nuances close the loop.")),
         _toc(sa.slides),
         _tree_section(mt),
         _slides_section(sa, ce),
@@ -480,6 +878,10 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _crosslinks(),
         '<div class="ifq-dl"><a href="/api/ift/markets.xlsx" download>Download the '
         'investor data pack (Excel) &darr;</a></div>',
+        ck_next_section(
+            "Get the sourcing prompts that gather the evidence for these questions "
+            "(Part 1)",
+            "/ift-sourcing", eyebrow="The sourcing", italic_word="sourcing"),
         ck_next_section(
             "Read the answers — the investor market study (4 dimensions + MMT)",
             "/ift-study", eyebrow="The answers", italic_word="investor"),

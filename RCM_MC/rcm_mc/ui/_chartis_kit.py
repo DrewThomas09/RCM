@@ -7529,6 +7529,8 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "ift-clinical",  "title": "Interfacility Transport · clinical acute-transfer demand engine (cases → codes → destination → volume growth)", "route": "/ift-clinical"},
     {"id": "ift-mmt",       "title": "Interfacility Transport · Midwest Medical Transport county deep dive (22 counties by MSA, demand & connector coverage)", "route": "/ift-mmt"},
     {"id": "ift-diligence", "title": "Interfacility Transport · diligence question architecture (per-slide question tree, evidence plan & visuals, cross-linked to the answers + connector estate)", "route": "/ift-diligence"},
+    {"id": "ift-sourcing",  "title": "Interfacility Transport · sourcing prompts Part 1 (scope-bounded research prompts w/ prioritized GOV/academic sources, connector datasets & where each answer lives)", "route": "/ift-sourcing"},
+    {"id": "ift-demand",    "title": "Interfacility Transport · demand deep-dive (national→regional→subcounty, CMS BLS/ALS/SCT code analysis × emergency/non-emergency, population growth, hospitals, trailed over time, MMT counties & customers)", "route": "/ift-demand"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
     {"id": "hc-unit-econ",  "title": "Cross-Vertical Unit Economics", "route": "/healthcare-verticals/unit-economics"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},
