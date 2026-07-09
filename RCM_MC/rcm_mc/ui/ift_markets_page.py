@@ -1250,6 +1250,12 @@ def render_ift_markets() -> str:
                   "moat that makes the incumbent hard to displace.")),
         _region_sections(structures, sam_by_name),
         ck_next_section(
+            "See the diligence question architecture behind this study — every "
+            "slide's question tree, evidence plan, and visuals, cross-linked to "
+            "the answers and the connector estate",
+            "/ift-diligence",
+            eyebrow="Question architecture", italic_word="question"),
+        ck_next_section(
             "Read the full investor market study (taxonomy, ecosystem, "
             "health-system POV, MMT vs the field)",
             "/ift-study",

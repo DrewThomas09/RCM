@@ -311,6 +311,7 @@ def _crosslinks() -> str:
     return (
         '<div class="irs-links">'
         '<a href="/ift-study">Investor study (4 dimensions + MMT) &rarr;</a>'
+        '<a href="/ift-diligence">Diligence question architecture &rarr;</a>'
         '<a href="/ift-markets">Geographic markets &amp; TAM/SAM/SOM &rarr;</a>'
         '<a href="/ift-clinical">Clinical demand engine &rarr;</a>'
         '<a href="/connector-estate">Live data-connector estate &rarr;</a>'
