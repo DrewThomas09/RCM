@@ -101,6 +101,24 @@ class IftWorkbookTests(unittest.TestCase):
                     self.assertIsNone(repr_pat.match(str(v)),
                                       f"{ws.title}: dataclass repr leaked: {v!r}")
 
+    def test_clinical_routing_never_shows_bare_zero_volume(self):
+        # a not-separately-enumerated scenario must read "not separately
+        # enumerated", never a literal 0 (which reads as zero transports).
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        ws = wb["Clinical routing"]
+        header = next((list(r) for r in ws.iter_rows(values_only=True)
+                       if r and "Condition" in [str(c) for c in r]), None)
+        self.assertIsNotNone(header)
+        vi = header.index("National volume/yr")
+        for row in ws.iter_rows(values_only=True):
+            if len(row) > vi:
+                self.assertNotEqual(row[vi], 0,
+                                    "bare 0 in National volume/yr column")
+
     def test_cells_wrap_and_hyperlinks_resolve(self):
         # formatting contract: text wraps (no clipped prose), and the Contents
         # "where this lives online" links resolve to real https targets.

@@ -824,7 +824,11 @@ def _clinical_matrix_sheet() -> Optional[Sheet]:
             m.get("transport_acuity", ""), m.get("origin_setting", ""),
             m.get("destination_capability", ""), m.get("destination_setting", ""),
             m.get("time_window", ""),
-            (vol, "num") if isinstance(vol, (int, float)) else "not separately enumerated",
+            # A zero volume means "not separately enumerated nationally" (a few
+            # registry rows, e.g. paired return legs) — never show a bare "0",
+            # which reads as zero transports rather than uncounted.
+            (vol, "num") if isinstance(vol, (int, float)) and vol
+            else "not separately enumerated",
             vlabel,
             (cagr, "pct") if isinstance(cagr, (int, float)) else "—",
             m.get("growth_label", "")])
