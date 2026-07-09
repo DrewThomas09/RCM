@@ -161,6 +161,30 @@ class MmtModelTests(unittest.TestCase):
         for quad in (sw.strengths, sw.weaknesses, sw.opportunities, sw.threats):
             self.assertGreaterEqual(len(quad), 3)
 
+    def test_county_opportunity_ranks_and_splits(self):
+        opp = m.mmt_county_opportunity()
+        self.assertEqual(len(opp), len(m.MMT_COUNTIES))
+        # ranked descending by contestable $, ranks 1..N, Douglas (Omaha) is #1
+        self.assertEqual([o.rank for o in opp], list(range(1, len(opp) + 1)))
+        self.assertEqual(opp[0].name, "Douglas")
+        for o in opp:
+            # current + headroom == the contestable book (share split)
+            self.assertAlmostEqual(
+                o.mmt_current_revenue + o.headroom_revenue,
+                o.opportunity_revenue, places=2, msg=o.name)
+        vals = [o.opportunity_revenue for o in opp]
+        self.assertEqual(vals, sorted(vals, reverse=True))
+
+    def test_anchor_accounts_carry_strategy(self):
+        accts = m.mmt_anchor_accounts()
+        self.assertGreaterEqual(len(accts), 5)
+        systems = " ".join(a.system for a in accts)
+        self.assertIn("CHI Health", systems)          # the #1 captive network
+        for a in accts:
+            self.assertTrue(a.metros and a.mmt_strategy and a.risk)
+            self.assertIn(a.tier,
+                          ("captive-network", "regional-hub", "independent"))
+
     def test_diligence_and_scorecard_are_populated(self):
         d = m.mmt_diligence()
         self.assertGreaterEqual(len(d.value_levers), 4)
@@ -184,7 +208,8 @@ class MmtPageTests(unittest.TestCase):
                        "Every county MMT serves", "Serviceable market (SOM)",
                        "Operating model", "County-grain data-connector coverage",
                        "clinical drivers", "moat read", "Positioning scorecard",
-                       "Growth projection", "SWOT",
+                       "Growth projection", "SWOT", "County opportunity ranking",
+                       "Anchor-system account map",
                        "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 

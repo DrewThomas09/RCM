@@ -406,15 +406,73 @@ def _swot_sheet() -> Optional[Sheet]:
     return Sheet("MMT SWOT", rows, col_widths=[110], merges=merges)
 
 
+def _opportunity_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    opp = _safe(_m.mmt_county_opportunity, default=[]) or []
+    if not opp:
+        return None
+    rows, merges = _title(
+        "MMT county opportunity ranking — where to focus",
+        "Every county ranked by its CONTESTABLE IFT book (county demand × the "
+        "metro's serviceable share s(m)), split into MMT's current revenue and "
+        "the HEADROOM still winnable from competitors. Reuses the serviceable "
+        "model, so it agrees with the SOM. All ILLUSTRATIVE.", 9)
+    rows += [
+        [("#", _H), ("County", _H), ("St", _H), ("Metro", _H), ("Role", _H),
+         ("Demand legs/yr", _H), ("Serviceable legs/yr", _H),
+         ("Contestable $", _H), ("MMT current $", _H), ("Headroom $", _H)],
+    ]
+    band_start = len(rows) + 1
+    for o in opp:
+        rows.append([(o.rank, "num"), (o.name, _L), o.state, o.metro, o.role,
+                     (o.demand_missions, "num"), (o.serviceable_missions, "num"),
+                     (o.opportunity_revenue, "money"),
+                     (o.mmt_current_revenue, "money"),
+                     (o.headroom_revenue, "money")])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H),
+                  "Contestable = county demand × s(m) [metro archetype, reused "
+                  "from the funnel]; MMT current / headroom split on the metro's "
+                  "MMT share. ILLUSTRATIVE."]]
+    return Sheet("MMT county opportunity", rows,
+                 col_widths=[5, 14, 5, 22, 13, 14, 16, 15, 15, 15],
+                 freeze_rows=4, merges=merges, band_rows=(band_start, band_end),
+                 autofilter=f"A4:J{band_end}")
+
+
+def _accounts_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    accts = _safe(_m.mmt_anchor_accounts, default=()) or ()
+    if not accts:
+        return None
+    rows, merges = _title(
+        "MMT anchor-system account map — the transfer-center GTM",
+        "The health-system transfer-center 'accounts' that generate MMT's "
+        "volume, and the account strategy + risk for each. Systems / facilities "
+        "are PUBLIC-WEB; the strategy/risk reads are analyst framework.", 6)
+    rows += [
+        [("System", _H), ("Tier", _H), ("Metros", _H), ("Insource posture", _H),
+         ("MMT account strategy", _H), ("Risk", _H)],
+    ]
+    for a in accts:
+        rows.append([(a.system, _L), a.tier, "; ".join(a.metros),
+                     a.insource_posture, a.mmt_strategy, a.risk])
+    rows += [[], [("Basis", _H),
+                  "Systems / facilities PUBLIC-WEB; strategy/risk FRAMEWORK "
+                  "(analyst account read), no exclusivities asserted."]]
+    return Sheet("MMT accounts", rows, col_widths=[26, 16, 26, 44, 44, 40],
+                 freeze_rows=4, merges=merges)
+
+
 # ── public entry point ────────────────────────────────────────────────────────
 def mmt_sheets() -> List[Sheet]:
     """Every MMT county-by-MSA sheet, in reading order. Each degrades to skipped
     (never raises)."""
     out: List[Sheet] = []
     for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
-              _operating_sheet, _growth_sheet, _connectors_sheet,
-              _clinical_sheet, _metro_read_sheet, _scorecard_sheet,
-              _swot_sheet, _diligence_sheet):
+              _opportunity_sheet, _operating_sheet, _growth_sheet,
+              _connectors_sheet, _clinical_sheet, _metro_read_sheet,
+              _accounts_sheet, _scorecard_sheet, _swot_sheet, _diligence_sheet):
         s = _safe(b)
         if s is not None:
             out.append(s)

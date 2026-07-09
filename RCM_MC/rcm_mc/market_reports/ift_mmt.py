@@ -930,3 +930,154 @@ def mmt_swot() -> MmtSwot:
             "Single-hospital market fragility (Columbus) and any anchor-hospital "
             "ownership change (e.g. a system M&A) redirecting transfer volume.",
         ))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# County opportunity ranking — where MMT should focus. Each county's contestable
+# IFT book (demand × s(m) by its metro archetype), split into MMT's current book
+# vs the headroom winnable from competitors.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class CountyOpportunity:
+    rank: int
+    name: str
+    state: str
+    fips: str
+    metro: str
+    role: str
+    demand_missions: int
+    serviceable_share: float          # s(m) of the metro
+    serviceable_missions: int         # the contestable book in this county
+    mmt_share: float
+    mmt_current_revenue: float        # serviceable × mmt_share × $/leg
+    headroom_revenue: float           # serviceable × (1-mmt_share) × $/leg
+    opportunity_revenue: float        # total contestable $ (the focus size)
+
+
+def mmt_county_opportunity() -> List[CountyOpportunity]:
+    """Rank MMT's 22 counties by contestable IFT opportunity — the size of the
+    outsourced book (county demand × the metro's s(m)) split into MMT's current
+    revenue and the headroom still winnable from competitors. Reuses the metro
+    s(m) / MMT-share from the serviceable model so the two agree. Never raises."""
+    sm = mmt_serviceable_model()
+    by_metro = {r.metro: (r.serviceable_share, r.mmt_share) for r in sm.rows}
+    out: List[CountyOpportunity] = []
+    tmp: List[CountyOpportunity] = []
+    for c in MMT_COUNTIES:
+        s, share = by_metro.get(c.metro, (0.20, _MMT_SHARE_DEFAULT))
+        demand = county_demand(c).demand_missions
+        serviceable = int(round(demand * s))
+        opp = serviceable * _REV_PER_LEG
+        tmp.append(CountyOpportunity(
+            rank=0, name=c.name, state=c.state, fips=c.fips, metro=c.metro,
+            role=c.role, demand_missions=demand, serviceable_share=s,
+            serviceable_missions=serviceable, mmt_share=share,
+            mmt_current_revenue=serviceable * share * _REV_PER_LEG,
+            headroom_revenue=serviceable * (1 - share) * _REV_PER_LEG,
+            opportunity_revenue=opp))
+    tmp.sort(key=lambda o: o.opportunity_revenue, reverse=True)
+    for i, o in enumerate(tmp, start=1):
+        out.append(CountyOpportunity(
+            rank=i, name=o.name, state=o.state, fips=o.fips, metro=o.metro,
+            role=o.role, demand_missions=o.demand_missions,
+            serviceable_share=o.serviceable_share,
+            serviceable_missions=o.serviceable_missions, mmt_share=o.mmt_share,
+            mmt_current_revenue=o.mmt_current_revenue,
+            headroom_revenue=o.headroom_revenue,
+            opportunity_revenue=o.opportunity_revenue))
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Anchor-system account map — the transfer-center "accounts" that generate MMT's
+# volume, and the go-to-market play for each. Systems/facilities are PUBLIC-WEB.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class AnchorAccount:
+    system: str
+    tier: str                         # captive-network | regional-hub | independent
+    metros: Tuple[str, ...]
+    insource_posture: str
+    mmt_strategy: str
+    risk: str
+
+
+def mmt_anchor_accounts() -> Tuple[AnchorAccount, ...]:
+    """MMT's key health-system transfer-center accounts + the account strategy.
+    Systems/facilities are PUBLIC-WEB knowledge; the strategy/risk reads are
+    analyst framework. Never raises."""
+    return (
+        AnchorAccount(
+            system="CHI Health (CommonSpirit)",
+            tier="captive-network",
+            metros=("Omaha", "Grand Island / Kearney", "Lincoln",
+                    "Columbus (NE)"),
+            insource_posture="Runs a captive STATEWIDE intra-system network "
+                "(Bergan/CUMC ↔ St. Francis GI ↔ Good Samaritan Kearney ↔ "
+                "St. Elizabeth Lincoln); steers CHI-preferred vendors.",
+            mmt_strategy="The #1 account — win first-call on the CHI "
+                "intra-system lanes (recurring, high-switching-cost). "
+                "Land-and-expand from Omaha across the corridor.",
+            risk="CHI could insource high-acuity CCT or standardize on a single "
+                "national vendor — the biggest single-account concentration risk."),
+        AnchorAccount(
+            system="Bryan Health",
+            tier="regional-hub",
+            metros=("Lincoln",),
+            insource_posture="Bryan Medical Center + a ~30-CAH referral network "
+                "funnels transfers INBOUND; hospital IFT outsourced.",
+            mmt_strategy="Hold Bryan's transfer-center first-call to capture BOTH "
+                "the inbound CAH funnel AND the Madonna acute→rehab lane — "
+                "compounding volume.",
+            risk="A two-horse race with AmeriPro in Lincoln — the contract is "
+                "contestable at renewal."),
+        AnchorAccount(
+            system="Nebraska Medicine / UNMC",
+            tier="regional-hub",
+            metros=("Omaha",),
+            insource_posture="Academic Level I / transplant quaternary hub; "
+                "peds/neonatal CCT insourced at Children's next door.",
+            mmt_strategy="Win the adult quaternary UP-transfer and routine "
+                "discharge book; the high-acuity/peds stream is walled off.",
+            risk="Academic centers may build captive CCT; volume is "
+                "high-acuity-skewed (capability bar)."),
+        AnchorAccount(
+            system="Nebraska Methodist Health System",
+            tier="regional-hub",
+            metros=("Omaha",),
+            insource_posture="Independent Omaha system; hospital IFT outsourced "
+                "to privates.",
+            mmt_strategy="Second Omaha anchor — diversify beyond CHI; win the "
+                "discharge/SNF back-transfer book.",
+            risk="Contested with GMR/AMR in metro Omaha."),
+        AnchorAccount(
+            system="Great Plains Health",
+            tier="regional-hub",
+            metros=("North Platte",),
+            insource_posture="Sole west-central NE regional hub; brands the air "
+                "program ('LifeNet'), outsources ground IFT.",
+            mmt_strategy="Own the GPH ground relationship + local posts — geography "
+                "is the moat (long legs, thin volume).",
+            risk="AmeriPro's Priority acquisition is a direct incumbency-capture "
+                "play on this exact account."),
+        AnchorAccount(
+            system="Mary Lanning Healthcare",
+            tier="independent",
+            metros=("Grand Island / Kearney",),
+            insource_posture="Independent Hastings hospital; contracts IFT "
+                "per-relationship.",
+            mmt_strategy="Win the independent (non-CHI) discharge book in the "
+                "Hastings cluster — per-contract, relationship-driven.",
+            risk="Small standalone account; fragmented contracting vs for-profit "
+                "entrants."),
+        AnchorAccount(
+            system="Columbus Community Hospital",
+            tier="independent",
+            metros=("Columbus (NE)",),
+            insource_posture="Single independent acute node; outbound-dominant "
+                "(tertiary cases sent to Omaha/Lincoln).",
+            mmt_strategy="Win first-call + backhaul the Columbus→Omaha/Lincoln "
+                "corridor lane against interstate volume.",
+            risk="LOW structural moat — one hospital; whoever locks the single "
+                "contract holds the market."),
+    )
