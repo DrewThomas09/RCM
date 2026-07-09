@@ -175,6 +175,26 @@ class MmtModelTests(unittest.TestCase):
         vals = [o.opportunity_revenue for o in opp]
         self.assertEqual(vals, sorted(vals, reverse=True))
 
+    def test_som_scenario_bands_bracket_the_base(self):
+        sc = m.mmt_som_scenario()
+        self.assertGreater(sc.base_som, 0)
+        self.assertLess(sc.downside_som, sc.base_som)
+        self.assertGreater(sc.upside_som, sc.base_som)
+        self.assertGreaterEqual(len(sc.levers), 3)
+        for lv in sc.levers:
+            self.assertLess(lv.low_som, lv.high_som, lv.name)
+
+    def test_model_json_is_serializable_and_complete(self):
+        import json
+        d = m.mmt_model_json()
+        json.dumps(d)                     # must not raise
+        for key in ("footprint", "counties", "serviceable", "scenario",
+                    "operating_model", "growth", "opportunity",
+                    "anchor_accounts", "connectors", "swot", "diligence"):
+            self.assertIn(key, d, key)
+        self.assertEqual(len(d["counties"]), len(m.MMT_COUNTIES))
+        self.assertEqual(d["counties"][0].get("pop_65_plus") is not None, True)
+
     def test_anchor_accounts_carry_strategy(self):
         accts = m.mmt_anchor_accounts()
         self.assertGreaterEqual(len(accts), 5)
@@ -209,7 +229,7 @@ class MmtPageTests(unittest.TestCase):
                        "Operating model", "County-grain data-connector coverage",
                        "clinical drivers", "moat read", "Positioning scorecard",
                        "Growth projection", "SWOT", "County opportunity ranking",
-                       "Anchor-system account map",
+                       "Anchor-system account map", "SOM scenario band",
                        "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 

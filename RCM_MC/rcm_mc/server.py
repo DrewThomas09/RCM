@@ -5222,6 +5222,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_mmt_page import render_ift_mmt
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_mmt(_qs))
+        # MMT model as JSON — the whole county-resolved model (footprint, SOM +
+        # scenario, operating model, growth, opportunity, accounts, connectors)
+        # for programmatic consumption. Degrades to {} rather than 500.
+        if path == "/api/ift/mmt.json":
+            try:
+                from .market_reports.ift_mmt import mmt_model_json
+                return self._send_json(mmt_model_json())
+            except Exception:  # noqa: BLE001
+                return self._send_json({}, HTTPStatus.OK)
         # IFT clinical acute-transfer demand engine — the volume driver
         # (acute cases -> ICD-10/MS-DRG codes -> destination -> demographic growth).
         # See rcm_mc/ui/ift_clinical_page.py + market_reports/ift_clinical_demand.py.
