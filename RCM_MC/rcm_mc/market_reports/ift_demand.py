@@ -28,6 +28,7 @@ Public API:
     regional_demand() -> Tuple[RegionDemand, ...]
     national_frame() -> NationalFrame
     national_transport_volume() -> NationalVolume
+    demand_source_matrix() -> DemandSourceMatrix
     demand_time_series() -> DemandTimeSeries
     demand_summary() -> Dict[str, Any]
 """
@@ -379,10 +380,14 @@ _MC_FFS_YEAR = 2024
 # MA, so FFS alone sits near a quarter-to-a-third of all ground volume. A DERIVED
 # assumption band — NOT a published figure — used only to gross the GOV anchor up.
 _MC_FFS_SHARE = (0.25, 0.32)
-# IFT arriving at an ED via EMS (NHAMCS). A FLOOR on interfacility volume — it
-# counts only transfers that land in an ED, so it excludes the larger scheduled
+# Interfacility ED-to-ED transfers, from the largest all-payer ED database
+# (AHRQ HCUP NEDS): 9.87M adult ED-to-ED transfers over 2018-2022 ≈ ~2.0M/yr, and
+# >2M/yr across all ages (Am J Emerg Med 2025). This is the current, precise read
+# on the emergent up-transfer stream — it supersedes the older NHAMCS ~1.1-1.3M/yr
+# estimate (kept below as corroboration). Both still EXCLUDE the larger scheduled
 # discharge book (hospital→SNF/IRF/home), which /ift-hs-demand sizes from HCRIS.
-_IFT_TO_ED_M = (1.1, 1.3)
+_NEDS_ED_TRANSFERS_M = 2.0         # HCUP NEDS 2018-2022 (SOURCED)
+_IFT_TO_ED_M = (1.1, 1.3)         # older CDC NHAMCS read (ACADEMIC), corroborating
 
 
 @dataclass(frozen=True)
@@ -416,6 +421,7 @@ class NationalVolume:
     ffs_share_high: float = 0.0
     ift_to_ed_low_m: float = 0.0
     ift_to_ed_high_m: float = 0.0
+    neds_ed_transfers_m: float = 0.0
     tiers: Tuple[VolumeTier, ...] = ()
     acuity_split: Tuple[VolumeSplit, ...] = ()
     emergency_split: Tuple[VolumeSplit, ...] = ()
@@ -465,15 +471,16 @@ def national_transport_volume() -> NationalVolume:
                  "discharge book lives here; the slice is shrinking as repetitive "
                  "non-emergency is scrutinized."),
         VolumeTier(
-            tier="Interfacility arriving at an ED (NHAMCS floor)",
-            value=f"~{ift_lo:.1f}-{ift_hi:.1f}M / yr",
-            basis="ACADEMIC",
-            source=("NHAMCS — Am J Emerg Med 2020 (2014-17: ~1.1M/yr, 5.3% of "
-                    "EMS-transported ED encounters); 2026 nationwide IFT trend "
-                    "study (~1.3M/yr mean, rising)"),
-            note="A FLOOR on IFT — counts only transfers that LAND in an ED "
-                 "(emergent up-transfers). Excludes the larger hospital→SNF/IRF/"
-                 "home discharge book, which /ift-hs-demand sizes from HCRIS."),
+            tier="Interfacility ED-to-ED transfers (HCUP NEDS)",
+            value=f"~{_NEDS_ED_TRANSFERS_M:.1f}M / yr",
+            basis="SOURCED",
+            source=("AHRQ HCUP NEDS — 9.87M adult ED-to-ED transfers 2018-2022 "
+                    "(~2.0M/yr; >2M/yr all ages), Am J Emerg Med 2025. The older "
+                    f"CDC NHAMCS read (~{ift_lo:.1f}-{ift_hi:.1f}M/yr) corroborates."),
+            note="The emergent up-transfer stream, measured in the largest "
+                 "all-payer ED database — more current and precise than the NHAMCS "
+                 "floor. Still excludes the hospital→SNF/IRF/home discharge book, "
+                 "sized on /ift-hs-demand from HCRIS + HCUP NIS dispositions."),
     )
 
     # Acuity mix on the Medicare FFS ground base (~11.3M). 56/44 BLS/ALS is the
@@ -511,14 +518,150 @@ def national_transport_volume() -> NationalVolume:
         allpayer_low_m=allpayer_low, allpayer_high_m=allpayer_high,
         ffs_share_low=lo_share, ffs_share_high=hi_share,
         ift_to_ed_low_m=ift_lo, ift_to_ed_high_m=ift_hi,
+        neds_ed_transfers_m=_NEDS_ED_TRANSFERS_M,
         tiers=tiers, acuity_split=acuity_split, emergency_split=emergency_split,
         source_label=("GOV Medicare-FFS anchor (MedPAC 2024) → DERIVED all-payer "
-                      "band → ACADEMIC NHAMCS interfacility floor; acuity/emergency "
-                      "mix from CMS GADCS (RAND) + FAIR Health claims analysis"),
+                      "band → SOURCED HCUP NEDS interfacility transfers; "
+                      "acuity/emergency mix from CMS GADCS (RAND) + FAIR Health"),
         note=("Every tier is sourced. The all-payer line is DERIVED from the GOV "
               "figure — no trade or market-research-firm volume estimate is used. "
-              "The NHAMCS line is a FLOOR (ED arrivals only); the full IFT book "
-              "adds the scheduled discharge legs sized on /ift-hs-demand."))
+              "The HCUP NEDS line (~2.0M/yr) measures ED-to-ED transfers only; the "
+              "full IFT book adds the scheduled discharge legs sized on "
+              "/ift-hs-demand from HCRIS + HCUP NIS dispositions."))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4c — Demand-source matrix: the databases, the current best figure from each
+# ─────────────────────────────────────────────────────────────────────────────
+# "Are we using NEDS or other databases?" — this is the direct answer: the
+# multiple independent ways to measure IFT demand VOLUME, each with its most-
+# current published figure, data year, honesty basis, and a source URL. It exists
+# so the volume funnel above is not one number but a TRIANGULATION a buyer can
+# cross-check across the payer claims (CMS/MedPAC), the EMS activation record
+# (NEMSIS), the all-payer ED database (HCUP NEDS), the inpatient database (HCUP
+# NIS), and the facility throughput base (HCRIS). No trade / market-research-firm
+# database is used.
+@dataclass(frozen=True)
+class DemandSource:
+    name: str                  # database / dataset
+    steward: str               # who runs it
+    measures: str              # what it measures for IFT volume
+    current_read: str          # the most-current published figure + unit
+    data_year: str             # the data year / window it applies to
+    basis: str                 # GOV | SOURCED | ACADEMIC
+    url: str
+    note: str = ""
+
+
+_DEMAND_SOURCES: Tuple[DemandSource, ...] = (
+    DemandSource(
+        "Medicare Ambulance Fee Schedule + MedPAC Payment Basics",
+        "CMS / MedPAC",
+        "Medicare fee-for-service ground ambulance transports & spend — the hard "
+        "payer anchor for volume.",
+        "11.3M transports/yr · $5.3B · ~10,600 orgs", "CY2024", "GOV",
+        "https://www.medpac.gov/wp-content/uploads/2024/10/"
+        "MedPAC_Payment_Basics_24_ambulance_FINAL_SEC.pdf",
+        "The single hardest number; ~24-29% of all-payer ground volume, so the "
+        "all-payer total is grossed up from here."),
+    DemandSource(
+        "NEMSIS — National EMS Information System",
+        "NHTSA Office of EMS / NEMSIS TAC",
+        "National EMS activations; 'Hospital-to-Hospital Transfer' (formerly "
+        "Interfacility Transport) is a tracked Type of Service Requested — the "
+        "most direct EMS-activation denominator for IFT.",
+        "54.2M activations/yr (14,369 agencies, 54 states)", "2023 (v3.5 PRDS)",
+        "SOURCED", "https://nemsis.org/view-reports/public-reports/",
+        "The public-release research dataset can be filtered to the interfacility "
+        "service-type subset — the highest-value refinement still to ingest."),
+    DemandSource(
+        "HCUP NEDS — Nationwide Emergency Department Sample",
+        "AHRQ HCUP",
+        "ED-to-ED interfacility transfers (the emergent up-transfer stream), the "
+        "largest all-payer ED database.",
+        "~2.0M/yr (9.87M adult, 2018-2022; >2M all ages)", "2022 (latest release)",
+        "SOURCED", "https://hcup-us.ahrq.gov/nedsoverview.jsp",
+        "Supersedes the older NHAMCS ~1.1-1.3M/yr read. Loader exists "
+        "(rcm_mc/data/ahrq_hcup.py, source_db='NEDS') — vendored rows to ingest."),
+    DemandSource(
+        "HCUP NIS — National Inpatient Sample",
+        "AHRQ HCUP",
+        "Inpatient discharges + discharge-disposition split (transfer-to-hospital, "
+        "transfer-to-SNF/IRF/other) — the scheduled discharge-book denominator.",
+        "~35M discharges/yr (20% sample); ~20-25% to a facility", "2022", "SOURCED",
+        "https://hcup-us.ahrq.gov/nisoverview.jsp",
+        "The f_IFT discharge-disposition fraction the health-system model needs; "
+        "same loader (source_db='NIS'). The post-acute share is a superset of the "
+        "ambulance-requiring legs (many post-acute discharges go by van/livery)."),
+    DemandSource(
+        "CMS GADCS — Ground Ambulance Data Collection System",
+        "CMS / RAND",
+        "Agency cost & utilization; the BLS emergency vs non-emergency mix and its "
+        "drift over time.",
+        "BLS non-emergency 43.7%→37.1% (2018→2022)", "2022-2023 (Yr1/2 cohort)",
+        "GOV", "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+        "collection-system-gadcs-report-year-1-and-year-2-cohort-analysis.pdf",
+        "Fixes the emergency/non-emergency split on the funnel; also the definitive "
+        "agency-count and cost structure."),
+    DemandSource(
+        "CMS HCRIS — Hospital Cost Reports",
+        "CMS",
+        "Hospital discharges (throughput) per facility — the health-system-buyer "
+        "demand base (discharges ≈ patient_days ÷ ALOS).",
+        "vendored per-hospital S-3 panel (discharges, days, payer mix)",
+        "latest filed FY", "SOURCED",
+        "https://www.cms.gov/research-statistics-data-and-systems/"
+        "downloadable-public-use-files/cost-reports",
+        "LIVE in the estate — the one demand driver already ingested; powers "
+        "/ift-hs-demand county-by-county."),
+    DemandSource(
+        "CDC NHAMCS — Nat'l Hospital Ambulatory Medical Care Survey",
+        "CDC / NCHS",
+        "ED arrivals by ambulance and ED→acute interfacility transfers — the older "
+        "corroboration of the NEDS read.",
+        "~1.1-1.3M/yr IFT-to-ED (5.3% of EMS-ED encounters)", "2014-2022",
+        "ACADEMIC", "https://www.cdc.gov/nchs/ahcd/index.htm",
+        "Kept as a cross-check; NEDS is the more current/precise primary."),
+    DemandSource(
+        "FAIR Health — all-payer claims database",
+        "FAIR Health (independent nonprofit)",
+        "All-payer ground ambulance utilization & cost — the commercial/Medicaid "
+        "side the Medicare anchor misses.",
+        "utilization & cost brief (all-payer ground)", "latest brief", "SOURCED",
+        "https://www.fairhealth.org/",
+        "Widens the payer lens beyond Medicare FFS; not a trade/market-research "
+        "firm — a claims database."),
+)
+
+
+@dataclass(frozen=True)
+class DemandSourceMatrix:
+    available: bool
+    sources: Tuple[DemandSource, ...] = ()
+    n_gov: int = 0
+    n_sourced: int = 0
+    n_academic: int = 0
+    source_label: str = ""
+    note: str = ""
+
+
+def demand_source_matrix() -> DemandSourceMatrix:
+    """The multiple independent databases used to measure IFT demand volume, each
+    with its most-current published figure, data year, basis, and URL. The direct
+    answer to 'are we using NEDS / other databases.' Never raises."""
+    srcs = _DEMAND_SOURCES
+    return DemandSourceMatrix(
+        available=True, sources=srcs,
+        n_gov=sum(1 for s in srcs if s.basis == "GOV"),
+        n_sourced=sum(1 for s in srcs if s.basis == "SOURCED"),
+        n_academic=sum(1 for s in srcs if s.basis == "ACADEMIC"),
+        source_label=("Multi-database demand triangulation — CMS/MedPAC (payer "
+                      "claims), NEMSIS (EMS activations), HCUP NEDS/NIS (all-payer "
+                      "ED + inpatient), CMS GADCS, HCRIS, CDC NHAMCS, FAIR Health"),
+        note=("Every source is government or an independent claims/records database "
+              "— no trade or market-research firm. NEDS and NIS have a loader in "
+              "the codebase (rcm_mc/data/ahrq_hcup.py); NEMSIS is citation-anchored "
+              "with the public-release dataset as the ingest target."))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -633,4 +776,6 @@ def demand_summary() -> Dict[str, Any]:
         "ffs_transports_m": vol.ffs_transports_m,
         "allpayer_low_m": vol.allpayer_low_m,
         "allpayer_high_m": vol.allpayer_high_m,
+        "neds_ed_transfers_m": vol.neds_ed_transfers_m,
+        "n_demand_sources": len(demand_source_matrix().sources),
     }

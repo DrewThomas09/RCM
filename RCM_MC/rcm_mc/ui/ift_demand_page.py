@@ -225,6 +225,50 @@ def _volume_section(vol) -> str:
             + f'<p class="ifd-src">Source: {_esc(vol.source_label)}</p>'))
 
 
+# ── Demand databases (the multi-source triangulation) ────────────────────────
+def _sources_section(sm) -> str:
+    if not (sm and getattr(sm, "available", False)):
+        return ""
+    body_rows = []
+    for s in sm.sources:
+        name = (f'<a href="{_esc(s.url)}" target="_blank" rel="noopener" '
+                f'style="color:var(--sc-teal,#155752);text-decoration:none;'
+                f'font-weight:600;">{_esc(s.name)}</a>' if getattr(s, "url", "")
+                else _esc(s.name))
+        body_rows.append(
+            "<tr>"
+            f'<td>{name}<div style="font-size:10px;color:var(--sc-muted,#6b6357);'
+            f'margin-top:2px;">{_esc(s.steward)}</div></td>'
+            f'<td>{_esc(s.measures)}</td>'
+            f'<td class="ifd-hi" style="font-variant-numeric:tabular-nums;">'
+            f'{_esc(s.current_read)}</td>'
+            f'<td>{_esc(s.data_year)}</td>'
+            f'<td>{_chip(s.basis)}</td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Database (steward)</th><th>What it measures for IFT</th>'
+             '<th class="ifd-hi">Most-current read</th><th>Data year</th>'
+             '<th>Basis</th></tr></thead><tbody>'
+             + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Demand databases — are we using NEDS? (yes, and more)",
+                          eyebrow="STEP 0b · THE SOURCES")
+        + ck_panel(
+            '<p class="ifd-prose">The volume above is not one number — it is a '
+            '<strong>triangulation</strong> across independent databases. Every way '
+            'we measure IFT demand, with each one\'s most-current published figure, '
+            'data year, and source. The payer claims (<strong>CMS / MedPAC</strong>), '
+            'the EMS activation record (<strong>NEMSIS</strong>), the all-payer ED '
+            'database (<strong>HCUP NEDS</strong>), the inpatient database '
+            '(<strong>HCUP NIS</strong>), the facility throughput base '
+            '(<strong>HCRIS</strong>), and more — '
+            f'{sm.n_gov} GOV, {sm.n_sourced} SOURCED, {sm.n_academic} ACADEMIC, '
+            'no trade / market-research firm.</p>'
+            + table
+            + f'<p class="ifd-src">Source: {_esc(sm.source_label)}</p>'
+            + f'<p class="ifd-prose" style="font-size:12.5px;">{_esc(sm.note)}</p>'))
+
+
 # ── National frame ───────────────────────────────────────────────────────────
 def _national_section(nf) -> str:
     if not (nf and nf.available):
@@ -612,6 +656,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the IFT demand deep-dive. Degrades to honest notes, never raises."""
     nf = _dm.national_frame()
     vol = _dm.national_transport_volume()
+    sm = _dm.demand_source_matrix()
     hc = _dm.hcpcs_acuity_analysis()
     ep = _dm.emergency_prevalence()
     ts = _dm.demand_time_series()
@@ -655,6 +700,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
                   "customers, and growth.")),
         _charts(regions, hc, ts),
         _volume_section(vol),
+        _sources_section(sm),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),

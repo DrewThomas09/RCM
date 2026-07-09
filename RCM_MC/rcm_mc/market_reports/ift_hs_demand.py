@@ -266,17 +266,28 @@ _SIGNALS: Tuple[DemandSignal, ...] = (
         "hcris_s3_part_i"),
     DemandSignal(
         "Discharge disposition split",
-        "The f_IFT fraction — % of discharges to SNF/IRF/LTCH/home/transfer.",
-        "AHRQ HCUP NIS discharge-disposition codes", "ACADEMIC", "to-source"),
+        "The f_IFT fraction — ~35M inpatient discharges/yr, ~20-25% to a facility "
+        "(SNF/IRF/LTCH/transfer); the scheduled discharge-book share.",
+        "AHRQ HCUP NIS (2022) — loader in rcm_mc/data/ahrq_hcup.py (source_db=NIS)",
+        "ACADEMIC", "ingest-ready", "ahrq_hcup_nis"),
     DemandSignal(
         "Hospital-to-hospital up-transfer rate",
-        "The high-$ escalation legs, by condition (STEMI/stroke/sepsis/trauma).",
-        "HCUP NIS/NEDS transfer disposition + condition rates", "ACADEMIC",
-        "to-source"),
+        "The high-$ escalation legs — ~2.0M ED-to-ED transfers/yr (NEDS 2018-2022), "
+        "by condition (STEMI/stroke/sepsis/trauma).",
+        "AHRQ HCUP NEDS (2022) transfer disposition — loader source_db=NEDS",
+        "ACADEMIC", "ingest-ready", "ahrq_hcup_neds"),
     DemandSignal(
-        "ED-origin transfers",
-        "ED→acute transfer volume (refresh the stale 1.9M/2009 figure).",
-        "CDC NHAMCS + AHRQ HCUP NEDS", "ACADEMIC", "to-source"),
+        "ED-origin transfers (refreshed)",
+        "ED→acute transfer volume — now ~2.0M/yr (NEDS 2018-2022), superseding the "
+        "stale 1.9M/2009 read; NHAMCS ~1.1-1.3M/yr corroborates.",
+        "AHRQ HCUP NEDS (2022) + CDC NHAMCS", "ACADEMIC", "ingest-ready",
+        "ahrq_hcup_neds"),
+    DemandSignal(
+        "EMS interfacility activations",
+        "The direct EMS-activation denominator — 54.2M activations/yr (2023), of "
+        "which 'Hospital-to-Hospital Transfer' is a tracked service type.",
+        "NEMSIS national EMS dataset (NHTSA, 2023 v3.5 public-release)", "ACADEMIC",
+        "to-source", "nemsis_public_release"),
     DemandSignal(
         "Hospital catchment / served population",
         "Hospital→patient-ZIP flows — the counties a system actually serves.",

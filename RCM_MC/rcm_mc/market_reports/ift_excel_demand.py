@@ -197,6 +197,38 @@ def _volume_sources_sheet() -> Sheet:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# 2b — Demand databases (the multi-source triangulation: NEDS / NIS / NEMSIS / …)
+# ═════════════════════════════════════════════════════════════════════════════
+def _sources_matrix_sheet() -> Optional[Sheet]:
+    m = _safe(_dd.demand_source_matrix)
+    if not (m and getattr(m, "available", False)):
+        return None
+    rows: List[List[Any]] = [
+        [("Demand databases — the multiple ways to measure IFT volume", _H)],
+        [("Are we using NEDS, or other databases? Yes — this is the triangulation. "
+          "Each independent database that measures IFT demand volume, its most-"
+          "current published figure, the data year, the honesty basis, and a "
+          "source URL. %d GOV, %d SOURCED, %d ACADEMIC — no trade / market-"
+          "research firm." % (m.n_gov, m.n_sourced, m.n_academic))],
+        [],
+        [("Database", _H), ("Steward", _H), ("What it measures for IFT", _H),
+         ("Most-current read", _H), ("Data year", _H), ("Basis", _H),
+         ("Source (click)", _H), ("Note", _H)],
+    ]
+    for s in m.sources:
+        link = Link(s.name, s.url) if getattr(s, "url", "") else s.name
+        rows.append([s.name, s.steward, s.measures, s.current_read, s.data_year,
+                     s.basis, link, s.note])
+    rows += [
+        [],
+        [("Source", _H), m.source_label],
+        [("Note", _H), m.note],
+    ]
+    return Sheet("Demand databases", rows,
+                 col_widths=[30, 22, 44, 34, 16, 12, 40, 44])
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # 3 — CMS code analysis (HCPCS × acuity × emergency)
 # ═════════════════════════════════════════════════════════════════════════════
 def _code_analysis_sheet() -> Optional[Sheet]:
@@ -650,6 +682,9 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "National volume": "THE centerpiece — how many transports a year, national -> "
                        "IFT slice, by acuity and emergency/non-emergency. Sourced.",
     "Volume sources": "Every citation behind the funnel, clickable (GOV first).",
+    "Demand databases": "The multi-source triangulation — NEDS / NIS / NEMSIS / "
+                        "MedPAC / HCRIS / NHAMCS / FAIR Health, each with its "
+                        "current figure, data year, and URL.",
     "CMS code analysis": "Ground HCPCS mapped to BLS/ALS/SCT x emergency, with RVUs.",
     "Emergency mix": "Emergent up-transfer vs scheduled step-down / discharge split.",
     "Demand by condition YoY": "Each condition's case volume year over year + CAGR.",
@@ -704,10 +739,10 @@ def demand_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
     provenance contract. Every sheet degrades to skipped rather than raising, so
     the download always succeeds even offline where a pandas-gated read is dark."""
     builders = [
-        _volume_sheet, _volume_sources_sheet, _code_analysis_sheet,
-        _emergency_sheet, _condition_yoy_sheet, _aggregate_yoy_sheet,
-        _clinical_sheet, _hs_demand_sheet, _regional_sheet, _county_sheet,
-        _demographic_sheet, _inventory_sheet, _provenance_sheet,
+        _volume_sheet, _volume_sources_sheet, _sources_matrix_sheet,
+        _code_analysis_sheet, _emergency_sheet, _condition_yoy_sheet,
+        _aggregate_yoy_sheet, _clinical_sheet, _hs_demand_sheet, _regional_sheet,
+        _county_sheet, _demographic_sheet, _inventory_sheet, _provenance_sheet,
     ]
     sheets: List[Sheet] = []
     for b in builders:

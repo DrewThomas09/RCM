@@ -73,9 +73,52 @@ class NationalVolumeModuleTests(unittest.TestCase):
         self.assertAlmostEqual(sum(e.share_pct for e in self.vol.emergency_split),
                                100.0, delta=1.0)
 
+    def test_interfacility_tier_uses_the_current_neds_read(self):
+        # NEDS supersedes the older NHAMCS floor as the interfacility anchor.
+        self.assertAlmostEqual(self.vol.neds_ed_transfers_m, 2.0, places=1)
+        ift = [t for t in self.vol.tiers if "NEDS" in t.tier]
+        self.assertTrue(ift, "no HCUP NEDS interfacility tier")
+        self.assertEqual(ift[0].basis, "SOURCED")
+        self.assertIn("NEDS", ift[0].source)
+
     def test_no_trade_firm_figure_anywhere_in_the_build(self):
         blob = (self.vol.source_label + self.vol.note
                 + " ".join(t.source for t in self.vol.tiers)).lower()
+        self.assertNotIn("ibis", blob)
+        self.assertNotIn("grand view", blob)
+
+
+class DemandSourceMatrixTests(unittest.TestCase):
+    """The multi-database triangulation — the answer to 'are we using NEDS?'."""
+
+    def setUp(self):
+        self.m = d.demand_source_matrix()
+
+    def test_triangulates_across_the_key_databases(self):
+        self.assertTrue(self.m.available)
+        self.assertGreaterEqual(len(self.m.sources), 8)
+        names = " ".join(s.name for s in self.m.sources)
+        for db in ("NEDS", "NIS", "NEMSIS", "MedPAC", "HCRIS", "NHAMCS"):
+            self.assertIn(db, names, f"missing database {db}")
+
+    def test_every_source_has_a_figure_year_basis_and_url(self):
+        for s in self.m.sources:
+            self.assertTrue(s.current_read, f"{s.name}: no figure")
+            self.assertTrue(s.data_year, f"{s.name}: no data year")
+            self.assertIn(s.basis, ("GOV", "SOURCED", "ACADEMIC"))
+            self.assertTrue(s.url.startswith("http"), f"{s.name}: no url")
+
+    def test_neds_is_the_current_ed_transfer_read(self):
+        neds = [s for s in self.m.sources if "NEDS" in s.name][0]
+        self.assertIn("2.0", neds.current_read)     # ~2.0M/yr
+        self.assertIn("ahrq", neds.url.lower())
+
+    def test_nemsis_activation_denominator_present(self):
+        nemsis = [s for s in self.m.sources if "NEMSIS" in s.name][0]
+        self.assertIn("54.2M", nemsis.current_read)
+
+    def test_no_trade_firm_source(self):
+        blob = " ".join(s.name + s.steward + s.note for s in self.m.sources).lower()
         self.assertNotIn("ibis", blob)
         self.assertNotIn("grand view", blob)
 
@@ -101,11 +144,22 @@ class DemandWorkbookTests(unittest.TestCase):
     def test_carries_the_demand_spine(self):
         names = self._sheet_names()
         for expected in ("Contents", "National volume", "Volume sources",
-                         "CMS code analysis", "Emergency mix",
+                         "Demand databases", "CMS code analysis", "Emergency mix",
                          "Demand by condition YoY", "Aggregate demand YoY",
                          "Clinical demand engine", "Regional demand",
                          "Demographic engine", "Provenance"):
             self.assertIn(expected, names, f"missing sheet: {expected}")
+
+    def test_demand_databases_sheet_names_the_databases(self):
+        text = _content_text(self.data).lower()
+        for db in ("neds", "nemsis", "national inpatient sample"):
+            self.assertIn(db, text, f"database {db} not in workbook")
+        # the database URLs travel in the relationship parts
+        z = zipfile.ZipFile(io.BytesIO(self.data))
+        rels = "".join(z.read(n).decode("utf-8", "replace")
+                       for n in z.namelist() if n.endswith(".rels"))
+        self.assertIn("hcup-us.ahrq.gov", rels)
+        self.assertIn("nemsis.org", rels)
 
     def test_volume_sheet_leads_the_pack(self):
         # the centerpiece sits first after Contents (volume-first by design)
@@ -167,6 +221,14 @@ class DemandWorkbookWiringTests(unittest.TestCase):
         self.assertIn("National transport volume", html)
         self.assertIn("11.3M", html)               # the GOV anchor on the page
         self.assertNotIn("ibis", html.lower())
+
+    def test_demand_databases_section_on_page(self):
+        from rcm_mc.ui.ift_demand_page import render_ift_demand
+        html = render_ift_demand()
+        self.assertIn("Demand databases", html)
+        for db in ("NEMSIS", "HCUP NEDS", "HCUP NIS"):
+            self.assertIn(db, html)
+        self.assertIn("hcup-us.ahrq.gov", html)    # the clickable source URL
 
 
 if __name__ == "__main__":
