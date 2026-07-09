@@ -1259,6 +1259,10 @@ def render_ift_markets() -> str:
             "/ift-clinical",
             eyebrow="Demand driver", italic_word="clinical"),
         ck_next_section(
+            "Drill into Midwest Medical Transport's footprint, county by MSA",
+            "/ift-mmt",
+            eyebrow="Subject operator", italic_word="county"),
+        ck_next_section(
             "Read the full Interfacility Transport market report",
             "/market/interfacility_transport",
             eyebrow="Up next", italic_word="full"),

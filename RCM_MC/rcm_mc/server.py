@@ -5215,6 +5215,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_data)
             return
+        # MMT county-by-MSA deep dive — the subject operator's footprint resolved
+        # to its 22 counties across 7 CBSAs + the county-grain connector coverage.
+        # See rcm_mc/ui/ift_mmt_page.py + market_reports/ift_mmt.py.
+        if path == "/ift-mmt":
+            from .ui.ift_mmt_page import render_ift_mmt
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_mmt(_qs))
         # IFT clinical acute-transfer demand engine — the volume driver
         # (acute cases -> ICD-10/MS-DRG codes -> destination -> demographic growth).
         # See rcm_mc/ui/ift_clinical_page.py + market_reports/ift_clinical_demand.py.
