@@ -145,6 +145,7 @@ color:var(--sc-text,#2a3340);margin:0;}
 def _crosslinks() -> str:
     return (
         '<div class="ifd-links">'
+        '<a href="/ift-hs-demand">Health-system demand sizing (HCRIS) &rarr;</a>'
         '<a href="/ift-clinical">Clinical demand engine &rarr;</a>'
         '<a href="/ift-mmt">MMT county deep-dive &rarr;</a>'
         '<a href="/ift-markets">Geographic markets / TAM-SAM-SOM &rarr;</a>'

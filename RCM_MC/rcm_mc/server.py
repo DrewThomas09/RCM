@@ -5277,6 +5277,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_demand_page import render_ift_demand
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_demand(_qs))
+        # IFT health-system demand — demand sized off the larger health systems'
+        # hospital throughput (HCRIS discharges, SNF dropped), broken down county
+        # by county, + the demand-data inventory. See ui/ift_hs_demand_page.py +
+        # market_reports/ift_hs_demand.py.
+        if path == "/ift-hs-demand":
+            from .ui.ift_hs_demand_page import render_ift_hs_demand
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_hs_demand(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
