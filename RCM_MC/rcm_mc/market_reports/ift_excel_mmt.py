@@ -352,14 +352,69 @@ def _scorecard_sheet() -> Optional[Sheet]:
                  freeze_rows=4, merges=merges, band_rows=(band_start, band_end))
 
 
+def _growth_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    gp = _safe(_m.mmt_growth_projection)
+    if not (gp and getattr(gp, "available", False) and gp.years):
+        return None
+    rows, merges = _title(
+        "MMT growth projection — the SOM revenue trajectory",
+        "MMT's serviceable revenue projected on the study's three-lever growth "
+        "bridge: a BASE case at organic market growth (price × volume) and a "
+        "PLATFORM case at market × consolidation. Price is GOV-AIF-anchored, "
+        "volume is the demographic CAGR — the whole projection is ILLUSTRATIVE.",
+        3)
+    rows += [
+        [(gp.headline, _S)],
+        [],
+        ["Base CAGR (organic market)", (gp.base_cagr, "pct"),
+         "Platform CAGR (× consolidation)", (gp.platform_cagr, "pct")],
+        [],
+        [("Year", _H), ("Base revenue", _H), ("Platform revenue", _H)],
+    ]
+    band_start = len(rows) + 1
+    for y in gp.years:
+        lbl = "Today" if y.year_offset == 0 else f"+{y.year_offset} yr"
+        rows.append([lbl, (y.base_revenue, "money"),
+                     (y.platform_revenue, "money")])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H), gp.basis], [_chip("ILLUSTRATIVE")]]
+    return Sheet("MMT growth projection", rows, col_widths=[18, 20, 20],
+                 freeze_rows=8, merges=merges, band_rows=(band_start, band_end))
+
+
+def _swot_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    sw = _safe(_m.mmt_swot)
+    if not sw:
+        return None
+    rows, merges = _title(
+        "MMT SWOT — the strategic read, tied to the footprint",
+        "Strengths / weaknesses / opportunities / threats grounded in the "
+        "county model + the ift_geo competitive reads. Analyst framework "
+        "(FRAMEWORK basis), not a filed figure.", 2)
+    for label, items in (("Strengths", sw.strengths),
+                         ("Weaknesses", sw.weaknesses),
+                         ("Opportunities", sw.opportunities),
+                         ("Threats", sw.threats)):
+        rows.append([(label, _B)])
+        for it in items:
+            rows.append(["• " + it])
+        rows.append([])
+    rows.append([("Basis", _H), "FRAMEWORK — analyst SWOT tied to the footprint "
+                 "model + competitive reads."])
+    return Sheet("MMT SWOT", rows, col_widths=[110], merges=merges)
+
+
 # ── public entry point ────────────────────────────────────────────────────────
 def mmt_sheets() -> List[Sheet]:
     """Every MMT county-by-MSA sheet, in reading order. Each degrades to skipped
     (never raises)."""
     out: List[Sheet] = []
     for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
-              _operating_sheet, _connectors_sheet, _clinical_sheet,
-              _metro_read_sheet, _scorecard_sheet, _diligence_sheet):
+              _operating_sheet, _growth_sheet, _connectors_sheet,
+              _clinical_sheet, _metro_read_sheet, _scorecard_sheet,
+              _swot_sheet, _diligence_sheet):
         s = _safe(b)
         if s is not None:
             out.append(s)
