@@ -274,6 +274,89 @@ def _evidence_section(ev) -> str:
             + table))
 
 
+# ── Year-by-year trends (real series over time) ──────────────────────────────
+def _trends_section(tr) -> str:
+    if not (tr and getattr(tr, "available", False)):
+        return ""
+    cards = []
+    for t in tr.trends:
+        if t.points:
+            pts = " · ".join(f"{y}:&nbsp;{v:g}" for y, v in t.points)
+        else:
+            pts = ("<em>populates in the full environment (vendored panel needs "
+                   "pandas)</em>")
+        src = (f'<a href="{_esc(t.url)}" target="_blank" rel="noopener" '
+               f'style="color:var(--sc-teal,#155752);text-decoration:none;">'
+               f'{_esc(t.source)}</a>' if getattr(t, "url", "") else _esc(t.source))
+        cards.append(
+            '<div class="ifd-card">'
+            f'<h4>{_esc(t.title)} <span style="font-weight:400;font-size:11px;'
+            f'color:var(--sc-muted,#6b6357);">({_esc(t.unit)})</span> '
+            f'{_chip(t.basis)}</h4>'
+            f'<p style="font-variant-numeric:tabular-nums;font-family:'
+            f'var(--sc-mono,Consolas,monospace);font-size:12px;">{pts}</p>'
+            f'<p style="font-size:11px;color:var(--sc-muted,#6b6357);">'
+            f'<strong>Connector:</strong> {_esc(t.connector)}</p>'
+            f'<p style="font-size:11px;">{src}</p></div>')
+    return (
+        ck_section_header("Year-by-year trends — the demand, over time",
+                          eyebrow="STEP 0d · TRENDING")
+        + ck_panel(
+            '<p class="ifd-prose">The demand series <strong>over time</strong>, from '
+            'real sources. The CMS <strong>Ambulance Inflation Factor</strong> (a '
+            'live in-codebase GOV series), the <strong>HCRIS</strong> occupancy '
+            'panel and <strong>Hospital change-of-ownership</strong> count (live '
+            'from vendored CMS files), plus documented multi-year anchors for spend, '
+            'the BLS mix, and 65+ population. Every point is published — where only '
+            'two years exist, exactly two points are shown, never interpolated.</p>'
+            + f'<div class="ifd-grid">{"".join(cards)}</div>'
+            + f'<p class="ifd-src">Source: {_esc(tr.source_label)}</p>'))
+
+
+# ── Live connectors & data estate (can we confidently use AHA/HCRIS/CMS?) ─────
+def _estate_section(es) -> str:
+    if not (es and getattr(es, "available", False)):
+        return ""
+    body_rows = []
+    for e in es.entries:
+        link = (f'<a href="{_esc(e.url)}" target="_blank" rel="noopener" '
+                f'style="color:var(--sc-teal,#155752);text-decoration:none;">'
+                f'{_esc(e.source)}</a>' if getattr(e, "url", "") else _esc(e.source))
+        st = e.status
+        cls = ("gov" if st.startswith("live") else
+               "sourced" if st.startswith("ingest") else "framework")
+        badge = (f'<span class="ifd-chip ifd-chip-{cls}">{_esc(st)}</span>')
+        body_rows.append(
+            "<tr>"
+            f'<td>{link}<div style="font-size:10px;color:var(--sc-muted,#6b6357);'
+            f'margin-top:2px;">{_esc(e.steward)}</div></td>'
+            f'<td style="font-size:11.5px;">{_esc(e.yields_)}</td>'
+            f'<td class="ifd-hi">{badge}</td>'
+            f'<td style="font-size:11.5px;">{_esc(e.cadence)}</td>'
+            f'<td style="font-size:10.5px;font-family:var(--sc-mono,Consolas,'
+            f'monospace);">{_esc(e.dataset_id)}</td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Source / API (steward)</th><th>What it yields for demand</th>'
+             '<th class="ifd-hi">Status</th><th>Cadence</th><th>Dataset id</th>'
+             '</tr></thead><tbody>' + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Live connectors — can we confidently use AHA / HCRIS / "
+                          "CMS?", eyebrow="THE DATA ESTATE")
+        + ck_panel(
+            '<p class="ifd-prose">The honest answer, per source. Each demand API '
+            'with its <strong>live status in this codebase</strong>, refresh '
+            'cadence, and dataset id. <strong>HCRIS and the AIF are live now</strong> '
+            '(vendored, no network); the CMS open-data and HCUP sets are '
+            '<strong>ingest-ready</strong> connectors (loader present — run the '
+            'estate refresh to activate); <strong>AHA</strong>\'s full Annual Survey '
+            'is licensed, so we cite its public Fast Facts slice. '
+            f'{es.n_live} live, {es.n_ingest_ready} ingest-ready, {es.n_cited} '
+            'cited/licensed.</p>'
+            + table
+            + f'<p class="ifd-src">{_esc(es.note)}</p>'))
+
+
 # ── Demand databases (the multi-source triangulation) ────────────────────────
 def _sources_section(sm) -> str:
     if not (sm and getattr(sm, "available", False)):
@@ -749,6 +832,8 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     nf = _dm.national_frame()
     vol = _dm.national_transport_volume()
     evd = _dm.demand_evidence()
+    trd = _dm.demand_trends()
+    est = _dm.demand_data_estate()
     sm = _dm.demand_source_matrix()
     dr = _dm.demand_drivers()
     hc = _dm.hcpcs_acuity_analysis()
@@ -795,6 +880,8 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _charts(regions, hc, ts),
         _volume_section(vol),
         _evidence_section(evd),
+        _trends_section(trd),
+        _estate_section(est),
         _sources_section(sm),
         _drivers_section(dr),
         _national_section(nf),

@@ -183,6 +183,27 @@ _EVIDENCE: Tuple[Evidence, ...] = (
         "for a patient it cannot stabilize.",
         "https://www.cms.gov/medicare/regulations-guidance/legislation/"
         "emergency-medical-treatment-labor-act"),
+    Evidence(
+        "ambulance_inflation_factor",
+        "Medicare Ambulance Inflation Factor (the price trend), by year",
+        "0.9%(2020) 0.2%(2021) 5.1%(2022) 8.7%(2023) 2.6%(2024) 2.4%(2025) 2.0%(2026)",
+        "GOV",
+        "CMS Ambulance Inflation Factor (AFS update, published annually)",
+        "CMS sets the Ambulance Inflation Factor each year as the CPI-U change less "
+        "a productivity adjustment; it is the annual update to the ambulance fee "
+        "schedule conversion factor. (Values per CMS annual AFS notices.)",
+        "https://www.cms.gov/medicare/payment/fee-schedules/ambulance"),
+    Evidence(
+        "medicare_ambulance_spend_trend",
+        "Medicare FFS ambulance spending, over time",
+        "$4.76B (2012) -> $3.95B (2021) -> $5.3B (2024)",
+        "SOURCED",
+        "CMS Medicare Part B ambulance spending (MedPAC data book / Payment Basics)",
+        "\"Overall expenditures for ambulance services fell by 17.1% between 2012 "
+        "and 2021, decreasing from $4.76 billion to $3.95 billion\" (CMS); MedPAC "
+        "Payment Basics reports $5.3 billion in 2024.",
+        "https://www.medpac.gov/wp-content/uploads/2024/10/"
+        "MedPAC_Payment_Basics_24_ambulance_FINAL_SEC.pdf"),
     # ── DERIVED (equation on the above; NOT illustrative) ──
     Evidence(
         "condition_yoy_growth",
