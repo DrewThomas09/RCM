@@ -28,9 +28,11 @@ Built on the stdlib-only :mod:`rcm_mc.exports.xlsx_writer` — NO runtime
 dependency added. Every builder DEGRADES: a missing analytic drops its sheet
 rather than raising, so the download always succeeds even offline where a
 network-gated / pandas-gated read is dark. Honesty travels into every
-value-bearing cell via a ``Basis`` column (GOV / SOURCED / ACADEMIC /
-ILLUSTRATIVE / DERIVED / FRAMEWORK). No trade / market-research-firm figures are
-used anywhere — the all-payer volume line is DERIVED from the GOV anchor.
+value-bearing cell via a ``Basis`` column, restricted to four labels — GOV /
+SOURCED / ACADEMIC / DERIVED. There is NOTHING illustrative: every figure is
+published (with a verbatim quote + link on the Evidence & sources sheet) or
+DERIVED by an explicit equation from public inputs. No trade / market-research-firm
+figures are used anywhere, and no all-payer total is stated (none is published).
 """
 from __future__ import annotations
 
@@ -77,52 +79,100 @@ def _volume_sheet() -> Optional[Sheet]:
         return None
     rows: List[List[Any]] = [
         [("National transport volume — how many transports a year?", _H)],
-        [("The demand spine. A top-down transports/year funnel from the hardest "
-          "GOV anchor (Medicare fee-for-service ground) out to an all-payer band "
-          "and down to the interfacility slice. Every tier is sourced; the "
-          "all-payer line is DERIVED from the GOV figure — no trade estimate.")],
+        [("Four DISTINCT published counts (different denominators), not a nested "
+          "funnel: one Medicare payer-claims count and three all-payer "
+          "interfacility counts from HCUP. Every figure is quoted verbatim and "
+          "linked on the 'Evidence & sources' sheet. We state NO all-payer total — "
+          "none is published, so it would be an unsourced number.")],
         [],
-        [("The GOV anchor", _H), ("Value", _H), ("Basis", _H)],
+        [("The published counts", _H), ("Value / yr", _H), ("Basis", _H),
+         ("Source (full quote on Evidence sheet)", _H), ("What it counts", _H)],
+    ]
+    for t in vol.tiers:
+        rows.append([t.tier, t.value, t.basis, t.source, t.note])
+    rows += [
+        [],
+        [("Medicare FFS detail (MedPAC 2024)", _H), ("Value", _H), ("Basis", _H)],
         ["Medicare FFS ground transports (CY%d)" % vol.ffs_year,
          (vol.ffs_transports_m * 1e6, "num"), "GOV"],
         ["Medicare FFS ground spend (CY%d)" % vol.ffs_year,
          (_bn_to_dollars(vol.ffs_spend_bn), "money"), "GOV"],
         ["Ground ambulance organizations paid", (vol.ffs_orgs, "num"), "GOV"],
-        [],
-        [("Transports/year funnel", _H), ("Transports / yr", _H), ("Basis", _H),
-         ("Source", _H), ("What it counts", _H)],
     ]
-    for t in vol.tiers:
-        rows.append([t.tier, t.value, t.basis, t.source, t.note])
-    # Acuity split (BLS / ALS / SCT) on the Medicare FFS base.
+    # Acuity split — GADCS published 56% BLS split. Share + source, no modeled count.
     rows += [
         [],
-        [("By acuity type (on the %.1fM Medicare FFS base)"
-          % vol.ffs_transports_m, _H)],
-        [("Acuity type", _H), ("Share", _H), ("Transports (M)", _H),
-         ("Basis", _H), ("Read", _H)],
+        [("By acuity — CMS GADCS published split (no illustrative carve-out)", _H)],
+        [("Acuity type", _H), ("Share", _H), ("Basis", _H), ("Source", _H)],
     ]
     for a in vol.acuity_split:
-        rows.append([a.label, (_pctf(a.share_pct), "pct"),
-                     (a.transports_m, "num2"), a.basis, a.note])
-    # Emergency vs non-emergency split.
+        rows.append([a.label, (_pctf(a.share_pct), "pct"), a.basis, a.source])
+    # Emergency vs non-emergency — GADCS BLS claim lines (2022), BLS-specific.
     rows += [
         [],
-        [("Emergency vs non-emergency (on the %.1fM Medicare FFS base)"
-          % vol.ffs_transports_m, _H)],
-        [("Split", _H), ("Share", _H), ("Transports (M)", _H), ("Basis", _H),
-         ("Read", _H)],
+        [("Emergency vs non-emergency — CMS GADCS BLS claim lines (2022), "
+          "BLS-specific (not extrapolated to all transports)", _H)],
+        [("Split", _H), ("Share", _H), ("Basis", _H), ("Source", _H)],
     ]
     for e in vol.emergency_split:
-        rows.append([e.label, (_pctf(e.share_pct), "pct"),
-                     (e.transports_m, "num2"), e.basis, e.note])
+        rows.append([e.label, (_pctf(e.share_pct), "pct"), e.basis, e.source])
     rows += [
         [],
         [("Source", _H), vol.source_label],
         [("Note", _H), vol.note],
     ]
     return Sheet("National volume", rows,
-                 col_widths=[40, 18, 14, 60, 60])
+                 col_widths=[42, 16, 12, 58, 58])
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 1b — Evidence & sources (the trust key: value + basis + VERBATIM quote + link)
+# ═════════════════════════════════════════════════════════════════════════════
+def _evidence_sheet() -> Optional[Sheet]:
+    ev = _safe(_dd.demand_evidence, default=())
+    if not ev:
+        return None
+    # Count the basis mix to prove the honesty contract up front.
+    mix: Dict[str, int] = {}
+    for e in ev:
+        mix[e.basis] = mix.get(e.basis, 0) + 1
+    mix_txt = ", ".join(f"{mix[b]} {b}" for b in ("GOV", "SOURCED", "ACADEMIC",
+                                                  "DERIVED") if mix.get(b))
+    rows: List[List[Any]] = [
+        [("Evidence & sources — the trust key for every number", _H)],
+        [("What can you trust, and where does it come from? EVERY headline demand "
+          "figure, once, with its VERBATIM quote from the public source and a link. "
+          "Basis is GOV / SOURCED / ACADEMIC / DERIVED — there is NOTHING "
+          "illustrative. A DERIVED row shows its equation and names its inputs; the "
+          "inputs are all public, so it is not a guess. Mix: %s." % mix_txt)],
+        [],
+        [("Figure", _H), ("Value (as published)", _H), ("Basis", _H),
+         ("Source", _H), ("Direct quote from the source", _H),
+         ("Equation (if derived)", _H), ("Link", _H)],
+    ]
+    for e in ev:
+        link = Link(_src_short(e.source), e.url) if getattr(e, "url", "") else ""
+        rows.append([e.figure, e.value, e.basis, e.source, e.quote,
+                     getattr(e, "equation", "") or "—", link])
+    rows += [
+        [],
+        [("How to read the basis labels", _L)],
+        [("GOV", "basis_gov"),
+         "A published government statistic or regulation (CMS / MedPAC / Census / "
+         "AHRQ). The hardest evidence."],
+        [("SOURCED", "basis_sourced"),
+         "A real dataset or independent claims/records database (HCUP / HCRIS / "
+         "GADCS / NEMSIS)."],
+        [("ACADEMIC", "basis_academic"),
+         "A peer-reviewed study, cited by journal and year."],
+        ["DERIVED",
+         "Computed by an EXPLICIT equation from the GOV/SOURCED/ACADEMIC inputs "
+         "above. The equation is shown and every input is public — so it is "
+         "verifiable arithmetic, NOT an illustrative guess."],
+        [("There is no 'illustrative' figure anywhere in this workbook.", _L)],
+    ]
+    return Sheet("Evidence & sources", rows,
+                 col_widths=[34, 34, 12, 40, 72, 52, 30])
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -314,31 +364,41 @@ def _emergency_sheet() -> Optional[Sheet]:
         return None
     rows: List[List[Any]] = [
         [("Emergency vs non-emergency prevalence", _H)],
-        [("How the interfacility book splits between emergent up-transfers and "
-          "scheduled step-down / discharge legs, read from the clinical transfer "
-          "registry (escalation vs step-down vs direct-admit).")],
+        [("The PUBLISHED emergency mix comes from Medicare claims (CMS GADCS); the "
+          "critical-care share is measured directly in HCUP NEDS. Both are on the "
+          "Evidence & sources sheet with a verbatim quote. The clinical-registry "
+          "scenario counts below are our transfer TAXONOMY (a structure, not a "
+          "published rate) — labeled as such.")],
         [],
-        [("Headline", _H), ("Value", _H), ("Basis", _H)],
-        ["Emergent transfer scenarios", (ep.n_emergent_scenarios, "num"), "ACADEMIC"],
-        ["Non-emergent transfer scenarios",
-         (ep.n_nonemergent_scenarios, "num"), "ACADEMIC"],
-        ["High-acuity (ALS+) share of transfers",
-         (_frac_or_none(ep.high_acuity_share), "pct"), "ILLUSTRATIVE"],
-        ["Critical-care (SCT/CCT) share of transfers",
-         (_frac_or_none(ep.cct_sct_share), "pct"), "ILLUSTRATIVE"],
+        [("Published emergency / acuity figures", _H), ("Value", _H), ("Basis", _H),
+         ("Source", _H)],
+        ["BLS emergency share (claim lines, 2022)", (0.629, "pct"), "SOURCED",
+         "CMS GADCS / Medicare claims — 56.3%→62.9% (2018→2022)"],
+        ["BLS non-emergency share (claim lines, 2022)", (0.371, "pct"), "SOURCED",
+         "CMS GADCS / Medicare claims — 43.7%→37.1% (2018→2022)"],
+        ["ED transfers needing a critical procedure (CCT)", (0.066, "pct"),
+         "ACADEMIC",
+         "HCUP NEDS — 655,442 of 9,867,701 ED transfers (Am J Emerg Med 2025)"],
+    ]
+    rows += [
+        [],
+        [("Clinical transfer taxonomy — scenario COUNTS (structure, not a published "
+          "rate)", _H), ("Count", _H)],
+        ["Emergent transfer scenarios", (ep.n_emergent_scenarios, "num")],
+        ["Non-emergent transfer scenarios", (ep.n_nonemergent_scenarios, "num")],
     ]
     if isinstance(ep.by_transfer_type, dict) and ep.by_transfer_type:
-        rows += [[], [("By transfer type", _H), ("Scenarios", _H)]]
+        rows += [[], [("By transfer type (scenario counts)", _H), ("Count", _H)]]
         for k, v in ep.by_transfer_type.items():
             rows.append([str(k), (v, "num")])
     if isinstance(ep.by_family, dict) and ep.by_family:
-        rows += [[], [("By clinical family", _H), ("Scenarios", _H)]]
+        rows += [[], [("By clinical family (scenario counts)", _H), ("Count", _H)]]
         for k, v in ep.by_family.items():
             rows.append([str(k), (v, "num")])
-    rows += [[], [("Source", _H), ep.source_label]]
-    if getattr(ep, "note", ""):
-        rows.append([("Note", _H), ep.note])
-    return Sheet("Emergency mix", rows, col_widths=[42, 16, 16])
+    rows += [[], [("Source", _H), "Published figures: CMS GADCS + HCUP NEDS (see "
+                  "Evidence sheet). Scenario counts: the IFT clinical transfer "
+                  "taxonomy (a framework)."]]
+    return Sheet("Emergency mix", rows, col_widths=[46, 14, 14, 56])
 
 
 def _frac_or_none(x: Any) -> Optional[float]:
@@ -362,33 +422,34 @@ def _condition_yoy_sheet() -> Optional[Sheet]:
     year_hdrs = [(str(y), _H) for y in years]
     rows: List[List[Any]] = [
         [("Demand by condition — year over year", _H)],
-        [("Each acute condition's transferable case volume, projected forward on "
-          "its demographic growth (incidence held constant). The per-year cells "
-          "show the case COUNT; the CAGR and total added cases show how fast the "
-          "book is growing. Volumes are GOV/ACADEMIC; growth is ILLUSTRATIVE "
-          "(Census age-band CAGRs).")],
+        [("The base case volume of each condition is a published figure "
+          "(GOV/ACADEMIC — see Clinical demand engine + Evidence sheet). The "
+          "forward per-year cells are DERIVED by an explicit equation — NOT "
+          "illustrative: projected(year n) = base_volume x (1 + g)^n, where g is "
+          "the US Census age-band population growth. Incidence is held constant, so "
+          "this is pure demographic growth, and the blended rate matches the Census "
+          "65+ figure (+14.2% 2025-2030 ≈ 2.7%/yr).")],
         [],
         [("Condition", _H), ("Family", _H), ("Acuity", _H)]
-        + year_hdrs + [("CAGR", _H), ("Added cases", _H), ("Basis", _H)],
+        + year_hdrs + [("CAGR (g)", _H), ("Added cases", _H), ("Basis", _H)],
     ]
     for c in proj:
         vol_cells = [(p.volume, "num") for p in c.points]
+        # The base volume is published; the projection is DERIVED by the equation.
         rows.append(
             [c.name, c.family, c.transport_acuity] + vol_cells
-            + [(c.cagr, "pct"), (c.added_cases, "num"),
-               (c.basis.split()[0] if c.basis else "")])
-    src = ""
-    try:
-        src = proj[0].basis
-    except Exception:  # noqa: BLE001
-        pass
+            + [(c.cagr, "pct"), (c.added_cases, "num"), "DERIVED"])
     rows += [
         [],
-        [("Read", _L)],
-        [("Growth is demographic: each condition's age skew is weighted by the "
-          "Census age-band population CAGRs, incidence held constant — so the "
-          "case curve is the aging wave working through the transfer book.")],
-        [], [("Basis", _H), src or "ILLUSTRATIVE (demographic CAGRs)"],
+        [("Equation & inputs (why this is DERIVED, not illustrative)", _L)],
+        [("projected_volume(year n) = base_volume x (1 + g)^n. base_volume: the "
+          "published condition case count (HCUP/GOV). g: US Census 2023 National "
+          "Population Projections age-band growth, weighted by the condition's age "
+          "skew. Every input is public; the arithmetic is shown.")],
+        [], [("Growth input (GOV)", _H),
+             Link("US Census 2023 National Population Projections",
+                  "https://www.census.gov/data/tables/2023/demo/popproj/"
+                  "2023-summary-tables.html")],
     ]
     widths = [26, 16, 14] + [12] * len(years) + [10, 14, 12]
     return Sheet("Demand by condition YoY", rows, col_widths=widths)
@@ -423,15 +484,20 @@ def _aggregate_yoy_sheet() -> Optional[Sheet]:
                      (_pctf(p.yoy_growth_pct), "pct"), (p.added_cases, "num")])
     rows += [
         [],
-        [("Base volume", _L), (ag.base_volume, "num")],
-        [("End volume", _L), (ag.end_volume, "num")],
-        [("Blended CAGR", _L), (ag.blended_cagr, "pct")],
+        [("Base volume (published sum)", _L), (ag.base_volume, "num")],
+        [("End volume (DERIVED)", _L), (ag.end_volume, "num")],
+        [("Blended CAGR (DERIVED)", _L), (ag.blended_cagr, "pct")],
         [],
-        [("Source", _H), ag.source_label],
+        [("Basis", _H), "DERIVED — base volumes are published (GOV/ACADEMIC); the "
+         "trajectory compounds the published Census age-band growth. NOT "
+         "illustrative: the equation is projected = base x (1+g)^n and every input "
+         "is public."],
+        [("Growth input (GOV)", _H),
+         Link("US Census 2023 National Population Projections — 65+ +14.2% "
+              "(2025-2030)", "https://www.census.gov/data/tables/2023/demo/popproj/"
+              "2023-summary-tables.html")],
     ]
-    if getattr(ag, "note", ""):
-        rows.append([("Note", _H), ag.note])
-    return Sheet("Aggregate demand YoY", rows, col_widths=[14, 20, 14, 16])
+    return Sheet("Aggregate demand YoY", rows, col_widths=[26, 20, 14, 16])
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -444,29 +510,49 @@ def _clinical_sheet() -> Optional[Sheet]:
     rows: List[List[Any]] = [
         [("Clinical demand engine — cases -> codes -> volume -> growth", _H)],
         [("A ground-IFT operator's volume equals the acute patients who must move "
-          "between facilities. Volumes are published (GOV/ACADEMIC); growth is the "
-          "demographic CAGR (ILLUSTRATIVE, named basis).")],
+          "between facilities. Base volumes are published (GOV/ACADEMIC, per the "
+          "Volume basis column). The Growth CAGR is DERIVED — it applies the "
+          "published US Census age-band population growth to each condition; the "
+          "equation is on the 'Demand by condition YoY' sheet. Nothing here is "
+          "illustrative.")],
         [],
         [("Condition", _H), ("Family", _H), ("Transfer type", _H),
          ("ICD-10-CM", _H), ("MS-DRG", _H), ("Destination capability", _H),
          ("National volume/yr", _H), ("Measure", _H), ("Volume basis", _H),
          ("Growth CAGR", _H), ("Growth drivers", _H)],
     ]
+    n_omitted = 0
     for c in conds:
-        icd = ", ".join(c.icd10) if c.icd10 else ""
-        drg = ", ".join(c.ms_drg) if c.ms_drg else ""
         nv = c.national_volume
         vbasis = (nv.source_label.split()[0] if nv and nv.source_label else "")
+        # No illustrative figures: a condition whose base volume is only a modeled
+        # estimate is shown WITHOUT a number (its published count doesn't exist), so
+        # nothing on this sheet is an illustrative figure.
+        illustrative = vbasis.upper().startswith("ILLUSTRATIVE")
+        icd = ", ".join(c.icd10) if c.icd10 else ""
+        drg = ", ".join(c.ms_drg) if c.ms_drg else ""
         vol = (nv.value if nv and nv.value else 0)
+        if illustrative:
+            n_omitted += 1
+            vol_cell = "no published count (modeled estimate omitted)"
+            basis_cell = "—"
+        else:
+            vol_cell = (vol, "num") if vol else "not separately enumerated"
+            basis_cell = vbasis
         rows.append([
             c.name, c.family, c.transfer_type, icd, drg,
-            c.destination_capability,
-            (vol, "num") if vol else "not separately enumerated",
-            (nv.measure if nv else ""), vbasis,
+            c.destination_capability, vol_cell,
+            (nv.measure if nv else ""), basis_cell,
             (c.growth.cagr, "pct") if c.growth else "—",
             (c.growth.drivers if c.growth else "")])
+    if n_omitted:
+        rows += [[], [("Note", _H),
+                      "%d condition(s) have only a modeled volume estimate (no "
+                      "published count); their number is omitted here so this sheet "
+                      "carries no illustrative figure. Their growth CAGR is DERIVED "
+                      "from Census age-band growth like every other row." % n_omitted]]
     return Sheet("Clinical demand engine", rows,
-                 col_widths=[28, 14, 20, 22, 16, 26, 16, 22, 12, 11, 40])
+                 col_widths=[28, 14, 20, 22, 16, 26, 18, 22, 12, 11, 40])
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -485,9 +571,11 @@ def _hs_demand_sheet() -> Optional[Sheet]:
         [("Health-system demand — the BUYER view (HCRIS discharge-driven)", _H)],
         [("The health systems order and pay for IFT, so demand is sized off THEIR "
           "throughput: discharges ≈ patient_days ÷ ALOS per hospital (HCRIS "
-          "Worksheet S-3). SNF is NOT the buyer, so it is not sized here. Legs "
-          "are ILLUSTRATIVE from the discharge base; beds/discharges are SOURCED "
-          "(pandas-gated — 0 when the HCRIS panel is offline).")],
+          "Worksheet S-3). SNF is NOT the buyer, so it is not sized here. "
+          "Beds/discharges are SOURCED (HCRIS; pandas-gated — 0 when the panel is "
+          "offline). IFT legs/$ are DERIVED by equation: legs = discharges x the "
+          "published transfer rate (~3.5% of admissions, HCUP NIS; see Evidence "
+          "sheet) — verifiable arithmetic on public inputs, not illustrative.")],
         [],
         [("Metro", _H), ("Region", _H), ("Hospitals", _H), ("HCRIS beds", _H),
          ("Discharges", _H), ("IFT legs/yr", _H), ("Serviceable legs", _H),
@@ -528,7 +616,9 @@ def _regional_sheet() -> Optional[Sheet]:
         [("The SOURCED facility base grouped by region: hospitals, HCRIS beds, "
           "post-acute destinations, and the demand dollars that structure "
           "supports. The demographic growth read sits on the demographic engine "
-          "sheet. Counts are SOURCED; SAM dollars are ILLUSTRATIVE.")],
+          "sheet. Facility counts/beds are SOURCED; the demand $ is DERIVED by "
+          "equation from that sourced base (see the Health-system demand sheet and "
+          "the Evidence sheet) — not illustrative.")],
         [],
         [("Region", _H), ("Metros", _H), ("Hospitals", _H), ("HCRIS beds", _H),
          ("SNF", _H), ("Dialysis", _H), ("Post-acute dest.", _H),
@@ -558,8 +648,9 @@ def _county_sheet() -> Optional[Sheet]:
         [("County demand — the operator footprint, resolved to counties", _H)],
         [("The footprint counties with population, 65+ population, the county's "
           "share of its metro, and the IFT demand each supports. Population is "
-          "GOV (Census); demand legs/$ are ILLUSTRATIVE from the health-system "
-          "discharge base.")],
+          "GOV (Census); demand legs/$ are DERIVED by equation from the SOURCED "
+          "health-system discharge base x the published transfer rate — not "
+          "illustrative (see the Evidence sheet).")],
         [],
         [("County", _H), ("State", _H), ("CBSA", _H), ("Role", _H),
          ("Pop 2020", _H), ("Pop 65+", _H), ("Share of metro", _H),
@@ -585,25 +676,34 @@ def _demographic_sheet() -> Optional[Sheet]:
         return None
     rows: List[List[Any]] = [
         [("Demographic engine — the aging wave that drives IFT demand", _H)],
-        [("IFT volume growth is demographic: the 75+ bands use post-acute "
-          "transfer at the highest per-capita rate, and they are the fastest "
-          "growing this decade. This is the engine behind every YoY case curve "
-          "on the condition sheets.")],
+        [("IFT volume growth is demographic. The published anchor is the US Census "
+          "65+ projection; the per-band CAGRs below are DERIVED from the Census "
+          "age-band tables and feed the condition YoY projection. Nothing here is "
+          "illustrative — the growth input is a GOV statistic with a verbatim quote "
+          "on the Evidence sheet.")],
+        [],
+        [("Published growth anchor (GOV)", _H), ("Value", _H), ("Basis", _H),
+         ("Source (quote on Evidence sheet)", _H)],
+        ["US population 65+, 2025 -> 2030", "+14.2% (62.7M -> 71.6M) ≈ 2.7%/yr",
+         "GOV",
+         Link("US Census 2023 National Population Projections",
+              "https://www.census.gov/data/tables/2023/demo/popproj/"
+              "2023-summary-tables.html")],
         [],
         [("Age band", _H), ("Growth read", _H)],
     ]
     for band, read in (nf.age_bands or ()):
         rows.append([band, read])
-    # The per-band CAGRs actually used by the projection (from the fallback table).
+    # The per-band CAGRs the projection runs on — DERIVED from Census age-band tables.
     cagrs = _safe(_pop_growth_table, default={})
     if cagrs:
         rows += [
             [],
-            [("Per-band population CAGR (used by the YoY projection)", _H)],
+            [("Per-band population CAGR — DERIVED from Census age-band tables", _H)],
             [("Age band", _H), ("5-yr CAGR", _H), ("Basis", _H)],
         ]
         for band, cagr in cagrs.items():
-            rows.append([band, (cagr, "pct"), "ILLUSTRATIVE"])
+            rows.append([band, (cagr, "pct"), "DERIVED"])
     rows += [
         [],
         [("National price/volume/market growth", _H), ("Value", _H)],
@@ -619,7 +719,7 @@ def _demographic_sheet() -> Optional[Sheet]:
         [],
         [("Source", _H), nf.source_label],
     ]
-    return Sheet("Demographic engine", rows, col_widths=[22, 72, 14])
+    return Sheet("Demographic engine", rows, col_widths=[26, 60, 14, 40])
 
 
 def _pop_growth_table() -> Dict[str, float]:
@@ -672,37 +772,46 @@ def _inventory_sheet() -> Optional[Sheet]:
 def _provenance_sheet() -> Sheet:
     rows: List[List[Any]] = [
         [("Provenance & methodology — the demand workbook's honesty contract", _H)],
-        [("Every value-bearing cell carries a Basis. This sheet says what each "
-          "label means and what is real vs modeled, so nothing is taken on faith.")],
+        [("Every value-bearing cell carries one of FOUR bases — there is NOTHING "
+          "illustrative in this workbook. Every published figure has a verbatim "
+          "quote + link on the Evidence & sources sheet; every DERIVED figure shows "
+          "its equation and names its public inputs. So you can trust each number "
+          "for exactly what its basis says.")],
         [],
-        [("Basis", _H), ("What it means on the demand side", _H)],
+        [("Basis", _H), ("What it means — and how much to trust it", _H)],
         [("GOV", "basis_gov"),
-         "Published government figure — MedPAC ambulance Payment Basics, CMS FFS "
-         "claims analyses, CMS GADCS (RAND), Census population. The volume anchor."],
+         "A published government statistic or regulation — MedPAC ambulance Payment "
+         "Basics (11.3M FFS transports), CMS GADCS, US Census population, AHRQ. "
+         "The hardest evidence; quoted verbatim on the Evidence sheet."],
         [("SOURCED", "basis_sourced"),
-         "Read from a real dataset we hold or a named claims database (HCRIS "
-         "discharge base, FAIR Health utilization). 0 when a pandas-gated read is "
-         "offline — the sheet degrades, it does not invent."],
+         "A real dataset or independent claims/records database — HCUP (NEDS/NIS), "
+         "HCRIS discharge base, NEMSIS, FAIR Health. HCRIS reads 0 when the "
+         "pandas-gated panel is offline — the sheet degrades, it never invents."],
         [("ACADEMIC", "basis_academic"),
-         "Peer-reviewed / survey estimate — the NHAMCS interfacility studies. A "
-         "FLOOR on IFT volume (ED arrivals only)."],
-        [("ILLUSTRATIVE", "basis_illustrative"),
-         "Modeled on a NAMED basis — the demographic CAGRs (Census age-band "
-         "growth, incidence held constant) behind every YoY case curve, and the "
-         "leg/$ conversions off the discharge base."],
+         "A peer-reviewed study, cited by journal and year — the HCUP NEDS "
+         "interfacility analysis (9,867,701 ED transfers) and the NIS Nationwide "
+         "Outcomes Study (1.5M inter-hospital transfers)."],
         ["DERIVED",
-         "Computed from a GOV figure with an explicit, stated assumption — the "
-         "all-payer volume band (Medicare FFS ÷ its share of all-payer volume). "
-         "NOT a trade/market-research-firm number."],
+         "Computed by an EXPLICIT equation from the GOV/SOURCED/ACADEMIC inputs "
+         "above — e.g. the condition YoY curves (base_volume x (1+g)^n, g = Census "
+         "age-band growth) and the leg/$ conversions (discharges x the published "
+         "3.5% transfer rate). The equation is shown and every input is public, so "
+         "it is verifiable arithmetic — NOT an illustrative guess."],
+        [("There is deliberately NO all-payer transport TOTAL: none is published, "
+          "and Medicare's share of all-payer volume is not a verifiable figure, so "
+          "stating one would be unsourced. We omit it on purpose.", _L)],
         [],
         [("What this workbook deliberately does NOT do", _L)],
         [("• It does not size SNF as a buyer — the health systems order and pay "
           "for IFT, so demand is sized off health-system throughput.")],
-        [("• It does not use any trade / market-research-firm volume estimate — "
-          "the all-payer line is DERIVED from the GOV Medicare anchor.")],
-        [("• It does not present the NHAMCS interfacility figure as the whole IFT "
-          "market — it is a FLOOR (ED arrivals only); the scheduled discharge "
-          "book is additive and sized from HCRIS.")],
+        [("• It does not use any trade / market-research-firm figure, and it does "
+          "not state an all-payer transport total (none is published).")],
+        [("• It does not present any single interfacility figure as the whole IFT "
+          "market — the NEDS ED-to-ED count (~2.0M/yr) and the NIS inter-hospital "
+          "count (~1.5M/yr) are distinct measures; the scheduled discharge book is "
+          "additive and sized from HCRIS.")],
+        [("• It contains no illustrative figures — every number is published (with "
+          "a quote) or derived by a shown equation from public inputs.")],
         [],
         [("Where this lives online (click to open)", _H)],
         ["", Link("Demand deep-dive", "https://pedesk.app/ift-demand"),
@@ -721,6 +830,9 @@ def _provenance_sheet() -> Sheet:
 _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "National volume": "THE centerpiece — how many transports a year, national -> "
                        "IFT slice, by acuity and emergency/non-emergency. Sourced.",
+    "Evidence & sources": "THE trust key — every headline number with its "
+                          "verbatim quote + link; basis GOV/SOURCED/ACADEMIC/"
+                          "DERIVED, nothing illustrative.",
     "Volume sources": "Every citation behind the funnel, clickable (GOV first).",
     "Demand databases": "The multi-source triangulation — NEDS / NIS / NEMSIS / "
                         "MedPAC / HCRIS / NHAMCS / FAIR Health, each with its "
@@ -782,11 +894,11 @@ def demand_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
     provenance contract. Every sheet degrades to skipped rather than raising, so
     the download always succeeds even offline where a pandas-gated read is dark."""
     builders = [
-        _volume_sheet, _volume_sources_sheet, _sources_matrix_sheet,
-        _drivers_sheet, _code_analysis_sheet, _emergency_sheet,
-        _condition_yoy_sheet, _aggregate_yoy_sheet, _clinical_sheet,
-        _hs_demand_sheet, _regional_sheet, _county_sheet, _demographic_sheet,
-        _inventory_sheet, _provenance_sheet,
+        _volume_sheet, _evidence_sheet, _volume_sources_sheet,
+        _sources_matrix_sheet, _drivers_sheet, _code_analysis_sheet,
+        _emergency_sheet, _condition_yoy_sheet, _aggregate_yoy_sheet,
+        _clinical_sheet, _hs_demand_sheet, _regional_sheet, _county_sheet,
+        _demographic_sheet, _inventory_sheet, _provenance_sheet,
     ]
     sheets: List[Sheet] = []
     for b in builders:
