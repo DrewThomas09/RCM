@@ -379,6 +379,72 @@ def _scorecard_section() -> str:
         "names PUBLIC / company-web, no exclusivities asserted.</p>")
 
 
+def _opportunity_section() -> str:
+    opp = _m.mmt_county_opportunity()
+    if not opp:
+        return ""
+    rows = []
+    for o in opp:
+        rows.append(
+            "<tr>"
+            f'<td class="num">{o.rank}</td>'
+            f'<td class="lab">{_esc(o.name)}</td>'
+            f"<td>{_esc(o.state)}</td>"
+            f"<td>{_esc(o.metro)}</td>"
+            f'<td class="num">{_num(o.demand_missions)}</td>'
+            f'<td class="num">{_num(o.serviceable_missions)}</td>'
+            f'<td class="num">{_usd(o.opportunity_revenue)}</td>'
+            f'<td class="num">{_usd(o.mmt_current_revenue)}</td>'
+            f'<td class="num">{_usd(o.headroom_revenue)}</td>'
+            "</tr>")
+    return (
+        ck_section_header("County opportunity ranking",
+                          eyebrow="WHERE MMT SHOULD FOCUS", count=len(opp))
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>#</th><th>County</th><th>St</th><th>Metro</th><th>Demand legs/yr</th>"
+        "<th>Serviceable legs/yr</th><th>Contestable $</th><th>MMT current $</th>"
+        f"<th>Headroom $</th></tr></thead><tbody>{''.join(rows)}</tbody>"
+        "</table></div>"
+        f'<p class="mmt-note">Contestable = county demand × s(m); the '
+        "current/headroom split is on the metro's MMT share. "
+        f'{_chip("ILLUSTRATIVE")} — reuses the serviceable model.</p>')
+
+
+def _accounts_section() -> str:
+    accts = _m.mmt_anchor_accounts()
+    if not accts:
+        return ""
+    cards = []
+    _TIER = {"captive-network": "#b5321e", "regional-hub": "#155752",
+             "independent": "#b8732a"}
+    for a in accts:
+        color = _TIER.get(a.tier, "#155752")
+        cards.append(
+            '<div style="border:1px solid var(--sc-border,#e4dccb);'
+            f'border-left:3px solid {color};border-radius:4px;padding:13px 15px;'
+            'background:var(--sc-surface,#faf7f1);">'
+            f'<div style="font-family:var(--sc-serif,Georgia,serif);font-size:15px;'
+            f'font-weight:600;">{_esc(a.system)}</div>'
+            f'<div style="font-family:var(--sc-mono,Consolas,monospace);'
+            f'font-size:9.5px;font-weight:700;letter-spacing:.05em;color:{color};'
+            f'text-transform:uppercase;margin:2px 0 6px;">{_esc(a.tier)} · '
+            f'{_esc("; ".join(a.metros))}</div>'
+            f'<div style="font-size:12px;line-height:1.5;margin-bottom:5px;">'
+            f'<b>Posture:</b> {_esc(a.insource_posture)}</div>'
+            f'<div style="font-size:12px;line-height:1.5;margin-bottom:5px;'
+            f'color:#0f3d39;"><b>MMT play:</b> {_esc(a.mmt_strategy)}</div>'
+            f'<div style="font-size:12px;line-height:1.5;color:#7a3218;">'
+            f'<b>Risk:</b> {_esc(a.risk)}</div></div>')
+    return (
+        ck_section_header("Anchor-system account map",
+                          eyebrow="THE TRANSFER-CENTER GTM", count=len(accts))
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,'
+        'minmax(340px,1fr));gap:12px;margin:6px 0 14px;">'
+        + "".join(cards) + "</div>"
+        f'<p class="mmt-note">Systems / facilities {_chip("GOV")} PUBLIC / '
+        "company-web; strategy &amp; risk are analyst framework.</p>")
+
+
 def _growth_section() -> str:
     gp = _m.mmt_growth_projection()
     if not (gp.available and gp.years):
@@ -513,9 +579,10 @@ def render_ift_mmt(qs=None) -> str:
         parts.append(_kpi_strip(s))
     parts += [
         _cbsa_table(), _county_table(), _serviceable_section(),
-        _operating_section(), _growth_section(), _connector_table(),
-        _clinical_table(), _metro_read(), _scorecard_section(),
-        _swot_section(), _diligence_section(), _cta(), ck_page_actions(),
+        _opportunity_section(), _operating_section(), _growth_section(),
+        _connector_table(), _clinical_table(), _metro_read(),
+        _accounts_section(), _scorecard_section(), _swot_section(),
+        _diligence_section(), _cta(), ck_page_actions(),
     ]
     return chartis_shell(
         "".join(parts), "MMT — County Deep Dive", active_nav="/market",

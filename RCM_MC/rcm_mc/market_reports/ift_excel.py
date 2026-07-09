@@ -751,6 +751,8 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "MMT diligence": "MMT value-creation levers, risks, and the diligence question list.",
     "MMT growth projection": "MMT SOM revenue trajectory (base vs platform, 5-yr).",
     "MMT SWOT": "MMT strengths / weaknesses / opportunities / threats.",
+    "MMT county opportunity": "MMT's 22 counties ranked by contestable IFT book + headroom.",
+    "MMT accounts": "MMT's anchor-system transfer-center accounts + GTM strategy.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
     "Clinical routing": "How patients move: acute scenario → destination + growth.",
