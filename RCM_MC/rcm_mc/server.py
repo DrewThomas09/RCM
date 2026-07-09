@@ -5252,6 +5252,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_research_page import render_ift_research
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_research(_qs))
+        # IFT diligence question architecture — the question tree BEHIND the study
+        # (per-slide main question, sub-questions, evidence, visuals) cross-linked
+        # to the answered pages + the live connector estate. See
+        # ui/ift_diligence_page.py + market_reports/ift_diligence.py.
+        if path == "/ift-diligence":
+            from .ui.ift_diligence_page import render_ift_diligence
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_diligence(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
