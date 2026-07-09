@@ -1,7 +1,7 @@
 """IFT market-level research brief page (``/ift-research``).
 
 Renders the deep, MARKET-focused research: market definition + taxonomy (reused
-from ift_study), the IBISWorld industry-structure context, and the authored
+from ift_study), the CMS/MedPAC/AAA industry-structure context, and the authored
 market-research sections (metrics, unit economics, technology, regulatory,
 segmentation, sizing, reimbursement, growth, evidence). No company-specific
 analysis. Every table carries an honesty basis chip. Degrades, never raises.
@@ -172,11 +172,11 @@ def _industry_context_block() -> str:
                             eyebrow="MARKET RESEARCH")
         + ck_panel(
             '<p class="irs-prose">How the broader ambulance industry is '
-            'structured, from the IBISWorld industry report — the qualitative '
-            'frame around the ground-IFT slice. ' + _chip("ACADEMIC") + ' '
-            '<em>(The report\'s numeric series are chart images; figures on this '
-            'page use our GOV / market-research anchors, not invented '
-            'industry-report numbers.)</em></p>'
+            'structured, from CMS GADCS / MedPAC / AAA government + trade '
+            'industry data — the qualitative frame around the ground-IFT slice. '
+            + _chip("ACADEMIC") + ' '
+            '<em>(Structure only — every number on this page uses our GOV '
+            'anchors, not trade-report figures.)</em></p>'
             f'<div class="irs-cardgrid">{cards}</div>'
             f'<p class="irs-src">Source: {_esc(ic.source_label)}</p>')
         + '</div>')

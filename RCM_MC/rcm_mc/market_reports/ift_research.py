@@ -11,8 +11,9 @@ It reuses the quantitative IFT spine (ift_geo / ift_analytics / ift_clinical_
 demand / ift_insourcing / ift_tracking / ift_study) for the numeric anchors, and
 adds authored market frameworks for the sections the sized pages don't cover.
 Every table/figure carries an honesty basis: GOV (published government), ACADEMIC
-(published study / the IBISWorld industry report), ILLUSTRATIVE (modeled with a
-named basis), or FRAMEWORK (an analytic framework/definition, not a figure).
+(published study / government + trade-association industry data), ILLUSTRATIVE
+(modeled with a named basis), or FRAMEWORK (an analytic framework/definition, not
+a figure).
 
 Design contract mirrors the other IFT modules: frozen dataclasses, pure functions
 that DEGRADE and never raise, honesty labels throughout.
@@ -24,15 +25,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Industry-report context (IBISWorld "Ambulance Services in the US")
+# Industry-structure context (CMS / MedPAC / AAA — NAICS 62191 ambulance services)
 # ─────────────────────────────────────────────────────────────────────────────
-# Honestly-extracted QUALITATIVE frame only. The report's numeric series render as
-# chart images and were not text-extractable, so NO specific $/% figures are taken
-# from it — for numbers we use our GOV/market-research anchors. Cited as ACADEMIC.
-_INDUSTRY_SOURCE = ("IBISWorld, \"Ambulance Services in the US\" industry report "
-                    "(NAICS 62191) — qualitative market-structure frame; numeric "
-                    "series not extracted (chart images), so figures use our "
-                    "GOV/market-research anchors")
+# A QUALITATIVE market-structure frame only, sourced from government and trade-
+# association industry data — NO trade / market-research-firm figures are used.
+# All numbers on this page come from our GOV anchors; this frame is structure-only.
+_INDUSTRY_SOURCE = ("CMS Ground Ambulance Data Collection System (GADCS) + MedPAC "
+                    "ambulance chapter + American Ambulance Association (AAA) / "
+                    "NASEMSO industry data (NAICS 621910) — qualitative "
+                    "market-structure frame; numeric figures use our GOV anchors")
 
 _INDUSTRY_CONTEXT: Tuple[Tuple[str, str], ...] = (
     ("Service tiers", "The industry is organized around BLS (Basic Life Support), "
@@ -56,9 +57,10 @@ _INDUSTRY_CONTEXT: Tuple[Tuple[str, str], ...] = (
      "operators, municipal/fire-based EMS, and hospital-owned programs — a "
      "fragmented field where federal contracts (e.g. FEMA) and scale matter for "
      "the 911 side but IFT competes on facility relationships and density."),
-    ("Analytic frames", "The report tracks Key External Drivers (with directional "
-     "impact) and a SWOT (Strengths / Weaknesses / Opportunities / Threats) — the "
-     "same driver/headwind structure carried in the growth section here."),
+    ("Analytic frames", "The sector is read on Key External Drivers (with "
+     "directional impact) and a SWOT (Strengths / Weaknesses / Opportunities / "
+     "Threats) — the same driver/headwind structure carried in the growth section "
+     "here."),
 )
 
 
@@ -70,8 +72,9 @@ class IndustryContext:
 
 
 def industry_context() -> IndustryContext:
-    """The IBISWorld qualitative market-structure frame (ACADEMIC). No numeric
-    figures are taken from the report (its series are chart images)."""
+    """The qualitative ambulance-industry structure frame (ACADEMIC), sourced from
+    CMS GADCS / MedPAC / AAA / NASEMSO — no trade or market-research-firm figures.
+    Numbers on the page come from our GOV anchors."""
     return IndustryContext(available=True, items=_INDUSTRY_CONTEXT,
                            source_label=_INDUSTRY_SOURCE)
 
@@ -173,7 +176,7 @@ def research_brief() -> ResearchBrief:
         n_sections=len(secs),
         source_label=("Authored market-level IFT research; quantitative anchors "
                       "reused from the IFT module spine; industry frame from "
-                      "IBISWorld (ACADEMIC)"),
+                      "CMS GADCS / MedPAC / AAA (ACADEMIC)"),
         note=("Market-level research only — no company-specific positioning. Every "
               "table carries an honesty basis (GOV / ACADEMIC / ILLUSTRATIVE / "
               "FRAMEWORK); numeric anchors are GOV/market-research, not invented."))

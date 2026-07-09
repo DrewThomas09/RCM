@@ -14,7 +14,7 @@ research section, the data connectors, and the market-report narrative:
   * the company profiles (MMT the subject + the competitive field) and MMT's
     positioning pillars;
   * the competitive landscape BY PROVIDER TYPE (market-level, no company names);
-  * the IBISWorld industry-structure frame (ACADEMIC, qualitative only);
+  * the CMS/MedPAC/AAA industry-structure frame (ACADEMIC, qualitative only);
   * the nine authored market-research sections (reimbursement, unit economics,
     KPIs, technology, regulatory, segmentation, sizing method, growth, evidence);
   * the data connectors (Part B / NEMT / employment hooks) + the Ambulance Fee
@@ -262,14 +262,14 @@ def _competitor_types_sheet() -> Optional[Sheet]:
     return Sheet("Competitor types", rows, col_widths=[26, 40, 44, 44])
 
 
-# ── Industry-structure frame (IBISWorld, ACADEMIC, qualitative only) ──────────
+# ── Industry-structure frame (CMS/MedPAC/AAA, ACADEMIC, qualitative only) ──────
 def _industry_context_sheet() -> Optional[Sheet]:
     from . import ift_research as _r
     ic = _safe(_r.industry_context)
     if not (ic and getattr(ic, "available", False) and ic.items):
         return None
     rows: List[List[Any]] = [
-        [("Industry-structure frame — IBISWorld 'Ambulance Services in the US'",
+        [("Industry-structure frame — CMS GADCS / MedPAC / AAA (ambulance services)",
           _H)],
         [("ACADEMIC · qualitative market-structure frame ONLY — no numeric series "
           "taken from the report (its charts are images); figures use our "

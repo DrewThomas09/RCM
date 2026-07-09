@@ -97,6 +97,49 @@ class TestGrowth(unittest.TestCase):
         for c in m.all_conditions():
             self.assertTrue(c.growth.basis.startswith(m.LABEL_ILLUSTRATIVE))
 
+    def test_pop_growth_falls_back_never_empty(self):
+        # the demographic model must be non-empty even when demand_forecast can't
+        # be imported (its package __init__ needs pandas) — else all growth zeros
+        pg = m._pop_growth()
+        self.assertTrue(pg)
+        self.assertIn("85+", pg)
+        self.assertGreater(pg["85+"]["cagr_5yr"], 0.0)
+        self.assertGreater(pg["75-84"]["cagr_5yr"], pg["65-74"]["cagr_5yr"])
+
+
+class TestYoYProjection(unittest.TestCase):
+    def test_condition_yoy_trend_is_rising(self):
+        proj = m.condition_yoy_projection(5)
+        self.assertGreaterEqual(len(proj), 10)
+        for p in proj:
+            self.assertEqual(len(p.points), 6)          # Y+0..Y+5
+            self.assertEqual(p.points[0].volume, p.base_volume)
+            # a positive-CAGR condition rises year over year
+            if p.cagr > 0:
+                vols = [pt.volume for pt in p.points]
+                self.assertEqual(vols, sorted(vols))
+                self.assertGreater(p.end_volume, p.base_volume)
+                self.assertEqual(p.added_cases, p.end_volume - p.base_volume)
+                # the YoY % on a later year approximates the CAGR
+                self.assertAlmostEqual(p.points[-1].yoy_growth_pct / 100.0,
+                                       p.cagr, delta=0.01)
+        # sorted by CAGR desc
+        cagrs = [p.cagr for p in proj]
+        self.assertEqual(cagrs, sorted(cagrs, reverse=True))
+
+    def test_aggregate_yoy_compounds(self):
+        agg = m.aggregate_demand_yoy(5)
+        self.assertTrue(agg.available)
+        self.assertGreater(agg.blended_cagr, 0.0)
+        vols = [pt.volume for pt in agg.points]
+        self.assertEqual(vols, sorted(vols))            # rising
+        self.assertGreater(agg.end_volume, agg.base_volume)
+        # restrict to the escalation family — a strict subset that still rises
+        esc = m.aggregate_demand_yoy(5, family=m.FAMILY_ESCALATION)
+        self.assertTrue(esc.available)
+        self.assertLess(esc.base_volume, agg.base_volume)
+        self.assertGreater(esc.blended_cagr, 0.0)
+
 
 class TestVolumeHonesty(unittest.TestCase):
     def test_every_volume_labeled(self):
