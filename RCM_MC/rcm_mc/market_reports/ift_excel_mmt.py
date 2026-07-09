@@ -230,13 +230,136 @@ def _metro_read_sheet() -> Optional[Sheet]:
                  freeze_rows=4, merges=merges)
 
 
+# ── Serviceable market (SOM) ─────────────────────────────────────────────────
+def _serviceable_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    sm = _safe(_m.mmt_serviceable_model)
+    if not (sm and sm.rows):
+        return None
+    rows, merges = _title(
+        "MMT serviceable market (SOM) — county demand → winnable book",
+        "The funnel for MMT: total county ground-IFT demand × the serviceable "
+        "share s(m) [by the metro's insource archetype, reused from the study's "
+        "ift_analytics so this SOM agrees with the funnel] × MMT's estimated "
+        "share of the outsourced/contestable book. Demand & shares are "
+        "ILLUSTRATIVE; s(m) matches the market funnel.", 7)
+    rows += [
+        [("SOM at a glance", _B)],
+        ["Footprint IFT demand", (sm.total_demand, "num"),
+         "Serviceable (outsourced)", (sm.total_serviceable, "num")],
+        ["Serviceable share of demand", (sm.footprint_serviceable_share, "pct"),
+         "MMT SOM legs/yr", (sm.mmt_som_missions, "num")],
+        ["MMT SOM revenue", (sm.mmt_som_dollars, "money"), "@ $/leg",
+         "$1,300 (ILLUSTRATIVE)"],
+        [],
+        [("Per-metro serviceable build", _B)],
+        [("Metro", _H), ("Insource archetype", _H), ("Demand legs/yr", _H),
+         ("s(m)", _H), ("Serviceable legs/yr", _H), ("MMT share", _H),
+         ("MMT legs/yr", _H), ("MMT revenue", _H)],
+    ]
+    band_start = len(rows) + 1
+    for r in sm.rows:
+        rows.append([r.metro, r.insource_class, (r.demand_missions, "num"),
+                     (r.serviceable_share, "pct"), (r.serviceable_missions, "num"),
+                     (r.mmt_share, "pct"), (r.mmt_missions, "num"),
+                     (r.mmt_revenue, "money")])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H), sm.note],
+             [_chip("ILLUSTRATIVE"), _chip("GOV")]]
+    return Sheet("MMT serviceable SOM", rows,
+                 col_widths=[22, 30, 14, 8, 16, 11, 12, 16], freeze_rows=8,
+                 merges=merges, band_rows=(band_start, band_end))
+
+
+def _operating_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    op = _safe(_m.mmt_operating_model)
+    if not (op and op.metrics):
+        return None
+    rows, merges = _title(
+        "MMT operating model — footprint unit economics",
+        "The cost structure and the operating levers (UHU, deadhead) that decide "
+        "whether a dense-metro book or a rural long-leg book makes money. Every "
+        "figure is ILLUSTRATIVE with a named basis; labor share is the GADCS "
+        "anchor (~69% of ground-ambulance cost).", 4)
+    rows += [
+        [(op.headline, _S)],
+        [],
+        [("Metric", _H), ("Value", _H), ("Basis", _H), ("Detail", _H)],
+    ]
+    band_start = len(rows) + 1
+    for mtr in op.metrics:
+        rows.append([(mtr.name, _L), mtr.value, _chip(mtr.basis), mtr.detail])
+    band_end = len(rows)
+    return Sheet("MMT operating model", rows, col_widths=[30, 14, 34, 56],
+                 freeze_rows=6, merges=merges, band_rows=(band_start, band_end))
+
+
+def _diligence_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    d = _safe(_m.mmt_diligence)
+    if not (d and (d.value_levers or d.risks or d.questions)):
+        return None
+    rows, merges = _title(
+        "MMT diligence — value levers, risks, and the question list",
+        "The thesis a buyer underwrites: the value-creation levers unique to a "
+        "dense-metro + I-80-corridor footprint, the structural risks, and the "
+        "diligence questions. Analyst framework (FRAMEWORK basis).", 3)
+    if d.value_levers:
+        rows += [[("Value-creation levers", _B)],
+                 [("Lever", _H), ("Category", _H), ("What it is", _H)]]
+        for lv in d.value_levers:
+            rows.append([(lv.title, _L), lv.tag, lv.detail])
+    if d.risks:
+        rows += [[], [("Risks", _B)],
+                 [("Risk", _H), ("Severity", _H), ("Why it matters", _H)]]
+        for rk in d.risks:
+            rows.append([(rk.title, _L), rk.tag, rk.detail])
+    if d.questions:
+        rows += [[], [("Diligence questions", _B)]]
+        for q in d.questions:
+            rows.append(["• " + q])
+    rows += [[], [("Basis", _H),
+                  "FRAMEWORK — analyst value-creation / risk framing tied to the "
+                  "county model + ift_geo competitive reads; not a filed figure."]]
+    return Sheet("MMT diligence", rows, col_widths=[30, 18, 82], merges=merges)
+
+
+def _scorecard_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    sc = _safe(_m.mmt_positioning_scorecard, default=())
+    if not sc:
+        return None
+    rows, merges = _title(
+        "MMT positioning scorecard — vs the competitive field",
+        "MMT against a scaled regional private (AmeriPro), a national EMS platform "
+        "(GMR/AMR), and municipal / fire-based 911 across the factors that decide "
+        "IFT first-call. Reads are analyst knowledge (FRAMEWORK); operator names "
+        "are PUBLIC-WEB.", 5)
+    rows += [
+        [("Factor", _H), ("MMT (subject)", _H), ("AmeriPro (regional)", _H),
+         ("National EMS (GMR/AMR)", _H), ("Municipal / 911", _H)],
+    ]
+    band_start = len(rows) + 1
+    for r in sc:
+        rows.append([(r.factor, _L), r.mmt, r.ameripro, r.national_ems,
+                     r.municipal])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H),
+                  "FRAMEWORK — analyst competitive read; operator names "
+                  "PUBLIC-WEB, no exclusivities asserted."]]
+    return Sheet("MMT scorecard", rows, col_widths=[24, 30, 28, 26, 24],
+                 freeze_rows=4, merges=merges, band_rows=(band_start, band_end))
+
+
 # ── public entry point ────────────────────────────────────────────────────────
 def mmt_sheets() -> List[Sheet]:
     """Every MMT county-by-MSA sheet, in reading order. Each degrades to skipped
     (never raises)."""
     out: List[Sheet] = []
-    for b in (_footprint_sheet, _counties_sheet, _connectors_sheet,
-              _clinical_sheet, _metro_read_sheet):
+    for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
+              _operating_sheet, _connectors_sheet, _clinical_sheet,
+              _metro_read_sheet, _scorecard_sheet, _diligence_sheet):
         s = _safe(b)
         if s is not None:
             out.append(s)

@@ -117,6 +117,45 @@ class MmtLinkTests(unittest.TestCase):
                 self.assertNotIn("MMT", comp)
 
 
+class MmtModelTests(unittest.TestCase):
+    def test_serviceable_som_is_consistent_and_bounded(self):
+        sm = m.mmt_serviceable_model()
+        self.assertTrue(sm.rows)
+        # SOM never exceeds serviceable never exceeds demand
+        self.assertLessEqual(sm.mmt_som_missions, sm.total_serviceable)
+        self.assertLessEqual(sm.total_serviceable, sm.total_demand)
+        self.assertGreater(sm.mmt_som_dollars, 0)
+        # s(m) matches the study funnel (reused from ift_analytics)
+        from rcm_mc.market_reports import ift_analytics as _an, ift_geo as _geo
+        cls = {md.name: md.insource_class for md in _geo.MARKETS}
+        for r in sm.rows:
+            want = _an._SERVICEABLE_SHARE.get(cls.get(r.metro), _an._SERVICEABLE_DEFAULT)
+            self.assertAlmostEqual(r.serviceable_share, want, places=4, msg=r.metro)
+            self.assertLessEqual(r.mmt_missions, r.serviceable_missions)
+        # roll-up equals the row sum
+        self.assertEqual(sm.mmt_som_missions,
+                         sum(r.mmt_missions for r in sm.rows))
+
+    def test_operating_model_margin_and_metrics(self):
+        op = m.mmt_operating_model()
+        self.assertGreater(len(op.metrics), 5)
+        self.assertTrue(0.0 < op.contribution_margin_pct < 0.6)
+        self.assertGreaterEqual(op.est_units, 1)
+        self.assertTrue(op.headline)
+
+    def test_diligence_and_scorecard_are_populated(self):
+        d = m.mmt_diligence()
+        self.assertGreaterEqual(len(d.value_levers), 4)
+        self.assertGreaterEqual(len(d.risks), 4)
+        self.assertGreaterEqual(len(d.questions), 5)
+        for rk in d.risks:
+            self.assertIn(rk.tag, ("HIGH", "MEDIUM", "LOW"), rk.title)
+        sc = m.mmt_positioning_scorecard()
+        self.assertGreaterEqual(len(sc), 5)
+        for r in sc:
+            self.assertTrue(r.factor and r.mmt)
+
+
 class MmtPageTests(unittest.TestCase):
     def setUp(self):
         from rcm_mc.ui.ift_mmt_page import render_ift_mmt
@@ -124,9 +163,10 @@ class MmtPageTests(unittest.TestCase):
 
     def test_renders_every_section(self):
         for needle in ("County Deep Dive", "Footprint by CBSA",
-                       "Every county MMT serves",
-                       "County-grain data-connector coverage",
-                       "clinical drivers", "moat read"):
+                       "Every county MMT serves", "Serviceable market (SOM)",
+                       "Operating model", "County-grain data-connector coverage",
+                       "clinical drivers", "moat read", "Positioning scorecard",
+                       "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 
     def test_surfaces_counties_and_connectors(self):

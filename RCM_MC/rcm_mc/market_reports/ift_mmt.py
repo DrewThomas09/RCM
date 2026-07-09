@@ -481,3 +481,302 @@ def mmt_metro_reads() -> List[MmtMetroRead]:
             moat_note=getattr(md, "moat_note", "") if md else "",
             competitors=comp))
     return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Serviceable market (SOM) — county demand → serviceable share s(m) by the
+# metro's insource archetype (reused from ift_analytics, so this model agrees
+# with the funnel) → MMT's estimated share of the winnable book → MMT revenue.
+# ─────────────────────────────────────────────────────────────────────────────
+# MMT's estimated share of the SERVICEABLE (outsourced/contestable) book per
+# metro (ILLUSTRATIVE, from the ift_geo competitive reads): MMT-led in Omaha, a
+# two-horse race in Lincoln, incumbency contested by AmeriPro/Priority in the
+# rural corridor.
+_MMT_METRO_SHARE = {
+    "Omaha": 0.45,                    # MMT-led adult IFT, shares w/ GMR/AMR
+    "Lincoln": 0.40,                  # two-horse (AmeriPro vs MMT)
+    "North Platte": 0.30,             # AmeriPro's Priority acquisition captures incumbency
+    "Columbus (NE)": 0.35,            # single-hospital, per-contract
+    "Grand Island / Kearney": 0.35,   # CHI-steered + AmeriPro corridor roll-up
+}
+_MMT_SHARE_DEFAULT = 0.35
+
+
+@dataclass(frozen=True)
+class MmtServiceableRow:
+    metro: str
+    insource_class: str
+    demand_missions: int
+    serviceable_share: float          # s(m)
+    serviceable_missions: int
+    mmt_share: float                  # MMT share of the serviceable book
+    mmt_missions: int
+    mmt_revenue: float
+
+
+@dataclass(frozen=True)
+class MmtServiceable:
+    rows: Tuple[MmtServiceableRow, ...]
+    total_demand: int
+    total_serviceable: int
+    mmt_som_missions: int
+    mmt_som_dollars: float
+    footprint_serviceable_share: float
+    note: str = ("SOM = county demand × s(m) [insource archetype, reused from "
+                 "ift_analytics] × MMT share of the serviceable book. Demand & "
+                 "shares are ILLUSTRATIVE (named); s(m) matches the funnel.")
+
+
+def mmt_serviceable_model() -> MmtServiceable:
+    """MMT's serviceable-obtainable market by metro. Reuses the funnel's s(m) by
+    insource archetype so this SOM is consistent with ift_analytics. Never
+    raises (degrades to the default shares if ift_geo/analytics are dark)."""
+    try:
+        from . import ift_analytics as _an, ift_geo as _geo
+        s_by_class = getattr(_an, "_SERVICEABLE_SHARE", {})
+        s_default = getattr(_an, "_SERVICEABLE_DEFAULT", 0.20)
+        cls_by_metro = {md.name: md.insource_class for md in _geo.MARKETS}
+    except Exception:  # noqa: BLE001
+        s_by_class, s_default, cls_by_metro = {}, 0.20, {}
+    rows: List[MmtServiceableRow] = []
+    by_metro: Dict[str, int] = {}
+    order: List[str] = []
+    for c in MMT_COUNTIES:
+        if c.metro not in by_metro:
+            by_metro[c.metro] = 0
+            order.append(c.metro)
+        by_metro[c.metro] += county_demand(c).demand_missions
+    for m in order:
+        demand = by_metro[m]
+        cls = cls_by_metro.get(m, "rural-contract-gated")
+        s = s_by_class.get(cls, s_default)
+        serviceable = int(round(demand * s))
+        share = _MMT_METRO_SHARE.get(m, _MMT_SHARE_DEFAULT)
+        mmt_miss = int(round(serviceable * share))
+        rows.append(MmtServiceableRow(
+            metro=m, insource_class=cls, demand_missions=demand,
+            serviceable_share=s, serviceable_missions=serviceable,
+            mmt_share=share, mmt_missions=mmt_miss,
+            mmt_revenue=mmt_miss * _REV_PER_LEG))
+    rows.sort(key=lambda r: r.mmt_revenue, reverse=True)
+    tot_d = sum(r.demand_missions for r in rows)
+    tot_s = sum(r.serviceable_missions for r in rows)
+    som_m = sum(r.mmt_missions for r in rows)
+    return MmtServiceable(
+        rows=tuple(rows), total_demand=tot_d, total_serviceable=tot_s,
+        mmt_som_missions=som_m, mmt_som_dollars=som_m * _REV_PER_LEG,
+        footprint_serviceable_share=(tot_s / tot_d if tot_d else 0.0))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Operating model — footprint unit economics (ILLUSTRATIVE, GADCS-anchored).
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class OpMetric:
+    name: str
+    value: str
+    basis: str
+    detail: str
+
+
+@dataclass(frozen=True)
+class MmtOperatingModel:
+    headline: str
+    revenue_per_leg: float
+    cost_per_leg: float
+    contribution_margin_pct: float
+    est_units: int
+    metrics: Tuple[OpMetric, ...]
+
+
+def mmt_operating_model() -> MmtOperatingModel:
+    """MMT footprint unit economics — the cost structure and the operating levers
+    (UHU, deadhead) that separate a dense-metro book from a rural long-leg book.
+    Every figure is ILLUSTRATIVE with a named basis (labor share is the GADCS
+    anchor). Never raises."""
+    rev = _REV_PER_LEG
+    # cost structure (ILLUSTRATIVE): labor ~69% of ground cost (GADCS), the rest
+    # vehicle/fuel/maintenance + overhead; footprint contribution margin ~20%.
+    cost = 1040.0
+    labor = round(cost * 0.69, 0)
+    vehicle = round(cost * 0.16, 0)
+    overhead = round(cost * 0.15, 0)
+    cm = (rev - cost) / rev
+    som = mmt_serviceable_model()
+    # units estimate: mmt legs × ~1.6 crew-hours/leg / (UHU × ~4,380 staffed
+    # unit-hours/yr). Rural drags the blended UHU down.
+    uhu = 0.38
+    est_units = int(round(som.mmt_som_missions * 1.6 / (uhu * 4380))) or 1
+    metrics = (
+        OpMetric("Net revenue / transport", f"${rev:,.0f}", "ILLUSTRATIVE",
+                 "Blended all-payer net revenue per IFT leg."),
+        OpMetric("Total cost / transport", f"${cost:,.0f}", "ILLUSTRATIVE",
+                 "Fully-loaded; footprint blend of dense-metro + rural long-leg."),
+        OpMetric("→ Labor / transport", f"${labor:,.0f}",
+                 "ILLUSTRATIVE (GADCS ~69% of ground cost)",
+                 "The binding constraint — crew wages + benefits."),
+        OpMetric("→ Vehicle / fuel / maint.", f"${vehicle:,.0f}", "ILLUSTRATIVE",
+                 "Higher per-leg in the rural corridor (miles)."),
+        OpMetric("→ Overhead / dispatch / admin", f"${overhead:,.0f}",
+                 "ILLUSTRATIVE", "CAD/AVL, billing, management."),
+        OpMetric("Contribution margin", f"{cm*100:.1f}%", "ILLUSTRATIVE",
+                 "Thin — the scale + density lever is the value-creation thesis."),
+        OpMetric("Unit-hour utilization (UHU)", f"{uhu:.2f}",
+                 "ILLUSTRATIVE", "Rural markets drag the blend; the #1 margin lever."),
+        OpMetric("Deadhead share", "~32%", "ILLUSTRATIVE",
+                 "Long empty return legs on the I-80 corridor — backhaul is the "
+                 "prize."),
+        OpMetric("Est. staffed units (footprint)", f"~{est_units}",
+                 "ILLUSTRATIVE",
+                 "MMT SOM legs × ~1.6 crew-hrs / (UHU × ~4,380 staffed unit-hrs)."),
+    )
+    return MmtOperatingModel(
+        headline=(f"~{som.mmt_som_missions:,} MMT SOM legs/yr ≈ "
+                  f"${som.mmt_som_dollars/1e6:,.1f}M revenue at a ~{cm*100:.0f}% "
+                  "contribution margin — a density/backhaul scale game."),
+        revenue_per_leg=rev, cost_per_leg=cost, contribution_margin_pct=cm,
+        est_units=est_units, metrics=metrics)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Diligence pack — value-creation levers, risks, and the question list.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class DiligenceItem:
+    title: str
+    detail: str
+    tag: str = ""          # lever category / risk severity
+
+
+@dataclass(frozen=True)
+class MmtDiligence:
+    value_levers: Tuple[DiligenceItem, ...]
+    risks: Tuple[DiligenceItem, ...]
+    questions: Tuple[str, ...]
+
+
+def mmt_diligence() -> MmtDiligence:
+    """MMT-specific value-creation levers, risks, and diligence questions — the
+    thesis a buyer underwrites. Analyst framework (FRAMEWORK basis). Never raises."""
+    levers = (
+        DiligenceItem(
+            "I-80 corridor backhaul optimization",
+            "The Omaha↔Lincoln↔Grand Island↔Kearney↔North Platte metros sit on a "
+            "single interstate spine ~40-90 mi apart; pairing outbound + return "
+            "legs cuts the ~32% deadhead and lifts UHU — the single biggest "
+            "margin lever.", "Density / routing"),
+        DiligenceItem(
+            "CHI intra-system transfer-lane lock-in",
+            "CHI Health runs a captive statewide network (Omaha ↔ Grand Island ↔ "
+            "Kearney ↔ Lincoln); holding first-call on those intra-system lanes is "
+            "recurring, high-switching-cost volume.", "Contract / moat"),
+        DiligenceItem(
+            "Defend vs AmeriPro's roll-up",
+            "AmeriPro's acquisition of Priority (North Platte) is a direct "
+            "incumbency-capture play; matching local posts + the anchor-hospital "
+            "relationship is required to hold the rural corridor.", "Competitive"),
+        DiligenceItem(
+            "Rate + payer-mix optimization",
+            "Commercial pays ~2-4× Medicare; the AIF floors reimbursement growth. "
+            "OON leverage + escalators on the routine discharge book are "
+            "underpriced levers.", "Reimbursement"),
+        DiligenceItem(
+            "Dispatch / CAD-AVL technology",
+            "Reliable scheduled-transport execution (visibility, ETA, "
+            "transfer-center integration) is what separates a first-call partner "
+            "from a spot vendor.", "Operations / tech"),
+    )
+    risks = (
+        DiligenceItem(
+            "Rural long-leg deadhead economics",
+            "Half the footprint is frontier/rural (Logan, Webster, Clay) — long "
+            "empty legs + thin volume make UHU structurally low; backhaul is "
+            "essential, not optional.", "HIGH"),
+        DiligenceItem(
+            "Anchor-system vendor steering / insource",
+            "CHI steers CHI-preferred vendors and could insource high-acuity CCT; "
+            "the winnable book is the routine discharge/SNF/dialysis residual, not "
+            "the captive tertiary stream.", "HIGH"),
+        DiligenceItem(
+            "AmeriPro incumbency capture",
+            "A well-capitalized consolidator locking anchor-hospital first-call "
+            "(Lincoln, Platte, Buffalo/Dawson/Adams) directly compresses MMT's "
+            "serviceable share.", "MEDIUM"),
+        DiligenceItem(
+            "Single-hospital market fragility (Columbus)",
+            "Columbus (NE) is one independent hospital, outbound-dominant — highly "
+            "exposed to whichever consolidator locks that single contract.",
+            "MEDIUM"),
+        DiligenceItem(
+            "Reimbursement / AIF + labor inflation",
+            "Ground-ambulance rates track the AIF (CPI-U − productivity); labor "
+            "(~69% of cost) inflation can outrun it, compressing an already-thin "
+            "margin.", "MEDIUM"),
+    )
+    questions = (
+        "What are the contract terms + first-call status with CHI, Bryan Health, "
+        "and Great Plains Health transfer centers (exclusivity, term, escalators)?",
+        "Actual UHU and deadhead % by metro — how much backhaul headroom exists on "
+        "the I-80 corridor?",
+        "Payer mix by segment (commercial / Medicare / Medicaid / self-pay) and net "
+        "revenue per leg by acuity (BLS / ALS / SCT)?",
+        "Post-level economics — how many staffed units per metro, and driver/EMT "
+        "retention + wage trajectory vs the AIF?",
+        "Competitive share vs AmeriPro/Priority by anchor hospital, and any at-risk "
+        "contracts up for renewal?",
+        "High-acuity (CCT/SCT) capability + credentialing — can MMT capture the "
+        "specialty-transport premium the field under-serves?",
+        "IT stack — CAD/AVL, transfer-center integration, billing clean-claim rate "
+        "and days-in-AR?",
+    )
+    return MmtDiligence(value_levers=levers, risks=risks, questions=questions)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Positioning scorecard — MMT vs the competitive field across factors.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class ScorecardRow:
+    factor: str
+    mmt: str
+    ameripro: str
+    national_ems: str
+    municipal: str
+
+
+def mmt_positioning_scorecard() -> Tuple[ScorecardRow, ...]:
+    """MMT vs AmeriPro (scaled regional), a national EMS platform (GMR/AMR), and
+    municipal/fire 911 across the factors that decide IFT first-call. Reads are
+    analyst knowledge (FRAMEWORK), operator names PUBLIC-WEB. Never raises."""
+    return (
+        ScorecardRow("Dedicated IFT capacity",
+                     "High — dedicated scheduled fleet",
+                     "High — dedicated regional",
+                     "Low — IFT shares trucks with 911",
+                     "Low — 911 mandate first"),
+        ScorecardRow("Local density / UHU (footprint)",
+                     "High in NE metros (HQ)",
+                     "Rising — corridor roll-up",
+                     "Thin local dedication",
+                     "Jurisdiction-bound"),
+        ScorecardRow("Anchor-system first-call",
+                     "Strong CHI/Bryan relationships",
+                     "Capturing via acquisition",
+                     "National contracts (HCA-style)",
+                     "Ceded / secondary"),
+        ScorecardRow("High-acuity CCT/SCT",
+                     "Contestable — a growth lever",
+                     "Regional CCT",
+                     "Air+ground CCT scale",
+                     "Limited"),
+        ScorecardRow("Rural long-leg reach",
+                     "Local posts + GPH relationship",
+                     "Priority acquisition footprint",
+                     "Sparse rural dedication",
+                     "In-jurisdiction only"),
+        ScorecardRow("Capital / scale to consolidate",
+                     "Regional — the roll-up prize",
+                     "Well-capitalized consolidator",
+                     "National capital",
+                     "Public budget"),
+    )
