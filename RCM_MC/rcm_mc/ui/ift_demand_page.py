@@ -31,19 +31,20 @@ def _esc(x: object) -> str:
 
 
 _BASIS_TITLES = {
-    "GOV": "A published government figure (CMS, MedPAC, Census, HCRIS).",
-    "SOURCED": "Computed from our vendored CMS estate.",
-    "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
+    "GOV": "A published government figure (CMS, MedPAC, Census, HCRIS, AHRQ).",
+    "SOURCED": "Read from a real dataset / claims database (HCUP, HCRIS, NEMSIS).",
+    "ACADEMIC": "A peer-reviewed study, cited by journal and year.",
+    "DERIVED": "Computed by an explicit equation from public GOV/SOURCED/ACADEMIC "
+               "inputs — verifiable arithmetic, not an illustrative guess.",
     "FRAMEWORK": "An analytic classification, not a figure.",
-    "ACADEMIC": "A published study / analyst estimate.",
 }
-_BASIS_CLASS = {"GOV": "gov", "SOURCED": "sourced", "ILLUSTRATIVE": "illustrative",
-                "FRAMEWORK": "framework", "ACADEMIC": "academic"}
+_BASIS_CLASS = {"GOV": "gov", "SOURCED": "sourced", "ACADEMIC": "academic",
+                "DERIVED": "derived", "FRAMEWORK": "framework"}
 
 
 def _chip(basis: str) -> str:
-    b = (basis or "ILLUSTRATIVE").upper()
-    key = b if b in _BASIS_TITLES else "ILLUSTRATIVE"
+    b = (basis or "DERIVED").upper()
+    key = b if b in _BASIS_TITLES else "DERIVED"
     return (f'<span class="ifd-chip ifd-chip-{_BASIS_CLASS[key]}" '
             f'title="{_esc(_BASIS_TITLES[key])}">{key}</span>')
 
@@ -94,6 +95,7 @@ vertical-align:middle;margin:0 1px;}
 .ifd-chip-gov{background:#e7efe9;color:#154e36;}
 .ifd-chip-sourced{background:#e9eef5;color:#243b57;}
 .ifd-chip-illustrative{background:#f3ecd9;color:#7a5c1a;}
+.ifd-chip-derived{background:#e7eef0;color:#1f4b57;}
 .ifd-chip-framework{background:#ece9f2;color:#463a63;}
 .ifd-chip-academic{background:#efeae0;color:#6b5426;}
 .ifd-prose{font-family:var(--sc-serif,Georgia,serif);font-size:14px;line-height:1.62;
@@ -185,44 +187,178 @@ def _volume_section(vol) -> str:
         + _kpi("Medicare FFS ground / yr",
                f'{vol.ffs_transports_m:.1f}M {_chip("GOV")}',
                f"CY{vol.ffs_year} · ${vol.ffs_spend_bn:.1f}B · "
-               f"{vol.ffs_orgs:,} orgs — the anchor")
-        + _kpi("US all-payer ground / yr",
-               f'~{vol.allpayer_low_m:.0f}-{vol.allpayer_high_m:.0f}M',
-               f'{_chip("ILLUSTRATIVE")} DERIVED from the GOV anchor ÷ its '
-               f'{vol.ffs_share_low*100:.0f}-{vol.ffs_share_high*100:.0f}% share')
-        + _kpi("Interfacility to an ED / yr",
-               f'~{vol.ift_to_ed_low_m:.1f}-{vol.ift_to_ed_high_m:.1f}M',
-               f'{_chip("ACADEMIC")} NHAMCS — a FLOOR (ED arrivals only)')
+               f"{vol.ffs_orgs:,} orgs (MedPAC)")
+        + _kpi("Interfacility ED-to-ED / yr",
+               f'~{vol.neds_ed_transfers_m:.1f}M {_chip("ACADEMIC")}',
+               "HCUP NEDS — 9,867,701 over 2018-2022")
+        + _kpi("Acute inter-hospital / yr",
+               f'~{vol.interhospital_transfers_m:.1f}M {_chip("ACADEMIC")}',
+               "HCUP NIS — 3.5% of admissions")
+        + _kpi("ED transfers needing CCT",
+               f'{vol.neds_critical:,} {_chip("ACADEMIC")}',
+               "HCUP NEDS — 6.6% with a critical procedure")
         + '</div>')
     tier_rows = [(t.tier, t.value, t.basis, t.note) for t in vol.tiers]
-    acuity_rows = [(a.label, f"{a.share_pct:.0f}%", f"{a.transports_m:.1f}M",
-                    a.basis, a.note) for a in vol.acuity_split]
-    emerg_rows = [(e.label, f"{e.share_pct:.0f}%", f"{e.transports_m:.1f}M",
-                   e.basis, e.note) for e in vol.emergency_split]
+    acuity_rows = [(a.label, f"{a.share_pct:.0f}%", a.basis, a.source)
+                   for a in vol.acuity_split]
+    emerg_rows = [(e.label, f"{e.share_pct:.1f}%", e.basis, e.source)
+                  for e in vol.emergency_split]
     return (
         ck_section_header("National transport volume — how many a year?",
                           eyebrow="STEP 0 · THE VOLUME")
         + ck_panel(
-            '<p class="ifd-prose">The demand spine, and the first question a buyer '
-            'asks: <strong>how many transports are there a year?</strong> A '
-            'top-down funnel from the hardest GOV anchor (Medicare fee-for-service '
-            'ground) out to an all-payer band and down to the interfacility slice. '
-            'Every tier is sourced; the all-payer line is <strong>derived</strong> '
-            'from the GOV figure — no trade estimate is used.</p>'
+            '<p class="ifd-prose">The first question a buyer asks: <strong>how many '
+            'transports are there a year?</strong> These are <strong>four distinct, '
+            'published counts</strong> — a Medicare payer-claims count and three '
+            'all-payer interfacility counts from HCUP — <em>not</em> a nested '
+            'funnel, and <strong>every figure is quoted and linked</strong> on the '
+            'Evidence &amp; sources sheet. We deliberately state <strong>no '
+            'all-payer total</strong>: none is published, so putting one here would '
+            'be an unsourced number.</p>'
             + kpis
-            + '<p class="ifd-sub">The transports/year funnel</p>'
-            + _table(("Tier", "Transports / yr", "Basis", "What it counts"),
-                     tier_rows, hi_col=1)
-            + f'<p class="ifd-sub">By acuity type (on the {vol.ffs_transports_m:.1f}M '
-            'Medicare FFS base)</p>'
-            + _table(("Acuity type", "Share", "Transports", "Basis", "Read"),
-                     acuity_rows, hi_col=2)
-            + f'<p class="ifd-sub">Emergency vs non-emergency (on the '
-            f'{vol.ffs_transports_m:.1f}M base)</p>'
-            + _table(("Split", "Share", "Transports", "Basis", "Read"),
-                     emerg_rows, hi_col=1)
+            + '<p class="ifd-sub">The four published counts</p>'
+            + _table(("Measure", "Value / yr", "Basis", "What it counts (source on "
+                      "Evidence sheet)"), tier_rows, hi_col=1)
+            + '<p class="ifd-sub">By acuity — CMS GADCS published split</p>'
+            + _table(("Acuity type", "Share", "Basis", "Source"),
+                     acuity_rows, hi_col=1)
+            + '<p class="ifd-sub">Emergency vs non-emergency — CMS GADCS BLS claim '
+            'lines (2022), BLS-specific</p>'
+            + _table(("Split", "Share", "Basis", "Source"), emerg_rows, hi_col=1)
             + f'<p class="ifd-prose">{_chip("GOV")} {_esc(vol.note)}</p>'
             + f'<p class="ifd-src">Source: {_esc(vol.source_label)}</p>'))
+
+
+# ── Evidence & sources (the trust key: value + basis + verbatim quote + link) ─
+def _evidence_section(ev) -> str:
+    if not ev:
+        return ""
+    mix = {}
+    for e in ev:
+        mix[e.basis] = mix.get(e.basis, 0) + 1
+    mix_txt = ", ".join(f"{mix[b]} {b}" for b in ("GOV", "SOURCED", "ACADEMIC",
+                                                  "DERIVED") if mix.get(b))
+    body_rows = []
+    for e in ev:
+        src = (f'<a href="{_esc(e.url)}" target="_blank" rel="noopener" '
+               f'style="color:var(--sc-teal,#155752);text-decoration:none;">'
+               f'{_esc(e.source)}</a>' if getattr(e, "url", "") else _esc(e.source))
+        eq = (f'<div style="margin-top:4px;font-size:11px;'
+              f'color:var(--sc-muted,#6b6357);"><em>Equation:</em> {_esc(e.equation)}'
+              f'</div>' if getattr(e, "equation", "") else "")
+        body_rows.append(
+            "<tr>"
+            f'<td><strong>{_esc(e.figure)}</strong>{eq}</td>'
+            f'<td class="ifd-hi" style="font-variant-numeric:tabular-nums;">'
+            f'{_esc(e.value)}<div style="margin-top:3px;">{_chip(e.basis)}</div></td>'
+            f'<td style="font-size:12px;">&ldquo;{_esc(e.quote)}&rdquo;<div '
+            f'style="margin-top:3px;font-size:11px;">{src}</div></td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Figure</th><th class="ifd-hi">Value / basis</th>'
+             '<th>Direct quote from the source (click to open)</th>'
+             '</tr></thead><tbody>' + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Evidence & sources — what can I trust, and where's it from?",
+                          eyebrow="THE TRUST KEY")
+        + ck_panel(
+            '<p class="ifd-prose">Every headline number, once, with the '
+            '<strong>verbatim quote</strong> from the public source and a link. The '
+            'basis tells you exactly how much to trust each figure — '
+            + _chip("GOV") + ' published government statistic, ' + _chip("SOURCED")
+            + ' a real dataset, ' + _chip("ACADEMIC") + ' a peer-reviewed study, '
+            'and <strong>DERIVED</strong> a figure computed by a shown equation from '
+            'those public inputs. <strong>Nothing here is illustrative</strong>, and '
+            'there is deliberately no all-payer total (none is published). '
+            f'Mix: {_esc(mix_txt)}.</p>'
+            + table))
+
+
+# ── Demand databases (the multi-source triangulation) ────────────────────────
+def _sources_section(sm) -> str:
+    if not (sm and getattr(sm, "available", False)):
+        return ""
+    body_rows = []
+    for s in sm.sources:
+        name = (f'<a href="{_esc(s.url)}" target="_blank" rel="noopener" '
+                f'style="color:var(--sc-teal,#155752);text-decoration:none;'
+                f'font-weight:600;">{_esc(s.name)}</a>' if getattr(s, "url", "")
+                else _esc(s.name))
+        body_rows.append(
+            "<tr>"
+            f'<td>{name}<div style="font-size:10px;color:var(--sc-muted,#6b6357);'
+            f'margin-top:2px;">{_esc(s.steward)}</div></td>'
+            f'<td>{_esc(s.measures)}</td>'
+            f'<td class="ifd-hi" style="font-variant-numeric:tabular-nums;">'
+            f'{_esc(s.current_read)}</td>'
+            f'<td>{_esc(s.data_year)}</td>'
+            f'<td>{_chip(s.basis)}</td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Database (steward)</th><th>What it measures for IFT</th>'
+             '<th class="ifd-hi">Most-current read</th><th>Data year</th>'
+             '<th>Basis</th></tr></thead><tbody>'
+             + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Demand databases — are we using NEDS? (yes, and more)",
+                          eyebrow="STEP 0b · THE SOURCES")
+        + ck_panel(
+            '<p class="ifd-prose">The volume above is not one number — it is a '
+            '<strong>triangulation</strong> across independent databases. Every way '
+            'we measure IFT demand, with each one\'s most-current published figure, '
+            'data year, and source. The payer claims (<strong>CMS / MedPAC</strong>), '
+            'the EMS activation record (<strong>NEMSIS</strong>), the all-payer ED '
+            'database (<strong>HCUP NEDS</strong>), the inpatient database '
+            '(<strong>HCUP NIS</strong>), the facility throughput base '
+            '(<strong>HCRIS</strong>), and more — '
+            f'{sm.n_gov} GOV, {sm.n_sourced} SOURCED, {sm.n_academic} ACADEMIC, '
+            'no trade / market-research firm.</p>'
+            + table
+            + f'<p class="ifd-src">Source: {_esc(sm.source_label)}</p>'
+            + f'<p class="ifd-prose" style="font-size:12.5px;">{_esc(sm.note)}</p>'))
+
+
+# ── Demand drivers (the sourced forces behind volume) ────────────────────────
+def _drivers_section(dd) -> str:
+    if not (dd and getattr(dd, "available", False)):
+        return ""
+    body_rows = []
+    for x in dd.drivers:
+        src = (f'<a href="{_esc(x.url)}" target="_blank" rel="noopener" '
+               f'style="color:var(--sc-teal,#155752);text-decoration:none;">'
+               f'{_esc(x.source)}</a>' if getattr(x, "url", "") else _esc(x.source))
+        body_rows.append(
+            "<tr>"
+            f'<td><strong>{_esc(x.driver)}</strong>'
+            f'<div style="font-size:11px;color:var(--sc-muted,#6b6357);'
+            f'margin-top:2px;">{_esc(x.ift_link)}</div></td>'
+            f'<td class="ifd-hi">{_esc(x.value)}<div style="margin-top:3px;">'
+            f'{_chip(x.basis)}</div></td>'
+            f'<td style="font-size:11.5px;">{src}</td>'
+            f'<td style="font-size:11.5px;">{_esc(x.proxy)}</td>'
+            f'<td style="font-size:11.5px;">{_esc(x.track)}</td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Demand driver &amp; why it drives IFT</th>'
+             '<th class="ifd-hi">Current value / basis</th><th>Source</th>'
+             '<th>Best proxy to get it</th><th>How to track it</th>'
+             '</tr></thead><tbody>' + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Demand drivers — the forces behind the volume, sourced",
+                          eyebrow="STEP 0c · WHAT DRIVES DEMAND")
+        + ck_panel(
+            '<p class="ifd-prose">What actually generates interfacility transport '
+            'demand — and how we get each number. Every row is a current '
+            '<strong>GOV / SOURCED / ACADEMIC</strong> figure (nothing '
+            'illustrative), with the <strong>best proxy</strong> to obtain it and '
+            'how to <strong>track</strong> it over time: annual admissions, IFT '
+            'missions, hospital-to-hospital transfers, the ALS/BLS/CCT mix, '
+            'health-system consolidation, service-line specialization, ED boarding, '
+            f'and the hospital-side impact. {dd.n_gov} GOV, {dd.n_sourced} SOURCED, '
+            f'{dd.n_academic} ACADEMIC.</p>'
+            + table
+            + f'<p class="ifd-src">Source: {_esc(dd.source_label)}</p>'
+            + f'<p class="ifd-prose" style="font-size:12.5px;">{_esc(dd.note)}</p>'))
 
 
 # ── National frame ───────────────────────────────────────────────────────────
@@ -231,7 +367,7 @@ def _national_section(nf) -> str:
         return ""
     kpis = (
         '<div class="ifd-kpi-grid">'
-        + _kpi("US ground-IFT TAM", f'{nf.tam_central_bn:.1f}B {_chip("ILLUSTRATIVE")}',
+        + _kpi("US ground-IFT TAM", f'{nf.tam_central_bn:.1f}B {_chip("DERIVED")}',
                "central, all-payer, ex-NEMT ex-air")
         + _kpi("IFT legs / yr", f"{nf.ift_legs_low_m:.0f}-{nf.ift_legs_high_m:.0f}M",
                "all-payer ground interfacility")
@@ -257,7 +393,7 @@ def _national_section(nf) -> str:
             'band crossing in this decade is the inflection.</p>'
             + kpis
             + '<p class="ifd-sub">The demographic engine — age bands ' + _chip("GOV")
-            + ' ' + _chip("ILLUSTRATIVE") + '</p>'
+            + ' ' + _chip("DERIVED") + '</p>'
             + f'<div class="ifd-grid">{bands}</div>'
             + f'<p class="ifd-src">Source: {_esc(nf.source_label)}</p>'))
 
@@ -381,14 +517,14 @@ def _yoy_section() -> str:
     if agg_rows:
         body += (
             '<p class="ifd-sub">Aggregate trajectory (all conditions, relative '
-            'years) ' + _chip("ILLUSTRATIVE") + '</p>'
+            'years) ' + _chip("DERIVED") + '</p>'
             + _table(("Year", "Cases/yr", "YoY growth", "Added vs prior"), agg_rows))
     body += (
         '<p class="ifd-sub">By condition — YoY trend (top 16 by growth)</p>'
         + _table(("Condition", "Family", "Acuity", "Base (year)", "CAGR",
                   "Y+5 cases", "Added / 5y", "Trajectory"), crows)
         + f'<p class="ifd-src">Base volumes GOV/ACADEMIC; the forward YoY '
-        f'projection {_chip("ILLUSTRATIVE")} (Census age-band CAGRs, incidence '
+        f'projection {_chip("DERIVED")} (Census age-band CAGRs, incidence '
         'held constant). This is a demographic projection, not observed '
         'multi-year history (a HCUP time series is the to-source refinement); some '
         'base counts are cohort denominators pending a transfer-rate haircut.</p>')
@@ -436,14 +572,14 @@ def _regional_section(regions) -> str:
         + ck_panel(
             '<p class="ifd-prose">The SOURCED facility base rolled up to each '
             'region — hospitals (IFT origins), beds, and post-acute destinations '
-            '(the discharge demand) — with the ILLUSTRATIVE per-region demand-$ '
+            '(the discharge demand) — with the DERIVED per-region demand-$ '
             '(SAM) as the sizing proxy. Every region shares the same aging demand '
             'tailwind; the density and post-acute depth is what varies.</p>'
             + _table(("Region", "Metros", "Hospitals", "HCRIS beds", "SNFs",
                       "SNF beds", "Post-acute nodes", "Dialysis", "Demand $ (SAM)"),
                      rows)
             + f'<p class="ifd-src">Facility counts {_chip("SOURCED")} (our vendored '
-            f'CMS estate); per-region demand $ {_chip("ILLUSTRATIVE")} '
+            f'CMS estate); per-region demand $ {_chip("DERIVED")} '
             '(SOURCED structure × labelled levers).</p>'))
 
 
@@ -469,7 +605,7 @@ def _mmt_section() -> str:
         + _kpi("65+ population", _num(fs.pop_65_plus),
                f"{_pct(fs.senior_share * 100)} senior share")
         + _kpi("Modeled demand", _num(fs.demand_missions) + " legs/yr",
-               f'{_usd_m(fs.demand_dollars)} {_chip("ILLUSTRATIVE")}')
+               f'{_usd_m(fs.demand_dollars)} {_chip("DERIVED")}')
         + '</div>')
     # CBSA / subcounty demand table
     cbsa_rows = []
@@ -498,7 +634,7 @@ def _mmt_section() -> str:
     if gp and getattr(gp, "available", False):
         growth = (
             '<p class="ifd-sub">Growth — SOM projected over 5 years '
-            + _chip("ILLUSTRATIVE") + '</p>'
+            + _chip("DERIVED") + '</p>'
             f'<p class="ifd-prose">{_esc(gp.headline)}</p>')
     opp_rows = []
     for o in (opp or [])[:10]:
@@ -532,7 +668,7 @@ def _mmt_section() -> str:
             + f'<div class="ifd-grid">{acct_cards}</div>'
             + growth + opp_block
             + f'<p class="ifd-src">Population {_chip("GOV")} (2020 Census); demand '
-            f'{_chip("ILLUSTRATIVE")} (age-split per-capita rates); accounts '
+            f'{_chip("DERIVED")} (age-split per-capita rates); accounts '
             'public/company-web, labelled.</p>'))
 
 
@@ -545,7 +681,7 @@ def _charts(regions, hc, ts) -> str:
             cards.append(ck_hbar_chart(
                 "Demand $ by region (SAM, $M)", items,
                 value_fmt=lambda v: f"${v:,.1f}M",
-                subtitle="Where footprint demand concentrates (ILLUSTRATIVE on "
+                subtitle="Where footprint demand concentrates (DERIVED on "
                          "SOURCED facility structure).",
                 source="ift_demand.regional_demand", label_w=180.0))
     except Exception:  # noqa: BLE001
@@ -572,7 +708,7 @@ def _charts(regions, hc, ts) -> str:
                 "MMT SOM revenue over 5 yrs ($M)", items,
                 value_fmt=lambda v: f"${v:,.1f}M",
                 subtitle="Forward projection at organic market growth "
-                         "(ILLUSTRATIVE).",
+                         "(DERIVED).",
                 source="ift_mmt.mmt_growth_projection"))
     except Exception:  # noqa: BLE001
         pass
@@ -584,7 +720,7 @@ def _charts(regions, hc, ts) -> str:
                 "Demand book trajectory (M cases/yr)", items,
                 value_fmt=lambda v: f"{v:,.1f}M",
                 subtitle=f"All conditions grown YoY at their demographic CAGR "
-                         f"(blended {agg.blended_cagr * 100:.1f}%/yr, ILLUSTRATIVE).",
+                         f"(blended {agg.blended_cagr * 100:.1f}%/yr, DERIVED).",
                 source="ift_clinical_demand.aggregate_demand_yoy"))
     except Exception:  # noqa: BLE001
         pass
@@ -596,7 +732,7 @@ def _charts(regions, hc, ts) -> str:
                 "Fastest-growing conditions (CAGR %/yr)", items,
                 value_fmt=lambda v: f"{v:.1f}%",
                 subtitle="The aging-cohort demand — hip fx, hospice, sepsis, "
-                         "stroke, HF lead (ILLUSTRATIVE demographic CAGR).",
+                         "stroke, HF lead (DERIVED demographic CAGR).",
                 source="ift_clinical_demand.condition_yoy_projection",
                 label_w=200.0))
     except Exception:  # noqa: BLE001
@@ -612,6 +748,9 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the IFT demand deep-dive. Degrades to honest notes, never raises."""
     nf = _dm.national_frame()
     vol = _dm.national_transport_volume()
+    evd = _dm.demand_evidence()
+    sm = _dm.demand_source_matrix()
+    dr = _dm.demand_drivers()
     hc = _dm.hcpcs_acuity_analysis()
     ep = _dm.emergency_prevalence()
     ts = _dm.demand_time_series()
@@ -634,7 +773,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'the <strong>regions</strong> to the operator\'s <strong>exact counties</strong> '
         'and where its <strong>customers concentrate</strong>. Every figure carries '
         'its basis — ' + _chip("GOV") + ' ' + _chip("SOURCED") + ' '
-        + _chip("ILLUSTRATIVE") + ' ' + _chip("FRAMEWORK") + '.</p>')
+        + _chip("DERIVED") + ' ' + _chip("FRAMEWORK") + '.</p>')
 
     body = "".join([
         _STYLES,
@@ -655,6 +794,9 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
                   "customers, and growth.")),
         _charts(regions, hc, ts),
         _volume_section(vol),
+        _evidence_section(evd),
+        _sources_section(sm),
+        _drivers_section(dr),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),
