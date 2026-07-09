@@ -65,6 +65,57 @@ class IftWorkbookTests(unittest.TestCase):
         self.assertGreaterEqual(len(research), 9,
                                 f"expected 9 research tabs, got {research}")
 
+    def test_carries_the_model_and_routing_depth(self):
+        names = self._sheet_names()
+        self.assertIn("Assumptions & levers", names)   # the model, low/central/high
+        self.assertIn("Clinical routing", names)       # movement of patients
+
+    def test_no_ghost_or_thin_sheets(self):
+        # every sheet must carry real content — no title-only "ghost" pages.
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        for ws in wb.worksheets:
+            nonempty = sum(1 for row in ws.iter_rows(values_only=True)
+                           for v in row if v not in (None, ""))
+            self.assertGreaterEqual(nonempty, 6,
+                                    f"ghost/thin sheet: {ws.title} ({nonempty})")
+
+    def test_no_dataclass_reprs_leak_generically(self):
+        # a value rendered as `str(some_dataclass)` looks like `Name(field=...)`;
+        # that must never reach a cell (risks/connections regressed here once).
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        import re
+        repr_pat = re.compile(r"^[A-Z][A-Za-z0-9]+\(.*=.*\)")
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        for ws in wb.worksheets:
+            for row in ws.iter_rows(values_only=True):
+                for v in row:
+                    if v is None:
+                        continue
+                    self.assertIsNone(repr_pat.match(str(v)),
+                                      f"{ws.title}: dataclass repr leaked: {v!r}")
+
+    def test_cells_wrap_and_hyperlinks_resolve(self):
+        # formatting contract: text wraps (no clipped prose), and the Contents
+        # "where this lives online" links resolve to real https targets.
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        z = zipfile.ZipFile(io.BytesIO(self.data))
+        self.assertIn('wrapText="1"', z.read("xl/styles.xml").decode())
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        links = [c.hyperlink.target for row in wb["Contents"].iter_rows()
+                 for c in row if c.hyperlink]
+        self.assertGreaterEqual(len(links), 5)
+        self.assertTrue(all(u.startswith("https://") for u in links))
+
     def test_contents_is_the_first_sheet(self):
         # the index must be tab #1 so a partner can navigate 30+ sheets.
         self.assertEqual(self._sheet_names()[0], "Contents")

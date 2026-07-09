@@ -34,10 +34,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ..exports.xlsx_writer import Sheet
+from ..exports.xlsx_writer import Sheet, Link
 
 _H = "header"
 _L = "label"
+
+# The live pages behind each analytic (the workbook's "where this lives online").
+_APP_BASE = "https://pedesk.app"
 
 
 def _safe(fn, default=None):
@@ -95,17 +98,23 @@ def _ecosystem_sheet() -> Optional[Sheet]:
              [("Participant", _H), ("Role in the IFT market", _H)]]
     for name, desc in eco.participants:
         rows.append([(name, _L), desc])
-    rows += [
-        [],
-        [("Quantitative anchors (clinical spine)", _H)],
-        ["Acute-transfer scenarios modeled",
-         (eco.n_acute_scenarios, "num"), "SOURCED (registry)"],
-        ["Post-acute destination count (national)",
-         (eco.postacute_destinations, "num"), "SOURCED (CMS rolls)"],
-        [],
-        [("Source / basis", _H), eco.source_label],
-    ]
-    return Sheet("Ecosystem & journey", rows, col_widths=[30, 30, 84])
+    # Quantitative anchors — only shown when actually present (they degrade to 0
+    # offline), and each labelled with its HONEST basis (the acute-scenario count
+    # is an authored registry count = FRAMEWORK; destinations are SOURCED CMS
+    # rolls). Never present a degraded 0 under a SOURCED chip.
+    anchors: List[List[Any]] = []
+    if eco.n_acute_scenarios:
+        anchors.append(["Acute-transfer scenarios in the clinical registry",
+                        (eco.n_acute_scenarios, "num"),
+                        "FRAMEWORK (authored acute-scenario registry)"])
+    if eco.postacute_destinations:
+        anchors.append(["Post-acute destination count (national)",
+                        (eco.postacute_destinations, "num"),
+                        "SOURCED (CMS post-acute rolls)"])
+    if anchors:
+        rows += [[], [("Quantitative anchors (clinical spine)", _H)]] + anchors
+    rows += [[], [("Source / basis", _H), eco.source_label]]
+    return Sheet("Ecosystem & journey", rows, col_widths=[34, 26, 80])
 
 
 # ── Dimension 3 — operating models / procurement / pain points ───────────────
@@ -209,13 +218,19 @@ def _positioning_sheet() -> Optional[Sheet]:
     for p in mp.pillars:
         rows.append([(p.pillar, _L), p.mmt_stance, p.vs_alternatives,
                      getattr(p, "basis", "ILLUSTRATIVE")])
+    # Home-market structure — only rendered when the SOURCED counts are actually
+    # present (they degrade to 0 offline), carrying the module's own honest
+    # basis string (which flips to "…(unavailable offline)"), never a hard-coded
+    # SOURCED chip over degraded zeros.
     ref = getattr(mp, "reference_market", "")
-    if ref:
+    n_hosp = getattr(mp, "home_n_hospitals", 0) or 0
+    if ref and n_hosp:
         rows += [
             [],
-            [("Home / reference market structure (SOURCED)", _H)],
+            [("Home / reference market structure", _H),
+             getattr(mp, "home_structure_basis", "")],
             ["Reference market", ref],
-            ["Hospitals (origins)", (getattr(mp, "home_n_hospitals", 0), "num")],
+            ["Hospitals (origins)", (n_hosp, "num")],
             ["Post-acute nodes", (getattr(mp, "home_n_nodes", 0), "num")],
             ["SNF beds", (getattr(mp, "home_snf_beds", 0), "num")],
             ["Density tier", getattr(mp, "home_density_tier", "—")],
@@ -498,11 +513,23 @@ def _report_narrative_sheet() -> Optional[Sheet]:
             rows.append(["• " + str(x)])
     conns = getattr(r, "connections", []) or []
     if conns:
-        rows += [[], [("Connections — where IFT touches the rest of the platform",
-                       _H)]]
-        for x in conns:
-            rows.append(["• " + str(x)])
-    return Sheet("Report narrative", rows, col_widths=[122])
+        rows += [
+            [],
+            [("Connections — where IFT touches the rest of the platform", _H)],
+            [("Go to (click to open)", _H), ("Kind", _H)],
+        ]
+        for c in conns:
+            label = getattr(c, "label", None)
+            href = getattr(c, "href", None)
+            kind = getattr(c, "kind", "")
+            if label is None:            # unexpected shape — degrade to text
+                rows.append(["• " + str(c)])
+                continue
+            cell = (Link(label, _APP_BASE + href)
+                    if isinstance(href, str) and href.startswith("/")
+                    else label)
+            rows.append([cell, kind])
+    return Sheet("Report narrative", rows, col_widths=[96, 18])
 
 
 def _report_economics_sheet() -> Optional[Sheet]:
@@ -588,9 +615,15 @@ def _report_regrisk_sheet() -> Optional[Sheet]:
     reg = getattr(r, "regulatory", None)
     if reg is not None:
         rows += [[("Regulatory rules", _H)],
-                 [("Rule", _H), ("Why it matters", _H), ("Source", _H)]]
+                 [("Rule", _H), ("Why it matters", _H)]]
         for rule in getattr(reg, "rules", []) or []:
-            rows.append([(rule.name, _L), rule.why_it_matters, rule.source_url])
+            # source_url is optional and often absent; only render it as a
+            # clickable link when a real URL is present (no blank third column).
+            row: List[Any] = [(rule.name, _L), rule.why_it_matters]
+            url = getattr(rule, "source_url", None)
+            if isinstance(url, str) and url.startswith("http"):
+                row.append(Link("source", url))
+            rows.append(row)
         pw = getattr(reg, "policy_watch", []) or []
         if pw:
             rows += [[("Policy watch", _H)]]
@@ -614,16 +647,193 @@ def _report_regrisk_sheet() -> Optional[Sheet]:
         rows.append([])
     risks = getattr(r, "risks", []) or []
     if risks:
-        rows += [[("Risks", _H)]]
+        rows += [[("Risks", _H)],
+                 [("Risk", _H), ("Severity", _H), ("Note", _H)]]
         for x in risks:
-            rows.append(["• " + str(x)])
+            # MarketReport.risks is a list of Risk dataclasses (risk/severity/
+            # note) — render the fields, never str(dataclass) which leaks a repr.
+            rows.append([(getattr(x, "risk", str(x)), _L),
+                         getattr(x, "severity", ""), getattr(x, "note", "")])
         rows.append([])
     dqs = getattr(r, "diligence_questions", []) or []
     if dqs:
         rows += [[("Diligence questions", _H)]]
         for x in dqs:
             rows.append(["• " + str(x)])
-    return Sheet("Report reg & risk", rows, col_widths=[30, 66, 40])
+    return Sheet("Report reg & risk", rows, col_widths=[34, 12, 74])
+
+
+# ── Assumptions & levers — the full model parameter tracker (the model, in depth)
+def _assumptions_sheet() -> Optional[Sheet]:
+    from . import ift_analytics as _an
+    tam = _safe(_an.ground_tam)
+    hs = _safe(_an.health_system_sam)
+    som = _safe(_an.sam_formula)
+    if not any(getattr(x, "available", False) for x in (tam, hs, som) if x):
+        return None
+
+    def pct3(t):
+        return [(t[0], "pct"), (t[1], "pct"), (t[2], "pct")]
+
+    rows: List[List[Any]] = [
+        [("Assumptions & levers — every modeling parameter, low / central / high",
+          _H)],
+        [("The complete model spine. GOV/SOURCED anchors are real; every ratio, "
+          "share, and per-transport dollar is ILLUSTRATIVE with a named basis. "
+          "Change a lever here and the funnel moves — this is the audit trail "
+          "behind the TAM/SAM/SOM.")],
+        [],
+        [("Lever", _H), ("Low", _H), ("Central", _H), ("High", _H),
+         ("Basis", _H), ("Comment / rationale", _H)],
+    ]
+    if tam and getattr(tam, "available", False):
+        g = tam.medicare_ffs_ground_bn
+        i = tam.medicare_ffs_ground_ift_bn
+        rows += [
+            [("TAM build (top-down from the GOV Medicare anchor)", _H)],
+            ["Medicare FFS ambulance spend, 2023",
+             "", (tam.medicare_ffs_ambulance_bn, "num2"), "", "GOV",
+             "MedPAC Payment Basics (Ambulance), Oct 2024 — the one hard anchor."],
+            ["→ Medicare FFS ground ambulance ($B)",
+             (g[0], "num2"), "", (g[1], "num2"), "ILLUSTRATIVE",
+             "Ground is ~85-88% of ambulance $; air is a separate market."],
+            ["→ Medicare FFS ground IFT slice ($B)",
+             (i[0], "num2"), "", (i[1], "num2"), "ILLUSTRATIVE",
+             "IFT is ~30-40% of ground $ — over-indexes on ALS2/SCT + mileage."],
+            ["All-payer ground IFT TAM ($B)",
+             (tam.allpayer_tam_bn_low, "num2"),
+             (tam.allpayer_tam_bn_central, "num2"),
+             (tam.allpayer_tam_bn_high, "num2"), "ILLUSTRATIVE",
+             "~5x all-payer gross-up of the Medicare-FFS ground-IFT slice; the "
+             "$6.5B central is NEVER GOV."],
+            ["Volume cross-check — transports (M/yr)",
+             (tam.transports_m[0], "num2"), "", (tam.transports_m[1], "num2"),
+             "ILLUSTRATIVE", "US ground IFT ~4-5M legs/yr."],
+            ["Volume cross-check — revenue / transport ($)",
+             (tam.revenue_per_transport[0], "money"), "",
+             (tam.revenue_per_transport[1], "money"), "ILLUSTRATIVE",
+             "Blended all-payer net revenue per IFT leg."],
+            [],
+        ]
+    if hs and getattr(hs, "available", False):
+        rows += [
+            [("SAM = multi-hospital health systems (structural ratios)", _H)],
+            ["Multi-hospital-system share of IFT $ (σ)"] + pct3(
+                hs.multi_system_ift_share) + [
+                "ILLUSTRATIVE",
+                "AHA 2023 ~68% of hospitals are in a system; up-transfers "
+                "concentrate at system hubs, so IFT $ over-indexes on systems."],
+            ["Health-system-biller insource ceiling (ι)"] + pct3(
+                hs.insource_ceiling) + [
+                "ILLUSTRATIVE",
+                "The claims proxy '$ billed by a system NPI ⇒ insourced' — the "
+                "UPPER BOUND on insourcing; hospitals rarely own ground fleets."],
+            ["Addressable (outsourceable) share (1 − ι)"] + pct3(
+                hs.addressable_share) + [
+                "ILLUSTRATIVE", "What an outsourced operator can actually win."],
+            ["Multi-hospital-system share of US beds (β)",
+             "", (hs.multi_system_bed_share, "pct"), "", "GOV-magnitude",
+             "AHA 2023 — the bottoms-up scaling base."],
+            ["In-MSA share of system IFT $",
+             "", (hs.msa_share_of_system_ift, "pct"), "", "ILLUSTRATIVE",
+             "Systems concentrate in metros; the MSA-restricted SAM cut."],
+            ["Operator current share of SAM (nascent)",
+             "", (hs.operator_share_of_sam, "pct"), "", "ILLUSTRATIVE",
+             "The ~1% kickoff framing — SAM is ~20-30x the current footprint."],
+            [],
+        ]
+    if som and getattr(som, "available", False) and getattr(som, "assumptions", None):
+        a = som.assumptions
+        f = a.get("f_IFT", {})
+        lam = a.get("lambda_return", {})
+        occ = a.get("snf_occ", {})
+        r = a.get("r_IFT", {})
+        rows += [
+            [("SOM = footprint (bottom-up dollarising levers)", _H)],
+            ["f_IFT — ground-IFT fraction of discharges",
+             (f.get("low"), "pct"), (f.get("central"), "pct"),
+             (f.get("high"), "pct"), "ILLUSTRATIVE", f.get("basis", "")],
+            ["λ_return — recurring SNF legs / occ. bed / yr",
+             (lam.get("low"), "num2"), (lam.get("central"), "num2"),
+             (lam.get("high"), "num2"), "ILLUSTRATIVE", lam.get("basis", "")],
+            ["SNF occupancy",
+             "", (occ.get("value"), "pct"), "", "GOV-magnitude",
+             occ.get("basis", "")],
+            ["r_IFT — net revenue / IFT transport ($)",
+             (r.get("low"), "money"), (r.get("central"), "money"),
+             (r.get("high"), "money"), "ILLUSTRATIVE", r.get("basis", "")],
+            [f"r_IFT rural uplift (× base)",
+             "", (r.get("rural_uplift"), "mult"), "", "ILLUSTRATIVE",
+             "Super-rural mileage + 22.6% add-on on rural metros."],
+            [],
+            [("Serviceable share s(m) by insource archetype (0.15-0.30)", _H)],
+            [("Insource archetype", _H), ("s(m)", _H), ("Read", _H)],
+        ]
+        s_by = (a.get("s_of_m", {}) or {}).get("by_class", {})
+        _S_NOTE = {
+            "insourced-heavy": "Twin Cities, Rochester — mostly closed (owned fleets).",
+            "insourced-top-outsourced-bottom": "Omaha, Cleveland, Cincinnati — win the routine residual.",
+            "mixed-confirmed-outsource": "Columbus OH — confirmed outsourced workflow.",
+            "mixed-insource-residual": "Des Moines — partial insource, residual contestable.",
+            "two-anchor-contestable": "Dayton — two anchors, contestable first-call.",
+            "outsourced-two-horse": "Lincoln — two-operator outsourced market.",
+            "outsourced-fragmented": "Milwaukee, Madison — fragmented, roll-up ready.",
+            "outsourced-incumbent": "Louisville, NW Indiana, NoVA — an incumbent holds first-call.",
+            "bi-state-outsourced": "Kansas City — bi-state outsourced.",
+            "public-utility-mixed": "Wichita — public-utility mixed model.",
+            "rural-contract-gated": "WY / rural NE metros — contract-gated, thin.",
+        }
+        for cls, s in s_by.items():
+            rows.append([(cls, _L), (s, "pct"), _S_NOTE.get(cls, "")])
+    rows += [[], [("Basis legend", _H),
+                  "GOV = published government · GOV-magnitude = a GOV-scale figure "
+                  "used as an order-of-magnitude · ILLUSTRATIVE = modeled with the "
+                  "named basis. No ratio here is presented as a filed figure."]]
+    return Sheet("Assumptions & levers", rows,
+                 col_widths=[38, 12, 12, 12, 20, 52])
+
+
+# ── Clinical routing — how patients move (acute condition → destination) ──────
+def _clinical_matrix_sheet() -> Optional[Sheet]:
+    from . import ift_clinical_demand as _cd
+    matrix = _safe(_cd.transfer_matrix, default=[])
+    if not matrix:
+        return None
+    rows: List[List[Any]] = [
+        [("Clinical routing — how patients move (acute scenario → destination)",
+          _H)],
+        [("The movement of patients that IS the IFT volume: each acute scenario, "
+          "why it must move, the destination capability it needs, the time "
+          "window, national volume (GOV/ACADEMIC), and demographic growth "
+          "(ILLUSTRATIVE). This is the demand engine beneath the sizing.")],
+        [],
+        [("Condition", _H), ("Family", _H), ("Transfer", _H), ("Acuity", _H),
+         ("Transport tier", _H), ("Origin setting", _H),
+         ("Destination capability (why they move)", _H),
+         ("Destination setting", _H), ("Time window", _H),
+         ("National volume/yr", _H), ("Volume basis", _H),
+         ("Growth CAGR", _H), ("Growth basis", _H)],
+    ]
+    for m in matrix:
+        vol = m.get("national_volume")
+        vlabel = m.get("volume_label", "")
+        cagr = m.get("cagr")
+        rows.append([
+            (m.get("condition", ""), _L), m.get("family", ""),
+            m.get("transfer_type", ""), m.get("acuity", ""),
+            m.get("transport_acuity", ""), m.get("origin_setting", ""),
+            m.get("destination_capability", ""), m.get("destination_setting", ""),
+            m.get("time_window", ""),
+            (vol, "num") if isinstance(vol, (int, float)) else "not separately enumerated",
+            vlabel,
+            (cagr, "pct") if isinstance(cagr, (int, float)) else "—",
+            m.get("growth_label", "")])
+    rows += [[], [("Source / basis", _H),
+                  "Volumes are GOV/ACADEMIC (AHRQ HCUP, CDC, published series); "
+                  "growth CAGRs are ILLUSTRATIVE (age-band population CAGRs, "
+                  "incidence held constant). Labelled per row."]]
+    return Sheet("Clinical routing", rows,
+                 col_widths=[26, 14, 10, 10, 14, 22, 40, 22, 30, 16, 34, 11, 40])
 
 
 # ── public entry point ───────────────────────────────────────────────────────
@@ -633,9 +843,9 @@ def extra_sheets() -> List[Sheet]:
     append the result unconditionally."""
     out: List[Sheet] = []
     singles = [
-        _taxonomy_sheet, _ecosystem_sheet, _operating_models_sheet,
-        _company_profiles_sheet, _positioning_sheet, _competitor_types_sheet,
-        _industry_context_sheet,
+        _taxonomy_sheet, _ecosystem_sheet, _clinical_matrix_sheet,
+        _operating_models_sheet, _company_profiles_sheet, _positioning_sheet,
+        _competitor_types_sheet, _industry_context_sheet, _assumptions_sheet,
     ]
     for b in singles:
         s = _safe(b)

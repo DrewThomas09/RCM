@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ..exports.xlsx_writer import Sheet, write_xlsx
+from ..exports.xlsx_writer import Sheet, write_xlsx, Link
 from . import ift_analytics as _an
 from . import ift_clinical_demand as _cd
 from . import ift_geo
@@ -509,15 +509,22 @@ def _moat_sheet() -> Optional[Sheet]:
         rows += [
             [],
             [("Cross-market proof points (a new entrant cannot easily replace)", _H)],
-            [("Market", _H), ("Factors proven", _H), ("Claim", _H),
-             ("Evidence", _H)],
+            [("Market", _H), ("Region", _H), ("Factors proven", _H),
+             ("Claim", _H), ("Evidence", _H), ("Named operators (PUBLIC-WEB)", _H),
+             ("Evidence source", _H)],
         ]
         for pt in proofs.points:
             fns = ("; ".join(pt.factor_names)
                    if isinstance(pt.factor_names, (list, tuple))
                    else pt.factor_names)
-            rows.append([pt.market, fns, pt.claim, pt.evidence])
-    return Sheet("Moat scorecard", rows, col_widths=[22, 40, 40, 14, 14])
+            ops = ("; ".join(pt.named_operators)
+                   if isinstance(getattr(pt, "named_operators", None),
+                                 (list, tuple)) else "")
+            rows.append([pt.market, getattr(pt, "region_label", ""), fns,
+                         pt.claim, pt.evidence, ops,
+                         getattr(pt, "evidence_source", "")])
+    return Sheet("Moat scorecard", rows,
+                 col_widths=[20, 16, 34, 40, 40, 40, 22])
 
 
 def _tracking_sheet() -> Optional[Sheet]:
@@ -587,6 +594,8 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Provenance": "Honesty legend — what is real (GOV/SOURCED) vs modeled.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
+    "Clinical routing": "How patients move: acute scenario → destination + growth.",
+    "Assumptions & levers": "Every model parameter (low/central/high) + basis.",
     "Operating models": "Insource / hybrid / outsource bands, procurement, pain points.",
     "Company profiles": "MMT (subject) + the competitive field, full profiles.",
     "MMT positioning": "MMT's dedicated-IFT positioning pillars.",
@@ -623,7 +632,26 @@ def _contents_sheet(sheets: List[Sheet]) -> Sheet:
     for i, s in enumerate(sheets, start=1):
         rows.append([(i, "num"), (s.name, _H),
                      _SHEET_DESCRIPTIONS.get(s.name, "")])
-    return Sheet("Contents", rows, col_widths=[5, 24, 78])
+    # Where the same analysis lives online (clickable) — the interactive pages
+    # that this workbook is the downloadable, auditable companion to.
+    rows += [
+        [],
+        [("Where this lives online (click to open)", _H)],
+        [("", _H), ("Page", _H), ("What it is", _H)],
+        ["", Link("Investor Market Study", "https://pedesk.app/ift-study"),
+         "The four-dimension SOW study + MMT deep dive."],
+        ["", Link("Market Research Brief", "https://pedesk.app/ift-research"),
+         "The deep market-level 20-topic research brief."],
+        ["", Link("TAM / SAM / SOM + 20 metros", "https://pedesk.app/ift-markets"),
+         "The sized funnel + the target-metro deep dive."],
+        ["", Link("Clinical demand engine", "https://pedesk.app/ift-clinical"),
+         "The acute-transfer volume + growth spine."],
+        ["", Link("IFT market report", "https://pedesk.app/market/interfacility_transport"),
+         "The subsector market report."],
+        ["", Link("Download this workbook", "https://pedesk.app/api/ift/markets.xlsx"),
+         "This Excel — always the latest build."],
+    ]
+    return Sheet("Contents", rows, col_widths=[5, 30, 78])
 
 
 # ── the workbook ─────────────────────────────────────────────────────────────
