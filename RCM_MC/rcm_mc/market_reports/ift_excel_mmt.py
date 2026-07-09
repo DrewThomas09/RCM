@@ -406,6 +406,34 @@ def _swot_sheet() -> Optional[Sheet]:
     return Sheet("MMT SWOT", rows, col_widths=[110], merges=merges)
 
 
+def _payer_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    pm = _safe(_m.mmt_payer_mix)
+    if not (pm and pm.rows):
+        return None
+    rows, merges = _title(
+        "MMT payer mix — the revenue blend behind $/leg",
+        "MMT's SOM revenue by payer. Commercial pays ~2.8× Medicare, so a payer "
+        "mix that skews Medicare on VOLUME still skews commercial on REVENUE — "
+        "the single biggest revenue lever. Shares + multiples ILLUSTRATIVE; the "
+        "blend reconciles to the $1,300 net revenue/leg.", 5)
+    rows += [
+        [("Blended net revenue / leg", _H), (pm.blended_rate_per_leg, "money"),
+         ("Commercial % of revenue", _H), (pm.commercial_revenue_share, "pct")],
+        [],
+        [("Payer", _H), ("% of transports", _H), ("Rate vs Medicare", _H),
+         ("% of revenue", _H), ("SOM revenue", _H)],
+    ]
+    band_start = len(rows) + 1
+    for r in pm.rows:
+        rows.append([(r.payer, _L), (r.share, "pct"), (r.rate_multiple, "mult"),
+                     (r.revenue_share, "pct"), (r.revenue_dollars, "money")])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H), pm.note], [_chip("ILLUSTRATIVE")]]
+    return Sheet("MMT payer mix", rows, col_widths=[22, 16, 16, 14, 16],
+                 freeze_rows=6, merges=merges, band_rows=(band_start, band_end))
+
+
 def _scenario_sheet() -> Optional[Sheet]:
     from . import ift_mmt as _m
     sc = _safe(_m.mmt_som_scenario)
@@ -502,7 +530,7 @@ def mmt_sheets() -> List[Sheet]:
     out: List[Sheet] = []
     for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
               _scenario_sheet, _opportunity_sheet, _operating_sheet,
-              _growth_sheet, _connectors_sheet, _clinical_sheet,
+              _payer_sheet, _growth_sheet, _connectors_sheet, _clinical_sheet,
               _metro_read_sheet, _accounts_sheet, _scorecard_sheet,
               _swot_sheet, _diligence_sheet):
         s = _safe(b)
