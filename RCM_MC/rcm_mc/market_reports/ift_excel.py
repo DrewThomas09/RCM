@@ -18,12 +18,113 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ..exports.xlsx_writer import Sheet, write_xlsx, Link
+from ..exports.xlsx_writer import Sheet, write_xlsx, Link, basis_style, F
 from . import ift_analytics as _an
 from . import ift_clinical_demand as _cd
 from . import ift_geo
 
 _H = "header"
+_L = "label"
+
+
+# ── Presentation polish (centralized, idempotent) ─────────────────────────────
+# The IFT builders were written before the writer grew a style hierarchy: they
+# tag titles, section headers AND column headers all as "header" (white-on-navy),
+# so a sheet reads as one undifferentiated wall of navy bars, and Basis cells
+# render as plain grey text. This pass restyles a finished Sheet uniformly —
+# never touching a VALUE, only its style — so every sheet gains the same visual
+# hierarchy without editing 30 builders:
+#   * the first single-cell "header" row → a big navy TITLE (merged across the
+#     table width);
+#   * the row under it, if plain prose → a muted SUBTITLE;
+#   * every later single-cell "header" row → a teal SECTION BANNER (≠ the navy
+#     column-header bars, so sections read distinctly);
+#   * standalone honesty-basis cells (GOV / SOURCED / ACADEMIC / ILLUSTRATIVE /
+#     FRAMEWORK) → their colored chip, so provenance scans at a glance;
+#   * the first real column-header row (≥3 header cells, near the top) is frozen
+#     so it stays visible on scroll.
+# Idempotent: a sheet already carrying title/banner/chip styles (the depth &
+# connector sheets) is left as-is, because each rule only fires on the pre-polish
+# "header"/"text" styles it replaces.
+def _col_letter(i: int) -> str:
+    out = ""
+    i += 1
+    while i:
+        i, rem = divmod(i - 1, 26)
+        out = chr(65 + rem) + out
+    return out
+
+
+def _cell_parts(cell: Any):
+    return cell if isinstance(cell, tuple) else (cell, "text")
+
+
+def _is_basis_chip(value: Any, style: str) -> bool:
+    """A short, standalone honesty-basis label in a plain cell — chip it. Long
+    citations / prose that merely START with a basis word stay plain text."""
+    if style != "text" or not isinstance(value, str):
+        return False
+    v = value.strip()
+    if not v or len(v) > 48 or ". " in v:
+        return False
+    return basis_style(v) != "text"
+
+
+def _polish_sheet(sheet: Sheet) -> Sheet:
+    rows = sheet.rows
+    width = max((len(r) for r in rows), default=1)
+    if sheet.col_widths:
+        width = max(width, len(sheet.col_widths))
+    title_done = False
+    prev_was_title = False
+    freeze_at = 0
+    new_rows: List[List[Any]] = []
+    for i, row in enumerate(rows, start=1):
+        cells = list(row)
+        parts = [_cell_parts(c) for c in cells]
+        styles = [p[1] for p in parts]
+        vals = [p[0] for p in parts]
+        nonempty = [v for v in vals if v not in (None, "")]
+        single_header = (len(cells) == 1 and styles and styles[0] == "header")
+        # (1) title — the first single-cell header row
+        if not title_done and single_header:
+            new_rows.append([(vals[0], "title")])
+            title_done = True
+            prev_was_title = True
+            continue
+        # (2) subtitle — a plain-prose row directly under the title
+        if (prev_was_title and len(cells) == 1
+                and styles[0] == "text" and isinstance(vals[0], str)
+                and len(vals[0]) > 20):
+            new_rows.append([(vals[0], "subtitle")])
+            prev_was_title = False
+            continue
+        prev_was_title = False
+        # (3) section banner — a later single-cell header row
+        if single_header:
+            new_rows.append([(vals[0], "banner")])
+            continue
+        # (4) freeze the first real column-header row (≥3 header cells, near top)
+        if (freeze_at == 0 and i <= 9 and len(cells) >= 3
+                and len(nonempty) >= 3
+                and all(s == "header" for p, s in zip(vals, styles)
+                        if p not in (None, ""))):
+            freeze_at = i
+        # (5) chip standalone basis cells (keep every other cell untouched)
+        out: List[Any] = []
+        for c in cells:
+            value, style = _cell_parts(c)
+            if _is_basis_chip(value, style):
+                out.append((value, basis_style(value)))
+            else:
+                out.append(c)
+        new_rows.append(out)
+    sheet.rows = new_rows
+    if title_done and not sheet.merges and width > 1:
+        sheet.merges = [f"A1:{_col_letter(width - 1)}1"]
+    if freeze_at and not sheet.freeze_rows:
+        sheet.freeze_rows = freeze_at
+    return sheet
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -180,20 +281,43 @@ def _som_sheet() -> Optional[Sheet]:
         [("Per-metro serviceable market (SOURCED structure x ILLUSTRATIVE levers)",
           _H)],
         [("Metro", _H), ("Region", _H), ("HCRIS beds", _H),
-         ("Discharge base", _H), ("SNF beds", _H), ("Demand mis/yr", _H),
+         ("Discharge base", _H), ("SNF beds", _H), ("Acute mis/yr", _H),
+         ("PAC mis/yr", _H), ("Demand mis/yr", _H),
          ("s(m)", _H), ("$/transport", _H), ("Serv. mis/yr", _H),
          ("SOM $", _H)],
     ]
-    for r in som.rows:
+    # Sort biggest-SOM-first so the material metros read at the top.
+    for r in sorted(som.rows, key=lambda x: x.sam_dollars, reverse=True):
         rows.append([
             r.name, r.region_label, (r.hcris_beds, "num"),
             (r.discharge_base, "num"), (r.snf_beds, "num"),
+            (r.acute_missions, "num"), (r.pac_missions, "num"),
             (r.demand_missions, "num"), (r.serviceable_share, "pct"),
             (r.revenue_per_transport, "money"), (r.serviceable_missions, "num"),
             (r.sam_dollars, "money")])
+    # Validation cross-check — the SAM triangulation denominators (thin-spot the
+    # per-metro table drops): the footprint's national bed share, the bed-share ×
+    # TAM × s̄ cross-check, and the serviceable share of national IFT volume.
+    val: List[List[Any]] = []
+    if getattr(som, "bed_share_of_national", None):
+        val.append(["Footprint HCRIS beds (metro / national)",
+                    (som.metro_hcris_beds, "num"),
+                    "/", (som.national_hcris_beds, "num"),
+                    "share", (som.bed_share_of_national, "pct")])
+    if getattr(som, "sam_crosscheck_dollars", None):
+        val.append(["SOM cross-check (bed-share × TAM × s̄)",
+                    (som.sam_crosscheck_dollars, "money"),
+                    "vs bottom-up", (som.sam_dollars_central, "money")])
+    if getattr(som, "serviceable_share_of_national_volume", None):
+        lo, hi = som.national_ift_volume_m
+        val.append(["Serviceable share of national IFT volume",
+                    (som.serviceable_share_of_national_volume, "pct"),
+                    "(national ~", (lo, "num2"), "-", (hi, "num2"), "M legs/yr)"])
+    if val:
+        rows += [[], [("Validation cross-check (SAM triangulation)", _H)]] + val
     rows += [[], [("Source", _H), som.source_label]]
     return Sheet("SOM footprint", rows,
-                 col_widths=[22, 20, 12, 14, 10, 14, 8, 13, 12, 16])
+                 col_widths=[22, 20, 12, 14, 10, 12, 11, 13, 8, 13, 12, 16])
 
 
 # ── Per-metro structure (all facility counts) ────────────────────────────────
@@ -206,27 +330,44 @@ def _structure_sheet() -> Optional[Sheet]:
           "anchor systems / operators are public/company-web, named honestly.")],
         [],
         [("Metro", _H), ("Region", _H), ("States", _H), ("Profile", _H),
-         ("Rural", _H), ("Hospitals", _H), ("HCRIS beds", _H), ("SNF", _H),
-         ("SNF beds", _H), ("IRF", _H), ("LTCH", _H), ("Hospice", _H),
-         ("HomeHealth", _H), ("Dialysis", _H), ("Post-acute nodes", _H),
-         ("Density tier", _H)],
+         ("Rural", _H), ("Hospitals", _H), ("HCRIS beds", _H),
+         ("Inpt occ.", _H), ("SNF", _H),
+         ("SNF beds", _H), ("IRF", _H), ("LTCH", _H), ("LTCH beds", _H),
+         ("Hospice", _H), ("HomeHealth", _H), ("Dialysis", _H),
+         ("Dialysis stns", _H), ("Post-acute nodes", _H), ("Density tier", _H)],
     ]
+    caveats: List[List[Any]] = []
     for md in ift_geo.MARKETS:
         st = _safe(lambda md=md: ift_geo.metro_structure(md.name))
         if not (st and getattr(st, "available", False)):
             rows.append([md.name, md.region_label, "/".join(md.states),
                          md.profile, "yes" if md.rural else "no",
-                         "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—"])
+                         "—", "—", "—", "—", "—", "—", "—", "—", "—", "—", "—",
+                         "—", "—", "—"])
             continue
+        occ = getattr(st, "metro_occupancy", None)
         rows.append([
             st.name, st.region_label, "/".join(st.states), st.profile,
             "yes" if st.rural else "no", (st.n_hospitals, "num"),
-            (st.hcris_beds, "num"), (st.n_snf, "num"), (st.snf_beds, "num"),
-            (st.n_irf, "num"), (st.n_ltch, "num"), (st.n_hospice, "num"),
+            (st.hcris_beds, "num"),
+            (occ, "pct") if isinstance(occ, (int, float)) else "—",
+            (st.n_snf, "num"), (st.snf_beds, "num"),
+            (st.n_irf, "num"), (st.n_ltch, "num"),
+            (getattr(st, "ltch_beds", 0), "num"), (st.n_hospice, "num"),
             (st.n_home_health, "num"), (st.n_dialysis, "num"),
+            (getattr(st, "dialysis_stations", 0), "num"),
             (st.n_postacute_destinations, "num"), st.density_tier])
+        for cav in (getattr(st, "data_caveats", None) or []):
+            caveats.append([(st.name, _L), cav])
+    # Data caveats — the honest undercount flags the per-metro row can't carry
+    # (e.g. a public/VA hospital absent from the geocoded roll), so a reader
+    # never mistakes a conservative floor for the true count.
+    if caveats:
+        rows += [[], [("Data caveats (SOURCED undercount flags)", _H)],
+                 [("Metro", _H), ("Caveat", _H)]] + caveats
     return Sheet("Markets structure", rows,
-                 col_widths=[22, 18, 8, 16, 7, 10, 11, 7, 9, 6, 6, 8, 11, 9, 14, 12])
+                 col_widths=[20, 16, 8, 15, 6, 9, 10, 8, 6, 8, 5, 5, 8, 7, 10,
+                             8, 11, 13, 12])
 
 
 # ── Per-metro qualitative read (anchors / operators / insource / moat) ───────
@@ -592,6 +733,13 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Destination supply": "Real post-acute destination counts (SOURCED).",
     "Three-lever tracker": "Price × volume + consolidation growth bridge.",
     "Provenance": "Honesty legend — what is real (GOV/SOURCED) vs modeled.",
+    "Sensitivity": "TAM/SAM/SOM range + a one-variable-at-a-time SOM tornado.",
+    "Acuity mix": "The CCT/SCT high-acuity concentration — the IFT thesis.",
+    "Demand build": "Growth leaderboard + the escalation-book projection.",
+    "Reimbursement AIF series": "The Ambulance Inflation Factor, year by year (GOV).",
+    "Footprint vs national": "Footprint national penetration + per-region roll-up.",
+    "Moat detail": "Per-metro contestability + the factor-by-factor evidence trail.",
+    "Code validation QA": "ICD-10-CM coding-integrity check on the clinical spine.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
     "Clinical routing": "How patients move: acute scenario → destination + growth.",
@@ -610,7 +758,7 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "R· Sizing method": "Research: the six sizing approaches + assumption tracker.",
     "R· Growth & headwinds": "Research: growth drivers, headwinds, net demand.",
     "R· Evidence quality": "Research: confidence in findings + open gaps.",
-    "Connectors": "Network-gated data connectors + fallback GOV citations.",
+    "Connectors": "The full data-connector estate map (18 hooks / 11 connectors) + fallbacks.",
     "Fee schedule": "Medicare Ambulance Fee Schedule ready-reckoner (RVU × CF).",
     "Occupancy demand": "Hospital inpatient occupancy — the transfer-demand engine.",
     "Deal history": "EMS + NEMT + air-medical transport deal corpus.",
@@ -672,6 +820,14 @@ def ift_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
         s = _safe(b)
         if s is not None:
             sheets.append(s)
+    # The analytical-DEPTH sheet set (sensitivity, acuity mix, demand build, AIF
+    # series, footprint-vs-national, moat detail, code-validation QA) — the parts
+    # a diligence team stress-tests, surfaced from analytics the core computed.
+    try:
+        from . import ift_excel_depth as _depth
+        sheets.extend(_depth.depth_sheets())
+    except Exception:  # noqa: BLE001 — degrade to the core pack alone
+        pass
     # The qualitative / narrative / research / connector sheet set.
     try:
         from . import ift_excel_extra as _extra
@@ -680,4 +836,11 @@ def ift_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
         pass
     if not sheets:  # never emit an empty workbook
         sheets = [_provenance_sheet()]
-    return write_xlsx([_contents_sheet(sheets)] + sheets)
+    # Centralized presentation polish — title/banner hierarchy, basis chips,
+    # frozen headers — applied to every sheet (Contents first). Never raises: a
+    # sheet that somehow can't be polished is emitted as-built.
+    final = [_contents_sheet(sheets)] + sheets
+    out: List[Sheet] = []
+    for s in final:
+        out.append(_safe(lambda s=s: _polish_sheet(s), default=s) or s)
+    return write_xlsx(out)

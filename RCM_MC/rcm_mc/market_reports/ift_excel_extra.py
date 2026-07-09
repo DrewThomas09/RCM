@@ -32,12 +32,16 @@ not presented as data figures.
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..exports.xlsx_writer import Sheet, Link
 
 _H = "header"
 _L = "label"
+_T = "title"
+_S = "subtitle"
+_B = "banner"
+_N = "note"
 
 # The live pages behind each analytic (the workbook's "where this lives online").
 _APP_BASE = "https://pedesk.app"
@@ -344,35 +348,89 @@ def _research_sheets() -> List[Sheet]:
     return out
 
 
-# ── Data connectors (network-gated hooks + fallback GOV citations) ────────────
+# ── Data connectors & estate map (network-gated hooks + fallback citations) ───
 def _connectors_sheet() -> Optional[Sheet]:
-    from . import ift_analytics as _an
-    probes = [
-        ("Medicare Part B ambulance utilization (A0426-A0436)",
-         _safe(_an.ambulance_part_b_utilization)),
-        ("Medicaid NEMT state coverage", _safe(_an.nemt_state_coverage)),
-        ("BLS QCEW ambulance employment (NAICS 621910)",
-         _safe(_an.ambulance_employment)),
-    ]
-    probes = [(n, p) for n, p in probes if p is not None]
+    """The full IFT connector estate — every relevant public-data hook, probed
+    degrade-safe, grouped by category. Offline each reads 'network-gated' and
+    cites an honest GOV/ACADEMIC fallback; the label flips to SOURCED once the
+    estate is ingested. Sourced from :mod:`ift_connectors` (18 hooks / 11
+    connectors), a big step up from the original 3-hook sheet."""
+    try:
+        from . import ift_connectors as _ic
+    except Exception:  # noqa: BLE001
+        return None
+    probes = _safe(_ic.connector_estate_map, default=[]) or []
+    summ = _safe(_ic.estate_summary, default=None)
     if not probes:
         return None
+    n_total = len(probes)
+    n_avail = sum(1 for p in probes if p.available)
+    n_conn = summ.n_connectors if summ else len({p.connector for p in probes})
     rows: List[List[Any]] = [
-        [("Data connectors — network-gated hooks (ingest-ready) + fallbacks", _H)],
-        [("Offline these read 'network-gated' and cite an honest GOV/ILLUSTRATIVE "
-          "fallback — never a fabricated number. The wiring is real; the label "
-          "flips to SOURCED once the estate is ingested.")],
+        [("Data connectors & estate map — every IFT public-data hook", _T)],
+        [("The wiring is real: each dataset is a REGISTERED estate dataset, so "
+          "every hook flips from 'network-gated' to SOURCED the moment the "
+          "estate is ingested. Offline each cites an honest GOV/ACADEMIC "
+          "fallback — never a fabricated number. Honesty travels: a SOURCED "
+          "chip only ever appears over real ingested rows.", _S)],
         [],
-        [("Connector", _H), ("Dataset id", _H), ("Status", _H), ("Rows", _H),
-         ("Source / fallback citation", _H), ("Note", _H)],
+        [(f"{n_total} hooks across {n_conn} connectors "
+          f"({n_avail} live / {n_total - n_avail} ingest-ready). "
+          "Copy the CLI query to pull the live data once ingested.", _N)],
+        [],
     ]
-    for name, cr in probes:
-        status = "available (SOURCED)" if cr.available else "network-gated offline"
-        cite = cr.source_label if cr.available else (cr.fallback_citation
-                                                     or cr.source_label)
-        rows.append([(name, _L), cr.dataset_id, status,
-                     (len(cr.rows), "num"), cite, cr.note])
-    return Sheet("Connectors", rows, col_widths=[38, 42, 22, 8, 60, 60])
+    band_ranges: List[Tuple[int, int]] = []
+    cats = ["Supply", "Demand", "Facilities", "Reimbursement", "Coverage",
+            "Clinical", "Rural"]
+    _CAT_NOTE = {
+        "Supply": "Who can run the transports — the supplier-side TAM & fragmentation.",
+        "Demand": "Who needs to move — the structural demand drivers.",
+        "Facilities": "The origin/destination universe — nodes whose EDGES are the volume.",
+        "Reimbursement": "How the transports get paid.",
+        "Coverage": "The medical-necessity coverage rules — reimbursement risk.",
+        "Clinical": "The condition severity + coding integrity beneath demand.",
+        "Rural": "The rural / super-rural mileage economics.",
+    }
+    for cat in cats:
+        group = [p for p in probes if p.category == cat]
+        if not group:
+            continue
+        rows.append([(f"{cat} — {_CAT_NOTE.get(cat, '')}", _B)])
+        rows.append([("Connector", _H), ("What it yields for IFT", _H),
+                     ("Status", _H), ("Rows", _H), ("Basis", _H),
+                     ("Source / fallback citation", _H), ("CLI query", _H)])
+        start = len(rows) + 1
+        for p in group:
+            rows.append([
+                (p.title, _L), p.ift_signal, p.status, (p.n_rows, "num"),
+                _chip(p.basis if p.basis == "SOURCED" else "CONNECTOR"),
+                p.source_label,
+                Link("query", "https://pedesk.app/connector-estate?dataset="
+                     + p.dataset_id) if not p.cli_hint else p.cli_hint])
+        band_ranges.append((start, len(rows)))
+        rows.append([])
+    rows += [
+        [("Where the estate lives online (click to open)", _B)],
+        ["", Link("Connector estate + dataset browser",
+                  "https://pedesk.app/connector-estate"),
+         "The 16-connector / 200+ dataset public-data estate."],
+        [("Honesty legend", _H),
+         "SOURCED = real ingested rows · CONNECTOR = network-gated offline, the "
+         "GOV/ACADEMIC fallback is cited · every dataset_id is registered, so "
+         "the wiring is genuine."],
+    ]
+    # Band the first (largest) category block for readability.
+    band = band_ranges[0] if band_ranges else None
+    return Sheet("Connectors", rows,
+                 col_widths=[34, 52, 20, 7, 12, 60, 40], freeze_rows=5,
+                 band_rows=band)
+
+
+# CONNECTOR chip helper (mirror of ift_excel_depth._chip, kept local so this
+# module has no cross-module style dependency).
+def _chip(basis: str):
+    from ..exports.xlsx_writer import basis_style
+    return (basis, basis_style(basis))
 
 
 # ── Ambulance Fee Schedule ready-reckoner (RVU GOV × CF → worked base) ────────

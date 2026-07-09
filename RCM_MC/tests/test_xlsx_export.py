@@ -453,5 +453,72 @@ class TestHyperlinkWriter(unittest.TestCase):
                          z.read("xl/worksheets/sheet1.xml").decode())
 
 
+class TestWriterPolish(unittest.TestCase):
+    """The investor-grade polish appended to the stdlib xlsx_writer: byte
+    determinism, freeze panes, autofilter, merged cells, zebra banding, and the
+    colored honesty-basis chips — all backward-compatible."""
+
+    def _sheet(self):
+        from rcm_mc.exports.xlsx_writer import Sheet, basis_style
+        rows = [
+            [("IFT market study", "title")],
+            [("every sourced figure", "subtitle")],
+            [],
+            [("Metro", "header"), ("SOM $", "header"), ("Basis", "header")],
+            ["Omaha", (1234567.0, "money"), ("GOV", basis_style("GOV"))],
+            ["Dayton", (2345678.0, "money"),
+             ("ILLUSTRATIVE", basis_style("ILLUSTRATIVE"))],
+            ["Lincoln", (999.5, "money2"), ("SOURCED", basis_style("SOURCED"))],
+        ]
+        return Sheet("T", rows, col_widths=[20, 16, 16], freeze_rows=4,
+                     autofilter="A4:C7", merges=["A1:C1"], band_rows=(5, 7))
+
+    def test_output_is_byte_deterministic(self):
+        from rcm_mc.exports.xlsx_writer import write_xlsx
+        s1 = self._sheet()
+        s2 = self._sheet()
+        self.assertEqual(write_xlsx([s1]), write_xlsx([s2]))
+
+    def test_basis_style_maps_the_honesty_vocabulary(self):
+        from rcm_mc.exports.xlsx_writer import basis_style
+        self.assertEqual(basis_style("GOV"), "basis_gov")
+        self.assertEqual(basis_style("SOURCED · CMS"), "basis_sourced")
+        self.assertEqual(basis_style("ILLUSTRATIVE (GOV AIF)"),
+                         "basis_illustrative")
+        self.assertEqual(basis_style("ACADEMIC"), "basis_academic")
+        self.assertEqual(basis_style("FRAMEWORK"), "basis_framework")
+        self.assertEqual(basis_style("GOV-magnitude"), "basis_gov")
+        self.assertEqual(basis_style("CONNECTOR"), "basis_framework")
+        self.assertEqual(basis_style("nonsense"), "text")  # unknown → plain
+        self.assertEqual(basis_style(""), "text")
+
+    def test_freeze_autofilter_merge_are_valid_ooxml(self):
+        from rcm_mc.exports.xlsx_writer import write_xlsx
+        data = write_xlsx([self._sheet()])
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertIsNone(z.testzip())
+        wb = load_workbook(io.BytesIO(data))
+        ws = wb["T"]
+        self.assertEqual(ws.freeze_panes, "A5")            # 4 rows frozen
+        self.assertEqual(ws.auto_filter.ref, "A4:C7")
+        self.assertEqual([str(r) for r in ws.merged_cells.ranges], ["A1:C1"])
+
+    def test_backward_compatible_defaults(self):
+        # a plain Sheet (old call shape) still produces a valid, unfrozen sheet.
+        from rcm_mc.exports.xlsx_writer import Sheet, write_xlsx
+        data = write_xlsx([Sheet("Plain", [["a", 1], ["b", 2]])])
+        wb = load_workbook(io.BytesIO(data))
+        ws = wb["Plain"]
+        self.assertIsNone(ws.freeze_panes)
+        self.assertIsNone(ws.auto_filter.ref)
+
+    def test_zebra_band_uses_banded_style_ids(self):
+        # a banded even row swaps a plain content style for its *_band twin
+        from rcm_mc.exports.xlsx_writer import _sheet_xml
+        xml, _ = _sheet_xml(self._sheet())
+        # style id 26 == money_band (see _STYLE_IDS); row 6 (Dayton) is banded
+        self.assertIn('s="26"', xml)
+
+
 if __name__ == "__main__":
     unittest.main()
