@@ -175,6 +175,17 @@ class MmtModelTests(unittest.TestCase):
         vals = [o.opportunity_revenue for o in opp]
         self.assertEqual(vals, sorted(vals, reverse=True))
 
+    def test_payer_mix_reconciles_and_commercial_leads_revenue(self):
+        pm = m.mmt_payer_mix()
+        self.assertGreaterEqual(len(pm.rows), 3)
+        # revenue shares sum to 1 and revenue dollars sum to the SOM
+        self.assertAlmostEqual(sum(r.revenue_share for r in pm.rows), 1.0, places=4)
+        self.assertAlmostEqual(sum(r.revenue_dollars for r in pm.rows),
+                               pm.som_dollars, places=0)
+        comm = next(r for r in pm.rows if r.payer == "Commercial")
+        # commercial's revenue share exceeds its transport share (the multiple)
+        self.assertGreater(comm.revenue_share, comm.share)
+
     def test_som_scenario_bands_bracket_the_base(self):
         sc = m.mmt_som_scenario()
         self.assertGreater(sc.base_som, 0)
@@ -230,7 +241,7 @@ class MmtPageTests(unittest.TestCase):
                        "clinical drivers", "moat read", "Positioning scorecard",
                        "Growth projection", "SWOT", "County opportunity ranking",
                        "Anchor-system account map", "SOM scenario band",
-                       "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
+                       "Payer mix", "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 
     def test_surfaces_counties_and_connectors(self):

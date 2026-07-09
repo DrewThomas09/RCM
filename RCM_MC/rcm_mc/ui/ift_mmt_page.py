@@ -380,6 +380,34 @@ def _scorecard_section() -> str:
         "names PUBLIC / company-web, no exclusivities asserted.</p>")
 
 
+def _payer_section() -> str:
+    pm = _m.mmt_payer_mix()
+    if not pm.rows:
+        return ""
+    rows = []
+    for r in pm.rows:
+        rows.append(
+            "<tr>"
+            f'<td class="lab">{_esc(r.payer)}</td>'
+            f'<td class="num">{_pct(r.share)}</td>'
+            f'<td class="num">{r.rate_multiple:.2f}x</td>'
+            f'<td class="num">{_pct(r.revenue_share)}</td>'
+            f'<td class="num">{_usd(r.revenue_dollars)}</td>'
+            "</tr>")
+    return (
+        ck_section_header("Payer mix", eyebrow="THE REVENUE BLEND BEHIND $/LEG")
+        + f'<p class="mmt-prose">Commercial is ~{_pct(0.30)} of transports but '
+        f'<strong>{_pct(pm.commercial_revenue_share)} of revenue</strong> — the '
+        "~2.8× commercial multiple over Medicare makes payer mix the single "
+        "biggest revenue lever.</p>"
+        '<div class="mmt-wrap"><table class="mmt-tab" style="max-width:640px;">'
+        "<thead><tr><th>Payer</th><th>% transports</th><th>Rate vs Medicare</th>"
+        "<th>% revenue</th><th>SOM revenue</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+        f'<p class="mmt-note">Shares + multiples {_chip("ILLUSTRATIVE")}; the '
+        "blend reconciles to the $1,300 net revenue/leg.</p>")
+
+
 def _scenario_section() -> str:
     sc = _m.mmt_som_scenario()
     if not sc.levers:
@@ -614,7 +642,8 @@ def render_ift_mmt(qs=None) -> str:
     parts += [
         _cbsa_table(), _county_table(), _serviceable_section(),
         _scenario_section(), _opportunity_section(), _operating_section(),
-        _growth_section(), _connector_table(), _clinical_table(), _metro_read(),
+        _payer_section(), _growth_section(), _connector_table(),
+        _clinical_table(), _metro_read(),
         _accounts_section(), _scorecard_section(), _swot_section(),
         _diligence_section(), _cta(), ck_page_actions(),
     ]

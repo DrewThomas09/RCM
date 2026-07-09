@@ -1172,6 +1172,7 @@ def mmt_model_json() -> Dict[str, Any]:
         "serviceable": asdict(som) if som else None,
         "scenario": asdict(scen) if scen else None,
         "operating_model": asdict(op) if op else None,
+        "payer_mix": (lambda p: asdict(p) if p else None)(_try(mmt_payer_mix)),
         "growth": asdict(gp) if gp else None,
         "opportunity": [asdict(o) for o in (_try(mmt_county_opportunity, []) or [])],
         "anchor_accounts": [asdict(a) for a in (_try(mmt_anchor_accounts, ()) or ())],
@@ -1185,3 +1186,59 @@ def mmt_model_json() -> Dict[str, Any]:
                   "bases; connectors degrade-safe (network-gated offline, SOURCED "
                   "on ingest)."),
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Payer-mix revenue model — the blend behind the $/leg. Commercial pays a large
+# multiple of Medicare, so mix is the single biggest revenue lever.
+# ─────────────────────────────────────────────────────────────────────────────
+# ILLUSTRATIVE payer mix (IFT skews older / Medicare-heavy) and rate multiples
+# vs Medicare (=1.0): commercial pays ~2-4× Medicare, Medicaid below, self-pay
+# collects a fraction. Named, not filed.
+_PAYER_MIX = (
+    ("Commercial", 0.30, 2.80),
+    ("Medicare", 0.45, 1.00),
+    ("Medicaid", 0.15, 0.70),
+    ("Self-pay / other", 0.10, 0.30),
+)
+
+
+@dataclass(frozen=True)
+class PayerRow:
+    payer: str
+    share: float               # % of transports
+    rate_multiple: float       # net revenue vs Medicare (=1.0)
+    revenue_share: float       # % of revenue
+    revenue_dollars: float     # SOM revenue attributed to this payer
+
+
+@dataclass(frozen=True)
+class MmtPayerMix:
+    rows: Tuple[PayerRow, ...]
+    blended_rate_per_leg: float
+    commercial_revenue_share: float
+    som_dollars: float
+    note: str = ("Payer shares + rate multiples are ILLUSTRATIVE (IFT skews "
+                 "Medicare-heavy; commercial pays ~2-4× Medicare). Revenue share "
+                 "= share × multiple, normalized; the blend reconciles to the "
+                 "$1,300 net revenue/leg. Mix is the #1 revenue lever.")
+
+
+def mmt_payer_mix() -> MmtPayerMix:
+    """MMT's revenue by payer segment — the mix behind the blended $/leg and the
+    revenue attribution of the SOM. Commercial's ~2.8× multiple means a few
+    points of commercial mix move the blended rate materially. Never raises."""
+    som = mmt_serviceable_model().mmt_som_dollars
+    weight_total = sum(sh * mult for _n, sh, mult in _PAYER_MIX) or 1.0
+    rows: List[PayerRow] = []
+    for name, share, mult in _PAYER_MIX:
+        rev_share = (share * mult) / weight_total
+        rows.append(PayerRow(
+            payer=name, share=share, rate_multiple=mult,
+            revenue_share=rev_share, revenue_dollars=som * rev_share))
+    # blended rate/leg = weight_total × Medicare-equivalent/leg; back it out of
+    # the $1,300 net so the model reconciles.
+    blended = _REV_PER_LEG
+    comm_share = next((r.revenue_share for r in rows if r.payer == "Commercial"), 0.0)
+    return MmtPayerMix(rows=tuple(rows), blended_rate_per_leg=blended,
+                       commercial_revenue_share=comm_share, som_dollars=som)
