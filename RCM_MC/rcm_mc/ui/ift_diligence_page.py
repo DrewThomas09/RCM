@@ -584,6 +584,7 @@ color:var(--sc-muted,#6b6357);margin-top:3px;}
 def _crosslinks() -> str:
     return (
         '<div class="ifq-links-lg">'
+        '<a href="/ift-sourcing">Sourcing prompts — Part 1 &rarr;</a>'
         '<a href="/ift-study">Investor market study (4 dimensions) &rarr;</a>'
         '<a href="/ift-research">Market research brief (20 topics) &rarr;</a>'
         '<a href="/ift-markets">Geographic markets &amp; TAM/SAM/SOM &rarr;</a>'
@@ -876,6 +877,10 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _crosslinks(),
         '<div class="ifq-dl"><a href="/api/ift/markets.xlsx" download>Download the '
         'investor data pack (Excel) &darr;</a></div>',
+        ck_next_section(
+            "Get the sourcing prompts that gather the evidence for these questions "
+            "(Part 1)",
+            "/ift-sourcing", eyebrow="The sourcing", italic_word="sourcing"),
         ck_next_section(
             "Read the answers — the investor market study (4 dimensions + MMT)",
             "/ift-study", eyebrow="The answers", italic_word="investor"),

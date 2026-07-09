@@ -5260,6 +5260,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_diligence_page import render_ift_diligence
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_diligence(_qs))
+        # IFT sourcing prompts (Part 1) — the scope-bounded research prompts that
+        # gather the evidence, each wired to its sources, connector datasets, and
+        # the sized page + diligence slide that answer it. See
+        # ui/ift_sourcing_page.py + market_reports/ift_sourcing.py.
+        if path == "/ift-sourcing":
+            from .ui.ift_sourcing_page import render_ift_sourcing
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_sourcing(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
