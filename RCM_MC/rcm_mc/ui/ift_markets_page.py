@@ -206,12 +206,26 @@ def _styles() -> str:
         "tabular-nums;}"
         ".ift-kpi-sub{font-size:10.5px;color:var(--sc-text-faint,#7a8699);"
         "margin-top:4px;}"
+        # connector estate
+        ".ift-estate-note{font-size:12.5px;color:var(--sc-text,#1a2332);"
+        "line-height:1.55;max-width:82ch;margin:8px 0 10px;}"
+        ".ift-estate-cat{font-family:var(--sc-sans);font-size:10px;font-weight:700;"
+        "letter-spacing:0.07em;text-transform:uppercase;color:#fff;"
+        "background:var(--sc-teal,#155752);padding:5px 10px;}"
+        ".ift-estate-link{font-weight:600;color:var(--sc-navy,#0b2341);"
+        "text-decoration:none;border-bottom:1px solid rgba(21,87,82,0.35);}"
+        ".ift-estate-link:hover{color:var(--sc-teal,#155752);}"
+        ".ift-estate-ds{font-family:var(--sc-mono);font-size:10px;"
+        "color:var(--sc-text-faint,#7a8699);margin-top:2px;}"
+        ".ift-estate-cite{font-size:11px;}"
+        ".ift-estate-tbl td{font-size:11.5px;}"
         # tables
         ".ift-table{width:100%;border-collapse:collapse;background:#fff;"
         "border:1px solid var(--sc-rule,#d6cfc0);font-size:12px;margin:0 0 6px;}"
         ".ift-table th{text-align:left;padding:7px 10px;font-family:var(--sc-sans);"
         "font-size:9.5px;font-weight:600;letter-spacing:0.06em;text-transform:"
-        "uppercase;color:var(--sc-text-dim,#465366);"
+        "uppercase;color:var(--sc-text-dim,#465366);position:sticky;top:0;"
+        "background:var(--sc-surface,#faf7f1);z-index:1;"
         "border-bottom:1px solid var(--sc-rule,#d6cfc0);}"
         ".ift-table td{padding:7px 10px;"
         "border-bottom:1px solid var(--sc-panel-alt,#ece5d6);vertical-align:top;"
@@ -434,7 +448,7 @@ def _health_system_sam_section() -> str:
                _usd_b(hs.sam_bu_central_bn) if hs.sam_bu_central_bn else "—",
                "Komodo-claims proxy (structure-extrapolated)")
         + _kpi("Insource ceiling ι",
-               f"{hs.insource_ceiling[0]*100:.0f}–{hs.insource_ceiling[2]*100:.0f}%",
+               f"{hs.insource_ceiling[0]*100:.1f}–{hs.insource_ceiling[2]*100:.1f}%",
                "health-system-biller upper bound (non-addressable)")
         + '</div>'
         # the build steps
@@ -453,7 +467,7 @@ def _health_system_sam_section() -> str:
                f"~{_pct(hs.operator_share_of_sam)} held today ≈ "
                f"{_usd_m(hs.operator_current_revenue_m * 1e6)}")
         + _kpi("SAM ÷ SOM headroom",
-               (f"{hs.sam_over_som_multiple:.0f}×"
+               (f"{hs.sam_over_som_multiple:.2f}x"
                 if hs.sam_over_som_multiple else "—"),
                "structural headroom beyond the current metros")
         + '</div>'
@@ -1007,6 +1021,84 @@ def _charts_section(sam_by_name: Dict[str, float]) -> str:
             + grid)
 
 
+def _connector_estate_section() -> str:
+    """The live data-connector estate behind the study — every IFT-relevant
+    public-data hook, its status (live vs ingest-ready), what it yields, and a
+    link into the estate browser. Surfaces the same map the workbook's
+    Connectors sheet carries, so the pages and the download agree. Degrades to
+    "" if the estate module is unavailable."""
+    try:
+        from ..market_reports import ift_connectors as _ic
+    except Exception:  # noqa: BLE001
+        return ""
+    try:
+        probes = _ic.connector_estate_map()
+        summ = _ic.estate_summary(probes)
+    except Exception:  # noqa: BLE001
+        return ""
+    if not probes:
+        return ""
+    kpis = (
+        '<div class="ift-kpi-grid">'
+        + _kpi("Connector hooks", str(summ.total),
+               f"{summ.available} live · {summ.gated} ingest-ready")
+        + _kpi("Public-data sources", str(summ.n_connectors),
+               "CMS · Census · BLS · CDC · HRSA · NPPES …")
+        + _kpi("Signal categories", str(len(summ.by_category)),
+               " · ".join(c for c, _ in summ.by_category))
+        + '</div>')
+    _CAT_LABEL = {
+        "Supply": "Supply — who can run the transports",
+        "Demand": "Demand — who needs to move",
+        "Facilities": "Facilities — the origin/destination universe",
+        "Reimbursement": "Reimbursement — how transports get paid",
+        "Coverage": "Coverage — the medical-necessity rules",
+        "Clinical": "Clinical — condition severity & coding",
+        "Rural": "Rural — the mileage economics",
+    }
+    body_rows: List[str] = []
+    for cat, _n in summ.by_category:
+        group = [p for p in probes if p.category == cat]
+        if not group:
+            continue
+        body_rows.append(
+            f'<tr><td colspan="4" class="ift-estate-cat">'
+            f'{_esc(_CAT_LABEL.get(cat, cat))}</td></tr>')
+        for p in group:
+            live = p.available
+            status = (
+                '<span class="ift-chip ift-chip-sourced">LIVE</span>' if live
+                else '<span class="ift-chip ift-chip-connector">INGEST-READY'
+                     '</span>')
+            href = "/connector-estate?dataset=" + _esc(p.dataset_id)
+            body_rows.append(
+                '<tr>'
+                f'<td><a class="ift-estate-link" href="{href}">'
+                f'{_esc(p.title)}</a><div class="ift-estate-ds">'
+                f'{_esc(p.connector)} · {_esc(p.dataset_id)}</div></td>'
+                f'<td>{_esc(p.ift_signal)}</td>'
+                f'<td>{status}</td>'
+                f'<td class="ift-estate-cite">{_source_chip(p.source_label)}</td>'
+                '</tr>')
+    table = (
+        '<div class="ift-table-wrap"><table class="ift-table ift-estate-tbl">'
+        '<thead><tr><th>Connector</th><th>What it yields for IFT</th>'
+        '<th>Status</th><th>Source / fallback</th></tr></thead>'
+        f'<tbody>{"".join(body_rows)}</tbody></table></div>')
+    note = (
+        '<p class="ift-estate-note">The wiring is real — every dataset is a '
+        'registered estate dataset, so each hook flips from <em>ingest-ready</em> '
+        'to <strong>live</strong> the moment the estate is ingested. Offline, '
+        'each cites an honest GOV/ACADEMIC fallback — never a fabricated number. '
+        '<a href="/connector-estate">Browse the full 16-connector estate &rarr;</a>'
+        '</p>')
+    return (
+        ck_section_header(
+            "Live data estate", eyebrow="THE CONNECTORS BEHIND THE STUDY",
+            count=f"{summ.total} hooks / {summ.n_connectors} sources")
+        + kpis + note + table)
+
+
 def render_ift_markets() -> str:
     """Render the IFT geographic deep-dive page. Degrades to an honest note if
     the offline structure is unavailable — never raises."""
@@ -1102,11 +1194,17 @@ def render_ift_markets() -> str:
         'facility structure and sizing, the clinical demand spine, and the '
         'competitive / insourcing / moat / three-lever layers — in one auditable '
         'workbook, every cell carrying its honesty basis.</div>'
+        '<div style="flex:none;display:flex;gap:8px;align-items:center;">'
+        '<a href="/connector-estate" '
+        'style="font-family:var(--sc-mono,Consolas,monospace);font-size:12px;'
+        'font-weight:600;letter-spacing:0.04em;text-decoration:none;'
+        'color:var(--sc-teal,#155752);border:1px solid var(--sc-teal,#155752);'
+        'padding:8px 14px;border-radius:3px;">Data estate</a>'
         '<a href="/api/ift/markets.xlsx" download '
-        'style="flex:none;font-family:var(--sc-mono,Consolas,monospace);'
+        'style="font-family:var(--sc-mono,Consolas,monospace);'
         'font-size:12px;font-weight:600;letter-spacing:0.04em;text-decoration:none;'
         'color:#fff;background:var(--sc-teal,#155752);padding:9px 16px;'
-        'border-radius:3px;">Download Excel &darr;</a></div>')
+        'border-radius:3px;">Download Excel &darr;</a></div></div>')
 
     parts: List[str] = [
         _styles(),
@@ -1141,6 +1239,8 @@ def render_ift_markets() -> str:
         _moat_section(),
         _footprint_table(structures, sam_by_name),
         _footprint_map(structures),
+        # The live data-connector estate behind every SOURCED figure.
+        _connector_estate_section(),
         # Per-metro deep-dives, grouped by state
         ck_section_intro(
             "THE DEEP-DIVES", "Every target metro, grouped by state.",

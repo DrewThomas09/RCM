@@ -449,9 +449,13 @@ def ambulance_part_b_utilization() -> ConnectorResult:
     citations to cite instead. The A0426/A0428 non-emergent codes and A0434 SCT
     are the interfacility fingerprints once the estate is ingested."""
     dataset_id = "cms_open_data_physician_supplier_procedure_summary"
+    # Multi-value filter MUST use the estate grammar's ``__in`` operator — a
+    # plain ``{"hcpcs_cd": [list]}`` compiles to ``WHERE hcpcs_cd = '[...]'``
+    # (equality against the list's repr) and matches ZERO rows even after a full
+    # ingest, so the SOURCED path would never light up.
     payload = _estate_probe(
         dataset_id, group_by="hcpcs_cd",
-        filters={"hcpcs_cd": list(_AMBULANCE_HCPCS)})
+        filters={"hcpcs_cd__in": list(_AMBULANCE_HCPCS)})
     rows = payload.get("rows") or []
     if rows:
         return ConnectorResult(

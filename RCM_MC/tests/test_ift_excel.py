@@ -70,6 +70,50 @@ class IftWorkbookTests(unittest.TestCase):
         self.assertIn("Assumptions & levers", names)   # the model, low/central/high
         self.assertIn("Clinical routing", names)       # movement of patients
 
+    def test_carries_the_analytical_depth_sheet_set(self):
+        # the diligence stress-test layer: sensitivity, acuity mix, demand build,
+        # AIF series, footprint-vs-national, moat detail, code-validation QA.
+        names = self._sheet_names()
+        for expected in ("Sensitivity", "Acuity mix", "Demand build",
+                         "Reimbursement AIF series", "Footprint vs national",
+                         "Moat detail", "Code validation QA"):
+            self.assertIn(expected, names, f"missing depth sheet: {expected}")
+
+    def test_connectors_sheet_is_the_full_estate_map(self):
+        # the upgraded connectors sheet lists the whole estate (many hooks across
+        # many connectors), not just the original three.
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        ws = wb["Connectors"]
+        blob = " ".join(str(c) for row in ws.iter_rows(values_only=True)
+                        for c in row if c)
+        # a spread of connectors, well beyond the original 3-hook sheet
+        for token in ("NPPES", "Census", "HRSA", "PECOS", "ICD-10"):
+            self.assertIn(token, blob, f"estate map missing: {token}")
+
+    def test_styling_hierarchy_and_frozen_headers(self):
+        # the workbook has a real visual hierarchy: a 16pt title, a teal section
+        # banner distinct from the navy column header, colored basis chips, and
+        # frozen headers on the big tables.
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        z = zipfile.ZipFile(io.BytesIO(self.data))
+        styles = z.read("xl/styles.xml").decode()
+        self.assertIn('sz val="16"', styles)            # title font
+        self.assertIn("FF155752", styles)               # teal banner fill
+        self.assertIn("FFF6EEE0", styles)               # illustrative chip fill
+        wb = openpyxl.load_workbook(io.BytesIO(self.data))
+        # every sheet gets a big title in A1
+        self.assertTrue(all(ws["A1"].font and ws["A1"].font.size == 16.0
+                            for ws in wb.worksheets if ws["A1"].value))
+        # the big data tables freeze their header row
+        self.assertIsNotNone(wb["Markets structure"].freeze_panes)
+
     def test_no_ghost_or_thin_sheets(self):
         # every sheet must carry real content — no title-only "ghost" pages.
         try:

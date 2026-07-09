@@ -705,6 +705,12 @@ def _tie_note() -> str:
         'TAM/SAM/SOM &rarr;</a>'
         '<a href="/ift-study" style="color:var(--sc-teal,#155752);'
         'font-weight:600;text-decoration:none;">Investor market study &rarr;</a>'
+        '<a href="/connector-estate" style="color:var(--sc-teal,#155752);'
+        'font-weight:600;text-decoration:none;">Live data estate (hospital '
+        'capacity) &rarr;</a>'
+        '<a href="/api/ift/markets.xlsx" download style="color:var(--sc-teal,'
+        '#155752);font-weight:600;text-decoration:none;">Excel data pack '
+        '&darr;</a>'
         '</div></section>')
 
 

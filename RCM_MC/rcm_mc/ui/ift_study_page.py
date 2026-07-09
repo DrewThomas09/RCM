@@ -364,6 +364,7 @@ def _crosslinks() -> str:
         '<a href="/ift-research">Market research brief (20 topics) &rarr;</a>'
         '<a href="/ift-markets">Geographic markets &amp; TAM/SAM/SOM &rarr;</a>'
         '<a href="/ift-clinical">Clinical demand engine &rarr;</a>'
+        '<a href="/connector-estate">Live data-connector estate &rarr;</a>'
         '<a href="/market/interfacility_transport">Full IFT market report &rarr;</a>'
         '</div>'
         '<div class="ist-dl" style="margin:12px 0 4px;">'
