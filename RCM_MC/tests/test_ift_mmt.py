@@ -117,5 +117,30 @@ class MmtLinkTests(unittest.TestCase):
                 self.assertNotIn("MMT", comp)
 
 
+class MmtPageTests(unittest.TestCase):
+    def setUp(self):
+        from rcm_mc.ui.ift_mmt_page import render_ift_mmt
+        self.html = render_ift_mmt()
+
+    def test_renders_every_section(self):
+        for needle in ("County Deep Dive", "Footprint by CBSA",
+                       "Every county MMT serves",
+                       "County-grain data-connector coverage",
+                       "clinical drivers", "moat read"):
+            self.assertIn(needle, self.html, f"missing section: {needle}")
+
+    def test_surfaces_counties_and_connectors(self):
+        # a real county FIPS + the connector-estate deep links are present
+        self.assertIn("31055", self.html)                       # Douglas County
+        self.assertIn("connector-estate?dataset=census_acs_county_profile",
+                      self.html)
+        self.assertIn("/api/ift/markets.xlsx", self.html)
+
+    def test_no_raw_none_or_dataclass_leaks(self):
+        self.assertNotIn(">None<", self.html)
+        self.assertNotIn("MmtCounty(", self.html)
+        self.assertNotIn("object at 0x", self.html)
+
+
 if __name__ == "__main__":
     unittest.main()
