@@ -79,6 +79,13 @@ class IftWorkbookTests(unittest.TestCase):
                          "Moat detail", "Code validation QA"):
             self.assertIn(expected, names, f"missing depth sheet: {expected}")
 
+    def test_carries_the_mmt_county_sheet_set(self):
+        # the subject-operator deep dive resolved to counties-by-MSA
+        names = self._sheet_names()
+        for expected in ("MMT footprint", "MMT counties", "MMT connectors",
+                         "MMT clinical drivers", "MMT metro read"):
+            self.assertIn(expected, names, f"missing MMT sheet: {expected}")
+
     def test_connectors_sheet_is_the_full_estate_map(self):
         # the upgraded connectors sheet lists the whole estate (many hooks across
         # many connectors), not just the original three.
