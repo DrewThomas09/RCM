@@ -5268,6 +5268,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_sourcing_page import render_ift_sourcing
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_sourcing(_qs))
+        # IFT demand deep-dive — national -> regional -> subcounty demand, the CMS
+        # HCPCS code analysis (BLS/ALS/SCT x emergency), the emergency/non-emergency
+        # prevalence, the demand trailed over time, and MMT's exact counties +
+        # customer concentration + growth. See ui/ift_demand_page.py +
+        # market_reports/ift_demand.py.
+        if path == "/ift-demand":
+            from .ui.ift_demand_page import render_ift_demand
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_demand(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())

@@ -151,7 +151,10 @@ _CBSA_SOURCE = ("GOV · OMB 2023 CBSA delineations (eff. 2023-07-21); "
 # ─────────────────────────────────────────────────────────────────────────────
 _RATE_65 = 0.054       # ground-IFT legs / 65+ person / yr (ILLUSTRATIVE)
 _RATE_U65 = 0.0049     # ground-IFT legs / under-65 person / yr (ILLUSTRATIVE)
-_REV_PER_LEG = 1300.0  # blended all-payer net revenue / IFT leg ($, ILLUSTRATIVE)
+# Realized blended net revenue / IFT leg — Medicare/Medicaid-weighted plus facility
+# payments (NOT the commercial-lifted all-payer market average). Kept consistent
+# with ift_analytics._R_IFT central.
+_REV_PER_LEG = 600.0   # $ / IFT leg (ILLUSTRATIVE, realized)
 
 
 @dataclass(frozen=True)

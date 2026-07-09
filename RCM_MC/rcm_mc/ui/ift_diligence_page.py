@@ -584,6 +584,7 @@ color:var(--sc-muted,#6b6357);margin-top:3px;}
 def _crosslinks() -> str:
     return (
         '<div class="ifq-links-lg">'
+        '<a href="/ift-demand">Demand deep-dive (national→subcounty) &rarr;</a>'
         '<a href="/ift-sourcing">Sourcing prompts — Part 1 &rarr;</a>'
         '<a href="/ift-study">Investor market study (4 dimensions) &rarr;</a>'
         '<a href="/ift-research">Market research brief (20 topics) &rarr;</a>'
