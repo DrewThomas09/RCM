@@ -27,6 +27,7 @@ Public API:
     emergency_prevalence() -> EmergencyPrevalence
     regional_demand() -> Tuple[RegionDemand, ...]
     national_frame() -> NationalFrame
+    national_transport_volume() -> NationalVolume
     demand_time_series() -> DemandTimeSeries
     demand_summary() -> Dict[str, Any]
 """
@@ -350,6 +351,177 @@ def national_frame() -> NationalFrame:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4b — National transport VOLUME: "how many transports a year?"
+# ─────────────────────────────────────────────────────────────────────────────
+# The demand centerpiece: a top-down transports/year funnel from the hardest GOV
+# anchor down to the interfacility slice, every tier carrying a source. No trade /
+# market-research-firm figures are used — the all-payer line is DERIVED from the
+# GOV Medicare figure, not taken from any industry report.
+#
+# Anchors (all public):
+#   * MedPAC, "Ambulance Services Payment System" Payment Basics (Oct 2024):
+#     ~10,600 ground ambulance organizations delivered 11.3M transports to
+#     Medicare fee-for-service beneficiaries in CY2024, for $5.3B in payments.   [GOV]
+#   * Service-level mix ~56% BLS / ~44% ALS (incl. SCT at the top) — Medicare
+#     FFS claims analysis (CMS "Ground Ambulance Industry Trends 2017-2020";
+#     FAIR Health ground-ambulance utilization brief).                          [SOURCED]
+#   * BLS emergency vs non-emergency drifted 56.3/43.7 (2018) → 62.9/37.1 (2022)
+#     — Medicare claims / CMS GADCS (RAND) Year-1/2 report.                      [GOV]
+#   * Interfacility transports arriving at an ED via EMS ~1.1-1.3M/yr — National
+#     Hospital Ambulatory Medical Care Survey (NHAMCS), Am J Emerg Med 2020 /
+#     2026 nationwide IFT trend study.                                          [ACADEMIC]
+_MC_FFS_TRANSPORTS_M = 11.3          # MedPAC Payment Basics 2024 (GOV)
+_MC_FFS_SPEND_BN = 5.3              # MedPAC Payment Basics 2024 (GOV)
+_MC_FFS_ORGS = 10_600              # MedPAC Payment Basics 2024 (GOV)
+_MC_FFS_YEAR = 2024
+# Medicare FFS share of ALL-PAYER ground transport VOLUME. The elderly use
+# ambulances far above their population share, and roughly half of Medicare is now
+# MA, so FFS alone sits near a quarter-to-a-third of all ground volume. A DERIVED
+# assumption band — NOT a published figure — used only to gross the GOV anchor up.
+_MC_FFS_SHARE = (0.25, 0.32)
+# IFT arriving at an ED via EMS (NHAMCS). A FLOOR on interfacility volume — it
+# counts only transfers that land in an ED, so it excludes the larger scheduled
+# discharge book (hospital→SNF/IRF/home), which /ift-hs-demand sizes from HCRIS.
+_IFT_TO_ED_M = (1.1, 1.3)
+
+
+@dataclass(frozen=True)
+class VolumeTier:
+    tier: str                  # the funnel tier label
+    value: str                 # formatted display value (transports/yr)
+    basis: str                 # GOV | SOURCED | ACADEMIC | DERIVED
+    source: str                # the citation
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class VolumeSplit:
+    label: str
+    share_pct: float           # % of the Medicare FFS ground base
+    transports_m: float        # implied transports (millions) on the 11.3M base
+    basis: str
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class NationalVolume:
+    available: bool
+    ffs_transports_m: float = 0.0
+    ffs_spend_bn: float = 0.0
+    ffs_orgs: int = 0
+    ffs_year: int = 0
+    allpayer_low_m: float = 0.0
+    allpayer_high_m: float = 0.0
+    ffs_share_low: float = 0.0
+    ffs_share_high: float = 0.0
+    ift_to_ed_low_m: float = 0.0
+    ift_to_ed_high_m: float = 0.0
+    tiers: Tuple[VolumeTier, ...] = ()
+    acuity_split: Tuple[VolumeSplit, ...] = ()
+    emergency_split: Tuple[VolumeSplit, ...] = ()
+    source_label: str = ""
+    note: str = ""
+
+
+def national_transport_volume() -> NationalVolume:
+    """The transports/year funnel — national → interfacility, every tier sourced.
+
+    Anchored on the GOV Medicare-FFS figure (11.3M transports, $5.3B, CY2024) and
+    stepped up to an all-payer band (DERIVED, explicit share assumption) and down to
+    the interfacility slice (ACADEMIC NHAMCS floor). Never raises."""
+    ffs = _MC_FFS_TRANSPORTS_M
+    lo_share, hi_share = _MC_FFS_SHARE
+    # All-payer = FFS ÷ FFS's share of all-payer volume. Lower share → higher total.
+    allpayer_low = round(ffs / hi_share, 1)     # 11.3 / 0.32 ≈ 35.3M
+    allpayer_high = round(ffs / lo_share, 1)    # 11.3 / 0.25 ≈ 45.2M
+    ift_lo, ift_hi = _IFT_TO_ED_M
+
+    tiers = (
+        VolumeTier(
+            tier="US all-payer ground ambulance",
+            value=f"~{allpayer_low:.0f}-{allpayer_high:.0f}M / yr",
+            basis="DERIVED",
+            source=("DERIVED: GOV Medicare-FFS anchor (11.3M) ÷ Medicare FFS's "
+                    f"~{lo_share*100:.0f}-{hi_share*100:.0f}% share of all-payer "
+                    "ground volume — NOT a trade/market-research-firm figure"),
+            note="The widest ring: every ground transport, all payers, all types. "
+                 "A derived band, shown so the GOV slice below has context."),
+        VolumeTier(
+            tier="Medicare FFS ground (the GOV anchor)",
+            value=f"{ffs:.1f}M / yr",
+            basis="GOV",
+            source=("MedPAC, 'Ambulance Services Payment System' Payment Basics "
+                    "(Oct 2024) — ~10,600 orgs, 11.3M transports, $5.3B, CY2024"),
+            note=f"The hardest number on the page: ${_MC_FFS_SPEND_BN:.1f}B paid "
+                 f"across {_MC_FFS_ORGS:,} organizations. Everything else is sized "
+                 "off this."),
+        VolumeTier(
+            tier="Non-emergency ground (scheduled book)",
+            value="~38-40% of the base",
+            basis="SOURCED",
+            source=("Medicare claims / CMS GADCS (RAND) Year-1/2 — BLS "
+                    "non-emergency fell 43.7%→37.1% of BLS lines, 2018→2022"),
+            note="Scheduled discharge/transfer + repetitive (dialysis) legs. IFT's "
+                 "discharge book lives here; the slice is shrinking as repetitive "
+                 "non-emergency is scrutinized."),
+        VolumeTier(
+            tier="Interfacility arriving at an ED (NHAMCS floor)",
+            value=f"~{ift_lo:.1f}-{ift_hi:.1f}M / yr",
+            basis="ACADEMIC",
+            source=("NHAMCS — Am J Emerg Med 2020 (2014-17: ~1.1M/yr, 5.3% of "
+                    "EMS-transported ED encounters); 2026 nationwide IFT trend "
+                    "study (~1.3M/yr mean, rising)"),
+            note="A FLOOR on IFT — counts only transfers that LAND in an ED "
+                 "(emergent up-transfers). Excludes the larger hospital→SNF/IRF/"
+                 "home discharge book, which /ift-hs-demand sizes from HCRIS."),
+    )
+
+    # Acuity mix on the Medicare FFS ground base (~11.3M). 56/44 BLS/ALS is the
+    # SOURCED claims split; SCT is carved from the high-acuity ALS end (ILLUSTRATIVE
+    # — SCT is definitionally interfacility, 42 CFR 414.605, small volume/high value).
+    acuity_split = (
+        VolumeSplit("BLS (basic life support)", 56.0, round(ffs * 0.56, 1), "SOURCED",
+                    "The plurality of transports — routine + the discharge book."),
+        VolumeSplit("ALS (advanced life support)", 42.0, round(ffs * 0.42, 1), "SOURCED",
+                    "Monitored transfers + the emergent up-transfer stream."),
+        VolumeSplit("SCT / CCT (specialty critical care)", 2.0, round(ffs * 0.02, 1),
+                    "ILLUSTRATIVE",
+                    "Carved from the ALS top — definitionally interfacility (42 CFR "
+                    "414.605); the premium IFT tier, small volume, highest value."),
+    )
+
+    # Emergency vs non-emergency on the Medicare FFS ground base. The BLS trend
+    # (62.9% emergency by 2022) is the SOURCED anchor; blended with the more
+    # emergency-weighted ALS book gives an overall ~60-62% emergency read.
+    emergency_split = (
+        VolumeSplit("Emergency (911 / emergent up-transfer)", 62.0,
+                    round(ffs * 0.62, 1), "SOURCED",
+                    "The 911 book + the in-window emergent transfer (STEMI/stroke). "
+                    "Rising share as non-emergency is scrutinized."),
+        VolumeSplit("Non-emergency (scheduled / IFT discharge)", 38.0,
+                    round(ffs * 0.38, 1), "SOURCED",
+                    "The scheduled interfacility discharge/transfer book — where the "
+                    "IFT market concentrates outside the emergent minority."),
+    )
+
+    return NationalVolume(
+        available=True,
+        ffs_transports_m=ffs, ffs_spend_bn=_MC_FFS_SPEND_BN, ffs_orgs=_MC_FFS_ORGS,
+        ffs_year=_MC_FFS_YEAR,
+        allpayer_low_m=allpayer_low, allpayer_high_m=allpayer_high,
+        ffs_share_low=lo_share, ffs_share_high=hi_share,
+        ift_to_ed_low_m=ift_lo, ift_to_ed_high_m=ift_hi,
+        tiers=tiers, acuity_split=acuity_split, emergency_split=emergency_split,
+        source_label=("GOV Medicare-FFS anchor (MedPAC 2024) → DERIVED all-payer "
+                      "band → ACADEMIC NHAMCS interfacility floor; acuity/emergency "
+                      "mix from CMS GADCS (RAND) + FAIR Health claims analysis"),
+        note=("Every tier is sourced. The all-payer line is DERIVED from the GOV "
+              "figure — no trade or market-research-firm volume estimate is used. "
+              "The NHAMCS line is a FLOOR (ED arrivals only); the full IFT book "
+              "adds the scheduled discharge legs sized on /ift-hs-demand."))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5 — Time series ("trailed over time")
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass(frozen=True)
@@ -440,6 +612,7 @@ def demand_summary() -> Dict[str, Any]:
     nf = national_frame()
     hc = hcpcs_acuity_analysis()
     ts = demand_time_series()
+    vol = national_transport_volume()
     n_counties = n_cbsa = 0
     try:
         from . import ift_mmt as _mmt
@@ -457,4 +630,7 @@ def demand_summary() -> Dict[str, Any]:
         "n_series": len(ts.series),
         "n_counties": n_counties,
         "n_cbsa": n_cbsa,
+        "ffs_transports_m": vol.ffs_transports_m,
+        "allpayer_low_m": vol.allpayer_low_m,
+        "allpayer_high_m": vol.allpayer_high_m,
     }

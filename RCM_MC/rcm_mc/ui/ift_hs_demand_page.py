@@ -143,6 +143,26 @@ letter-spacing:.06em;text-transform:uppercase;color:var(--sc-warning,#b8732a);}
 </style>"""
 
 
+def _download_bar() -> str:
+    """The prominent demand-workbook download — the whole demand side, volume-first,
+    as one sourced .xlsx (separate from the market-study pack)."""
+    return (
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;'
+        'justify-content:space-between;margin:18px 0 6px;padding:14px 18px;'
+        'border:1px solid var(--sc-teal,#155752);border-radius:4px;'
+        'background:rgba(21,87,82,0.05);">'
+        '<div style="font-size:13.5px;max-width:70ch;">'
+        '<strong>Demand data pack (Excel).</strong> The whole demand side in one '
+        'download, volume-first: transports a year (GOV-anchored), by acuity and '
+        'emergency split, demand by condition year over year, and the health-system '
+        '/ regional / county views — every figure sourced.</div>'
+        '<a href="/api/ift/demand.xlsx" download '
+        'style="flex:none;font-family:var(--sc-mono,Consolas,monospace);'
+        'font-size:12px;font-weight:600;letter-spacing:0.04em;text-decoration:none;'
+        'color:#fff;background:var(--sc-teal,#155752);padding:9px 16px;'
+        'border-radius:3px;">Download demand Excel &darr;</a></div>')
+
+
 def _crosslinks() -> str:
     return (
         '<div class="ihd-links">'
@@ -352,6 +372,7 @@ def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         ck_chart_assets(),
         head,
         explainer,
+        _download_bar(),
         _crosslinks(),
         ck_section_intro(
             "HOW TO READ THIS",

@@ -5215,6 +5215,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(_data)
             return
+        # IFT DEMAND workbook — the whole demand side, volume-first, one .xlsx.
+        # Separate from the market-study pack: how many transports a year, by
+        # acuity / emergency, by condition YoY, by health system / region / county,
+        # every figure sourced. See market_reports/ift_excel_demand.py.
+        if path == "/api/ift/demand.xlsx":
+            from .market_reports.ift_excel_demand import demand_workbook_xlsx
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _data = demand_workbook_xlsx(_qs)
+            self.send_response(HTTPStatus.OK)
+            self.send_header(
+                "Content-Type",
+                "application/vnd.openxmlformats-officedocument."
+                "spreadsheetml.sheet")
+            self.send_header(
+                "Content-Disposition",
+                'attachment; filename="ift_demand.xlsx"')
+            self.send_header("Content-Length", str(len(_data)))
+            self.end_headers()
+            self.wfile.write(_data)
+            return
         # MMT county-by-MSA deep dive — the subject operator's footprint resolved
         # to its 22 counties across 7 CBSAs + the county-grain connector coverage.
         # See rcm_mc/ui/ift_mmt_page.py + market_reports/ift_mmt.py.

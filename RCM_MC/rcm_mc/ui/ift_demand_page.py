@@ -143,6 +143,26 @@ color:var(--sc-text,#2a3340);margin:0;}
 </style>"""
 
 
+def _download_bar() -> str:
+    """The prominent demand-workbook download — the whole demand side, volume-first,
+    as one sourced .xlsx (separate from the market-study pack)."""
+    return (
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;'
+        'justify-content:space-between;margin:18px 0 6px;padding:14px 18px;'
+        'border:1px solid var(--sc-teal,#155752);border-radius:4px;'
+        'background:rgba(21,87,82,0.05);">'
+        '<div style="font-size:13.5px;max-width:70ch;">'
+        '<strong>Demand data pack (Excel).</strong> The whole demand side in one '
+        'download, volume-first: how many transports a year (GOV-anchored), by '
+        'acuity and emergency split, demand by condition year over year, and the '
+        'health-system / regional / county views — every figure sourced.</div>'
+        '<a href="/api/ift/demand.xlsx" download '
+        'style="flex:none;font-family:var(--sc-mono,Consolas,monospace);'
+        'font-size:12px;font-weight:600;letter-spacing:0.04em;text-decoration:none;'
+        'color:#fff;background:var(--sc-teal,#155752);padding:9px 16px;'
+        'border-radius:3px;">Download demand Excel &darr;</a></div>')
+
+
 def _crosslinks() -> str:
     return (
         '<div class="ifd-links">'
@@ -154,6 +174,55 @@ def _crosslinks() -> str:
         '<a href="/ift-diligence">Diligence question architecture &rarr;</a>'
         '<a href="/connector-estate">Live data-connector estate &rarr;</a>'
         '</div>')
+
+
+# ── National transport VOLUME (the centerpiece) ──────────────────────────────
+def _volume_section(vol) -> str:
+    if not (vol and getattr(vol, "available", False)):
+        return ""
+    kpis = (
+        '<div class="ifd-kpi-grid">'
+        + _kpi("Medicare FFS ground / yr",
+               f'{vol.ffs_transports_m:.1f}M {_chip("GOV")}',
+               f"CY{vol.ffs_year} · ${vol.ffs_spend_bn:.1f}B · "
+               f"{vol.ffs_orgs:,} orgs — the anchor")
+        + _kpi("US all-payer ground / yr",
+               f'~{vol.allpayer_low_m:.0f}-{vol.allpayer_high_m:.0f}M',
+               f'{_chip("ILLUSTRATIVE")} DERIVED from the GOV anchor ÷ its '
+               f'{vol.ffs_share_low*100:.0f}-{vol.ffs_share_high*100:.0f}% share')
+        + _kpi("Interfacility to an ED / yr",
+               f'~{vol.ift_to_ed_low_m:.1f}-{vol.ift_to_ed_high_m:.1f}M',
+               f'{_chip("ACADEMIC")} NHAMCS — a FLOOR (ED arrivals only)')
+        + '</div>')
+    tier_rows = [(t.tier, t.value, t.basis, t.note) for t in vol.tiers]
+    acuity_rows = [(a.label, f"{a.share_pct:.0f}%", f"{a.transports_m:.1f}M",
+                    a.basis, a.note) for a in vol.acuity_split]
+    emerg_rows = [(e.label, f"{e.share_pct:.0f}%", f"{e.transports_m:.1f}M",
+                   e.basis, e.note) for e in vol.emergency_split]
+    return (
+        ck_section_header("National transport volume — how many a year?",
+                          eyebrow="STEP 0 · THE VOLUME")
+        + ck_panel(
+            '<p class="ifd-prose">The demand spine, and the first question a buyer '
+            'asks: <strong>how many transports are there a year?</strong> A '
+            'top-down funnel from the hardest GOV anchor (Medicare fee-for-service '
+            'ground) out to an all-payer band and down to the interfacility slice. '
+            'Every tier is sourced; the all-payer line is <strong>derived</strong> '
+            'from the GOV figure — no trade estimate is used.</p>'
+            + kpis
+            + '<p class="ifd-sub">The transports/year funnel</p>'
+            + _table(("Tier", "Transports / yr", "Basis", "What it counts"),
+                     tier_rows, hi_col=1)
+            + f'<p class="ifd-sub">By acuity type (on the {vol.ffs_transports_m:.1f}M '
+            'Medicare FFS base)</p>'
+            + _table(("Acuity type", "Share", "Transports", "Basis", "Read"),
+                     acuity_rows, hi_col=2)
+            + f'<p class="ifd-sub">Emergency vs non-emergency (on the '
+            f'{vol.ffs_transports_m:.1f}M base)</p>'
+            + _table(("Split", "Share", "Transports", "Basis", "Read"),
+                     emerg_rows, hi_col=1)
+            + f'<p class="ifd-prose">{_chip("GOV")} {_esc(vol.note)}</p>'
+            + f'<p class="ifd-src">Source: {_esc(vol.source_label)}</p>'))
 
 
 # ── National frame ───────────────────────────────────────────────────────────
@@ -542,15 +611,17 @@ def _charts(regions, hc, ts) -> str:
 def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the IFT demand deep-dive. Degrades to honest notes, never raises."""
     nf = _dm.national_frame()
+    vol = _dm.national_transport_volume()
     hc = _dm.hcpcs_acuity_analysis()
     ep = _dm.emergency_prevalence()
     ts = _dm.demand_time_series()
     regions = _dm.regional_demand()
     summ = _dm.demand_summary()
 
-    meta = (f"national → {summ['n_regions']} regions → {summ['n_counties']} "
-            f"counties · {summ['n_hospitals_national']:,} US hospitals · "
-            f"{summ['n_hcpcs']} HCPCS × BLS/ALS/SCT × emergency · trailed over time")
+    meta = (f"{vol.ffs_transports_m:.1f}M Medicare-FFS ground transports/yr "
+            f"(GOV anchor) · national → {summ['n_regions']} regions → "
+            f"{summ['n_counties']} counties · {summ['n_hospitals_national']:,} US "
+            f"hospitals · {summ['n_hcpcs']} HCPCS × BLS/ALS/SCT × emergency")
     head = ck_page_title(
         "IFT Demand Deep-Dive", eyebrow="INTERFACILITY TRANSPORT · DEMAND, "
         "NATIONAL → SUBCOUNTY", meta=meta)
@@ -570,17 +641,20 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         ck_chart_assets(),
         head,
         explainer,
+        _download_bar(),
         _crosslinks(),
         ck_section_intro(
             "HOW TO READ THIS",
             "National first, then down to the exact counties they run.",
             italic_word="exact",
-            body=("National demand base & demographics → the CMS codes by acuity "
+            body=("How many transports a year (the sourced volume funnel) → the "
+                  "national demand base & demographics → the CMS codes by acuity "
                   "type and emergency split → the emergency/non-emergency "
                   "prevalence → demand by condition trended year over year → the "
                   "series over time → the regional roll-up → and MMT's counties, "
                   "customers, and growth.")),
         _charts(regions, hc, ts),
+        _volume_section(vol),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),

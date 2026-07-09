@@ -741,12 +741,13 @@ def ground_tam() -> GroundTam:
                 "Reconciles only if IFT leg volume is ~6-8M (discharge + "
                 "facility-origin recurring legs fully counted) or the blended rate "
                 "is higher. Treated as a downside marker, not corroboration."),
-        TamStep("Market-research cross-check (US ground ambulance)",
+        TamStep("All-payer ground cross-check (CMS-derived)",
                 f"${_ALLPAYER_GROUND_AMBULANCE_BN[0]:.0f}-"
                 f"{_ALLPAYER_GROUND_AMBULANCE_BN[1]:.0f}B", "ILLUSTRATIVE",
-                "US ambulance ~$21-22B (2024-26, Grand View/IBISWorld), ground "
-                "~60-70% — IFT is a slice WITHIN ground, never top-down off the "
-                "whole."),
+                "US all-payer ground ambulance ~$18-22B — DERIVED from the GOV "
+                "Medicare-FFS ground figure ($5.3B) ÷ Medicare's ~24-29% all-payer "
+                "share, NOT a trade/market-research-firm figure. IFT is a slice "
+                "WITHIN ground, never top-down off the whole."),
     ]
     if part_b.available:
         steps.insert(0, TamStep(

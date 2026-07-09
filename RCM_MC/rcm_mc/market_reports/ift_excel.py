@@ -763,7 +763,7 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Company profiles": "MMT (subject) + the competitive field, full profiles.",
     "MMT positioning": "MMT's dedicated-IFT positioning pillars.",
     "Competitor types": "Competitive landscape by provider TYPE (no company names).",
-    "Industry context": "IBISWorld industry-structure frame (ACADEMIC, qualitative).",
+    "Industry context": "CMS/MedPAC/AAA industry-structure frame (ACADEMIC, qualitative).",
     "R· Reimbursement": "Research: how payment works, statute, why claims undercount.",
     "R· Unit economics": "Research: cost/revenue driver trees + margin levers.",
     "R· KPIs & metrics": "Research: the KPI dictionary by stakeholder.",
