@@ -198,8 +198,11 @@ def occupancy_trend() -> OccupancyTrend:
             f"National inpatient occupancy ran {first_occ * 100:.1f}% in "
             f"FY{first_fy}, {points[1][1] * 100:.1f}% in FY{points[1][0]}, and "
             f"{latest_occ * 100:.1f}% in FY{latest_fy} ({delta_pp:+.1f}pp across "
-            f"the window) across ~{n_by_year.get(latest_fy, 0):,} filers — the "
-            "post-COVID census recovery. Occupancy is the throughput engine of "
+            f"the window) across ~{n_by_year.get(latest_fy, 0):,} filers. NOTE the "
+            f"window ends FY{latest_fy}: the {delta_pp:+.1f}pp is a "
+            f"FY{first_fy}->FY{latest_fy} COVID-recovery rebound off a depressed "
+            "base, NOT an established demand trend — read it as a level normalizing, "
+            "not a growth rate. Occupancy is the throughput engine of "
             "interfacility transport: when tertiary and step-down beds fill, "
             "ED-boarding builds and capacity/load-balancing transfers rise, so "
             "this is a genuine (if lagging) demand proxy — not a same-day "
@@ -558,8 +561,10 @@ def live_figures() -> List["Any"]:
             deals.source_label))
         if deals.median_entry_multiple is not None:
             out.append(LiveFigure(
-                "Median entry EV/EBITDA — transport corpus (thin, directional)",
-                f"{deals.median_entry_multiple:.2f}x (n={deals.entry_multiple_n})",
+                "Median entry EV/EBITDA — transport corpus (directional only, "
+                "n too small for a comp set)",
+                f"{deals.median_entry_multiple:.2f}x (n={deals.entry_multiple_n}; "
+                "a handful of dated deals — not a valuation comp set)",
                 deals.source_label))
     return out
 
