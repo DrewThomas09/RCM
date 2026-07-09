@@ -104,6 +104,34 @@ class TestSourcingPage(unittest.TestCase):
         for token in ("PROMPT 1", "PROMPT 10", "{H, N, E, G, J, D, I}", "RSNAT"):
             self.assertIn(token, self.html)
 
+    def test_current_research_read_rendered_inline(self):
+        # the page is fleshed out with findings, not just prompts — real figures
+        # pulled from the sized modules, one research block per prompt.
+        self.assertGreaterEqual(self.html.count("Current research read"), 10)
+        for needle in ("Medicare FFS GROUND",          # denominator (TAM)
+                       "both endpoints in {H, N, E, G, J, D, I}",  # claims method
+                       "blended escalation CAGR",       # demographic engine
+                       "Post-acute setting",            # post-acute universe
+                       "SCT (A0434)",                   # RVU over-index
+                       "RSNAT prior authorization",     # policy discontinuity
+                       "high-acuity incl. behavioral"): # mission mix
+            self.assertIn(needle, self.html, f"missing research finding: {needle}")
+
+    def test_degrades_when_a_findings_module_raises(self):
+        import rcm_mc.market_reports.ift_analytics as an
+        saved = (an.ground_tam, an.occupancy_trend)
+
+        def boom(*a, **k):
+            raise RuntimeError("simulated outage")
+        try:
+            an.ground_tam = an.occupancy_trend = boom
+            html = self._render()
+            self.assertEqual(html.count("<h1"), 1)
+            self.assertIn("</html>", html.lower())
+            self.assertEqual(html.count('class="ifs-num">PROMPT '), 10)
+        finally:
+            an.ground_tam, an.occupancy_trend = saved
+
     def test_copy_affordances_present(self):
         # a boundary copy button + one per prompt, each targeting a <pre> id
         self.assertIn('data-target="ifs-boundary-text"', self.html)
