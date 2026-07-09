@@ -110,6 +110,7 @@ def _cta() -> str:
         'workbook (MMT sheets) &darr;</a>'
         '<a class="ghost" href="/connector-estate">Live data-connector estate '
         '&rarr;</a>'
+        '<a class="ghost" href="/api/ift/mmt.json">Model JSON (API) &rarr;</a>'
         '<a class="ghost" href="/ift-markets">Target-markets funnel &rarr;</a>'
         '<a class="ghost" href="/ift-study">Investor study &rarr;</a>'
         '</div>')
@@ -379,6 +380,39 @@ def _scorecard_section() -> str:
         "names PUBLIC / company-web, no exclusivities asserted.</p>")
 
 
+def _scenario_section() -> str:
+    sc = _m.mmt_som_scenario()
+    if not sc.levers:
+        return ""
+    kpis = (
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("Downside SOM", _usd(sc.downside_som),
+                       "combined moderate", code="DOWN")
+        + ck_kpi_block("Base SOM", _usd(sc.base_som), "modeled central",
+                       code="BASE")
+        + ck_kpi_block("Upside SOM", _usd(sc.upside_som),
+                       "combined moderate", code="UP")
+        + "</div>")
+    rows = []
+    for lv in sc.levers:
+        rows.append(
+            "<tr>"
+            f'<td class="lab">{_esc(lv.name)}</td>'
+            f'<td class="num">{_usd(lv.low_som)}</td>'
+            f'<td class="num">{_usd(lv.high_som)}</td>'
+            f'<td class="num">{_pct(lv.swing_pct)}</td>'
+            "</tr>")
+    return (
+        ck_section_header("SOM scenario band", eyebrow="THE RANGE, NOT A POINT")
+        + kpis
+        + '<div class="mmt-wrap"><table class="mmt-tab" style="max-width:640px;">'
+        "<thead><tr><th>Lever (swung one-at-a-time)</th><th>SOM low</th>"
+        "<th>SOM high</th><th>Swing</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+        f'<p class="mmt-note">The SOM is multiplicative in each lever, so a swing '
+        f"scales the base directly. {_chip('ILLUSTRATIVE')} — a modeled range.</p>")
+
+
 def _opportunity_section() -> str:
     opp = _m.mmt_county_opportunity()
     if not opp:
@@ -579,8 +613,8 @@ def render_ift_mmt(qs=None) -> str:
         parts.append(_kpi_strip(s))
     parts += [
         _cbsa_table(), _county_table(), _serviceable_section(),
-        _opportunity_section(), _operating_section(), _growth_section(),
-        _connector_table(), _clinical_table(), _metro_read(),
+        _scenario_section(), _opportunity_section(), _operating_section(),
+        _growth_section(), _connector_table(), _clinical_table(), _metro_read(),
         _accounts_section(), _scorecard_section(), _swot_section(),
         _diligence_section(), _cta(), ck_page_actions(),
     ]

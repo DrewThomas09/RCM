@@ -406,6 +406,37 @@ def _swot_sheet() -> Optional[Sheet]:
     return Sheet("MMT SWOT", rows, col_widths=[110], merges=merges)
 
 
+def _scenario_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    sc = _safe(_m.mmt_som_scenario)
+    if not (sc and sc.levers):
+        return None
+    rows, merges = _title(
+        "MMT SOM scenario — the range, not a point",
+        "MMT's serviceable revenue swung one lever at a time (demand rate, "
+        "serviceable share, MMT share, revenue/leg) plus a combined moderate "
+        "downside/upside band. The SOM is multiplicative in each lever, so the "
+        "swing scales the base directly. All ILLUSTRATIVE.", 4)
+    rows += [
+        [("Combined band", _B)],
+        ["Downside SOM", (sc.downside_som, "money"), "Base SOM",
+         (sc.base_som, "money")],
+        ["Upside SOM", (sc.upside_som, "money"), "", ""],
+        [],
+        [("Per-lever swing (one-at-a-time off base)", _B)],
+        [("Lever", _H), ("SOM low", _H), ("SOM high", _H), ("Swing", _H),
+         ("Basis", _H)],
+    ]
+    band_start = len(rows) + 1
+    for lv in sc.levers:
+        rows.append([(lv.name, _L), (lv.low_som, "money"), (lv.high_som, "money"),
+                     (lv.swing_pct, "pct"), _chip("ILLUSTRATIVE")])
+    band_end = len(rows)
+    rows += [[], [("Basis", _H), sc.note]]
+    return Sheet("MMT SOM scenario", rows, col_widths=[34, 16, 16, 10, 34],
+                 freeze_rows=8, merges=merges, band_rows=(band_start, band_end))
+
+
 def _opportunity_sheet() -> Optional[Sheet]:
     from . import ift_mmt as _m
     opp = _safe(_m.mmt_county_opportunity, default=[]) or []
@@ -470,9 +501,10 @@ def mmt_sheets() -> List[Sheet]:
     (never raises)."""
     out: List[Sheet] = []
     for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
-              _opportunity_sheet, _operating_sheet, _growth_sheet,
-              _connectors_sheet, _clinical_sheet, _metro_read_sheet,
-              _accounts_sheet, _scorecard_sheet, _swot_sheet, _diligence_sheet):
+              _scenario_sheet, _opportunity_sheet, _operating_sheet,
+              _growth_sheet, _connectors_sheet, _clinical_sheet,
+              _metro_read_sheet, _accounts_sheet, _scorecard_sheet,
+              _swot_sheet, _diligence_sheet):
         s = _safe(b)
         if s is not None:
             out.append(s)

@@ -1081,3 +1081,107 @@ def mmt_anchor_accounts() -> Tuple[AnchorAccount, ...]:
             risk="LOW structural moat — one hospital; whoever locks the single "
                 "contract holds the market."),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SOM scenario band — swing each lever to give MMT's SOM a range, not a point.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class ScenarioLever:
+    name: str
+    low_som: float
+    high_som: float
+    swing_pct: float          # (high-low)/base
+    basis: str
+
+
+@dataclass(frozen=True)
+class MmtScenario:
+    base_som: float
+    downside_som: float
+    upside_som: float
+    levers: Tuple[ScenarioLever, ...]
+    note: str = ("Each lever swung one-at-a-time off the base SOM; the combined "
+                 "downside/upside is a moderate compounded band. All ILLUSTRATIVE "
+                 "— the SOM is a modeled range, not a filed figure.")
+
+
+def mmt_som_scenario() -> MmtScenario:
+    """MMT SOM as a RANGE — a one-variable-at-a-time swing on each lever (demand
+    per-capita rate, serviceable share s(m), MMT share of book, revenue/leg) plus
+    a combined moderate downside/upside band. Since the SOM is multiplicative in
+    each lever, the swing scales the base directly. Never raises."""
+    base = mmt_serviceable_model().mmt_som_dollars
+
+    def _lever(name, lo_f, hi_f, basis):
+        return ScenarioLever(name=name, low_som=base * lo_f, high_som=base * hi_f,
+                             swing_pct=(hi_f - lo_f), basis=basis)
+
+    levers = (
+        _lever("Demand — per-capita IFT rate", 0.85, 1.15,
+               "ILLUSTRATIVE (national-anchored rate ±15%)"),
+        _lever("Serviceable share s(m)", 0.80, 1.20,
+               "ILLUSTRATIVE (insource archetype ±20% relative)"),
+        _lever("MMT share of the winnable book", 0.80, 1.20,
+               "ILLUSTRATIVE (competitive position ±20% relative)"),
+        _lever("Net revenue / transport", 0.90, 1.10,
+               "ILLUSTRATIVE (payer-mix / rate ±10%)"),
+    )
+    # combined moderate band (compounded but not the extreme corner product)
+    downside = base * 0.70
+    upside = base * 1.40
+    return MmtScenario(base_som=base, downside_som=downside, upside_som=upside,
+                       levers=levers)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON serialization — the whole MMT model as a JSON-safe dict (for the API).
+# ─────────────────────────────────────────────────────────────────────────────
+def mmt_model_json() -> Dict[str, Any]:
+    """The complete MMT model as a JSON-serializable dict — footprint, counties,
+    serviceable SOM + scenario, operating model, growth, opportunity ranking,
+    anchor accounts, scorecard, SWOT, diligence, and the county connector
+    coverage. Never raises; a failed section degrades to null/empty."""
+    from dataclasses import asdict
+
+    def _try(fn, default=None):
+        try:
+            return fn()
+        except Exception:  # noqa: BLE001
+            return default
+
+    def _county(c: MmtCounty) -> Dict[str, Any]:
+        d = asdict(c)
+        d["pop_65_plus"] = c.pop_65_plus
+        d["demand_missions"] = county_demand(c).demand_missions
+        return d
+
+    summ = _try(footprint_summary)
+    som = _try(mmt_serviceable_model)
+    op = _try(mmt_operating_model)
+    gp = _try(mmt_growth_projection)
+    scen = _try(mmt_som_scenario)
+    swot = _try(mmt_swot)
+    dil = _try(mmt_diligence)
+    return {
+        "subject": "Midwest Medical Transport (MMT)",
+        "hq": "Omaha, NE",
+        "footprint": asdict(summ) if summ else None,
+        "cbsas": [asdict(b) for b in (_try(footprint_cbsas, []) or [])],
+        "counties": [_county(c) for c in MMT_COUNTIES],
+        "serviceable": asdict(som) if som else None,
+        "scenario": asdict(scen) if scen else None,
+        "operating_model": asdict(op) if op else None,
+        "growth": asdict(gp) if gp else None,
+        "opportunity": [asdict(o) for o in (_try(mmt_county_opportunity, []) or [])],
+        "anchor_accounts": [asdict(a) for a in (_try(mmt_anchor_accounts, ()) or ())],
+        "scorecard": [asdict(r) for r in (_try(mmt_positioning_scorecard, ()) or ())],
+        "swot": asdict(swot) if swot else None,
+        "diligence": asdict(dil) if dil else None,
+        "connectors": [asdict(cc) for cc in (_try(county_connector_coverage, []) or [])],
+        "metro_reads": [asdict(r) for r in (_try(mmt_metro_reads, []) or [])],
+        "basis": ("County↔CBSA OMB 2023 (GOV); population 2020 Census (GOV); "
+                  "demand / SOM / operating / growth ILLUSTRATIVE with named "
+                  "bases; connectors degrade-safe (network-gated offline, SOURCED "
+                  "on ingest)."),
+    }

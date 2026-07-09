@@ -753,6 +753,7 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "MMT SWOT": "MMT strengths / weaknesses / opportunities / threats.",
     "MMT county opportunity": "MMT's 22 counties ranked by contestable IFT book + headroom.",
     "MMT accounts": "MMT's anchor-system transfer-center accounts + GTM strategy.",
+    "MMT SOM scenario": "MMT SOM as a range — per-lever swing + downside/upside band.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
     "Clinical routing": "How patients move: acute scenario → destination + growth.",
