@@ -268,7 +268,10 @@ def write_xlsx(sheets: List[Sheet]) -> bytes:
                     + "".join(
                         f'<Relationship Id="rId{j+1}" Type="http://schemas.'
                         'openxmlformats.org/officeDocument/2006/relationships/'
-                        f'hyperlink" Target="{escape(url)}" '
+                        # Target is an ATTRIBUTE — escape the double-quote too, or
+                        # a URL containing one would terminate the attribute and
+                        # corrupt the rels part.
+                        f'hyperlink" Target="{escape(url, {chr(34): "&quot;"})}" '
                         'TargetMode="External"/>'
                         for j, (_ref, url) in enumerate(links))
                     + '</Relationships>'

@@ -32,6 +32,7 @@ pptx:
 """
 from __future__ import annotations
 
+import io
 import os
 import socket
 import tempfile
@@ -424,6 +425,32 @@ class TestPptxFallback(unittest.TestCase):
         # Executive-summary text inherited from _memo_exec_text should
         # reference the deal's dollar impact.
         self.assertIn("<a:t>", xml)
+
+
+class TestHyperlinkWriter(unittest.TestCase):
+    """The stdlib xlsx_writer's Link cell + per-sheet hyperlink rels."""
+
+    def test_link_cell_resolves_and_survives_special_chars(self):
+        # A URL with & < > and a double-quote must not corrupt the rels part
+        # (Target is an attribute — the quote must be escaped).
+        from rcm_mc.exports.xlsx_writer import Sheet, write_xlsx, Link
+        url = 'https://pedesk.app/x?a=1&b=2<>"q"'
+        data = write_xlsx([Sheet("Links", [[Link("open", url)]])])
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertIsNone(z.testzip())
+        self.assertIn("xl/worksheets/_rels/sheet1.xml.rels", z.namelist())
+        wb = load_workbook(io.BytesIO(data))
+        cell = wb["Links"]["A1"]
+        self.assertEqual(cell.value, "open")
+        self.assertEqual(cell.hyperlink.target, url)
+
+    def test_sheet_without_links_writes_no_rels_part(self):
+        from rcm_mc.exports.xlsx_writer import Sheet, write_xlsx
+        data = write_xlsx([Sheet("Plain", [["hi", 1]])])
+        z = zipfile.ZipFile(io.BytesIO(data))
+        self.assertNotIn("xl/worksheets/_rels/sheet1.xml.rels", z.namelist())
+        self.assertNotIn("<hyperlinks>",
+                         z.read("xl/worksheets/sheet1.xml").decode())
 
 
 if __name__ == "__main__":
