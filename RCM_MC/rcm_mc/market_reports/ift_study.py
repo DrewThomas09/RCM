@@ -321,7 +321,10 @@ def operating_models() -> OperatingModels:
             bands = list(fr.bands)
         bp = _ins.biller_proxy()
         if getattr(bp, "available", False):
-            ceiling = getattr(bp, "insource_ceiling", None)
+            # BillerProxy exposes ceiling_low/central/high (there is no single
+            # ``insource_ceiling`` attribute) — assemble the (low, central, high)
+            # tuple the operating-model view wants.
+            ceiling = (bp.ceiling_low, bp.ceiling_central, bp.ceiling_high)
     except Exception:  # noqa: BLE001
         pass
     return OperatingModels(

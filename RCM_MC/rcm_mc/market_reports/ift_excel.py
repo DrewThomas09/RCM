@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ..exports.xlsx_writer import Sheet, write_xlsx
+from ..exports.xlsx_writer import Sheet, write_xlsx, Link
 from . import ift_analytics as _an
 from . import ift_clinical_demand as _cd
 from . import ift_geo
@@ -509,15 +509,22 @@ def _moat_sheet() -> Optional[Sheet]:
         rows += [
             [],
             [("Cross-market proof points (a new entrant cannot easily replace)", _H)],
-            [("Market", _H), ("Factors proven", _H), ("Claim", _H),
-             ("Evidence", _H)],
+            [("Market", _H), ("Region", _H), ("Factors proven", _H),
+             ("Claim", _H), ("Evidence", _H), ("Named operators (PUBLIC-WEB)", _H),
+             ("Evidence source", _H)],
         ]
         for pt in proofs.points:
             fns = ("; ".join(pt.factor_names)
                    if isinstance(pt.factor_names, (list, tuple))
                    else pt.factor_names)
-            rows.append([pt.market, fns, pt.claim, pt.evidence])
-    return Sheet("Moat scorecard", rows, col_widths=[22, 40, 40, 14, 14])
+            ops = ("; ".join(pt.named_operators)
+                   if isinstance(getattr(pt, "named_operators", None),
+                                 (list, tuple)) else "")
+            rows.append([pt.market, getattr(pt, "region_label", ""), fns,
+                         pt.claim, pt.evidence, ops,
+                         getattr(pt, "evidence_source", "")])
+    return Sheet("Moat scorecard", rows,
+                 col_widths=[20, 16, 34, 40, 40, 40, 22])
 
 
 def _tracking_sheet() -> Optional[Sheet]:
@@ -568,12 +575,93 @@ def _tracking_sheet() -> Optional[Sheet]:
     return Sheet("Three-lever tracker", rows, col_widths=[40, 16, 30, 60])
 
 
+# ── Contents index (built last, prepended first) ─────────────────────────────
+# One line per sheet so a partner can navigate 30+ tabs. Keyed by sheet name; a
+# name without an entry still lists (blank description) so nothing is hidden.
+_SHEET_DESCRIPTIONS: Dict[str, str] = {
+    "Overview": "The TAM → SAM → SOM funnel at a glance.",
+    "TAM build": "US ground-IFT TAM, top-down from the GOV Medicare anchor.",
+    "SAM health systems": "Structural SAM = multi-hospital health systems (two ways).",
+    "SOM footprint": "Serviceable-obtainable market in the operator's current metros.",
+    "Markets structure": "SOURCED facility structure for every target metro.",
+    "Markets read": "Anchor systems, operators, insource & moat read per metro.",
+    "Competitive": "Competitive archetypes, MMT positioning, per-market competition.",
+    "Insourcing": "Insource-vs-outsource bands, biller proxy, claims gross-up.",
+    "Moat scorecard": "The 7 stickiness factors, per-market scores, proof points.",
+    "Clinical demand": "Acute-transfer clinical spine: cases → codes → volume → growth.",
+    "Destination supply": "Real post-acute destination counts (SOURCED).",
+    "Three-lever tracker": "Price × volume + consolidation growth bridge.",
+    "Provenance": "Honesty legend — what is real (GOV/SOURCED) vs modeled.",
+    "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
+    "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
+    "Clinical routing": "How patients move: acute scenario → destination + growth.",
+    "Assumptions & levers": "Every model parameter (low/central/high) + basis.",
+    "Operating models": "Insource / hybrid / outsource bands, procurement, pain points.",
+    "Company profiles": "MMT (subject) + the competitive field, full profiles.",
+    "MMT positioning": "MMT's dedicated-IFT positioning pillars.",
+    "Competitor types": "Competitive landscape by provider TYPE (no company names).",
+    "Industry context": "IBISWorld industry-structure frame (ACADEMIC, qualitative).",
+    "R· Reimbursement": "Research: how payment works, statute, why claims undercount.",
+    "R· Unit economics": "Research: cost/revenue driver trees + margin levers.",
+    "R· KPIs & metrics": "Research: the KPI dictionary by stakeholder.",
+    "R· Technology & data": "Research: the request→claim technology map.",
+    "R· Regulatory": "Research: the regulatory stack + barriers to entry.",
+    "R· Segmentation": "Research: the seven segmentation axes + attractiveness.",
+    "R· Sizing method": "Research: the six sizing approaches + assumption tracker.",
+    "R· Growth & headwinds": "Research: growth drivers, headwinds, net demand.",
+    "R· Evidence quality": "Research: confidence in findings + open gaps.",
+    "Connectors": "Network-gated data connectors + fallback GOV citations.",
+    "Fee schedule": "Medicare Ambulance Fee Schedule ready-reckoner (RVU × CF).",
+    "Occupancy demand": "Hospital inpatient occupancy — the transfer-demand engine.",
+    "Deal history": "EMS + NEMT + air-medical transport deal corpus.",
+    "Report narrative": "Executive summary, how-it-works, trends, insider lens.",
+    "Report economics": "Market size, reimbursement, unit economics, growth levers.",
+    "Report reg & risk": "Regulatory, competition, risks, diligence questions.",
+}
+
+
+def _contents_sheet(sheets: List[Sheet]) -> Sheet:
+    rows: List[List[Any]] = [
+        [("Interfacility Transport (IFT) — MMT market study workbook", _H)],
+        [("Every sourced figure, every model, every qualitative frame, the "
+          "connectors, and the market-report narrative — one auditable download. "
+          "Honesty basis travels on every value-bearing cell.")],
+        [],
+        [("#", _H), ("Sheet", _H), ("What's on it", _H)],
+    ]
+    for i, s in enumerate(sheets, start=1):
+        rows.append([(i, "num"), (s.name, _H),
+                     _SHEET_DESCRIPTIONS.get(s.name, "")])
+    # Where the same analysis lives online (clickable) — the interactive pages
+    # that this workbook is the downloadable, auditable companion to.
+    rows += [
+        [],
+        [("Where this lives online (click to open)", _H)],
+        [("", _H), ("Page", _H), ("What it is", _H)],
+        ["", Link("Investor Market Study", "https://pedesk.app/ift-study"),
+         "The four-dimension SOW study + MMT deep dive."],
+        ["", Link("Market Research Brief", "https://pedesk.app/ift-research"),
+         "The deep market-level 20-topic research brief."],
+        ["", Link("TAM / SAM / SOM + 20 metros", "https://pedesk.app/ift-markets"),
+         "The sized funnel + the target-metro deep dive."],
+        ["", Link("Clinical demand engine", "https://pedesk.app/ift-clinical"),
+         "The acute-transfer volume + growth spine."],
+        ["", Link("IFT market report", "https://pedesk.app/market/interfacility_transport"),
+         "The subsector market report."],
+        ["", Link("Download this workbook", "https://pedesk.app/api/ift/markets.xlsx"),
+         "This Excel — always the latest build."],
+    ]
+    return Sheet("Contents", rows, col_widths=[5, 30, 78])
+
+
 # ── the workbook ─────────────────────────────────────────────────────────────
 def ift_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
     """Build the full IFT market-study workbook and return .xlsx bytes.
 
-    Every sheet degrades to skipped rather than raising, so the download always
-    succeeds — even offline where a network-gated analytic is dark."""
+    The quantitative funnel + per-market layers come first, then the qualitative /
+    narrative / research / connector sheets from :mod:`ift_excel_extra`, with a
+    Contents index prepended. Every sheet degrades to skipped rather than raising,
+    so the download always succeeds — even offline where a connector is dark."""
     builders = [
         _overview_sheet, _tam_sheet, _sam_sheet, _som_sheet, _structure_sheet,
         _markets_read_sheet, _competitive_sheet, _insourcing_sheet, _moat_sheet,
@@ -584,6 +672,12 @@ def ift_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
         s = _safe(b)
         if s is not None:
             sheets.append(s)
+    # The qualitative / narrative / research / connector sheet set.
+    try:
+        from . import ift_excel_extra as _extra
+        sheets.extend(_extra.extra_sheets())
+    except Exception:  # noqa: BLE001 — degrade to the quantitative pack alone
+        pass
     if not sheets:  # never emit an empty workbook
         sheets = [_provenance_sheet()]
-    return write_xlsx(sheets)
+    return write_xlsx([_contents_sheet(sheets)] + sheets)

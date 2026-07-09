@@ -39,10 +39,25 @@ class F:
     """Live Excel formula. ``F("SUM(B2:B5)")`` renders as ``=SUM(B2:B5)``."""
     expr: str
 
+
+@dataclass(frozen=True)
+class Link:
+    """A clickable hyperlink cell. ``Link("MMT study", "https://…/ift-study")``
+    renders the visible ``text`` as a blue underlined link to ``url``.
+
+    Opt-in (like :class:`F`) so a plain string is never silently turned into a
+    hyperlink — the URL travels separately in the workbook's relationship parts,
+    so a partner-supplied string can never inject one."""
+    text: str
+    url: str
+
+
 # Style ids map to cellXfs entries in _STYLES_XML below (order matters).
 # The "input*" styles render blue — the banker convention (blue =
 # hardcoded assumption you may edit, black = formula/derived) that deal
-# teams expect in any model template they download.
+# teams expect in any model template they download. Every text-bearing cell
+# wraps and top-aligns (``<alignment vertical="top" wrapText="1"/>``) so the
+# long prose these exports carry never overflows or clips a column.
 _STYLE_IDS = {
     "text": 0,
     "header": 1,
@@ -57,7 +72,10 @@ _STYLE_IDS = {
     "input_money": 10, # blue, $#,##0.00
     "input_pct": 11,   # blue, 0.0%
     "input_num": 12,   # blue, #,##0.00
+    "link": 13,        # blue underline hyperlink
 }
+
+_ALIGN = '<alignment vertical="top" wrapText="1"/>'
 
 _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -66,11 +84,12 @@ _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <numFmt numFmtId="165" formatCode="$#,##0.00"/>
 <numFmt numFmtId="166" formatCode="0.00&quot;x&quot;"/>
 </numFmts>
-<fonts count="4">
+<fonts count="5">
 <font><sz val="11"/><name val="Calibri"/></font>
 <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>
 <font><b/><sz val="11"/><color rgb="FF1A2332"/><name val="Calibri"/></font>
 <font><sz val="11"/><color rgb="FF1F4E9C"/><name val="Calibri"/></font>
+<font><u/><sz val="11"/><color rgb="FF1F4E9C"/><name val="Calibri"/></font>
 </fonts>
 <fills count="3">
 <fill><patternFill patternType="none"/></fill>
@@ -79,22 +98,23 @@ _STYLES_XML = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </fills>
 <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="13">
-<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
-<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
-<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
-<xf numFmtId="165" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
-<xf numFmtId="10" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
-<xf numFmtId="4" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<cellXfs count="14">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">{A}</xf>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="10" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="165" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="10" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="4" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyAlignment="1">{A}</xf>
+<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">{A}</xf>
 </cellXfs>
-</styleSheet>"""
+</styleSheet>""".replace("{A}", _ALIGN)
 
 
 @dataclass
@@ -113,10 +133,20 @@ def _col_letter(i: int) -> str:
     return out
 
 
-def _cell_xml(ref: str, value: Any, style: str) -> str:
+def _cell_xml(ref: str, value: Any, style: str,
+              links: Optional[List] = None) -> str:
     sid = _STYLE_IDS.get(style, 0)
     if isinstance(value, F):
         return f'<c r="{ref}" s="{sid}"><f>{escape(value.expr)}</f></c>'
+    if isinstance(value, Link):
+        # A hyperlink is a styled inline-string cell; the target travels in the
+        # sheet's <hyperlinks> block + rels (registered via the accumulator).
+        if links is not None:
+            links.append((ref, value.url))
+        txt = escape(str(value.text))
+        lsid = _STYLE_IDS["link"]
+        return (f'<c r="{ref}" s="{lsid}" t="inlineStr">'
+                f'<is><t xml:space="preserve">{txt}</t></is></c>')
     if isinstance(value, (int, float)) and value is not True and value is not False:
         return f'<c r="{ref}" s="{sid}"><v>{value}</v></c>'
     if value is None or value == "":
@@ -126,13 +156,17 @@ def _cell_xml(ref: str, value: Any, style: str) -> str:
             f'<is><t xml:space="preserve">{txt}</t></is></c>')
 
 
-def _sheet_xml(sheet: Sheet) -> str:
+def _sheet_xml(sheet: Sheet):
+    """Return ``(worksheet_xml, links)`` where ``links`` is a list of
+    ``(cell_ref, url)`` for every :class:`Link` cell — the caller writes the
+    per-sheet relationship part for them."""
     cols = ""
     if sheet.col_widths:
         col_parts = "".join(
             f'<col min="{i+1}" max="{i+1}" width="{w}" customWidth="1"/>'
             for i, w in enumerate(sheet.col_widths))
         cols = f"<cols>{col_parts}</cols>"
+    links: List = []
     rows_xml = []
     for r_i, row in enumerate(sheet.rows, start=1):
         cells = []
@@ -141,14 +175,24 @@ def _sheet_xml(sheet: Sheet) -> str:
                 value, style = cell
             else:
                 value, style = cell, "text"
-            cells.append(_cell_xml(f"{_col_letter(c_i)}{r_i}", value, style))
+            cells.append(_cell_xml(f"{_col_letter(c_i)}{r_i}", value, style,
+                                   links))
         rows_xml.append(f'<row r="{r_i}">{"".join(cells)}</row>')
-    return (
+    hyperlinks = ""
+    if links:
+        parts = "".join(f'<hyperlink ref="{ref}" r:id="rId{i+1}"/>'
+                        for i, (ref, _url) in enumerate(links))
+        hyperlinks = f"<hyperlinks>{parts}</hyperlinks>"
+    xml = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<worksheet xmlns="http://schemas.openxmlformats.org/'
-        'spreadsheetml/2006/main">'
-        f'{cols}<sheetData>{"".join(rows_xml)}</sheetData></worksheet>'
+        'spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/'
+        '2006/relationships">'
+        f'{cols}<sheetData>{"".join(rows_xml)}</sheetData>{hyperlinks}'
+        '</worksheet>'
     )
+    return xml, links
 
 
 def write_xlsx(sheets: List[Sheet]) -> bytes:
@@ -214,5 +258,20 @@ def write_xlsx(sheets: List[Sheet]) -> bytes:
         z.writestr("xl/_rels/workbook.xml.rels", wb_rels)
         z.writestr("xl/styles.xml", _STYLES_XML)
         for i, s in enumerate(sheets):
-            z.writestr(f"xl/worksheets/sheet{i+1}.xml", _sheet_xml(s))
+            xml, links = _sheet_xml(s)
+            z.writestr(f"xl/worksheets/sheet{i+1}.xml", xml)
+            if links:
+                rels = (
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/'
+                    'package/2006/relationships">'
+                    + "".join(
+                        f'<Relationship Id="rId{j+1}" Type="http://schemas.'
+                        'openxmlformats.org/officeDocument/2006/relationships/'
+                        f'hyperlink" Target="{escape(url)}" '
+                        'TargetMode="External"/>'
+                        for j, (_ref, url) in enumerate(links))
+                    + '</Relationships>'
+                )
+                z.writestr(f"xl/worksheets/_rels/sheet{i+1}.xml.rels", rels)
     return buf.getvalue()
