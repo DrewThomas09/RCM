@@ -357,7 +357,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_capability="Thrombectomy-capable Comprehensive Stroke Center + neuro-ICU",
             destination_setting="Comprehensive Stroke Center",
             icd10=("I639", "I6350", "I63512", "I63411"),
-            ms_drg=("061-063 (acute stroke w/ thrombolytic)", "064-066 (intracranial hemorrhage or infarction)", "020-022 (endovascular thrombectomy)"),
+            ms_drg=("061-063 (acute ischemic stroke w/ thrombolytic)", "064-066 (intracranial hemorrhage or cerebral infarction, medical)", "023-024 (endovascular thrombectomy, no hemorrhage PDX)"),
             pcs=("03CG3ZZ", "03CH3ZZ"),
             time_window="Door-to-needle <=60 min; thrombectomy in the DAWN/DEFUSE-3 window (<=24h LKW selected)",
             national_volume=NationalVolume(533400, 2018, "GOV · AHRQ HCUP SB#277 (2018 NIS)",
@@ -373,7 +373,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_capability="Neurosurgery + neuro-ICU (clip/coil, EVD, hematoma evacuation)",
             destination_setting="Comprehensive Stroke Center w/ neurosurgery",
             icd10=("I619", "I609"),
-            ms_drg=("064-066 (intracranial hemorrhage or infarction)", "023-027 (craniotomy & endovascular)"),
+            ms_drg=("020-022 (intracranial vascular procedures w/ hemorrhage PDX)", "025-027 (craniotomy w/o major device)", "064-066 (intracranial hemorrhage, medical)"),
             time_window="Aneurysm securing within 24-72h to prevent rebleed",
             national_volume=NationalVolume(110000, 2022, "GOV · CDC-derived (ICH+SAH ~13% of >795,000 strokes)",
                                            "hemorrhagic-stroke cases/yr",
@@ -520,7 +520,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_capability="Maternal-Fetal Medicine, Level III/IV maternal care + co-located NICU III/IV",
             destination_setting="MFM / Level III-IV OB",
             icd10=("O1490", "O721", "O6014X0"),
-            ms_drg=("781-782 (other antepartum w/wo complications)", "831-834 (O.R. proc for pregnancy)", "765-770 (cesarean)"),
+            ms_drg=("783-788 (cesarean section)", "817-819 (other antepartum dx w/ O.R. procedure)", "831-834 (other antepartum dx w/o O.R. procedure)"),
             time_window="Eclampsia/hemorrhage time-critical; prefer in-utero maternal transport before delivery",
             national_volume=NationalVolume(3667758, 2022, "GOV · CDC/NCHS Births 2022",
                                            "US births/yr",
@@ -932,9 +932,13 @@ def mission_mix() -> Dict:
 
     Aggregates each condition's ``transport_acuity`` tier weighted by its GOV
     national volume (value>0 only) across the ESCALATION family, then reports
-    the high-acuity (CCT/SCT + specialty teams) vs mid (ALS) vs low (BLS/NEMT/
-    behavioral) share. This is the headline IFT-thesis output: acute escalation
-    skews heavily toward the high-acuity, high-reimbursement CCT/SCT tier.
+    the high-acuity (CCT/SCT + neonatal + peds teams) vs mid (ALS + ALS2) vs low
+    (BLS/NEMT + behavioral) share. To prevent the workbook mislabel that conflated
+    these, the split is reported BOTH ways: ``high_acuity_share`` EXCLUDES
+    behavioral (CCT/SCT + neonatal + peds only), ``cct_sct_share`` is the CCT/SCT
+    tier ALONE, and ``high_acuity_incl_behavioral_share`` adds behavioral back in.
+    Acute escalation skews heavily toward the high-acuity, high-reimbursement
+    CCT/SCT tier.
     """
     by_tier: Dict[str, int] = {}
     total = 0
@@ -949,6 +953,8 @@ def mission_mix() -> Dict:
     high = sum(v for t, v in by_tier.items() if t in _HIGH_ACUITY_TIERS)
     mid = sum(v for t, v in by_tier.items() if t in _MID_ACUITY_TIERS)
     low = sum(v for t, v in by_tier.items() if t in _LOW_ACUITY_TIERS)
+    cct_sct = by_tier.get(TIER_CCT_SCT, 0)
+    behavioral = by_tier.get(TIER_BH, 0)
     def share(x: int) -> float:
         return round(x / total, 3) if total else 0.0
     return {
@@ -956,9 +962,12 @@ def mission_mix() -> Dict:
         "volume_weighted": True,
         "total_weighting_volume": total,
         "by_tier_volume": dict(sorted(by_tier.items(), key=lambda kv: kv[1], reverse=True)),
-        "high_acuity_share": share(high),   # CCT/SCT + neonatal + peds-critical
-        "mid_acuity_share": share(mid),     # ALS / ALS2
-        "low_acuity_share": share(low),     # BLS / NEMT / behavioral
+        "high_acuity_share": share(high),   # CCT/SCT + neonatal + peds (EXCLUDES behavioral)
+        "cct_sct_share": share(cct_sct),    # CCT/SCT tier ALONE (< high_acuity_share)
+        "high_acuity_incl_behavioral_share": share(high + behavioral),  # + behavioral
+        "behavioral_share": share(behavioral),
+        "mid_acuity_share": share(mid),     # ALS + ALS2
+        "low_acuity_share": share(low),     # BLS / NEMT + behavioral
         "basis": "GOV volumes x authored transport-acuity tiering (Medicare ambulance ladder)",
     }
 

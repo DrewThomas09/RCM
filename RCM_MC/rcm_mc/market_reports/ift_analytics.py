@@ -75,10 +75,11 @@ _AMBULANCE_HCPCS: Tuple[str, ...] = (
     "A0430", "A0431", "A0425", "A0435", "A0436",
 )
 
-# The default CY2024-25 conversion factor used for the worked base rates. The
-# exact CF ships in the CMS AFS public-use file; this tracks the national
-# amounts closely and is labelled ILLUSTRATIVE wherever a dollar is shown.
-_DEFAULT_CF = 278.0
+# The CY2025 Ambulance Fee Schedule conversion factor (GOV — the exact CF as
+# published in the CMS AFS public-use file). The CF itself is GOV; only the
+# base rates DERIVED from it (CF × the illustrative RVU weights × geographic
+# adjustment) are labelled ILLUSTRATIVE.
+_DEFAULT_CF = 278.98
 
 # Corpus sector tokens that ARE interfacility transport (the union of the three
 # modalities). Matched case-insensitively, plus substring fallbacks so free-text
@@ -467,8 +468,9 @@ def ambulance_part_b_utilization() -> ConnectorResult:
         available=False, dataset_id=dataset_id,
         source_label=("connector · " + dataset_id + " (not ingested offline)"),
         fallback_citation=("GOV · CMS Medicare Ambulance Fee Schedule "
-                           "(A0426-A0436, 42 CFR 414.601-617) + MedPAC ambulance "
-                           "chapter (~$4.0B Medicare FFS ambulance, 2023) + CMS "
+                           "(A0426-A0436, 42 CFR 414.601-617) + MedPAC ground-"
+                           "ambulance report ($5.3B FFS ground, ~11.4M transports, "
+                           "2023) + CMS "
                            "GADCS (Ground Ambulance Data Collection System, "
                            "BBA 2018 §50203)"),
         note=("Line-level ambulance utilization is network-gated offline "
@@ -615,13 +617,24 @@ _TAM_EXCLUSIONS: Tuple[str, ...] = (
 )
 
 # GOV anchor + the ILLUSTRATIVE build ratios (basis stated on every line).
-_MEDICARE_FFS_AMBULANCE_BN = 4.0        # GOV — MedPAC Payment Basics, 2023 FFS spend
-_GROUND_SHARE = (0.85, 0.88)           # ILLUSTRATIVE — ground vs air share of $
+# Anchor DIRECTLY on the Medicare-FFS GROUND figure so the ground slice is not
+# double-discounted: MedPAC's mandated ground-ambulance report gives $5.3B in
+# FFS payments across ~11.4M FFS ground transports / ~10,500 ground organizations
+# (2023 data). The broader $4.0B "ambulance program spend" (all-ambulance, net of
+# beneficiary cost-sharing, ~1% of FFS) is a DIFFERENT cut, kept only as context.
+_MEDICARE_FFS_GROUND_BN = 5.3           # GOV — MedPAC ground-ambulance report, 2023
+_MEDICARE_FFS_AMBULANCE_BN = 4.0        # GOV — MedPAC program spend (context only)
+_GROUND_SHARE = (0.85, 0.88)           # ILLUSTRATIVE — ground vs air (context only)
 _IFT_SHARE_OF_GROUND = (0.30, 0.40)    # ILLUSTRATIVE — IFT over-indexes on ALS2/SCT
-_ALLPAYER_GROSSUP = (4.5, 5.5)         # ILLUSTRATIVE — Medicare FFS ~16-19% of $
+# Gross-up kept CONSISTENT with the market-research anchor: $5.3B Medicare-FFS
+# ground is ~24-29% of the ~$18-22B all-payer ground ambulance market, i.e. a
+# ~3.4-4.2× gross-up (NOT ~5×, which would imply Medicare is only ~16-19%).
+_ALLPAYER_GROSSUP = (3.4, 4.2)         # ILLUSTRATIVE — Medicare FFS ground ~24-29%
 _ALLPAYER_GROUND_AMBULANCE_BN = (18.0, 22.0)   # ILLUSTRATIVE — market-research x-check
 _IFT_TRANSPORTS_M = (4.0, 5.0)         # ILLUSTRATIVE — all-payer ground IFT volume
-_R_PER_TRANSPORT = (1200.0, 1400.0)    # ILLUSTRATIVE — blended all-payer net rev/leg
+_R_PER_TRANSPORT = (700.0, 900.0)      # ILLUSTRATIVE — all-payer BLENDED rev/leg
+                                       # (commercial-lifted market average, above
+                                       # the MMT-realized SOM rate below)
 
 
 @dataclass
@@ -662,54 +675,67 @@ def ground_tam() -> GroundTam:
     Method: the line-level Part-B ambulance-HCPCS path (:func:`ambulance_part_b_
     utilization`) is the SOURCED build once the estate is ingested; it is
     network-gated offline, so this degrades to the GOV/ILLUSTRATIVE top-down build
-    — Medicare FFS ambulance $4.0B (GOV) → ground 85-88% → interfacility 30-40% →
-    ~5× all-payer gross-up → ~$6.5B central ($5-8B). NEMT + air + 911-scene +
+    — Medicare FFS GROUND ambulance $5.3B (GOV, 2023) → interfacility 30-40% →
+    ~3.4-4.2× all-payer gross-up → ~$5.5B central ($4-8B), corroborated by the
+    share method and marked down by the volume×rate check. NEMT + air + 911-scene +
     residence-origin dialysis are EXCLUDED (documented). Never raises."""
     part_b = ambulance_part_b_utilization()
     method = "part_b_utilization" if part_b.available else "top_down_illustrative"
 
-    anchor = _MEDICARE_FFS_AMBULANCE_BN
-    grd = (round(anchor * _GROUND_SHARE[0], 2), round(anchor * _GROUND_SHARE[1], 2))
-    ift = (round(grd[0] * _IFT_SHARE_OF_GROUND[0], 2),
-           round(grd[1] * _IFT_SHARE_OF_GROUND[1], 2))
-    # All-payer gross-up applied to the Medicare-FFS ground-IFT slice (~5× central).
-    grossup_c = (_ALLPAYER_GROSSUP[0] + _ALLPAYER_GROSSUP[1]) / 2.0    # 5.0
-    ap_grossup_low = round(ift[0] * grossup_c, 1)
-    ap_grossup_high = round(ift[1] * grossup_c, 1)
-    # Volume cross-check: transports × revenue/transport.
+    # Anchor directly on the Medicare-FFS GROUND figure ($5.3B) — do NOT re-apply a
+    # ground-share discount (that would double-count the ground cut).
+    anchor = _MEDICARE_FFS_GROUND_BN
+    grd = (anchor, anchor)                                   # already ground
+    ift = (round(anchor * _IFT_SHARE_OF_GROUND[0], 2),
+           round(anchor * _IFT_SHARE_OF_GROUND[1], 2))       # ~1.59-2.12B
+    # All-payer gross-up applied to the Medicare-FFS ground-IFT slice, kept
+    # consistent with the $18-22B market anchor (~3.4-4.2×, i.e. Medicare ~24-29%).
+    ap_grossup_low = round(ift[0] * _ALLPAYER_GROSSUP[0], 1)
+    ap_grossup_high = round(ift[1] * _ALLPAYER_GROSSUP[1], 1)
+    # Share cross-check: all-payer ground market × IFT share (independent of the
+    # gross-up path) — this and the gross-up now AGREE at ~$5-9B.
+    share_low = round(_ALLPAYER_GROUND_AMBULANCE_BN[0] * _IFT_SHARE_OF_GROUND[0], 1)
+    share_high = round(_ALLPAYER_GROUND_AMBULANCE_BN[1] * _IFT_SHARE_OF_GROUND[1], 1)
+    # Volume cross-check: IFT legs × all-payer BLENDED rev/leg. This sits BELOW the
+    # two $-based methods and does NOT confirm them — it reconciles only if IFT leg
+    # volume is materially above the oft-cited 4-5M (once discharge + facility-origin
+    # recurring legs are fully counted) or the blended rate is higher. Surfaced, not
+    # buried.
     vol_low = round(_IFT_TRANSPORTS_M[0] * _R_PER_TRANSPORT[0] / 1000.0, 1)   # $B
     vol_high = round(_IFT_TRANSPORTS_M[1] * _R_PER_TRANSPORT[1] / 1000.0, 1)
-    # Headline is the TRIANGULATED central/range across the three methods (top-down
-    # gross-up, volume × revenue, market-research context) — NOT the raw corner
-    # product of the extremes, which overstates the tails. These are the brief's
-    # ILLUSTRATIVE headline figures; the $6.5B is NEVER GOV.
-    ap_low, ap_central, ap_high = 5.0, 6.5, 8.0
+    # Headline central sits at the consensus of the two $-based methods (gross-up +
+    # share), pulled down modestly by the low volume×rate check. ILLUSTRATIVE — the
+    # central is NEVER GOV.
+    ap_low, ap_central, ap_high = 4.0, 5.5, 8.0
 
     steps = [
-        TamStep("Medicare FFS ambulance spend (2023)",
+        TamStep("Medicare FFS GROUND ambulance payments (2023)",
                 f"${anchor:.1f}B", "GOV",
-                "~1% of Medicare FFS; ~13% of FFS beneficiaries used ambulance "
-                "(MedPAC Payment Basics, Oct 2024). 2024: ~10,600 orgs, 11.3M "
-                "transports, $5.3B AFS."),
-        TamStep("→ ground share of ambulance $ (85-88%)",
-                f"${grd[0]:.2f}-{grd[1]:.2f}B", "ILLUSTRATIVE",
-                "air is ~1-2% of transports but higher $/trip; ground is the "
-                "residual."),
+                "MedPAC's mandated ground-ambulance report (Mar 2025, 2023 data): "
+                "~10,500 ground ambulance organizations, ~11.4M FFS ground "
+                "transports, $5.3B in FFS payments. (Separately, all-ambulance FFS "
+                "PROGRAM spend net of cost-sharing ≈ $4.0B, ~1% of FFS; ~13% of FFS "
+                "beneficiaries used ambulance — a different, broader cut.)"),
         TamStep("→ interfacility share of ground $ (30-40%)",
                 f"${ift[0]:.2f}-{ift[1]:.2f}B", "ILLUSTRATIVE",
                 "IFT over-indexes on spend vs volume — it concentrates ALS2/SCT "
                 "(RVU 2.75/3.25) + long mileage; 911/scene is higher volume, lower "
                 "$/trip. This is the Medicare-FFS ground-IFT slice."),
-        TamStep("→ all-payer gross-up (~5×)",
+        TamStep("→ all-payer gross-up (~3.4-4.2×)",
                 f"${ap_grossup_low:.1f}-{ap_grossup_high:.1f}B", "ILLUSTRATIVE",
-                "Medicare FFS ground ambulance is ~16-19% of all-payer revenue "
-                "(commercial pays ~2-4× Medicare; MA/Medicaid/self-pay fill the "
-                "rest)."),
-        TamStep("Volume cross-check (4-5M transports × $1,200-1,400)",
+                "Medicare FFS ground ambulance ($5.3B) is ~24-29% of the ~$18-22B "
+                "all-payer ground market, i.e. a ~3.4-4.2× gross-up (commercial "
+                "pays ~2-4× Medicare; MA/Medicaid/self-pay fill the rest)."),
+        TamStep("Share cross-check (all-payer ground × IFT 30-40%)",
+                f"${share_low:.1f}-{share_high:.1f}B", "ILLUSTRATIVE",
+                "the ~$18-22B all-payer ground market × the 30-40% IFT share — an "
+                "independent path that AGREES with the gross-up at ~$5-9B."),
+        TamStep("Volume cross-check (4-5M IFT legs × $700-900 blended)",
                 f"${vol_low:.1f}-{vol_high:.1f}B", "ILLUSTRATIVE",
-                "US ground ambulance transports ~25-30M/yr incl. ~22M 911; "
-                "interfacility ~15-20% by volume × blended all-payer net "
-                "revenue/leg — reconciles with the top-down."),
+                "sits BELOW the two $-based methods — it does NOT confirm them. "
+                "Reconciles only if IFT leg volume is ~6-8M (discharge + "
+                "facility-origin recurring legs fully counted) or the blended rate "
+                "is higher. Treated as a downside marker, not corroboration."),
         TamStep("Market-research cross-check (US ground ambulance)",
                 f"${_ALLPAYER_GROUND_AMBULANCE_BN[0]:.0f}-"
                 f"{_ALLPAYER_GROUND_AMBULANCE_BN[1]:.0f}B", "ILLUSTRATIVE",
@@ -727,8 +753,9 @@ def ground_tam() -> GroundTam:
     headline = (
         f"US GROUND IFT TAM ≈ ${ap_central:.1f}B central (range "
         f"${ap_low:.1f}-{ap_high:.1f}B), all-payer, ex-NEMT ex-air — ILLUSTRATIVE, "
-        f"a ~5× gross-up of the ${ift[0]:.1f}-{ift[1]:.1f}B Medicare-FFS ground-IFT "
-        f"slice built off the ${anchor:.1f}B GOV MedPAC anchor.")
+        f"a ~3.4-4.2× gross-up of the ${ift[0]:.1f}-{ift[1]:.1f}B Medicare-FFS "
+        f"ground-IFT slice off the ${anchor:.1f}B GOV MedPAC ground anchor, "
+        f"corroborated by the share method and marked down by the volume×rate check.")
 
     return GroundTam(
         available=True, method=method, part_b_available=part_b.available,
@@ -738,16 +765,19 @@ def ground_tam() -> GroundTam:
         allpayer_ground_ambulance_bn=_ALLPAYER_GROUND_AMBULANCE_BN,
         transports_m=_IFT_TRANSPORTS_M, revenue_per_transport=_R_PER_TRANSPORT,
         steps=steps, exclusions=list(_TAM_EXCLUSIONS),
-        source_label=("GOV anchor · MedPAC Payment Basics (Ambulance, Oct 2024) "
-                      "+ 42 CFR 414 Subpart H fee schedule; ILLUSTRATIVE build "
-                      "(ground/air split, IFT share, all-payer gross-up) modeled "
-                      "on the GOV anchor — the $6.5B is NEVER GOV"),
+        source_label=("GOV anchor · MedPAC ground-ambulance report (Mar 2025, 2023 "
+                      "data) + 42 CFR 414 Subpart H fee schedule; ILLUSTRATIVE "
+                      "build (IFT share, all-payer gross-up) modeled on the GOV "
+                      "anchor — the central is NEVER GOV"),
         headline=headline,
         note=("The SOURCED line-level path (Part B ambulance HCPCS) is network-"
               "gated offline, so the TAM is the top-down GOV→ILLUSTRATIVE build. "
-              "Present as a RANGE, not a point; the Medicare-FFS ground-IFT slice "
-              f"(${ift[0]:.1f}-{ift[1]:.1f}B) is the ILLUSTRATIVE figure most "
-              "directly anchored to GOV."))
+              "Present as a RANGE, not a point. Two $-based methods (gross-up + "
+              "share) agree at ~$5-9B; the independent volume×rate check runs low "
+              f"(${vol_low:.1f}-{vol_high:.1f}B) and is carried as an explicit "
+              "downside marker, not corroboration. The Medicare-FFS ground-IFT "
+              f"slice (${ift[0]:.1f}-{ift[1]:.1f}B) is the figure most directly "
+              "anchored to GOV."))
 
 
 # ── SAM(footprint) — bottom-up from the ift_geo market structure ─────────────
@@ -759,8 +789,16 @@ def ground_tam() -> GroundTam:
 _F_IFT = (0.07, 0.10, 0.12)            # (low, central, high) fraction of discharges
 _LAMBDA_RETURN = (2.0, 3.0, 4.0)       # SNF recurring ground-IFT legs / occ. bed / yr
 _SNF_OCC = 0.77                        # GOV magnitude (NIC/CMS)
-_R_IFT = (1200.0, 1300.0, 1400.0)      # (low, central, high) $/IFT transport
-_R_IFT_RURAL_UPLIFT = 1.12             # rural/super-rural mileage + 22.6% add-on
+# Blended net revenue per IFT transport as an operator ACTUALLY REALIZES it —
+# Medicare/Medicaid-weighted, plus facility payments — which lands well below the
+# all-payer market average (_R_PER_TRANSPORT) because the SOM is a real operator's
+# collected revenue, not the commercial-lifted market blend. Consistent with a
+# ~$465 Medicare ground transport and a mid-$400s realized net per mission.
+_R_IFT = (500.0, 600.0, 700.0)         # (low, central, high) $/IFT transport
+# Rural metros carry a modest uplift: the super-rural adjustment is a BASE-RATE
+# increase (+22.6% to the ground base rate in the lowest-density quartile, 42 CFR
+# 414 Subpart H), plus the higher rural per-mile rate — not a mileage-only bump.
+_R_IFT_RURAL_UPLIFT = 1.12             # rural base-rate + per-mile uplift, blended
 
 # Realistically-serviceable share s(m) by ift_geo insource archetype (ILLUSTRATIVE,
 # in the brief's 0.15-0.30 band). LOWER where an anchor IDN insources its fleet or

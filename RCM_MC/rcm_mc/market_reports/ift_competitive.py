@@ -321,10 +321,15 @@ _ARCHETYPE_AUTHORED: Dict[str, Dict[str, object]] = {
             "deeply integrated into the transfer center and CAD; some (Allina) "
             "even sell CCT to non-system facilities."),
         "scale_magnitude": (
-            "Large where it exists (Allina fielded ~34,000 interfacility requests "
-            "in 2024; Mayo runs ~70 units) but confined to the owning system's "
+            "Large where it exists (Allina Health EMS fields ~34,000 interfacility "
+            "requests/yr; Mayo runs ~70 units) but confined to the owning system's "
             "captive stream — a hard ceiling on the addressable market, not a "
-            "contestable book."),
+            "contestable book. LIVE PROOF POINT: Allina signed a definitive "
+            "agreement to combine with Sutter Health (May 21, 2026) into a "
+            "~39-hospital, ~$26B nonprofit expected to close by end-2026 pending "
+            "regulatory approval — exactly the 'strategic review flips a captive "
+            "fleet' dynamic, putting Allina's ~34,000 captive IFT requests into "
+            "play in a market otherwise scored insourced-hard."),
         "pros": (
             "Deepest transfer-center / CAD / ePCR integration — the default "
             "first-call inside the system",

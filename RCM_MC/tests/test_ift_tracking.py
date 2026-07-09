@@ -42,10 +42,12 @@ class TestPriceLever(unittest.TestCase):
 
     def test_gov_aif_anchor(self):
         p = self.p
-        # CY2025 ~2.4% per the brief; the full trend is present and GOV.
-        self.assertEqual(p.aif_latest_year, 2025)
-        self.assertAlmostEqual(p.aif_latest_pct, 2.4, places=2)
+        # The AIF decelerates: CY2024 2.6% → CY2025 2.4% → CY2026 2.0% (GOV).
+        self.assertEqual(p.aif_latest_year, 2026)
+        self.assertAlmostEqual(p.aif_latest_pct, 2.0, places=2)
+        self.assertIn((2026, 2.0), p.aif_trend)
         self.assertIn((2025, 2.4), p.aif_trend)
+        self.assertIn((2024, 2.6), p.aif_trend)
         self.assertGreaterEqual(len(p.aif_trend), 5)
         # the AIF component is GOV; the composite component is ILLUSTRATIVE.
         gov = [c for c in p.components if c.basis == t.LABEL_GOV]
