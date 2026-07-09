@@ -740,6 +740,11 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Footprint vs national": "Footprint national penetration + per-region roll-up.",
     "Moat detail": "Per-metro contestability + the factor-by-factor evidence trail.",
     "Code validation QA": "ICD-10-CM coding-integrity check on the clinical spine.",
+    "MMT footprint": "Midwest Medical Transport's footprint by MSA (county-resolved).",
+    "MMT counties": "Every county MMT serves — pop, 65+, modeled IFT demand, by CBSA.",
+    "MMT connectors": "County-grain data-connector coverage across MMT's territory.",
+    "MMT clinical drivers": "MMT's acute-transfer demand conditions (ICD-10 validated).",
+    "MMT metro read": "MMT's per-metro competitive & moat read, tied to counties.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
     "Clinical routing": "How patients move: acute scenario → destination + growth.",
@@ -827,6 +832,13 @@ def ift_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
         from . import ift_excel_depth as _depth
         sheets.extend(_depth.depth_sheets())
     except Exception:  # noqa: BLE001 — degrade to the core pack alone
+        pass
+    # The MMT county-by-MSA sheet set (subject-operator deep dive resolved to the
+    # 22 counties across 7 CBSAs, with the county-grain connector coverage).
+    try:
+        from . import ift_excel_mmt as _mmt
+        sheets.extend(_mmt.mmt_sheets())
+    except Exception:  # noqa: BLE001 — degrade without the MMT pack
         pass
     # The qualitative / narrative / research / connector sheet set.
     try:
