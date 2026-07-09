@@ -143,6 +143,24 @@ class MmtModelTests(unittest.TestCase):
         self.assertGreaterEqual(op.est_units, 1)
         self.assertTrue(op.headline)
 
+    def test_growth_projection_compounds_and_platform_leads(self):
+        gp = m.mmt_growth_projection(5)
+        self.assertTrue(gp.available)
+        self.assertEqual(len(gp.years), 6)                    # year 0..5
+        # today == the SOM start on both cases
+        self.assertAlmostEqual(gp.years[0].base_revenue, gp.start_revenue, places=2)
+        # monotonically increasing and platform >= base each year
+        for i in range(1, len(gp.years)):
+            self.assertGreater(gp.years[i].base_revenue, gp.years[i - 1].base_revenue)
+            self.assertGreaterEqual(gp.years[i].platform_revenue,
+                                    gp.years[i].base_revenue)
+        self.assertGreaterEqual(gp.platform_cagr, gp.base_cagr)
+
+    def test_swot_has_all_four_quadrants(self):
+        sw = m.mmt_swot()
+        for quad in (sw.strengths, sw.weaknesses, sw.opportunities, sw.threats):
+            self.assertGreaterEqual(len(quad), 3)
+
     def test_diligence_and_scorecard_are_populated(self):
         d = m.mmt_diligence()
         self.assertGreaterEqual(len(d.value_levers), 4)
@@ -166,6 +184,7 @@ class MmtPageTests(unittest.TestCase):
                        "Every county MMT serves", "Serviceable market (SOM)",
                        "Operating model", "County-grain data-connector coverage",
                        "clinical drivers", "moat read", "Positioning scorecard",
+                       "Growth projection", "SWOT",
                        "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 

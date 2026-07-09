@@ -379,6 +379,71 @@ def _scorecard_section() -> str:
         "names PUBLIC / company-web, no exclusivities asserted.</p>")
 
 
+def _growth_section() -> str:
+    gp = _m.mmt_growth_projection()
+    if not (gp.available and gp.years):
+        return ""
+    kpis = (
+        '<div class="ck-kpi-grid">'
+        + ck_kpi_block("SOM today", _usd(gp.start_revenue),
+                       "modeled serviceable revenue", code="SOM")
+        + ck_kpi_block("Base case (5-yr)", _usd(gp.base_5yr),
+                       f"{_pct(gp.base_cagr)}/yr organic", code="BASE")
+        + ck_kpi_block("Platform case (5-yr)", _usd(gp.platform_5yr),
+                       f"{_pct(gp.platform_cagr)}/yr w/ consolidation",
+                       code="PLAT")
+        + "</div>")
+    rows = []
+    for y in gp.years:
+        lbl = "Today" if y.year_offset == 0 else f"+{y.year_offset} yr"
+        rows.append(
+            "<tr>"
+            f'<td class="lab">{_esc(lbl)}</td>'
+            f'<td class="num">{_usd(y.base_revenue)}</td>'
+            f'<td class="num">{_usd(y.platform_revenue)}</td>'
+            "</tr>")
+    return (
+        ck_section_header("Growth projection", eyebrow="THE SOM REVENUE "
+                          "TRAJECTORY (3-LEVER BRIDGE)")
+        + kpis
+        + '<div class="mmt-wrap"><table class="mmt-tab" style="max-width:520px;">'
+        "<thead><tr><th>Year</th><th>Base revenue</th><th>Platform revenue</th>"
+        f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
+        f'<p class="mmt-note">{_esc(gp.headline)}. Growth {_chip("ILLUSTRATIVE")} '
+        "from the study's three-lever bridge — price (GOV AIF-anchored) × volume "
+        "(demographic CAGR) = market; × consolidation = platform.</p>")
+
+
+def _swot_section() -> str:
+    sw = _m.mmt_swot()
+    if not sw:
+        return ""
+    quads = [
+        ("Strengths", sw.strengths, "#0a8a5f"),
+        ("Weaknesses", sw.weaknesses, "#b8732a"),
+        ("Opportunities", sw.opportunities, "#155752"),
+        ("Threats", sw.threats, "#b5321e"),
+    ]
+    cells = []
+    for label, items, color in quads:
+        lis = "".join(f"<li style='margin:4px 0;'>{_esc(x)}</li>" for x in items)
+        cells.append(
+            '<div style="border:1px solid var(--sc-border,#e4dccb);'
+            f'border-top:3px solid {color};border-radius:4px;padding:12px 14px;'
+            'background:var(--sc-surface,#faf7f1);">'
+            f'<div style="font-family:var(--sc-mono,Consolas,monospace);'
+            f'font-size:11px;font-weight:700;letter-spacing:.06em;'
+            f'text-transform:uppercase;color:{color};margin-bottom:6px;">'
+            f'{_esc(label)}</div>'
+            f'<ul style="margin:0;padding-left:18px;font-size:12.5px;'
+            f'line-height:1.5;">{lis}</ul></div>')
+    return (
+        ck_section_header("SWOT", eyebrow="THE STRATEGIC READ, FOOTPRINT-TIED")
+        + '<div style="display:grid;grid-template-columns:repeat(auto-fit,'
+        'minmax(320px,1fr));gap:12px;margin:6px 0 14px;">'
+        + "".join(cells) + "</div>")
+
+
 def _diligence_section() -> str:
     d = _m.mmt_diligence()
     if not (d.value_levers or d.risks or d.questions):
@@ -448,9 +513,9 @@ def render_ift_mmt(qs=None) -> str:
         parts.append(_kpi_strip(s))
     parts += [
         _cbsa_table(), _county_table(), _serviceable_section(),
-        _operating_section(), _connector_table(), _clinical_table(),
-        _metro_read(), _scorecard_section(), _diligence_section(),
-        _cta(), ck_page_actions(),
+        _operating_section(), _growth_section(), _connector_table(),
+        _clinical_table(), _metro_read(), _scorecard_section(),
+        _swot_section(), _diligence_section(), _cta(), ck_page_actions(),
     ]
     return chartis_shell(
         "".join(parts), "MMT — County Deep Dive", active_nav="/market",

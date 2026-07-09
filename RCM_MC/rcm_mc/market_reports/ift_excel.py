@@ -749,6 +749,8 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "MMT operating model": "MMT footprint unit economics (cost structure, UHU, deadhead).",
     "MMT scorecard": "MMT vs AmeriPro / national EMS / municipal across first-call factors.",
     "MMT diligence": "MMT value-creation levers, risks, and the diligence question list.",
+    "MMT growth projection": "MMT SOM revenue trajectory (base vs platform, 5-yr).",
+    "MMT SWOT": "MMT strengths / weaknesses / opportunities / threats.",
     "Taxonomy": "IFT vs 911 / CCT / air / NEMT and why dedicated IFT is different.",
     "Ecosystem & journey": "The acute→post-acute patient journey + participants.",
     "Clinical routing": "How patients move: acute scenario → destination + growth.",

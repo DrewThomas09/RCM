@@ -359,6 +359,37 @@ _COUNTY_PROBES: Tuple[Dict[str, Any], ...] = (
          group_by="state", filter_col=None, metrics=None,
          taxonomy=True,
          fallback="GOV · CMS NPPES provider taxonomy (NUCC §341600000X Ambulance)"),
+    dict(key="snf_universe_state",
+         title="CMS nursing-home / SNF universe (MMT states)",
+         connector="provider_data",
+         dataset_id="provider_data_nursing_home_provider_info",
+         grain="SNFs by state (NE + IA)",
+         yields="the post-acute DESTINATION universe — SNF↔hospital back-transfer "
+                "is the recurring routine-IFT book MMT wins.",
+         group_by="state", filter_col="state", filter_vals_states=True,
+         metrics=None,
+         fallback="GOV · CMS Care Compare Nursing Home provider info (by state)"),
+    dict(key="dialysis_universe_state",
+         title="CMS dialysis-facility universe (MMT states)",
+         connector="provider_data",
+         dataset_id="provider_data_dialysis_facilities",
+         grain="dialysis centers by state (NE + IA)",
+         yields="the recurring non-emergent-transport destination pool — "
+                "thrice-weekly dialysis runs.",
+         group_by="state", filter_col="state", filter_vals_states=True,
+         metrics=None,
+         fallback="GOV · CMS Care Compare Dialysis Facility file (by state)"),
+    dict(key="rural_access_state",
+         title="HRSA rural / HPSA designations (MMT states)",
+         connector="hrsa_data", dataset_id="hrsa_data_hpsa_primary_care",
+         grain="HPSA by state (NE + IA)",
+         yields="rural-designation density — the super-rural mileage add-on "
+                "economics behind the long-leg corridor.",
+         group_by="common_state_abbreviation",
+         filter_col="common_state_abbreviation", filter_vals_states=True,
+         metrics=None,
+         fallback="GOV · HRSA Data Warehouse HPSA/MUA designations (by state); "
+                  "Medicare super-rural mileage add-on 42 CFR 414.610(c)(5)"),
 )
 
 # NUCC land+air+water ambulance taxonomy family (shared with ift_connectors).
@@ -780,3 +811,122 @@ def mmt_positioning_scorecard() -> Tuple[ScorecardRow, ...]:
                      "National capital",
                      "Public budget"),
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Growth projection — apply the study's three-lever growth bridge (price × volume
+# + consolidation) to MMT's SOM to project the revenue trajectory.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class ProjectionYear:
+    year_offset: int          # 0 = today
+    base_revenue: float       # organic market growth (price × volume)
+    platform_revenue: float   # market × consolidation (a well-run platform)
+
+
+@dataclass(frozen=True)
+class MmtGrowthProjection:
+    available: bool
+    base_cagr: float          # market growth (organic)
+    platform_cagr: float      # platform growth (market × consolidation)
+    years: Tuple[ProjectionYear, ...]
+    start_revenue: float
+    base_5yr: float
+    platform_5yr: float
+    headline: str = ""
+    basis: str = ""
+
+
+def mmt_growth_projection(horizon: int = 5) -> MmtGrowthProjection:
+    """Project MMT's SOM revenue over ``horizon`` years using the study's growth
+    bridge — a base case at organic market growth (price × volume) and a platform
+    case at market × consolidation. Growth rates are ILLUSTRATIVE (GOV-AIF-anchored
+    price + demographic volume); the start is the modeled SOM. Never raises."""
+    som = mmt_serviceable_model()
+    start = som.mmt_som_dollars
+    base_cagr = platform_cagr = 0.0
+    try:
+        from . import ift_tracking as _t
+        gb = _t.growth_bridge()
+        if gb and getattr(gb, "available", False):
+            base_cagr = (gb.market_growth_central_pct or 0.0) / 100.0
+            platform_cagr = (gb.platform_growth_central_pct or 0.0) / 100.0
+    except Exception:  # noqa: BLE001
+        pass
+    if base_cagr <= 0:                     # degrade to a labelled default
+        base_cagr, platform_cagr = 0.062, 0.072
+    years = tuple(
+        ProjectionYear(
+            year_offset=y,
+            base_revenue=start * ((1 + base_cagr) ** y),
+            platform_revenue=start * ((1 + platform_cagr) ** y))
+        for y in range(0, horizon + 1))
+    base_5 = years[-1].base_revenue
+    plat_5 = years[-1].platform_revenue
+    return MmtGrowthProjection(
+        available=bool(start > 0), base_cagr=base_cagr,
+        platform_cagr=platform_cagr, years=years, start_revenue=start,
+        base_5yr=base_5, platform_5yr=plat_5,
+        headline=(f"MMT SOM ${start/1e6:,.1f}M → ${base_5/1e6:,.1f}M base "
+                  f"({base_cagr*100:.1f}%/yr) / ${plat_5/1e6:,.1f}M platform "
+                  f"({platform_cagr*100:.1f}%/yr) over {horizon} yrs"),
+        basis=("ILLUSTRATIVE — the study's three-lever bridge: price (GOV AIF-"
+               "anchored) × volume (demographic CAGR) = market growth; × "
+               "consolidation = platform growth. Applied to the modeled SOM."))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SWOT — MMT's structured strategic read, tied to the county footprint.
+# ─────────────────────────────────────────────────────────────────────────────
+@dataclass(frozen=True)
+class MmtSwot:
+    strengths: Tuple[str, ...]
+    weaknesses: Tuple[str, ...]
+    opportunities: Tuple[str, ...]
+    threats: Tuple[str, ...]
+
+
+def mmt_swot() -> MmtSwot:
+    """MMT's SWOT — analyst framework tied to the footprint model. Never raises."""
+    return MmtSwot(
+        strengths=(
+            "Omaha-HQ home density — the highest-UHU metro in-state (best deadhead "
+            "economics) and the CHI / Methodist / Nebraska Medicine transfer-center "
+            "relationships.",
+            "Dedicated scheduled-IFT posture (not 911-shared trucks), so reliability "
+            "on the routine discharge book is a genuine differentiator.",
+            "Statewide corridor presence across all five NE metros on the I-80 spine "
+            "— a backhaul-friendly, hard-to-replicate network.",
+            "CHI intra-system lanes (Omaha↔Grand Island↔Kearney↔Lincoln) are "
+            "recurring, high-switching-cost captive-adjacent volume.",
+        ),
+        weaknesses=(
+            "Thin contribution margin (~20%) — the model only works with high UHU + "
+            "backhaul discipline.",
+            "Half the footprint is rural/frontier (Logan, Webster, Clay) with "
+            "structurally low utilization and long empty legs.",
+            "Contested first-call vs AmeriPro in Lincoln and the western corridor — "
+            "no single-vendor lock in most metros.",
+            "High-acuity CCT/SCT capability is a growth area, not yet a moat — the "
+            "specialty-transport premium is under-captured.",
+        ),
+        opportunities=(
+            "Backhaul / corridor routing optimization to lift UHU and cut the ~32% "
+            "deadhead — the biggest margin lever.",
+            "Roll up the fragmented rural corridor before AmeriPro does — Priority "
+            "(North Platte) shows the consolidation is live.",
+            "Add CCT/SCT capability to capture the high-acuity, higher-$ transports "
+            "the demographic wave is growing fastest.",
+            "Aging demand tailwind — the 65+ cohort (the IFT over-indexer) grows "
+            "through 2035 across the footprint.",
+        ),
+        threats=(
+            "AmeriPro's incumbency-capture roll-up compressing MMT's serviceable "
+            "share metro by metro.",
+            "Anchor-system vendor steering or insourcing (CHI could take high-acuity "
+            "CCT in-house).",
+            "Reimbursement risk — AIF-capped rate growth vs labor inflation (~69% of "
+            "cost) squeezing an already-thin margin.",
+            "Single-hospital market fragility (Columbus) and any anchor-hospital "
+            "ownership change (e.g. a system M&A) redirecting transfer volume.",
+        ))
