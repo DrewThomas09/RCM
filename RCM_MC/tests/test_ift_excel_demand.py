@@ -123,6 +123,53 @@ class DemandSourceMatrixTests(unittest.TestCase):
         self.assertNotIn("grand view", blob)
 
 
+class DemandDriversTests(unittest.TestCase):
+    """The sourced demand-driver table — every user-named lever, no illustrative."""
+
+    def setUp(self):
+        self.dd = d.demand_drivers()
+
+    def test_available_and_all_sourced(self):
+        self.assertTrue(self.dd.available)
+        self.assertGreaterEqual(len(self.dd.drivers), 8)
+        # the load-bearing guarantee the user asked for: NOTHING illustrative.
+        self.assertTrue(self.dd.all_sourced)
+        for x in self.dd.drivers:
+            self.assertIn(x.basis, ("GOV", "SOURCED", "ACADEMIC"),
+                          f"{x.driver}: basis {x.basis} is not fully sourced")
+
+    def test_every_driver_has_source_url_proxy_and_tracking(self):
+        for x in self.dd.drivers:
+            self.assertTrue(x.value, f"{x.driver}: no value")
+            self.assertTrue(x.source, f"{x.driver}: no source")
+            self.assertTrue(x.url.startswith("http"), f"{x.driver}: no url")
+            self.assertTrue(x.proxy, f"{x.driver}: no proxy")
+            self.assertTrue(x.track, f"{x.driver}: no tracking path")
+            self.assertTrue(x.ift_link, f"{x.driver}: no IFT linkage")
+
+    def test_covers_every_driver_the_user_named(self):
+        drivers = " ".join(x.driver.lower() for x in self.dd.drivers)
+        for needed in ("admission", "ift mission", "hospital-to-hospital",
+                       "als / bls", "facilities increasing", "specializing",
+                       "boarding", "impact on hospital"):
+            self.assertIn(needed, drivers, f"missing driver: {needed}")
+
+    def test_key_anchors_are_the_current_sourced_figures(self):
+        by = {x.driver: x for x in self.dd.drivers}
+        consol = [x for x in self.dd.drivers if "consolidation" in x.driver][0]
+        self.assertIn("640", consol.value)            # AHRQ Compendium 2022
+        self.assertEqual(consol.basis, "GOV")
+        h2h = [x for x in self.dd.drivers if "hospital-to-hospital" in x.driver][0]
+        self.assertIn("1.5M", h2h.value)              # nationwide outcomes study
+
+    def test_nothing_illustrative_or_trade_firm(self):
+        blob = " ".join(x.driver + x.source + x.proxy + x.track + x.ift_link
+                        for x in self.dd.drivers).lower()
+        self.assertNotIn("illustrative", blob)
+        self.assertNotIn("ibis", blob)
+        self.assertNotIn("grand view", blob)
+
+
 class DemandWorkbookTests(unittest.TestCase):
     def setUp(self):
         self.data = demand_workbook_xlsx()
@@ -144,11 +191,23 @@ class DemandWorkbookTests(unittest.TestCase):
     def test_carries_the_demand_spine(self):
         names = self._sheet_names()
         for expected in ("Contents", "National volume", "Volume sources",
-                         "Demand databases", "CMS code analysis", "Emergency mix",
-                         "Demand by condition YoY", "Aggregate demand YoY",
-                         "Clinical demand engine", "Regional demand",
-                         "Demographic engine", "Provenance"):
+                         "Demand databases", "Demand drivers", "CMS code analysis",
+                         "Emergency mix", "Demand by condition YoY",
+                         "Aggregate demand YoY", "Clinical demand engine",
+                         "Regional demand", "Demographic engine", "Provenance"):
             self.assertIn(expected, names, f"missing sheet: {expected}")
+
+    def test_demand_drivers_sheet_is_sourced_with_proxy_and_tracking(self):
+        text = _content_text(self.data).lower()
+        self.assertIn("best proxy to get it", text)
+        self.assertIn("how to track it", text)
+        for anchor in ("640 health systems", "emtala", "boarding"):
+            self.assertIn(anchor, text)
+        z = zipfile.ZipFile(io.BytesIO(self.data))
+        rels = "".join(z.read(n).decode("utf-8", "replace")
+                       for n in z.namelist() if n.endswith(".rels"))
+        self.assertIn("ahrq.gov/chsp", rels)          # the consolidation source
+        self.assertIn("acep.org", rels)               # the ED-boarding source
 
     def test_demand_databases_sheet_names_the_databases(self):
         text = _content_text(self.data).lower()
@@ -229,6 +288,16 @@ class DemandWorkbookWiringTests(unittest.TestCase):
         for db in ("NEMSIS", "HCUP NEDS", "HCUP NIS"):
             self.assertIn(db, html)
         self.assertIn("hcup-us.ahrq.gov", html)    # the clickable source URL
+
+    def test_demand_drivers_section_on_page(self):
+        from rcm_mc.ui.ift_demand_page import render_ift_demand
+        html = render_ift_demand()
+        self.assertIn("Demand drivers", html)
+        self.assertIn("Best proxy to get it", html)
+        self.assertIn("How to track it", html)
+        for anchor in ("Annual hospital admissions", "640 health systems",
+                       "ED boarding", "EMTALA"):
+            self.assertIn(anchor, html)
 
 
 if __name__ == "__main__":

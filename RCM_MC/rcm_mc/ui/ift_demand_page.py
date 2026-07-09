@@ -269,6 +269,49 @@ def _sources_section(sm) -> str:
             + f'<p class="ifd-prose" style="font-size:12.5px;">{_esc(sm.note)}</p>'))
 
 
+# ── Demand drivers (the sourced forces behind volume) ────────────────────────
+def _drivers_section(dd) -> str:
+    if not (dd and getattr(dd, "available", False)):
+        return ""
+    body_rows = []
+    for x in dd.drivers:
+        src = (f'<a href="{_esc(x.url)}" target="_blank" rel="noopener" '
+               f'style="color:var(--sc-teal,#155752);text-decoration:none;">'
+               f'{_esc(x.source)}</a>' if getattr(x, "url", "") else _esc(x.source))
+        body_rows.append(
+            "<tr>"
+            f'<td><strong>{_esc(x.driver)}</strong>'
+            f'<div style="font-size:11px;color:var(--sc-muted,#6b6357);'
+            f'margin-top:2px;">{_esc(x.ift_link)}</div></td>'
+            f'<td class="ifd-hi">{_esc(x.value)}<div style="margin-top:3px;">'
+            f'{_chip(x.basis)}</div></td>'
+            f'<td style="font-size:11.5px;">{src}</td>'
+            f'<td style="font-size:11.5px;">{_esc(x.proxy)}</td>'
+            f'<td style="font-size:11.5px;">{_esc(x.track)}</td>'
+            "</tr>")
+    table = ('<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+             '<th>Demand driver &amp; why it drives IFT</th>'
+             '<th class="ifd-hi">Current value / basis</th><th>Source</th>'
+             '<th>Best proxy to get it</th><th>How to track it</th>'
+             '</tr></thead><tbody>' + "".join(body_rows) + '</tbody></table></div>')
+    return (
+        ck_section_header("Demand drivers — the forces behind the volume, sourced",
+                          eyebrow="STEP 0c · WHAT DRIVES DEMAND")
+        + ck_panel(
+            '<p class="ifd-prose">What actually generates interfacility transport '
+            'demand — and how we get each number. Every row is a current '
+            '<strong>GOV / SOURCED / ACADEMIC</strong> figure (nothing '
+            'illustrative), with the <strong>best proxy</strong> to obtain it and '
+            'how to <strong>track</strong> it over time: annual admissions, IFT '
+            'missions, hospital-to-hospital transfers, the ALS/BLS/CCT mix, '
+            'health-system consolidation, service-line specialization, ED boarding, '
+            f'and the hospital-side impact. {dd.n_gov} GOV, {dd.n_sourced} SOURCED, '
+            f'{dd.n_academic} ACADEMIC.</p>'
+            + table
+            + f'<p class="ifd-src">Source: {_esc(dd.source_label)}</p>'
+            + f'<p class="ifd-prose" style="font-size:12.5px;">{_esc(dd.note)}</p>'))
+
+
 # ── National frame ───────────────────────────────────────────────────────────
 def _national_section(nf) -> str:
     if not (nf and nf.available):
@@ -657,6 +700,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     nf = _dm.national_frame()
     vol = _dm.national_transport_volume()
     sm = _dm.demand_source_matrix()
+    dr = _dm.demand_drivers()
     hc = _dm.hcpcs_acuity_analysis()
     ep = _dm.emergency_prevalence()
     ts = _dm.demand_time_series()
@@ -701,6 +745,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _charts(regions, hc, ts),
         _volume_section(vol),
         _sources_section(sm),
+        _drivers_section(dr),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),

@@ -29,6 +29,7 @@ Public API:
     national_frame() -> NationalFrame
     national_transport_volume() -> NationalVolume
     demand_source_matrix() -> DemandSourceMatrix
+    demand_drivers() -> DemandDrivers
     demand_time_series() -> DemandTimeSeries
     demand_summary() -> Dict[str, Any]
 """
@@ -665,6 +666,178 @@ def demand_source_matrix() -> DemandSourceMatrix:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4d — Demand drivers: the structural forces behind IFT volume, EVERY ONE SOURCED
+# ─────────────────────────────────────────────────────────────────────────────
+# The forces that generate interfacility transport demand — admissions, transfers,
+# consolidation, specialization, ED boarding, acuity mix — each with a current
+# GOV/SOURCED/ACADEMIC figure (NOTHING illustrative), the best proxy to obtain it,
+# and how to track it over time. Basis is deliberately restricted: a driver with
+# no published/GOV figure is not admitted to this table.
+@dataclass(frozen=True)
+class DemandDriver:
+    driver: str                # the demand force
+    metric: str                # the specific quantity
+    value: str                 # the current sourced figure
+    basis: str                 # GOV | SOURCED | ACADEMIC  (never ILLUSTRATIVE)
+    source: str                # citation
+    url: str
+    proxy: str                 # the best proxy / dataset to OBTAIN it
+    track: str                 # the best way to TRACK it over time
+    ift_link: str              # why it drives IFT demand
+
+
+_DEMAND_DRIVERS: Tuple[DemandDriver, ...] = (
+    DemandDriver(
+        "Annual hospital admissions",
+        "US inpatient admissions / discharges per year",
+        "~33.7M admissions (AHA 2022); ~35M discharges (HCUP NIS 2022)",
+        "SOURCED",
+        "AHA Fast Facts / AHA Annual Survey (2022); AHRQ HCUP NIS (2022)",
+        "https://www.aha.org/statistics/fast-facts-us-hospitals",
+        "AHA Annual Survey admissions; HCUP NIS weighted discharges; per-hospital "
+        "HCRIS Worksheet S-3 discharges (already vendored).",
+        "HCRIS S-3 refresh each cost-report cycle (LIVE) + HCUP NIS yearly release.",
+        "The demand denominator — every admission is a potential transfer origin; "
+        "IFT volume scales with the admitted base."),
+    DemandDriver(
+        "Annual IFT missions / transfers",
+        "Interfacility ambulance transports per year",
+        "~2.0M ED-to-ED (NEDS 2018-22) + ~1.5M inter-hospital (nationwide study)",
+        "SOURCED",
+        "AHRQ HCUP NEDS (2022); Sokol-Hessner/Mueller et al., Nationwide Outcomes "
+        "Study (PubMed 25397857); MedPAC 11.3M FFS ground (CY2024)",
+        "https://pubmed.ncbi.nlm.nih.gov/25397857/",
+        "HCUP NEDS/NIS transfer disposition (loader exists); NEMSIS "
+        "'Hospital-to-Hospital Transfer' service-type count; CMS Part-B A0426-A0434.",
+        "HCUP NEDS/NIS annual; NEMSIS public-release dataset each year; CMS PSPS "
+        "annual — triangulated, not a single feed.",
+        "The direct volume the operator serves."),
+    DemandDriver(
+        "Annual hospital-to-hospital transfers",
+        "Acute-to-acute inter-hospital transfers per year",
+        "~1.5M/yr (~3.5% of admissions); ~640k require critical care",
+        "ACADEMIC",
+        "Mueller SK et al., 'Interhospital Facility Transfers in the US: A "
+        "Nationwide Outcomes Study' (PubMed 25397857); ~3.5% of admissions",
+        "https://pubmed.ncbi.nlm.nih.gov/25397857/",
+        "HCUP NIS admission-source = 'transfer from another acute hospital' + "
+        "discharge disposition = 'transfer to short-term hospital'.",
+        "HCUP NIS yearly (loader supports source_db=NIS); cross-check vs NEDS "
+        "ED-to-ED transfers.",
+        "The escalation up-transfer book — the high-acuity, high-$ IFT stream."),
+    DemandDriver(
+        "Acuity mix — % ALS / BLS / CCT",
+        "Share of ground transports by service level",
+        "BLS ~56% / ALS ~42% / SCT-CCT ~2% (CMS claims); ~40% of inter-hospital "
+        "transfers are critical-care level (~640k of ~1.5M)",
+        "SOURCED",
+        "CMS Ground Ambulance Industry Trends / GADCS (RAND); FAIR Health; the "
+        "640k-CCT share from the Nationwide Outcomes Study",
+        "https://www.cms.gov/data-research/statistics-trends-reports/"
+        "medicare-provider-utilization-payment-data",
+        "CMS Part-B Physician/Supplier Procedure Summary by HCPCS (A0426-A0434); "
+        "GADCS agency reports.",
+        "CMS PSPS annual (ingest-ready connector) — line-level A0428/A0433/A0434 "
+        "volume is the definitive acuity split.",
+        "The revenue mix — SCT/CCT is the premium tier; a rising CCT share lifts "
+        "$/leg."),
+    DemandDriver(
+        "Health systems — facilities increasing (consolidation)",
+        "Number of health systems & hospital system-affiliation",
+        "640 health systems (2022); ~70% of non-federal general acute hospitals "
+        "are in a system; system growth continues",
+        "GOV",
+        "AHRQ Compendium of US Health Systems (CHSP), 2022",
+        "https://www.ahrq.gov/chsp/data-resources/compendium.html",
+        "AHRQ Compendium of US Health Systems (systems, hospitals-per-system, "
+        "affiliation) + CMS Provider-of-Services facility counts.",
+        "AHRQ CHSP Compendium annual release; CMS POS facility counts.",
+        "System growth → more INTRA-system transfers (keep patients in-network) → "
+        "captive, contractible IFT demand."),
+    DemandDriver(
+        "Hospitals increasingly specializing (regionalization)",
+        "Service-line concentration into designated centers",
+        "Time-sensitive care (trauma, STEMI, stroke, sepsis, cardiogenic shock) is "
+        "regionalized hub-and-spoke; strong volume-outcome relationship",
+        "ACADEMIC",
+        "Time-to-Transfer / hub-and-spoke, Joint Commission Journal Qual Patient "
+        "Saf (2023); regionalization & volume-outcome literature",
+        "https://www.jointcommissionjournal.com/article/S1553-7250(23)00132-0/"
+        "abstract",
+        "Designated-center registries (trauma level I/II, primary/comprehensive "
+        "stroke, STEMI-receiving); CMS MedPAR service-line volume by hospital.",
+        "Center-designation lists + CMS MedPAR DRG concentration, tracked yearly.",
+        "Spoke→hub up-transfers are the direct product of specialization — the "
+        "highest-acuity, most reliable IFT demand."),
+    DemandDriver(
+        "ED boarding / occupancy / transfer delays",
+        "ED boarding prevalence & transfer-out pressure",
+        "44% of adults report prolonged waits before admit/transfer, 16% of those "
+        "≥13h (ACEP 2023); boarding drives diversion + transfer-out",
+        "ACADEMIC",
+        "ACEP Emergency Department Boarding & Crowding (2023 ACEP/Morning Consult "
+        "poll); ED-throughput literature",
+        "https://www.acep.org/administration/crowding--boarding",
+        "CMS Hospital Compare 'Timely & Effective Care' ED-throughput measures "
+        "(OP-18/OP-22) + HCRIS inpatient occupancy (patient-days ÷ bed-days).",
+        "CMS Care Compare ED-throughput quarterly; HCRIS occupancy (LIVE) each "
+        "cost-report cycle.",
+        "A full hospital transfers patients OUT — boarding and high occupancy "
+        "convert directly into IFT missions."),
+    DemandDriver(
+        "Impact on hospital priorities (why they buy)",
+        "Throughput, EMTALA duty, quality, network retention",
+        "EMTALA (42 CFR 489.24) mandates appropriate transfer; boarding raises "
+        "LOS, cost, diversion, and mortality risk (sourced above)",
+        "GOV",
+        "CMS EMTALA — 42 CFR 489.24; ED-throughput & regionalization evidence "
+        "(rows above)",
+        "https://www.cms.gov/medicare/regulations-guidance/legislation/"
+        "emergency-medical-treatment-labor-act",
+        "CMS EMTALA rule (the legal transfer duty) + CMS quality/throughput "
+        "measures for the operational impact.",
+        "EMTALA compliance + throughput + in-network retention, tracked via CMS "
+        "measures.",
+        "Hospitals MUST transfer appropriately and WANT reliable, in-network "
+        "transport — the structural pull that makes IFT a purchased service."),
+)
+
+
+@dataclass(frozen=True)
+class DemandDrivers:
+    available: bool
+    drivers: Tuple[DemandDriver, ...] = ()
+    n_gov: int = 0
+    n_sourced: int = 0
+    n_academic: int = 0
+    all_sourced: bool = True
+    source_label: str = ""
+    note: str = ""
+
+
+def demand_drivers() -> DemandDrivers:
+    """The structural forces behind IFT demand, EACH fully sourced (GOV/SOURCED/
+    ACADEMIC, nothing illustrative), with the best proxy to obtain it and how to
+    track it over time. Never raises."""
+    ds = _DEMAND_DRIVERS
+    bases = {d.basis for d in ds}
+    return DemandDrivers(
+        available=True, drivers=ds,
+        n_gov=sum(1 for d in ds if d.basis == "GOV"),
+        n_sourced=sum(1 for d in ds if d.basis == "SOURCED"),
+        n_academic=sum(1 for d in ds if d.basis == "ACADEMIC"),
+        all_sourced=bases.issubset({"GOV", "SOURCED", "ACADEMIC"}),
+        source_label=("IFT demand drivers — each anchored to a GOV rule/statistic, "
+                      "a real dataset (HCUP/HCRIS/CMS/AHRQ), or a peer-reviewed "
+                      "study; every row carries its source, proxy, and tracking "
+                      "path"),
+        note=("Nothing on this table is illustrative — a driver with no published "
+              "or government figure is not admitted. Proxies name the exact dataset "
+              "to obtain each figure; several (HCRIS, CMS PSPS, HCUP loader) are "
+              "already in the codebase's data estate."))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5 — Time series ("trailed over time")
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass(frozen=True)
@@ -778,4 +951,5 @@ def demand_summary() -> Dict[str, Any]:
         "allpayer_high_m": vol.allpayer_high_m,
         "neds_ed_transfers_m": vol.neds_ed_transfers_m,
         "n_demand_sources": len(demand_source_matrix().sources),
+        "n_demand_drivers": len(demand_drivers().drivers),
     }

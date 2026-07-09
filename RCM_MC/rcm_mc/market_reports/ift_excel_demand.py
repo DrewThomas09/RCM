@@ -229,6 +229,46 @@ def _sources_matrix_sheet() -> Optional[Sheet]:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# 2c — Demand drivers (every force sourced; proxy + how-to-track for each)
+# ═════════════════════════════════════════════════════════════════════════════
+def _drivers_sheet() -> Optional[Sheet]:
+    dd = _safe(_dd.demand_drivers)
+    if not (dd and getattr(dd, "available", False)):
+        return None
+    rows: List[List[Any]] = [
+        [("Demand drivers — the forces behind IFT volume, every one sourced", _H)],
+        [("The structural forces that generate interfacility transport demand — "
+          "admissions, transfers, consolidation, specialization, ED boarding, "
+          "acuity mix. Each row carries a current GOV/SOURCED/ACADEMIC figure "
+          "(NOTHING illustrative), the best proxy to obtain it, and how to track it "
+          "over time. %d GOV, %d SOURCED, %d ACADEMIC%s."
+          % (dd.n_gov, dd.n_sourced, dd.n_academic,
+             "; all sourced" if dd.all_sourced else ""))],
+        [],
+        [("Demand driver", _H), ("Metric", _H), ("Current value", _H),
+         ("Basis", _H), ("Source (click)", _H), ("Best proxy to get it", _H),
+         ("How to track it", _H), ("Why it drives IFT", _H)],
+    ]
+    for x in dd.drivers:
+        link = Link(_src_short(x.source), x.url) if getattr(x, "url", "") else x.source
+        rows.append([x.driver, x.metric, x.value, x.basis, link, x.proxy, x.track,
+                     x.ift_link])
+    rows += [
+        [],
+        [("Source", _H), dd.source_label],
+        [("Note", _H), dd.note],
+    ]
+    return Sheet("Demand drivers", rows,
+                 col_widths=[30, 28, 40, 12, 40, 46, 40, 44])
+
+
+def _src_short(s: str) -> str:
+    """A compact label for a long citation, so the hyperlink cell stays readable."""
+    s = (s or "").strip()
+    return (s[:60] + "…") if len(s) > 62 else s
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # 3 — CMS code analysis (HCPCS × acuity × emergency)
 # ═════════════════════════════════════════════════════════════════════════════
 def _code_analysis_sheet() -> Optional[Sheet]:
@@ -685,6 +725,9 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Demand databases": "The multi-source triangulation — NEDS / NIS / NEMSIS / "
                         "MedPAC / HCRIS / NHAMCS / FAIR Health, each with its "
                         "current figure, data year, and URL.",
+    "Demand drivers": "The forces behind IFT volume — admissions, transfers, "
+                      "consolidation, specialization, ED boarding, acuity mix — "
+                      "each sourced, with a proxy + how to track it.",
     "CMS code analysis": "Ground HCPCS mapped to BLS/ALS/SCT x emergency, with RVUs.",
     "Emergency mix": "Emergent up-transfer vs scheduled step-down / discharge split.",
     "Demand by condition YoY": "Each condition's case volume year over year + CAGR.",
@@ -740,9 +783,10 @@ def demand_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
     the download always succeeds even offline where a pandas-gated read is dark."""
     builders = [
         _volume_sheet, _volume_sources_sheet, _sources_matrix_sheet,
-        _code_analysis_sheet, _emergency_sheet, _condition_yoy_sheet,
-        _aggregate_yoy_sheet, _clinical_sheet, _hs_demand_sheet, _regional_sheet,
-        _county_sheet, _demographic_sheet, _inventory_sheet, _provenance_sheet,
+        _drivers_sheet, _code_analysis_sheet, _emergency_sheet,
+        _condition_yoy_sheet, _aggregate_yoy_sheet, _clinical_sheet,
+        _hs_demand_sheet, _regional_sheet, _county_sheet, _demographic_sheet,
+        _inventory_sheet, _provenance_sheet,
     ]
     sheets: List[Sheet] = []
     for b in builders:
