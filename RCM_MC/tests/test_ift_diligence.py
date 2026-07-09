@@ -137,6 +137,45 @@ class TestDiligencePage(unittest.TestCase):
         self.assertIn("/connector-estate?dataset=", self.html)
         self.assertGreater(self.html.count("/connector-estate?dataset="), 20)
 
+    def test_answers_rendered_inline_from_sized_modules(self):
+        # each slide carries its ANSWER inline (not just a link) — real content
+        # pulled from the same modules the sized pages render.
+        self.assertIn("ifq-ans-lab", self.html)          # answer block chrome
+        self.assertIn("Go deeper on the sized pages", self.html)
+        self.assertIn("The sub-questions behind it", self.html)
+        # headline sized answer up top
+        self.assertIn("TAM · all US ground IFT", self.html)
+        # taxonomy matrix answer (IFT column highlighted)
+        self.assertIn("911 Emergency", self.html)
+        self.assertIn('class="ifq-ift"', self.html)
+        # patient-journey, operating-model, MMT, competitive, moat answers present
+        for needle in ("Community / referring hospital",
+                       "Hybrid — mostly outsourced",
+                       "Omaha, Nebraska",
+                       "First-call relationship",
+                       "Infrastructure for care transitions"):
+            self.assertIn(needle, self.html, f"missing inline answer: {needle}")
+
+    def test_degrades_when_answer_sources_unavailable(self):
+        # answer builders must never break the page if a source module raises
+        import rcm_mc.market_reports.ift_study as st
+        saved = (st.taxonomy_matrix, st.ecosystem, st.operating_models,
+                 st.company_positioning)
+
+        def boom(*a, **k):
+            raise RuntimeError("simulated outage")
+        try:
+            st.taxonomy_matrix = st.ecosystem = boom
+            st.operating_models = st.company_positioning = boom
+            html = self._render()
+            self.assertEqual(html.count("<h1"), 1)
+            self.assertIn("</html>", html.lower())
+            self.assertEqual(html.count('id="ifq-slide-'), 15)
+            self.assertIn("The sub-questions behind it", html)  # tree intact
+        finally:
+            (st.taxonomy_matrix, st.ecosystem, st.operating_models,
+             st.company_positioning) = saved
+
     def test_evidence_visuals_nuances_sections(self):
         for section in ("Cross-slide data &amp; evidence plan",
                         "Best-overall visual package",
