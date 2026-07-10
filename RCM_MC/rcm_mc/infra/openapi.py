@@ -713,6 +713,14 @@ _SPEC: Dict[str, Any] = {
                 "responses": {"200": {"description": "The artifact stream"}},
             },
         },
+        "/npi-cleaner/api/enrichments": {
+            "get": {
+                "summary": "Selectable enrichment registry (columns each "
+                           "adds + ready/needs_data/network status)",
+                "tags": ["Claims Cleaner"],
+                "responses": {"200": {"description": "{enrichments: [...]}"}},
+            },
+        },
         "/npi-cleaner/api/profiles/delete": {
             "post": {"summary": "Delete a cleaning profile by name",
                      "tags": ["Claims Cleaner"],

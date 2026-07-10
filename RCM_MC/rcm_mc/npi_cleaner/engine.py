@@ -1314,6 +1314,10 @@ class CleanResult:
     # chronic-condition prevalence, volume integrity, readmissions, coding
     # intensity. Report-only; None when the columns aren't there.
     population: Optional[Dict[str, object]] = None
+    # Selectable enrichment (enrich.py): appended-column summary + report
+    # marts (top codes/trend, key providers, MSA mix, Medicare benchmark).
+    # None unless the upload selected enrichments.
+    enrichment: Optional[Dict[str, object]] = None
 
     @property
     def total_npi_cells(self) -> int:
@@ -1485,6 +1489,7 @@ class CleanResult:
             "deep": self.deep,
             "deep_workbook_name": (self.deep_workbook_name
                                    if self.deep_workbook_path else None),
+            "enrichment": self.enrichment,
         }
 
 
@@ -2173,6 +2178,7 @@ def clean_bytes(
     enrich: bool = False,
     deep: bool = False,
     deid: bool = False,
+    enrichments: Optional[List[str]] = None,
     profile: Optional[Dict[str, object]] = None,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
@@ -3809,6 +3815,45 @@ def clean_bytes(
         except Exception:  # noqa: BLE001
             res.advanced = None
 
+    # Selectable enrichment (enrich.py) — appends analysis-ready columns
+    # (care setting, specialty, CBSA, Medicare benchmark) to the output the
+    # pivot/workbook/CSV all read, plus report marts. Guarded end-to-end:
+    # any failure leaves res.enrichment carrying the error note and the
+    # cleaned output stands. Skipped in chunk mode like the other
+    # whole-file passes (per-chunk marts would double-count).
+    if enrichments and not _stream_chunk:
+        cb("Enriching the cleaned table", 0.86)
+        try:
+            from . import enrich as _enrich
+            _eout = _enrich.apply(
+                headers, cleaned, {
+                    "rev_set": rev_set, "tob_i": tob_i, "pos_set": pos_set,
+                    "hcpcs_i": hcpcs_i, "billed_i": billed_i,
+                    "dos_i": dos_i, "zip_set": zip_set,
+                    "taxo_set": taxo_set, "billing_idx": billing_idx,
+                    "name_idx": name_idx,
+                }, list(enrichments), progress=cb)
+            _eh = list(_eout.get("added_headers") or [])
+            if _eh:
+                _ecols = _eout.get("added_columns") or []
+                for _ri, _erow in enumerate(cleaned):
+                    _erow.extend(_ec[_ri] for _ec in _ecols)
+                headers = list(headers) + _eh
+            res.enrichment = {
+                "marts": _eout.get("marts") or {},
+                "results": _eout.get("results") or [],
+                "requested": _eout.get("requested") or [],
+                "columns_added": _eh,
+            }
+        except JobCancelled:
+            raise
+        except Exception as exc:  # noqa: BLE001 — enrichment never blocks
+            res.enrichment = {
+                "error": f"{type(exc).__name__}: {exc}",
+                "requested": [str(x) for x in enrichments],
+                "marts": {}, "results": [], "columns_added": [],
+            }
+
     cb("Writing cleaned file", 0.90)
     res.out_name = _out_name(src_name)
     if _stream_chunk:
@@ -4441,6 +4486,7 @@ class JobManager:
     def submit(self, data: bytes, name: str, *,
                drop_duplicates: bool = True, enrich: bool = False,
                deep: bool = False, deid: bool = False,
+               enrichments: Optional[List[str]] = None,
                overrides: Optional[Dict[str, str]] = None,
                profile: Optional[Dict[str, object]] = None) -> str:
         job_id = uuid.uuid4().hex
@@ -4458,6 +4504,7 @@ class JobManager:
                 job.result = clean_bytes(
                     data, name, drop_duplicates=drop_duplicates,
                     enrich=enrich, deep=deep, deid=deid,
+                    enrichments=enrichments,
                     overrides=overrides, profile=profile, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except JobCancelled:
@@ -4474,6 +4521,7 @@ class JobManager:
     def submit_path(self, path: str, name: str, *,
                     drop_duplicates: bool = True, enrich: bool = False,
                     deep: bool = False, deid: bool = False,
+                    enrichments: Optional[List[str]] = None,
                     overrides: Optional[Dict[str, str]] = None,
                     profile: Optional[Dict[str, object]] = None,
                     cleanup: bool = True) -> str:
@@ -4497,6 +4545,7 @@ class JobManager:
                 job.result = bigfile.clean_path(
                     path, name, drop_duplicates=drop_duplicates,
                     enrich=enrich, deep=deep, deid=deid,
+                    enrichments=enrichments,
                     overrides=overrides, profile=profile, progress=cb)
                 job.frac, job.msg, job.done = 1.0, "Done", True
             except JobCancelled:

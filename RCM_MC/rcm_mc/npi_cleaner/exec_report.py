@@ -69,7 +69,13 @@ def _fmt_pct(v: object) -> str:
 def build_exec_report(sc: Dict[str, object], file_name: str,
                       generated: str) -> str:
     """Render the one-pager from an as_scorecard() dict. ``generated`` is an
-    ISO timestamp string supplied by the caller (keeps this module pure)."""
+    ISO timestamp string supplied by the caller (keeps this module pure).
+
+    Returns a COMPLETE ``<!doctype html>`` document, not a fragment: the
+    server's ``_send_html`` safety net wraps any fragment in the full app
+    shell (topbar, nav, parchment chrome), which is exactly what this
+    artifact must never carry — it is forwarded by email and printed. The
+    doctype is what keeps the shell off."""
     q = sc.get("quality") or {}
     dims: Dict[str, float] = dict(q.get("dimensions") or {})
     score = q.get("score", "—")
@@ -77,7 +83,13 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
     tone = _dim_color(float(score) if isinstance(score, (int, float)) else 0)
 
     parts: List[str] = []
-    parts.append(f"<style>{_CSS}</style>")
+    parts.append("<!doctype html><html lang='en'><head>"
+                 "<meta charset='utf-8'>"
+                 "<meta name='viewport' "
+                 "content='width=device-width, initial-scale=1'>"
+                 f"<title>Claims data-quality report · {_esc(file_name)}"
+                 "</title>"
+                 f"<style>{_CSS}</style></head><body>")
     parts.append("<h1>Claims data-quality report</h1>")
     parts.append(f"<div class='small'>{_esc(file_name)} · generated "
                  f"{_esc(generated)} · PE&nbsp;Desk claims cleaner</div>")
@@ -531,9 +543,148 @@ def build_exec_report(sc: Dict[str, object], file_name: str,
                          f"<td class='num'>{float(f['pct']):.1f}%</td></tr>")
         parts.append("</table>")
 
+    # Enrichment marts (enrich.py) — the analysis-ready angles: top codes
+    # and their trend, key billing providers (revenue sizing), MSA/CBSA
+    # geography, and the Medicare benchmark for commercial-vs-Medicare
+    # gross-up. Every block is guarded — an un-enriched run renders nothing.
+    _append_enrichment(parts, sc.get("enrichment") or {})
+
     parts.append(
         "<p class='small' style='margin-top:26px'>Grades are deterministic "
         "ratios of the counts shown — no model, no sampling. Findings are "
         "reported and never auto-changed; safe formatting repairs are "
         "itemized in the run's change-log download.</p>")
+    parts.append("</body></html>")
     return "".join(parts)
+
+
+def _append_enrichment(parts: List[str], enr: Dict[str, object]) -> None:
+    if not isinstance(enr, dict) or not enr:
+        return
+    marts = enr.get("marts") or {}
+    if not isinstance(marts, dict):
+        marts = {}
+
+    top = (marts.get("top_codes") or {}) if isinstance(
+        marts.get("top_codes"), dict) else {}
+    codes = top.get("codes") or []
+    if codes:
+        parts.append("<h2>Top procedure codes &amp; trend</h2><table>"
+                     "<tr><th>Code</th><th>Description</th>"
+                     "<th class='num'>Lines</th><th class='num'>Charges</th>"
+                     "<th class='num'>% of $</th><th>Trend</th></tr>")
+        for c in codes[:12]:
+            tr = c.get("trend") or {}
+            tr_txt = ""
+            if tr.get("direction"):
+                tr_txt = (f"{tr['direction']} "
+                          f"{_fmt_pct(tr.get('change_pct'))} "
+                          f"({_esc(tr.get('window') or '')})")
+            parts.append(
+                f"<tr><td>{_esc(c.get('code'))}</td>"
+                f"<td class='small'>{_esc(c.get('description') or '')}</td>"
+                f"<td class='num'>{int(c.get('lines') or 0):,}</td>"
+                f"<td class='num'>{_fmt_money(c.get('charges'))}</td>"
+                f"<td class='num'>{_fmt_pct(c.get('pct_dollars'))}</td>"
+                f"<td class='small'>{_esc(tr_txt)}</td></tr>")
+        parts.append("</table>")
+
+    prov = (marts.get("provider_revenue") or {}) if isinstance(
+        marts.get("provider_revenue"), dict) else {}
+    players = prov.get("providers") or []
+    if players:
+        hhi = prov.get("hhi")
+        sub = (f" Concentration (HHI on billed $): {int(hhi):,}."
+               if isinstance(hhi, (int, float)) else "")
+        parts.append("<h2>Key players — revenue by billing provider</h2>")
+        parts.append(f"<p class='small'>Top billing NPIs by billed dollars "
+                     f"in this file.{_esc(sub)}</p>")
+        parts.append("<table><tr><th>Billing NPI</th><th>Name</th>"
+                     "<th class='num'>Lines</th><th class='num'>Charges</th>"
+                     "<th class='num'>% of file $</th>"
+                     "<th class='num'>Medicare $ (CMS)</th></tr>")
+        for p in players[:10]:
+            med = p.get("medicare_payment")
+            parts.append(
+                f"<tr><td>{_esc(p.get('npi'))}</td>"
+                f"<td class='small'>{_esc(p.get('name') or '')}</td>"
+                f"<td class='num'>{int(p.get('lines') or 0):,}</td>"
+                f"<td class='num'>{_fmt_money(p.get('charges'))}</td>"
+                f"<td class='num'>{_fmt_pct(p.get('pct_dollars'))}</td>"
+                f"<td class='num'>{_fmt_money(med) if med is not None else '—'}"
+                "</td></tr>")
+        parts.append("</table>")
+
+    geo = (marts.get("geography") or {}) if isinstance(
+        marts.get("geography"), dict) else {}
+    areas = geo.get("areas") or []
+    if areas:
+        parts.append("<h2>Geography — CBSA / metro mix</h2><table>"
+                     "<tr><th>CBSA</th><th>Metro area</th>"
+                     "<th class='num'>Lines</th>"
+                     "<th class='num'>Charges</th>"
+                     "<th class='num'>% of file $</th></tr>")
+        for a in areas[:10]:
+            parts.append(
+                f"<tr><td>{_esc(a.get('cbsa'))}</td>"
+                f"<td class='small'>{_esc(a.get('name') or '')}</td>"
+                f"<td class='num'>{int(a.get('lines') or 0):,}</td>"
+                f"<td class='num'>{_fmt_money(a.get('charges'))}</td>"
+                f"<td class='num'>{_fmt_pct(a.get('pct_dollars'))}</td></tr>")
+        parts.append("</table>")
+        if geo.get("unmatched_pct") is not None:
+            parts.append(f"<p class='small'>{_fmt_pct(geo['unmatched_pct'])} "
+                         "of ZIP-bearing lines did not match a CBSA "
+                         "(rural ZIPs sit outside metro/micro areas).</p>")
+
+    med = (marts.get("medicare_benchmark") or {}) if isinstance(
+        marts.get("medicare_benchmark"), dict) else {}
+    med_codes = med.get("codes") or []
+    if med_codes or med.get("note"):
+        parts.append("<h2>Medicare benchmark (CMS national)</h2>")
+        if med.get("pct_of_medicare") is not None:
+            parts.append(
+                "<p class='small'><strong>File charges run "
+                f"{_fmt_pct(med['pct_of_medicare'])} of the Medicare "
+                "national average allowed</strong> on the matched codes "
+                f"({_fmt_money(med.get('matched_dollars'))} of file "
+                "charges matched; Medicare-equivalent value "
+                f"{_fmt_money(med.get('medicare_equivalent_dollars'))})."
+                "</p>")
+        if med_codes:
+            parts.append("<table><tr><th>Code</th>"
+                         "<th class='num'>File avg charge</th>"
+                         "<th class='num'>Medicare avg allowed</th>"
+                         "<th class='num'>× Medicare</th>"
+                         "<th class='num'>Medicare services (natl)</th>"
+                         "</tr>")
+            for c in med_codes[:10]:
+                ratio = c.get("ratio")
+                ratio_txt = (f"{ratio:.2f}x"
+                             if isinstance(ratio, (int, float)) else "—")
+                parts.append(
+                    f"<tr><td>{_esc(c.get('code'))}</td>"
+                    f"<td class='num'>{_fmt_money(c.get('file_avg_charge'))}"
+                    "</td>"
+                    f"<td class='num'>{_fmt_money(c.get('medicare_avg_allowed'))}"
+                    "</td>"
+                    f"<td class='num'>{ratio_txt}</td>"
+                    f"<td class='num'>{int(c.get('medicare_services') or 0):,}"
+                    "</td></tr>")
+            parts.append("</table>")
+        if med.get("note"):
+            parts.append(f"<p class='small'>{_esc(med['note'])}</p>")
+
+    results = [r for r in (enr.get("results") or []) if isinstance(r, dict)]
+    if results:
+        parts.append("<h2>Enrichment applied</h2><table>"
+                     "<tr><th>Enrichment</th><th class='num'>Rows enriched"
+                     "</th><th>Columns added</th><th>Result</th></tr>")
+        for r in results:
+            cols = ", ".join(str(c) for c in (r.get("columns_added") or []))
+            parts.append(
+                f"<tr><td>{_esc(r.get('label') or r.get('id'))}</td>"
+                f"<td class='num'>{int(r.get('rows_enriched') or 0):,}</td>"
+                f"<td class='small'>{_esc(cols or '—')}</td>"
+                f"<td class='small'>{_esc(r.get('note') or '')}</td></tr>")
+        parts.append("</table>")

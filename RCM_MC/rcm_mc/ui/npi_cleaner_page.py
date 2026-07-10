@@ -723,6 +723,19 @@ def _body() -> str:
             <span class="npi-opt-d">Mask patient identifiers in the export;
               provider NPI &amp; name are kept intact.</span></span></div>
       </div>
+      <div class="npi-optprofile" id="npi-enrich-band">
+        <div style="width:100%">
+          <span class="lab">Enrichment — make the file analysis-ready</span>
+          <span class="npi-muted" style="margin:0 0 0 8px">Each box adds
+            columns or angles the pivot and reports pick up: care setting,
+            specialty, MSA/CBSA market, top-code trends, key-player revenue,
+            live Medicare benchmarks. Live connectors call public CMS data
+            and are opt-in per run.</span>
+          <div class="npi-opts npi-mt-sm" id="npi-enrich-list">
+            <p class="npi-muted">Loading enrichments…</p>
+          </div>
+        </div>
+      </div>
       <div class="npi-optprofile">
         <label class="lab" for="npi-profile">Cleaning profile</label>
         <select id="npi-profile" class="npi-select">
@@ -838,7 +851,7 @@ def _body() -> str:
         <span class="npi-tab-badge" id="tabbadge-issues"></span></button>
       <button class="npi-tab" id="npi-tab-population" role="tab" tabindex="-1"
         aria-selected="false" aria-controls="npi-panel-population"
-        data-tab="population">Population
+        data-tab="population">Population &amp; enrichment
         <span class="npi-tab-badge" id="tabbadge-pop"></span></button>
       <button class="npi-tab" id="npi-tab-connectors" role="tab" tabindex="-1"
         aria-selected="false" aria-controls="npi-panel-connectors"
@@ -902,6 +915,7 @@ def _body() -> str:
     <section class="npi-panel" data-panel="population" id="npi-panel-population"
          role="tabpanel" aria-labelledby="npi-tab-population">
       {pop_intro}
+      <div id="npi-enrichment"></div>
       <div id="npi-pop"></div>
     </section>
 
@@ -1210,8 +1224,11 @@ _EXTRA_JS = r"""
     renderAdvanced(s.advanced);
     renderSuggestions(s.advanced);
     renderPopulation(s.population, s.download);
-    $("tabbadge-pop").textContent = s.population
-      ? String(Object.keys(s.population).length) : "";
+    renderEnrichment(s.enrichment, s.download);
+    var nPop=(s.population?Object.keys(s.population).length:0)+
+      (s.enrichment&&s.enrichment.marts
+        ?Object.keys(s.enrichment.marts).length:0);
+    $("tabbadge-pop").textContent = nPop ? String(nPop) : "";
     renderConnectorPlan(s.connector_plan);
     renderDeep(s.deep, s.download, s.deep_workbook_name);
     renderCompliance(s.compliance);
@@ -2501,6 +2518,8 @@ _EXTRA_JS = r"""
     if($("npi-enrich").checked) params.push("enrich=1");
     if($("npi-deep").checked) params.push("deep=1");
     if($("npi-deid").checked) params.push("deid=1");
+    var eids=selectedEnrichments();
+    if(eids.length) params.push("enrich_ids="+encodeURIComponent(eids.join(",")));
     var qs = params.length ? "?"+params.join("&") : "";
     var headers={"X-Filename":encodeURIComponent(file.name)};
     var profSel=$("npi-profile");
@@ -2518,6 +2537,226 @@ _EXTRA_JS = r"""
     })
     .catch(function(e){ fail("Upload failed. Is the file under 10 GB, and "+
       "is the connection stable enough to send it?"); });
+  }
+
+  // ---- Enrichment: selectable analysis-ready add-ons (enrich.py) ----
+  // Checkboxes are built from the live registry so every enrichment (and
+  // every live connector it fronts) is selectable, with an honest
+  // ready / needs-pack / live-network status per box. Selections persist
+  // in this browser so a team's preferred setup survives reloads.
+  function enrichPrefs(){
+    try{ return JSON.parse(localStorage.getItem("npi_enrich_sel"))||null; }
+    catch(e){ return null; }
+  }
+  function saveEnrichPrefs(){
+    var sel={};
+    document.querySelectorAll("#npi-enrich-list input[data-eid]")
+      .forEach(function(cb){ sel[cb.getAttribute("data-eid")]=cb.checked; });
+    try{ localStorage.setItem("npi_enrich_sel", JSON.stringify(sel)); }
+    catch(e){}
+  }
+  function selectedEnrichments(){
+    var out=[];
+    document.querySelectorAll("#npi-enrich-list input[data-eid]")
+      .forEach(function(cb){
+        if(cb.checked && !cb.disabled) out.push(cb.getAttribute("data-eid"));
+      });
+    return out;
+  }
+  function loadEnrichments(){
+    fetch("/npi-cleaner/api/enrichments")
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var box=$("npi-enrich-list"); if(!box) return;
+        var list=j.enrichments||[];
+        if(!list.length){ box.innerHTML=""; return; }
+        var prefs=enrichPrefs();
+        box.innerHTML=list.map(function(e){
+          var needs = e.status==="needs_data";
+          var live = e.mode==="network";
+          var on = prefs && (e.id in prefs) ? !!prefs[e.id] : !!e.default;
+          if(needs) on=false;
+          var chip = needs
+            ? '<span class="npi-chip tone-warning">needs pack</span>'
+            : (live ? '<span class="npi-chip tone-accent">live · CMS</span>'
+                    : '<span class="npi-chip dot on">offline</span>');
+          var adds = (e.adds&&e.adds.length)
+            ? '<br>adds <code>'+e.adds.map(esc).join("</code> · <code>")+
+              '</code>'
+            : '';
+          return '<div class="npi-opt">'+
+            '<input type="checkbox" id="npi-en-'+esc(e.id)+'" data-eid="'+
+            esc(e.id)+'"'+(on?' checked':'')+(needs?' disabled':'')+'>'+
+            '<span class="npi-opt-body">'+
+            '<span class="npi-opt-t"><label for="npi-en-'+esc(e.id)+'">'+
+            esc(e.label)+'</label> '+chip+'</span>'+
+            '<span class="npi-opt-d">'+esc(e.description)+adds+
+            (e.reason?('<br><em>'+esc(e.reason)+'</em>'):'')+
+            '</span></span></div>';
+        }).join("");
+        box.querySelectorAll("input[data-eid]").forEach(function(cb){
+          cb.addEventListener("change", saveEnrichPrefs);
+        });
+      }).catch(function(){
+        var box=$("npi-enrich-list");
+        if(box) box.innerHTML='<p class="npi-muted">Enrichment registry '+
+          'unavailable.</p>';
+      });
+  }
+  loadEnrichments();
+
+  function renderEnrichment(enr, download){
+    var box=$("npi-enrichment");
+    if(!box) return;
+    if(!enr){ box.innerHTML=""; return; }
+    var h="";
+    if(enr.error){
+      h+='<div class="npi-warn">Enrichment error: '+esc(enr.error)+'</div>';
+    }
+    var cols=enr.columns_added||[];
+    if(cols.length){
+      h+='<div class="npi-recovered"><strong>'+cols.length+
+        ' analysis column'+(cols.length===1?'':'s')+
+        ' added to the cleaned file</strong> — <code>'+
+        cols.map(esc).join('</code>, <code>')+
+        '</code>. They are live in the pivot, the CSV and the workbook.'+
+        '</div>';
+    }
+    var marts=enr.marts||{};
+    var tc=marts.top_codes;
+    if(tc && tc.codes && tc.codes.length){
+      h+=secHead("Top codes & trend",
+        fmt(tc.distinct_codes)+" distinct procedure codes — ranked by "+
+        "billed dollars; trend compares the first and second half of the "+
+        "file's months.",
+        "ENRICHMENT · UTILIZATION", tc.codes.length);
+      h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
+        '<th>Code</th><th>Description</th><th class="num">Lines</th>'+
+        '<th class="num">Charges</th><th class="num">% of $</th>'+
+        '<th>Trend</th></tr></thead><tbody>';
+      tc.codes.forEach(function(c){
+        var tr=c.trend, ttxt='', tone='';
+        if(tr){
+          tone=tr.direction==="rising"?"good":
+               (tr.direction==="falling"?"bad":"");
+          ttxt=esc(tr.direction)+' '+
+            (tr.change_pct>0?'+':'')+tr.change_pct+'% '+
+            '<span class="npi-fine">('+esc(tr.window)+')</span>';
+        }
+        h+='<tr><td>'+esc(c.code)+'</td><td class="npi-cell-sm">'+
+          esc(c.description||'')+'</td><td class="num">'+fmt(c.lines)+
+          '</td><td class="num">'+dollars(c.charges)+'</td>'+
+          '<td class="num">'+(c.pct_dollars!=null?pct1(c.pct_dollars):'')+
+          '</td><td><span class="npi-sig '+tone+'">'+ttxt+
+          '</span></td></tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    var pr=marts.provider_revenue;
+    if(pr && pr.providers && pr.providers.length){
+      var hasMed=pr.providers.some(function(p){
+        return p.medicare_payment!=null; });
+      h+=secHead("Key players — revenue by billing provider",
+        fmt(pr.n_providers)+" distinct billing NPIs"+
+        (pr.hhi!=null?(" · HHI "+fmt(pr.hhi)+
+          (pr.hhi>=2500?" (highly concentrated)":
+           pr.hhi>=1500?" (moderately concentrated)":" (unconcentrated)")):
+          "")+".",
+        "ENRICHMENT · REVENUE SIZING", pr.providers.length);
+      h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
+        '<th>Billing NPI</th><th>Name</th><th class="num">Lines</th>'+
+        '<th class="num">Charges</th><th class="num">% of $</th>'+
+        (hasMed?'<th class="num">Medicare payments (CMS)</th>'+
+                '<th class="num">Medicare services</th>':'')+
+        '</tr></thead><tbody>';
+      pr.providers.forEach(function(p){
+        h+='<tr><td>'+esc(p.npi)+'</td><td class="npi-cell-sm">'+
+          esc(p.name||'')+'</td><td class="num">'+fmt(p.lines)+'</td>'+
+          '<td class="num">'+dollars(p.charges)+'</td>'+
+          '<td class="num">'+(p.pct_dollars!=null?pct1(p.pct_dollars):'')+
+          '</td>'+
+          (hasMed?('<td class="num">'+
+            (p.medicare_payment!=null?dollars(p.medicare_payment):'—')+
+            '</td><td class="num">'+
+            (p.medicare_services!=null?fmt(p.medicare_services):'—')+
+            '</td>'):'')+
+          '</tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    var geo=marts.geography;
+    if(geo && geo.areas && geo.areas.length){
+      h+=secHead("Geography — MSA / CBSA mix",
+        fmt(geo.n_areas)+" metro/micro areas via the Census ZIP→CBSA "+
+        "crosswalk"+(geo.unmatched_pct!=null?(" · "+pct1(geo.unmatched_pct)+
+        " of ZIP lines outside any CBSA (rural)"):"")+
+        ". The cbsa_code / cbsa_name columns are on every row for "+
+        "pivoting.",
+        "ENRICHMENT · MARKETS", geo.areas.length);
+      h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
+        '<th>CBSA</th><th>Metro area</th><th class="num">Lines</th>'+
+        '<th class="num">Charges</th><th class="num">% of $</th>'+
+        '</tr></thead><tbody>';
+      geo.areas.forEach(function(a){
+        h+='<tr><td>'+esc(a.cbsa)+'</td><td class="npi-cell-sm">'+
+          esc(a.name||'')+'</td><td class="num">'+fmt(a.lines)+'</td>'+
+          '<td class="num">'+dollars(a.charges)+'</td>'+
+          '<td class="num">'+(a.pct_dollars!=null?pct1(a.pct_dollars):'')+
+          '</td></tr>';
+      });
+      h+='</tbody></table></div>';
+    }
+    var mb=marts.medicare_benchmark;
+    if(mb && ((mb.codes&&mb.codes.length)||mb.pct_of_medicare!=null)){
+      h+=secHead("Medicare benchmark (CMS national)",
+        (mb.pct_of_medicare!=null
+          ? "File charges run <strong>"+pct1(mb.pct_of_medicare)+
+            " of Medicare national average allowed</strong> on matched "+
+            "codes — "+dollars(mb.matched_dollars)+" of file charges vs a "+
+            dollars(mb.medicare_equivalent_dollars)+" Medicare-equivalent "+
+            "value. "
+          : "")+esc(mb.note||""),
+        "ENRICHMENT · LIVE CMS", (mb.codes||[]).length);
+      if(mb.codes && mb.codes.length){
+        h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
+          '<th>Code</th><th class="num">File avg charge</th>'+
+          '<th class="num">Medicare avg allowed</th>'+
+          '<th class="num">× Medicare</th>'+
+          '<th class="num">Medicare services (natl)</th>'+
+          '</tr></thead><tbody>';
+        mb.codes.forEach(function(c){
+          var tone=(c.ratio!=null && c.ratio>=3)?'bad':
+                   ((c.ratio!=null && c.ratio>=2)?'warn':'');
+          h+='<tr><td>'+esc(c.code)+'</td>'+
+            '<td class="num">'+(c.file_avg_charge!=null?
+              money(c.file_avg_charge):'—')+'</td>'+
+            '<td class="num">'+(c.medicare_avg_allowed!=null?
+              money(c.medicare_avg_allowed):'—')+'</td>'+
+            '<td class="num '+tone+'">'+
+            (c.ratio!=null?(c.ratio.toFixed(2)+'x'):'—')+'</td>'+
+            '<td class="num">'+(c.medicare_services!=null?
+              fmt(c.medicare_services):'—')+'</td></tr>';
+        });
+        h+='</tbody></table></div>';
+      }
+    }
+    var results=enr.results||[];
+    if(results.length){
+      h+=secHead("Enrichment run detail", null,
+        "ENRICHMENT · WHAT RAN", results.length);
+      results.forEach(function(r){
+        var hit=(r.rows_enriched||0)>0;
+        h+='<div class="npi-flag"><div class="lab">'+
+          esc(r.label||r.id)+
+          '<small>'+esc(r.note||'')+
+          ((r.columns_added&&r.columns_added.length)?
+            (' · adds '+r.columns_added.map(esc).join(', ')):'')+
+          '</small></div>'+
+          '<div class="cnt '+(hit?'clear':'')+'">'+
+          (hit?fmt(r.rows_enriched)+' rows':'')+'</div></div>';
+      });
+    }
+    box.innerHTML=h;
   }
 
   // ---- Wishlist: "missing something? tell us and we'll fill it in" ----
