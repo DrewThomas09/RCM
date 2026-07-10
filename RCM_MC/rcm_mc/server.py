@@ -5306,6 +5306,14 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_diligence_page import render_ift_diligence
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_diligence(_qs))
+        # IFT in-depth — the ANSWERED question architecture: all ten study
+        # questions, every subsection conclusion-led, every subquestion answered
+        # in one line (or explicitly skipped as a diligence request), plus the
+        # ten framework visuals. See ui/ift_indepth_page.py +
+        # market_reports/ift_indepth*.py.
+        if path == "/ift-indepth":
+            from .ui.ift_indepth_page import render_ift_indepth
+            return self._send_html(render_ift_indepth())
         # IFT sourcing prompts (Part 1) — the scope-bounded research prompts that
         # gather the evidence, each wired to its sources, connector datasets, and
         # the sized page + diligence slide that answer it. See

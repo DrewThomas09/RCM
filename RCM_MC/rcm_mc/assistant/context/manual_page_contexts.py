@@ -14296,18 +14296,53 @@ _IFT_COMMON_NOTES = [
     "13-state IFT platform (Harbour Point Capital, 2022) whose legacy core "
     "is 22 NE/IA counties across 7 CBSAs.",
 ]
+_IFT_LIMITS = [
+    "Desk research only — company-internal figures (MMT trip mix, contract "
+    "terms, crew schedules) are explicit diligence requests, never "
+    "estimates.",
+    "Figures captured from search excerpts rather than fetched primary "
+    "text carry a re-verification flag until the primary source is pulled.",
+]
 _MANUAL.extend([
     _ctx("/ift", "IFT — The Study (hub)",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The IFT suite index: one card per surface with "
          "its single job, a reading order, data assets, and the live "
          "evidence-governance counts.",
-         primary_purpose="Orient a reader across the nine IFT surfaces so "
+         primary_purpose="Orient a reader across the ten IFT surfaces so "
          "the suite reads as one study.",
+         common_questions=[
+             "Where do I start reading the IFT study?",
+             "Which page answers market sizing vs company diligence?",
+             "What data assets (workbooks, JSON) can I download?",
+             "What does each surface deliberately NOT cover?",
+             "How is evidence quality labeled across the suite?"],
+         inputs=["Static surface registry (route, job, not-for)",
+                 "Live counts from ift_growth_evidence and "
+                 "ift_unit_economics."],
+         outputs=["One card per surface with its single job and reading "
+                  "order", "Links to the .xlsx/.json data assets."],
+         key_metrics=["Count of study surfaces", "Cited growth-evidence "
+                      "entries", "Re-verification queue depth"],
+         model_logic_summary="A static index; the only computation is "
+         "live counts pulled from the evidence registries at render time.",
+         why_it_matters="Ten surfaces only read as one study if a reader "
+         "knows what lives where.",
+         diligence_use_cases=["On-ramp for a partner opening the IFT "
+                              "study for the first time."],
+         interpretation_guidance=[
+             "Follow the numbered reading order for the full picture; the "
+             "'NOT here' line on each card routes single questions.",
+         ],
+         limitations=["An index — no analysis of its own; counts degrade "
+                      "to zero if a registry module is unavailable."],
          data_sources=["Static index + live counts from "
                        "ift_growth_evidence and ift_unit_economics."],
          related_routes=["/ift-mmt", "/ift-demand", "/ift-markets"],
+         source_confidence=SourceConfidence.DOCUMENTED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-mmt", "MMT — Company Deep Dive",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The company file: NPPES-verified location "
          "estate, ownership/PE trail, hospital-system customers, "
          "registry-computed competitive field, litigation record, and the "
@@ -14315,83 +14350,415 @@ _MANUAL.extend([
          "volume-increase scenarios.",
          primary_purpose="Answer who MMT actually is with primary-source "
          "evidence, then size its legacy-core demand honestly.",
+         common_questions=[
+             "How many states/locations does MMT verifiably operate in?",
+             "Who owns MMT and since when?",
+             "Which hospital systems are its customers?",
+             "Who competes with MMT in its core counties?",
+             "How was the legacy-core demand band derived?"],
+         inputs=["CMS NPPES registry pull (2026-07-10)",
+                 "Press/deal records and public court dockets",
+                 "OMB 2023 CBSA delineations + 2020 Census",
+                 "HCUP NEDS/NIS measured transfer base."],
+         outputs=["NPPES-verified estate table", "Ownership/PE timeline",
+                  "Customer and competitor registries",
+                  "22-county demand band with the derivation shown."],
+         key_metrics=["NPPES-verified location count",
+                      "Legacy-core county count (22 across 7 CBSAs)",
+                      "Derived annual IFT demand band for the core."],
+         model_logic_summary="Registry joins (NPPES × county × CBSA) plus "
+         "one DERIVED band: measured transfer rates applied to the core "
+         "counties' hospital volumes, equation shown inline.",
+         why_it_matters="Company diligence starts from what can be "
+         "verified without the data room.",
+         diligence_use_cases=["Pre-LOI company screening",
+                              "Cross-checking CIM claims against NPPES "
+                              "and court records."],
+         interpretation_guidance=[
+             "The NPPES estate is the floor of MMT's presence, not the "
+             "ceiling — stations without a distinct NPI won't appear.",
+             "The demand band is for the legacy 22-county core, not the "
+             "full 13-state platform.",
+         ],
+         limitations=list(_IFT_LIMITS),
          data_sources=["CMS NPPES registry pull (2026-07-10)", "press/deal "
                        "records", "public court dockets", "OMB 2023 CBSA "
                        "delineations + 2020 Census", "HCUP NEDS/NIS "
                        "measured transfer base", "MedPAC/GADCS/HCCI "
                        "benchmarks"],
          related_routes=["/ift", "/ift-hs-demand", "/ift-markets"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-demand", "IFT Demand Deep-Dive",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The demand story: the sourced national "
          "transport-volume funnel, CMS acuity-code analysis, the cited "
          "growth-evidence registry, and the regional/county roll-down.",
          primary_purpose="Ground every demand and growth claim in a "
          "published figure with its quote and link.",
+         common_questions=[
+             "How many IFT transports happen nationally per year?",
+             "How does volume split across BLS/ALS/SCT acuity codes?",
+             "What published evidence supports demand growth?",
+             "How does national volume roll down to MMT's region?",
+             "Which growth claims are still awaiting re-verification?"],
+         inputs=["MedPAC/CMS published volumes", "HCUP NEDS + NIS transfer "
+                 "counts", "The 30-entry ift_growth_evidence registry."],
+         outputs=["National transport-volume funnel with each step cited",
+                  "Acuity-code (HCPCS) mix analysis",
+                  "Regional/county demand roll-down."],
+         key_metrics=["National ground-IFT transports per year",
+                      "Acuity mix shares by HCPCS code",
+                      "Cited growth-evidence entry count."],
+         model_logic_summary="A funnel of published figures joined by "
+         "explicit DERIVED steps (each equation shown); no unexplained "
+         "gross-ups anywhere in the chain.",
+         why_it_matters="The demand base is the denominator under every "
+         "sizing and growth claim in the study.",
+         diligence_use_cases=["Market-sizing validation for an IC memo",
+                              "Stress-testing a CIM's growth narrative "
+                              "against cited evidence."],
+         interpretation_guidance=[
+             "Every growth claim carries its verbatim quote — read the "
+             "quote, not just the direction.",
+             "Regional roll-downs are DERIVED shares of national volume, "
+             "not measured local counts.",
+         ],
+         limitations=list(_IFT_LIMITS),
          data_sources=["MedPAC/CMS (GOV)", "HCUP NEDS + NIS (ACADEMIC)",
                        "the ift_growth_evidence registry (30 cited "
                        "entries)"],
          related_routes=["/ift", "/ift-clinical", "/ift-hs-demand"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-markets", "IFT Target Markets",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="Metro-by-metro market structure from the "
          "vendored CMS estate, with the MMT-presence reconciliation "
          "(NPI-verified vs roll-up-screen metros).",
          primary_purpose="Show each metro's origin/destination structure "
          "and be honest about where MMT verifiably operates.",
+         common_questions=[
+             "What does TAM/SAM/SOM look like for ground IFT?",
+             "What is the facility structure of each target metro?",
+             "Where does MMT verifiably operate vs merely screen?",
+             "How many origin/destination pairs does a metro support?",
+             "Which metros have the densest post-acute estates?"],
+         inputs=["Vendored CMS estate (hospital coordinates, HCRIS, "
+                 "post-acute rolls)",
+                 "ift_geo.MMT_PRESENCE_EVIDENCE (NPPES/web sweep)."],
+         outputs=["Per-metro facility structure tables",
+                  "TAM/SAM/SOM sizing with the basis of each layer",
+                  "MMT-presence reconciliation table."],
+         key_metrics=["Hospitals and post-acute facilities per metro",
+                      "TAM/SAM/SOM dollar layers",
+                      "NPI-verified metro count."],
+         model_logic_summary="Counts and distances computed from vendored "
+         "CMS facility files per CBSA; sizing layers are DERIVED with "
+         "each multiplication shown.",
+         why_it_matters="Metro structure decides how much IFT volume a "
+         "dedicated operator can actually reach.",
+         diligence_use_cases=["Geographic expansion screening",
+                              "Sanity-checking a platform's claimed "
+                              "market count."],
+         interpretation_guidance=[
+             "The reconciliation column separates verified presence from "
+             "roll-up-screen presence — treat the latter as unproven.",
+         ],
+         limitations=["Vendored CMS files are a fixed vintage; new "
+                      "facility openings/closures since the pull are "
+                      "absent."] + list(_IFT_LIMITS),
          data_sources=["Vendored CMS estate (hospital_coords, HCRIS, "
                        "post-acute rolls)", "ift_geo.MMT_PRESENCE_EVIDENCE "
                        "(NPPES/web sweep 2026-07-10)"],
          related_routes=["/ift", "/ift-mmt"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-study", "IFT Investor Study",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The four-dimension synthesis and the single "
          "home of the shared frameworks (taxonomy, journey/ecosystem, "
          "operating-model bands, MMT positioning).",
          primary_purpose="Synthesize the market education an investor "
          "needs; other pages digest and link here.",
+         common_questions=[
+             "How do 911, IFT, and NEMT differ structurally?",
+             "What does the patient journey look like for a transfer?",
+             "What operating models do health systems use for IFT?",
+             "How does MMT position against the field?",
+             "Where do the shared frameworks live vs get digested?"],
+         inputs=["The taxonomy, journey/ecosystem, and operating-model "
+                 "frameworks", "MMT positioning evidence from the company "
+                 "file."],
+         outputs=["The four-dimension synthesis narrative",
+                  "The canonical framework tables other pages digest."],
+         key_metrics=["Four dimensions covered",
+                      "Framework tables owned (taxonomy, journey, "
+                      "operating bands, positioning)."],
+         model_logic_summary="A synthesis page — frameworks are stated "
+         "FRAMEWORK-basis structures with corroborating anchors, not "
+         "computed models.",
+         why_it_matters="The synthesis is what an IC actually reads; the "
+         "rest of the suite is its evidence base.",
+         diligence_use_cases=["IC memo market-context section",
+                              "Partner ramp-up before a management "
+                              "meeting."],
+         interpretation_guidance=[
+             "Frameworks carry the FRAMEWORK basis — analytical "
+             "structure, corroborated but not measured.",
+         ],
+         limitations=list(_IFT_LIMITS),
+         data_sources=["ift_study framework modules",
+                       "digests of the demand/markets/company pages."],
          related_routes=["/ift", "/ift-research", "/ift-diligence"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-research", "IFT Market Research Brief",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The market-level research brief: "
          "reimbursement, unit economics, KPIs, technology, regulatory, "
          "segmentation, sizing — with digests where the study owns "
          "content.",
          primary_purpose="Market-level reference; no company-specific "
          "analysis.",
+         common_questions=[
+             "How is ground IFT reimbursed and by whom?",
+             "What do IFT unit economics look like per transport?",
+             "Which KPIs do operators and buyers track?",
+             "What regulatory regimes govern IFT operators?",
+             "How is the market segmented and sized?"],
+         inputs=["CMS ambulance fee schedule and payment rules",
+                 "Published operator benchmarks and academic studies."],
+         outputs=["Twenty topic briefs, each with cited evidence",
+                  "Digest links where the study owns the framework."],
+         key_metrics=["Medicare base rates by HCPCS code",
+                      "Cost-per-transport benchmark band",
+                      "On-time performance contract norms."],
+         model_logic_summary="Reference content — published figures "
+         "organized by topic; DERIVED math limited to unit-economics "
+         "worked examples with the arithmetic shown.",
+         why_it_matters="Reimbursement and unit economics decide whether "
+         "IFT volume is worth owning.",
+         diligence_use_cases=["Reimbursement-risk assessment",
+                              "Benchmarking a target's unit economics."],
+         interpretation_guidance=[
+             "Market-level figures are national averages — local payer "
+             "mix moves realized rates materially.",
+         ],
+         limitations=list(_IFT_LIMITS),
+         data_sources=["CMS fee schedules (GOV)", "academic and industry "
+                       "benchmarks (ACADEMIC/SOURCED)."],
          related_routes=["/ift", "/ift-study"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-clinical", "IFT Clinical Demand Engine",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="Condition-level acute-transfer scenarios "
          "mapped to ICD-10 codes and post-acute destinations, with "
          "DERIVED demographic growth per condition.",
          primary_purpose="Explain the clinical WHY under the demand "
          "model.",
+         common_questions=[
+             "Which clinical conditions generate interfacility "
+             "transfers?",
+             "What ICD-10 codes map to each transfer scenario?",
+             "Where do transferred patients go (destination mix)?",
+             "How does demographic aging move each condition's volume?",
+             "Which conditions are growing fastest as transfer drivers?"],
+         inputs=["Condition→ICD-10 mappings", "Published transfer-rate "
+                 "studies", "Census demographic projections."],
+         outputs=["Condition-level transfer scenarios with code lists",
+                  "Destination mix per condition",
+                  "DERIVED demographic growth rates."],
+         key_metrics=["Transfer rate per condition",
+                      "Projected condition growth from aging",
+                      "Destination shares (acute vs post-acute)."],
+         model_logic_summary="Condition scenarios pair published transfer "
+         "rates with Census age-cohort growth; the growth math is DERIVED "
+         "and shown per condition.",
+         why_it_matters="Clinical drivers are what make the demand "
+         "trend durable rather than cyclical.",
+         diligence_use_cases=["Validating the demand model's clinical "
+                              "assumptions", "Payer-mix inference from "
+                              "condition mix."],
+         interpretation_guidance=[
+             "Growth rates are demographic-mechanical — they exclude "
+             "practice-pattern shifts, which can cut either way.",
+         ],
+         limitations=list(_IFT_LIMITS),
+         data_sources=["ICD-10 registries", "published transfer-rate "
+                       "studies", "Census projections."],
          related_routes=["/ift", "/ift-demand"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-hs-demand", "IFT Health-System Demand",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="Demand sized from health systems' HCRIS "
          "filings by system and county, plus the confirmed-CCN pull "
          "worklist from the hospital-system research.",
          primary_purpose="The account-level (buyer) view of the demand "
          "base.",
+         common_questions=[
+             "Which health systems anchor demand in MMT's footprint?",
+             "How many discharges does each system generate by county?",
+             "How does discharge volume convert to transport demand?",
+             "Which CCNs are confirmed vs still on the pull worklist?",
+             "Which counties concentrate the buyer-side demand?"],
+         inputs=["HCRIS discharge panel (network-gated)",
+                 "ift_health_systems CCN registry."],
+         outputs=["Per-system, per-county discharge tables",
+                  "DERIVED transport-demand conversion",
+                  "Confirmed-CCN worklist."],
+         key_metrics=["Discharges by system and county",
+                      "Derived transports per discharge",
+                      "Confirmed CCN count."],
+         model_logic_summary="HCRIS discharges joined to the CCN registry "
+         "by system, then converted to transport demand via a DERIVED "
+         "rate whose equation is shown.",
+         why_it_matters="Health systems are the buyers — demand sized "
+         "from their own filings is demand an operator can contract.",
+         diligence_use_cases=["Account planning and customer-concentration "
+                              "analysis", "Cross-checking management's "
+                              "volume claims by account."],
+         interpretation_guidance=[
+             "SNF-originated demand is deliberately excluded — this page "
+             "is the hospital-buyer view only.",
+         ],
+         limitations=["HCRIS panel is network-gated; offline it degrades "
+                      "to the registry worklist."] + list(_IFT_LIMITS),
          data_sources=["HCRIS panel (network-gated)", "ift_health_systems "
                        "CCN registry (2026-07-10 research)"],
          related_routes=["/ift", "/ift-mmt", "/ift-demand"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-diligence", "IFT Diligence Question Architecture",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The diligence question tree with inline "
          "digests linking each answer to its single home, plus the "
          "evidence-request list.",
          primary_purpose="The workplan layer over the study.",
-         related_routes=["/ift", "/ift-study"],
+         common_questions=[
+             "What are the study's master questions and sub-questions?",
+             "Which page answers each slide's question?",
+             "What evidence exists for each question already?",
+             "What still needs the data room (evidence requests)?",
+             "Which visuals answer which slide?"],
+         inputs=["The 15-slide question architecture",
+                 "Answer digests from the sized pages",
+                 "The live connector estate."],
+         outputs=["Per-slide question trees with inline answer digests",
+                  "The evidence-request (data room) list."],
+         key_metrics=["Slide count (15)", "Questions in the tree",
+                      "Evidence requests outstanding."],
+         model_logic_summary="A mapping layer — each slide's question "
+         "wired to the module that answers it and the connector datasets "
+         "that evidence it; no computation of its own.",
+         why_it_matters="A question architecture keeps the diligence "
+         "team asking answerable questions in a deliberate order.",
+         diligence_use_cases=["Structuring the diligence workplan",
+                              "Drafting the data-room request list."],
+         interpretation_guidance=[
+             "Inline digests are summaries — click through to the sized "
+             "page before quoting a figure.",
+         ],
+         limitations=["The tree tracks the study's questions, not every "
+                      "possible diligence question."] + list(_IFT_LIMITS),
+         data_sources=["ift_diligence module", "digests from the sized "
+                       "IFT pages", "the live connector estate."],
+         related_routes=["/ift", "/ift-study", "/ift-indepth"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
     _ctx("/ift-sourcing", "IFT Sourcing Prompts",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
          short_description="The scope-bounded research prompts that "
          "generated the IFT corpus — the meta layer for reproducing or "
          "extending the research.",
          primary_purpose="Process documentation, not findings.",
+         common_questions=[
+             "How was the IFT research corpus generated?",
+             "Which sources were prioritized for each prompt?",
+             "Which connector datasets feed each research prompt?",
+             "Where does each prompt's answer live in the suite?",
+             "How would I extend the research to a new question?"],
+         inputs=["The scope-bounded prompt registry",
+                 "Source-priority lists (GOV/ACADEMIC first)."],
+         outputs=["Each prompt with its sources, connector datasets, and "
+                  "the page where its answer landed."],
+         key_metrics=["Prompt count", "Prompts wired to connector "
+                      "datasets", "Prompts with landed answers."],
+         model_logic_summary="Process documentation — a registry of the "
+         "prompts that generated the corpus; no analysis or computation.",
+         why_it_matters="Research a second analyst can reproduce is "
+         "research an IC can trust.",
+         diligence_use_cases=["Reproducing or auditing the research "
+                              "trail", "Extending the corpus to a new "
+                              "market question."],
+         interpretation_guidance=[
+             "This page documents HOW the research was done — findings "
+             "live on the sized pages it links to.",
+         ],
+         limitations=["Prompts reflect the study's scope at writing time; "
+                      "new questions need new prompts."],
+         data_sources=["ift_sourcing prompt registry."],
          related_routes=["/ift", "/ift-research"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-indepth", "IFT In Depth — The Answers",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
+         short_description="The answered question architecture: all ten "
+         "study questions, every subsection conclusion-led (conclusion → "
+         "why true → why it matters → evidence), every subquestion "
+         "answered in one line or explicitly skipped as a diligence "
+         "request, plus the ten framework visuals.",
+         primary_purpose="The single surface where every study question "
+         "and subquestion carries its answer with cited evidence.",
+         common_questions=[
+             "What is the one-line answer to each study question?",
+             "What evidence sits behind each conclusion?",
+             "Which subquestions could NOT be answered from desk "
+             "research?",
+             "How do the ten questions build the study's storyline arc?",
+             "Which visual communicates each question's answer?"],
+         inputs=["The ten-question study architecture",
+                 "PubMed-verified abstracts and CMS/GAO/MACPAC "
+                 "publications", "The repo's IFT data modules."],
+         outputs=["Ten answered questions, each conclusion-led with "
+                  "why-true findings, implication, and cited evidence",
+                  "Per-block subquestion coverage with answered/skipped "
+                  "counts", "Ten framework visuals."],
+         key_metrics=["Subquestions answered vs skipped",
+                      "Blocks (conclusion-led answers) per question",
+                      "Evidence citations by basis."],
+         model_logic_summary="A content surface — answers are authored "
+         "from cited evidence; the only computation is the coverage "
+         "count (answered + skipped must equal total).",
+         why_it_matters="A question architecture is only as good as its "
+         "answers; this page is where the study commits to them.",
+         diligence_use_cases=["IC memo drafting straight from answered "
+                              "questions", "Identifying which questions "
+                              "still need the data room."],
+         interpretation_guidance=[
+             "Skipped subquestions are honest diligence requests — the "
+             "answer needs company data, so none is invented.",
+             "Evidence chips carry the basis (GOV/SOURCED/ACADEMIC/"
+             "DERIVED/FRAMEWORK) — weight conclusions accordingly.",
+         ],
+         limitations=list(_IFT_LIMITS),
+         data_sources=["ift_indepth content modules (Q1–Q10)",
+                       "PubMed-verified abstracts", "CMS/GAO/MACPAC "
+                       "publications", "repo IFT data modules"],
+         related_routes=["/ift", "/ift-diligence", "/ift-study"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
 ])
 

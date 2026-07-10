@@ -67,6 +67,12 @@ _SURFACES: Tuple[Tuple[str, str, str, str], ...] = (
      "The scope-bounded research prompts that generated the corpus — the "
      "meta layer for reproducing or extending the research.",
      "Findings — this is process, not results."),
+    ("/ift-indepth", "10 · In depth — the answers",
+     "The answered question architecture: all ten study questions, every "
+     "subsection conclusion-led (conclusion → why true → why it matters → "
+     "evidence), every subquestion answered in one line or explicitly "
+     "skipped as a diligence request, plus the ten framework visuals.",
+     "The question tree without answers (that's diligence)."),
 )
 
 _DATA_ASSETS: Tuple[Tuple[str, str], ...] = (
@@ -85,12 +91,12 @@ def render_ift_hub(qs=None) -> str:
     head = ck_page_title(
         "Interfacility Transport — The Study",
         eyebrow="IFT SUITE · START HERE",
-        meta=("9 surfaces · 1 reading order · subject operator: Midwest "
+        meta=("10 surfaces · 1 reading order · subject operator: Midwest "
               "Medical Transport (MMT Ambulance)"))
     intro = (
         '<p style="font-family:var(--sc-serif,Georgia,serif);font-size:15px;'
         'line-height:1.65;max-width:88ch;color:var(--sc-text,#1a2332);">'
-        "One study, nine surfaces, each with one job. Read top to bottom "
+        "One study, ten surfaces, each with one job. Read top to bottom "
         "for the full picture — company, demand, geography, synthesis — or "
         "jump straight to the surface that answers your question. Shared "
         "frameworks render once (on the study) and are digested elsewhere; "
