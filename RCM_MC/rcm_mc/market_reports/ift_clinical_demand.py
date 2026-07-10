@@ -86,7 +86,7 @@ _SETTING_CSV = {
 LABEL_SOURCED = "SOURCED"
 LABEL_GOV = "GOV"
 LABEL_ACADEMIC = "ACADEMIC"
-LABEL_ILLUSTRATIVE = "ILLUSTRATIVE"
+LABEL_ILLUSTRATIVE = "FRAMEWORK"   # renamed 2026-07-10: a stated analytical scaffold, not "illustrative"
 _HONESTY_TAGS = (LABEL_SOURCED, LABEL_GOV, LABEL_ACADEMIC, LABEL_ILLUSTRATIVE)
 
 # Families + transfer directions (kept as constants so callers/tests don't
@@ -248,7 +248,7 @@ class Growth:
     age_skew: Tuple[Tuple[str, float], ...]
     index_10yr: float
     basis: str = (
-        "ILLUSTRATIVE · demand_forecast._POP_GROWTH_BY_AGE age-band population "
+        "FRAMEWORK · demand_forecast._POP_GROWTH_BY_AGE age-band population "
         "CAGRs weighted by the condition's age skew (incidence held constant)"
     )
 
@@ -746,7 +746,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_setting="Right-capability facility/service",
             icd10=(),  # condition-agnostic: routed by UB-04 point-of-origin (code 1), not a dx
             ms_drg=("whatever the admitting condition is (e.g. 291 HF, 690 kidney/UTI, 871 sepsis)",),
-            national_volume=NationalVolume(0, 2019, "ILLUSTRATIVE · non-ED share of ~33,700,000 inpatient stays (AHRQ HCUP NIS 2019)",
+            national_volume=NationalVolume(0, 2019, "FRAMEWORK · non-ED share of ~33,700,000 inpatient stays (AHRQ HCUP NIS 2019)",
                                            "direct-admit share (not separately counted)",
                                            "no clean national direct-admit count; each is a scheduled/urgent ground-IFT leg"),
             growth=_growth("acute-transfer blended cohort (~70% 65+)", _SKEW_ACUTE_BLEND),
@@ -774,7 +774,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_setting="Same-system community hospital",
             icd10=("A419", "J189", "J9600", "N179"),  # empirical load-balance mix; census is the driver
             ms_drg=("least specific — census-driven (empirically 870-872 sepsis ~15%, 193-195 pneumonia ~8%, 189 resp ~5%)",),
-            national_volume=NationalVolume(0, 2024, "ILLUSTRATIVE · anchored to the HHS/HCRIS occupancy signal",
+            national_volume=NationalVolume(0, 2024, "FRAMEWORK · anchored to the HHS/HCRIS occupancy signal",
                                            "load-balancing transfers (no defensible single national count)",
                                            "Intermountain diverted >5,100 quaternary bed-days over 4yr; 3-4 patients/hospital/day"),
             growth=_growth("fastest-growing leg — command-center adoption + structural ED-boarding crisis", _SKEW_ACUTE_BLEND),
@@ -788,7 +788,7 @@ def _registry() -> Tuple[Condition, ...]:
             destination_setting="Origin community hospital",
             icd10=(),  # post-acute-stable version of the index dx
             ms_drg=("post-acute-stable version of the index dx",),
-            national_volume=NationalVolume(0, 2024, "ILLUSTRATIVE · mirrors each up-transfer",
+            national_volume=NationalVolume(0, 2024, "FRAMEWORK · mirrors each up-transfer",
                                            "back-transfers (~1:1 with escalations)",
                                            "roughly doubles the ground-IFT mission count per escalation episode"),
             growth=_growth("sticky — tracks up-transfer volume 1:1, rises with IDN integration", _SKEW_ACUTE_BLEND),

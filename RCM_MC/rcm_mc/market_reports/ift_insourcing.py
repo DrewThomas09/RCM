@@ -60,7 +60,7 @@ from typing import Dict, List, Optional, Tuple
 LABEL_GOV = "GOV"
 LABEL_SOURCED = "SOURCED"
 LABEL_ACADEMIC = "ACADEMIC"
-LABEL_ILLUSTRATIVE = "ILLUSTRATIVE"
+LABEL_ILLUSTRATIVE = "FRAMEWORK"   # renamed 2026-07-10: a stated analytical scaffold, not "illustrative"
 _BASES = (LABEL_GOV, LABEL_SOURCED, LABEL_ACADEMIC, LABEL_ILLUSTRATIVE)
 
 # System / operator NAMES are public-web knowledge, not a data figure — they
@@ -352,7 +352,7 @@ def insourcing_framework() -> InsourceFramework:
     return InsourceFramework(
         available=True, bands=bands, classification_axis=axis,
         source_label=(
-            "ILLUSTRATIVE · insource-vs-outsource classification model "
+            "FRAMEWORK · insource-vs-outsource classification model "
             "(volume-share bands + operating-requirement rationale); example "
             "systems PUBLIC-WEB (reused from ift_geo, named honestly)"),
         headline=(
@@ -407,7 +407,7 @@ def biller_proxy() -> BillerProxy:
     ``.insource_ceiling`` (the network-gated claims proxy, ILLUSTRATIVE, anchored
     to how little ground fleet hospitals own) — NOT a different number. Degrades
     to ``available=False`` if that spine is unavailable — never raises."""
-    src = ("ILLUSTRATIVE · health-system-biller insource ceiling reused from "
+    src = ("FRAMEWORK · health-system-biller insource ceiling reused from "
            "ift_analytics.health_system_sam().insource_ceiling (network-gated "
            "claims proxy; anchored to how little ground fleet hospitals own) — "
            "GROUND IFT $ only, ex-air ex-NEMT ex-911")
@@ -525,7 +525,7 @@ _GROSSUP_AUTHORED: Tuple[Dict[str, object], ...] = (
             "mission never reaches a payer claim and is invisible to a claims-only "
             "market build."),
         "named_basis": (
-            "ILLUSTRATIVE — direct-to-hospital vendor billing share; the IFT "
+            "FRAMEWORK — direct-to-hospital vendor billing share; the IFT "
             "analog of the cleaner's 'interfacility/transport legs billed "
             "separately and dropped' + NPI/TIN-fragmentation causes."),
         "cause_ids": ("ancillary_transport_dropped", "chain_parent_attribution_absent",
@@ -540,7 +540,7 @@ _GROSSUP_AUTHORED: Tuple[Dict[str, object], ...] = (
             "into the case rate or simply written off — and never bill any payer, "
             "so that volume never appears in claims at all."),
         "named_basis": (
-            "ILLUSTRATIVE — hospital-absorbed / unbilled share; the IFT analog of "
+            "FRAMEWORK — hospital-absorbed / unbilled share; the IFT analog of "
             "the cleaner's 'self-pay / never billed' + 'capitated / bundled — no "
             "FFS claim' causes."),
         "cause_ids": ("self_pay_never_billed", "capitated_bundled_no_ffs"),
@@ -621,7 +621,7 @@ def claims_grossup() -> ClaimsGrossup:
         true_market_bn=true_bn, claims_observed_bn=claims_bn, missing_bn=missing_bn,
         taxonomy_source=tax_src, taxonomy_available=tax_ok,
         source_label=(
-            "ILLUSTRATIVE · direct-bill + unbilled gross-up fractions (named "
+            "FRAMEWORK · direct-bill + unbilled gross-up fractions (named "
             "basis each), cross-referenced to the npi_cleaner/understatement.py "
             "20-cause taxonomy; reference market = the GOV-anchored ground-IFT TAM "
             "(ift_analytics.ground_tam)"),
@@ -758,7 +758,7 @@ def market_insourcing() -> MarketInsourcing:
     serviceable share reused from ``ift_analytics.sam_formula``). The
     ``insource_read`` / moat prose are PUBLIC-WEB (ift_geo). Degrades to
     ``available=False`` if ift_geo is unreadable — never raises."""
-    src = ("ILLUSTRATIVE · per-metro insourced-VOLUME-share read keyed to the "
+    src = ("FRAMEWORK · per-metro insourced-VOLUME-share read keyed to the "
            "ift_geo insource archetype; contestable residual = s(m) serviceable "
            "share (ift_analytics.sam_formula); insource_class, insource_read & moat "
            "PUBLIC-WEB (ift_geo, named honestly)")
@@ -785,7 +785,7 @@ def market_insourcing() -> MarketInsourcing:
             volume_read=read, insource_read=md.insource_read,
             moat_note=md.moat_note,
             source_label=(
-                f"ILLUSTRATIVE · {_BAND_LABEL[band]} "
+                f"FRAMEWORK · {_BAND_LABEL[band]} "
                 f"({lo * 100:.0f}-{hi * 100:.0f}% insourced by volume) · "
                 "insource_read PUBLIC-WEB (ift_geo)")))
 

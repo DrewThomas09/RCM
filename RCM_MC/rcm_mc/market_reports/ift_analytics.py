@@ -410,7 +410,7 @@ def fee_schedule(conversion_factor: float = _DEFAULT_CF) -> FeeSchedule:
         available=True, conversion_factor=cf, rows=rows,
         rvu_source_label=("GOV · CMS Ambulance Fee Schedule RVU table "
                           "(42 CFR 414 Subpart H, via PYA payment primer)"),
-        rate_source_label=(f"ILLUSTRATIVE · RVU × conversion factor "
+        rate_source_label=(f"FRAMEWORK · RVU × conversion factor "
                            f"${cf:,.0f} (exact CF in the CMS AFS public-use "
                            "file; GAF adjusts 70% of the base)"),
         note=("Base rate = RVU × conversion factor × geographic adjustment; the "
@@ -722,28 +722,28 @@ def ground_tam() -> GroundTam:
                 "PROGRAM spend net of cost-sharing ≈ $4.0B, ~1% of FFS; ~13% of FFS "
                 "beneficiaries used ambulance — a different, broader cut.)"),
         TamStep("→ interfacility share of ground $ (30-40%)",
-                f"${ift[0]:.2f}-{ift[1]:.2f}B", "ILLUSTRATIVE",
+                f"${ift[0]:.2f}-{ift[1]:.2f}B", "FRAMEWORK",
                 "IFT over-indexes on spend vs volume — it concentrates ALS2/SCT "
                 "(RVU 2.75/3.25) + long mileage; 911/scene is higher volume, lower "
                 "$/trip. This is the Medicare-FFS ground-IFT slice."),
         TamStep("→ all-payer gross-up (~3.4-4.2×)",
-                f"${ap_grossup_low:.1f}-{ap_grossup_high:.1f}B", "ILLUSTRATIVE",
+                f"${ap_grossup_low:.1f}-{ap_grossup_high:.1f}B", "FRAMEWORK",
                 "Medicare FFS ground ambulance ($5.3B) is ~24-29% of the ~$18-22B "
                 "all-payer ground market, i.e. a ~3.4-4.2× gross-up (commercial "
                 "pays ~2-4× Medicare; MA/Medicaid/self-pay fill the rest)."),
         TamStep("Share cross-check (all-payer ground × IFT 30-40%)",
-                f"${share_low:.1f}-{share_high:.1f}B", "ILLUSTRATIVE",
+                f"${share_low:.1f}-{share_high:.1f}B", "FRAMEWORK",
                 "the ~$18-22B all-payer ground market × the 30-40% IFT share — an "
                 "independent path that AGREES with the gross-up at ~$5-9B."),
         TamStep("Volume cross-check (4-5M IFT legs × $700-900 blended)",
-                f"${vol_low:.1f}-{vol_high:.1f}B", "ILLUSTRATIVE",
+                f"${vol_low:.1f}-{vol_high:.1f}B", "FRAMEWORK",
                 "sits BELOW the two $-based methods — it does NOT confirm them. "
                 "Reconciles only if IFT leg volume is ~6-8M (discharge + "
                 "facility-origin recurring legs fully counted) or the blended rate "
                 "is higher. Treated as a downside marker, not corroboration."),
         TamStep("All-payer ground cross-check (CMS-derived)",
                 f"${_ALLPAYER_GROUND_AMBULANCE_BN[0]:.0f}-"
-                f"{_ALLPAYER_GROUND_AMBULANCE_BN[1]:.0f}B", "ILLUSTRATIVE",
+                f"{_ALLPAYER_GROUND_AMBULANCE_BN[1]:.0f}B", "FRAMEWORK",
                 "US all-payer ground ambulance ~$18-22B — DERIVED from the GOV "
                 "Medicare-FFS ground figure ($5.3B) ÷ Medicare's ~24-29% all-payer "
                 "share, NOT a trade/market-research-firm figure. IFT is a slice "
@@ -969,20 +969,20 @@ def sam_formula(f_ift: float = _F_IFT[1],
         serviceable_share_of_national_volume=serv_vol_share,
         assumptions={
             "f_IFT": {"low": _F_IFT[0], "central": f_ift, "high": _F_IFT[2],
-                      "basis": "ILLUSTRATIVE — ground-IFT fraction of discharges "
+                      "basis": "FRAMEWORK — ground-IFT fraction of discharges "
                                "(discharge-to-PAC by stretcher ~6-8% + acute-to-"
                                "acute ground transfer ~2-4%)"},
             "lambda_return": {"low": _LAMBDA_RETURN[0], "central": lambda_return,
                               "high": _LAMBDA_RETURN[2],
-                              "basis": "ILLUSTRATIVE — SNF→hospital/dialysis recurring "
+                              "basis": "FRAMEWORK — SNF→hospital/dialysis recurring "
                                        "ground-IFT legs per occupied SNF bed/yr"},
             "snf_occ": {"value": _SNF_OCC, "basis": "GOV magnitude (NIC/CMS ~0.77)"},
             "s_of_m": {"by_class": dict(_SERVICEABLE_SHARE), "default": _SERVICEABLE_DEFAULT,
-                       "basis": "ILLUSTRATIVE — realistically-serviceable share keyed "
+                       "basis": "FRAMEWORK — realistically-serviceable share keyed "
                                 "to the insource-vs-outsource archetype (0.15-0.30)"},
             "r_IFT": {"low": _R_IFT[0], "central": r_ift, "high": _R_IFT[2],
                       "rural_uplift": _R_IFT_RURAL_UPLIFT,
-                      "basis": "ILLUSTRATIVE — blended all-payer net revenue per IFT "
+                      "basis": "FRAMEWORK — blended all-payer net revenue per IFT "
                                "transport (IFT skews ALS/SCT + longer mileage; rural "
                                "carries the super-rural +22.6% add-on)"},
         },
@@ -1168,32 +1168,32 @@ def health_system_sam() -> HealthSystemSam:
 
     steps = [
         TamStep("TAM — all US ground IFT (ex-911, ex-air, ex-NEMT)",
-                f"${tam_c:.1f}B", "ILLUSTRATIVE",
+                f"${tam_c:.1f}B", "FRAMEWORK",
                 f"range ${tam_lo:.0f}-{tam_hi:.0f}B; the GOV-anchored ground-IFT "
                 "TAM from ground_tam()."),
         TamStep("→ × multi-hospital-system share of IFT $ (σ)",
                 f"{sig_lo*100:.0f}-{sig_hi*100:.0f}% (central {sig_c*100:.0f}%)",
-                "ILLUSTRATIVE",
+                "FRAMEWORK",
                 "AHA 2023 ~68% of hospitals are in a system, and acute up-"
                 "transfers concentrate at system-owned tertiary/quaternary hubs, "
                 "so IFT $ over-indexes on system involvement."),
         TamStep("→ × addressable (outsourceable) share (1 − insource ceiling ι)",
                 f"{addr[0]*100:.0f}-{addr[2]*100:.0f}% (central {addr[1]*100:.0f}%)",
-                "ILLUSTRATIVE",
+                "FRAMEWORK",
                 f"insource ceiling ι = {ins_lo*100:.0f}-{ins_hi*100:.0f}% — the "
                 "health-system-biller proxy: $ billed by a system NPI is treated "
                 "as insourced (non-addressable). Hospitals rarely own ground "
                 "fleets, so the ceiling is low."),
         TamStep("(A) TOP-DOWN SAM = TAM · σ · (1 − ι)",
                 f"${sam_td_c:.1f}B (${sam_td_lo:.1f}-{sam_td_hi:.1f}B)",
-                "ILLUSTRATIVE",
+                "FRAMEWORK",
                 f"MSA-restricted ${sam_td_msa_c:.1f}B (× {_MSA_SHARE_OF_SYSTEM_IFT*100:.0f}% "
                 "in-MSA share)."),
     ]
     if sam_bu_c:
         steps.append(TamStep(
             "(B) BOTTOMS-UP SAM = footprint SAM-$/bed × national multi-system beds",
-            f"${sam_bu_c:.1f}B", "ILLUSTRATIVE",
+            f"${sam_bu_c:.1f}B", "FRAMEWORK",
             f"the offline Komodo-claims proxy: SOM ${som_c_m:,.0f}M scaled by "
             f"β_system {_MULTI_SYSTEM_BED_SHARE*100:.0f}% ÷ footprint bed-share "
             f"{fp_bed_share*100:.1f}%. Reads low — the footprint over-samples "
@@ -1201,19 +1201,19 @@ def health_system_sam() -> HealthSystemSam:
             "destination system NPI split by billing-NPI ownership."))
     steps.append(TamStep(
         "SAM (triangulated)", f"${sam_central:.1f}B (${sam_low:.1f}-{sam_high:.1f}B)",
-        "ILLUSTRATIVE",
+        "FRAMEWORK",
         "geometric blend of the two central methods." if sam_bu_c
         else "top-down central (bottoms-up proxy unavailable offline)."))
     steps.append(TamStep(
         "SOM — operator footprint (serviceable, current markets)",
         f"${som_c_m:,.0f}M (${som_lo_m:,.0f}-{som_hi_m:,.0f}M)",
-        "ILLUSTRATIVE" if som.available else "unavailable",
+        "FRAMEWORK" if som.available else "unavailable",
         "the bottom-up footprint SAM from sam_formula() — reframed as the SOM: "
         "what is serviceable in the operator's CURRENT metros, not the structural "
         "market."))
     steps.append(TamStep(
         f"Operator current revenue ≈ {_OPERATOR_SHARE_OF_SAM*100:.0f}% of SAM",
-        f"~${op_rev_m:,.0f}M", "ILLUSTRATIVE",
+        f"~${op_rev_m:,.0f}M", "FRAMEWORK",
         f"the nascent ~{_OPERATOR_SHARE_OF_SAM*100:.0f}% share (MMT framing); SAM "
         + (f"is ~{sam_over_som:.0f}× the SOM" if sam_over_som else "dwarfs the SOM")
         + " — the headroom is structural, not just in-footprint."))
@@ -1242,7 +1242,7 @@ def health_system_sam() -> HealthSystemSam:
         operator_share_of_sam=_OPERATOR_SHARE_OF_SAM,
         operator_current_revenue_m=op_rev_m, sam_over_som_multiple=sam_over_som,
         steps=steps,
-        source_label=("ILLUSTRATIVE · GOV-anchored ground-IFT TAM × ILLUSTRATIVE "
+        source_label=("FRAMEWORK · GOV-anchored ground-IFT TAM × ILLUSTRATIVE "
                       "multi-hospital-system share + health-system-biller insource "
                       "ceiling; bottoms-up scaled from the SOURCED footprint "
                       "(ift_geo/HCRIS) bed structure — the offline proxy for the "

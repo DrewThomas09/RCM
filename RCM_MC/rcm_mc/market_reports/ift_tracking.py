@@ -80,7 +80,7 @@ from typing import List, Optional, Tuple
 LABEL_GOV = "GOV"
 LABEL_SOURCED = "SOURCED"
 LABEL_ACADEMIC = "ACADEMIC"
-LABEL_ILLUSTRATIVE = "ILLUSTRATIVE"
+LABEL_ILLUSTRATIVE = "FRAMEWORK"   # renamed 2026-07-10: a stated analytical scaffold, not "illustrative"
 _BASES = (LABEL_GOV, LABEL_SOURCED, LABEL_ACADEMIC, LABEL_ILLUSTRATIVE)
 
 # The three levers, named to line up 1:1 with the claims-understatement cleaner's
@@ -335,7 +335,7 @@ def _price_from(cf: Optional[float]) -> PriceLever:
         composite_low_pct=comp_lo, composite_central_pct=comp_c,
         composite_high_pct=comp_hi,
         source_label=(
-            "ILLUSTRATIVE · composite reimbursement-inflation read; GOV anchors = "
+            "FRAMEWORK · composite reimbursement-inflation read; GOV anchors = "
             "Medicare Ambulance Inflation Factor (AIF) annual updates + statutory "
             "ground add-ons (42 U.S.C. 1395m(l)) + the No Surprises Act ground "
             "exclusion; commercial OON leverage + facility escalators modeled"),
@@ -366,7 +366,7 @@ def price_lever() -> PriceLever:
     except Exception:  # noqa: BLE001
         return PriceLever(
             available=False,
-            source_label=("ILLUSTRATIVE · composite reimbursement inflation; GOV "
+            source_label=("FRAMEWORK · composite reimbursement inflation; GOV "
                           "anchor = Medicare Ambulance Inflation Factor"),
             note="Price-lever composite could not be built offline.")
 
@@ -463,7 +463,7 @@ def _volume_from(demographic_cagr_pct: Optional[float],
         composite_low_pct=comp_lo, composite_central_pct=comp_c,
         composite_high_pct=comp_hi,
         source_label=(
-            "ILLUSTRATIVE · composite volume-growth read; SOURCED anchors = "
+            "FRAMEWORK · composite volume-growth read; SOURCED anchors = "
             "ift_clinical_demand demographic CAGRs (demand_forecast age bands) + "
             "HCRIS inpatient occupancy + CMS post-acute destination supply; "
             "non-demographic intensity uplift modeled"),
@@ -524,7 +524,7 @@ def volume_lever() -> VolumeLever:
     except Exception:  # noqa: BLE001
         return VolumeLever(
             available=False,
-            source_label=("ILLUSTRATIVE · composite volume growth; SOURCED anchor "
+            source_label=("FRAMEWORK · composite volume growth; SOURCED anchor "
                           "= ift_clinical_demand demographic model"),
             note="Volume-lever composite could not be built offline.")
 
@@ -605,7 +605,7 @@ def _consolidation_from(multi_share: Optional[Tuple[float, float, float]],
                             "honestly (health-system M&A + operator roll-up) — "
                             "not a data-derived figure."),
         source_label=(
-            "ILLUSTRATIVE · consolidation is a platform SHARE-SHIFT, not organic "
+            "FRAMEWORK · consolidation is a platform SHARE-SHIFT, not organic "
             "market growth; ratios reused from ift_analytics.health_system_sam "
             "(GOV-anchored TAM × ILLUSTRATIVE system/insource shares), footprint "
             "bed-share SOURCED (ift_geo/HCRIS); consolidator names public-web"),
@@ -652,7 +652,7 @@ def consolidation_lever() -> ConsolidationLever:
     except Exception:  # noqa: BLE001
         return ConsolidationLever(
             available=False,
-            source_label=("ILLUSTRATIVE · consolidation share-shift; ratios from "
+            source_label=("FRAMEWORK · consolidation share-shift; ratios from "
                           "ift_analytics.health_system_sam"),
             note="Consolidation-lever build failed offline.")
 
@@ -788,7 +788,7 @@ def _assemble_bridge(price: PriceLever, volume: VolumeLever,
         volume=volume if v_ok else None,
         consolidation=cons if c_ok else None,
         source_label=(
-            "ILLUSTRATIVE · three-lever growth bridge; price × volume COMPOUND is "
+            "FRAMEWORK · three-lever growth bridge; price × volume COMPOUND is "
             "organic market growth (GOV AIF + SOURCED demand anchors, named in the "
             "levers), consolidation is an explicit ILLUSTRATIVE share-shift layered "
             "on top — never folded into the organic compound"),
@@ -817,7 +817,7 @@ def growth_bridge() -> GrowthBridge:
     except Exception:  # noqa: BLE001
         return GrowthBridge(
             available=False,
-            source_label=("ILLUSTRATIVE · three-lever growth bridge (price × "
+            source_label=("FRAMEWORK · three-lever growth bridge (price × "
                           "volume compound + consolidation share-shift)"),
             note="Growth bridge could not be assembled offline.")
 

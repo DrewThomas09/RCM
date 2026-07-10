@@ -52,7 +52,7 @@ from typing import Dict, List, Optional, Tuple
 LABEL_GOV = "GOV"
 LABEL_SOURCED = "SOURCED"
 LABEL_ACADEMIC = "ACADEMIC"
-LABEL_ILLUSTRATIVE = "ILLUSTRATIVE"
+LABEL_ILLUSTRATIVE = "FRAMEWORK"   # renamed 2026-07-10: a stated analytical scaffold, not "illustrative"
 _BASES = (LABEL_GOV, LABEL_SOURCED, LABEL_ACADEMIC, LABEL_ILLUSTRATIVE)
 
 # Operator / health-system NAMES are public-web knowledge, not a data figure —
@@ -391,7 +391,7 @@ def competitive_archetypes() -> ArchetypeSet:
     ``available=False`` if ift_geo is unreadable — never raises."""
     markets = _markets()
     src = (
-        "ILLUSTRATIVE · competitive archetypes, scale magnitudes and MMT-advantage "
+        "FRAMEWORK · competitive archetypes, scale magnitudes and MMT-advantage "
         "reads are analytic/modeled; operator & health-system NAMES are PUBLIC-WEB "
         "(reused verbatim from ift_geo.named_operators, named honestly); the "
         "per-archetype footprint-metro appearance counts are SOURCED from ift_geo")
@@ -556,7 +556,7 @@ def market_competition() -> MarketCompetition:
     ``available=False`` if ift_geo is unreadable — never raises."""
     markets = _markets()
     src = (
-        "ILLUSTRATIVE · the contestability read is analytic (reusing the s(m) "
+        "FRAMEWORK · the contestability read is analytic (reusing the s(m) "
         "serviceable share ift_analytics keys to each insource archetype); "
         "operators present + first-call read are PUBLIC-WEB (ift_geo); node "
         "density is SOURCED (ift_geo/CMS)")
@@ -610,7 +610,7 @@ def market_competition() -> MarketCompetition:
                           "+ HCRIS + post-acute rolls)",
             names_basis=PUBLIC_WEB_NOTE,
             contestability_basis=(
-                "ILLUSTRATIVE · contestability tier keyed to the insource "
+                "FRAMEWORK · contestability tier keyed to the insource "
                 "archetype; score = s(m) serviceable share (ift_analytics)"),
             basis=LABEL_ILLUSTRATIVE,
             source_label=(
@@ -757,7 +757,7 @@ def mmt_positioning() -> MmtPositioning:
         home_n_hospitals=home_h, home_n_nodes=home_nodes, home_snf_beds=home_snf,
         home_density_tier=home_tier, home_structure_basis=home_basis,
         source_label=(
-            "ILLUSTRATIVE · the five-pillar positioning and MMT-advantage reads "
+            "FRAMEWORK · the five-pillar positioning and MMT-advantage reads "
             "are analytic; operator & system NAMES are PUBLIC-WEB (ift_geo); the "
             "Omaha home-market density snapshot is SOURCED (ift_geo/CMS)"),
         headline=headline,

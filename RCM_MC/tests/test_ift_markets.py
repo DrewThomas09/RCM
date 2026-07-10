@@ -284,7 +284,8 @@ class GeoAnalyticsSanityTests(unittest.TestCase):
             hs.sam_central_bn * 1e3 * hs.operator_share_of_sam, places=1)
         # every build step carries an honesty basis chip
         for st in hs.steps:
-            self.assertIn(st.basis, ("GOV", "ILLUSTRATIVE", "SOURCED", "unavailable"))
+            self.assertIn(st.basis, ("GOV", "FRAMEWORK", "ILLUSTRATIVE",
+                         "SOURCED", "unavailable"))
 
     def test_unknown_metro_degrades_without_raising(self):
         s = _geo.metro_structure("Nowhere")

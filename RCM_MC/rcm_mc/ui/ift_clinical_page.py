@@ -114,6 +114,8 @@ _CHIP_TONE = {
     "SOURCED": ("var(--sc-positive,#0a8a5f)", "var(--sc-positive,#0a8a5f)"),
     "GOV": ("var(--sc-teal,#155752)", "var(--sc-teal,#155752)"),
     "ACADEMIC": ("var(--sc-navy,#0b2341)", "var(--sc-navy,#0b2341)"),
+    "DERIVED": ("#3d3268", "#7a6aa8"),
+    "FRAMEWORK": ("#463a63", "#7a6aa8"),
     "ILLUSTRATIVE": ("var(--sc-warning,#b8732a)", "var(--sc-warning,#b8732a)"),
 }
 
@@ -123,12 +125,13 @@ def _tag_of(source_label: Optional[str]) -> str:
     ACADEMIC / ILLUSTRATIVE); falls back to ILLUSTRATIVE for anything else so a
     figure is never shown without a basis chip."""
     if not source_label:
-        return "ILLUSTRATIVE"
+        return "FRAMEWORK"
     head = str(source_label).split("·", 1)[0].strip().upper()
-    for tag in ("SOURCED", "GOV", "ACADEMIC", "ILLUSTRATIVE"):
+    for tag in ("SOURCED", "GOV", "ACADEMIC", "DERIVED", "FRAMEWORK",
+                "ILLUSTRATIVE"):
         if head.startswith(tag):
             return tag
-    return "ILLUSTRATIVE"
+    return "FRAMEWORK"
 
 
 def _chip(tag: str, *, title: str = "") -> str:

@@ -22,7 +22,8 @@ import unittest
 from rcm_mc.market_reports import ift_insourcing as ins
 from rcm_mc.market_reports import ift_geo as geo
 
-_BASES = {"GOV", "SOURCED", "ACADEMIC", "ILLUSTRATIVE"}
+_BASES = {"GOV", "SOURCED", "ACADEMIC", "FRAMEWORK",
+          "ILLUSTRATIVE"}  # FRAMEWORK: 2026-07-10 rename of the scaffold basis
 
 
 def _leads_with_basis(label: str) -> bool:
@@ -172,7 +173,7 @@ class ClaimsGrossupTests(unittest.TestCase):
         for c in self.cg.components:
             self.assertIn(c.basis, _BASES, c.key)
             self.assertTrue(c.mechanism and c.named_basis, c.key)
-            self.assertTrue(c.named_basis.startswith("ILLUSTRATIVE"), c.key)
+            self.assertTrue(c.named_basis.startswith("FRAMEWORK"), c.key)
             # a real, ordered fraction band inside (0,1)
             self.assertLess(0.0, c.frac_low, c.key)
             self.assertLessEqual(c.frac_low, c.frac_central, c.key)
