@@ -10,7 +10,11 @@ class TestResearchModule(unittest.TestCase):
         ic = r.industry_context()
         self.assertTrue(ic.available)
         self.assertTrue(ic.items)
-        self.assertIn("IBISWorld", ic.source_label)
+        # Trade-firm sourcing (IBISWorld et al.) was deliberately purged in
+        # #1932 — the frame now rests on GADCS/MedPAC/AAA government and
+        # association sources. Guard the purge, not the old label.
+        self.assertNotIn("IBISWorld", ic.source_label)
+        self.assertIn("GADCS", ic.source_label)
 
     def test_authored_sections_present_and_labelled(self):
         secs = r.research_sections()

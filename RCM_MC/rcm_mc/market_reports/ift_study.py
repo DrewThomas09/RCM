@@ -159,7 +159,7 @@ def taxonomy_matrix() -> TaxonomyMatrix:
         rows=_TAXONOMY_ROWS,
         ift_col_index=_IFT_COL,
         why_dedicated_different=_WHY_DIFFERENT,
-        source_label=("ACADEMIC / ILLUSTRATIVE market taxonomy; GOV anchors named "
+        source_label=("ACADEMIC / FRAMEWORK market taxonomy; GOV anchors named "
                       "inside (Medicare Ambulance Fee Schedule tiers, No Surprises "
                       "Act ground exclusion, Medicaid NEMT mandate 42 CFR 431.53)"),
         note=("The market definition IS the thesis: IFT is a hospital-ordered B2B "
@@ -338,7 +338,7 @@ def operating_models() -> OperatingModels:
             "TRANSPORT VOLUME, upper-bounded by the health-system-biller proxy."),
         source_label=("Authored operating-model + procurement framework; "
                       "quantitative bands + biller ceiling reused from "
-                      "ift_insourcing (ILLUSTRATIVE, GOV/SOURCED anchored)"),
+                      "ift_insourcing (FRAMEWORK, GOV/SOURCED anchored)"),
         note=("The delivered-vs-reimbursed distinction is the crux: insourcing is "
               "measured by who actually runs the volume, not who bills or owns a "
               "truck. Most hospital IFT is contestable because hospitals rarely "

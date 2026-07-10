@@ -22,7 +22,8 @@ import unittest
 from rcm_mc.market_reports import ift_competitive as comp
 from rcm_mc.market_reports import ift_geo as geo
 
-_BASES = {"GOV", "SOURCED", "ACADEMIC", "ILLUSTRATIVE"}
+_BASES = {"GOV", "SOURCED", "ACADEMIC", "FRAMEWORK",
+          "ILLUSTRATIVE"}  # FRAMEWORK: 2026-07-10 rename of the scaffold basis
 
 
 def _leads_with_basis(label: str) -> bool:
@@ -57,7 +58,7 @@ class ArchetypeTests(unittest.TestCase):
             self.assertTrue(a.pros and a.cons, a.key)
             # honesty: dominant basis + the two figure-level bases are valid
             self.assertIn(a.basis, _BASES, a.key)
-            self.assertEqual(a.scale_basis, "ILLUSTRATIVE", a.key)
+            self.assertEqual(a.scale_basis, "FRAMEWORK", a.key)
             self.assertEqual(a.appearances_basis, "SOURCED", a.key)
             # names carry a PUBLIC-WEB note, never a data chip
             self.assertIn("PUBLIC-WEB", a.names_basis, a.key)
@@ -169,7 +170,7 @@ class MarketCompetitionTests(unittest.TestCase):
             self.assertIn(r.basis, _BASES, r.name)
             self.assertTrue(r.density_basis.startswith("SOURCED"), r.name)
             self.assertIn("PUBLIC-WEB", r.names_basis, r.name)
-            self.assertEqual(r.contestability_basis.split(" · ")[0], "ILLUSTRATIVE",
+            self.assertEqual(r.contestability_basis.split(" · ")[0], "FRAMEWORK",
                              r.name)
             self.assertTrue(_leads_with_basis(r.source_label), r.name)
             # SOURCED density is a non-negative count

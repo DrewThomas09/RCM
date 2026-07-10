@@ -32,15 +32,20 @@ _BASIS_TITLES = {
     "CONNECTOR": "A registered connector dataset — ingest-ready, honest fallback.",
     "GOV": "A published government figure / rule.",
     "ACADEMIC": "A published study / analyst series to source.",
+    "DERIVED": "Computed by an explicit equation from GOV/SOURCED/ACADEMIC "
+               "inputs — the equation and inputs are stated.",
+    "FRAMEWORK": "A stated analytical band/scaffold with corroborating "
+                 "published anchors — replaced by filed data in diligence.",
     "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
 }
 _BASIS_CLASS = {"SOURCED": "sourced", "CONNECTOR": "connector", "GOV": "gov",
-                "ACADEMIC": "academic", "ILLUSTRATIVE": "illustrative"}
+                "ACADEMIC": "academic", "DERIVED": "derived",
+                "FRAMEWORK": "framework", "ILLUSTRATIVE": "illustrative"}
 
 
 def _chip(basis: str) -> str:
-    b = (basis or "ILLUSTRATIVE").upper()
-    key = b if b in _BASIS_TITLES else "ILLUSTRATIVE"
+    b = (basis or "FRAMEWORK").upper()
+    key = b if b in _BASIS_TITLES else "FRAMEWORK"
     return (f'<span class="ihd-chip ihd-chip-{_BASIS_CLASS[key]}" '
             f'title="{_esc(_BASIS_TITLES[key])}">{key}</span>')
 
@@ -189,7 +194,7 @@ def _method_section() -> str:
             'Acute discharges ≈ <code>HCRIS patient_days ÷ ALOS</code> per hospital '
             + _chip("SOURCED") + ' — with a labelled '
             '<code>hospital_count × ~7,300 discharges/hospital/yr</code> fallback '
-            + _chip("ILLUSTRATIVE") + ' when the HCRIS panel is not ingested, so '
+            + _chip("FRAMEWORK") + ' when the HCRIS panel is not ingested, so '
             'the build is never zero.</p>'
             '<p class="ihd-prose" style="margin:0 0 6px;"><strong>Legs.</strong> '
             '<code>IFT legs = discharges × f_IFT</code> (stretcher-eligible '
@@ -262,9 +267,12 @@ def _metro_section(hd) -> str:
             + '</p>'
             + _table(("Metro", "Region", "Hospitals", "Discharges/yr",
                       "IFT legs/yr", "Serviceable", "Demand $"), rows)
-            + f'<p class="ihd-src">Discharges {_chip("SOURCED")}/{_chip("ILLUSTRATIVE")} '
+            + f'<p class="ihd-src">Discharges {_chip("SOURCED")}/{_chip("FRAMEWORK")} '
             f'(HCRIS or hospital-count fallback); legs = discharges × f_IFT; '
-            f'demand $ = serviceable legs × $600 realized {_chip("ILLUSTRATIVE")}.</p>'))
+            f'demand $ = serviceable legs × the $500–700 realized band '
+            f'{_chip("FRAMEWORK")} — bracketed by the $469 Medicare-average '
+            f'floor (MedPAC-derived) and the ~2.0x commercial multiple '
+            f'(HCCI 2022).</p>'))
 
 
 def _system_section(sr) -> str:
@@ -284,7 +292,7 @@ def _system_section(sr) -> str:
             'exclusive split.</p>'
             + _table(("Health system", "Tier", "Metros", "IFT legs/yr",
                       "Serviceable", "Demand $ (reach)", "MMT strategy"), rows)
-            + f'<p class="ihd-src">System reach {_chip("ILLUSTRATIVE")} on the '
+            + f'<p class="ihd-src">System reach {_chip("FRAMEWORK")} on the '
             'SOURCED hospital base; systems &amp; posture public/company-web, '
             'labelled.</p>'))
 
@@ -309,7 +317,7 @@ def _county_section(cd) -> str:
                       "Pop share", "IFT legs/yr", "Demand $", "Systems served"),
                      rows)
             + f'<p class="ihd-src">County population {_chip("GOV")} (2020 Census); '
-            f'metro→county allocation + demand {_chip("ILLUSTRATIVE")}.</p>'))
+            f'metro→county allocation + demand {_chip("FRAMEWORK")}.</p>'))
 
 
 def _charts(hd, sr) -> str:
@@ -340,6 +348,37 @@ def _charts(hd, sr) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+def _ccn_worklist_section() -> str:
+    """The confirmed CCN pull worklist (2026-07-10 research) — the exact
+    cost-report identifiers that turn this page's HCRIS sizing from
+    metro-level into system-level actuals."""
+    try:
+        from ..market_reports import ift_health_systems as _hs
+        reg = _hs.ccn_registry()
+    except Exception:  # noqa: BLE001
+        return ""
+    if not reg:
+        return ""
+    rows = "".join(
+        f'<tr><td>{_esc(name)}</td><td class="ihd-num">{_esc(ccn)}</td></tr>'
+        for name, ccn in reg)
+    return (
+        ck_section_header("HCRIS pull worklist — confirmed CCNs",
+                          eyebrow="FROM THE 2026-07-10 SYSTEM DEEP DIVES",
+                          count=len(reg))
+        + '<p class="ihd-prose">The hospital-system research confirmed the '
+        "CMS certification numbers below. Feeding them to the HCRIS panel "
+        "turns this page's metro-level discharge sizing into per-system "
+        "actuals (discharges, occupancy, payer mix) — the exact next data "
+        "pull.</p>"
+        '<div class="ihd-wrap"><table class="ihd-tab" style="max-width:'
+        '560px;"><thead><tr><th>Facility</th><th>CCN</th></tr></thead>'
+        f"<tbody>{rows}</tbody></table></div>"
+        f'<p class="ihd-src">CCNs {_chip("SOURCED")} via public cost-report '
+        "directories (AHD), research pull 2026-07-10; conflicts and "
+        "not-found facilities are flagged in ift_health_systems.</p>")
+
+
 def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the health-system demand page. Degrades to honest notes, never
     raises."""
@@ -364,7 +403,7 @@ def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'destination-side SNF term is <strong>dropped</strong> — a SNF is where a '
         'leg goes, not who buys it. Plus the <strong>demand-data inventory</strong>: '
         'what drives volume, what we have, and what to source. Figures carry their '
-        'basis — ' + _chip("SOURCED") + ' ' + _chip("ILLUSTRATIVE") + ' '
+        'basis — ' + _chip("SOURCED") + ' ' + _chip("FRAMEWORK") + ' '
         + _chip("GOV") + ' ' + _chip("CONNECTOR") + '.</p>')
 
     body = "".join([
@@ -386,6 +425,7 @@ def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _inventory_section(inv),
         _metro_section(hd),
         _system_section(sr),
+        _ccn_worklist_section(),
         _county_section(cd),
         _crosslinks(),
         ck_next_section(

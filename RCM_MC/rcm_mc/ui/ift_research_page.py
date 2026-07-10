@@ -187,12 +187,11 @@ def _ecosystem_block() -> str:
     eco = _st.ecosystem()
     if not eco.available:
         return ""
-    jrows = "".join(
-        f'<tr><td>{_esc(site)}</td><td>{_esc(role)}</td><td>{_esc(desc)}</td></tr>'
-        for site, role, desc in eco.journey)
-    parts = "".join(
-        f'<div class="irs-card"><h4>{_esc(name)}</h4><p>{_esc(desc)}</p></div>'
-        for name, desc in eco.participants)
+    # DIGEST (2026-07-10 dedup) — the journey table + participant cards
+    # render ONCE, on /ift-study (Dimension 2); this brief keeps the flow
+    # line, the sourced anchors, and the participant names.
+    sites = " → ".join(row[0] for row in eco.journey)
+    names = " · ".join(name for name, _d in eco.participants)
     anchor = ""
     if eco.n_acute_scenarios or eco.postacute_destinations:
         anchor = (f'<p class="irs-prose">{_chip("SOURCED")} Anchored to '
@@ -202,24 +201,31 @@ def _ecosystem_block() -> str:
                   'clinical demand engine &rarr;</a>).</p>')
     return (
         '<div id="rs-ecosystem">'
-        + ck_section_header("3. Patient journey & ecosystem",
+        + ck_section_header("3. Patient journey & ecosystem — digest",
                             eyebrow="MARKET RESEARCH")
         + ck_panel(
             '<p class="irs-prose">IFT is the connective tissue of the acute → '
             'post-acute continuum — every up-transfer to a higher level of care '
             'and every discharge step-down is a mission, with a paired '
-            'repatriation leg. ' + _chip("FRAMEWORK") + '</p>'
-            '<div class="irs-wrap"><table class="irs-tab"><thead><tr>'
-            '<th>Site of care</th><th>Role</th><th>What IFT does</th></tr>'
-            f'</thead><tbody>{jrows}</tbody></table></div>' + anchor
-            + '<p class="irs-sub">Ecosystem participants ' + _chip("FRAMEWORK")
-            + '</p>' + f'<div class="irs-cardgrid">{parts}</div>'
-            f'<p class="irs-src">Source: {_esc(eco.source_label)}</p>')
+            f'repatriation leg: <strong>{_esc(sites)}</strong>. '
+            + _chip("FRAMEWORK") + '</p>' + anchor
+            + f'<p class="irs-prose">Participants: <strong>{_esc(names)}'
+            '</strong> — the full journey table and participant cards live on '
+            'the <a href="/ift-study" style="color:var(--sc-teal,#155752);">'
+            'investor study (Dimension 2)</a>, their single home.</p>'
+            f'<p class="irs-src">Source: {_esc(eco.source_label)} · full '
+            'render on /ift-study</p>')
         + '</div>')
 
 
 def _operating_models_block() -> str:
-    """Section 4 — health-system operating models & procurement (reused)."""
+    """Section 4 — a DIGEST of the health-system operating models.
+
+    The full band taxonomy (definitions + addressable reads + procurement +
+    pain points) renders ONCE, on /ift-study — the 2026-07-10 audit measured
+    this content repeated verbatim across three pages (79–118 shared
+    sentences per pair). This brief keeps a one-line-per-band digest and
+    defers to the canonical render."""
     om = _st.operating_models()
     if not om.available:
         return ""
@@ -229,33 +235,28 @@ def _operating_models_block() -> str:
         hi = getattr(b, "volume_share_high", None)
         share = (f"{lo*100:.0f}–{hi*100:.0f}%" if lo is not None and hi is not None
                  else "—")
-        brows += (f'<tr><td>{_esc(getattr(b, "name", ""))}</td><td>{_esc(share)}</td>'
-                  f'<td>{_esc(getattr(b, "definition", ""))}</td>'
-                  f'<td>{_esc(getattr(b, "addressable_read", ""))}</td></tr>')
-    proc = "".join(
-        f'<div class="irs-card"><h4>{_esc(t)}</h4><p>{_esc(d)}</p></div>'
-        for t, d in om.procurement)
-    pain = "".join(
-        f'<div class="irs-card"><h4>{_esc(t)}</h4><p>{_esc(d)}</p></div>'
-        for t, d in om.pain_points)
+        brows += (f'<tr><td>{_esc(getattr(b, "name", ""))}</td>'
+                  f'<td>{_esc(share)}</td></tr>')
     return (
         '<div id="rs-operating">'
-        + ck_section_header("4. Operating models, procurement & pain points",
+        + ck_section_header("4. Operating models — digest",
                             eyebrow="MARKET RESEARCH")
         + ck_panel(
-            f'<p class="irs-prose"><strong>{_chip("ILLUSTRATIVE")} '
-            f'{_esc(om.classification_note)}</strong></p>'
-            '<p class="irs-sub">Operating models — classified by delivered volume '
-            + _chip("ILLUSTRATIVE") + '</p>'
-            '<div class="irs-wrap"><table class="irs-tab"><thead><tr>'
-            '<th>Model</th><th>Volume insourced</th><th>Definition</th>'
-            '<th>Addressable read</th></tr></thead>'
+            '<p class="irs-prose">Health systems sit on a spectrum from fully '
+            'insourced fleets to fully outsourced transport, and the band a '
+            'system occupies decides how much of its volume an IFT partner can '
+            'win. The band names and volume shares are digested below; the '
+            'full taxonomy — definitions, addressable reads, procurement '
+            'mechanics and operational pain points — lives on the '
+            '<a href="/ift-study" style="color:var(--sc-teal,#155752);">'
+            'investor study (Dimension 3)</a>, its single home. '
+            + _chip("FRAMEWORK") + '</p>'
+            '<div class="irs-wrap"><table class="irs-tab" '
+            'style="max-width:560px;"><thead><tr>'
+            '<th>Model band</th><th>Volume insourced</th></tr></thead>'
             f'<tbody>{brows}</tbody></table></div>'
-            '<p class="irs-sub">Procurement ' + _chip("FRAMEWORK") + '</p>'
-            f'<div class="irs-cardgrid">{proc}</div>'
-            '<p class="irs-sub">Operational pain points ' + _chip("FRAMEWORK")
-            + '</p>' + f'<div class="irs-cardgrid">{pain}</div>'
-            f'<p class="irs-src">Source: {_esc(om.source_label)}</p>')
+            f'<p class="irs-src">Source: {_esc(om.source_label)} · full '
+            'taxonomy on /ift-study</p>')
         + '</div>')
 
 
@@ -337,7 +338,7 @@ def render_ift_research(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'sizing methodology, and evidence quality. Deliberately MARKET-focused — no '
         'individual company\'s positioning or footprint. Every table carries an '
         'honesty basis: ' + _chip("GOV") + ' ' + _chip("ACADEMIC") + ' '
-        + _chip("ILLUSTRATIVE") + ' ' + _chip("FRAMEWORK") + '.</p>')
+        + _chip("FRAMEWORK") + ' ' + _chip("FRAMEWORK") + '.</p>')
 
     # 1-2 scaffold, 3-5 reused, 6+ authored.
     authored = "".join(_render_section(s, i)

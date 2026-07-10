@@ -57,8 +57,9 @@ def _footprint_sheet() -> Optional[Sheet]:
         "Midwest Medical Transport — footprint by MSA (county-resolved)",
         "MMT's served metros resolved to OMB Core-Based Statistical Areas and "
         "their constituent counties. Delineations are OMB 2023 (GOV); county "
-        "population is the 2020 Census (GOV); the 65+ split and the modeled "
-        "ground-IFT demand are ILLUSTRATIVE (national-anchored per-capita rates).",
+        "population is the 2020 Census (GOV); demand is DERIVED — 2020 pop x "
+        "the measured-base per-capita floor (3.47M national NEDS+NIS legs / "
+        "331.4M) at the $469 Medicare-average $/leg (MedPAC-derived).",
         6)
     rows += [
         [("Footprint at a glance", _B)],
@@ -69,8 +70,9 @@ def _footprint_sheet() -> Optional[Sheet]:
          (s.pop_65_plus, "num")],
         ["65+ share", (s.senior_share, "pct"),
          "Modeled ground-IFT demand", (f"{s.demand_missions:,} legs/yr")],
-        ["Modeled demand $", (s.demand_dollars, "money"), "@ $/leg",
-         "$1,300 (ILLUSTRATIVE)"],
+        ["Demand $ floor", (s.demand_dollars, "money"), "@ $/leg",
+         "$469 — Medicare FFS average payment/transport (DERIVED: MedPAC "
+         "$5.3B / 11.3M, 2024)"],
         [],
         [("Served CBSAs (biggest first)", _B)],
         [("CBSA", _H), ("Type", _H), ("Metro (ift_geo)", _H), ("Counties", _H),
@@ -88,9 +90,11 @@ def _footprint_sheet() -> Optional[Sheet]:
         [("Delineation basis", _H), s.cbsa_source],
         [("Population basis", _H), s.pop_source],
         [("Demand basis", _H),
-         "ILLUSTRATIVE — ground-IFT legs = 65+ × 0.054 + under-65 × 0.0049 "
-         "(national-anchored: US ground IFT ~4.5M legs/yr, 65+ over-indexed) × "
-         "$1,300 blended all-payer net revenue/leg."],
+         "DERIVED — legs = pop × 0.010469/person/yr, where 0.010469 = 3.47M "
+         "measured national acute transfers (1.97M NEDS ED-to-ED + 1.5M NIS "
+         "interhospital, ACADEMIC) / 331.4M 2020 Census pop (GOV); a floor "
+         "excluding post-acute/dialysis/behavioral legs. $ at the $469 "
+         "Medicare-average floor (MedPAC-derived)."],
     ]
     return Sheet("MMT footprint", rows, col_widths=[30, 10, 22, 10, 16, 12, 14, 16],
                  merges=merges, band_rows=(band_start, band_end))
@@ -523,12 +527,176 @@ def _accounts_sheet() -> Optional[Sheet]:
                  freeze_rows=4, merges=merges)
 
 
+# ── 2026-07-10 research sheets — the overnight pull, saved ───────────────────
+def _company_sheet() -> Optional[Sheet]:
+    from . import ift_company as _co
+    locs = getattr(_co, "MMT_NPI_LOCATIONS", ())
+    if not locs:
+        return None
+    rows, merges = _title(
+        "MMT — the company file (NPPES-verified estate + ownership + courts)",
+        "Primary-source pull 2026-07-10: the NPI registry estate, the "
+        "ownership/PE trail, the public litigation record and the "
+        "third-party estimates (shown side by side, never blended).", 6)
+    rows += [
+        [("Location estate — NPPES (SOURCED)", _B)],
+        [("NPI", _H), ("City", _H), ("State", _H),
+         ("Registered name / DBA", _H), ("Practice address", _H),
+         ("Note", _H)],
+    ]
+    b1 = len(rows) + 1
+    for l in locs:
+        rows.append([l.npi, l.city, l.state, l.name, l.address, l.note])
+    b1e = len(rows)
+    rows += [[], [("Ownership / control timeline", _B)],
+             [("Year", _H), ("Event", _H), ("Detail", _H), ("Basis", _H)]]
+    for ev in getattr(_co, "OWNERSHIP_TIMELINE", ()):
+        src = _co.SOURCES.get(ev.source_key)
+        rows.append([ev.year, ev.event, ev.detail,
+                     _chip(src.basis) if src else ""])
+    rows += [[], [("Litigation & agency records (COURT)", _B)],
+             [("Case", _H), ("Court", _H), ("Filed", _H), ("Nature", _H),
+              ("Status", _H)]]
+    for lit in getattr(_co, "LITIGATION", ()):
+        rows.append([lit.case, lit.court, lit.filed, lit.nature, lit.status])
+    rows += [[], [("Third-party revenue estimates — handle with care", _B)]]
+    for e in getattr(_co, "REVENUE_ESTIMATES", ()):
+        rows.append([e.metric, e.value, e.as_of, _chip("ESTIMATE")])
+    rows += [[(getattr(_co, "REVENUE_ESTIMATE_READ", ""), _N)]]
+    return Sheet("MMT company file", rows,
+                 col_widths=[14, 18, 8, 44, 30, 60], merges=merges,
+                 band_rows=(b1, b1e))
+
+
+def _health_systems_sheet() -> Optional[Sheet]:
+    from . import ift_health_systems as _hs
+    systems = _safe(_hs.systems, default=()) or ()
+    if not systems:
+        return None
+    rows, merges = _title(
+        "Hospital-system customer deep dives (NE + western IA)",
+        "Per-system: facilities w/ beds + CCNs, transfer-center posture, "
+        "transport ownership, catalysts and the IFT read. Research pull "
+        "2026-07-10; every profile carries source URLs in the module.", 5)
+    for sy in systems:
+        rows += [[(f"{sy.name} — {sy.hq}", _B)], [(sy.role, _N)],
+                 [("Facility", _H), ("City", _H), ("State", _H),
+                  ("Beds", _H), ("CCN", _H)]]
+        for f in sy.facilities:
+            rows.append([f.name, f.city, f.state, f.beds, f.ccn or "—"])
+        rows += [[("Transfer coordination", _L), sy.transfer_center],
+                 [("Transport posture", _L), sy.ems_posture],
+                 [("IFT read", _L), sy.ift_read], []]
+    return Sheet("Health systems", rows, col_widths=[44, 18, 8, 22, 12],
+                 merges=merges)
+
+
+def _competitive_sheet() -> Optional[Sheet]:
+    from . import ift_npi_landscape as _npi
+    summ = _safe(_npi.summary, default={}) or {}
+    if not summ.get("available"):
+        return None
+    rows, merges = _title(
+        "Competitive landscape — from the NPPES registry, not a guess",
+        f"{summ['total_orgs']} unique NE/IA ambulance org NPIs (pulled "
+        "2026-07-10, vendored CSV), categorized; curated competitor "
+        "profiles; the CMS claims-data recipe to rank suppliers by "
+        "Medicare volume.", 4)
+    rows += [[("Universe by category (SOURCED)", _B)],
+             [("Category", _H), ("NE org NPIs", _H), ("IA org NPIs", _H)]]
+    for cat in ("private", "hospital-owned", "municipal-fire-volunteer",
+                "air"):
+        rows.append([_npi.CATEGORY_LABELS.get(cat, cat),
+                     (summ["ne"].get(cat, 0), "num"),
+                     (summ["ia"].get(cat, 0), "num")])
+    rows += [[(summ.get("read", ""), _N)], [],
+             [("Named competitors", _B)],
+             [("Competitor", _H), ("Base", _H), ("Archetype", _H),
+              ("The read", _H)]]
+    b1 = len(rows) + 1
+    for c in getattr(_npi, "COMPETITORS", ()):
+        rows.append([c.name, c.base, c.archetype, c.read])
+    b1e = len(rows)
+    r = getattr(_npi, "CLAIMS_RECIPE", {})
+    rows += [[], [("Claims-data recipe (CONNECTOR — egress-gated)", _B)],
+             [("Dataset", _L), r.get("dataset", "")],
+             [("CY2023 UUID", _L), r.get("uuids", {}).get("2023", "")],
+             [("Endpoint", _L), r.get("endpoint", "")],
+             [("Filter example", _L), r.get("filter_example", "")],
+             [(r.get("note", ""), _N)]]
+    return Sheet("Competitive landscape", rows,
+                 col_widths=[40, 30, 22, 110], merges=merges,
+                 band_rows=(b1, b1e))
+
+
+def _growth_evidence_sheet() -> Optional[Sheet]:
+    from . import ift_growth_evidence as _ge
+    evs = _safe(_ge.all_evidence, default=()) or ()
+    if not evs:
+        return None
+    rows, merges = _title(
+        "Why demand grows — the evidence registry",
+        "Every growth claim, cited: figure, value, basis, source, and the "
+        "verbatim quote where captured. Entries captured from search "
+        "excerpts (vs fetched full text) are flagged re-verify.", 6)
+    rows += [[("Theme", _H), ("Figure", _H), ("Value", _H), ("Basis", _H),
+              ("Source", _H), ("Quote (verbatim where flagged)", _H)]]
+    b1 = len(rows) + 1
+    for e in evs:
+        flag = "" if e.verbatim else " [re-verify]"
+        rows.append([e.theme, e.figure, e.value, _chip(e.basis),
+                     e.source + flag, e.quote])
+    b1e = len(rows)
+    return Sheet("Growth evidence", rows,
+                 col_widths=[16, 44, 40, 12, 44, 90], merges=merges,
+                 band_rows=(b1, b1e))
+
+
+def _demand_band_sheet() -> Optional[Sheet]:
+    from . import ift_mmt as _m
+    band = _safe(_m.footprint_demand_band)
+    outlook = _safe(_m.footprint_volume_outlook)
+    if not (band and outlook):
+        return None
+    rows, merges = _title(
+        "Footprint demand band + potential volume increase",
+        "The demand read as a bracket of two DERIVED allocations of the "
+        "measured national transfer base, and the volume-increase "
+        "scenarios (each one published rate, equations shown).", 5)
+    rows += [
+        [("The band", _B)],
+        ["Pop-share allocation", (band.flat_legs, "num"),
+         band.equation_flat],
+        ["65+-share allocation", (band.senior_weighted_legs, "num"),
+         band.equation_senior],
+        ["Band ($ at $469/leg)",
+         f"{band.lo_legs:,}–{band.hi_legs:,} legs/yr",
+         f"${band.lo_dollars/1e6:,.2f}M–${band.hi_dollars/1e6:,.2f}M"],
+        [(band.caveat, _N)], [],
+        [("Potential volume increase — scenarios", _B)],
+        [("Scenario", _H), ("CAGR", _H), ("5-yr", _H), ("Equation", _H),
+         ("Basis", _H)],
+    ]
+    for sc in outlook.scenarios:
+        rows.append([sc.name, (sc.cagr_pct / 100.0, "pct"),
+                     (sc.five_yr_pct / 100.0, "pct"), sc.equation, sc.basis])
+    rows += [[], [("Footprint catalysts — documented, not quantified", _B)]]
+    for c in outlook.catalysts:
+        rows.append([(c, _N)])
+    rows += [[(outlook.caveat, _N)]]
+    return Sheet("Demand band + outlook", rows,
+                 col_widths=[40, 14, 16, 80, 50], merges=merges)
+
+
 # ── public entry point ────────────────────────────────────────────────────────
 def mmt_sheets() -> List[Sheet]:
-    """Every MMT county-by-MSA sheet, in reading order. Each degrades to skipped
-    (never raises)."""
+    """Every MMT sheet, in reading order — the company file and the
+    2026-07-10 research sheets lead, then the county model. Each degrades to
+    skipped (never raises)."""
     out: List[Sheet] = []
-    for b in (_footprint_sheet, _counties_sheet, _serviceable_sheet,
+    for b in (_company_sheet, _health_systems_sheet, _competitive_sheet,
+              _growth_evidence_sheet, _footprint_sheet, _counties_sheet,
+              _demand_band_sheet, _serviceable_sheet,
               _scenario_sheet, _opportunity_sheet, _operating_sheet,
               _payer_sheet, _growth_sheet, _connectors_sheet, _clinical_sheet,
               _metro_read_sheet, _accounts_sheet, _scorecard_sheet,
@@ -537,3 +705,4 @@ def mmt_sheets() -> List[Sheet]:
         if s is not None:
             out.append(s)
     return out
+

@@ -14284,5 +14284,117 @@ _MANUAL.extend([
     ),
 ])
 
+# ── Interfacility Transport (IFT) study suite — 2026-07-10 rehaul ────────
+_IFT_COMMON_NOTES = [
+    "The IFT suite's basis vocabulary: GOV (published government figure), "
+    "SOURCED (real dataset/registry), ACADEMIC (peer-reviewed study), "
+    "DERIVED (explicit equation from cited inputs — the equation is shown), "
+    "FRAMEWORK (stated analytical band/scaffold with corroborating anchors). "
+    "There are no unlabeled or illustrative figures; quotes captured from "
+    "search excerpts sit in an explicit re-verification queue.",
+    "Subject operator: Midwest Medical Transport (MMT Ambulance) — a "
+    "13-state IFT platform (Harbour Point Capital, 2022) whose legacy core "
+    "is 22 NE/IA counties across 7 CBSAs.",
+]
+_MANUAL.extend([
+    _ctx("/ift", "IFT — The Study (hub)",
+         short_description="The IFT suite index: one card per surface with "
+         "its single job, a reading order, data assets, and the live "
+         "evidence-governance counts.",
+         primary_purpose="Orient a reader across the nine IFT surfaces so "
+         "the suite reads as one study.",
+         data_sources=["Static index + live counts from "
+                       "ift_growth_evidence and ift_unit_economics."],
+         related_routes=["/ift-mmt", "/ift-demand", "/ift-markets"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-mmt", "MMT — Company Deep Dive",
+         short_description="The company file: NPPES-verified location "
+         "estate, ownership/PE trail, hospital-system customers, "
+         "registry-computed competitive field, litigation record, and the "
+         "legacy-core county model with the derived demand band and "
+         "volume-increase scenarios.",
+         primary_purpose="Answer who MMT actually is with primary-source "
+         "evidence, then size its legacy-core demand honestly.",
+         data_sources=["CMS NPPES registry pull (2026-07-10)", "press/deal "
+                       "records", "public court dockets", "OMB 2023 CBSA "
+                       "delineations + 2020 Census", "HCUP NEDS/NIS "
+                       "measured transfer base", "MedPAC/GADCS/HCCI "
+                       "benchmarks"],
+         related_routes=["/ift", "/ift-hs-demand", "/ift-markets"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-demand", "IFT Demand Deep-Dive",
+         short_description="The demand story: the sourced national "
+         "transport-volume funnel, CMS acuity-code analysis, the cited "
+         "growth-evidence registry, and the regional/county roll-down.",
+         primary_purpose="Ground every demand and growth claim in a "
+         "published figure with its quote and link.",
+         data_sources=["MedPAC/CMS (GOV)", "HCUP NEDS + NIS (ACADEMIC)",
+                       "the ift_growth_evidence registry (30 cited "
+                       "entries)"],
+         related_routes=["/ift", "/ift-clinical", "/ift-hs-demand"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-markets", "IFT Target Markets",
+         short_description="Metro-by-metro market structure from the "
+         "vendored CMS estate, with the MMT-presence reconciliation "
+         "(NPI-verified vs roll-up-screen metros).",
+         primary_purpose="Show each metro's origin/destination structure "
+         "and be honest about where MMT verifiably operates.",
+         data_sources=["Vendored CMS estate (hospital_coords, HCRIS, "
+                       "post-acute rolls)", "ift_geo.MMT_PRESENCE_EVIDENCE "
+                       "(NPPES/web sweep 2026-07-10)"],
+         related_routes=["/ift", "/ift-mmt"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-study", "IFT Investor Study",
+         short_description="The four-dimension synthesis and the single "
+         "home of the shared frameworks (taxonomy, journey/ecosystem, "
+         "operating-model bands, MMT positioning).",
+         primary_purpose="Synthesize the market education an investor "
+         "needs; other pages digest and link here.",
+         related_routes=["/ift", "/ift-research", "/ift-diligence"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-research", "IFT Market Research Brief",
+         short_description="The market-level research brief: "
+         "reimbursement, unit economics, KPIs, technology, regulatory, "
+         "segmentation, sizing — with digests where the study owns "
+         "content.",
+         primary_purpose="Market-level reference; no company-specific "
+         "analysis.",
+         related_routes=["/ift", "/ift-study"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-clinical", "IFT Clinical Demand Engine",
+         short_description="Condition-level acute-transfer scenarios "
+         "mapped to ICD-10 codes and post-acute destinations, with "
+         "DERIVED demographic growth per condition.",
+         primary_purpose="Explain the clinical WHY under the demand "
+         "model.",
+         related_routes=["/ift", "/ift-demand"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-hs-demand", "IFT Health-System Demand",
+         short_description="Demand sized from health systems' HCRIS "
+         "filings by system and county, plus the confirmed-CCN pull "
+         "worklist from the hospital-system research.",
+         primary_purpose="The account-level (buyer) view of the demand "
+         "base.",
+         data_sources=["HCRIS panel (network-gated)", "ift_health_systems "
+                       "CCN registry (2026-07-10 research)"],
+         related_routes=["/ift", "/ift-mmt", "/ift-demand"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-diligence", "IFT Diligence Question Architecture",
+         short_description="The diligence question tree with inline "
+         "digests linking each answer to its single home, plus the "
+         "evidence-request list.",
+         primary_purpose="The workplan layer over the study.",
+         related_routes=["/ift", "/ift-study"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    _ctx("/ift-sourcing", "IFT Sourcing Prompts",
+         short_description="The scope-bounded research prompts that "
+         "generated the IFT corpus — the meta layer for reproducing or "
+         "extending the research.",
+         primary_purpose="Process documentation, not findings.",
+         related_routes=["/ift", "/ift-research"],
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
+])
+
+
 
 MANUAL_PAGE_CONTEXTS: Dict[str, PageContext] = {c.route: c for c in _MANUAL}

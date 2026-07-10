@@ -27,14 +27,17 @@ _BASIS_TITLES = {
     "GOV": "A published government figure (CMS, MedPAC, USRDS, Census).",
     "SOURCED": "Computed from our vendored data.",
     "ACADEMIC": "A published study / analyst estimate.",
+    "FRAMEWORK": "A stated analytical band/scaffold with corroborating "
+                 "published anchors — never a filed figure.",
     "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
 }
 
 
 def _chip(basis: str) -> str:
-    b = (basis or "ILLUSTRATIVE").upper()
+    b = (basis or "FRAMEWORK").upper()
     key = ("GOV" if b.startswith("GOV") else "SOURCED" if b.startswith("SOURCED")
-           else "ACADEMIC" if b.startswith("ACADEMIC") else "ILLUSTRATIVE")
+           else "ACADEMIC" if b.startswith("ACADEMIC")
+           else "FRAMEWORK" if b.startswith("FRAMEWORK") else "ILLUSTRATIVE")
     return (f'<span class="ist-chip ist-chip-{key.lower()}" '
             f'title="{_esc(_BASIS_TITLES[key])}">{key}</span>')
 
@@ -50,6 +53,7 @@ vertical-align:middle;}
 .ist-chip-gov{background:#e7efe9;color:#154e36;}
 .ist-chip-sourced{background:#e9eef5;color:#243b57;}
 .ist-chip-academic{background:#efeae0;color:#6b5426;}
+.ist-chip-framework{background:#ece9f2;color:#463a63;}
 .ist-chip-illustrative{background:#f3ecd9;color:#7a5c1a;}
 .ist-src{font-family:var(--sc-mono,Consolas,monospace);font-size:10px;
 color:var(--sc-muted,#6b6357);margin:6px 0 2px;line-height:1.5;}
@@ -216,7 +220,7 @@ def _dimension3() -> str:
             "Dimension 3 — The health-system POV",
             eyebrow="INSOURCED / OUTSOURCED / HYBRID · PROCUREMENT · PAIN")
         + ck_panel(
-            f'<p class="ist-prose"><strong>{_chip("ILLUSTRATIVE")} '
+            f'<p class="ist-prose"><strong>{_chip("FRAMEWORK")} '
             f'{_esc(om.classification_note)}</strong></p>'
             + band_tbl
             + '<p class="ist-sub">How health systems procure transportation</p>'
@@ -397,7 +401,7 @@ def render_ift_study(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'space: what the market is, how big it is and why it grows, how health '
         'systems buy it, and how <strong>Midwest Medical Transport (MMT)</strong> '
         'is positioned. Every figure carries an honesty basis chip — '
-        f'{_chip("GOV")} {_chip("SOURCED")} {_chip("ACADEMIC")} {_chip("ILLUSTRATIVE")} '
+        f'{_chip("GOV")} {_chip("SOURCED")} {_chip("ACADEMIC")} {_chip("FRAMEWORK")} '
         '— and the four dimensions synthesize the sized market pages and the '
         'downloadable data pack below.</p>')
 

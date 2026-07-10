@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Tuple
 BASIS_GOV = "GOV"
 BASIS_SOURCED = "SOURCED"
 BASIS_ACADEMIC = "ACADEMIC"
-BASIS_ILLUSTRATIVE = "ILLUSTRATIVE"
+BASIS_ILLUSTRATIVE = "FRAMEWORK"   # renamed 2026-07-10: a stated analytical scaffold, not "illustrative"
 VALID_BASES = frozenset({BASIS_GOV, BASIS_SOURCED, BASIS_ACADEMIC, BASIS_ILLUSTRATIVE})
 
 # ── Ordinal scale (a labelled ordinal is honest; a fabricated 0-100 is not) ──
@@ -194,7 +194,7 @@ _FACTOR_SPECS: Tuple[MoatFactor, ...] = (
 )
 
 _MOAT_FACTORS_LABEL = (
-    "ILLUSTRATIVE · MMT operator stickiness thesis (digital connection + 85%+ "
+    "FRAMEWORK · MMT operator stickiness thesis (digital connection + 85%+ "
     "share-of-wallet + co-located assets — not software alone); factor reads are "
     "public/analyst framing, the density factor names its SOURCED input")
 
@@ -328,10 +328,10 @@ _CONTESTABILITY: Dict[str, str] = {
 _DEFAULT_CONTESTABILITY = ("Mixed — see the ift_geo insource read for who holds the volume.")
 
 _SCORES_LABEL = (
-    "ILLUSTRATIVE · ordinal moat scores derived from ift_geo public/analyst reads "
+    "FRAMEWORK · ordinal moat scores derived from ift_geo public/analyst reads "
     "(insource_class archetype + moat_note + insource_read signals) with a SOURCED "
     "per-metro node-density input (ift_geo.metro_structure); composite index "
-    "ILLUSTRATIVE, inputs shown")
+    "FRAMEWORK, inputs shown")
 
 
 # ── Per-factor + per-metro score records ─────────────────────────────────────
@@ -481,7 +481,7 @@ def market_moat_score(name: str) -> MarketMoatScore:
             n_nodes=structure.n_nodes,
             n_postacute=structure.n_postacute_destinations,
             composite_index=composite,
-            composite_basis=("ILLUSTRATIVE · mean of the seven ordinal factor points "
+            composite_basis=("FRAMEWORK · mean of the seven ordinal factor points "
                              "(strong=3, moderate=2, weak=1) on a 1.00-3.00 scale; "
                              "inputs are the per-factor scores shown"),
             overall_verdict=verdict, contestability=contest, overall_read=overall,

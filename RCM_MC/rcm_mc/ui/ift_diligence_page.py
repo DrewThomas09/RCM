@@ -196,7 +196,7 @@ def _ans_definition() -> str:
             tam_line = (
                 '<p class="ifq-prose">Sized boundary: TAM = all US ground '
                 'interfacility ambulance = <strong>'
-                f'{_usd_b(t.allpayer_tam_bn_central)}</strong> {_chip("ILLUSTRATIVE")}'
+                f'{_usd_b(t.allpayer_tam_bn_central)}</strong> {_chip("FRAMEWORK")}'
                 ' — excludes 911, air, and NEMT.</p>')
     except Exception:  # noqa: BLE001
         pass
@@ -217,16 +217,20 @@ def _ans_definition() -> str:
 
 
 def _ans_taxonomy() -> str:
+    # DIGEST — the full 5-category × N-dimension matrix renders once, on
+    # /ift-study (Dimension 1); the vocabulary block above already gives
+    # the category one-liners.
     from ..market_reports import ift_study as _st
     tm = _st.taxonomy_matrix()
     if not tm.available:
         return ""
-    headers = ("Dimension",) + tuple(tm.columns)
-    rows = [(label,) + tuple(cells) for label, cells in tm.rows]
+    dims = " · ".join(label for label, _cells in tm.rows)
     return _ans_wrap(
-        f'<p class="ifq-prose">{_esc(tm.note)}</p>'
-        + _ans_table(headers, rows, ift_col=tm.ift_col_index + 1),
-        basis="ACADEMIC", source=tm.source_label)
+        f'<p class="ifq-prose">{_esc(tm.note)} The matrix compares the five '
+        f'categories across: <strong>{_esc(dims)}</strong> — the full table '
+        'lives on the <a href="/ift-study">investor study (Dimension 1)</a>, '
+        'its single home.</p>',
+        basis="ACADEMIC", source=tm.source_label + " · full matrix on /ift-study")
 
 
 def _ans_markets_contrast() -> str:
@@ -255,7 +259,7 @@ def _ans_why_dedicated() -> str:
         mf = _mo.moat_factors()
         if mf:
             moat = ('<p class="ifq-sub">The moat, factor by factor '
-                    + _chip("ILLUSTRATIVE") + '</p>'
+                    + _chip("FRAMEWORK") + '</p>'
                     + _ans_table(("Factor", "Why it makes the incumbent sticky"),
                                  [(f.name, f.why_it_matters) for f in mf]))
     except Exception:  # noqa: BLE001
@@ -267,31 +271,45 @@ def _ans_why_dedicated() -> str:
 
 
 def _ans_journey() -> str:
+    # DIGEST — the full journey table renders once, on /ift-study; this
+    # inline answer keeps the sourced anchor counts + the site list.
     from ..market_reports import ift_study as _st
     eco = _st.ecosystem()
     if not eco.available:
         return ""
-    tbl = _ans_table(("Site of care", "Role", "What IFT does"),
-                     list(eco.journey))
+    sites = " → ".join(row[0] for row in eco.journey)
     anchor = ""
     if eco.n_acute_scenarios or eco.postacute_destinations:
         anchor = (f'<p class="ifq-prose">{_chip("SOURCED")} Anchored to '
                   f'<strong>{eco.n_acute_scenarios}</strong> mapped acute-transfer '
                   f'scenarios and <strong>{eco.postacute_destinations:,}</strong> '
                   'real post-acute destinations.</p>')
-    return _ans_wrap(tbl + anchor, basis="FRAMEWORK", source=eco.source_label)
+    return _ans_wrap(
+        f'<p class="ifq-prose">The continuum IFT connects: <strong>'
+        f'{_esc(sites)}</strong> — each site\'s role and what IFT does there '
+        'is tabled on the <a href="/ift-study">investor study (Dimension '
+        '2)</a>, its single home.</p>' + anchor,
+        basis="FRAMEWORK", source=eco.source_label + " · full table on /ift-study")
 
 
 def _ans_participants() -> str:
+    # DIGEST — participant cards render once, on /ift-study.
     from ..market_reports import ift_study as _st
     eco = _st.ecosystem()
     if not eco.available:
         return ""
-    return _ans_wrap(_ans_cards(eco.participants), basis="FRAMEWORK",
-                     source=eco.source_label)
+    names = " · ".join(t for t, _d in eco.participants)
+    return _ans_wrap(
+        f'<p class="ifq-prose">Ecosystem participants: <strong>{_esc(names)}'
+        '</strong> — each unpacked on the <a href="/ift-study">investor '
+        'study (Dimension 2)</a>.</p>',
+        basis="FRAMEWORK", source=eco.source_label)
 
 
 def _ans_operating() -> str:
+    # DIGEST — the full band taxonomy (definitions + addressable reads)
+    # renders once, on /ift-study (2026-07-10 dedup); this inline answer
+    # keeps the band names/shares and links to the canonical render.
     from ..market_reports import ift_study as _st
     om = _st.operating_models()
     if not (om.available and om.bands):
@@ -302,32 +320,43 @@ def _ans_operating() -> str:
         hi = getattr(b, "volume_share_high", None)
         share = (f"{lo * 100:.0f}–{hi * 100:.0f}%"
                  if lo is not None and hi is not None else "—")
-        rows.append((getattr(b, "name", ""), share,
-                     getattr(b, "definition", ""),
-                     getattr(b, "addressable_read", "")))
+        rows.append((getattr(b, "name", ""), share))
     return _ans_wrap(
-        f'<p class="ifq-prose"><strong>{_esc(om.classification_note)}</strong></p>'
-        + _ans_table(("Model", "Volume insourced", "Definition",
-                      "Addressable read"), rows),
-        basis="ILLUSTRATIVE", source=om.source_label)
+        f'<p class="ifq-prose"><strong>{_esc(om.classification_note)}</strong> '
+        'Band names and volume shares below; the full taxonomy — '
+        'definitions and per-band addressable reads — lives on the '
+        '<a href="/ift-study">investor study (Dimension 3)</a>, its single '
+        'home.</p>'
+        + _ans_table(("Model", "Volume insourced"), rows),
+        basis="FRAMEWORK", source=om.source_label + " · full taxonomy on /ift-study")
 
 
 def _ans_procurement() -> str:
+    # DIGEST — procurement mechanics render in full on /ift-study.
     from ..market_reports import ift_study as _st
     om = _st.operating_models()
     if not (om.available and om.procurement):
         return ""
-    return _ans_wrap(_ans_cards(om.procurement), basis="FRAMEWORK",
-                     source=om.source_label)
+    titles = " · ".join(t for t, _d in om.procurement)
+    return _ans_wrap(
+        f'<p class="ifq-prose">Procurement mechanics: <strong>{_esc(titles)}'
+        '</strong> — each unpacked on the '
+        '<a href="/ift-study">investor study (Dimension 3)</a>.</p>',
+        basis="FRAMEWORK", source=om.source_label)
 
 
 def _ans_challenges() -> str:
+    # DIGEST — operational pain points render in full on /ift-study.
     from ..market_reports import ift_study as _st
     om = _st.operating_models()
     if not (om.available and om.pain_points):
         return ""
-    return _ans_wrap(_ans_cards(om.pain_points), basis="FRAMEWORK",
-                     source=om.source_label)
+    titles = " · ".join(t for t, _d in om.pain_points)
+    return _ans_wrap(
+        f'<p class="ifq-prose">Operational pain points: <strong>{_esc(titles)}'
+        '</strong> — each unpacked on the '
+        '<a href="/ift-study">investor study (Dimension 3)</a>.</p>',
+        basis="FRAMEWORK", source=om.source_label)
 
 
 def _ans_mmt() -> str:
@@ -361,18 +390,24 @@ def _ans_dedicated() -> str:
     parts: List[str] = []
     mp = pos.mmt_positioning
     if mp is not None and getattr(mp, "available", False) and mp.pillars:
-        rows = [(getattr(p, "pillar", ""), getattr(p, "mmt_stance", ""),
-                 getattr(p, "vs_alternatives", "")) for p in mp.pillars]
-        parts.append('<p class="ifq-sub">The dedicated-partnership pillars</p>'
-                     + _ans_table(("Pillar", "MMT stance", "vs alternatives"),
-                                  rows))
+        # DIGEST — the full pillar table (stance + vs-alternatives) renders
+        # once, on /ift-study (Dimension 4); names + link here.
+        names = " · ".join(getattr(p, "pillar", "") for p in mp.pillars)
+        parts.append(
+            '<p class="ifq-prose">The dedicated-partnership pillars: '
+            f'<strong>{_esc(names)}</strong> — each stance and its read vs '
+            'alternatives is tabled on the <a href="/ift-study">investor '
+            'study (Dimension 4)</a>, its single home.</p>')
     if pos.field_:
-        frows = [(f.name + (" ★" if f.is_subject else ""), f.archetype,
-                  str(len(f.footprint_markets)), f.dedicated_vs_ems)
-                 for f in pos.field_]
-        parts.append('<p class="ifq-sub">The competitive field, positioned</p>'
-                     + _ans_table(("Company", "Archetype", "Footprint metros",
-                                   "Dedicated vs EMS"), frows))
+        # DIGEST — the positioned field table renders once, on /ift-study;
+        # names + archetypes here.
+        names = " · ".join(
+            f.name + (" ★" if f.is_subject else "") for f in pos.field_)
+        parts.append(
+            '<p class="ifq-prose">The positioned field: '
+            f'<strong>{_esc(names)}</strong> — archetypes, footprints and '
+            'the dedicated-vs-EMS read are tabled on the '
+            '<a href="/ift-study">investor study (Dimension 4)</a>.</p>')
     if not parts:
         return ""
     return _ans_wrap("".join(parts), basis="FRAMEWORK", source=pos.source_label)
@@ -399,7 +434,7 @@ def _ans_strategic() -> str:
                 f'{gb.volume_central_pct:.1f}%/yr = ~{gb.market_growth_central_pct:.1f}% '
                 'organic market growth; plus consolidation → ~'
                 f'{gb.platform_growth_central_pct:.1f}% platform growth. '
-                + _chip("ILLUSTRATIVE") + '</p>')
+                + _chip("FRAMEWORK") + '</p>')
     except Exception:  # noqa: BLE001
         pass
     return _ans_wrap(
@@ -461,7 +496,7 @@ def _market_glance() -> str:
     return (
         '<div class="ifq-ans" style="border-left-color:var(--sc-navy,#0b2341);">'
         '<span class="ifq-ans-lab">The market, sized — the study\'s headline '
-        f'answer {_chip("ILLUSTRATIVE")}</span>'
+        f'answer {_chip("FRAMEWORK")}</span>'
         '<p class="ifq-prose">All figures exclude 911, air, and NEMT; the full '
         'build is on <a href="/ift-markets" style="color:var(--sc-teal,#155752);">'
         '/ift-markets</a>.</p>' + stats + '</div>')
@@ -847,7 +882,7 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'visuals, the real <strong>connector datasets</strong> that feed it, and a '
         'link to go deeper. Questions are authored diligence knowledge '
         f'{_chip("FRAMEWORK")}; answers carry their own basis — {_chip("ACADEMIC")} '
-        f'{_chip("ILLUSTRATIVE")} {_chip("SOURCED")} — and the connector references '
+        f'{_chip("FRAMEWORK")} {_chip("SOURCED")} — and the connector references '
         f'resolve live {_chip("CONNECTOR")}.</p>')
 
     body = "".join([

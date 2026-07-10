@@ -1,0 +1,752 @@
+npi,org_name,city,state,search_state,primary_taxonomy,category
+1063490407,AIR EVAC EMS INC,Keokuk,IA,IA,"Ambulance, Air Transport",air
+1073104691,"AIR EVAC EMS, INC.",Clarinda,IA,IA,"Ambulance, Air Transport",air
+1871180273,"APOLLO MEDFLIGHT, LLC",Atlantic,IA,IA,"Ambulance, Air Transport",air
+1033532718,CATHOLIC HEALTH INITIATIVES-IOWA CORP,Knoxville,IA,IA,"Ambulance, Air Transport",air
+1497962468,CENTRAL IOWA HEALTH SYSTEM,Des Moines,IA,IA,"Ambulance, Air Transport",air
+1376846972,MED-TRANS CORPORATION,Sioux City,IA,IA,"Ambulance, Air Transport",air
+1669931382,MED-TRANS CORPORATION,Cedar Rapids,IA,IA,"Ambulance, Air Transport",air
+1730482332,MED-TRANS CORPORATION,Mason City,IA,IA,"Ambulance, Air Transport",air
+1851571855,MERCY MEDICAL CENTER NORTH IOWA,Mason City,IA,IA,"Ambulance, Air Transport",air
+1891872552,QUAD CITY HELICOPTER EMERGENCY MEDICAL SERVICE,Colona,IL,IA,"Ambulance, Air Transport",air
+1003394164,"ROCKY MOUNTAIN HOLDINGS, LLC",Clarida,IA,IA,"Ambulance, Air Transport",air
+1437642071,"ROCKY MOUNTAIN HOLDINGS, LLC",Knoxville,IA,IA,"Ambulance, Air Transport",air
+1376108506,"ROCKY MOUNTAIN HOLDINGS, LLC",Iowa City,IA,IA,"Ambulance, Air Transport",air
+1922671619,"ROCKY MOUNTAIN HOLDINGS, LLC",Fort Dodge,IA,IA,"Ambulance, Air Transport",air
+1952799769,"ROCKY MOUNTAIN HOLDINGS, LLC",Iowa City,IA,IA,"Ambulance, Air Transport",air
+1740890102,"ROCKY MOUNTAIN HOLDINGS, LLC",Sioux City,IA,IA,"Ambulance, Air Transport",air
+1043028921,"ROCKY MOUNTAIN HOLDINGS, LLC",Davenport,IA,IA,"Ambulance, Air Transport",air
+1306397401,"ROCKY MOUNTAIN HOLDINGS, LLC",Dubuque,IA,IA,"Ambulance, Air Transport",air
+1598411076,"ROCKY MOUNTAIN HOLDINGS, LLC",Audubon,IA,IA,"Ambulance, Air Transport",air
+1295501989,"ROCKY MOUNTAIN HOLDINGS, LLC",Des Moines,IA,IA,"Ambulance, Air Transport",air
+1063896074,"ROCKY MOUNTAIN HOLDINGS, LLC",Des Moines,IA,IA,"Ambulance, Air Transport",air
+1871429423,"ROCKY MOUNTAIN HOLDINGS, LLC",Clinton,IA,IA,"Ambulance, Air Transport",air
+1659417764,BELMOND COMMUNITY HOSPITAL,Belmond,IA,IA,Ambulance,hospital-owned
+1790855914,BOONE COUNTY HOSPITAL AMBULANCE,Boone,IA,IA,Ambulance,hospital-owned
+1922164227,BUENA VISTA REGIONAL MEDICAL CENTER,Storm Lake,IA,IA,Ambulance,hospital-owned
+1225451909,"CATHOLIC HEALTH INITIATIVES, IOWA CORP",Centerville,IA,IA,"Ambulance, Land Transport",hospital-owned
+1053539932,CATHOLIC HEALTH INITIATIVES-IOWA CORP.,Des Moines,IA,IA,Ambulance,hospital-owned
+1710048269,CENTRAL COMMUNITY HOSPITAL,Elkader,IA,IA,Ambulance,hospital-owned
+1033201793,CENTRAL IOWA HOSPITAL CORPORATION,Des Moines,IA,IA,Psychiatric Unit,hospital-owned
+1356433049,CENTRAL IOWA HOSPITAL CORPORATION,Des Moines,IA,IA,General Acute Care Hospital,hospital-owned
+1598905762,CENTRAL IOWA HOSPITAL CORPORATION,West Des Moines,IA,IA,General Acute Care Hospital,hospital-owned
+1396837951,CENTRAL IOWA HOSPITAL CORPORATION,Des Moines,IA,IA,General Acute Care Hospital,hospital-owned
+1003908666,CENTRAL IOWA HOSPITAL CORPORATION,Des Moines,IA,IA,Rehabilitation Unit,hospital-owned
+1093754962,CLARINDA REGIONAL HEALTH CENTER AMBULANCE,Clarinda,IA,IA,Ambulance,hospital-owned
+1700827896,COVENANT MEDICAL CENTER INC,Waterloo,IA,IA,General Acute Care Hospital,hospital-owned
+1588780985,COVENANT MEDICAL CENTER INC,Waterloo,IA,IA,Ambulance,hospital-owned
+1649240201,CRAWFORD COUNTY MEMORIAL HOSPITAL,Denison,IA,IA,"Ambulance, Land Transport",hospital-owned
+1043427610,DECATUR COUNTY HOSPITAL,Leon,IA,IA,Ambulance,hospital-owned
+1235208422,DELAWARE COUNTY MEMORIAL HOSPITAL,Manchester,IA,IA,"Ambulance, Land Transport",hospital-owned
+1720162019,FRANKLIN GENERAL HOSPITAL,Hampton,IA,IA,Ambulance,hospital-owned
+1457596199,GENESIS HEALTH SYSTEM,Davenport,IA,IA,Ambulance,hospital-owned
+1649368523,GENESIS HEALTH SYSTEM,De Witt,IA,IA,"General Acute Care Hospital, Critical Access",hospital-owned
+1972542264,GENESIS HEALTH SYSTEM,Davenport,IA,IA,General Acute Care Hospital,hospital-owned
+1932139359,GUTTENBERG MUNICIPAL HOSPITAL,Guttenberg,IA,IA,"General Acute Care Hospital, Critical Access",hospital-owned
+1083767321,HAMILTON COUNTY PUBLIC HOSPITAL,Webster City,IA,IA,"Ambulance, Land Transport",hospital-owned
+1770640708,HENRY COUNTY SOLDIERS' AND SAILORS' MEMORIAL HOSPITAL,Mount Pleasant,IA,IA,"Ambulance, Land Transport",hospital-owned
+1821170754,HUMBOLDT COUNTY MEMORIAL HOSPITAL,Humboldt,IA,IA,Ambulance,hospital-owned
+1225245939,LUCAS COUNTY HEALTH CENTER,Chariton,IA,IA,Ambulance,hospital-owned
+1588644298,MAHASKA COUNTY HOSPITAL,Oskaloosa,IA,IA,"Ambulance, Land Transport",hospital-owned
+1538199617,MARIAN HEALTH CENTER-SMHC,Sioux City,IA,IA,General Acute Care Hospital,hospital-owned
+1447470463,MARY GREELEY MEDICAL CENTER,Ames,IA,IA,"Ambulance, Land Transport",hospital-owned
+1669598074,MERCY HOSPITAL OF FRANCISCAN SISTERS INC,Oelwein,IA,IA,Ambulance,hospital-owned
+1528009511,MERCY HOSPITAL OF FRANCISCAN SISTERS INC,Oelwein,IA,IA,"General Acute Care Hospital, Critical Access",hospital-owned
+1255484903,MERCY MEDICAL CENTER-CENTERVILLE,Centerville,IA,IA,"Ambulance, Land Transport",hospital-owned
+1851460984,MITCHELL COUNTY REGIONAL HEALTH CENTER,Osage,IA,IA,"Ambulance, Land Transport",hospital-owned
+1740442888,MONROE COUNTY HOSPITAL,Albia,IA,IA,"Ambulance, Land Transport",hospital-owned
+1104999010,ORANGE CITY MUNICIPAL HOSPITAL,Orange City,IA,IA,Ambulance,hospital-owned
+1275746406,"OTTUMWA REGIONAL HEALTH CENTER, INC",Ottumwa,IA,IA,Ambulance,hospital-owned
+1245334960,PALO ALTO COUNTY HOSPITAL,Emmetsburg,IA,IA,Ambulance,hospital-owned
+1417991316,REGIONAL HEALTH SERVICES OF HOWARD COUNTY,Cresco,IA,IA,"General Acute Care Hospital, Critical Access",hospital-owned
+1144324740,REGIONAL HEALTH SERVICES OF HOWARD COUNTY,Cresco,IA,IA,Ambulance,hospital-owned
+1508916024,RINGGOLD COUNTY HOSPITAL,Mount Ayr,IA,IA,"Ambulance, Land Transport",hospital-owned
+1649300641,ADAIR FIRE DEPARTMENT INC,Adair,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1750509279,ADAMS COUNTY AMBULANCE,Corning,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1588733521,ALTON FIRE & RESCUE,Alton,IA,IA,Ambulance,municipal-fire-volunteer
+1477583623,ASBURY COMMUNITY FIRE DEPARTMENT,Asbury,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1003271065,AVOCA VOLUNTEER FIRE DEPARTMENT,Avoca,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1164415162,BAXTER RURAL FIRE & RESCUE,Baxter,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1922234400,BAXTER RURAL FIRE AND RESCUE DEPT.,Baxter,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1104092535,BEDFORD VOLUNTEER MUNICIPAL AMBULANCE SERVICE,Bedford,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1306826599,BENNETT VOLUNTEER AMBULANCE SERVICE,Bennett,IA,IA,Ambulance,municipal-fire-volunteer
+1891878757,BERNARD RESCUE UNIT INC,Bernard,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1457596405,BI COUNTY AMBULANCE,Dyersville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1144333998,BI-COUNTY AMBULANCE,Dyersville,IA,IA,Ambulance,municipal-fire-volunteer
+1770170425,BLAKESBURG COMMUNITY FIRE BOARD,Blakesburg,IA,IA,Ambulance,municipal-fire-volunteer
+1063441194,BLAKESBURG FIRE & RESCUE,Blakesburg,IA,IA,Ambulance,municipal-fire-volunteer
+1598910002,BUFFALO CENTER VOLUNTEER AMBULANCE,Buffalo Center,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1073566444,BUFFALO VOLUNTEER AMBULANCE SERVICE INC,Blue Grass,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1902835903,CAMP TWP-POLK COUNTY,Runnells,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1598770455,CARROLL COUNTY COUNTY AUDITOR,Carroll,IA,IA,Ambulance,municipal-fire-volunteer
+1497617807,CEDAR COUNTY,Tipton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1972583714,CENTRALIA PEOSTA COMMUNITY FIRE DEPARTMENT,Peosta,IA,IA,Ambulance,municipal-fire-volunteer
+1871659763,CITY OF ACKLEY,Ackley,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1346650777,CITY OF AKRON,Akron,IA,IA,Ambulance,municipal-fire-volunteer
+1790715969,CITY OF ALGONA,Algona,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1881741742,CITY OF ALLISON,Allison,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1548378664,CITY OF ALTOONA,Altoona,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1093999120,CITY OF ANITA,Anita,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1548239569,CITY OF ANITA VOLUNTEER FIRE DEPT,Anita,IA,IA,Ambulance,municipal-fire-volunteer
+1225006968,CITY OF ANKENY,Ankeny,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1669717237,CITY OF ARLINGTON,Arlington,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1720140734,CITY OF BANCROFT,Bancroft,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1003791427,CITY OF BAXTER,Baxter,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1376039040,CITY OF BENNETT,Bennett,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1649213752,CITY OF BLAIRSTOWN,Blairstown,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1356411318,CITY OF BOYDEN,Boyden,IA,IA,Ambulance,municipal-fire-volunteer
+1932281292,CITY OF BRONSON,Bronson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1467593129,CITY OF BURLINGTON,Burlington,IA,IA,Ambulance,municipal-fire-volunteer
+1073615274,CITY OF BUSSEY,Bussey,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1073764007,CITY OF CAMANCHE,Camanche,IA,IA,Ambulance,municipal-fire-volunteer
+1174568380,CITY OF CARLISLE,Carlisle,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1467514422,CITY OF CARSON,Carson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1902884885,CITY OF CARTER LAKE,Carter Lake,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1861969578,CITY OF CENTERVILLE,Centerville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1033110739,CITY OF CLARENCE,Clarence,IA,IA,Ambulance,municipal-fire-volunteer
+1215988431,CITY OF CLARION,Clarion,IA,IA,Ambulance,municipal-fire-volunteer
+1285720458,CITY OF CLARKSVILLE,Clarksville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1154342327,CITY OF CLEAR LAKE CITY CLERK,Clear Lake,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1649363201,CITY OF CLINTON,Clinton,IA,IA,Ambulance,municipal-fire-volunteer
+1366596736,CITY OF CLIVE,Clive,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1427040500,CITY OF COLFAX,Colfax,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1730261058,CITY OF CORRECTIONVILLE,Correctionville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1366428716,CITY OF COUNCIL BLUFFS,Council Bluffs,IA,IA,Ambulance,municipal-fire-volunteer
+1649312653,CITY OF CUMBERLAND,Cumberland,IA,IA,Ambulance,municipal-fire-volunteer
+1821145061,CITY OF CUSHING,Cushing,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1972656841,CITY OF DES MOINES IOWA,Des Moines,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1669529384,CITY OF DIKE,Dike,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1669482741,CITY OF DOWS,Dows,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1780636803,CITY OF DUBUQUE,Dubuque,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1588720874,CITY OF DUNKERTON,Dunkerton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1275535353,CITY OF DYSART,Dysart,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1093889644,CITY OF EAGLE GROVE,Eagle Grove,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1871655712,CITY OF EARLVILLE,Earlville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1518952670,CITY OF EDGEWOOD,Edgewood,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1093894388,CITY OF ELBERON,Elberon,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1659301828,CITY OF ELDORA,Eldora,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1699704734,CITY OF ELLSWORTH,Ellsworth,IA,IA,Ambulance,municipal-fire-volunteer
+1124172028,CITY OF ESSEX,Essex,IA,IA,Ambulance,municipal-fire-volunteer
+1376610576,CITY OF EVANSDALE,Evansdale,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1184653222,CITY OF EVERLY,Everly,IA,IA,Ambulance,municipal-fire-volunteer
+1376639542,CITY OF FENTON,Fenton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1932482973,CITY OF FORT DODGE,Fort Dodge,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1043848237,CITY OF FORT MADISON,Fort Madison,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1871202234,CITY OF GLENWOOD,Glenwood,IA,IA,Ambulance,municipal-fire-volunteer
+1427080662,CITY OF GRANGER,Granger,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1437276045,CITY OF GRIMES,Grimes,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1730861048,CITY OF GRINNELL,Grinnell,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1225106107,CITY OF GRISWOLD,Griswold,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1033265228,CITY OF GRUNDY CENTER,Grundy Center,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1811076441,CITY OF GUTHRIE CENTER,Guthrie Center,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1558442459,CITY OF HAWARDEN,Hawarden,IA,IA,Ambulance,municipal-fire-volunteer
+1699820597,CITY OF HIAWATHA,Hiawatha,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1649339169,CITY OF HOLSTEIN,Holstein,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1982074464,CITY OF HOPKINTON,Hopkinton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1245300151,CITY OF HUBBARD,Hubbard,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1679645873,CITY OF HUDSON,Hudson,IA,IA,Ambulance,municipal-fire-volunteer
+1962721324,CITY OF HUXLEY,Huxley,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1619947199,CITY OF INDIANOLA,Indianola,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1265998942,CITY OF IOWA FALLS,Iowa Falls,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1619033990,CITY OF JESUP,Jesup,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1518023811,CITY OF JEWELL,Jewell,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1942214218,CITY OF JOHNSTON,Johnston,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1215909411,CITY OF KELLOGG,Kellogg,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1528120334,CITY OF KINGSLEY,Kingsley,IA,IA,Ambulance,municipal-fire-volunteer
+1598840613,CITY OF KNOXVILLE,Knoxville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1033112669,CITY OF LA PORTE CITY,La Porte City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1316976244,CITY OF LAKOTA,Lakota,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1215093661,CITY OF LAURENS,Laurens,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1700953957,CITY OF LEMARS,Lemars,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1356383657,CITY OF LENOX,Lenox,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1780732859,CITY OF LOHRVILLE,Lohrville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1861553885,CITY OF MAPLETON,Mapleton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1578585931,CITY OF MASON CITY,Mason City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1982665634,CITY OF MECHANICSVILLE,Mechanicsville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1902979719,CITY OF MILO,Milo,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1891787818,CITY OF MONROE,Monroe,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1467548636,CITY OF MONTEZUMA,Montezuma,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1013044270,CITY OF MONTICELLO,Monticello,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1649247099,CITY OF MUSCATINE,Muscatine,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1275248692,CITY OF NASHUA,Nashua,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1649113341,CITY OF NEVADA IOWA,Nevada,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1629136304,CITY OF NEW HARTFORD,New Hartford,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1538161344,CITY OF NEWTON,Newton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1275578411,CITY OF NORWALK,Norwalk,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1063494052,CITY OF OLIN,Olin,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1255142253,CITY OF OTHO,Otho,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1528019049,CITY OF PACIFIC JUNCTION,Pacific Junction,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1538228499,CITY OF PANORA,Panora,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1427116524,CITY OF PARKERSBURG,Parkersburg,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1114096591,CITY OF PAULLINA,Paullina,IA,IA,Ambulance,municipal-fire-volunteer
+1750014981,CITY OF PELLA,Pella,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1538288832,CITY OF PERSIA,Persia,IA,IA,Ambulance,municipal-fire-volunteer
+1902958150,CITY OF PLEASANT HILL,Pleasant Hill,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1073673463,CITY OF POLK CITY,Polk City,IA,IA,Ambulance,municipal-fire-volunteer
+1003887316,CITY OF PRAIRIE CITY,Prairie City,IA,IA,Ambulance,municipal-fire-volunteer
+1689846248,CITY OF RADCLIFFE,Radcliffe,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1679565683,CITY OF REASNOR,Reasnor,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1063589232,CITY OF RED OAK,Red Oak,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1992842025,CITY OF REMSEN-REMSEN AMBULANCE,Remsen,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1205906088,CITY OF ROCK VALLEY,Rock Valley,IA,IA,Ambulance,municipal-fire-volunteer
+1447327630,CITY OF ROCKWELL CITY,Rockwell City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1619150216,CITY OF ROLFE,Rolfe,IA,IA,Ambulance,municipal-fire-volunteer
+1053458521,CITY OF SANBORN,Sanborn,IA,IA,Ambulance,municipal-fire-volunteer
+1033140272,CITY OF SERGEANT BLUFF,Sergeant Bluff,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1922187244,CITY OF SHELDON,Sheldon,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1710048020,CITY OF SHELL ROCK,Shell Rock,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1770643132,CITY OF SIOUX CENTER - CITY TREASURER,Sioux Center,IA,IA,Ambulance,municipal-fire-volunteer
+1669984324,CITY OF SIOUX CITY ACCOUNTING DIVISION,Sioux City,IA,IA,Ambulance,municipal-fire-volunteer
+1174673651,CITY OF STANWOOD,Stanwood,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1083770382,CITY OF STRATFORD,Stratford,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1558313668,CITY OF TABOR,Tabor,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1992721344,CITY OF TAMA,Tama,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1144290461,CITY OF TIPTON,Tipton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1508924515,CITY OF TITONKA,Titonka,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1255320420,CITY OF TRAER,Traer,IA,IA,Ambulance,municipal-fire-volunteer
+1801964101,CITY OF TRIPOLI,Tripoli,IA,IA,Ambulance,municipal-fire-volunteer
+1346402401,CITY OF TRURO,Truro,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1972501286,CITY OF URBANDALE,Urbandale,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1992829071,CITY OF UTE,Ute,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1255376554,CITY OF VILLISCA,Villisca,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1487127767,CITY OF WALLINGFORD,Wallingford,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1134199318,CITY OF WAPELLO,Wapello,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1811076565,CITY OF WATERLOO,Waterloo,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1174664957,CITY OF WAUKEE,Waukee,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1376643403,CITY OF WELLSBURG,Wellsburg,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1306826359,CITY OF WEST DES MOINES,West Des Moines,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1588705206,CITY OF WEST LIBERTY,West Liberty,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1396801619,CITY OF WHITTEMORE,Whittemore,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1013073337,CITY OF WILLIAMS IOWA,Williams,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1326610726,CITY OF WILTON,Wilton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1831224757,CITY OF WINDSOR HEIGHTS,Windsor Heights,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1720140635,CLAIRE FIRE & RESCUE AGENCY,Clare,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1437543147,COIN FIRE AND RESCUE,Coin,IA,IA,Ambulance,municipal-fire-volunteer
+1932277795,COMMUNITY AMBULANCE SERVICE FOR NORTHERN DES MOINES COUNTY,Mediapolis,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1821217951,COUNTY OF CALHOUN,Rockwell City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1528779030,COUNTY OF CHICKASAW,New Hampton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1780148932,COUNTY OF GREENE,Jefferson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1134539760,COUNTY OF IOWA,Marengo,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1851370134,COUNTY OF JOHNSON,Iowa City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1811683550,COUNTY OF KOSSUTH,Algona,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1346246253,COUNTY OF LYON,Rock Rapids,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1114914819,COUNTY OF MADISON,Winterset,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1437373156,COUNTY OF OSCEOLA,Sibley,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1003691916,COUNTY OF SCOTT,Davenport,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1033985585,COUNTY OF SHELBY,Harlan,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1164776076,COUNTY OF TAYLOR,Bedford,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1619507415,COUNTY OF WASHINGTON,Washington,IA,IA,Ambulance,municipal-fire-volunteer
+1932189867,DALLAS COUNTY IOWA,Perry,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1598902306,DEFIANCE VOLUNTEER FIRE AND RESCUE,Defiance,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1043638497,DELAWARE TOWNSHIP FIRE DEPARTMENT,Des Moines,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1487983219,"DOW CITY-ARION COMMUNITY FIRE DEPARTMENT, INC",Dow City,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1003051681,DUNLAP FIRE AND RESCUE,Dunlap,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1356582738,EARLING FIRE & RESCUE DEPARTMENT,Earling,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1194876938,EARLING FIRE & RESCUE DEPARTMENT,Earling,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1528095056,FARRAGUT FIRE & RESCUE ASSOCIATION,Farragut,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1184813990,FONDA CITY OF,Fonda,IA,IA,Ambulance,municipal-fire-volunteer
+1316062201,GARNER VOLUNTEER AMBULANCE SERVICE,Garner,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1548266208,GLENWOOD VOLUNTEER FIRE ASSOC INC,Glenwood,IA,IA,Ambulance,municipal-fire-volunteer
+1386677425,GRAND JUNCTION FIRE AND RESCUE UNIT INC,Grand Junction,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1013980309,"GREENE COUNTY EMERGENCY MEDICAL SERVICES, INC.",Jefferson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1063589554,GREENE VOLUNTEER AMBULANCE SERVICE,Greene,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1730130428,HAMBURG FIRE PROTECTION AGENCY,Hamburg,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1972570265,HARPERS FERRY RESCUE UNIT FUND,Harpers Ferry,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1770620619,HINTON FIRE RESCUE INC,Hinton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1396883393,HOLY CROSS & N BUENA VISTA FIRE DEPT INC,Holy Cross,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1790841088,IRETON COMMUNITY FIRE DEPARTMENT INC,Ireton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1871277905,JEFFERSON COUNTY,Fairfield,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1891855011,JEFFERSON COUNTY AREA AMBULANCE INC,Fairfield,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1013073311,KAMRAR VOLUNTEER FIRE AND RESCUE,Kamrar,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1588283881,"KEOKUK FIRE DEPARTMENT, CITY OF KEOKUK",Keokuk,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1073539375,KEY WEST FIRE AND EMS ASSOCIATION,Dubuque,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1437216405,KEY WEST FIRE DEPARTMENT,Dubuque,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1215783071,KIRON FIRE DEPARTMENT INCORPORATED,Kiron,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1023142932,LACONA FIRE AND RESCUE,Lacona,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1225633092,LEE COUNTY AUDITOR,Donnellson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1205931086,"LEE COUNTY EMS AMBULANCE, INC.",Donnellson,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1588614747,LEWIS TOWNSHIP TRUSTEES,Council Bluffs,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1285723163,"MALVERN VOLUNTEER RESCUE, INC.",Malvern,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1326013848,MENLO COMMUNITY FIRE ASSOCIATION,Menlo,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1942239884,MOVILLE AMBULANCE AND RESCUE SQUAD,Moville,IA,IA,Ambulance,municipal-fire-volunteer
+1477614774,NEW ALBIN VOLUNTEER FIRE DEPARTMENT,New Albin,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1144386806,NEW SHARON FIRE AND RESCUE ASSOCIATION INCORPORATED,New Sharon,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1083770309,NEWARK COLFAX TOWNSHIP FIRE BOARD,Vincent,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1255417101,"NORA SPRINGS VOLUNTEER AMBULANCE SERVICE, INC.",Nora Springs,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1659057982,NORTHWOOD VOLUNTEER FIRE COMPANY,Northwood,IA,IA,Ambulance,municipal-fire-volunteer
+1376582122,OXFORD JUNCTION FIRE DEPARTMENT,Oxford Junction,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1093765240,PERCIVAL VOLUNTEER FIREMEN INCORPORATED,Percival,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1730197401,PLEASANTVILLE FIRE RESCUE,Pleasantville,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1447050158,PORTSMOUTH FIRE DEPARTMENT FOUNDATION,Portsmouth,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1386728830,RINGSTED BENEFITTED FIRE DIST,Ringsted,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1720014517,RIVERTON VOLUNTEER FIRE AND RESCUE,Riverton,IA,IA,"Ambulance, Land Transport",municipal-fire-volunteer
+1477697506,1CITY OF BAYARD,Bayard,IA,IA,"Ambulance, Land Transport",private
+1689979015,ADVANCED MEDICAL TRANSPORT OF IOWA,Iowa City,IA,IA,Ambulance,private
+1295970689,ALLAMAKEE EMS ASSOCIATION,Waukon,IA,IA,"Ambulance, Land Transport",private
+1972585966,ANAMOSA AREA AMBULANCE SERVICE,Anamosa,IA,IA,"Ambulance, Land Transport",private
+1265567861,ANDOVER AMBULANCE SERVICE,Andover,IA,IA,Ambulance,private
+1093744195,ANTHON COMMUNITY AMBULANCE SERVICE INCORPORATED,Anthon,IA,IA,"Ambulance, Land Transport",private
+1447397005,ARLINGTON AREA AMBULANCE,Arlington,IA,IA,Ambulance,private
+1457440521,BATTLE CREEK COMMUNITY AMBULANCE,Battle Creek,IA,IA,"Ambulance, Land Transport",private
+1689898975,BELLE PLAINE AREA AMBULANCE SERVICE INC,Belle Plaine,IA,IA,Ambulance,private
+1013054089,BENTON-LINN AMBULANCE SERVICE INC,Palo,IA,IA,"Ambulance, Land Transport",private
+1720473812,"CARE AMBULANCE, LLC",Iowa City,IA,IA,Ambulance,private
+1740594118,CASCADE CITY,Cascade,IA,IA,"Ambulance, Land Transport",private
+1538154323,CENTER POINT AMBULANCE SERVICE INC,Center Point,IA,IA,"Ambulance, Land Transport",private
+1154463081,CHICKASAW AMBULANCE SERVICE INC,Fredericksburg,IA,IA,"Ambulance, Land Transport",private
+1174532246,COMMUNITY AMBULANCE SERVICE OF PRESTON IOWA,Preston,IA,IA,"Ambulance, Land Transport",private
+1457363483,DANBURY COMMUNITY AMBULANCE SERVICE,Danbury,IA,IA,"Ambulance, Land Transport",private
+1184989576,DENVER AMBULANCE SERVICE,Denver,IA,IA,"Ambulance, Land Transport",private
+1558396275,DENVER AMBULANCE SERVICE,Denver,IA,IA,"Ambulance, Land Transport",private
+1821167883,"DURANT AMBULANCE SERVICE, INC.",Durant,IA,IA,"Ambulance, Land Transport",private
+1780499129,EMS TEAM OF IOWA LLC,Des Moines,IA,IA,Ambulance,private
+1568527356,EPWORTH COMMUNITY FIREMEN,Epworth,IA,IA,"Ambulance, Land Transport",private
+1528848587,EVENT MEDICAL SERVICES AMBULANCE INC,Marshalltown,IA,IA,"Ambulance, Land Transport",private
+1740442458,"FARLEY EMERGENCY MEDICAL SERVICES, INC",Farley,IA,IA,"Ambulance, Land Transport",private
+1063574945,FARNHAMVILLE EMS,Farnhamville,IA,IA,"Ambulance, Land Transport",private
+1528119195,FOREST CITY AMBULANCE SERVICE,Forest City,IA,IA,"Ambulance, Land Transport",private
+1417390832,FRASER TRANSPORTATION INC,Iowa City,IA,IA,"Ambulance, Land Transport",private
+1710047691,"FRASER TRANSPORTATION SERVICES, LLC",Des Moines,IA,IA,"Ambulance, Land Transport",private
+1952467391,GILMORE CITY INC,Gilmore City,IA,IA,"Ambulance, Land Transport",private
+1083556617,GUARDIAN OF LIFE LLC,Grinnell,IA,IA,"Ambulance, Land Transport",private
+1780843532,HEARTLAND EMS SYSTEM,Dubuque,IA,IA,Ambulance,private
+1205885712,"HEARTLAND EMS, INC.",Wautoma,WI,IA,"Ambulance, Land Transport",private
+1396487229,HEARTLAND MEDICAL TRANSPORT LLC,Ottumwa,IA,IA,"Ambulance, Land Transport",private
+1396787529,IDA GROVE AMBULANCE SERVICE,Ida Grove,IA,IA,"Ambulance, Land Transport",private
+1598768012,LAKE MILLS AMBULANCE SERVICE,Lake Mills,IA,IA,"Ambulance, Land Transport",private
+1568514362,LAKES REGIONAL HEALTHCARE,Spirit Lake,IA,IA,Ambulance,private
+1164583365,"LANSING EMERGENCY MEDICAL SERVICES, INC.",Lansing,IA,IA,"Ambulance, Land Transport",private
+1417968843,LAWTON AMBULANCE,Lawton,IA,IA,Ambulance,private
+1447239322,LISBON - MT VERNON AMBULANCE SERVICE,Mount Vernon,IA,IA,Ambulance,private
+1922745215,LITTLE ROCK EMERGENCY MEDICAL SERVICE,Little Rock,IA,IA,"Ambulance, Land Transport",private
+1750374583,LOREN J. VOS TREAS,Sully,IA,IA,"Ambulance, Land Transport",private
+1164459053,"M-F-L AMBULANCE SERVICE, INC.",Monona,IA,IA,"Ambulance, Land Transport",private
+1003861154,MAR-MAC EMERGENCY SQUAD INC,Mcgregor,IA,IA,"Ambulance, Land Transport",private
+1801861950,MEDIC EMS,Davenport,IA,IA,"Ambulance, Land Transport",private
+1215934849,MEDIVAC CORP,Harlan,IA,IA,"Ambulance, Land Transport",private
+1891099768,MELCHER DALLAS EMERGENCY RESPONSE ASSOCIATION,Melcher,IA,IA,Ambulance,private
+1700814167,MELCHER-DALLAS,Melcher,IA,IA,Ambulance,private
+1366424418,MIDLAND AMBULANCE SERVICE,Wyoming,IA,IA,"Ambulance, Land Transport",private
+1487700035,MIDWEST AMBULANCE SERVICE OF IOWA INC,Grinnell,IA,IA,"Ambulance, Land Transport",private
+1225184864,MIDWEST AMBULANCE SERVICE OF IOWA INC,Des Moines,IA,IA,"Ambulance, Land Transport",private
+1235202284,MORNING SUN COMMUNITY AMBULANCE SERVICE,Morning Sun,IA,IA,"Ambulance, Land Transport",private
+1508064841,MOULTON FIRST RESPONDERS & VOLUNTEERS AMBULANCE SERVICE,Moulton,IA,IA,"Ambulance, Land Transport",private
+1134158082,NEWELL AMBULANCE SERVICE,Newell,IA,IA,Ambulance,private
+1427236819,NORTH BENTON AMBULANCE SERVICE,Vinton,IA,IA,"Ambulance, Land Transport",private
+1457438251,"NORTH BENTON AMBULANCE SERVICE, INC.",Vinton,IA,IA,Ambulance,private
+1922247949,"NORTHEAST IOWA EMS, INC.",New Hampton,IA,IA,"Ambulance, Land Transport",private
+1285693861,"NORTHEAST IOWA MEDICAL TRANSPORT, INC.",West Union,IA,IA,"Ambulance, Land Transport",private
+1285784710,NORTHEAST LINN AMBULANCE SERVICE INC.,Central City,IA,IA,"Ambulance, Land Transport",private
+1720017684,OTO COMMUNITY AMBULANCE SERVICE,Oto,IA,IA,"Ambulance, Land Transport",private
+1275581837,"OUTWARD MOBILITY MEDICAL TRANSPORTATION SERVICES, INC.",Dunlap,IA,IA,"Ambulance, Land Transport",private
+1982683181,PARAMOUNT EMERGENCY MEDICAL SERVICE INC,Dubuque,IA,IA,"Ambulance, Land Transport",private
+1861470874,PELLA COMMUNITY AMBULANCE SERVICE,Pella,IA,IA,"Ambulance, Land Transport",private
+1932574936,"PLACER MANAGED CARE, LLC",Waterloo,IA,IA,Durable Medical Equipment & Medical Supplies,private
+1184780488,POMEROY AMBULANCE SERVICE,Pomeroy,IA,IA,"Ambulance, Land Transport",private
+1932278967,PRIMGHAR,Primghar,IA,IA,"Ambulance, Land Transport",private
+1538487160,RCHP OTTUMWA LLC,Ottumwa,IA,IA,Ambulance,private
+1013038751,REIFF AMBULANCE SERVICE,Cascade,IA,IA,Ambulance,private
+1295997906,REIFF AMBULANCE SERVICE LTD,Cascade,IA,IA,Ambulance,private
+1801283965,REINBECK FIREMEN INC,Reinbeck,IA,IA,"Ambulance, Land Transport",private
+1104950963,"RICEVILLE AMBULANCE SERVICE, INC.",Riceville,IA,IA,Ambulance,private
+1487780680,ROBERT LIBBY,Iowa City,IA,IA,"Ambulance, Land Transport",private
+1205335296,"AIRMED INTERNATIONAL, LLC",Scottsbluff,NE,NE,"Ambulance, Air Transport",air
+1770888422,"APOLLO MEDFLIGHT, LLC",Amarillo,TX,NE,"Ambulance, Air Transport",air
+1578102547,"APOLLO MEDFLIGHT, LLC",Kearney,NE,NE,"Ambulance, Air Transport",air
+1831044759,CHILDREN'S HOSPITAL & MEDICAL CENTER,Omaha,NE,NE,"Ambulance, Air Transport",air
+1144634445,"DALE AVIATION, INC",Valentine,NE,NE,"Ambulance, Air Transport",air
+1306196431,EAGLEMED LLC,Scottsbluff,NE,NE,"Ambulance, Land Transport",air
+1467700500,EAGLEMED LLC,Scottsbluff,NE,NE,"Ambulance, Air Transport",air
+1639652514,GUARDIAN FLIGHT LLC,Scottsbluff,NE,NE,"Ambulance, Air Transport",air
+1194963918,MED-TRANS CORPORATION,Scottsbluff,NE,NE,"Ambulance, Air Transport",air
+1346297843,CHILDREN'S HOSPITAL & MEDICAL CENTER,Omaha,NE,NE,"General Acute Care Hospital, Children",hospital-owned
+1881643484,"COMMUNITY MEDICAL CENTER, INC.",Falls City,NE,NE,"General Acute Care Hospital, Critical Access",hospital-owned
+1336184019,GOOD SAMARITAN HOSPITAL,Kearney,NE,NE,General Acute Care Hospital,hospital-owned
+1487429106,JOHNSON COUNTY HOSPITAL,Tecumseh,NE,NE,Ambulance,hospital-owned
+1730448606,PAWNEE COUNTY MEMORIAL HOSPITAL,Pawnee City,NE,NE,Ambulance,hospital-owned
+1578625000,ADAMS RESCUE SQUAD,Adams,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730141813,ALBION FIRE DEPARTMENT,Albion,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1235291832,ALLIANCE RURAL FIRE PROTECTION DISTRICT,Alliance,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1538674759,ALMA RURAL FIRE PROTECTION DISTRICT,Alma,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1164584199,ALMA VOL FIRE DEPT,Alma,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1164698890,ALMA VOLUNTEER FIRE DEPT,Alma,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508162892,ALVO RESCUE SQUAD,Alvo,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1851467989,ALVO RESCUE SQUAD,Alvo,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1861497752,ANSLEY RURAL FIRE PROTECTION DIST 1,Ansley,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932423969,ARCADIA FIRE & RESCUE,Arcadia,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1811978588,ARLINGTON RURAL FIRE DISTRICT,Arlington,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1841295094,ARNOLD RURAL FIRE DISTRICT,Arnold,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1497029508,ARTHUR RURAL FIRE PROTECTION DISTRICT,Arthur,NE,NE,Ambulance,municipal-fire-volunteer
+1518916055,ASHLAND RESCUE SQUAD,Ashland,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1396814729,ATKINSON RURAL FIRE PROTECTION DISTRICT,Atkinson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1952712119,AUBURN RESCUE SQUAD,Auburn,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407335052,AUDUBON FIRE AND RESCUE ASSOCIATION INCORPORATED,Audubon,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1629155403,AXTELL RURAL FIRE DEPARTMENT NO 4,Axtell,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1093892879,BANCROFT RURAL FIRE DISTRICT,Bancroft,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1386781243,BEAVER VALLEY RURAL FIRE PROTECTION DISTRICT,Danbury,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407928914,BEAVER VALLEY RURAL FIRE PROTECTION DISTRICT,Danbury,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1215016787,BELLWOOD RURAL FIRE DIST 5,Bellwood,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1154029965,BENNET RURAL FIRE DISTRICT,Bennet,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1811290166,BENNINGTON SUBURBAN FIRE PROTECTION DISTRICT 7,Bennington,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1871657791,BENNINGTON VOLUNTEER FIRE,Bennington,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1821601295,BERTRAND RURAL FIRE PROTECTION DISTRICT 2,Bertrand,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1447863519,BERTRAND RURAL FIRE PROTECTION DISTRICT 2,Bertrand,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1073030482,BIG SPRINGS FIRE DISTRICT,Big Springs,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1659773240,BISMARCK COMMUNITY FIRE PROTECTION DISTRICT,Bismarck,IL,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912902818,BLAINE COUNTY RESCUE SQUAD,Brewster,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1164565008,BLAIR RESCUE SQUAD,Blair,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1871101782,BOULDER RURAL FIRE PROTECTION DISTRICT,Boulder,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1023193976,BRADY VOLUNTEER FIRE DEPARTMENT,Brady,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1962463117,BRAINARD FIRE DEPARTMENT,Brainard,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508056151,BROWN COUNTY AMBULANCE SERVICE,Ainsworth,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1114954369,BURR RESCUE INC,Burr,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1902845084,BURWELL RURAL FIRE DISTRICT,Burwell,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1477558625,CALLAWAY VOLUNTEER FIRE & RESCUE DEPARTMENT,Callaway,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1336271873,CAMPBELL RURAL FIRE PROTECTION DISTRICT,Campbell,NE,NE,Ambulance,municipal-fire-volunteer
+1952346777,CEDAR BLUFFS SUBURBAN FIRE DISTRICT 7,Cedar Bluffs,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1104916634,CERESCO RURAL FIRE PROTECTION DISTRICT NO 5,Ceresco,NE,NE,Ambulance,municipal-fire-volunteer
+1538581202,CHADRON VOLUNTEER FIRE DEPARTMENT,Chadron,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932190576,CHAMBERS RURAL FIRE DISTRICT,Chambers,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1003043951,CITY OF ALLEN,Allen,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1245356377,CITY OF ALLIANCE,Alliance,NE,NE,Ambulance,municipal-fire-volunteer
+1730380924,CITY OF ARAPAHOE,Arapahoe,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1417033473,CITY OF ARGONIA,Argonia,KS,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1578834222,CITY OF ASHLAND,Ashland,NE,NE,Ambulance,municipal-fire-volunteer
+1679030480,CITY OF AUDUBON,Audubon,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1689232209,CITY OF AURORA,Aurora,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1972711919,CITY OF BATTLE CREEK,Battle Creek,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1073526398,CITY OF BAYARD,Bayard,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1649203720,CITY OF BEATRICE,Beatrice,NE,NE,Ambulance,municipal-fire-volunteer
+1548215809,CITY OF BEAVER CITY,Beaver City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1750311742,CITY OF BELLE PLAINE,Belle Plaine,KS,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1154584639,CITY OF BELLEVUE,Bellevue,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1679717482,CITY OF BLAIR,Blair,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1093784399,CITY OF BRIDGEPORT,Bridgeport,NE,NE,Ambulance,municipal-fire-volunteer
+1710956248,CITY OF BROKEN BOW,Broken Bow,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1972548170,CITY OF CAMBRIDGE,Cambridge,NE,NE,Ambulance,municipal-fire-volunteer
+1225172828,CITY OF CEDAR RAPIDS,Cedar Rapids,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1811986045,CITY OF CENTRAL CITY,Central City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1619459476,CITY OF CHADRON,Chadron,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295704880,CITY OF CHAPPELL,Chappell,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1205035847,CITY OF CLARKSON,Clarkson,NE,NE,Ambulance,municipal-fire-volunteer
+1336379395,CITY OF CLAY CENTER,Clay Center,NE,NE,Ambulance,municipal-fire-volunteer
+1871554204,CITY OF COLUMBUS,Columbus,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598847105,CITY OF COZAD,Cozad,NE,NE,Ambulance,municipal-fire-volunteer
+1659335362,CITY OF CRAWFORD,Crawford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1376690453,CITY OF CREIGHTON,Creighton,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1194738179,CITY OF CRETE,Crete,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1891122388,CITY OF CUMBERLAND,Cumberland,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1972502490,CITY OF DODGE,Dodge,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1386729986,CITY OF EDGAR,Edgar,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1700751047,CITY OF ELGIN,Elgin,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295773810,CITY OF ELGIN,Elgin,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1306802327,CITY OF ELK HORN,Elkhorn,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1922154525,CITY OF EXETER,Exeter,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1801937040,CITY OF FAIRBANK,Fairbank,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1205052917,CITY OF FARNAM,Farnam,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1649205469,CITY OF FAYETTE,Fayette,IA,NE,Ambulance,municipal-fire-volunteer
+1205825981,CITY OF FREMONT,Fremont,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1437254349,CITY OF FRIEND,Friend,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1891947503,CITY OF FULLERTON,Fullerton,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1942410360,CITY OF GENEVA,Geneva,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1487621561,CITY OF GENOA,Genoa,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1306855127,CITY OF GORDON OFFICE OF COMPTROLLER,Gordon,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730145731,CITY OF GOTHENBURG,Gothenburg,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1093748212,CITY OF GRAND ISLAND,Grand Island,NE,NE,Ambulance,municipal-fire-volunteer
+1528247939,CITY OF GREELEY,Greeley,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912929175,CITY OF GRETNA,Gretna,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407823396,CITY OF HARTINGTON,Hartington,NE,NE,Ambulance,municipal-fire-volunteer
+1710069315,CITY OF HARTLEY,Hartley,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1164550810,CITY OF HARVARD,Harvard,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1770853145,CITY OF HASTINGS,Hastings,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225041486,CITY OF HEBRON,Hebron,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225387111,CITY OF HENDERSON,Henderson,NE,NE,Ambulance,municipal-fire-volunteer
+1174559496,CITY OF HOLDREGE,Holdrege,NE,NE,Ambulance,municipal-fire-volunteer
+1134299076,CITY OF HUMBOLDT,Humboldt,NE,NE,Ambulance,municipal-fire-volunteer
+1164646519,CITY OF INDIANOLA,Indianola,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1831181122,CITY OF JAL GENERAL FUND,Jal,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134371040,CITY OF KENESAW,Kenesaw,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1194885483,CITY OF LAKE CITY,Lake City,MN,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1043363559,CITY OF LAUREL,Laurel,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1790701985,CITY OF LAVISTA,La Vista,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730220872,CITY OF LEXINGTON,Lexington,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1477588101,"CITY OF LINCOLN, NEBRASKA",Lincoln,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912084641,CITY OF MADISON,Madison,NE,NE,Ambulance,municipal-fire-volunteer
+1538196928,CITY OF MARTENSDALE,Martensdale,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1093856148,CITY OF MCCOOK,Mccook,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1861779720,CITY OF MEADOW GROVE,Meadow Grove,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1063604148,CITY OF MERRILL,Merrill,IA,NE,Ambulance,municipal-fire-volunteer
+1841156973,CITY OF MILFORD,Milford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1790875813,CITY OF MINDEN - OFFICE OF COMPTROLLER,Minden,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508154519,CITY OF MISSOURI VALLEY,Missouri Valley,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1669449781,CITY OF MITCHELL,Mitchell,NE,NE,Ambulance,municipal-fire-volunteer
+1306284682,CITY OF MORIARTY,Moriarty,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1194979831,CITY OF NEBRASKA CITY,Nebraska City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912025032,CITY OF NELSON,Nelson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1629433271,CITY OF NEOLA,Neols,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407583115,CITY OF NEWMAN GROVE,Newman Grove,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730183369,CITY OF NORFOLK,Norfolk,NE,NE,Ambulance,municipal-fire-volunteer
+1265583892,CITY OF NORTH PLATTE,North Platte,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1871590315,CITY OF O'NEILL,Oneill,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1992719215,CITY OF OAKLAND,Oakland,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1497824841,CITY OF OAKLAND,Oakland,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1780737205,CITY OF OGALLALA,Ogallala,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083798912,CITY OF OMAHA,Omaha,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1326148628,CITY OF OSCEOLA,Osceola,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1962035485,CITY OF OSCEOLA,Osceola,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083751176,CITY OF PAGE,Page,AZ,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1154329340,CITY OF PAPILLION,Papillion,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1699978312,CITY OF PERU,Peru,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1821027095,CITY OF PIERCE,Pierce,NE,NE,"Emergency Medical Technician, Basic",municipal-fire-volunteer
+1821149535,CITY OF PINE BLUFFS,Pine Bluffs,WY,NE,Ambulance,municipal-fire-volunteer
+1982664215,CITY OF PLATTSMOUTH,Plattsmouth,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508826538,CITY OF PONCA,Ponca,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1528184249,CITY OF RANDOLPH,Randolph,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083676860,CITY OF RAVENNA,Ravenna,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1952489320,CITY OF RUSHVILLE,Rushville,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1356457212,CITY OF SAINT PAUL,Saint Paul,NE,NE,Ambulance,municipal-fire-volunteer
+1457465981,CITY OF SCHUYLER,Schuyler,NE,NE,Ambulance,municipal-fire-volunteer
+1831164771,CITY OF SCRIBNER,Scribner,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598495483,CITY OF SEWARD,Seward,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1245410794,CITY OF SOUTH SIOUX CITY NEBR,South Sioux City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1033262498,CITY OF SPALDING,Spalding,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295481000,CITY OF ST. CHARLES,Saint Charles,IA,NE,Ambulance,municipal-fire-volunteer
+1730367236,CITY OF STANTON,Stanton,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1124081310,CITY OF STROMSBURG,Stromsburg,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1871713347,CITY OF SUPERIOR,Superior,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1285899609,CITY OF SUTTON,Sutton,NE,NE,Ambulance,municipal-fire-volunteer
+1316985997,CITY OF SYCAMORE DEKALB COUNTY ILLINOIS,Sycamore,IL,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1447456249,CITY OF SYRACUSE,Syracuse,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1699814541,CITY OF TILDEN,Tilden,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1679722664,CITY OF TUCKERMAN RECORDER TREASURER,Tuckerman,AR,NE,Ambulance,municipal-fire-volunteer
+1003920919,CITY OF UNDERWOOD,Underwood,IA,NE,Ambulance,municipal-fire-volunteer
+1477542645,CITY OF WAHOO,Wahoo,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598848558,CITY OF WAKEFIELD,Wakefield,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1326048786,CITY OF WALNUT,Walnut,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1477699445,CITY OF WAVERLY,Waverly,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1720159254,CITY OF WEEPING WATER,Weeping Water,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1346348752,CITY OF WEST POINT,West Point,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134269590,CITY OF WHITING,Whiting,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1821287582,CITY OF WILBER,Wilber,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1629139662,CITY OF WISNER CITY CLERK TREAS,Wisner,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1447211834,CITY OF WOOD RIVER,Wood River,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1881134286,CITY OF WYMORE,Wymore,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1982810339,CITY OF YORK,York,NE,NE,Ambulance,municipal-fire-volunteer
+1134177819,CLAY TOWNSHIP FIRE DEPARTMENT FIREFIGHTER,Tracy,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1316502826,COIN FIRE AND RESCUE,Coin,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730184631,COMSTOCK RURAL FIRE DEPARTMENT AMBULANCE,Comstock,NE,NE,Ambulance,municipal-fire-volunteer
+1659349546,COUNTY OF BANNER,Harrisburg,NE,NE,Ambulance,municipal-fire-volunteer
+1548276264,COUNTY OF BOONE,Albion,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1326265166,COUNTY OF BOYD,Butte,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225030422,COUNTY OF CHASE,Imperial,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730352659,COUNTY OF DUNDY,Benkelman,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225011877,COUNTY OF GOSPER,Elwood,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1720568074,COUNTY OF HARDING,Amistad,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1376594929,COUNTY OF JEFFERSON,Fairbury,NE,NE,Ambulance,municipal-fire-volunteer
+1952397275,COUNTY OF JOHNSON,Tecumseh,NE,NE,Ambulance,municipal-fire-volunteer
+1619296043,COUNTY OF LOUP,Taylor,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1619912045,COUNTY OF PERKINS,Grant,NE,NE,Ambulance,municipal-fire-volunteer
+1093034928,COUNTY OF ROOSEVELT,Portales,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1346561701,COUNTY OF ROOSEVELT,Milnesand,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1346382363,COUNTY OF SAC,Sac City,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1891100137,COUNTY OF UNION,Folsom,NM,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225190051,COUNTY OF WEBSTER COUNTY CLERK,Red Cloud,NE,NE,Ambulance,municipal-fire-volunteer
+1407846223,CRAIG RURAL FIRE DISTRICT,Craig,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932916996,CRAWFORD RURAL FIRE DISTRICT 4,Crawford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1871958462,CROFTON COMMUNITY FIRE PROTECTION DIST,Crofton,NE,NE,Ambulance,municipal-fire-volunteer
+1992676662,CROFTON COMMUNITY FIRE PROTECTION DISTRICT5,Crofton,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1609869304,CROFTON VOLUNTEER AMBULANCE,Crofton,NE,NE,Ambulance,municipal-fire-volunteer
+1487616389,CULBERTSON RESCUE SQUAD,Culbertson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407845274,"DAKOTA CITY VOLUNTEER FIRE DEPARTMENT INC. OF DAKOTA CITY, NEBRASKA",Dakota City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1649546326,DANNEBROG-BOELUS RESCUE SQUAD,Dannebrog,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1396957759,DAVID CITY VOLUNTEER FIRE DEPARTMENT &RESCUE SQUAD,David City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1306033261,DAYKIN RURAL FIRE PROTECTION DISTRICT,Daykin,NE,NE,Ambulance,municipal-fire-volunteer
+1669461653,DECATUR RURAL FIRE DEPT.,Decatur,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1780730382,DESHLER VOLUNTEER FIRE DEPARTMENT,Deshler,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1518009349,DEWEY COUNTY AMBULANCE SERVICE,Isabel,SD,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912025446,DILLER RURAL FIRE AND AMBULANCE,Diller,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134927270,DIXON RURAL FIRE DISTRICT,Dixon,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1578091948,DODDRIDGE COUNTY COMMISSION,West Union,WV,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1952897225,DOVE CREEK AMBULANCE DISTRICT,Dove Creek,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1144362203,DOVE CREEK VOLUNTEER AMBULANCE SERVICE INC.,Dove Creek,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598512022,DUNCAN RURAL FIRE,Duncan,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295948990,DWIGHT VOLUNTEER FIRE DEPT,Dwight,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1265519011,EAGLE VOLUNTEER FIRE DEPARTMENT,Eagle,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1720948797,EDEN-FARSON FIRE CONTROL DISTRICT,Farson,WY,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1619003662,EDGAR VOLUNTEER FIRE DEPT,Edgar,WI,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134428725,ELBA RURAL FIRE DISTRICT,Elba,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1457555484,ELBERT FIRE PROTECTION DISTRICT,Elbert,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1043326291,ELK HORN RESCUE,Elk Horn,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932306552,ELM CREEK RURAL FIRE PROTECTION DISTRICT NO 7,Elm Creek,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1639453947,ELM CREEK RURAL FIRE PROTECTION DISTRICT NO 7,Elm Creek,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1811959745,ELMWOOD RURAL FIRE DISTRICT,Elmwood,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1770579856,EMERSON RURAL FIRE DISTRICT,Emerson,NE,NE,Ambulance,municipal-fire-volunteer
+1841325198,EUSTIS RESCUE SQUAD,Eustis,NE,NE,Ambulance,municipal-fire-volunteer
+1063810224,EWING RURAL FIRE DISTRICT 5,Ewing,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1790213478,EXIRA FIRE & EMS ASSOCIATION INCORPORATED,Exira,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1437476579,FAIRFIELD RURAL FIRE PROTECTION DISTRICT,Fairfield,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508017583,FAIRFIELD RURAL FIRE PROTECTION DISTRICT,Fairfield,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1033292032,FALLS CITY VOLUNTEER AMBULANCE SQUAD,Falls City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134132863,FIRE PROTECTION DISTRICT 4,Potter,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1659081479,FIRTH RURAL FIRE PROTECTION DISTRICT,Firth,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1760801864,FRANKLIN RURAL FIRE PROTECTION DISTRICT,Franklin,NE,NE,Ambulance,municipal-fire-volunteer
+1821421553,FRANKLIN RURAL FIRE PROTECTION DISTRICT,Franklin,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1508858762,FRANKLIN RURAL FIRE PROTECTION DISTRICT,Franklin,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225212053,FRONTIER COUNTY AMBULANCE SERVICE,Curtis,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1689649949,FT CALHOUN FIRE & RESCUE DEPARTMENT,Fort Calhoun,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1306909304,GATEWAY UNAWEEP FIRE DEPARTMENT INC,Gateway,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295537330,GENOA RESCUE DEPARTMENT,Genoa,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1265733042,GIBBON VOULENTEER FIRE DEPARTMENT,Gibbon,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1700896651,GLENVIL FIRE AND RESCUE,Glenvil,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1265238596,GOSPER COUNTY RURAL FIRE DISTRICT,Elwood,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1700297306,GRAFTON RURAL FIRE DISTRICT,Grafton,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1912229501,GRANT COUNTY RESCUE SERVICES INC,Hyannis,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1184865586,GRANT COUNTY RESCUE SERVICES INC,Hyannis,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1255061784,GREATER BRIGHTON FIRE PROTECTION DISTRICT,Brighton,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1063711570,GREELEY FIRE DISTRICT NO 2,Greeley,NE,NE,Ambulance,municipal-fire-volunteer
+1891775771,GREENWOOD VOLUNTEER RESCUE SQUAD,Greenwood,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1225804768,GRETNA SUBURBAN FIRE PROTECTION DISTRICT,Gretna,NE,NE,Ambulance,municipal-fire-volunteer
+1225309115,GRETNA VOLUNTEER FIRE AND RESCUE DEPARTMENT,Gretna,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407023716,GRETNA VOLUNTEER FIRE DEPARTMENT INCORPORATED,Gretna,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932362225,HADAR RURAL FIRE PROTECTION,Hadar,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1366983108,HALLAM RURAL FIRE PROTECTION DISTRICT,Hallam,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1205208311,HALLAM RURAL FIRE PROTECTION DISTRICT,Hallam,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1568475150,HALLAM VOLUNTEER FIRE DEPARTMENT,Hallam,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083618482,HAMILTON COUNTY,Aurora,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1023455193,HAWK SPRINGS VOLUNTEER FIREMEN,Hawk Springs,WY,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295675338,HAY SPRINGS VOLUNTEER FIRE DEPARTMENT,Hay Springs,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1548239825,HAYES CENTER FIRE DEPARTMENT,Hayes Center,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1346345634,HEMINGFORD RURAL FIRE PROTECTION DISTRICT,Hemingford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1437929296,HEMINGFORD VOLUNTEER FIREFIGHTERS,Hemingford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1275595357,HERMAN RESCUE SQUAD,Herman,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1760014070,HICKMAN RURAL FIRE PROTECTION DISTRICT,Hickman,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1649638693,HILDRETH RURAL FIRE DISTRICT,Hildreth,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1518447051,HOLSTEIN RURAL FIRE PROTECTION DIST,Holstein,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1205133758,HOMER RURAL FIRE PROTECTION,Homer,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134265366,HOMER VOLUNTEER FIRE DEPARTMENT,Homer,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1184601064,HOOPER RURAL FIRE DIST 2,Hooper,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1316916620,HOSKINS FIRE DEPARTMENT,Hoskins,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1033127105,HOWELLS RURAL FIRE PROTECTION DISTRICT,Howells,NE,NE,Ambulance,municipal-fire-volunteer
+1437040243,HUDSON FIRE PROTECTION DISTRICT,Hudson,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1417909607,HUMPHREY VOLUNTEER FIRE DEPARTMENT,Humphrey,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1992466700,INDIANA TOWNSHIP FIRE DEPARTMENT,Knoxville,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407192404,INTER CITY FIRE PROTECTION DISTRICT,Blue Summit,MO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1780661884,IRVINGTON VOLUNTEER FIRE DEPARTMENT INCORPORATED,Omaha,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1497071708,ISABEL-DEWEY COUNTY AMBULANCE SERVICE,Isabel,SD,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1073812178,JOHNSON RESCUE SQUAD INC,Johnson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1275675365,KENNARD VOLUNTEER FIRE RESCUE SQUAD,Kennard,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1639772999,LANDS END FIRE PROTECTION DISTRICT,Whitewater,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1407021553,LAONA RESCUE UNIT INC.,Laona,WI,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1346380409,LAWRENCE RURAL FIRE DIST.,Lawrence,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1477185858,LEGRAND TOWNSHIP,Le Grand,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1922332808,LEWIS TOWNSHIP FIRE AND RESCUE,Council Bluffs,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1114490745,LIMON AREA FIRE PROTECTION DISTRICT,Limon,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1861786709,LINDSAY VOL FIRE & RESCUE DEPT,Lindsay,NE,NE,Ambulance,municipal-fire-volunteer
+1730296245,LOGAN VOLUNTEER FIRE & RESCUE ASSOCIATION,Logan,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1962619700,LOOMIS RURAL FIRE DISTRICT 4,Loomis,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1093697567,LYMAN KIOWA FIRE PROTECTION DISTRICT,Lyman,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1245334812,LYNCH AREA FIRE PROTECTION DISTRICT,Danville,IL,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1417020231,LYONS FIRE DISTRICT,Lyons,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1366873572,MALCOLM RURAL FIRE PROTECTION DISTRICT,Malcolm,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1255652756,MASON CITY RESCUE SERVICE,Mason City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1730955295,MCPHERSON COUNTY RURAL FIRE DISTRICT,Tryon,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1790752855,MEAD RURAL FIRE PROTECTION DIST,Mead,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1124484407,MILLER RURAL FIRE DISTRICT,Sumner,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1891763793,MINATURE VOLUNTEER FIRE DEPARTMENT,Minatare,NE,NE,Ambulance,municipal-fire-volunteer
+1760553366,MISSOURI VALLEY VOLUNTEER FIRE DEPARTMENT,Missouri Valley,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1467158758,MONDAMIN FIRE-RESCUE INC,Mondamin,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1053623389,MONROE RURAL FIRE PROTECTION DISTRICT NO 9,Monroe,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1235479346,MULLEN RURAL FIRE PROTECTION,Mullen,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1134240997,MURRAY RURAL FIRE DISTRICT,Murray,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1194788349,NAPER RURAL FIRE DISTRICT,Naper,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1376589341,NEBRASKA CITY RESCUE SERVICE,Nebraska City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1609811777,NEMAHA RESCUE TEAM,Nemaha,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1669460689,NEOLA FIRE & RESCUE FUND RAISERS INC,Neola,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083702575,NEWCASTLE VOLUNTEER FIRE DEPARTMENT,Newcastle,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598602096,NEWMAN GROVE RURAL FIRE DISTRICT 7,Newman Grove,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1033285556,NICKERSON RURAL FIRE DISTRICT,Nickerson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1629911441,NICKERSON VOLUNTEER FIRE DEPARTMENT,Nickerson,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1568475622,NIOBRARA RURAL FIRE DISTRICT,Niobrara,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1194865808,NORTH BEND FIRE DEPARTMENT,North Bend,NE,NE,Ambulance,municipal-fire-volunteer
+1720220999,NORTH BEND RURAL FIRE PROTECTION,North Bend,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1881680197,NORTH ROUTT FIRE PROTECTION DISTRICT,Clark,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1588267843,NORTH ROUTT FIRE PROTECTION DISTRICT,Clark,CO,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1265574339,NORTHERN WARREN FIRE AND EMERGENCY,Norwalk,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932342631,OAKLAND FIRE DISTRICT DISTRICT,Oakland,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1619339066,OCONTO RURAL FIRE DISTRICT,Oconto,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1639848633,OMAHA TRIBE OF NEBRASKA,Walthill,NE,NE,Clinic/Center,municipal-fire-volunteer
+1679092373,OMAHA TRIBE OF NEBRASKA,Macy,NE,NE,Ambulance,municipal-fire-volunteer
+1851433692,ONG RURAL VOLUNTEER FIRE,Ong,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1265494348,ORCHARD VOLUNTEER FIRE AND RESCUE,Orchard,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1659333490,ORD VOLUNTEER FIRE DEPARTMENT,Ord,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1932215365,ORFORDVILLE FIRE PROTECTION DISTRICT,Orfordville,WI,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1609581768,ORLEANS RURAL FIRE DISTRICT,Orleans,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1770990616,OSAGE VOLUNTEER FIRE DEPARTMENT,Osage,WY,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1033251194,OSMOND RURAL FIRE PROTECTION DISTRICT,Osmond,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1306553920,OXFORD RURAL FIRE DEPT,Oxford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1295516029,OXFORD RURAL FIRE DISTRICT,Oxford,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1831454081,OYENS FIRE DEPARTMENT,Oyens,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1558414912,PALISADE FIRE DEPARTMENT,Palisade,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1083985188,PALISADE FIRE DEPARTMENT,Palisade,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1538318613,PALMER RESCUE SQUAD,Palmer,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1598774523,PALMYRA RESCUE SERVICE,Palmyra,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1861529422,"PAWNEE COUNTY AMBULANCE, INC.",Pawnee City,NE,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1053440875,PERCIVAL VOLUNTEER FIREMENT INC.,Percival,IA,NE,"Ambulance, Land Transport",municipal-fire-volunteer
+1962955187,9 LINE MEDICAL SOLUTIONS,Omaha,NE,NE,"Ambulance, Land Transport",private
+1720462104,ALPINE EMS INC,Alpine,WY,NE,"Ambulance, Land Transport",private
+1295665461,AMERICAN AMBULANCE LLC,Omaha,NE,NE,Ambulance,private
+1558331405,"AMERICAN AMBULANCE SERVICE, INC",Omaha,NE,NE,Ambulance,private
+1336315225,"AMERICAN MEDICAL RESPONSE AMBULANCE SERVICE, INC.",Omaha,NE,NE,Ambulance,private
+1295542520,AMERIPRO EMS OF NEBRASKA LLC,North Platte,NE,NE,Ambulance,private
+1174513311,AREA AMBULANCE AUTHORITY,Cedar Rapids,IA,NE,"Ambulance, Land Transport",private
+1063580397,"AREA EMERGENCY MEDICAL AND TRANSPORTATION SERVICES, INC.",Postville,IA,NE,"Ambulance, Land Transport",private
+1679210769,ARROW MOBILE MEDICAL,Kimball,NE,NE,"Clinic/Center, Mental Health (Including Community Mental Health Center)",private
+1659903342,BEAUTIFUL LIFE MEDICAL TRANSPORT LLC,Omaha,NE,NE,"Ambulance, Land Transport",private
+1164501334,BLOOMFIELD AMBULANCE SERVICE,Bloomfield,NE,NE,Ambulance,private
+1427456383,CALIBER OF OMAHA,Omaha,NE,NE,Non-emergency Medical Transport (VAN),private
+1578223889,"CENTRAL ASSISTED LIVING, INC.",Central City,NE,NE,"Ambulance, Land Transport",private
+1972486918,CENTRAL TRANSPORT LLC,Central City,NE,NE,"Ambulance, Land Transport",private
+1619095569,COLERIDGE AMBULANCE SERVICE,Coleridge,NE,NE,"Ambulance, Land Transport",private
+1770343675,COMFORT SQUAD MEDICAL TRANSPORT,Omaha,NE,NE,Non-emergency Medical Transport (VAN),private
+1447885256,COMMUNITY CLINICS AT MEMORIAL REGIONAL HEALTH,Craig,CO,NE,"Ambulance, Land Transport",private
+1073376505,CUMBERLAND FIREFIGHTERS ASSOCIATION INCORPORATED,Cumberland,IA,NE,"Ambulance, Land Transport",private
+1568419125,EASTERN AMBULANCE SERVICE INC,Hastings,NE,NE,Ambulance,private
+1699722298,EASTERN AMBULANCE SERVICE INC,Omaha,NE,NE,"Ambulance, Land Transport",private
+1093896391,ESTHERVILLE AMBULANCE SERVICE INC.,Estherville,IA,NE,"Ambulance, Land Transport",private
+1629249586,FRONTIER CO AMBLANCE,Curtis,NE,NE,"Ambulance, Land Transport",private
+1306445333,HARPERS FERRY EMS ASSOCIATION INC,Harpers Ferry,IA,NE,"Ambulance, Land Transport",private
+1104923473,HEARTLAND EMS INC,Fremont,NE,NE,"Ambulance, Land Transport",private
+1477599470,HOLBROOK EMERGENCY MEDICAL SERVICES,Holbrook,NE,NE,"Ambulance, Land Transport",private
+1295863900,LITCHFIELD RFD AMBULANCE,Litchfield,NE,NE,"Ambulance, Land Transport",private
+1346466620,"LOUP CITY, ASHTON & ROCKVILLE COOPERATIVE AMBULANCE SERVICE",Loup City,NE,NE,"Ambulance, Land Transport",private
+1346310364,MACEDONIA FIREMENS ASSOCIATION,Macedonia,IA,NE,"Ambulance, Land Transport",private
+1396042479,MED-STAR AMBULANCE LLC,Franklin,TN,NE,"Ambulance, Land Transport",private
+1396052023,MERNA EMERGENCY MEDICAL SERVICES,Merna,NE,NE,"Ambulance, Land Transport",private
+1881936359,METROPOLITAN EMERGENCY SERVICES,Pittsburgh,PA,NE,"Ambulance, Land Transport",private
+1548047152,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Milwaukee,WI,NE,Ambulance,private
+1760832695,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Atlantic,IA,NE,Ambulance,private
+1538612320,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Sheldon,IA,NE,Ambulance,private
+1073296893,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Des Moines,IA,NE,Ambulance,private
+1992579338,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Pawtucket,RI,NE,Ambulance,private
+1982069134,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Audubon,IA,NE,Ambulance,private
+1871991125,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Columbus,NE,NE,Ambulance,private
+1235998626,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Kansas City,MO,NE,Ambulance,private
+1003266339,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Mason City,IA,NE,Ambulance,private
+1740645332,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Council Bluffs,IA,NE,Ambulance,private
+1477490381,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Indianapolis,IN,NE,Ambulance,private
+1356115562,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Omaha,NE,NE,Ambulance,private
+1548034754,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Columbus,OH,NE,Ambulance,private
+1053162420,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Elizabeth City,NC,NE,Ambulance,private
+1629831102,MIDWEST MEDICAL TRANSPORT COMPANY LLC,Colorado Springs,CO,NE,Ambulance,private
+1235681354,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC DBA FRASER TRANSPORTATION SERVI",Des Moines,IA,NE,Ambulance,private
+1205387545,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC-ABERDEEN, SD",Aberdeen,SD,NE,Ambulance,private
+1932650272,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC-ALBIA, IA",Albia,IA,NE,Ambulance,private
+1346792371,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC-DBA SOUTHEAST IOWA AMBULANCE",Columbus,NE,NE,Ambulance,private
+1134670219,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC-HURON, SD",Huron,SD,NE,Ambulance,private
+1588115893,"MIDWEST MEDICAL TRANSPORT COMPANY, LLC-SIOUX CITY, IA.",Sioux City,IA,NE,Ambulance,private
+1922872134,MIDWEST MEDICAL TRANSPORT LLC,Virginia Beach,VA,NE,Ambulance,private
+1497744395,MINDEN EMERGENCY SERVICES,Minden,IA,NE,"Ambulance, Land Transport",private
+1265565006,"NORFOLK AMBULANCE SERVICE, INC.",Norfolk,NE,NE,"Ambulance, Land Transport",private
+1285324947,PAPIO AMBULANCE SERVICES INC,Papillion,NE,NE,"Ambulance, Land Transport",private
+1104699545,"PIONEER AMBULANCE SERVICE, LLC",Omaha,NE,NE,Ambulance,private
+1477436988,PIONEER METRO AMBULANCE LLC,Omaha,NE,NE,Ambulance,private
