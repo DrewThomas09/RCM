@@ -10,7 +10,7 @@ class HubTests(unittest.TestCase):
         h = render_ift_hub()
         for route, title, _job, _notfor in _SURFACES:
             self.assertIn(f'href="{route}"', h)
-        self.assertEqual(h.count("NOT here"), 9)
+        self.assertEqual(h.count("NOT here"), len(_SURFACES))
 
     def test_data_assets_linked(self):
         h = render_ift_hub()
