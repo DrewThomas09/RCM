@@ -121,6 +121,24 @@ taxonomy renders from ONE module in ONE place.
   lines + data assets), palette entry, cross-links, tests. Playwright
   verification: zero horizontal overflow at 1440px and 1024px.
 
+- **Cycle 9 — research saved to the workbook**: 5 new sheets (MMT company
+  file, Health systems, Competitive landscape, Growth evidence, Demand
+  band + outlook); footprint sheet re-based off the derived equations.
+- **Cycle 10–11 — the illustrative purge**: basis constants across
+  ift_moat / ift_tracking / ift_insourcing / ift_competitive /
+  ift_clinical_demand renamed to FRAMEWORK; clinical growth CAGRs
+  relabelled DERIVED; page chip systems gained DERIVED/FRAMEWORK tiers;
+  **zero visible ILLUSTRATIVE chips or legend entries across all 10
+  surfaces** (render-verified).
+- **Cycle 12 — cross-steps**: HCRIS CCN pull worklist on /ift-hs-demand
+  (19 confirmed CCNs from the system research); Evidence-governance panel
+  on /ift (live verbatim-vs-reverify counts).
+- **Cycle 13 — ift_analytics prose sweep**: chart subtitles/method labels
+  moved to the FRAMEWORK vocabulary.
+
+Final state: 549 IFT tests + 120 kit-adjacent + 34 market-report tests
+green; Playwright-verified zero horizontal overflow at 1440/1024px.
+
 ## Blocked on network egress (documented recipes, ready to run)
 
 - CDC PLACES county prevalence rows (SODA query for the 22 FIPS is in the
