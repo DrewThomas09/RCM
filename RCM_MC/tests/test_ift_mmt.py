@@ -139,9 +139,18 @@ class MmtModelTests(unittest.TestCase):
     def test_operating_model_margin_and_metrics(self):
         op = m.mmt_operating_model()
         self.assertGreater(len(op.metrics), 5)
-        self.assertTrue(0.0 < op.contribution_margin_pct < 0.6)
+        # 2026-07-10 re-anchor: the numeric fields now carry the PUBLISHED
+        # GADCS means (mean reimbursement $1,147 vs private-for-profit mean
+        # cost $1,778) — the published mean spread is NEGATIVE by design;
+        # the old fabricated 0–60% margin is gone. Guard the honesty.
+        self.assertEqual(op.revenue_per_leg, 1147.0)
+        self.assertEqual(op.cost_per_leg, 1778.0)
+        self.assertLess(op.contribution_margin_pct, 0.0)
         self.assertGreaterEqual(op.est_units, 1)
         self.assertTrue(op.headline)
+        # no metric may carry the banned ILLUSTRATIVE basis
+        for mt in op.metrics:
+            self.assertNotIn("ILLUSTRATIVE", mt.basis.upper())
 
     def test_growth_projection_compounds_and_platform_leads(self):
         gp = m.mmt_growth_projection(5)

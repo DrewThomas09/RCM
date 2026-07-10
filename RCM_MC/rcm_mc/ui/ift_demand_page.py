@@ -744,6 +744,68 @@ def _charts(regions, hc, ts) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+def _growth_evidence_section() -> str:
+    """The structural growth-driver registry (2026-07-10 research pull) —
+    every growth claim on the demand side, cited, themed, and honest about
+    which quotes are verbatim-verified vs pending re-verification."""
+    try:
+        from ...market_reports import ift_growth_evidence as _ge  # type: ignore
+    except Exception:  # noqa: BLE001
+        try:
+            from ..market_reports import ift_growth_evidence as _ge
+        except Exception:  # noqa: BLE001
+            return ""
+    evs = _ge.all_evidence()
+    if not evs:
+        return ""
+    blocks: List[str] = []
+    for theme, label in _ge.THEMES:
+        items = _ge.by_theme(theme)
+        if not items:
+            continue
+        rows = []
+        for e in items:
+            flag = ("verbatim" if e.verbatim else "re-verify")
+            quote = (f'<br><span style="font-size:11.5px;color:'
+                     f'var(--sc-muted,#6b6357);font-style:italic;">'
+                     f'&ldquo;{_esc(e.quote)}&rdquo;</span>' if e.quote else "")
+            rows.append([
+                f"<strong>{_esc(e.figure)}</strong>{quote}",
+                _esc(e.value),
+                _chip(e.basis),
+                (f'<a href="{_esc(e.url)}" target="_blank" rel="noopener">'
+                 f"{_esc(e.source)}</a> "
+                 f'<span style="font-size:10px;color:var(--sc-muted,#6b6357);">'
+                 f"[{flag}]</span>"),
+            ])
+        blocks.append(
+            ck_section_header(label, eyebrow=f"GROWTH EVIDENCE · "
+                              f"{theme.upper().replace('-', ' ')}",
+                              count=len(items))
+            + _table(["Figure (with quote where captured)", "Value",
+                      "Basis", "Source"], rows))
+    n_verbatim = sum(1 for e in evs if e.verbatim)
+    n_rev = len(_ge.reverify_queue())
+    intro = (
+        '<p class="ifd-prose">Why demand GROWS is not assumed here — it is '
+        "the measured sum of structural forces, each carried by a published "
+        "figure: transfer volume itself is rising (the Peters 2026 national "
+        "series), hospital consolidation concentrates capability into "
+        "hubs, service-line closures and REH conversions convert local "
+        "admissions into transports, chronic-disease burden and the 65+ "
+        "curve raise per-capita acuity, and the volunteer EMS base that "
+        "used to absorb rural legs is contracting. "
+        f"{n_verbatim} of {len(evs)} entries carry verbatim-verified "
+        f"quotes (PubMed/PMC full text); {n_rev} were captured from "
+        "search excerpts of the cited page and sit in an explicit "
+        "re-verification queue — labelled inline, never blended.</p>")
+    return (
+        ck_section_header("Why demand grows — the evidence registry",
+                          eyebrow="STRUCTURAL DRIVERS, CITED",
+                          count=len(evs))
+        + intro + "".join(blocks))
+
+
 def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the IFT demand deep-dive. Degrades to honest notes, never raises."""
     nf = _dm.national_frame()
@@ -797,6 +859,7 @@ def render_ift_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _evidence_section(evd),
         _sources_section(sm),
         _drivers_section(dr),
+        _growth_evidence_section(),
         _national_section(nf),
         _hcpcs_section(hc),
         _prevalence_section(ep),

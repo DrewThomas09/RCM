@@ -352,8 +352,13 @@ def _operating_section() -> str:
         '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
         "<th>Metric</th><th>Value</th><th>Basis</th><th>Detail</th>"
         f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
-        f'<p class="mmt-note">All ILLUSTRATIVE with named bases; labor share is '
-        "the GADCS anchor (~69% of ground-ambulance cost).</p>")
+        f'<p class="mmt-note">Published benchmarks {_chip("SOURCED")} '
+        f'{_chip("GOV")} — GADCS (federal ambulance cost collection), '
+        "MedPAC, HCCI, AIMHI; DERIVED lines show their equations. GADCS "
+        "figures were captured from trade coverage of the report and sit "
+        "in the re-verify queue until the CMS PDFs are re-pulled. No "
+        "fabricated per-leg P&L appears here — MMT's actual margin is a "
+        "diligence request.</p>")
 
 
 def _scorecard_section() -> str:
@@ -399,14 +404,13 @@ def _payer_section() -> str:
         ck_section_header("Payer mix", eyebrow="THE REVENUE BLEND BEHIND $/LEG")
         + f'<p class="mmt-prose">Commercial is ~{_pct(0.30)} of transports but '
         f'<strong>{_pct(pm.commercial_revenue_share)} of revenue</strong> — the '
-        "~2.8× commercial multiple over Medicare makes payer mix the single "
-        "biggest revenue lever.</p>"
+        "2.0× commercial multiple over Medicare (HCCI 2022) makes payer mix "
+        "the single biggest revenue lever.</p>"
         '<div class="mmt-wrap"><table class="mmt-tab" style="max-width:640px;">'
         "<thead><tr><th>Payer</th><th>% transports</th><th>Rate vs Medicare</th>"
         "<th>% revenue</th><th>SOM revenue</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
-        f'<p class="mmt-note">Shares + multiples {_chip("ILLUSTRATIVE")}; the '
-        "blend reconciles to the $1,300 net revenue/leg.</p>")
+        f'<p class="mmt-note">{_esc(pm.note)}</p>')
 
 
 def _scenario_section() -> str:
@@ -859,6 +863,40 @@ def _litigation_section() -> str:
         f'<p class="mmt-prose">{_esc(read)}</p>')
 
 
+def _growth_counties_section() -> str:
+    try:
+        rows = _m.county_growth()
+    except Exception:  # noqa: BLE001
+        rows = []
+    if not rows:
+        return ""
+    body = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(r.county.name)}, {_esc(r.county.state)}</td>'
+        f"<td>{_esc(r.county.metro)}</td>"
+        f'<td class="num">{_num(r.pop_2020)}</td>'
+        f'<td class="num">{_num(r.pop_2024)}</td>'
+        f'<td class="num">{"+" if r.growth_pct >= 0 else ""}'
+        f"{r.growth_pct:.1f}%</td>"
+        f'<td class="num">{"+" if r.cagr_pct >= 0 else ""}'
+        f"{r.cagr_pct:.1f}%</td>"
+        "</tr>" for r in rows)
+    return (
+        ck_section_header("County population growth, 2020 → 2024",
+                          eyebrow="MEASURED, NOT PROJECTED",
+                          count=len(rows))
+        + '<p class="mmt-prose">Where the footprint is actually growing — '
+        "Vintage-2024 Census estimates against the 2020 decennial count. "
+        "Sarpy (Omaha's southern suburb ring) leads; the rural-feeder "
+        "counties without a captured 2024 figure are omitted rather than "
+        "imputed.</p>"
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>County</th><th>Metro</th><th>Pop 2020</th><th>Pop 2024 est.</th>"
+        "<th>Growth</th><th>CAGR</th></tr></thead>"
+        f"<tbody>{body}</tbody></table></div>"
+        f'<p class="mmt-note">{_esc(rows[0].basis)}</p>')
+
+
 def _core_divider() -> str:
     return (
         ck_section_header("The legacy core, county by county",
@@ -903,7 +941,8 @@ def render_ift_mmt(qs=None) -> str:
     if s:
         parts.append(_kpi_strip(s))
     parts += [
-        _cbsa_table(), _county_table(), _serviceable_section(),
+        _cbsa_table(), _county_table(), _growth_counties_section(),
+        _serviceable_section(),
         _scenario_section(), _opportunity_section(), _operating_section(),
         _payer_section(), _growth_section(), _connector_table(),
         _clinical_table(), _metro_read(),

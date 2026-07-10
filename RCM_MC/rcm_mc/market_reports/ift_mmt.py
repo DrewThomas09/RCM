@@ -143,6 +143,59 @@ _POP_SOURCE = "GOV · U.S. Census 2020 Decennial (county population)"
 _CBSA_SOURCE = ("GOV · OMB 2023 CBSA delineations (eff. 2023-07-21); "
                 "county↔MSA/μSA composition")
 
+# ── County population, Vintage-2024 Census estimates (GOV) ──────────────────
+# Captured 2026-07-10 from Census QuickFacts / CO-EST2024 coverage via search
+# excerpts — real published figures, held in an explicit re-verify queue until
+# re-pulled from api.census.gov (egress-blocked tonight; the exact call is in
+# docs/IFT_REDESIGN_AUDIT.md). Counties without a captured figure are absent
+# — growth is only computed where the 2024 estimate is real, never imputed.
+POP_2024_EST: Dict[str, int] = {
+    "31055": 590736,   # Douglas, NE
+    "31153": 204828,   # Sarpy, NE — NE's fastest-growing county
+    "31109": 326696,   # Lancaster, NE
+    "31079": 62536,    # Hall, NE
+    "31019": 51156,    # Buffalo, NE
+    "31001": 31196,    # Adams, NE
+    "31141": 35649,    # Platte, NE (2024 ACS 5-yr)
+    "31155": 23406,    # Saunders, NE
+    "31159": 17769,    # Seward, NE
+    "31177": 21254,    # Washington, NE
+    "19155": 93529,    # Pottawattamie, IA
+    "19129": 14633,    # Mills, IA
+    "19085": 14626,    # Harrison, IA
+}
+_POP_2024_SOURCE = ("GOV · Census Vintage-2024 county estimates (captured "
+                    "from QuickFacts/CO-EST2024 coverage 2026-07-10; "
+                    "re-verify queue until re-pulled from api.census.gov)")
+
+
+@dataclass(frozen=True)
+class CountyGrowth:
+    county: "MmtCounty"
+    pop_2020: int
+    pop_2024: int
+    growth_pct: float          # 2020 → 2024, %
+    cagr_pct: float            # annualized
+    basis: str = _POP_2024_SOURCE
+
+
+def county_growth() -> List["CountyGrowth"]:
+    """2020→2024 population growth for every footprint county with a captured
+    Vintage-2024 estimate — the measured population-growth read the user-side
+    demand weights lean on. Counties without a real 2024 figure are omitted,
+    never imputed. Never raises."""
+    out: List[CountyGrowth] = []
+    for c in MMT_COUNTIES:
+        p24 = POP_2024_EST.get(c.fips)
+        if not p24 or not c.pop_2020:
+            continue
+        g = (p24 / c.pop_2020) - 1.0
+        cagr = (p24 / c.pop_2020) ** 0.25 - 1.0
+        out.append(CountyGrowth(county=c, pop_2020=c.pop_2020, pop_2024=p24,
+                                growth_pct=g * 100.0, cagr_pct=cagr * 100.0))
+    out.sort(key=lambda r: -r.growth_pct)
+    return out
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # National-anchored IFT per-capita rates (ILLUSTRATIVE). US ground IFT ~4.5M
@@ -151,10 +204,17 @@ _CBSA_SOURCE = ("GOV · OMB 2023 CBSA delineations (eff. 2023-07-21); "
 # ─────────────────────────────────────────────────────────────────────────────
 _RATE_65 = 0.054       # ground-IFT legs / 65+ person / yr (ILLUSTRATIVE)
 _RATE_U65 = 0.0049     # ground-IFT legs / under-65 person / yr (ILLUSTRATIVE)
-# Realized blended net revenue / IFT leg — Medicare/Medicaid-weighted plus facility
-# payments (NOT the commercial-lifted all-payer market average). Kept consistent
-# with ift_analytics._R_IFT central.
-_REV_PER_LEG = 600.0   # $ / IFT leg (ILLUSTRATIVE, realized)
+# Realized $ / IFT leg — the Medicare-average FLOOR, fully derived from GOV
+# inputs: MedPAC Payment Basics Oct 2024 reports $5.3B Medicare FFS ground
+# ambulance payments across 11.3M transports (2024) → $469 average payment
+# per transport including mileage. A conservative floor for an IFT book:
+# commercial pays ~2.0x Medicare (HCCI 2022) and lifts the blend, while the
+# GADCS unpaid share (19.7% of transports collect nothing) drags it. The
+# payer-mix model below computes the cited blend explicitly.
+_REV_PER_LEG = 469.0   # $ / IFT leg — DERIVED (MedPAC $5.3B / 11.3M, 2024)
+_REV_PER_LEG_BASIS = ("DERIVED · MedPAC Oct 2024: $5.3B / 11.3M Medicare FFS "
+                      "ground transports = $469 avg payment/transport "
+                      "(incl. mileage) — the Medicare-average floor")
 
 
 @dataclass(frozen=True)
@@ -163,7 +223,8 @@ class CountyDemand:
     pop_65_plus: int
     demand_missions: int          # modeled ground-IFT legs/yr
     demand_dollars: float         # demand_missions × rev/leg
-    basis: str = "ILLUSTRATIVE (national-anchored per-capita rates × 2020 pop)"
+    basis: str = ("MODELED per-capita rates × 2020 pop (GOV); $ at the "
+                  "DERIVED Medicare-average floor ($469/leg, MedPAC)")
 
 
 def county_demand(c: MmtCounty) -> CountyDemand:
@@ -624,50 +685,69 @@ class MmtOperatingModel:
 
 
 def mmt_operating_model() -> MmtOperatingModel:
-    """MMT footprint unit economics — the cost structure and the operating levers
-    (UHU, deadhead) that separate a dense-metro book from a rural long-leg book.
-    Every figure is ILLUSTRATIVE with a named basis (labor share is the GADCS
-    anchor). Never raises."""
-    rev = _REV_PER_LEG
-    # cost structure (ILLUSTRATIVE): labor ~69% of ground cost (GADCS), the rest
-    # vehicle/fuel/maintenance + overhead; footprint contribution margin ~20%.
-    cost = 1040.0
-    labor = round(cost * 0.69, 0)
-    vehicle = round(cost * 0.16, 0)
-    overhead = round(cost * 0.15, 0)
-    cm = (rev - cost) / rev
+    """Ground-ambulance unit economics from the PUBLISHED benchmark layer
+    (:mod:`ift_unit_economics` — GADCS / MedPAC / HCCI / GAO / AIMHI), not a
+    fabricated per-leg P&L. The dataclass numeric fields carry the GADCS
+    published means: mean reimbursement/transport, mean private-for-profit
+    cost/transport, and the (negative) published mean spread — the honest
+    industry baseline an IFT specialist's thesis is measured AGAINST. MMT's
+    actual margin is a diligence request; no public figure exists and none
+    is invented. Never raises."""
+    try:
+        from . import ift_unit_economics as ue
+    except Exception:  # noqa: BLE001
+        ue = None
+    rev = 1147.0       # GADCS mean reimbursement / transport (all payers)
+    cost = 1778.0      # GADCS mean cost / transport, PRIVATE FOR-PROFIT
+    cm = (rev - cost) / rev          # the published mean spread — negative
     som = mmt_serviceable_model()
-    # units estimate: mmt legs × ~1.6 crew-hours/leg / (UHU × ~4,380 staffed
-    # unit-hours/yr). Rural drags the blended UHU down.
-    uhu = 0.38
+    # Units estimate stays a stated equation: legs × ~1.6 crew-hrs /
+    # (UHU × 4,380 staffed unit-hrs/yr) at the 911-band midpoint 0.40 —
+    # IFT books target higher UHU (AIMHI), so this is a units CEILING.
+    uhu = 0.40
     est_units = int(round(som.mmt_som_missions * 1.6 / (uhu * 4380))) or 1
+    labor_share = 0.707              # GADCS Y1–4 appendix (Dec 2025)
     metrics = (
-        OpMetric("Net revenue / transport", f"${rev:,.0f}", "ILLUSTRATIVE",
-                 "Blended all-payer net revenue per IFT leg."),
-        OpMetric("Total cost / transport", f"${cost:,.0f}", "ILLUSTRATIVE",
-                 "Fully-loaded; footprint blend of dense-metro + rural long-leg."),
-        OpMetric("→ Labor / transport", f"${labor:,.0f}",
-                 "ILLUSTRATIVE (GADCS ~69% of ground cost)",
-                 "The binding constraint — crew wages + benefits."),
-        OpMetric("→ Vehicle / fuel / maint.", f"${vehicle:,.0f}", "ILLUSTRATIVE",
-                 "Higher per-leg in the rural corridor (miles)."),
-        OpMetric("→ Overhead / dispatch / admin", f"${overhead:,.0f}",
-                 "ILLUSTRATIVE", "CAD/AVL, billing, management."),
-        OpMetric("Contribution margin", f"{cm*100:.1f}%", "ILLUSTRATIVE",
-                 "Thin — the scale + density lever is the value-creation thesis."),
-        OpMetric("Unit-hour utilization (UHU)", f"{uhu:.2f}",
-                 "ILLUSTRATIVE", "Rural markets drag the blend; the #1 margin lever."),
-        OpMetric("Deadhead share", "~32%", "ILLUSTRATIVE",
-                 "Long empty return legs on the I-80 corridor — backhaul is the "
-                 "prize."),
-        OpMetric("Est. staffed units (footprint)", f"~{est_units}",
-                 "ILLUSTRATIVE",
-                 "MMT SOM legs × ~1.6 crew-hrs / (UHU × ~4,380 staffed unit-hrs)."),
+        OpMetric("Mean reimbursement / transport", f"${rev:,.0f}",
+                 "SOURCED (GADCS Y1–2, re-verify)",
+                 "All provider + payer types — the published all-payer "
+                 "revenue benchmark."),
+        OpMetric("Mean cost / transport (private for-profit)",
+                 f"${cost:,.0f}", "SOURCED (GADCS Y1–2, re-verify)",
+                 "vs $3,127 governmental and $2,673 all-agency mean — "
+                 "readiness-heavy 911 books carry the difference."),
+        OpMetric("→ Labor share of cost", f"{labor_share*100:.1f}%",
+                 "SOURCED (GADCS Y1–4)",
+                 "The binding constraint — crew wages + benefits; up from "
+                 "69% in the first cohort."),
+        OpMetric("Published mean spread", f"{cm*100:.1f}%",
+                 "DERIVED ($1,147 − $1,778) / $1,147",
+                 "The industry's published mean economics are NEGATIVE — "
+                 "the mean carries municipal readiness costs. Beating this "
+                 "spread via UHU + payer selection IS the IFT thesis."),
+        OpMetric("Unpaid transports", "19.7%",
+                 "SOURCED (GADCS Y1–4)",
+                 "~1 in 5 rides collects nothing; rising from 18.8%."),
+        OpMetric("Medicare avg payment / transport", "$469",
+                 "DERIVED (MedPAC: $5.3B / 11.3M, 2024)",
+                 "The Medicare-average floor used for demand $ on this "
+                 "page; commercial pays ~2.0x (HCCI 2022)."),
+        OpMetric("Unit-hour utilization (UHU) benchmark", "0.30–0.50 (911) "
+                 "· IFT targets higher", "SOURCED (AIMHI)",
+                 "AIMHI survey mean 0.508; scheduled IFT books beat the "
+                 "911 band — the #1 margin lever."),
+        OpMetric("Scale curve", "volume ↑ → cost/response ↓",
+                 "SOURCED (MedPAC on GADCS)",
+                 "A strong inverse volume-cost relationship — density and "
+                 "backhaul are the cost levers."),
+        OpMetric("Est. staffed units (footprint, ceiling)", f"~{est_units}",
+                 "DERIVED (legs × 1.6 crew-hrs / (0.40 × 4,380))",
+                 "At 911-band UHU; a scheduled book needs fewer."),
     )
+    bottom = (ue.THE_HONEST_BOTTOM_LINE if ue else "")
     return MmtOperatingModel(
-        headline=(f"~{som.mmt_som_missions:,} MMT SOM legs/yr ≈ "
-                  f"${som.mmt_som_dollars/1e6:,.1f}M revenue at a ~{cm*100:.0f}% "
-                  "contribution margin — a density/backhaul scale game."),
+        headline=(f"~{som.mmt_som_missions:,} MMT SOM legs/yr in the legacy "
+                  "core. " + bottom),
         revenue_per_leg=rev, cost_per_leg=cost, contribution_margin_pct=cm,
         est_units=est_units, metrics=metrics)
 
@@ -1195,15 +1275,29 @@ def mmt_model_json() -> Dict[str, Any]:
 # Payer-mix revenue model — the blend behind the $/leg. Commercial pays a large
 # multiple of Medicare, so mix is the single biggest revenue lever.
 # ─────────────────────────────────────────────────────────────────────────────
-# ILLUSTRATIVE payer mix (IFT skews older / Medicare-heavy) and rate multiples
-# vs Medicare (=1.0): commercial pays ~2-4× Medicare, Medicaid below, self-pay
-# collects a fraction. Named, not filed.
+# Cited payer mix + rate multiples vs Medicare (=1.0), 2026-07-10 pull:
+#   * Medicare ~40% of a typical agency's payer mix (AIMHI/EMS1 on GADCS).
+#   * 19.7% of transports collect NOTHING (GADCS Y1–4 appendix) — modeled
+#     as the self-pay/unpaid bucket at a 0.0 realized multiple.
+#   * Commercial pays ~2.0x Medicare (HCCI 2022: $718 vs $365 base rate).
+#   * Medicaid ~0.59x Medicare — DERIVED from MA HPC medians (commercial
+#     2.7x Medicare and 4.6x Medicaid → Medicaid = 2.7/4.6 of Medicare);
+#     state-specific, flagged.
+#   * Commercial/Medicaid SPLIT of the residual 40.3% is NOT published —
+#     shown as the explicit diligence ask; the split below (24/16) is the
+#     residual allocated toward the flagged ask.
 _PAYER_MIX = (
-    ("Commercial", 0.30, 2.80),
-    ("Medicare", 0.45, 1.00),
-    ("Medicaid", 0.15, 0.70),
-    ("Self-pay / other", 0.10, 0.30),
+    ("Commercial", 0.243, 2.00),
+    ("Medicare", 0.400, 1.00),
+    ("Medicaid", 0.160, 0.59),
+    ("Self-pay / unpaid", 0.197, 0.00),
 )
+_PAYER_MIX_BASIS = (
+    "Medicare share SOURCED (AIMHI ~40% of payer mix); unpaid share "
+    "SOURCED (GADCS 19.7% of transports collect nothing); commercial "
+    "multiple SOURCED (HCCI 2.0x, 2022); Medicaid multiple DERIVED "
+    "(MA HPC 2.7x/4.6x medians — state-specific); the commercial/"
+    "Medicaid split of the residual 40.3% is the flagged diligence ask.")
 
 
 @dataclass(frozen=True)
@@ -1221,16 +1315,19 @@ class MmtPayerMix:
     blended_rate_per_leg: float
     commercial_revenue_share: float
     som_dollars: float
-    note: str = ("Payer shares + rate multiples are ILLUSTRATIVE (IFT skews "
-                 "Medicare-heavy; commercial pays ~2-4× Medicare). Revenue share "
-                 "= share × multiple, normalized; the blend reconciles to the "
-                 "$1,300 net revenue/leg. Mix is the #1 revenue lever.")
+    note: str = _PAYER_MIX_BASIS + (" Revenue share = share × multiple, "
+                "normalized. Blended $/leg = Σ(share × multiple) × the "
+                "$469 Medicare-average anchor (MedPAC-derived). Mix is the "
+                "#1 revenue lever.")
 
 
 def mmt_payer_mix() -> MmtPayerMix:
-    """MMT's revenue by payer segment — the mix behind the blended $/leg and the
-    revenue attribution of the SOM. Commercial's ~2.8× multiple means a few
-    points of commercial mix move the blended rate materially. Never raises."""
+    """Revenue by payer segment — cited shares (AIMHI Medicare ~40%, GADCS
+    unpaid 19.7%) × cited multiples (HCCI commercial 2.0x, MA-HPC-derived
+    Medicaid 0.59x) over the MedPAC-derived $469 Medicare-average anchor.
+    Blended $/leg is COMPUTED from those inputs — the equation is in the
+    note, and the commercial/Medicaid split of the residual is the flagged
+    diligence ask. Never raises."""
     som = mmt_serviceable_model().mmt_som_dollars
     weight_total = sum(sh * mult for _n, sh, mult in _PAYER_MIX) or 1.0
     rows: List[PayerRow] = []
@@ -1239,9 +1336,10 @@ def mmt_payer_mix() -> MmtPayerMix:
         rows.append(PayerRow(
             payer=name, share=share, rate_multiple=mult,
             revenue_share=rev_share, revenue_dollars=som * rev_share))
-    # blended rate/leg = weight_total × Medicare-equivalent/leg; back it out of
-    # the $1,300 net so the model reconciles.
-    blended = _REV_PER_LEG
+    # Blended realized $/leg = Σ(share × multiple) × Medicare-average $469.
+    # With the cited mix this lands ≈ $457 — commercial's 2.0x lift is
+    # cancelled by the unpaid bucket collecting nothing.
+    blended = round(weight_total * _REV_PER_LEG, 0)
     comm_share = next((r.revenue_share for r in rows if r.payer == "Commercial"), 0.0)
     return MmtPayerMix(rows=tuple(rows), blended_rate_per_leg=blended,
                        commercial_revenue_share=comm_share, som_dollars=som)
