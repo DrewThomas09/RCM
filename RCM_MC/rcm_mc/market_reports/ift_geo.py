@@ -408,6 +408,69 @@ MARKETS: Tuple[MetroDef, ...] = (
 )
 
 
+# ── MMT presence evidence per metro (2026-07-10 NPPES + web pull) ────────────
+# The registry above was authored as "the target operator's footprint", but
+# the primary-source sweep shows MMT presence is only VERIFIABLE in a subset.
+# Tiers:
+#   npi        — an MMT organizational NPI sits in the metro (NPPES, SOURCED)
+#   web        — a company/web-listed MMT station or active company hiring
+#   adjacent   — the nearest MMT NPI is in a DIFFERENT metro of the same
+#                state (named), so this metro's inclusion is inferential
+#   unverified — no MMT presence evidence found tonight (recorded as
+#                not-found, not absence)
+MMT_PRESENCE_EVIDENCE: Dict[str, Tuple[str, str]] = {
+    "Omaha": ("npi", "NPI 1356115562, 13326 B St (2023) + Council Bluffs "
+              "subpart 1740645332"),
+    "Lincoln": ("web", "company/web-listed station, 3001 O St"),
+    "North Platte": ("web", "legacy station + historic MedAir helicopter "
+                     "base; contested by AmeriPro/Priority (same market)"),
+    "Columbus (NE)": ("npi", "flagship NPI 1871991125, 2155 33rd Ave — "
+                      "historic HQ"),
+    "Grand Island / Kearney": ("web", "web-listed stations (Diers Ave GI; "
+                               "103 E 15th St Kearney) + Hastings/Lexington"),
+    "Cleveland": ("unverified", "no MMT NPI or station found (2026-07-10)"),
+    "Cincinnati": ("web", "company hiring/expansion posts, 2025–26"),
+    "Columbus (OH)": ("npi", "NPI 1548034754, 3729 Corporate Dr (also the "
+                      "flagship NPI's secondary practice location)"),
+    "Dayton": ("unverified", "no MMT NPI or station found (2026-07-10)"),
+    "Kansas City (bi-state)": ("npi", "NPI 1235998626, 3198 Mercier St "
+                               "(enumerated 2024-03-18)"),
+    "Wichita": ("unverified", "historic signal only: NLRB case "
+                "14-CA-251082 (2019) was filed in Wichita; no current NPI/"
+                "station found"),
+    "Madison": ("unverified", "no MMT NPI or station found (2026-07-10)"),
+    "Milwaukee": ("npi", "NPI 1548047152, 9401 W Brown Deer Rd"),
+    "Twin Cities": ("unverified", "no MMT NPI or station found (2026-07-10)"),
+    "Rochester (MN)": ("unverified", "no MMT NPI or station found "
+                       "(2026-07-10)"),
+    "Des Moines": ("npi", "NPI 1073296893 DBA Southeast Iowa Ambulance + "
+                   "DBA Fraser Transportation, 4780 NE 3rd St"),
+    "Crown Point / NW Indiana": ("adjacent", "nearest MMT NPI is "
+                                 "Indianapolis (1477490381, 320 Transfer "
+                                 "Dr) — this metro's inclusion is "
+                                 "inferential"),
+    "Louisville": ("unverified", "no MMT NPI or station found (2026-07-10)"),
+    "Northern Virginia": ("adjacent", "nearest record is Virginia Beach "
+                          "(1922872134, 'Midwest Medical Transport LLC') — "
+                          "same-org link itself unconfirmed"),
+    "Cheyenne / Casper (WY)": ("unverified", "no MMT NPI or station found "
+                               "(2026-07-10)"),
+}
+
+PRESENCE_TIER_LABEL: Dict[str, str] = {
+    "npi": "NPI-VERIFIED",
+    "web": "COMPANY/WEB",
+    "adjacent": "ADJACENT NPI",
+    "unverified": "NOT VERIFIED",
+}
+
+
+def mmt_presence(metro_name: str) -> Tuple[str, str]:
+    """(tier, note) for a metro — degrades to ('unverified', ...)."""
+    return MMT_PRESENCE_EVIDENCE.get(
+        metro_name, ("unverified", "metro not in the evidence registry"))
+
+
 def markets_by_region() -> Dict[str, List[MetroDef]]:
     """``{region_key: [MetroDef, ...]}`` preserving registry order."""
     out: Dict[str, List[MetroDef]] = {}

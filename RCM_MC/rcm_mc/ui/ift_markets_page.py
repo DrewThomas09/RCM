@@ -55,13 +55,16 @@ def _esc(x: object) -> str:
 
 # ── Honesty basis chips (scoped ift- classes so they never collide with the
 #    market-report renderer's ck-mr- chips, same visual contract) ─────────────
-_BASIS_KEYS = ("SOURCED", "GOV", "ACADEMIC", "ILLUSTRATIVE", "INDUSTRY",
+_BASIS_KEYS = ("SOURCED", "GOV", "ACADEMIC", "FRAMEWORK", "ILLUSTRATIVE", "INDUSTRY",
                "INTERNAL", "CONNECTOR", "PUBLIC")
 _BASIS_TITLE = {
     "SOURCED": "Computed from OUR vendored CMS estate (hospital_coords + HCRIS "
                "+ the post-acute provider rolls).",
     "GOV": "A published government figure (CMS, MedPAC, USRDS, Census).",
     "ACADEMIC": "A real academic / peer-reviewed citation.",
+    "FRAMEWORK": "A stated analytical band/scaffold from named inputs, with "
+                 "corroborating published anchors — replaced by filed data in "
+                 "diligence, never presented as a filed figure.",
     "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
     "INDUSTRY": "An industry / trade source.",
     "INTERNAL": "A PE Desk internal surface (deep-dive, corpus, sizing).",
@@ -178,6 +181,7 @@ def _styles() -> str:
         "background:rgba(11,35,65,0.06);}"
         ".ift-chip-academic{color:#5a3b12;border-color:var(--sc-warning,#b8732a);"
         "background:rgba(184,115,42,0.08);}"
+        ".ift-chip-framework{color:#463a63;border-color:#7a6aa8;}"
         ".ift-chip-illustrative{color:#5c6878;"
         "border-color:var(--sc-text-faint,#7a8699);background:rgba(122,134,153,0.08);}"
         ".ift-chip-public{color:#4a3766;border-color:#7a5ca8;"
@@ -393,7 +397,7 @@ def _sam_section(rollup, sam) -> str:
         'per occupied bed/yr; s(m) = serviceable share 0.15–0.30 by '
         'insource-vs-outsource archetype; r_IFT = blended all-payer net revenue '
         'per transport (rural carries the super-rural mileage uplift). '
-        + _basis_chip("ILLUSTRATIVE") + '</p>'
+        + _basis_chip("FRAMEWORK") + '</p>'
     )
     return header + ck_panel(body)
 
@@ -518,7 +522,7 @@ def _market_education_section() -> str:
         'non-patient transport.</td></tr>'
         '</tbody></table></div>'
         '<p class="ift-mono-src">Boundary held throughout this study: TAM counts '
-        'ONLY US ground IFT. ' + _basis_chip("ILLUSTRATIVE") + '</p>')
+        'ONLY US ground IFT. ' + _basis_chip("FRAMEWORK") + '</p>')
     return header + ck_panel(body)
 
 
@@ -627,7 +631,7 @@ def _competitive_section() -> str:
             + f"<tbody>{prows}</tbody></table></div>")
     body += ('<p class="ift-mono-src">Operator names are public / company-web, '
              'named honestly; scale &amp; contestability reads are '
-             + _basis_chip("ILLUSTRATIVE") + '; density is '
+             + _basis_chip("FRAMEWORK") + '; density is '
              + _basis_chip("SOURCED") + '.</p>')
     return header + ck_panel(body)
 
@@ -766,7 +770,7 @@ def _moat_section() -> str:
             + f"<tbody>{prows}</tbody></table></div>")
     body += ('<p class="ift-mono-src">Density is ' + _basis_chip("SOURCED")
              + '; the other factor reads + the composite are ordinal '
-             + _basis_chip("ILLUSTRATIVE")
+             + _basis_chip("FRAMEWORK")
              + '; proof-point evidence is analyst/public-web, named honestly.</p>')
     return header + ck_panel(body)
 
@@ -780,11 +784,20 @@ def _footprint_table(structures, sam_by_name: Dict[str, float]) -> str:
     if not structures:
         return header + ck_panel(
             '<p class="ift-prose">No metro structure computed offline.</p>')
+    def _presence(name: str) -> str:
+        tier, note = _geo.mmt_presence(name)
+        label = _geo.PRESENCE_TIER_LABEL.get(tier, tier.upper())
+        cls = {"npi": "sourced", "web": "public", "adjacent": "industry",
+               "unverified": "illustrative"}.get(tier, "illustrative")
+        return (f'<span class="ift-chip ift-chip-{cls}" '
+                f'title="{_esc(note)}">{_esc(label)}</span>')
+
     rows = "".join(
         "<tr>"
         f'<td><a href="#ift-{_esc(s.name.lower().replace(" ", "-").replace("/", "").replace("(", "").replace(")", ""))}" '
         f'class="ck-arrow">{_esc(s.name)}</a></td>'
         f"<td>{_esc(s.region_label)}</td>"
+        f"<td>{_presence(s.name)}</td>"
         f'<td class="ift-num">{_num(s.n_hospitals)}</td>'
         f'<td class="ift-num">{_num(s.hcris_beds)}</td>'
         f'<td class="ift-num">{_num(s.n_snf)}</td>'
@@ -797,19 +810,33 @@ def _footprint_table(structures, sam_by_name: Dict[str, float]) -> str:
         f'<td class="ift-num">{_usd_m(sam_by_name.get(s.name, 0.0))}</td>'
         "</tr>"
         for s in structures)
+    n_npi = sum(1 for s in structures if _geo.mmt_presence(s.name)[0] == "npi")
+    n_web = sum(1 for s in structures if _geo.mmt_presence(s.name)[0] == "web")
+    n_unv = sum(1 for s in structures
+                if _geo.mmt_presence(s.name)[0] == "unverified")
     body = (
+        '<p class="ift-prose"><strong>Footprint reconciliation '
+        '(2026-07-10).</strong> This registry was authored as the target '
+        'operator\'s footprint, but the NPPES + web sweep verifies MMT in '
+        f'only a subset: <strong>{n_npi} metros NPI-verified</strong>, '
+        f'{n_web} company/web-listed, 2 adjacent-NPI (nearest MMT unit is in '
+        f'a different metro of the state), and <strong>{n_unv} with no MMT '
+        'presence evidence found</strong> — the MMT PRESENCE column carries '
+        'each metro\'s tier and, on hover, its evidence. Unverified metros '
+        'read as the roll-up/expansion screen, not the operator footprint.</p>'
         '<div class="ift-table-wrap"><table class="ift-table"><thead><tr>'
-        '<th>Metro</th><th>State / region</th><th>Hosp</th><th>HCRIS beds</th>'
+        '<th>Metro</th><th>State / region</th><th>MMT presence</th>'
+        '<th>Hosp</th><th>HCRIS beds</th>'
         '<th>SNF</th><th>SNF beds</th><th>IRF</th><th>LTCH</th><th>Hospice</th>'
         '<th>Dialysis</th><th>Density</th><th>SAM ($M)</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         '<p class="ift-mono-src">Origin + destination counts and HCRIS beds are '
         + _basis_chip("SOURCED")
-        + ' (our vendored CMS estate); per-metro SAM is '
-        + _basis_chip("ILLUSTRATIVE")
-        + ' (SOURCED structure × labelled levers). Density tier reads the '
-        'origin+destination node cluster — the unit-hour-utilization / deadhead '
-        'moat.</p>'
+        + ' (our vendored CMS estate); per-metro SAM is a stated FRAMEWORK '
+        'build (SOURCED structure × labelled levers). MMT presence tiers from '
+        'the 2026-07-10 NPPES/web sweep (ift_geo.MMT_PRESENCE_EVIDENCE). '
+        'Density tier reads the origin+destination node cluster — the '
+        'unit-hour-utilization / deadhead moat.</p>'
     )
     return header + ck_panel(body)
 
@@ -881,7 +908,7 @@ def _metro_card(s, sam_dollars: float) -> str:
         f'<b>{_esc(s.profile)}</b>{_esc(rural_tag)} &middot; '
         f'density <b>{_esc(s.density_tier)}</b> &middot; '
         f'archetype <b>{_esc(s.insource_class)}</b> &middot; '
-        f'metro SAM <b>{_usd_m(sam_dollars)}</b> {_basis_chip("ILLUSTRATIVE")}'
+        f'metro SAM <b>{_usd_m(sam_dollars)}</b> {_basis_chip("FRAMEWORK")}'
         '</div>'
     )
 
@@ -1135,23 +1162,23 @@ def render_ift_markets() -> str:
                    "metro."),
         source_note=("Facility counts SOURCED from our vendored CMS estate; "
                      "anchor systems & operators public/company-web, "
-                     "labelled; every sizing lever labelled GOV or ILLUSTRATIVE."),
+                     "labelled; every sizing lever labelled GOV, DERIVED or FRAMEWORK (stated bands with corroborating anchors)."),
         show_legend=True,
     )
 
     # National-overview KPI strip.
     kpi_tam = ck_provenance_tooltip(
-        "US ground-IFT TAM", f'{tam_central} {_basis_chip("ILLUSTRATIVE")}',
+        "US ground-IFT TAM", f'{tam_central} {_basis_chip("FRAMEWORK")}',
         explainer=(tam.headline if (tam and tam.available)
                    else "Top-down from the GOV MedPAC anchor, ex-NEMT ex-air."))
     kpi_samhs = ck_provenance_tooltip(
-        "SAM — health systems", f'{samhs_central} {_basis_chip("ILLUSTRATIVE")}',
+        "SAM — health systems", f'{samhs_central} {_basis_chip("FRAMEWORK")}',
         explainer=(_hs.headline if (_hs and _hs.available)
                    else "Multi-hospital-health-system IFT, addressable by an "
                    "outsourced operator — top-down ratio × bottoms-up structure."),
         inject_css=False)
     kpi_sam = ck_provenance_tooltip(
-        "Footprint SOM", f'{sam_central} {_basis_chip("ILLUSTRATIVE")}',
+        "Footprint SOM", f'{sam_central} {_basis_chip("FRAMEWORK")}',
         explainer=("Serviceable-obtainable in the current footprint — bottom-up "
                    "from the real origins/destinations in the target metros × "
                    "labelled serviceable-share levers."),
