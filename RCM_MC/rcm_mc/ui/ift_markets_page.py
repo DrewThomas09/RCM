@@ -111,7 +111,7 @@ def _legend_row() -> str:
         '<span class="ift-legend-lab">Every figure is labelled</span>'
         f'{chips}'
         '<span class="ift-legend-note">SOURCED = our CMS estate · GOV = CMS/'
-        'MedPAC · ILLUSTRATIVE = modeled w/ basis · PUBLIC = company-web, '
+        'MedPAC · FRAMEWORK = stated band w/ named basis + anchors · PUBLIC = company-web, '
         'labelled</span>'
         '</div>'
     )
