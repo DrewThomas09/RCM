@@ -114,6 +114,7 @@ color:var(--sc-muted,#6b6357);margin:2px 0 14px;line-height:1.5;max-width:96ch;}
 def _cta() -> str:
     return (
         '<div class="mmt-cta">'
+        '<a class="ghost" href="/ift">Study hub &rarr;</a>'
         '<a class="solid" href="/api/ift/markets.xlsx" download>Download the '
         'workbook (MMT sheets) &darr;</a>'
         '<a class="ghost" href="/connector-estate">Live data-connector estate '

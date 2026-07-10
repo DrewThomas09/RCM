@@ -168,6 +168,7 @@ def _download_bar() -> str:
 def _crosslinks() -> str:
     return (
         '<div class="ifd-links">'
+        '<a href="/ift">Study hub &rarr;</a>'
         '<a href="/ift-hs-demand">Health-system demand sizing (HCRIS) &rarr;</a>'
         '<a href="/ift-clinical">Clinical demand engine &rarr;</a>'
         '<a href="/ift-mmt">MMT county deep-dive &rarr;</a>'

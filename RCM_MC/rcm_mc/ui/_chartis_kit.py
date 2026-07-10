@@ -7523,6 +7523,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "research",      "title": "Research Hub",       "route": "/research"},
     {"id": "industry",      "title": "Industry Intelligence", "route": "/industry"},
     {"id": "market-reports", "title": "Market Reports · in-depth per-subsector dossiers (value chain, reimbursement, consolidation, insider lens) wired to our real data", "route": "/market"},
+    {"id": "ift",           "title": "Interfacility Transport · THE STUDY HUB (start here — what lives where, reading order, data assets)", "route": "/ift"},
     {"id": "ift-study",     "title": "Interfacility Transport · investor market study (taxonomy, ecosystem, health-system POV, MMT vs the field)", "route": "/ift-study"},
     {"id": "ift-research",  "title": "Interfacility Transport · market research brief (definition, metrics, reimbursement, unit economics, regulatory, sizing, evidence)", "route": "/ift-research"},
     {"id": "ift-markets",   "title": "Interfacility Transport · geographic markets (TAM/SAM/SOM, per-metro origin→destination structure)", "route": "/ift-markets"},
