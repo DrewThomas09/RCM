@@ -8106,6 +8106,14 @@ _CSS_INLINE_FALLBACK = """
    * gold-standard pages — editorial register change, not layout
    * break: title gets its own row, eyebrow sits above it. */
   .ck-section-header { display:flex; flex-direction:column; align-items:flex-start; gap:6px; margin:var(--sc-s-8) 0 var(--sc-s-5); }
+  /* .sc-eyebrow / .sc-h2 are the classes ck_section_header actually emits.
+   * They had NO ruleset — the eyebrow rendered as bare full-size body text
+   * stacked over the title, so every section header read as a duplicated
+   * heading (audit 2026-07-10, all 9 IFT pages + 59 other files). Styled to
+   * the same editorial register as .ck-eyebrow / .ck-section-intro h2. */
+  .sc-eyebrow { display:inline-flex; align-items:center; gap:12px; font-family:var(--sc-mono); font-size:11px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--sc-text-dim); }
+  .sc-eyebrow::before { content:''; display:inline-block; width:24px; height:2px; background:var(--sc-teal); }
+  .ck-section-header .sc-h2 { font-family:var(--sc-serif); font-weight:400; font-size:clamp(20px, 2.2vw, 26px); line-height:1.2; letter-spacing:-0.01em; color:var(--sc-navy); margin:0; }
   .ck-section-code { font-family:var(--sc-mono); font-size:11px; color:var(--sc-text-faint); letter-spacing:0.1em; }
   .ck-section-count { display:inline-block; font-family:var(--sc-mono); font-size:13px; font-weight:500; color:var(--sc-text-faint); margin-left:12px; vertical-align:baseline; letter-spacing:0.04em; }
 

@@ -1134,7 +1134,7 @@ def render_ift_markets() -> str:
                    "the insource-vs-outsource moat that decides who wins each "
                    "metro."),
         source_note=("Facility counts SOURCED from our vendored CMS estate; "
-                     "anchor systems &amp; operators public/company-web, "
+                     "anchor systems & operators public/company-web, "
                      "labelled; every sizing lever labelled GOV or ILLUSTRATIVE."),
         show_legend=True,
     )
