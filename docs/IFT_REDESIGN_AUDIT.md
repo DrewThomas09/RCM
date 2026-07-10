@@ -84,7 +84,52 @@ taxonomy renders from ONE module in ONE place.
 
 ## Cycle log
 
-- **Cycle 0 (this)**: audit + this plan. Fixed `.sc-eyebrow`/`.sc-h2` CSS,
+- **Cycle 0**: audit + this plan. Fixed `.sc-eyebrow`/`.sc-h2` CSS,
   `&AMP;` double-escape. 5 research agents launched (MMT dossier,
   competitors/claims, hospital systems, CDC/NEDS/Census linkage,
   consolidation/specialization trends).
+- **Cycle 2 — research ingestion**: 4 new sourced modules —
+  `ift_company` (MMT is a 13-state Harbour Point platform; 23 NPI-verified
+  locations, ownership trail, litigation registry, conflicting revenue
+  estimates shown side by side), `ift_health_systems` (8 system profiles
+  w/ CCNs, transfer centers, EMS posture, catalysts), `ift_growth_evidence`
+  (30-entry cited growth registry incl. Peters 2026 IFT trend, REH
+  conversions, consolidation series), `ift_npi_landscape` + vendored NPPES
+  CSV (751 NE/IA ambulance org NPIs, categorized; pinned CMS claims
+  connector recipe). 20 new tests.
+- **Cycle 3 — /ift-mmt rebuilt** as the company deep dive (estate,
+  ownership, customers, competitors, litigation + legacy-core county
+  model); KPI debris and stale $1,300 label removed.
+- **Cycle 4 — grounded unit economics**: `ift_unit_economics` (CY2025 fee
+  ladder, GADCS means, HCCI/FAIR Health/KFF payer facts); operating model
+  now carries PUBLISHED means only (negative published mean spread stated,
+  no fabricated margin); payer mix re-anchored (Medicare 40% AIMHI, unpaid
+  19.7% GADCS, commercial 2.0x HCCI); county pop growth 2020→2024 added.
+- **Cycle 5 — demand model fully derived**: per-capita rate = 3.47M
+  measured national legs (NEDS+NIS) / 331.4M pop, equation stated; demand
+  band bracketed (14,831–16,335 legs/yr); volume-increase scenarios
+  (LOW +14.2% demographics / TREND +46.6% over 5 yrs) with footprint
+  catalysts documented, unquantified.
+- **Cycle 6 — dedup**: study/research/diligence shared sentences cut from
+  118/79/79 per pair to 61/42/49 (shell baseline ~25); shared frameworks
+  render once on /ift-study, digests + links elsewhere.
+- **Cycle 7 — footprint reconciliation**: `ift_geo.MMT_PRESENCE_EVIDENCE`
+  per-metro tiers (6 npi / 5 web / 2 adjacent / 8 unverified); MMT PRESENCE
+  column + reconciliation note on /ift-markets; FRAMEWORK basis tier
+  replaces ILLUSTRATIVE on headline chips.
+- **Cycle 8 — /ift hub**: suite index (one job per surface + "NOT here"
+  lines + data assets), palette entry, cross-links, tests. Playwright
+  verification: zero horizontal overflow at 1440px and 1024px.
+
+## Blocked on network egress (documented recipes, ready to run)
+
+- CDC PLACES county prevalence rows (SODA query for the 22 FIPS is in the
+  Cycle-0 notes + `ift_growth_evidence` docstring) — proxy 403s
+  data.cdc.gov; state-level BRFSS anchors vendored instead.
+- Census API county pulls (CO-EST2024 / ACS 65+ by county) — captured
+  values sit in `ift_mmt.POP_2024_EST` with an explicit re-verify queue.
+- CMS claims utilization by supplier (dataset UUIDs + filter grammar
+  pinned in `ift_npi_landscape.CLAIMS_RECIPE`; repo connector
+  `connectors/cms_open_data` already implements the API).
+- County-boundary geo paths for true prevalence choropleths (only state
+  paths exist in `_us_geo_paths`).
