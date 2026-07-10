@@ -442,7 +442,7 @@ _EVIDENCE: Tuple[GrowthEvidence, ...] = (
        "Traditional Medicare… have reported cost, revenue, utilization… "
        "Now collected from roughly half of the more than 10,500 ground "
        "ambulance organizations billing Medicare annually.",
-       "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-"
+       "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-"
        "Dec-2025.pdf", needs_reverify=True),
     _E("gapb_risk",
        "payment",

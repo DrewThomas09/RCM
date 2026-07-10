@@ -1551,7 +1551,7 @@ _SELECTION = Block(
         _E("Strong inverse relationship between ambulance response volume "
            "and cost per response — the scale gate on insourcing",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("CommonSpirit FY2025 operating loss $225M (improved from $875M "
            "FY2024) — the capital-allocation pressure that favors "
            "asset-light transport",
@@ -2002,7 +2002,7 @@ _EVALUATION = Block(
            "inverse relationship between response volume and cost per "
            "response",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
     ),
     subqs=(
         _S("How is fleet capacity evaluated?",

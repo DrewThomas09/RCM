@@ -1,0 +1,409 @@
+{
+ "xl/charts/chart23.xml": {
+  "drawing": "xl/drawings/drawing9.xml",
+  "from": [
+   3,
+   14
+  ],
+  "to": [
+   4,
+   23
+  ]
+ },
+ "xl/charts/chart21.xml": {
+  "drawing": "xl/drawings/drawing8.xml",
+  "from": [
+   1,
+   13
+  ],
+  "to": [
+   2,
+   15
+  ]
+ },
+ "xl/charts/chart22.xml": {
+  "drawing": "xl/drawings/drawing8.xml",
+  "from": [
+   6,
+   13
+  ],
+  "to": [
+   8,
+   15
+  ]
+ },
+ "xl/charts/chart20.xml": {
+  "drawing": "xl/drawings/drawing7.xml",
+  "from": [
+   7,
+   4
+  ],
+  "to": [
+   13,
+   16
+  ]
+ },
+ "xl/charts/chart24.xml": {
+  "drawing": "xl/drawings/drawing10.xml",
+  "from": [
+   4,
+   20
+  ],
+  "to": [
+   6,
+   21
+  ]
+ },
+ "xl/charts/chart1.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   5
+  ],
+  "to": [
+   8,
+   19
+  ]
+ },
+ "xl/charts/chart2.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   30
+  ],
+  "to": [
+   8,
+   44
+  ]
+ },
+ "xl/charts/chart3.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   55
+  ],
+  "to": [
+   8,
+   69
+  ]
+ },
+ "xl/charts/chart4.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   80
+  ],
+  "to": [
+   8,
+   94
+  ]
+ },
+ "xl/charts/chart5.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   105
+  ],
+  "to": [
+   8,
+   119
+  ]
+ },
+ "xl/charts/chart6.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   8,
+   105
+  ],
+  "to": [
+   15,
+   119
+  ]
+ },
+ "xl/charts/chart7.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   130
+  ],
+  "to": [
+   8,
+   144
+  ]
+ },
+ "xl/charts/chart8.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   155
+  ],
+  "to": [
+   8,
+   169
+  ]
+ },
+ "xl/charts/chart9.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   178
+  ],
+  "to": [
+   8,
+   193
+  ]
+ },
+ "xl/charts/chart10.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   203
+  ],
+  "to": [
+   8,
+   217
+  ]
+ },
+ "xl/charts/chart11.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   1,
+   228
+  ],
+  "to": [
+   8,
+   241
+  ]
+ },
+ "xl/charts/chart12.xml": {
+  "drawing": "xl/drawings/drawing1.xml",
+  "from": [
+   8,
+   228
+  ],
+  "to": [
+   15,
+   241
+  ]
+ },
+ "xl/charts/chart25.xml": {
+  "drawing": "xl/drawings/drawing11.xml",
+  "from": [
+   7,
+   3
+  ],
+  "to": [
+   14,
+   8
+  ]
+ },
+ "xl/charts/chart26.xml": {
+  "drawing": "xl/drawings/drawing11.xml",
+  "from": [
+   7,
+   19
+  ],
+  "to": [
+   14,
+   33
+  ]
+ },
+ "xl/charts/chart27.xml": {
+  "drawing": "xl/drawings/drawing11.xml",
+  "from": [
+   7,
+   35
+  ],
+  "to": [
+   14,
+   49
+  ]
+ },
+ "xl/charts/chart28.xml": {
+  "drawing": "xl/drawings/drawing11.xml",
+  "from": [
+   15,
+   3
+  ],
+  "to": [
+   22,
+   8
+  ]
+ },
+ "xl/charts/chart29.xml": {
+  "drawing": "xl/drawings/drawing11.xml",
+  "from": [
+   15,
+   19
+  ],
+  "to": [
+   22,
+   33
+  ]
+ },
+ "xl/charts/chart30.xml": {
+  "drawing": "xl/drawings/drawing12.xml",
+  "from": [
+   7,
+   3
+  ],
+  "to": [
+   14,
+   10
+  ]
+ },
+ "xl/charts/chart31.xml": {
+  "drawing": "xl/drawings/drawing12.xml",
+  "from": [
+   7,
+   21
+  ],
+  "to": [
+   14,
+   28
+  ]
+ },
+ "xl/charts/chart13.xml": {
+  "drawing": "xl/drawings/drawing3.xml",
+  "from": [
+   10,
+   3
+  ],
+  "to": [
+   17,
+   12
+  ]
+ },
+ "xl/charts/chart32.xml": {
+  "drawing": "xl/drawings/drawing13.xml",
+  "from": [
+   9,
+   19
+  ],
+  "to": [
+   13,
+   20
+  ]
+ },
+ "xl/charts/chart33.xml": {
+  "drawing": "xl/drawings/drawing13.xml",
+  "from": [
+   15,
+   17
+  ],
+  "to": [
+   22,
+   19
+  ]
+ },
+ "xl/charts/chart34.xml": {
+  "drawing": "xl/drawings/drawing13.xml",
+  "from": [
+   9,
+   31
+  ],
+  "to": [
+   13,
+   32
+  ]
+ },
+ "xl/charts/chart14.xml": {
+  "drawing": "xl/drawings/drawing4.xml",
+  "from": [
+   11,
+   3
+  ],
+  "to": [
+   18,
+   15
+  ]
+ },
+ "xl/charts/chart15.xml": {
+  "drawing": "xl/drawings/drawing4.xml",
+  "from": [
+   11,
+   23
+  ],
+  "to": [
+   18,
+   34
+  ]
+ },
+ "xl/charts/chart35.xml": {
+  "drawing": "xl/drawings/drawing14.xml",
+  "from": [
+   8,
+   3
+  ],
+  "to": [
+   16,
+   15
+  ]
+ },
+ "xl/charts/chart36.xml": {
+  "drawing": "xl/drawings/drawing14.xml",
+  "from": [
+   8,
+   23
+  ],
+  "to": [
+   16,
+   34
+  ]
+ },
+ "xl/charts/chart16.xml": {
+  "drawing": "xl/drawings/drawing5.xml",
+  "from": [
+   8,
+   4
+  ],
+  "to": [
+   15,
+   16
+  ]
+ },
+ "xl/charts/chart17.xml": {
+  "drawing": "xl/drawings/drawing5.xml",
+  "from": [
+   8,
+   21
+  ],
+  "to": [
+   15,
+   25
+  ]
+ },
+ "xl/charts/chart18.xml": {
+  "drawing": "xl/drawings/drawing5.xml",
+  "from": [
+   8,
+   39
+  ],
+  "to": [
+   15,
+   44
+  ]
+ },
+ "xl/charts/chart37.xml": {
+  "drawing": "xl/drawings/drawing15.xml",
+  "from": [
+   5,
+   29
+  ],
+  "to": [
+   12,
+   32
+  ]
+ },
+ "xl/charts/chart19.xml": {
+  "drawing": "xl/drawings/drawing6.xml",
+  "from": [
+   13,
+   3
+  ],
+  "to": [
+   21,
+   13
+  ]
+ }
+}
