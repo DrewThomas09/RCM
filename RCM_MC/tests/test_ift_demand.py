@@ -154,3 +154,25 @@ class TestDemandPage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DoubleEscapeRegressionTests(unittest.TestCase):
+    """2026-07-10 user-reported: the growth-evidence tables passed BUILT
+    markup through the escaping _table() helper, and the YoY table
+    pre-escaped cells before _table() escaped them again — both rendered
+    literal HTML/entities on /ift-demand. Guard both directions."""
+
+    def test_no_escaped_tags_or_double_entities_render(self):
+        import re
+        from rcm_mc.ui.ift_demand_page import render_ift_demand
+        h = render_ift_demand({})
+        self.assertEqual(
+            re.findall(r"&lt;(strong|span|a href|br|em|td|tr)", h), [],
+            "built markup was escaped — raw table cells routed through "
+            "_table()?")
+        self.assertEqual(
+            re.findall(r"&amp;(amp|lt|gt|ldquo|rdquo|quot);", h), [],
+            "double-escaped entity — cell pre-escaped before _table()?")
+        # the growth-evidence links + chips must render as real markup
+        self.assertIn('href="https://doi.org/10.1016/j.ajem.2026.04.025"', h)
+        self.assertIn('ifd-chip ifd-chip-academic', h)

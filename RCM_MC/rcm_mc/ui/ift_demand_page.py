@@ -372,10 +372,12 @@ def _national_section(nf) -> str:
                "central, all-payer, ex-NEMT ex-air")
         + _kpi("IFT legs / yr", f"{nf.ift_legs_low_m:.0f}-{nf.ift_legs_high_m:.0f}M",
                "all-payer ground interfacility")
-        + _kpi("US hospitals (origins)", _num(nf.n_hospitals_national),
-               f'{_chip("SOURCED")} the IFT origin universe')
-        + _kpi("Post-acute destinations", _num(nf.postacute_destinations),
-               f'{_chip("SOURCED")} SNF/IRF/LTACH/hospice/HHA')
+        + _kpi("US hospitals (origins)",
+               f'{_num(nf.n_hospitals_national)} {_chip("SOURCED")}',
+               "the IFT origin universe")
+        + _kpi("Post-acute destinations",
+               f'{_num(nf.postacute_destinations)} {_chip("SOURCED")}',
+               "SNF/IRF/LTACH/hospice/HHA")
         + _kpi("Volume growth", _pct(nf.volume_growth_pct),
                "aging + acuity (the demand engine)")
         + _kpi("Organic market growth", _pct(nf.market_growth_pct),
@@ -504,10 +506,13 @@ def _yoy_section() -> str:
     crows = []
     for p in proj[:16]:
         traj = " → ".join(_num(pt.volume) for pt in p.points)
-        crows.append((_esc(p.name), _esc(p.family), _esc(p.transport_acuity),
+        # No _esc() here — _table() escapes every cell itself; pre-escaping
+        # double-encoded condition names, so 'x -> y' rendered as the
+        # literal text '-&gt;' (user-reported 2026-07-10).
+        crows.append((p.name, p.family, p.transport_acuity,
                       f"{_num(p.base_volume)} ({p.base_year})",
                       _pct(p.cagr * 100), _num(p.end_volume),
-                      "+" + _num(p.added_cases), _esc(traj)))
+                      "+" + _num(p.added_cases), traj))
     body = (
         '<p class="ifd-prose">Every condition\'s demand grown <strong>year over '
         'year</strong> at its own demographic CAGR (age-band population growth, '
@@ -601,12 +606,14 @@ def _mmt_section() -> str:
         '<div class="ifd-kpi-grid">'
         + _kpi("Counties", _num(fs.n_county),
                f"{_num(fs.n_cbsa)} CBSAs across {_num(fs.n_states)} states")
-        + _kpi("Footprint population", _num(fs.pop_2020),
-               f'{_chip("GOV")} 2020 Census')
+        + _kpi("Footprint population",
+               f'{_num(fs.pop_2020)} {_chip("GOV")}',
+               "2020 Census")
         + _kpi("65+ population", _num(fs.pop_65_plus),
                f"{_pct(fs.senior_share * 100)} senior share")
-        + _kpi("Modeled demand", _num(fs.demand_missions) + " legs/yr",
-               f'{_usd_m(fs.demand_dollars)} {_chip("DERIVED")}')
+        + _kpi("Modeled demand",
+               f'{_num(fs.demand_missions)} legs/yr {_chip("DERIVED")}',
+               f"{_usd_m(fs.demand_dollars)} at the $469 Medicare-avg floor")
         + '</div>')
     # CBSA / subcounty demand table
     cbsa_rows = []
@@ -764,27 +771,37 @@ def _growth_evidence_section() -> str:
         items = _ge.by_theme(theme)
         if not items:
             continue
-        rows = []
+        # Cells are BUILT markup (strong figure + quote span + basis chip +
+        # source link), so this table is assembled raw with each data field
+        # escaped individually — routing it through _table() double-escaped
+        # every tag and the section rendered as literal HTML (user-reported
+        # 2026-07-10). Never pass pre-built markup through _table().
+        body_rows = []
         for e in items:
             flag = ("verbatim" if e.verbatim else "re-verify")
             quote = (f'<br><span style="font-size:11.5px;color:'
                      f'var(--sc-muted,#6b6357);font-style:italic;">'
                      f'&ldquo;{_esc(e.quote)}&rdquo;</span>' if e.quote else "")
-            rows.append([
-                f"<strong>{_esc(e.figure)}</strong>{quote}",
-                _esc(e.value),
-                _chip(e.basis),
-                (f'<a href="{_esc(e.url)}" target="_blank" rel="noopener">'
-                 f"{_esc(e.source)}</a> "
-                 f'<span style="font-size:10px;color:var(--sc-muted,#6b6357);">'
-                 f"[{flag}]</span>"),
-            ])
+            body_rows.append(
+                "<tr>"
+                f"<td><strong>{_esc(e.figure)}</strong>{quote}</td>"
+                f"<td>{_esc(e.value)}</td>"
+                f"<td>{_chip(e.basis)}</td>"
+                f'<td><a href="{_esc(e.url)}" target="_blank" '
+                f'rel="noopener">{_esc(e.source)}</a> '
+                f'<span style="font-size:10px;color:var(--sc-muted,'
+                f'#6b6357);">[{flag}]</span></td>'
+                "</tr>")
+        table = (
+            '<div class="ifd-wrap"><table class="ifd-tab"><thead><tr>'
+            "<th>Figure (with quote where captured)</th><th>Value</th>"
+            "<th>Basis</th><th>Source</th></tr></thead>"
+            f"<tbody>{''.join(body_rows)}</tbody></table></div>")
         blocks.append(
             ck_section_header(label, eyebrow=f"GROWTH EVIDENCE · "
                               f"{theme.upper().replace('-', ' ')}",
                               count=len(items))
-            + _table(["Figure (with quote where captured)", "Value",
-                      "Basis", "Source"], rows))
+            + table)
     n_verbatim = sum(1 for e in evs if e.verbatim)
     n_rev = len(_ge.reverify_queue())
     intro = (
