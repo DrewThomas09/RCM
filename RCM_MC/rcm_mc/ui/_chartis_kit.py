@@ -7533,6 +7533,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "ift-sourcing",  "title": "Interfacility Transport · sourcing prompts Part 1 (scope-bounded research prompts w/ prioritized GOV/academic sources, connector datasets & where each answer lives)", "route": "/ift-sourcing"},
     {"id": "ift-demand",    "title": "Interfacility Transport · demand deep-dive (national→regional→subcounty, CMS BLS/ALS/SCT code analysis × emergency/non-emergency, population growth, hospitals, trailed over time, MMT counties & customers)", "route": "/ift-demand"},
     {"id": "ift-hs-demand", "title": "Interfacility Transport · health-system demand sizing (HCRIS hospital-discharge driven, SNF dropped, by health system & county, + demand-data inventory)", "route": "/ift-hs-demand"},
+    {"id": "ift-service-levels", "title": "In-Depth IFT — BLS · ALS1 · ALS2 · CCT (service-level definitions, clinical/operational needs, reimbursement, edge cases — fully sourced)", "route": "/in-depth-ift-bls-als1-als2-cct"},
     {"id": "hc-verticals",  "title": "Healthcare Verticals 2025–2026", "route": "/healthcare-verticals"},
     {"id": "hc-unit-econ",  "title": "Cross-Vertical Unit Economics", "route": "/healthcare-verticals/unit-economics"},
     {"id": "market-geo",    "title": "Market Intel · Geographic", "route": "/market-intel/geo"},

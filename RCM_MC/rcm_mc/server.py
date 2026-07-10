@@ -5331,6 +5331,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.ift_hs_demand_page import render_ift_hs_demand
             _qs = urllib.parse.parse_qs(parsed.query)
             return self._send_html(render_ift_hs_demand(_qs))
+
+        # IFT clinical service levels in depth — BLS / ALS1 / ALS2 / SCT-CCT
+        # (definitions, clinical + operational needs, reimbursement, edge
+        # cases, misconceptions, conclusion test; fully sourced, zero
+        # illustrative). See ui/ift_service_levels_page.py +
+        # market_reports/ift_service_levels.py.
+        if path == "/in-depth-ift-bls-als1-als2-cct":
+            from .ui.ift_service_levels_page import render_ift_service_levels
+            _qs = urllib.parse.parse_qs(parsed.query)
+            return self._send_html(render_ift_service_levels(_qs))
         if path == "/healthcare-verticals":
             from .ui.data_public.healthcare_verticals_page import render_verticals_intel_index
             return self._send_html(render_verticals_intel_index())
