@@ -198,12 +198,36 @@ def county_growth() -> List["CountyGrowth"]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# National-anchored IFT per-capita rates (ILLUSTRATIVE). US ground IFT ~4.5M
-# legs/yr; the 65+ cohort generates the large majority of interfacility volume
-# (aging + acuity + post-acute recurrence), so the model splits the rate by age.
+# Per-capita IFT rates — DERIVED from the measured national transfer base,
+# no assumed age split (2026-07-10 re-derivation):
+#
+#   national measured acute interfacility legs / yr
+#     = 1.97M ED-to-ED transfers  (HCUP NEDS 2018-2022, Nikolla et al. 2025,
+#       ACADEMIC — evidence key `neds_ed_transfers`)
+#     + 1.50M inpatient interhospital transfers (~3.5% of admissions, HCUP
+#       NIS, ACADEMIC — evidence key `interhospital_transfers`)
+#     = 3.47M / yr
+#
+#   flat per-capita floor = 3.47M / 331,449,281 (2020 Census US pop, GOV)
+#                         = 0.010469 legs / person / yr
+#
+# This is a FLOOR: it counts only the measured acute transfer base and
+# excludes post-acute discharge legs (SNF/IRF/LTCH), recurring dialysis, and
+# behavioral-health transfers, for which no national all-payer count is
+# published. A 65+-weighted alternative (all measured legs allocated to the
+# 65+ population: 3.47M / 55.8M = 0.0622) is exposed via
+# ``footprint_demand_band`` — the two allocations bracket the read, and the
+# equation for each is stated. No uncited age-split multiplier survives.
 # ─────────────────────────────────────────────────────────────────────────────
-_RATE_65 = 0.054       # ground-IFT legs / 65+ person / yr (ILLUSTRATIVE)
-_RATE_U65 = 0.0049     # ground-IFT legs / under-65 person / yr (ILLUSTRATIVE)
+_NATL_ACUTE_LEGS = 3_470_000     # DERIVED: 1.97M (NEDS) + 1.5M (NIS)
+_US_POP_2020 = 331_449_281       # GOV — 2020 Census apportionment count
+_US_65_2020 = 55_800_000         # GOV — 2020 Census, 16.8% aged 65+
+_RATE_FLAT = _NATL_ACUTE_LEGS / _US_POP_2020        # ≈ 0.010469
+_RATE_65_WEIGHTED = _NATL_ACUTE_LEGS / _US_65_2020  # ≈ 0.0622
+_RATE_BASIS = ("DERIVED · measured national base (1.97M NEDS ED-to-ED + "
+               "1.5M NIS interhospital = 3.47M legs/yr, ACADEMIC) ÷ 2020 "
+               "Census population (GOV) — a floor that excludes post-acute/"
+               "dialysis/behavioral legs")
 # Realized $ / IFT leg — the Medicare-average FLOOR, fully derived from GOV
 # inputs: MedPAC Payment Basics Oct 2024 reports $5.3B Medicare FFS ground
 # ambulance payments across 11.3M transports (2024) → $469 average payment
@@ -228,14 +252,127 @@ class CountyDemand:
 
 
 def county_demand(c: MmtCounty) -> CountyDemand:
-    """Modeled ground-IFT demand for one county — an age-split per-capita build
-    off the 2020 population. Every rate is ILLUSTRATIVE (named, national-anchored),
-    never a filed figure."""
+    """DERIVED ground-IFT demand floor for one county: 2020 population × the
+    flat measured-base per-capita rate (equation in ``_RATE_BASIS``). No
+    uncited age-split multiplier; the 65+-weighted bracket lives in
+    ``footprint_demand_band``."""
     p65 = c.pop_65_plus
-    pu = max(0, c.pop_2020 - p65)
-    missions = int(round(p65 * _RATE_65 + pu * _RATE_U65))
+    missions = int(round(c.pop_2020 * _RATE_FLAT))
     return CountyDemand(county=c, pop_65_plus=p65, demand_missions=missions,
                         demand_dollars=missions * _REV_PER_LEG)
+
+
+@dataclass(frozen=True)
+class DemandBand:
+    """The footprint demand read as a bracket of two DERIVED allocations of
+    the measured national transfer base — never a single false-precision
+    point."""
+    flat_legs: int            # pop-share allocation (floor allocation)
+    senior_weighted_legs: int # 65+-share allocation
+    lo_legs: int
+    hi_legs: int
+    lo_dollars: float         # at the $469 Medicare-average floor
+    hi_dollars: float
+    equation_flat: str
+    equation_senior: str
+    caveat: str
+
+
+def footprint_demand_band() -> DemandBand:
+    """Footprint acute-IFT demand as the bracket of the two published-input
+    allocations. The footprint skews slightly YOUNGER than the nation
+    (15.3% vs 16.8% 65+ — Omaha/Lincoln dominate), so the 65+-share
+    allocation is the lower bound here. Never raises."""
+    pop = sum(c.pop_2020 for c in MMT_COUNTIES)
+    p65 = sum(c.pop_65_plus for c in MMT_COUNTIES)
+    flat = int(round(pop * _RATE_FLAT))
+    senior = int(round(_NATL_ACUTE_LEGS * (p65 / _US_65_2020)))
+    lo, hi = min(flat, senior), max(flat, senior)
+    return DemandBand(
+        flat_legs=flat, senior_weighted_legs=senior,
+        lo_legs=lo, hi_legs=hi,
+        lo_dollars=lo * _REV_PER_LEG, hi_dollars=hi * _REV_PER_LEG,
+        equation_flat=(f"3.47M national measured legs × (footprint pop "
+                       f"{pop:,} / US 331.4M) = {flat:,}"),
+        equation_senior=(f"3.47M × (footprint 65+ {p65:,} / US 65+ 55.8M) "
+                         f"= {senior:,}"),
+        caveat=("Both allocations of the MEASURED base (NEDS + NIS) — a "
+                "floor excluding post-acute discharge, dialysis and "
+                "behavioral legs; $ at the $469 Medicare-average floor "
+                "(MedPAC-derived)."))
+
+
+@dataclass(frozen=True)
+class OutlookScenario:
+    name: str
+    cagr_pct: float
+    five_yr_pct: float
+    equation: str
+    basis: str
+
+
+@dataclass(frozen=True)
+class VolumeOutlook:
+    """The 'potential volume increase' read — the MSA footprint tied to the
+    CDC/Census demographic engine and the measured NEDS transfer trend, as
+    two cited scenarios plus the unquantified footprint catalysts. Each
+    scenario is one published rate or an explicit composition of two; no
+    blended invented growth number."""
+    base_lo_legs: int
+    base_hi_legs: int
+    scenarios: Tuple[OutlookScenario, ...]
+    catalysts: Tuple[str, ...]
+    caveat: str
+
+
+def footprint_volume_outlook() -> VolumeOutlook:
+    """Potential IFT volume increase for the footprint. LOW = demographics
+    only (Census 65+ growth). TREND = demographics + continuation of the
+    measured national rise in the transfer share of ED visits (Peters et
+    al. 2026: +35% in 2020–22 vs 2014–16 → 5.1%/yr share growth across the
+    6-year midpoint gap). Footprint-specific catalysts are listed, not
+    quantified — no invented uplift. Never raises."""
+    band = footprint_demand_band()
+    demo = 2.69           # %/yr — Census 65+ 2025–2030 (+14.2% over 5 yrs)
+    trend_share = (1.35 ** (1.0 / 6.0) - 1.0) * 100.0    # ≈ 5.13 %/yr
+    lo = OutlookScenario(
+        "Demographics only (LOW)", demo,
+        ((1 + demo / 100) ** 5 - 1) * 100,
+        "Census 2023 NPP: US 65+ 62.7M (2025) → 71.6M (2030) = +14.2% "
+        "≈ 2.69%/yr, applied to the demand band",
+        "GOV — evidence key `pop_65_growth`")
+    mid_cagr = ((1 + demo / 100) * (1 + trend_share / 100) - 1) * 100
+    mid = OutlookScenario(
+        "Demographics + measured transfer-share trend (TREND)", mid_cagr,
+        ((1 + mid_cagr / 100) ** 5 - 1) * 100,
+        "LOW × continuation of the measured IFT share of ED arrivals "
+        "(Peters 2026, NHAMCS/NEDS: 2020–22 share = 1.35× the 2014–16 "
+        "baseline → (1.35)^(1/6)−1 ≈ 5.1%/yr), compounded with "
+        "demographics",
+        "ACADEMIC — evidence key `ift_ed_trend`; a trend-continuation "
+        "scenario, not a forecast")
+    catalysts = (
+        "CHI Mercy Council Bluffs ends labor & delivery (announced "
+        "2026-07-10; deliveries end ~Sep 2026) — OB volume re-routes "
+        "across the river to Omaha as recurring maternal transfers.",
+        "REH conversions keep no inpatient beds: Warren Memorial (Friend, "
+        "NE) converted Jan 2024; Garden County (Oshkosh) announced Dec "
+        "2025 — every admission at a converted facility becomes an IFT.",
+        "20% of Nebraska hospitals eliminated services incl. L&D in "
+        "2022–24 (NE Rural Health Assn) — each service cut converts local "
+        "admissions into transfers.",
+        "Nebraska's volunteer EMS base (80%+ of agencies) is contracting "
+        "— hospitals shift long-distance legs to contracted IFT.",
+        "Bryan/CHI/Methodist transfer centers centralize routing — "
+        "system-level contracts move whole networks at once.")
+    return VolumeOutlook(
+        base_lo_legs=band.lo_legs, base_hi_legs=band.hi_legs,
+        scenarios=(lo, mid), catalysts=catalysts,
+        caveat=("Scenarios apply PUBLISHED rates to the measured demand "
+                "band; the catalysts are documented events left "
+                "unquantified — no invented uplift percentage. The trend "
+                "scenario assumes the measured national share-shift "
+                "persists locally, which is the diligence question."))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

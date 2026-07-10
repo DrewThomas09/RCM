@@ -51,6 +51,10 @@ _BASIS_TITLES = {
     "GOV": "A published government figure (OMB delineations, 2020 Census, CMS).",
     "SOURCED": "Computed from our vendored / ingested data.",
     "ACADEMIC": "A published study / analyst estimate.",
+    "DERIVED": "Computed by an explicit equation from GOV/SOURCED/ACADEMIC "
+               "inputs — the equation and inputs are stated.",
+    "FRAMEWORK": "An analyst scaffold — a stated assumption structure to be "
+                 "replaced by company data in diligence, never a filed figure.",
     "ILLUSTRATIVE": "Modeled — the basis is named, not a filed figure.",
     "CONNECTOR": "A network-gated connector dataset — ingest-ready, honest "
                  "fallback offline.",
@@ -61,6 +65,8 @@ def _chip(basis: str) -> str:
     b = (basis or "ILLUSTRATIVE").upper()
     key = ("GOV" if b.startswith("GOV") else "SOURCED" if b.startswith("SOURCED")
            else "ACADEMIC" if b.startswith("ACADEMIC")
+           else "DERIVED" if b.startswith("DERIVED")
+           else "FRAMEWORK" if b.startswith("FRAMEWORK")
            else "CONNECTOR" if b.startswith("CONNECTOR")
            else "ILLUSTRATIVE")
     return (f'<span class="mmt-chip mmt-chip-{key.lower()}" '
@@ -74,6 +80,8 @@ vertical-align:middle;text-transform:uppercase;}
 .mmt-chip-gov{background:#e7efe9;color:#154e36;}
 .mmt-chip-sourced{background:#e0efed;color:#0f3d39;}
 .mmt-chip-academic{background:#e6edf7;color:#243b57;}
+.mmt-chip-derived{background:#e9e6f4;color:#3d3268;}
+.mmt-chip-framework{background:#efe9e2;color:#6a4e2a;}
 .mmt-chip-illustrative{background:#f6eee0;color:#7a5c1a;}
 .mmt-chip-connector{background:#edecea;color:#5a5a5a;}
 .mmt-prose{font-family:var(--sc-serif,Georgia,serif);font-size:14.5px;line-height:1.62;
@@ -127,10 +135,10 @@ def _kpi_strip(s) -> str:
         ck_kpi_block("Population (2020)", _num(s.pop_2020), "US Census"),
         ck_kpi_block("65+ share", _pct(s.senior_share),
                      f"{_num(s.pop_65_plus)} seniors"),
-        ck_kpi_block("Modeled IFT demand", f"{_num(s.demand_missions)}/yr",
-                     "ground-IFT legs (modeled)"),
-        ck_kpi_block("Modeled demand $", _usd(s.demand_dollars),
-                     "at the model's realized $/leg"),
+        ck_kpi_block("Derived IFT demand floor", f"{_num(s.demand_missions)}/yr",
+                     "measured-base per-capita × pop (DERIVED)"),
+        ck_kpi_block("Demand $ floor", _usd(s.demand_dollars),
+                     "at $469/leg — the Medicare avg (MedPAC-derived)"),
     ]
     return '<div class="ck-kpi-grid">' + "".join(kpis) + "</div>"
 
@@ -160,8 +168,9 @@ def _cbsa_table() -> str:
         "<th>Pop 2020</th><th>65+</th><th>Demand legs/yr</th><th>Demand $</th>"
         f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
         f'<p class="mmt-note">Delineations {_chip("GOV")} OMB 2023 · population '
-        f'{_chip("GOV")} 2020 Census · demand {_chip("ILLUSTRATIVE")} '
-        "national-anchored per-capita model.</p>")
+        f'{_chip("GOV")} 2020 Census · demand {_chip("DERIVED")} 2020 pop × '
+        "the measured-base per-capita floor (3.47M national NEDS+NIS legs ÷ "
+        "331.4M) · $ at the $469 Medicare-average floor.</p>")
 
 
 def _county_table() -> str:
@@ -195,8 +204,9 @@ def _county_table() -> str:
         "<th>65+ (est)</th><th>Demand legs/yr</th><th>Seat / anchor node</th>"
         f"</tr></thead><tbody>{''.join(body)}</tbody></table></div>"
         f'<p class="mmt-note">County↔CBSA {_chip("GOV")} OMB 2023 · pop '
-        f'{_chip("GOV")} 2020 Census · 65+ &amp; demand {_chip("ILLUSTRATIVE")} '
-        "(named rates). Roles: core / suburban / rural-feeder.</p>")
+        f'{_chip("GOV")} 2020 Census · 65+ share tier-based pending the ACS '
+        f'connector (flagged) · demand {_chip("DERIVED")} measured-base '
+        "per-capita floor. Roles: core / suburban / rural-feeder.</p>")
 
 
 def _connector_table() -> str:
@@ -253,7 +263,7 @@ def _clinical_table() -> str:
         "<th>Condition</th><th>Family</th><th>Transfer</th><th>ICD-10-CM</th>"
         f"<th>Codes ok</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
         f'<p class="mmt-note">Conditions ranked by demographic CAGR '
-        f'{_chip("ILLUSTRATIVE")}; national volumes {_chip("GOV")}/'
+        f'{_chip("DERIVED")}; national volumes {_chip("GOV")}/'
         f'{_chip("ACADEMIC")}; ICD-10-CM codes {_chip("SOURCED")} validated '
         "against the code set.</p>")
 
@@ -326,7 +336,7 @@ def _serviceable_section() -> str:
         "<th>s(m)</th><th>Serviceable legs/yr</th><th>MMT share</th>"
         "<th>MMT legs/yr</th><th>MMT revenue</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
-        f'<p class="mmt-note">s(m) {_chip("ILLUSTRATIVE")} reuses the study '
+        f'<p class="mmt-note">s(m) {_chip("FRAMEWORK")} reuses the study '
         "funnel's serviceable share by insource archetype, so this SOM agrees "
         f"with the market model; MMT share {_chip('ILLUSTRATIVE')} from the "
         "ift_geo competitive reads.</p>")
@@ -443,7 +453,7 @@ def _scenario_section() -> str:
         "<th>SOM high</th><th>Swing</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
         f'<p class="mmt-note">The SOM is multiplicative in each lever, so a swing '
-        f"scales the base directly. {_chip('ILLUSTRATIVE')} — a modeled range.</p>")
+        f"scales the base directly. {_chip('FRAMEWORK')} — a stated range, not data.</p>")
 
 
 def _opportunity_section() -> str:
@@ -474,7 +484,7 @@ def _opportunity_section() -> str:
         "</table></div>"
         f'<p class="mmt-note">Contestable = county demand × s(m); the '
         "current/headroom split is on the metro's MMT share. "
-        f'{_chip("ILLUSTRATIVE")} — reuses the serviceable model.</p>')
+        f'{_chip("FRAMEWORK")} — reuses the serviceable model.</p>')
 
 
 def _accounts_section() -> str:
@@ -863,6 +873,47 @@ def _litigation_section() -> str:
         f'<p class="mmt-prose">{_esc(read)}</p>')
 
 
+def _demand_band_section() -> str:
+    try:
+        band = _m.footprint_demand_band()
+        outlook = _m.footprint_volume_outlook()
+    except Exception:  # noqa: BLE001
+        return ""
+    scen_rows = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(s.name)}</td>'
+        f'<td class="num">{s.cagr_pct:.1f}%/yr</td>'
+        f'<td class="num">+{s.five_yr_pct:.1f}%</td>'
+        f"<td>{_esc(s.equation)}</td>"
+        f"<td>{_esc(s.basis)}</td>"
+        "</tr>" for s in outlook.scenarios)
+    catalysts = "".join(f"<li style='margin:5px 0;'>{_esc(c)}</li>"
+                        for c in outlook.catalysts)
+    return (
+        ck_section_header("Footprint demand band — derived, bracketed",
+                          eyebrow="THE MEASURED BASE, TWO ALLOCATIONS")
+        + '<p class="mmt-prose">The footprint demand read is a '
+        f"<strong>bracket, not a point</strong>: {_num(band.lo_legs)}–"
+        f"{_num(band.hi_legs)} acute IFT legs/yr "
+        f"({_usd(band.lo_dollars)}–{_usd(band.hi_dollars)} at the $469 "
+        "Medicare-average floor). Both bounds are allocations of the "
+        "measured national transfer base — the equations:</p>"
+        f'<p class="mmt-note">POP-SHARE&nbsp; {_esc(band.equation_flat)}'
+        f"<br>65+-SHARE&nbsp; {_esc(band.equation_senior)}"
+        f"<br>{_esc(band.caveat)}</p>"
+        + ck_section_header("Potential volume increase — the scenario "
+                            "band", eyebrow="MSA × CENSUS × NEDS, TIED "
+                            "TOGETHER")
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Scenario</th><th>CAGR</th><th>5-yr</th><th>Equation</th>"
+        f"<th>Basis</th></tr></thead><tbody>{scen_rows}</tbody></table></div>"
+        + '<p class="mmt-note" style="font-weight:600;">FOOTPRINT '
+        "CATALYSTS — DOCUMENTED, NOT QUANTIFIED</p>"
+        f'<ul style="font-size:12.5px;line-height:1.55;max-width:96ch;'
+        f'padding-left:20px;margin:2px 0 8px;">{catalysts}</ul>'
+        f'<p class="mmt-note">{_esc(outlook.caveat)}</p>')
+
+
 def _growth_counties_section() -> str:
     try:
         rows = _m.county_growth()
@@ -941,8 +992,8 @@ def render_ift_mmt(qs=None) -> str:
     if s:
         parts.append(_kpi_strip(s))
     parts += [
-        _cbsa_table(), _county_table(), _growth_counties_section(),
-        _serviceable_section(),
+        _cbsa_table(), _county_table(), _demand_band_section(),
+        _growth_counties_section(), _serviceable_section(),
         _scenario_section(), _opportunity_section(), _operating_section(),
         _payer_section(), _growth_section(), _connector_table(),
         _clinical_table(), _metro_read(),
