@@ -19,7 +19,7 @@ Read-only companions in the IFT estate (cross-linked, never modified here):
 from __future__ import annotations
 
 import html as _html
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell,
