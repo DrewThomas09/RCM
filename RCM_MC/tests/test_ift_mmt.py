@@ -235,13 +235,18 @@ class MmtPageTests(unittest.TestCase):
         self.html = render_ift_mmt()
 
     def test_renders_every_section(self):
-        for needle in ("County Deep Dive", "Footprint by CBSA",
+        for needle in ("Company Deep Dive", "Footprint by CBSA",
                        "Every county MMT serves", "Serviceable market (SOM)",
                        "Operating model", "County-grain data-connector coverage",
                        "clinical drivers", "moat read", "Positioning scorecard",
                        "Growth projection", "SWOT", "County opportunity ranking",
                        "Anchor-system account map", "SOM scenario band",
-                       "Payer mix", "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS"):
+                       "Payer mix", "VALUE-CREATION LEVERS", "DILIGENCE QUESTIONS",
+                       # 2026-07-10 company-truth sections (research pull)
+                       "NPPES-verified", "Ownership &amp; scale",
+                       "Hospital-system customer deep dives",
+                       "Competitive landscape", "Litigation",
+                       "legacy core, county by county"):
             self.assertIn(needle, self.html, f"missing section: {needle}")
 
     def test_surfaces_counties_and_connectors(self):

@@ -117,19 +117,20 @@ def _cta() -> str:
 
 
 def _kpi_strip(s) -> str:
+    # No `code=` badges here — six bracket chips rendered as a row of
+    # floating debris next to the values (2026-07-10 audit).
     kpis = [
         ck_kpi_block("CBSAs served", str(s.n_cbsa),
-                     f"{s.n_msa} MSA · {s.n_micro} micro", code="MSA/μSA"),
+                     f"{s.n_msa} MSA · {s.n_micro} micro"),
         ck_kpi_block("Counties", str(s.n_county),
-                     f"{s.n_states} states · {s.n_metros} metros", code="COUNTY"),
-        ck_kpi_block("Population (2020)", _num(s.pop_2020),
-                     "US Census", code="POP"),
+                     f"{s.n_states} states · {s.n_metros} metros"),
+        ck_kpi_block("Population (2020)", _num(s.pop_2020), "US Census"),
         ck_kpi_block("65+ share", _pct(s.senior_share),
-                     f"{_num(s.pop_65_plus)} seniors", code="65+"),
+                     f"{_num(s.pop_65_plus)} seniors"),
         ck_kpi_block("Modeled IFT demand", f"{_num(s.demand_missions)}/yr",
-                     "ground-IFT legs (modeled)", code="LEGS"),
+                     "ground-IFT legs (modeled)"),
         ck_kpi_block("Modeled demand $", _usd(s.demand_dollars),
-                     "@ $1,300/leg (illustrative)", code="$"),
+                     "at the model's realized $/leg"),
     ]
     return '<div class="ck-kpi-grid">' + "".join(kpis) + "</div>"
 
@@ -611,32 +612,294 @@ def _diligence_section() -> str:
         "model + ift_geo reads — a diligence scaffold, not a filed figure.</p>")
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Company-truth sections (2026-07-10 research pull) — who MMT actually is.
+# These render from ift_company / ift_health_systems / ift_npi_landscape and
+# sit ABOVE the county model, which is re-framed as the legacy-core deep dive.
+# ─────────────────────────────────────────────────────────────────────────────
+def _company_kpis() -> str:
+    try:
+        from ..market_reports import ift_company as _co
+        states = _co.npi_states()
+        n_npi = len(_co.MMT_NPI_LOCATIONS)
+    except Exception:  # noqa: BLE001
+        return ""
+    kpis = [
+        ck_kpi_block("States of operation", "13",
+                     "company claim, 2026 (PRESS)"),
+        ck_kpi_block("Org NPIs on file", str(n_npi),
+                     f"{len(states)} states (NPPES, 2026-07-10)"),
+        ck_kpi_block("Team members", "2,800+", "company claim, 2026 (PRESS)"),
+        ck_kpi_block("Fleet", "500+", "vehicles incl. air + para-transit "
+                     "(PRESS)"),
+        ck_kpi_block("Missions / year", "200,000+",
+                     "Jan 2022 deal release (PRESS)"),
+        ck_kpi_block("Sponsor", "Harbour Point",
+                     "recap Jan 2022 · Headway co-invest"),
+    ]
+    return '<div class="ck-kpi-grid">' + "".join(kpis) + "</div>"
+
+
+def _estate_section() -> str:
+    try:
+        from ..market_reports import ift_company as _co
+        core = _co.legacy_core_locations()
+        exp = _co.expansion_locations()
+        stations = _co.MMT_WEB_STATIONS
+    except Exception:  # noqa: BLE001
+        return ""
+
+    def _rows(locs):
+        out = []
+        for l in locs:
+            out.append(
+                "<tr>"
+                f'<td class="num">{_esc(l.npi)}</td>'
+                f'<td class="lab">{_esc(l.city)}, {_esc(l.state)}</td>'
+                f"<td>{_esc(l.name)}</td>"
+                f"<td>{_esc(l.address)}</td>"
+                f"<td>{_esc(l.note)}</td>"
+                "</tr>")
+        return "".join(out)
+
+    head = ("<thead><tr><th>NPI</th><th>City</th><th>Registered name / DBA"
+            "</th><th>Practice address</th><th>Note</th></tr></thead>")
+    web = ", ".join(f"{c}, {st}" for c, st in stations)
+    return (
+        ck_section_header("The location estate — NPPES-verified",
+                          eyebrow="WHO MMT ACTUALLY IS",
+                          count=len(core) + len(exp))
+        + '<p class="mmt-prose">The prior read modeled MMT as a Nebraska–Iowa '
+        "operator. The NPI registry says otherwise: the legacy core "
+        "(NE/IA/SD, below left of the divider) now sits inside a "
+        "<strong>13-state platform</strong> whose 2023–24 enumerations "
+        "(Des Moines, Omaha, Kansas City) and OH/IN/WI/CO/RI/NC/VA units "
+        "track the Harbour Point expansion play.</p>"
+        f'<p class="mmt-note">LEGACY CORE (NE · IA · SD) {_chip("SOURCED")}</p>'
+        f'<div class="mmt-wrap"><table class="mmt-tab">{head}'
+        f"<tbody>{_rows(core)}</tbody></table></div>"
+        f'<p class="mmt-note">EXPANSION UNITS (2022–) {_chip("SOURCED")}</p>'
+        f'<div class="mmt-wrap"><table class="mmt-tab">{head}'
+        f"<tbody>{_rows(exp)}</tbody></table></div>"
+        f'<p class="mmt-note">Station cities named by company/web sources '
+        f"without a separate captured NPI (subparts often bill under a "
+        f"parent): {_esc(web)}. NPPES pull 2026-07-10; the VA record's "
+        "same-org link is flagged, not asserted.</p>")
+
+
+def _ownership_section() -> str:
+    try:
+        from ..market_reports import ift_company as _co
+        tl = _co.OWNERSHIP_TIMELINE
+        est = _co.REVENUE_ESTIMATES
+        est_read = _co.REVENUE_ESTIMATE_READ
+        srcs = _co.SOURCES
+    except Exception:  # noqa: BLE001
+        return ""
+    rows = []
+    for ev in tl:
+        src = srcs.get(ev.source_key)
+        link = (f'<a href="{_esc(src.url)}" target="_blank" rel="noopener">'
+                f"{_esc(src.basis)}</a>" if src else "")
+        rows.append(
+            "<tr>"
+            f'<td class="lab">{_esc(ev.year)}</td>'
+            f"<td><strong>{_esc(ev.event)}</strong><br>"
+            f'<span style="font-size:12px;color:var(--sc-muted,#6b6357);">'
+            f"{_esc(ev.detail)}</span></td>"
+            f"<td>{link}</td></tr>")
+    est_rows = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(srcs[e.source_key].label.split(" ")[0])}</td>'
+        f"<td>{_esc(e.value)}</td>"
+        f'<td>{_esc(e.as_of)}</td></tr>' for e in est if e.source_key in srcs)
+    return (
+        ck_section_header("Ownership & scale — the PE trail",
+                          eyebrow="1987 FOUNDING → HARBOUR POINT PLATFORM")
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Year</th><th>Event</th><th>Basis</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+        + ck_section_header("Third-party revenue estimates — shown, "
+                            "not blended", eyebrow="HANDLE WITH CARE")
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Estimator</th><th>Estimate</th><th>As of</th></tr></thead>"
+        f"<tbody>{est_rows}</tbody></table></div>"
+        f'<p class="mmt-prose">{_esc(est_read)}</p>')
+
+
+def _customers_section() -> str:
+    try:
+        from ..market_reports import ift_health_systems as _hs
+        systems = _hs.systems()
+        statewide = _hs.STATEWIDE
+    except Exception:  # noqa: BLE001
+        return ""
+    cards = []
+    for s in systems:
+        fac_rows = "".join(
+            "<tr>"
+            f'<td class="lab">{_esc(f.name)}</td>'
+            f"<td>{_esc(f.city)}, {_esc(f.state)}</td>"
+            f'<td class="num">{_esc(f.beds)}</td>'
+            f'<td class="num">{_esc(f.ccn or "—")}</td>'
+            "</tr>" for f in s.facilities)
+        catalysts = "".join(f"<li style='margin:4px 0;'>{_esc(c)}</li>"
+                            for c in s.catalysts)
+        links = " · ".join(
+            f'<a href="{_esc(u)}" target="_blank" rel="noopener">source</a>'
+            for u in s.sources)
+        cards.append(
+            '<div style="border:1px solid var(--sc-border,#e4dccb);'
+            'border-radius:4px;padding:14px 16px;margin:0 0 14px;'
+            'background:var(--sc-surface,#faf7f1);">'
+            f'<div style="font-family:var(--sc-serif,Georgia,serif);'
+            f'font-size:16px;font-weight:600;">{_esc(s.name)}'
+            f'<span style="font-size:12px;font-weight:400;color:'
+            f'var(--sc-muted,#6b6357);"> · {_esc(s.hq)}</span></div>'
+            f'<p class="mmt-prose" style="margin:6px 0;">{_esc(s.role)}</p>'
+            f'<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+            f"<th>Facility</th><th>City</th><th>Beds</th><th>CCN</th>"
+            f"</tr></thead><tbody>{fac_rows}</tbody></table></div>"
+            f'<p class="mmt-note"><strong>Transfer coordination:</strong> '
+            f"{_esc(s.transfer_center)}</p>"
+            f'<p class="mmt-note"><strong>Transport posture:</strong> '
+            f"{_esc(s.ems_posture)}</p>"
+            + (f'<p class="mmt-note" style="font-weight:600;">CATALYSTS</p>'
+               f'<ul style="font-size:12.5px;line-height:1.5;max-width:92ch;'
+               f'padding-left:20px;margin:2px 0 8px;">{catalysts}</ul>'
+               if s.catalysts else "")
+            + f'<p class="mmt-prose" style="font-style:italic;">'
+            f"{_esc(s.ift_read)}</p>"
+            f'<p class="mmt-note">{links}</p></div>')
+    return (
+        ck_section_header("Hospital-system customer deep dives",
+                          eyebrow="THE ACCOUNTS THAT GENERATE THE TRANSFERS",
+                          count=len(systems))
+        + f'<p class="mmt-prose">Statewide frame: {_esc(statewide["ne_hospitals"])}. '
+        f'{_esc(statewide["transfer_center_stats"])} '
+        f'{_esc(statewide["maternity"])}</p>'
+        + "".join(cards))
+
+
+def _competitors_section() -> str:
+    try:
+        from ..market_reports import ift_npi_landscape as _npi
+        summ = _npi.summary()
+        comps = _npi.COMPETITORS
+    except Exception:  # noqa: BLE001
+        return ""
+    if not summ.get("available"):
+        return ""
+    ne, ia = summ["ne"], summ["ia"]
+    labels = _npi.CATEGORY_LABELS
+    count_rows = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(labels.get(cat, cat))}</td>'
+        f'<td class="num">{_num(ne.get(cat, 0))}</td>'
+        f'<td class="num">{_num(ia.get(cat, 0))}</td>'
+        "</tr>" for cat in ("private", "hospital-owned",
+                            "municipal-fire-volunteer", "air"))
+    comp_rows = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(c.name)}</td>'
+        f"<td>{_esc(c.base)}</td>"
+        f"<td>{_esc(c.archetype)}</td>"
+        f"<td>{_esc(c.read)} "
+        f'<a href="{_esc(c.source_url)}" target="_blank" rel="noopener">'
+        f"source</a></td></tr>" for c in comps)
+    return (
+        ck_section_header("Competitive landscape — from the registry, "
+                          "not a guess",
+                          eyebrow=f"NPPES SWEEP · {summ['total_orgs']} ORG "
+                                  "NPIS · PULLED 2026-07-10")
+        + f'<p class="mmt-prose">{_esc(summ["read"])}</p>'
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Category</th><th>NE org NPIs</th><th>IA org NPIs</th>"
+        f"</tr></thead><tbody>{count_rows}</tbody></table></div>"
+        f'<p class="mmt-note">{_esc(summ["source_label"])} · NPPES matches '
+        "mailing OR practice address, so each state includes some "
+        "out-of-state-practice orgs; small squads often hold 2–3 NPIs.</p>"
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Competitor</th><th>Base</th><th>Archetype</th>"
+        "<th>The read</th></tr></thead>"
+        f"<tbody>{comp_rows}</tbody></table></div>"
+        f'<p class="mmt-note">Claims-data next step {_chip("CONNECTOR")}: '
+        "rank these suppliers by Medicare services + payments via the "
+        "pinned data.cms.gov datasets (Medicare Physician & Other "
+        "Practitioners by Provider & Service, CY2020–23 UUIDs in "
+        "ift_npi_landscape.CLAIMS_RECIPE) — egress-blocked from this "
+        "environment, runs from any unblocked network via "
+        "connectors/cms_open_data.</p>")
+
+
+def _litigation_section() -> str:
+    try:
+        from ..market_reports import ift_company as _co
+        lits = _co.LITIGATION
+        read = _co.LITIGATION_READ
+        srcs = _co.SOURCES
+    except Exception:  # noqa: BLE001
+        return ""
+    rows = "".join(
+        "<tr>"
+        f'<td class="lab">{_esc(l.case)}</td>'
+        f"<td>{_esc(l.court)}</td>"
+        f'<td class="num">{_esc(l.filed)}</td>'
+        f"<td>{_esc(l.nature)}</td>"
+        f"<td>{_esc(l.status)} "
+        + (f'<a href="{_esc(srcs[l.source_key].url)}" target="_blank" '
+           f'rel="noopener">docket</a>' if l.source_key in srcs else "")
+        + "</td></tr>" for l in lits)
+    return (
+        ck_section_header("Litigation & agency records — public dockets",
+                          eyebrow="COURT TRAIL", count=len(lits))
+        + '<div class="mmt-wrap"><table class="mmt-tab"><thead><tr>'
+        "<th>Case</th><th>Court</th><th>Filed</th><th>Nature</th>"
+        f"<th>Status</th></tr></thead><tbody>{rows}</tbody></table></div>"
+        f'<p class="mmt-prose">{_esc(read)}</p>')
+
+
+def _core_divider() -> str:
+    return (
+        ck_section_header("The legacy core, county by county",
+                          eyebrow="NE + WESTERN IA — WHERE THE MODEL HAS "
+                                  "COUNTY-GRAIN DATA")
+        + '<p class="mmt-prose">Everything below resolves the ORIGINAL '
+        "NE/IA service area to the county grain — 22 counties across 7 "
+        "CBSAs. It is the deepest-data slice of the platform, not the "
+        "whole platform: the 2022– expansion units (KC, OH, IN, WI, CO, "
+        "RI, NC) do not yet have county models and are sized only by "
+        "their NPPES presence above.</p>")
+
+
 def render_ift_mmt(qs=None) -> str:
-    """Render the MMT county-by-MSA deep-dive page. Degrades but never raises."""
+    """Render the MMT company deep-dive page. Degrades but never raises."""
     try:
         s = _m.footprint_summary()
     except Exception:  # noqa: BLE001
         s = None
-    meta = ""
-    if s:
-        meta = (f"{s.n_cbsa} CBSAs · {s.n_county} counties · "
-                f"{_num(s.pop_2020)} people · ~{_num(s.demand_missions)} "
-                "modeled IFT legs/yr")
     head = ck_page_title(
-        "Midwest Medical Transport — County Deep Dive",
-        eyebrow="MMT · INTERFACILITY TRANSPORT · SUBJECT OPERATOR", meta=meta)
+        "Midwest Medical Transport — Company Deep Dive",
+        eyebrow="MMT AMBULANCE · INTERFACILITY TRANSPORT · SUBJECT OPERATOR",
+        meta=("13-state IFT platform · Harbour Point Capital (2022) · "
+              "23 org NPIs · legacy core: 22 NE/IA counties, 7 CBSAs"))
     explainer = (
-        '<p class="mmt-prose">MMT (Omaha HQ) is the study\'s deep-dive subject. '
-        "This page resolves its served territory from the metro grain down to "
-        "every <strong>county, grouped by MSA</strong>, and wires each "
-        "county-level public dataset — Census 65+ demand, CMS ambulance "
-        "saturation &amp; geographic variation, CDC kidney &amp; cardiac "
-        "prevalence, the hospital origin universe, and the NPPES ambulance-"
-        "supplier field — to MMT's exact FIPS. County↔MSA delineations are OMB "
-        f"2023 {_chip('GOV')}, population is the 2020 Census {_chip('GOV')}, and "
-        f"the ground-IFT demand model is {_chip('ILLUSTRATIVE')} with named, "
-        "national-anchored per-capita rates.</p>")
-    parts: List[str] = [_STYLES, head, explainer, _cta()]
+        '<p class="mmt-prose">MMT is the study\'s deep-dive subject — an '
+        "interfacility-transport specialist founded 1987 in Columbus, NE "
+        "(explicitly 'not a 911 service'), now a private-equity platform. "
+        "This page is the company file: the NPPES-verified location "
+        "estate, the ownership trail, the hospital-system accounts that "
+        "generate the transfers, the competitive field computed from the "
+        "registry, and the public court record — then the legacy-core "
+        f"county model. Estate + registry reads are {_chip('SOURCED')}, "
+        "press/deal facts carry their links, geography is "
+        f"{_chip('GOV')} (OMB 2023 · 2020 Census).</p>")
+    parts: List[str] = [_STYLES, head, explainer, _cta(), _company_kpis()]
+    parts += [
+        _estate_section(), _ownership_section(), _customers_section(),
+        _competitors_section(), _litigation_section(),
+        _core_divider(),
+    ]
     if s:
         parts.append(_kpi_strip(s))
     parts += [
@@ -648,6 +911,6 @@ def render_ift_mmt(qs=None) -> str:
         _diligence_section(), _cta(), ck_page_actions(),
     ]
     return chartis_shell(
-        "".join(parts), "MMT — County Deep Dive", active_nav="/market",
-        subtitle="Midwest Medical Transport · county-by-MSA footprint, demand & "
-                 "connector coverage")
+        "".join(parts), "MMT — Company Deep Dive", active_nav="/market",
+        subtitle="Midwest Medical Transport · the company file + the "
+                 "legacy-core county model")

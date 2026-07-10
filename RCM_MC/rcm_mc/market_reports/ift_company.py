@@ -371,7 +371,7 @@ SCALE_CLAIMS: Tuple[ScaleClaim, ...] = (
                "then 10 states)", "PRESS", "hpc_2022"),
     ScaleClaim("Employees at 2022 deal", "~1,000 (7 states)",
                "Jan 2022 (sell-side advisor)", "PRESS", "lincoln_intl"),
-    ScaleClaim("Active org NPIs", "24 (NE 4 · IA 9 · SD 2 · MO 1 · OH 2 · "
+    ScaleClaim("Active org NPIs", "23 (NE 4 · IA 9 · SD 2 · MO 1 · OH 1 · "
                "IN 1 · WI 1 · CO 1 · RI 1 · NC 1 · VA 1)",
                "2026-07-10 (NPPES pull)", "NPPES", "nppes_pull"),
 )
