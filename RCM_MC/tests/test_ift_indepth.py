@@ -121,9 +121,12 @@ class TestInDepthPage(unittest.TestCase):
         self.assertIn("THE ANSWER IN ONE LINE", self.html)
 
     def test_storyline_arc_present(self):
+        import html as _html
         self.assertIn('class="idp-arc"', self.html)
         for step in idp.STORYLINE:
-            self.assertIn(step, self.html, f"arc step missing: {step!r}")
+            # the renderer escapes each step (apostrophes -> &#x27;)
+            self.assertIn(_html.escape(step), self.html,
+                          f"arc step missing: {step!r}")
 
     def test_writing_contract_chrome(self):
         # the conclusion-led structure is visible page chrome, not prose

@@ -1024,4 +1024,809 @@ Q7 = QuestionDef(
 )
 
 
-# __PART5__
+# ═════════════════════════════ QUESTION 8 ════════════════════════════════════
+
+_SCOPE = Block(
+    "q8-scope", "Service scope",
+    conclusion=(
+        "MMT's public service scope is an IFT ladder — BLS/ALS "
+        "interfacility transport, specialty/critical-care transport, and "
+        "wheelchair/para-transit — explicitly positioned as 'not a 911 "
+        "service', with air ambulance a historic line (Midwest MedAir) "
+        "whose current status is unconfirmed; every mix percentage behind "
+        "that list is company data."),
+    why_true=(
+        "The deal record defines the core: 'advanced life support and "
+        "basic life support inter-facility transports (IFT) and specialty "
+        "transports to large and mid-sized health systems, critical "
+        "access hospitals and long-term care facilities' (sponsor "
+        "release, Jan 2022).",
+        "The fleet claim confirms the low-acuity edge: '500+ vehicles "
+        "(ambulances, helicopters, para-transit vans)' — wheelchair/"
+        "para-transit capacity is in the estate by the company's own "
+        "description.",
+        "The boundary is drawn by the company itself: 'Midwest Medical "
+        "Transport is not a 911 service—it provides inter-facility "
+        "medical transportation, taking patients from hospital to "
+        "hospital, nursing home to hospital, and vice versa.'",
+        "Air is historic and flagged: Midwest MedAir flew 400+ emergency "
+        "helicopter calls alongside 30,000 ground calls in a reported "
+        "year, and the flagship NPI still carries the Air Ambulance "
+        "taxonomy — but no post-2022 confirmation of the air line exists; "
+        "recorded as unconfirmed, not asserted either way."),
+    why_matters=(
+        "The scope matches the dedicated-IFT archetype this study "
+        "contrasts against 911-first platforms — but without trip and "
+        "revenue mix by modality, the acuity-mix economics (the SCT "
+        "premium, the para-transit availability book) cannot be "
+        "underwritten from public data."),
+    evidence=(
+        _E("'advanced life support and basic life support inter-facility "
+           "transports (IFT) and specialty transports to large and "
+           "mid-sized health systems, critical access hospitals and "
+           "long-term care facilities'",
+           "SOURCED", "Businesswire / Harbour Point Capital deal release, "
+           "Jan 25 2022",
+           "https://www.businesswire.com/news/home/20220125006174/en/"),
+        _E("'500+ vehicles (ambulances, helicopters, para-transit vans)'; "
+           "13 states; 2,800+ team members",
+           "SOURCED", "mmtamb.com About Us (company self-report, 2026)",
+           "https://mmtamb.com/about-us/"),
+        _E("'Midwest Medical Transport is not a 911 service—it provides "
+           "inter-facility medical transportation…'",
+           "SOURCED", "Siouxland Chamber directory (company positioning)",
+           "https://directory.siouxlandchamber.com/list/member/midwest-medical-transport-company-6143"),
+        _E("Midwest MedAir: 30,000 ambulance calls + 400+ emergency "
+           "helicopter calls in a reported year — the historic air line",
+           "SOURCED", "Omaha World-Herald (Midwest MedAir coverage)",
+           "https://omaha.com/news/air-ambulance-team-adds-hastings-based-helicopter/article_0038cb3a-8f7d-52fc-9a70-7003fec324b2.html"),
+    ),
+    subqs=(
+        _S("Which transportation modalities does MMT provide?",
+           "Publicly: BLS and ALS interfacility, specialty/critical-care "
+           "transport, and wheelchair/para-transit vans; historically air "
+           "(Midwest MedAir, current status unconfirmed)."),
+        _S("Which modalities are core?",
+           "ALS/BLS interfacility plus specialty transports — the deal "
+           "release's own definition of the business."),
+        _S("Which modalities are offered only in selected markets?", "",
+           skip="Company data — diligence request: modality availability "
+           "by market (air and CCT footprints are the likely variables)."),
+        _S("What percentage of trips falls into each modality?", "",
+           skip="Company data — diligence request: trip mix by modality "
+           "(BLS/ALS/CCT/wheelchair)."),
+        _S("What percentage of revenue falls into each modality?", "",
+           skip="Company data — diligence request: revenue mix by "
+           "modality."),
+        _S("How does service mix differ by customer?", "",
+           skip="Company data — diligence request: mix by account class "
+           "(health system vs CAH vs long-term care)."),
+        _S("How does service mix differ by geography?", "",
+           skip="Company data — diligence request: mix by market; the "
+           "NPI estate (rural Iowa stations vs metro posts) implies "
+           "variation without quantifying it."),
+        _S("Does MMT provide both scheduled and urgent transportation?",
+           "The customer set (health systems + CAHs + long-term care) "
+           "implies both scheduled discharge and urgent transfer work; no "
+           "public statement quantifies the split."),
+        _S("Does it operate 24/7 in every market?", "",
+           skip="Company data — diligence request: staffed coverage hours "
+           "by station."),
+        _S("Which trip categories does it not serve?",
+           "911 scene response, by its own positioning ('not a 911 "
+           "service'); everything else is unstated publicly."),
+    ),
+)
+
+
+_CUSTOMERS = Block(
+    "q8-customers", "Customer scope",
+    conclusion=(
+        "MMT names its customer classes (large and mid-sized health "
+        "systems, critical access hospitals, long-term care facilities) "
+        "and its longevity ('over 35 years') but not one countable "
+        "customer metric — customer count, facility count, concentration, "
+        "tenure, and retention are all company data, and no public "
+        "contract with any named system is documented."),
+    why_true=(
+        "Customer classes are on the record twice: the 2022 deal release "
+        "(health systems, CAHs, long-term care) and the company site "
+        "('For over 35 years, MMT has partnered with some of the largest "
+        "and most prestigious health systems across the country').",
+        "The origin story is single-customer: founded 1987 'with one "
+        "ambulance, doing a few transfers a week out of the Columbus "
+        "Hospital' — the archetype of account-anchored growth.",
+        "The footprint implies but does not prove accounts: MMT stations "
+        "sit in metros anchored by CHI Health, Bryan, Methodist, Nebraska "
+        "Medicine, and Great Plains Health, yet no public registry "
+        "documents a single MMT hospital contract — recorded as "
+        "not-found, consistent with Question 1's finding that IFT "
+        "contracts are publicly invisible everywhere.",
+        "Growth events are account-shaped: the expansion NPIs (Kansas "
+        "City 2024, Columbus OH, Indianapolis, Milwaukee, Rhode Island) "
+        "each imply a market entry whose customer anchor is unnamed."),
+    why_matters=(
+        "Revenue concentration is the single largest un-derisked item: a "
+        "13-state platform whose footprint metros are each anchored by "
+        "one or two health systems could be well-diversified or "
+        "dangerously concentrated — only the customer ledger can say "
+        "which."),
+    evidence=(
+        _E("'For over 35 years, MMT has partnered with some of the "
+           "largest and most prestigious health systems across the "
+           "country'",
+           "SOURCED", "mmtamb.com About Us (company self-report, 2026)",
+           "https://mmtamb.com/about-us/"),
+        _E("Founded 1987 'with one ambulance, doing a few transfers a "
+           "week out of the Columbus Hospital'",
+           "SOURCED", "Omaha World-Herald / Columbus Telegram "
+           "retrospectives on the 2015 sale",
+           "https://omaha.com/news/nation-world/business/midwest-medical-transport-ready-to-take-flight-with-new-owners/article_b6fa47d3-9c50-5bee-85e2-528815926374.html"),
+        _E("No public hospital contract naming MMT was found for any "
+           "footprint system — an honest not-found, consistent with the "
+           "market-wide invisibility of IFT contracts",
+           "FRAMEWORK", "2026-07-10 research sweep (dead-end log)", ""),
+    ),
+    subqs=(
+        _S("How many health-system customers does MMT serve?", "",
+           skip="Company data — diligence request: customer count by "
+           "class (system / CAH / long-term care)."),
+        _S("How many facilities does it serve?", "",
+           skip="Company data — diligence request: served-facility "
+           "roster."),
+        _S("Does it contract at the health-system or facility level?", "",
+           skip="Company data — diligence request: contract structure by "
+           "account; no public contract is documented at either level."),
+        _S("What portion of customers use MMT across multiple "
+           "facilities?", "",
+           skip="Company data — diligence request: multi-facility "
+           "penetration by account."),
+        _S("What portion use multiple service modalities?", "",
+           skip="Company data — diligence request: modality cross-sell "
+           "by account."),
+        _S("How concentrated is revenue?", "",
+           skip="Company data — diligence request: top-5 / top-10 "
+           "revenue concentration."),
+        _S("How concentrated is trip volume?", "",
+           skip="Company data — diligence request: trip-volume "
+           "concentration by account."),
+        _S("What is average customer tenure?",
+           "Not published; the 1987 Columbus Hospital origin proves at "
+           "least one multi-decade relationship class exists — the "
+           "distribution is a diligence request."),
+        _S("What is customer retention?", "",
+           skip="Company data — diligence request: gross/net retention "
+           "and named churn events."),
+        _S("How often does MMT expand within an existing account?", "",
+           skip="Company data — diligence request: expansion history; "
+           "the one-truck-to-13-states arc implies land-and-expand "
+           "without documenting it."),
+        _S("What causes customer expansion?",
+           "Publicly unattributable for MMT; structurally (Questions "
+           "1-7): reliability on the routine book and transfer-center "
+           "integration are the share-of-wallet levers."),
+        _S("What causes customer loss?",
+           "Not published for MMT; the visible footprint mechanism is "
+           "competitive capture — AmeriPro's acquisition of Priority "
+           "(North Platte, Feb 2025) buys incumbency at the anchor "
+           "hospital."),
+    ),
+)
+
+
+_CAPACITY = Block(
+    "q8-capacity", "Capacity model",
+    conclusion=(
+        "The one capacity fact in public view is the posture: an IFT-only "
+        "fleet (500+ vehicles) with no 911 mandate to shed it against — "
+        "which removes Question 7's shared-truck failure mode by "
+        "construction; everything the phrase 'dedicated capacity' must "
+        "mean in a contract (reserved units, minimums, overflow, who pays "
+        "for idle) is company data."),
+    why_true=(
+        "Structural dedication is public: 'not a 911 service' means no "
+        "PSAP can pre-empt an IFT booking — the shared-fleet shedding "
+        "mechanism behind Question 7's acceptance and ETA failures is "
+        "absent by design.",
+        "Scale is claimed but the components never align in one year: "
+        "500+ vehicles / 2,800+ team members / 13 states (company site, "
+        "2026) vs 200,000+ missions/yr at the Jan 2022 deal — when the "
+        "deal release said 10 states while the sell-side advisor said "
+        "seven states and ~1,000 employees; the conflict is shown, never "
+        "blended.",
+        "Third-party estimates make capacity inference unusable: the "
+        "estimators disagree ~3x on revenue and headcount and all "
+        "disagree with the company's own 2,800+ claim.",
+        "No public document describes reservation mechanics — no "
+        "minimums, dedicated-unit fees, or overflow protocol has "
+        "surfaced — consistent with the market-wide absence of public "
+        "IFT contract terms."),
+    why_matters=(
+        "'Dedicated' is the product: whether it is contractual (reserved "
+        "units, guaranteed minimums, penalties) or rhetorical (a "
+        "scheduling preference) determines whether MMT's model actually "
+        "solves Question 7 — and only the contracts can answer it."),
+    evidence=(
+        _E("'not a 911 service' — dedication as positioning, from the "
+           "company's own directory listing",
+           "SOURCED", "Siouxland Chamber directory",
+           "https://directory.siouxlandchamber.com/list/member/midwest-medical-transport-company-6143"),
+        _E("200,000+ missions/yr at the Jan 2022 recapitalization (deal "
+           "release, then 10 states); sell-side advisor simultaneously: "
+           "'seven states and nearly 1,000 employees'",
+           "SOURCED", "Harbour Point release + Lincoln International "
+           "transaction notice, 2022",
+           "https://www.businesswire.com/news/home/20220125006174/en/"),
+        _E("Revenue estimates conflict ~3x: $296.4M/784 employees "
+           "(Growjo) vs $293.6M (ZoomInfo) vs $100-250M/~700 (LeadIQ) — "
+           "unusable for underwriting",
+           "SOURCED", "Growjo / ZoomInfo / LeadIQ estimates, 2026 "
+           "(unaudited; re-verify)", ""),
+    ),
+    subqs=(
+        _S("What does MMT mean by dedicated capacity?", "",
+           skip="Company data — diligence request: contract language "
+           "defining dedication (reserved units vs scheduling "
+           "preference)."),
+        _S("Are particular vehicles reserved?", "",
+           skip="Company data — diligence request: unit reservation by "
+           "account."),
+        _S("Are particular crews reserved?", "",
+           skip="Company data — diligence request: crew dedication by "
+           "account."),
+        _S("Is capacity dedicated by facility, health system, modality, "
+           "or geography?", "",
+           skip="Company data — diligence request: the dedication grain "
+           "in contracts."),
+        _S("Is there a guaranteed minimum?", "",
+           skip="Company data — diligence request: volume or availability "
+           "minimums in either direction."),
+        _S("Can dedicated units serve other customers?", "",
+           skip="Company data — diligence request: exclusivity and "
+           "backfill rules."),
+        _S("How is overflow managed?", "",
+           skip="Company data — diligence request: overflow/mutual-aid "
+           "protocol; no public subcontracting arrangement is "
+           "documented."),
+        _S("How is spare capacity determined?", "",
+           skip="Company data — diligence request: reserve staffing "
+           "policy."),
+        _S("How is demand forecast?",
+           "Not published; the demand curve is forecastable in principle "
+           "(Question 1's facility×hour×modality grain) — whether MMT "
+           "forecasts it is a diligence request."),
+        _S("How frequently is capacity adjusted?", "",
+           skip="Company data — diligence request: staffing-adjustment "
+           "cadence."),
+        _S("Who pays for underutilized dedicated capacity?",
+           "Not published for MMT; market-wide, availability retainers "
+           "and dedicated-unit fees are the instruments — whether MMT's "
+           "contracts carry them is the diligence question."),
+        _S("Who bears the risk when demand exceeds forecasts?", "",
+           skip="Company data — diligence request: SLA and penalty "
+           "allocation at peak demand."),
+    ),
+)
+
+
+_DISPATCH = Block(
+    "q8-dispatch", "Dispatch model",
+    conclusion=(
+        "Whether dispatch is centralized or market-based, how trips are "
+        "prioritized, and what customers can see are all company data; "
+        "what the public record fixes is the architecture's anchor points "
+        "— the historic Columbus NE headquarters estate, an Omaha "
+        "corporate NPI added in 2023, and an IFT-only mission profile "
+        "whose dispatch problem (scheduled plus urgent, no 911 "
+        "pre-emption) differs from EMS CAD by construction."),
+    why_true=(
+        "The estate shows the anchors: the flagship NPI sits at the "
+        "historic Columbus NE headquarters (2155 33rd Ave, alongside the "
+        "1987 predecessor entity), with an Omaha corporate NPI enumerated "
+        "Nov 2023 under the current leadership — a two-node core "
+        "consistent with centralized functions, without proving them.",
+        "IFT dispatch is a scheduling problem, not a proximity race: "
+        "assignment optimizes chaining, acuity match, and promised "
+        "windows (Question 1's operating read) — the correct benchmark "
+        "for any MMT dispatch diligence.",
+        "Nothing public describes MMT's CAD, prioritization scheme, or "
+        "customer visibility — recorded as not-found across company "
+        "materials.",
+        "The multi-state estate (23 active NPIs across 11 states) makes "
+        "centralize-vs-local the material question: dispatch is a classic "
+        "standardizable layer (Question 1's competitive read), and "
+        "roll-ups win or lose on it."),
+    why_matters=(
+        "Dispatch is where the dedicated thesis becomes measurable: ETA "
+        "accuracy, delay-cause coding, and hospital-caused vs "
+        "provider-caused attribution (Question 7's asks) either exist in "
+        "MMT's dispatch data or the Question 7 failures live unfixed "
+        "inside the model too."),
+    evidence=(
+        _E("Flagship NPI 1871991125 at 2155 33rd Ave, Columbus NE "
+           "(historic HQ; enumerated 2014, predecessor entity 2005); "
+           "Omaha corporate NPI 1356115562 enumerated 2023-11-08",
+           "SOURCED", "CMS NPPES registry pull, 2026-07-10",
+           "https://npiregistry.cms.hhs.gov/"),
+        _E("23 active organizational NPIs across NE/IA/SD/MO/OH/IN/WI/"
+           "CO/RI/NC/VA — the estate any dispatch architecture must span",
+           "SOURCED", "CMS NPPES registry pull, 2026-07-10",
+           "https://npiregistry.cms.hhs.gov/"),
+        _E("No public description of MMT's CAD, prioritization, or "
+           "customer-facing visibility was found",
+           "FRAMEWORK", "2026-07-10 research sweep (dead-end log)", ""),
+    ),
+    subqs=(
+        _S("Is dispatch centralized or market-based?",
+           "Not published; the Columbus NE historic HQ plus Omaha "
+           "corporate core is consistent with centralization but does "
+           "not prove it — diligence: dispatch org design."),
+        _S("How are trips entered?", "",
+           skip="Company data — diligence request: intake channels "
+           "(phone / portal / integration) by account."),
+        _S("How are they prioritized?", "",
+           skip="Company data — diligence request: priority scheme "
+           "across scheduled, urgent, and critical requests."),
+        _S("How are vehicles assigned?", "",
+           skip="Company data — diligence request: assignment logic "
+           "(chaining, acuity match, post proximity)."),
+        _S("How are scheduled and urgent requests balanced?", "",
+           skip="Company data — diligence request: reserve policy for "
+           "urgent inserts into a scheduled board."),
+        _S("How are critical-care trips prioritized?", "",
+           skip="Company data — diligence request: CCT queueing and "
+           "crew staging."),
+        _S("How are cancellations managed?", "",
+           skip="Company data — diligence request: cancellation workflow "
+           "and cause coding."),
+        _S("How are delays communicated?", "",
+           skip="Company data — diligence request: proactive "
+           "notification practice."),
+        _S("Can customers see vehicle and ETA information?", "",
+           skip="Company data — diligence request: customer-facing "
+           "visibility — Question 7's checklist, applied to MMT."),
+        _S("How is dispatch performance measured?", "",
+           skip="Company data — diligence request: KPI set (on-time %, "
+           "promised-vs-actual ETA, at-door wall time)."),
+        _S("How does dispatch differ from traditional EMS?",
+           "Structurally answerable: no PSAP and no response-time "
+           "geometry — the problem is chaining known trips against "
+           "promised windows, so IFT dispatch resembles logistics "
+           "software more than 911 CAD."),
+    ),
+)
+
+
+_GEOGRAPHY = Block(
+    "q8-geography", "Geographic model",
+    conclusion=(
+        "Geography is the best-documented layer of the whole model: a "
+        "contiguous NE/IA/SD legacy core (15 of 23 NPIs; 22 counties, "
+        "~1.56M people on the I-80 spine) built over 35 years, and a "
+        "2023-26 expansion ring (Kansas City, Columbus OH, Indianapolis, "
+        "Milwaukee, Colorado Springs, Rhode Island, North Carolina) that "
+        "is discontiguous by design — an account-led, not corridor-led, "
+        "growth pattern."),
+    why_true=(
+        "The registry dates the build: legacy-core NPIs enumerate "
+        "2005-2016 (Columbus predecessor 2005, flagship 2014, Council "
+        "Bluffs 2015, Sioux City and Aberdeen 2016); the expansion NPIs "
+        "cluster in 2023-24 (Des Moines Aug 2023, Omaha corporate Nov "
+        "2023, Kansas City Mar 2024) — two distinct eras under two "
+        "ownership regimes.",
+        "Presence quality is tiered, not uniform: NPI-verified in six "
+        "footprint metros, company/web-listed in four more (Lincoln, "
+        "North Platte, Grand Island/Kearney, Cincinnati), adjacent-only "
+        "for NW Indiana and Northern Virginia, and unverified in eight "
+        "registry metros — and the 13-state claim outruns the 11 states "
+        "with NPI evidence.",
+        "The legacy core is corridor geometry: five Nebraska metros on "
+        "the I-80 spine roughly 40-90 miles apart plus western Iowa — "
+        "contiguous and backhaul-friendly — while the expansion ring "
+        "(Rhode Island, North Carolina, coastal Virginia) shares no "
+        "border with it.",
+        "Anchoring varies by market and is documented at the metro "
+        "grain: Columbus NE is a single-hospital market, Omaha holds "
+        "four anchor systems, and North Platte is a single-hub long-leg "
+        "market contested by AmeriPro's Priority acquisition."),
+    why_matters=(
+        "Discontiguous expansion forfeits corridor density — the "
+        "strongest published cost lever (MedPAC's inverse volume-cost "
+        "curve) — unless each new market is anchored by a committed "
+        "account; the unnamed customer behind each 2023-26 NPI is "
+        "therefore the central geographic diligence question."),
+    evidence=(
+        _E("23 active org NPIs: NE 4 · IA 9 · SD 2 · MO 1 · OH 1 · IN 1 "
+           "· WI 1 · CO 1 · RI 1 · NC 1 · VA 1 (the VA record's same-org "
+           "link unconfirmed — flagged)",
+           "SOURCED", "CMS NPPES registry pull, 2026-07-10",
+           "https://npiregistry.cms.hhs.gov/"),
+        _E("MMT presence tiers by metro: NPI-verified (Omaha, Columbus "
+           "NE, Columbus OH, Kansas City, Milwaukee, Des Moines), "
+           "company/web (Lincoln, North Platte, GI/Kearney, Cincinnati), "
+           "adjacent or unverified elsewhere",
+           "SOURCED", "NPPES + company-web presence sweep, 2026-07-10",
+           ""),
+        _E("Legacy-core footprint: 22 counties, ~1.56M people (2020 "
+           "Census) across 7 OMB CBSAs on the Omaha-Lincoln-Grand "
+           "Island-Kearney-North Platte corridor",
+           "GOV", "OMB 2023 CBSA delineations × 2020 Census county "
+           "populations", ""),
+        _E("Strong inverse relationship between response volume and cost "
+           "per response — density is the cost lever new markets start "
+           "without",
+           "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
+           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+    ),
+    subqs=(
+        _S("In which markets does MMT operate?",
+           "NPI-verified: Columbus NE, Omaha/Council Bluffs, Sioux City, "
+           "Des Moines plus six smaller Iowa stations, Aberdeen/Huron SD, "
+           "Kansas City, Columbus OH, Indianapolis, Milwaukee, Colorado "
+           "Springs, Pawtucket RI, Elizabeth City NC; web-tier: Lincoln, "
+           "North Platte, Grand Island/Kearney/Hastings, Cincinnati."),
+        _S("How large is each market?",
+           "The legacy core spans 22 counties / ~1.56M people (the "
+           "8-county Omaha MSA is the largest); expansion-market service "
+           "areas are publicly undefined."),
+        _S("How long has each market operated?",
+           "Columbus NE since 1987; Council Bluffs / Sioux City / "
+           "Aberdeen since ~2015-16; the expansion ring since 2023-24 "
+           "(NPI enumeration dates bound the timing)."),
+        _S("What is fleet density by market?", "",
+           skip="Company data — diligence request: units and posts by "
+           "market; the 500+ vehicle total is not allocated publicly."),
+        _S("How concentrated is demand?",
+           "In the core, corridor-concentrated (five I-80 metros, "
+           "Omaha-dominant); account-level concentration is a company-"
+           "data ask."),
+        _S("How contiguous is the footprint?",
+           "The NE/IA/SD core is contiguous; the 2023-26 ring is "
+           "discontiguous — Rhode Island, North Carolina, and coastal "
+           "Virginia share nothing with it."),
+        _S("Which markets are anchored by one major health-system "
+           "customer?",
+           "Structurally single-anchor: Columbus NE (Columbus Community "
+           "Hospital) and North Platte (Great Plains Health); actual "
+           "contract status is unconfirmed."),
+        _S("Which markets serve multiple customers?",
+           "Omaha (four anchor systems) and the other multi-system "
+           "metros, structurally; the account roster per market is "
+           "company data."),
+        _S("What minimum demand is required to enter a market?", "",
+           skip="Company data — diligence request: market-entry "
+           "underwriting criteria."),
+        _S("How long does market launch take?", "",
+           skip="Company data — diligence request: launch playbook and "
+           "time-to-breakeven; NPI dates bound only the licensure "
+           "timing."),
+        _S("How does a new market reach operating efficiency?",
+           "Not published for MMT; the public benchmark is MedPAC's "
+           "inverse volume-cost curve — density (chaining, backhaul) is "
+           "the mechanism, and ramp curves are a diligence request."),
+        _S("Which capabilities are centralized versus rebuilt locally?",
+           "Not published; Question 1's split is the frame to test — "
+           "dispatch, revenue cycle, protocols, and recruiting "
+           "standardize, while density, licenses, and relationships stay "
+           "local."),
+    ),
+)
+
+
+_WORKFORCE = Block(
+    "q8-workforce", "Workforce model",
+    conclusion=(
+        "Headcount is public and steep — 350+ (2015) to ~1,000 (2022) to "
+        "2,800+ (2026) — and so is the friction: three FLSA wage-and-hour "
+        "suits in three federal districts (OH 2020, WI 2023, NE 2024) "
+        "plus a closed NLRB charge, the classic pattern of crew-comp "
+        "practices scaling faster than compliance; turnover, wages, "
+        "overtime, and scheduling are all company data."),
+    why_true=(
+        "The headcount trajectory is documented at three points: 350+ "
+        "employees at the 2015 sale, ~1,000 at the 2022 deal (sell-side "
+        "advisor), 2,800+ on the 2026 company site — roughly a tripling "
+        "per ownership era — while third-party estimators still publish "
+        "~700-784, disagreeing with the company by up to ~4x.",
+        "The litigation registry is public: Reust (N.D. Ohio, 2020), "
+        "Wroblewski (E.D. Wis., 2023), and Meysenburg (D. Neb., 2024) — "
+        "all FLSA wage-and-hour, outcomes sealed without PACER — plus "
+        "NLRB case 14-CA-251082 (Wichita, 2019, closed).",
+        "The industry cost structure makes labor the binding constraint: "
+        "70.7% of ambulance cost is labor, and MMT's core state is losing "
+        "its volunteer EMS subsidy (80%+ of Nebraska agencies "
+        "all-volunteer, contracting) — a hiring tailwind for paid "
+        "platforms and a wage-pressure headwind at once.",
+        "Credential tiers define the recruiting problem: EMT (BLS) → "
+        "paramedic (ALS) → nurse/specialty crew (CCT) — the scarce tiers "
+        "are exactly the high-relative-value ones."),
+    why_matters=(
+        "At a 70.7% labor share, workforce IS the unit economics: "
+        "turnover, overtime, and wage trajectory move margin more than "
+        "any pricing lever — and the FLSA docket is the cheapest "
+        "early-warning signal a buyer gets before payroll data arrives."),
+    evidence=(
+        _E("2015 sale: a one-state operation with 350+ employees, 13 "
+           "ground locations, two helicopter bases",
+           "SOURCED", "Lincoln Journal Star, Feb 2015",
+           "https://journalstar.com/business/local/private-equity-firm-buys-nebraska-ambulance-company/article_f17387c0-ec6f-5872-b159-3c99a212dd03.html"),
+        _E("'one of the largest, independently owned providers of "
+           "private ground ambulance services with operations currently "
+           "in seven states and nearly 1,000 employees' (2022)",
+           "SOURCED", "Lincoln International transaction notice, 2022",
+           "https://www.lincolninternational.com/transactions/panorama-point-partners-dixon-midland-and-orix-have-sold-midwest-medical-transport-to-harbour-point-capital/"),
+        _E("Three FLSA wage-and-hour suits: N.D. Ohio 1:20-cv-01548 "
+           "(2020), E.D. Wis. 2:23-cv-00877 (2023), D. Neb. "
+           "4:2024-cv-03107 (2024); NLRB 14-CA-251082 (Wichita 2019, "
+           "closed)",
+           "SOURCED", "Justia / CourtListener / NLRB public dockets",
+           "https://www.courtlistener.com/docket/67552669/wroblewski-v-midwest-medical-transport-company-llc/"),
+        _E("Labor is 70.7% of ambulance service cost — the industry's "
+           "binding input",
+           "SOURCED", "CMS/RAND GADCS Year 1-4 appendix, via AAA coverage",
+           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+    ),
+    subqs=(
+        _S("How many employees and crews operate in each market?", "",
+           skip="Company data — diligence request: headcount and staffed "
+           "crews by market; only the 2,800+ total is public."),
+        _S("What credentials are required?",
+           "Tier-driven, industry-wide: EMT for BLS, paramedic for ALS, "
+           "nurse/specialty crew for CCT; MMT's staffing matrices are "
+           "company data."),
+        _S("How does MMT recruit?", "",
+           skip="Company data — diligence request: recruiting engine and "
+           "pipeline; public job postings (Cincinnati, 2025-26) show "
+           "active hiring without quantifying it."),
+        _S("How does compensation compare with local alternatives?", "",
+           skip="Company data — diligence request: wage benchmarks vs "
+           "fire departments and hospital employers; the FLSA docket "
+           "makes comp-practice review non-optional."),
+        _S("How are schedules designed?", "",
+           skip="Company data — diligence request: shift patterns; FLSA "
+           "wage-and-hour suits are the standard shift-pay/overtime fact "
+           "pattern for this question."),
+        _S("How much overtime is used?", "",
+           skip="Company data — diligence request: overtime hours as a "
+           "share of paid hours."),
+        _S("What is employee turnover?", "",
+           skip="Company data — diligence request: turnover by role and "
+           "market."),
+        _S("Which roles are hardest to fill?",
+           "Structurally, paramedics and CCT-credentialed crews — the "
+           "scarce, high-relative-value tiers; MMT's vacancy data is a "
+           "diligence request."),
+        _S("How does dedicated volume improve workforce planning?",
+           "Scheduled books make shifts plannable (Question 1: "
+           "forecastable demand) — the structural claim; whether MMT "
+           "realizes it will show in its overtime ratio."),
+        _S("How does MMT maintain clinical consistency across markets?",
+           "",
+           skip="Company data — diligence request: medical direction, "
+           "protocol, and QA structure across the 11 NPI states."),
+        _S("How does labor availability constrain growth?",
+           "Industry-wide it is the binding constraint (70.7% cost "
+           "share; volunteer contraction in the core state); MMT's "
+           "market-entry pacing against staffing is a diligence "
+           "request."),
+    ),
+)
+
+
+_TECH = Block(
+    "q8-tech", "Technology model",
+    conclusion=(
+        "Technology is the least-documented layer of MMT's model — no "
+        "public source describes its booking, CAD/AVL, customer "
+        "visibility, integrations, or reporting — a not-found that "
+        "matters because Question 7's failure modes (ETA, visibility, "
+        "delay attribution) are exactly what IFT technology exists to "
+        "fix."),
+    why_true=(
+        "The research sweep found no MMT technology description — no "
+        "named CAD vendor, no customer portal, no integration "
+        "announcement — recorded as not-found, not as absence of a "
+        "stack.",
+        "The capability bar is set by the market: dispatch/CAD-AVL, "
+        "transfer-center integration, and ETA visibility are what "
+        "separate a first-call partner from a spot vendor — so the stack "
+        "is thesis-critical whether or not it is public.",
+        "The measurable asks are known in advance: future-demand intake, "
+        "modality guidance, delay-cause coding, and hospital-vs-provider "
+        "delay attribution — Question 7 defines the checklist any "
+        "product demo must answer.",
+        "Proprietary-vs-third-party is an economics question, not a "
+        "feature question: third-party CAD is replicable by any funded "
+        "competitor (Question 1's competitive read), so durable "
+        "differentiation must live in workflow integration, not the "
+        "software license."),
+    why_matters=(
+        "If the technology cannot separate hospital-caused from "
+        "provider-caused delay, MMT cannot prove its own reliability "
+        "story to a buyer or a hospital — the reporting layer is what "
+        "converts 'dedicated' from a claim into a contract metric."),
+    evidence=(
+        _E("No public description of MMT's booking, CAD/AVL, portal, or "
+           "reporting stack was found",
+           "FRAMEWORK", "2026-07-10 research sweep (dead-end log)", ""),
+        _E("Information flow measurably moves transfer clocks: EMS "
+           "prenotification cut stroke door-in-door-out time 20.1 "
+           "minutes — the class of gain IFT technology targets",
+           "ACADEMIC", "GWTG-Stroke analysis, JAMA 2023",
+           "https://doi.org/10.1001/jama.2023.12739"),
+    ),
+    subqs=(
+        _S("What technology does MMT use for booking?", "",
+           skip="Company data — diligence request: booking channels and "
+           "systems."),
+        _S("What technology supports dispatch?", "",
+           skip="Company data — diligence request: CAD/AVL vendor or "
+           "in-house build."),
+        _S("What customer-facing visibility is available?", "",
+           skip="Company data — diligence request: portal, ETA feeds, "
+           "and status notifications."),
+        _S("Are health-system integrations available?", "",
+           skip="Company data — diligence request: EHR / transfer-center "
+           "integrations live today."),
+        _S("Can the system receive future scheduled demand?", "",
+           skip="Company data — diligence request: advance-booking and "
+           "standing-order support."),
+        _S("Can it support modality guidance?", "",
+           skip="Company data — diligence request: structured intake "
+           "with level-of-service logic (Question 7's modality fix)."),
+        _S("Can it track delay reasons?", "",
+           skip="Company data — diligence request: delay-cause coding "
+           "taxonomy."),
+        _S("Can it separate hospital-caused and provider-caused delays?",
+           "",
+           skip="Company data — diligence request: attribution reporting "
+           "— the single most valuable artifact for validating the "
+           "reliability story."),
+        _S("What performance reporting is provided?", "",
+           skip="Company data — diligence request: customer-facing KPI "
+           "reports (on-time %, promised-vs-actual ETA, wall time)."),
+        _S("Is the technology proprietary, third-party, or combined?", "",
+           skip="Company data — diligence request: stack ownership and "
+           "vendor contracts."),
+        _S("Which technology capabilities are meaningfully "
+           "differentiated?",
+           "Answerable only structurally: differentiation must live in "
+           "workflow integration and delay-attribution reporting, since "
+           "CAD itself is purchasable by any competitor."),
+    ),
+)
+
+
+_ECONOMICS = Block(
+    "q8-economics", "Economics",
+    conclusion=(
+        "No MMT financial figure in public view is usable — the three "
+        "estimators disagree ~3x ($100M to $296M) and all conflict with "
+        "the company's own headcount — so the economics answer is the "
+        "industry ledger MMT must beat: $1,147 mean reimbursement vs "
+        "$1,778 private-for-profit mean cost per transport, with payer "
+        "mix, unit-hour utilization, and density as the levers that make "
+        "a dedicated book positive."),
+    why_true=(
+        "The estimate conflict is disqualifying by itself: $296.4M / 784 "
+        "employees (Growjo) vs $293.6M (ZoomInfo) vs $100-250M / ~700 "
+        "(LeadIQ) — shown side by side, never blended, never used for "
+        "underwriting.",
+        "The published mean spread is negative — $1,147 mean "
+        "reimbursement vs $2,673 all-agency mean cost — because the mean "
+        "carries municipal readiness books; the private for-profit cost "
+        "mean ($1,778) plus a scheduled book's higher unit-hour "
+        "utilization is the structural path to a positive spread — the "
+        "IFT thesis in one line.",
+        "Revenue per trip is fee-ladder arithmetic: BLS 1.00 → ALS1 1.20 "
+        "→ ALS2 2.75 → SCT 3.25 relative values on a $278.98 CY2025 "
+        "conversion factor, ~$8/loaded-mile Medicare vs ~$17 commercial, "
+        "commercial ~2.0x Medicare overall, and 19.7% of transports "
+        "collecting nothing — mix, not the base rate, is the margin.",
+        "The cost side is labor and geometry: 70.7% labor share, unpaid "
+        "deadhead and wait, MedPAC's inverse volume-cost curve making "
+        "density the cost lever, and a +22.6% super-rural add-on that "
+        "exists because rural geometry breaks the base rate."),
+    why_matters=(
+        "Every lever this section asks about — modality, distance, "
+        "density, dedication, payer mix, denials, ramp, scale thresholds "
+        "— has a cited industry direction and no public MMT value; the "
+        "diligence pack is therefore a request list against company "
+        "data, with the industry benchmarks as the scoring key."),
+    evidence=(
+        _E("Revenue estimates: $296.4M/784 employees (Growjo) vs $293.6M "
+           "(ZoomInfo) vs $100-250M/~700 (LeadIQ) — ~3x disagreement, "
+           "all conflicting with the company's 2,800+ headcount claim",
+           "SOURCED", "Growjo / ZoomInfo / LeadIQ, 2026 (unaudited "
+           "third-party estimates; re-verify)", ""),
+        _E("Mean reimbursement $1,147/transport vs mean cost $2,673 "
+           "all-agency / $1,778 private for-profit; labor 70.7%; 19.7% "
+           "of transports unpaid",
+           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
+           "trade coverage; re-verify)",
+           "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
+        _E("CY2025 AFS conversion factor $278.98 × RVUs (BLS 1.00 / ALS1 "
+           "1.20 / ALS2 2.75 / SCT 3.25); super-rural add-on +22.6% "
+           "through 2027",
+           "GOV", "CMS AFS / MedPAC Payment Basics 2025; CAA 2026 §6203 "
+           "(re-verify)", ""),
+        _E("Commercial ESI base rate 2.0x Medicare ($718 vs $365, 2022); "
+           "mileage $17 vs $8",
+           "SOURCED", "Health Care Cost Institute",
+           "https://healthcostinstitute.org/all-hcci-reports/commercial-prices-for-ground-ambulance-are-double-medicare-rates/"),
+        _E("Strong inverse relationship between response volume and cost "
+           "per response — density is the profitability mechanism",
+           "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
+           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+    ),
+    subqs=(
+        _S("What drives revenue per trip?",
+           "HCPCS level (BLS 1.00 → SCT 3.25 RVU), loaded miles, payer "
+           "(commercial ~2.0x Medicare), and collection (19.7% collect "
+           "nothing); MMT's realized $/trip is a diligence request."),
+        _S("What drives cost per trip?",
+           "Labor first (70.7% of cost), then deadhead and at-door wait "
+           "— the unpaid hours; MMT's cost build is a diligence "
+           "request."),
+        _S("How do modality and distance affect margin?",
+           "Higher tiers carry higher relative values but scarcer crews; "
+           "distance pays only loaded miles (~$8/mi Medicare), so "
+           "one-way legs tax margin; MMT actuals are company data."),
+        _S("How does fleet density affect profitability?",
+           "Via MedPAC's inverse volume-cost curve: density chains "
+           "trips, cuts deadhead, and lifts unit-hour utilization — the "
+           "strongest published cost lever."),
+        _S("How does dedicated capacity affect utilization?",
+           "Scheduled books target UHU above the 0.30-0.50 911 band "
+           "(AIMHI survey mean 0.508) — dedication converts forecastable "
+           "demand into utilization; MMT's UHU is a diligence request."),
+        _S("How does payer mix affect economics?",
+           "Decisively: Medicare ~40% of a typical agency mix, "
+           "commercial ~2.0x, Medicaid ~0.59x (derived from MA HPC "
+           "medians), unpaid 19.7% — the commercial/Medicaid split of "
+           "the residual is the flagged ask."),
+        _S("What role do direct health-system payments play?",
+           "The channel unique to IFT (Question 1): non-covered trips, "
+           "denied-trip contract terms, and any availability retainers; "
+           "MMT's facility-contract revenue share is company data."),
+        _S("How much risk does MMT bear for denials?", "",
+           skip="Company data — diligence request: denial rate, "
+           "clean-claim rate, and contract allocation of denied trips; "
+           "industry exposure is 13.2% improper (63.5% documentation)."),
+        _S("How long does a new market take to mature?", "",
+           skip="Company data — diligence request: ramp curves by market "
+           "cohort (the 2023-24 NPI vintage is the natural test set)."),
+        _S("What scale is required for market-level profitability?", "",
+           skip="Company data — diligence request: market-level P&L "
+           "thresholds; the public prior is MedPAC's density curve — "
+           "direction without a number."),
+        _S("Which service lines are most attractive?",
+           "Structurally: commercially insured ALS2/SCT and dense "
+           "chained BLS with backhaul (Question 1); MMT's line-level "
+           "margins are company data."),
+        _S("Which are strategically important but less profitable?",
+           "Structurally: long rural one-ways, Medicaid/unfunded "
+           "discharges, and wheelchair/para-transit — the availability "
+           "book that wins contracts; MMT's cross-subsidy design is a "
+           "diligence request."),
+    ),
+)
+
+
+Q8 = QuestionDef(
+    num=8,
+    slug="mmt-model",
+    title="What is MMT's operating model?",
+    storyline=(
+        "The public record proves the shape — a 35-year, 13-state-claimed "
+        "(11 NPI-verified) dedicated-IFT platform grown from one Columbus "
+        "NE ambulance — but every metric that would prove the model works "
+        "(mix, retention, utilization, turnover, margin) is company data, "
+        "requested here and never invented."),
+    visual_key="mmt-system",
+    blocks=(_SCOPE, _CUSTOMERS, _CAPACITY, _DISPATCH, _GEOGRAPHY,
+            _WORKFORCE, _TECH, _ECONOMICS),
+)
+
+
+QUESTIONS = (Q7, Q8)

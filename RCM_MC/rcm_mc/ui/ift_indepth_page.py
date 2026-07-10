@@ -219,6 +219,9 @@ font-weight:700;text-transform:uppercase;letter-spacing:.04em;
 background:var(--sc-surface,#faf7f1);}
 .idp-spec-tbl thead th{background:var(--sc-navy,#0b2341);color:#fff;
 font-size:10px;}
+/* corner cell: first-child wins the light background, so it must also
+   win the ink color — otherwise thead's #fff renders invisible on it */
+.idp-spec-tbl thead th:first-child{color:var(--sc-teal-ink,#0f3d39);}
 /* maturity staircase */
 .idp-stairs{display:flex;align-items:flex-end;gap:6px;min-width:680px;}
 .idp-stair{flex:1;border:1px solid var(--sc-rule,#d8d0bc);
@@ -256,6 +259,7 @@ color:var(--sc-teal,#155752);}
 padding:6px 8px;text-align:center;}
 .idp-tro thead th{background:var(--sc-navy,#0b2341);color:#fff;
 font-size:10px;}
+.idp-tro thead th:first-child{color:var(--sc-teal-ink,#0f3d39);}
 .idp-tro td:first-child,.idp-tro th:first-child{text-align:left;
 font-family:var(--sc-mono,Consolas,monospace);font-size:9.5px;
 font-weight:700;letter-spacing:.04em;text-transform:uppercase;
