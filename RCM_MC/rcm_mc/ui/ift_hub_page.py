@@ -123,7 +123,32 @@ def render_ift_hub(qs=None) -> str:
         ck_section_header("Data assets", eyebrow="DOWNLOADS & APIS")
         + ck_panel(f'<ul style="font-size:13px;line-height:1.6;'
                    f'padding-left:20px;margin:4px 0;">{assets}</ul>'))
+    governance = ""
+    try:
+        from ..market_reports import ift_growth_evidence as _ge
+        from ..market_reports import ift_unit_economics as _ue
+        q = len(_ge.reverify_queue())
+        total = len(_ge.all_evidence())
+        econ_q = sum(1 for b in _ue.all_benchmarks() if b.needs_reverify)
+        econ_total = len(_ue.all_benchmarks())
+        governance = (
+            ck_section_header("Evidence governance",
+                              eyebrow="HONESTY, TRACKED")
+            + ck_panel(
+                '<p style="font-size:13.5px;line-height:1.6;max-width:88ch;">'
+                f"Growth registry: <strong>{total - q} of {total}</strong> "
+                "entries carry verbatim-verified quotes (fetched primary "
+                f"text); <strong>{q}</strong> were captured from search "
+                "excerpts of the cited page and sit in the explicit "
+                "re-verification queue. Unit-economics benchmarks: "
+                f"<strong>{econ_q} of {econ_total}</strong> queued for "
+                "re-verification against the blocked CMS/MedPAC PDFs. "
+                "Nothing in a queue is presented as verified — the flag "
+                "travels with each figure on every page and workbook "
+                "sheet.</p>"))
+    except Exception:  # noqa: BLE001
+        governance = ""
     return chartis_shell(
-        head + intro + grid + assets_html + ck_page_actions(),
+        head + intro + grid + assets_html + governance + ck_page_actions(),
         "IFT — The Study", active_nav="/market",
         subtitle="Interfacility transport study hub — what lives where")

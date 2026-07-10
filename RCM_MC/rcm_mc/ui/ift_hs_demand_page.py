@@ -348,6 +348,37 @@ def _charts(hd, sr) -> str:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+def _ccn_worklist_section() -> str:
+    """The confirmed CCN pull worklist (2026-07-10 research) — the exact
+    cost-report identifiers that turn this page's HCRIS sizing from
+    metro-level into system-level actuals."""
+    try:
+        from ..market_reports import ift_health_systems as _hs
+        reg = _hs.ccn_registry()
+    except Exception:  # noqa: BLE001
+        return ""
+    if not reg:
+        return ""
+    rows = "".join(
+        f'<tr><td>{_esc(name)}</td><td class="ihd-num">{_esc(ccn)}</td></tr>'
+        for name, ccn in reg)
+    return (
+        ck_section_header("HCRIS pull worklist — confirmed CCNs",
+                          eyebrow="FROM THE 2026-07-10 SYSTEM DEEP DIVES",
+                          count=len(reg))
+        + '<p class="ihd-prose">The hospital-system research confirmed the '
+        "CMS certification numbers below. Feeding them to the HCRIS panel "
+        "turns this page's metro-level discharge sizing into per-system "
+        "actuals (discharges, occupancy, payer mix) — the exact next data "
+        "pull.</p>"
+        '<div class="ihd-wrap"><table class="ihd-tab" style="max-width:'
+        '560px;"><thead><tr><th>Facility</th><th>CCN</th></tr></thead>'
+        f"<tbody>{rows}</tbody></table></div>"
+        f'<p class="ihd-src">CCNs {_chip("SOURCED")} via public cost-report '
+        "directories (AHD), research pull 2026-07-10; conflicts and "
+        "not-found facilities are flagged in ift_health_systems.</p>")
+
+
 def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
     """Render the health-system demand page. Degrades to honest notes, never
     raises."""
@@ -394,6 +425,7 @@ def render_ift_hs_demand(qs: Optional[Dict[str, List[str]]] = None) -> str:
         _inventory_section(inv),
         _metro_section(hd),
         _system_section(sr),
+        _ccn_worklist_section(),
         _county_section(cd),
         _crosslinks(),
         ck_next_section(
