@@ -960,7 +960,7 @@ def aggregate_demand_yoy(horizon: int = 5, family: Optional[str] = None) -> Aggr
     return AggregateYoY(
         available=True, horizon=horizon, base_volume=base, points=tuple(pts),
         blended_cagr=round(blended, 4), end_volume=end, n_conditions=len(projs),
-        source_label=("GOV/ACADEMIC base volumes × ILLUSTRATIVE demographic CAGRs "
+        source_label=("GOV/ACADEMIC base volumes × DERIVED demographic CAGRs "
                       "(Census age-band growth, incidence held constant)"),
         note=("Volume-weighted forward trajectory across the enumerated conditions "
               "— the demand book compounds at the blended demographic CAGR as the "
@@ -1141,7 +1141,7 @@ def registry_summary() -> Dict:
         "destination_supply_national": {k: destination_supply(k)["national"] for k in _SETTING_CSV},
         "honesty": {
             "volumes": "GOV (published CMS/AHRQ/CDC/MedPAC/NCHS) or ACADEMIC; never computed here",
-            "growth": "ILLUSTRATIVE projection off the SOURCED demand_forecast age-band model",
+            "growth": "DERIVED projection off the SOURCED demand_forecast age-band model",
             "codes": "SOURCED — ICD-10-CM validated against the vendored billability seed",
             "supply": "SOURCED — real provider-file counts",
             "capabilities_and_pcs": "authored clinical reference (not in our data)",

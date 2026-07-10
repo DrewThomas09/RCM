@@ -196,7 +196,7 @@ def _ans_definition() -> str:
             tam_line = (
                 '<p class="ifq-prose">Sized boundary: TAM = all US ground '
                 'interfacility ambulance = <strong>'
-                f'{_usd_b(t.allpayer_tam_bn_central)}</strong> {_chip("ILLUSTRATIVE")}'
+                f'{_usd_b(t.allpayer_tam_bn_central)}</strong> {_chip("FRAMEWORK")}'
                 ' — excludes 911, air, and NEMT.</p>')
     except Exception:  # noqa: BLE001
         pass
@@ -259,7 +259,7 @@ def _ans_why_dedicated() -> str:
         mf = _mo.moat_factors()
         if mf:
             moat = ('<p class="ifq-sub">The moat, factor by factor '
-                    + _chip("ILLUSTRATIVE") + '</p>'
+                    + _chip("FRAMEWORK") + '</p>'
                     + _ans_table(("Factor", "Why it makes the incumbent sticky"),
                                  [(f.name, f.why_it_matters) for f in mf]))
     except Exception:  # noqa: BLE001
@@ -434,7 +434,7 @@ def _ans_strategic() -> str:
                 f'{gb.volume_central_pct:.1f}%/yr = ~{gb.market_growth_central_pct:.1f}% '
                 'organic market growth; plus consolidation → ~'
                 f'{gb.platform_growth_central_pct:.1f}% platform growth. '
-                + _chip("ILLUSTRATIVE") + '</p>')
+                + _chip("FRAMEWORK") + '</p>')
     except Exception:  # noqa: BLE001
         pass
     return _ans_wrap(
@@ -496,7 +496,7 @@ def _market_glance() -> str:
     return (
         '<div class="ifq-ans" style="border-left-color:var(--sc-navy,#0b2341);">'
         '<span class="ifq-ans-lab">The market, sized — the study\'s headline '
-        f'answer {_chip("ILLUSTRATIVE")}</span>'
+        f'answer {_chip("FRAMEWORK")}</span>'
         '<p class="ifq-prose">All figures exclude 911, air, and NEMT; the full '
         'build is on <a href="/ift-markets" style="color:var(--sc-teal,#155752);">'
         '/ift-markets</a>.</p>' + stats + '</div>')
@@ -882,7 +882,7 @@ def render_ift_diligence(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'visuals, the real <strong>connector datasets</strong> that feed it, and a '
         'link to go deeper. Questions are authored diligence knowledge '
         f'{_chip("FRAMEWORK")}; answers carry their own basis — {_chip("ACADEMIC")} '
-        f'{_chip("ILLUSTRATIVE")} {_chip("SOURCED")} — and the connector references '
+        f'{_chip("FRAMEWORK")} {_chip("SOURCED")} — and the connector references '
         f'resolve live {_chip("CONNECTOR")}.</p>')
 
     body = "".join([

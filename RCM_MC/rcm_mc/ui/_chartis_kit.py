@@ -6187,7 +6187,7 @@ def ck_editorial_head(
         '<li><span class="ck-eh-dot live"></span>Live data</li>'
         '<li><span class="ck-eh-dot computed"></span>Computed</li>'
         '<li><span class="ck-eh-dot needs"></span>Needs data</li>'
-        '<li><span class="ck-eh-dot illustrative"></span>Illustrative</li>'
+        '<li><span class="ck-eh-dot illustrative"></span>Framework</li>'
         '</ul>'
         if show_legend else ""
     )

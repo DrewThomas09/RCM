@@ -105,7 +105,7 @@ def _source_chip(source_label: str) -> str:
 
 def _legend_row() -> str:
     chips = "".join(_basis_chip(k) for k in
-                    ("SOURCED", "GOV", "ILLUSTRATIVE", "PUBLIC"))
+                    ("SOURCED", "GOV", "FRAMEWORK", "PUBLIC"))
     return (
         '<div class="ift-legend">'
         '<span class="ift-legend-lab">Every figure is labelled</span>'

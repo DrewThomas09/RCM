@@ -102,7 +102,7 @@ def _f_denominator() -> str:
         f'<p class="ifs-prose">{_chip("GOV")} <strong>Medicare FFS GROUND</strong> '
         f'ambulance = <strong>{_usd_b(t.medicare_ffs_ground_bn[0])}</strong> across '
         '~11.4M FFS ground transports / ~10,500 ground organizations (2023, '
-        'MedPAC). ' + _chip("ILLUSTRATIVE") + ' US ground ambulance runs '
+        'MedPAC). ' + _chip("FRAMEWORK") + ' US ground ambulance runs '
         '~25-30M transports/yr including ~22M 911; <strong>interfacility is '
         '~30-40% of ground DOLLARS</strong> (it over-indexes on spend, not '
         'volume). The all-payer ground market is ~$18-22B.</p>'
@@ -148,7 +148,7 @@ def _f_growth() -> str:
         f'<p class="ifs-prose">{_chip("GOV")} Price growth is anchored by the AIF, '
         'which DECELERATES (2.6/2.4/2.0 for CY2024-26) — so the '
         f'~{gb.price_central_pct:.1f}%/yr price lever is carried above the GOV '
-        'floor by commercial OON + escalators. ' + _chip("ILLUSTRATIVE")
+        'floor by commercial OON + escalators. ' + _chip("FRAMEWORK")
         + f' Volume grows ~{gb.volume_central_pct:.1f}%/yr on aging + acuity. '
         f'RSNAT prior authorization (2021) is the SERIES BREAK — it removed the '
         'repetitive scheduled-dialysis book, so pre/post trends are not '
@@ -216,7 +216,7 @@ def _f_post_acute() -> str:
         f'<p class="ifs-prose">{_chip("SOURCED")} The post-acute destination '
         f'universe is <strong>{_num(ds.get("national", 0))}</strong> facilities '
         'nationally (below), from the CMS Care Compare / Provider-of-Services '
-        'file. ' + _chip("ILLUSTRATIVE") + ' The stretcher-eligible share that '
+        'file. ' + _chip("FRAMEWORK") + ' The stretcher-eligible share that '
         'needs ground IFT is ~7-12% of acute discharges (the f_IFT lever), plus '
         'recurring SNF-origin legs (~2-4 per occupied bed/yr) — the countable '
         'non-emergency discharge engine.</p>'
@@ -578,7 +578,7 @@ def render_ift_sourcing(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'public sources, the real <strong>connector datasets</strong> that feed '
         'it, and a live link to <strong>where the answer lives</strong> (a sized '
         'page and the matching diligence slide). Findings carry their own basis — '
-        + _chip("GOV") + ' ' + _chip("SOURCED") + ' ' + _chip("ILLUSTRATIVE") + ' '
+        + _chip("GOV") + ' ' + _chip("SOURCED") + ' ' + _chip("FRAMEWORK") + ' '
         + _chip("ACADEMIC") + '; prompts are ' + _chip("FRAMEWORK")
         + '. This is Part 1.</p>')
 

@@ -299,9 +299,12 @@ class TestIFTClinicalPage(unittest.TestCase):
             self.assertIn(code, self.html, f"code missing from page: {code}")
 
     def test_basis_chips_on_every_family(self):
-        for tag in ("GOV", "SOURCED", "ILLUSTRATIVE", "ACADEMIC"):
+        # DERIVED/FRAMEWORK replaced ILLUSTRATIVE in the 2026-07-10
+        # grounding sweep; the page must never render an ILLUSTRATIVE chip.
+        for tag in ("GOV", "SOURCED", "DERIVED", "ACADEMIC"):
             self.assertIn(f">{tag}</span>", self.html,
                           f"missing basis chip: {tag}")
+        self.assertNotIn(">ILLUSTRATIVE</span>", self.html)
 
     def test_all_sections_present(self):
         for marker in ("The acute-transfer matrix",

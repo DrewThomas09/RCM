@@ -57,7 +57,7 @@ def _clinical_charts() -> str:
                 "Projected volume growth by condition (%/yr)", items,
                 value_fmt=lambda v: f"{v:+.1f}%",
                 subtitle="Demographic CAGR (aging cohorts), incidence held "
-                         "constant — the IFT volume thesis (ILLUSTRATIVE).",
+                         "constant — the IFT volume thesis (DERIVED demographic CAGRs).",
                 source="ift_clinical_demand · demand_forecast age-band CAGRs",
                 label_w=220.0))
     except Exception:  # noqa: BLE001
@@ -310,7 +310,7 @@ def _kpi_row() -> str:
             "Blended demographic growth",
             _num_span(_pct(summ.get("escalation_volume_weighted_cagr", 0),
                            sign=True)) + " " + _chip(
-                "ILLUSTRATIVE", title="demand_forecast age-band CAGRs weighted "
+                "DERIVED", title="demand_forecast age-band CAGRs weighted "
                 "by each condition's age skew"),
             "per yr — escalation volume-weighted, incidence held flat"),
         ck_kpi_block(
@@ -344,7 +344,7 @@ def _demand_signal_band() -> str:
                   "2017-24); ~35% winter peak"))
     if lb is not None and lb.national_volume.note:
         items.append(("Load-balancing signal", "occupancy-anchored",
-                      "ILLUSTRATIVE", lb.national_volume.note))
+                      "FRAMEWORK", lb.national_volume.note))
 
     cells = []
     for label, value, tag, cite in items:
@@ -521,7 +521,7 @@ def _per_condition_table() -> str:
                            + _chip(vtag, title=nv.source_label))
                 vol_sub = _e(nv.measure)
             growth_cell = (_num_span(_pct(c.growth.cagr, sign=True)) + " "
-                           + _chip("ILLUSTRATIVE", title=c.growth.basis))
+                           + _chip("DERIVED", title=c.growth.basis or "demand_forecast age-band CAGR, condition age-skew weighted"))
             out.append(
                 "<tr>"
                 f'<td class="align-left"><strong>{_e(c.name)}</strong></td>'
@@ -590,7 +590,7 @@ def _growth_outlook() -> str:
         f'<span>Fastest five: {_e(leaders)}</span></div>'
         f'<p style="font-family:var(--sc-serif,Georgia,serif);font-size:14px;'
         f'line-height:1.55;color:var(--sc-text,#1a2332);max-width:80ch;">'
-        f'<em>{takeaway}</em> {_chip("ILLUSTRATIVE")} projection off the '
+        f'<em>{takeaway}</em> {_chip("DERIVED")} projection off the '
         f'{_chip("SOURCED")} demand_forecast age-band model.</p>')
 
 

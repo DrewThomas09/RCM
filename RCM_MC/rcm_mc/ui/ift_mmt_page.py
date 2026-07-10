@@ -339,7 +339,7 @@ def _serviceable_section() -> str:
         f"<tbody>{''.join(rows)}</tbody></table></div>"
         f'<p class="mmt-note">s(m) {_chip("FRAMEWORK")} reuses the study '
         "funnel's serviceable share by insource archetype, so this SOM agrees "
-        f"with the market model; MMT share {_chip('ILLUSTRATIVE')} from the "
+        f"with the market model; MMT share {_chip('FRAMEWORK')} from the "
         "ift_geo competitive reads.</p>")
 
 
@@ -553,7 +553,7 @@ def _growth_section() -> str:
         + '<div class="mmt-wrap"><table class="mmt-tab" style="max-width:520px;">'
         "<thead><tr><th>Year</th><th>Base revenue</th><th>Platform revenue</th>"
         f"</tr></thead><tbody>{''.join(rows)}</tbody></table></div>"
-        f'<p class="mmt-note">{_esc(gp.headline)}. Growth {_chip("ILLUSTRATIVE")} '
+        f'<p class="mmt-note">{_esc(gp.headline)}. Growth {_chip("FRAMEWORK")} '
         "from the study's three-lever bridge — price (GOV AIF-anchored) × volume "
         "(demographic CAGR) = market; × consolidation = platform.</p>")
 

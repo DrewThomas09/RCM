@@ -338,7 +338,7 @@ def render_ift_research(qs: Optional[Dict[str, List[str]]] = None) -> str:
         'sizing methodology, and evidence quality. Deliberately MARKET-focused — no '
         'individual company\'s positioning or footprint. Every table carries an '
         'honesty basis: ' + _chip("GOV") + ' ' + _chip("ACADEMIC") + ' '
-        + _chip("ILLUSTRATIVE") + ' ' + _chip("FRAMEWORK") + '.</p>')
+        + _chip("FRAMEWORK") + ' ' + _chip("FRAMEWORK") + '.</p>')
 
     # 1-2 scaffold, 3-5 reused, 6+ authored.
     authored = "".join(_render_section(s, i)
