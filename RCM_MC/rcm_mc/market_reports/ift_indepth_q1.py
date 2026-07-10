@@ -371,7 +371,7 @@ _OPERATING = Block(
         _E("Strong inverse relationship between response volume and cost "
            "per response — density is the cost lever",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("Super-rural base-rate add-on of +22.6% (with +2% urban / +3% "
            "rural), extended through 2027 — the statutory recognition of "
            "rural operating geometry",

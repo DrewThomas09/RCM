@@ -152,7 +152,7 @@ BENCHMARKS: Tuple[EconBenchmark, ...] = (
        "response — scale is the cost lever",
        "SOURCED",
        "MedPAC assessment of GADCS data (Dec 2025) via coverage",
-       "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-"
+       "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-"
        "Dec-2025.pdf",
        "a strong inverse relationship between ambulance response volume "
        "and cost per response."),

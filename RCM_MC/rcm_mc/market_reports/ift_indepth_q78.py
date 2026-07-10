@@ -1456,7 +1456,7 @@ _GEOGRAPHY = Block(
            "per response — density is the cost lever new markets start "
            "without",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
     ),
     subqs=(
         _S("In which markets does MMT operate?",
@@ -1757,7 +1757,7 @@ _ECONOMICS = Block(
         _E("Strong inverse relationship between response volume and cost "
            "per response — density is the profitability mechanism",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
     ),
     subqs=(
         _S("What drives revenue per trip?",

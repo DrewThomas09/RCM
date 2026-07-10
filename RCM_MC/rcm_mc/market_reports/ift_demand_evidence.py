@@ -79,8 +79,9 @@ _EVIDENCE: Tuple[Evidence, ...] = (
         "Acute-to-acute inter-hospital transfers per year",
         "~1.5 million/yr = 3.5% of inpatient admissions",
         "ACADEMIC",
-        "Mueller SK et al., \"Interhospital Facility Transfers in the US: A "
-        "Nationwide Outcomes Study\" (2014), PubMed 25397857 — HCUP NIS",
+        "Hernandez-Boussard T et al., \"Interhospital Facility Transfers in the "
+        "United States: A Nationwide Outcomes Study\", J Patient Saf 2017 "
+        "(2009 NIS; epub 2014), PubMed 25397857 — HCUP NIS",
         "\"...patients transferred between acute care hospitals constitute "
         "approximately 3.5% of all hospital inpatient admissions (1.5 million "
         "admissions).\"",

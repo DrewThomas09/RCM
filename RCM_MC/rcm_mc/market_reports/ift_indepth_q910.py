@@ -439,7 +439,7 @@ _VS_INSOURCING = Block(
         _E("Strong inverse relationship between response volume and cost "
            "per response — only high captive volume amortizes a fleet",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("CommonSpirit FY2025 operating loss $225M (improved from "
            "$875M FY2024) — system-level margin pressure favors "
            "asset-light outsourcing over fleet ownership",
@@ -575,7 +575,7 @@ _VS_MULTIVENDOR = Block(
            "per response — splitting a book across vendors forfeits the "
            "density that funds dedicated capacity",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("The 85%+ share-of-wallet threshold — below it the system "
            "keeps a second vendor warm and accountability stays "
            "contestable — is the operator thesis target, not a measured "
@@ -937,7 +937,7 @@ _CAPACITY = Block(
            "per response — planned density is the cost lever that makes "
            "dedicated capacity affordable",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("911 systems target ~0.30-0.50 unit-hour utilization; "
            "non-emergency providers target higher — the utilization "
            "headroom a planned scheduled book captures",
@@ -1399,7 +1399,7 @@ _DURABILITY = Block(
            "per response — the measured basis for 'the partnership gets "
            "cheaper as facilities are added'",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("The flip risk is observed, not theoretical: Wesley/HCA moved "
            "~77% of county IFT (~4,873 transports/2020 base) to AMR in "
            "2022 — share-of-wallet durability tracks ownership intent, "

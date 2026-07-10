@@ -70,7 +70,7 @@ _MISSION = Block(
            "per response — the scheduled book monetizes density the "
            "readiness book cannot",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("Three-fourths of California hospitals detained EMS crews more "
            "than one hour; one-third delayed return to service by more "
            "than three hours — hospital-door time is where shared fleets "
@@ -158,7 +158,8 @@ _PREDICTABILITY = Block(
            "https://doi.org/10.1016/j.jemermed.2025.12.020"),
         _E("~1.5M/yr acute-to-acute interhospital transfers = 3.5% of "
            "inpatient admissions",
-           "ACADEMIC", "Mueller et al., 2014 (HCUP NIS)",
+           "ACADEMIC", "Hernandez-Boussard et al., J Patient Saf 2017 "
+           "(2009 HCUP NIS; epub 2014)",
            "https://pubmed.ncbi.nlm.nih.gov/25397857/"),
         _E("Rural EDs transfer 6.2% of visits vs 2.0% urban — the "
            "transfer propensity is a stable facility attribute, which is "
@@ -272,7 +273,7 @@ _CAPACITY = Block(
         _E("Strong inverse relationship between ambulance response "
            "volume and cost per response",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("Labor (wages + benefits) is 70.7% of ambulance cost — the "
            "crew-hour is the unit everything else must amortize",
            "SOURCED", "GADCS Year 1-4 appendix via AAA coverage "
@@ -865,7 +866,7 @@ _MOAT = Block(
         _E("Strong inverse volume-to-cost-per-response relationship — "
            "the density moat has measured economics",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
-           "https://www.medpac.gov/wp-content/uploads/2025/01/Tab-M-Ambulance-Dec-2025.pdf"),
+           "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
         _E("80%+ of Nebraska EMS agencies are all-volunteer; only 31% "
            "of volunteer agencies report adequate staffing; 28% expect "
            "to be unable to operate within 5 years — credentialed labor "
@@ -1098,8 +1099,8 @@ _MOVEMENTS = Block(
     evidence=(
         _E("~1.97M adult ED-to-ED transfers/yr (NEDS 2018-2022); ~1.5M "
            "inpatient interhospital transfers/yr (NIS)",
-           "ACADEMIC", "Nikolla et al., J Emerg Med 2025; Mueller et "
-           "al., 2014",
+           "ACADEMIC", "Nikolla et al., J Emerg Med 2025; Hernandez-"
+           "Boussard et al., J Patient Saf 2017",
            "https://doi.org/10.1016/j.jemermed.2025.12.020"),
         _E("Medicare fee ladder: SCT (A0434) 3.25 RVU vs BLS 1.00 → "
            "~$907 vs ~$279 national base at the CY2025 conversion "

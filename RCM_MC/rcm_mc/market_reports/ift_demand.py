@@ -684,7 +684,7 @@ _DEMAND_DRIVERS: Tuple[DemandDriver, ...] = (
         "Interfacility ambulance transports per year",
         "~2.0M ED-to-ED (NEDS 2018-22) + ~1.5M inter-hospital (nationwide study)",
         "SOURCED",
-        "AHRQ HCUP NEDS (2022); Sokol-Hessner/Mueller et al., Nationwide Outcomes "
+        "AHRQ HCUP NEDS (2022); Hernandez-Boussard et al., Nationwide Outcomes "
         "Study (PubMed 25397857); MedPAC 11.3M FFS ground (CY2024)",
         "https://pubmed.ncbi.nlm.nih.gov/25397857/",
         "HCUP NEDS/NIS transfer disposition (loader exists); NEMSIS "
@@ -697,8 +697,9 @@ _DEMAND_DRIVERS: Tuple[DemandDriver, ...] = (
         "Acute-to-acute inter-hospital transfers per year",
         "~1.5M/yr (~3.5% of admissions); ~640k require critical care",
         "ACADEMIC",
-        "Mueller SK et al., 'Interhospital Facility Transfers in the US: A "
-        "Nationwide Outcomes Study' (PubMed 25397857); ~3.5% of admissions",
+        "Hernandez-Boussard T et al., 'Interhospital Facility Transfers in the "
+        "United States: A Nationwide Outcomes Study', J Patient Saf 2017 "
+        "(2009 NIS; PubMed 25397857); ~3.5% of admissions",
         "https://pubmed.ncbi.nlm.nih.gov/25397857/",
         "HCUP NIS admission-source = 'transfer from another acute hospital' + "
         "discharge disposition = 'transfer to short-term hospital'.",
