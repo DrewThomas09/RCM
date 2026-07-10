@@ -48,6 +48,8 @@ TITLE_OVERRIDES = {
     "/payer-stress": "Payer-Mix Stress",             # vs deal /diligence/payer-stress
     "/value-creation": "Value Creation Tracker",     # vs deal /diligence/value
     "/npi-cleaner/history": "NPI Cleaner · Run History",  # slug-derived read as "Npi"
+    # Slug-derived title mangles the acronyms ("In Depth Ift Bls Als1 ...").
+    "/in-depth-ift-bls-als1-als2-cct": "In-Depth IFT — BLS · ALS1 · ALS2 · CCT",
 }
 
 _STATUS_LABEL = {
