@@ -3873,7 +3873,7 @@ class TestRefdataPacks(unittest.TestCase):
                     j = json.loads(r.read().decode())
                 ids = {p["id"] for p in j["packs"]}
                 self.assertEqual(ids, {"taxonomy", "icd10cm", "hcpcs",
-                                       "leie"})
+                                       "leie", "zip_cbsa"})
                 # Bad pack name → 400, not a silent thread.
                 req = _u.Request(
                     f"http://127.0.0.1:{port}"

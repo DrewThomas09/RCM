@@ -2831,6 +2831,18 @@ class RCMHandler(BaseHTTPRequestHandler):
         enrich = (qs.get("enrich") or ["0"])[0] == "1"
         deep = (qs.get("deep") or ["0"])[0] == "1"
         deid = (qs.get("deid") or ["0"])[0] == "1"
+        # Selected enrichments (enrich.py registry ids), comma-separated.
+        # Unknown ids are dropped here so a stale page can't smuggle an
+        # arbitrary string into the engine.
+        enrichments = None
+        _raw_eids = (qs.get("enrich_ids") or [""])[0]
+        if _raw_eids:
+            try:
+                from .npi_cleaner import enrich as _nc_enrich
+                enrichments = _nc_enrich.valid_ids(
+                    _raw_eids.split(",")) or None
+            except Exception:  # noqa: BLE001
+                enrichments = None
         # Column-mapping overrides arrive as a URL-encoded JSON object in the
         # X-Overrides header (role -> header). Bad JSON is ignored → auto-detect.
         overrides = None
@@ -2860,8 +2872,8 @@ class RCMHandler(BaseHTTPRequestHandler):
             _prof_cfg = _nc_profiles.get_profile(
                 urllib.parse.unquote(_prof_name))
         return {"name": name, "drop_duplicates": dedupe, "enrich": enrich,
-                "deep": deep, "deid": deid, "overrides": overrides,
-                "profile": _prof_cfg}
+                "deep": deep, "deid": deid, "enrichments": enrichments,
+                "overrides": overrides, "profile": _prof_cfg}
 
     def _spool_upload_body(self, length: int):
         """Stream the request body to a temp file in the cleaner's WORKDIR
@@ -2917,6 +2929,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 spool, opts["name"],
                 drop_duplicates=opts["drop_duplicates"],
                 enrich=opts["enrich"], deep=opts["deep"],
+                enrichments=opts["enrichments"],
                 overrides=opts["overrides"], deid=opts["deid"],
                 profile=opts["profile"])
             return self._send_json({"job_id": job_id})
@@ -2930,6 +2943,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         job_id = engine.manager().submit(
             raw, opts["name"], drop_duplicates=opts["drop_duplicates"],
             enrich=opts["enrich"], deep=opts["deep"],
+            enrichments=opts["enrichments"],
             overrides=opts["overrides"], deid=opts["deid"],
             profile=opts["profile"])
         return self._send_json({"job_id": job_id})
@@ -4143,6 +4157,13 @@ class RCMHandler(BaseHTTPRequestHandler):
             return self._send_json(
                 {"requests": _nc_wishlist.list_requests(_status),
                  "categories": list(_nc_wishlist.CATEGORIES)})
+        if path == "/npi-cleaner/api/enrichments":
+            # Selectable enrichment registry: one entry per enrichment the
+            # upload can request (id, columns it adds, honest ready/
+            # needs_data/network status) — drives the page's checkboxes.
+            from .npi_cleaner import enrich as _nc_enrich
+            return self._send_json(
+                {"enrichments": _nc_enrich.registry()})
         if path == "/npi-cleaner/api/refdata":
             # Reference-data packs: installed state + provenance per pack,
             # plus any in-flight pull.

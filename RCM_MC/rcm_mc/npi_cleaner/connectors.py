@@ -61,6 +61,10 @@ def available() -> bool:
 # that could never fire. The RxNav crosswalk rides the "rxnorm" id.
 _CLEANING_WIRED = frozenset({
     "nppes", "rxnorm", "openfda", "oig_leie", "pecos",
+    # data.cms.gov Medicare enrichments (enrich.py) — selected per upload
+    # on the Enrichment panel: national per-HCPCS benchmark + per-NPI
+    # Medicare volumes.
+    "cms_geo_service", "cms_by_provider",
 })
 
 
@@ -104,6 +108,29 @@ def catalog() -> List[dict]:
             "is_wired": _pecos_live,
             "cleaning_wired": True,
         })
+    # The Medicare enrichment connectors (enrich.py) run against
+    # data.cms.gov's Data API directly; the shared catalog has no
+    # ApiSource for those two datasets, so append synthetic entries the
+    # same way PECOS gets one — the panel must show what can actually run.
+    for cid, cname, cdocs in (
+        ("cms_geo_service",
+         "Medicare Physician & Other Practitioners — by Geography and "
+         "Service (rate benchmark)",
+         "https://data.cms.gov/provider-summary-by-type-of-service/"
+         "medicare-physician-other-practitioners"),
+        ("cms_by_provider",
+         "Medicare Physician & Other Practitioners — by Provider "
+         "(NPI volumes)",
+         "https://data.cms.gov/provider-summary-by-type-of-service/"
+         "medicare-physician-other-practitioners"),
+    ):
+        if not any(d["id"] == cid for d in out):
+            out.append({
+                "id": cid, "name": cname, "operator": "CMS",
+                "category": "providers", "cost": "free",
+                "docs_url": cdocs, "status": "live",
+                "is_wired": True, "cleaning_wired": True,
+            })
     # Wired-for-cleaning first, then alphabetical — the sources that act
     # on a run should lead the panel.
     out.sort(key=lambda d: (not d["cleaning_wired"], d["name"].lower()))
@@ -297,6 +324,24 @@ def plan(signals: Dict[str, object]) -> List[dict]:
             add(f"pack_{pid}", pname, True, "offline",
                 why + " Pack not installed — pull it from Reference data "
                 "packs" + _hint + ".", state="needs_data")
+
+    # --- Medicare enrichment connectors (enrich.py) — run only when the
+    # upload SELECTS them on the Enrichment panel, so the coverage table
+    # says "selectable" rather than promising an automatic run. Their own
+    # mode value keeps them out of the network set the drug/NPPES
+    # resolvers own.
+    add("cms_geo_service", "Medicare rate benchmark (data.cms.gov)",
+        has_hcpcs or jcode > 0, "enrichment",
+        ("Procedure codes present — select 'Medicare rate benchmark' in "
+         "Enrichment to price the top codes at the CMS national average "
+         "allowed amount." if (has_hcpcs or jcode > 0) else
+         "No procedure-code column to benchmark."))
+    add("cms_by_provider", "Medicare provider volumes (data.cms.gov)",
+        has_billing, "enrichment",
+        ("Billing NPIs present — select 'Medicare volumes for key "
+         "providers' in Enrichment to size file volume against each "
+         "provider's Medicare book." if has_billing else
+         "No billing NPI column."))
     return out
 
 
@@ -602,6 +647,10 @@ _NETWORK_SOURCES = (
      "NDC → FDA product label (brand / generic / labeler)"),
     ("pecos", "Medicare PECOS (live, deep mode)",
      "billing-NPI enrollment + opt-out screen"),
+    ("cms_geo_service", "Medicare rate benchmark (data.cms.gov, live)",
+     "top HCPCS → national Medicare avg allowed + gross-up basis"),
+    ("cms_by_provider", "Medicare provider volumes (data.cms.gov, live)",
+     "key billing NPIs → Medicare services / benes / payments"),
 )
 
 _SEED_CACHE: Dict[str, dict] = {}
@@ -660,7 +709,7 @@ def connector_status() -> List[dict]:
 
     # --- Reference packs (refdata_packs) ---
     packs = _pack_status_map()
-    for pid in ("taxonomy", "icd10cm", "hcpcs", "leie"):
+    for pid in ("taxonomy", "icd10cm", "hcpcs", "leie", "zip_cbsa"):
         info = packs.get(pid) or {}
         entry = {
             "id": f"pack_{pid}",
@@ -749,7 +798,14 @@ def connector_status() -> List[dict]:
     except Exception:  # noqa: BLE001
         _nppes_ok = False
     for cid, name, powers in _NETWORK_SOURCES:
-        importable = _nppes_ok if cid == "nppes" else _client_ok
+        if cid == "nppes":
+            importable = _nppes_ok
+        elif cid in ("cms_geo_service", "cms_by_provider"):
+            # enrich.py talks to data.cms.gov with stdlib urllib — always
+            # importable; reachability is only proven by an opt-in run.
+            importable = True
+        else:
+            importable = _client_ok
         out.append({
             "id": cid, "name": name, "kind": "network",
             "powers": powers, "rows": 0, "vintage": "",

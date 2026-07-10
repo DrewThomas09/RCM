@@ -176,18 +176,22 @@ def clean_path(
     enrich: bool = False,
     deep: bool = False,
     deid: bool = False,
+    enrichments: Optional[List[str]] = None,
     profile: Optional[Dict[str, object]] = None,
     overrides: Optional[Dict[str, str]] = None,
     progress: Optional[ProgressCb] = None,
 ) -> CleanResult:
     """Clean a claims file already on disk. Small files delegate to the
-    normal in-memory pipeline; big delimited files stream in chunks."""
+    normal in-memory pipeline; big delimited files stream in chunks.
+    ``enrichments`` only acts on the in-memory path — streaming chunks
+    skip whole-file passes by design (same rule as population marts)."""
     size = os.path.getsize(path)
 
     def _in_memory() -> CleanResult:
         data = Path(path).read_bytes()
         return clean_bytes(data, src_name, drop_duplicates=drop_duplicates,
                            enrich=enrich, deep=deep, deid=deid,
+                           enrichments=enrichments,
                            profile=profile, overrides=overrides,
                            progress=progress)
 

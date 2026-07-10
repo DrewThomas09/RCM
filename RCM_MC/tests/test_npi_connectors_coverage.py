@@ -186,8 +186,12 @@ class TestCatalogPecos(unittest.TestCase):
         if not cat:
             self.skipTest("public_api_catalog unavailable")
         wired = {c["id"] for c in cat if c["cleaning_wired"]}
+        # cms_geo_service / cms_by_provider are the data.cms.gov Medicare
+        # enrichments (enrich.py) — selectable per upload on the
+        # Enrichment panel, so they count as acting on a cleaning run.
         self.assertEqual(wired,
-                         {"nppes", "rxnorm", "openfda", "oig_leie", "pecos"})
+                         {"nppes", "rxnorm", "openfda", "oig_leie", "pecos",
+                          "cms_geo_service", "cms_by_provider"})
 
 
 class _FdaOpenerMixin:

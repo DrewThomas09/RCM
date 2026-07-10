@@ -77,6 +77,11 @@ CREATE TABLE IF NOT EXISTS pack_hcpcs (
 CREATE TABLE IF NOT EXISTS pack_leie (
     npi     TEXT PRIMARY KEY
 );
+CREATE TABLE IF NOT EXISTS pack_zip_cbsa (
+    zip5    TEXT PRIMARY KEY,
+    cbsa    TEXT NOT NULL,
+    name    TEXT NOT NULL DEFAULT ''
+);
 """
 
 
@@ -207,6 +212,60 @@ def _parse_leie(raw: bytes) -> Iterable[Tuple[str]]:
 
 
 # ------------------------------------------------------------------- packs --
+def _parse_zip_cbsa(raw: bytes) -> Iterable[Tuple[str, str, str]]:
+    """ZIP/ZCTA → CBSA (metro/micro area) crosswalk.
+
+    Primary source is the Census ZCTA↔CBSA relationship file
+    (``tab20_zcta520_cbsa20_natl.txt``): pipe-delimited, one row per
+    ZCTA×CBSA overlap. A ZCTA can straddle CBSAs, so the winner per ZIP is
+    the overlap with the largest land area — the same tie-break HUD's
+    crosswalk applies by address weight. Also accepts any simple delimited
+    file with zip/cbsa(/name) columns (a downloaded HUD ZIP-CBSA crosswalk
+    export works), so no-egress deployments can install from a file."""
+    text = raw.decode("utf-8-sig", errors="replace")
+    first = text.split("\n", 1)[0]
+    delim = "|" if first.count("|") >= first.count(",") else ","
+    reader = csv.reader(io.StringIO(text), delimiter=delim)
+    header = [h.strip().lower() for h in next(reader, [])]
+
+    def _find(*cands: str) -> Optional[int]:
+        for c in cands:
+            for i, h in enumerate(header):
+                if h == c or h.startswith(c):
+                    return i
+        return None
+
+    z_i = _find("geoid_zcta5", "zcta5", "zip", "zcta")
+    c_i = _find("geoid_cbsa", "cbsa")
+    n_i = _find("namelsad_cbsa", "cbsaname", "cbsa_name", "name_cbsa",
+                "cbsatitle", "cbsa_title")
+    a_i = _find("arealand_part", "arealand")
+    if z_i is None or c_i is None or z_i == c_i:
+        raise ValueError("not a ZIP/ZCTA↔CBSA crosswalk (no zip + cbsa "
+                         "columns found)")
+    best: Dict[str, Tuple[float, str, str]] = {}
+    for row in reader:
+        if z_i >= len(row) or c_i >= len(row):
+            continue
+        z = "".join(ch for ch in row[z_i].strip() if ch.isdigit())
+        c = row[c_i].strip()
+        if len(z) != 5 or not c or not c.isdigit():
+            continue
+        name = (row[n_i].strip() if n_i is not None and n_i < len(row)
+                else "")
+        area = 0.0
+        if a_i is not None and a_i < len(row):
+            try:
+                area = float(row[a_i])
+            except ValueError:
+                area = 0.0
+        cur = best.get(z)
+        if cur is None or area > cur[0]:
+            best[z] = (area, c, name[:120])
+    for z, (_area, c, name) in best.items():
+        yield z, c, name
+
+
 def _year_urls(pattern: str, back: int = 3) -> List[str]:
     y = datetime.now(timezone.utc).year
     return [pattern.format(year=y - i) for i in range(back)]
@@ -271,6 +330,19 @@ PACKS: Dict[str, Dict[str, object]] = {
         "cadence_days": 100,
         "license": "CMS public file (Level II only; CPT-4 excluded).",
         "enables": "hcpcs-unknown-code — letter-led codes not in the set.",
+    },
+    "zip_cbsa": {
+        "title": "ZIP → CBSA/MSA crosswalk (Census)",
+        "table": "pack_zip_cbsa",
+        "columns": 3,
+        "parse": _parse_zip_cbsa,
+        "urls": lambda: [
+            "https://www2.census.gov/geo/docs/maps-data/data/rel2020/"
+            "cbsa/tab20_zcta520_cbsa20_natl.txt"],
+        "cadence_days": 800,
+        "license": "Public domain (US Census Bureau).",
+        "enables": "geo_msa enrichment — cbsa_code / cbsa_name columns and "
+                   "the metro-area mix, so claims pivot by MSA.",
     },
     "leie": {
         "title": "OIG exclusions list (LEIE)",
@@ -514,6 +586,8 @@ def _invalidate_cache(pack_id: str) -> None:
         _CACHE.pop(pack_id, None)
         if pack_id == "taxonomy":
             _CACHE.pop("taxonomy_codes", None)
+        if pack_id == "hcpcs":
+            _CACHE.pop("hcpcs_descr", None)
 
 
 def _load_set(pack_id: str, table: str) -> Optional[frozenset]:
@@ -572,6 +646,54 @@ def taxonomy_codes() -> Optional[frozenset]:
     with _CACHE_LOCK:
         _CACHE["taxonomy_codes"] = vals
     return vals
+
+
+def hcpcs_display(code: str) -> Optional[str]:
+    """Long description for a HCPCS Level II code from the installed pack,
+    or None (pack absent / code unknown). Powers the top-codes enrichment
+    labels — same lazy whole-table cache pattern as taxonomy_display."""
+    with _CACHE_LOCK:
+        table = _CACHE.get("hcpcs_descr")
+    if table is None:
+        if not _DB_PATH.exists():
+            return None
+        try:
+            with _LOCK, _conn() as con:
+                has = con.execute(
+                    "SELECT 1 FROM pack_meta WHERE pack = 'hcpcs'").fetchone()
+                if not has:
+                    return None
+                table = dict(con.execute(
+                    "SELECT code, descr FROM pack_hcpcs"))
+        except Exception:  # noqa: BLE001
+            return None
+        with _CACHE_LOCK:
+            _CACHE["hcpcs_descr"] = table
+    return table.get(code.strip().upper()) or None  # type: ignore[union-attr]
+
+
+def zip_cbsa_lookup() -> Optional[Dict[str, Tuple[str, str]]]:
+    """zip5 → (cbsa_code, cbsa_name) for the geo_msa enrichment, or None
+    when the pack isn't installed. ~33k small tuples — cached once per
+    process like the code sets."""
+    with _CACHE_LOCK:
+        if "zip_cbsa" in _CACHE:
+            return _CACHE["zip_cbsa"]  # type: ignore[return-value]
+    if not _DB_PATH.exists():
+        return None
+    try:
+        with _LOCK, _conn() as con:
+            has = con.execute(
+                "SELECT 1 FROM pack_meta WHERE pack = 'zip_cbsa'").fetchone()
+            if not has:
+                return None
+            table = {z: (c, n) for z, c, n in con.execute(
+                "SELECT zip5, cbsa, name FROM pack_zip_cbsa")}
+    except Exception:  # noqa: BLE001
+        return None
+    with _CACHE_LOCK:
+        _CACHE["zip_cbsa"] = table
+    return table
 
 
 def taxonomy_display(code: str) -> Optional[str]:

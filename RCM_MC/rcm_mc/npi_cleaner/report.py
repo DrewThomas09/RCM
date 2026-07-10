@@ -590,6 +590,101 @@ def build_workbook(res, headers: List[str], rows: List[List[str]]) -> bytes:
         sheets.append(Sheet("Recovery gaps", rg_rows,
                             col_widths=[40, 10, 14, 70]))
 
+    # ---- Enrichment (enrich.py marts) ----
+    # One tab for the analysis-ready angles: top codes + trend, key
+    # billing providers (with Medicare volumes when that connector ran),
+    # CBSA/metro mix, and the Medicare rate benchmark. Guarded — an
+    # un-enriched run grows no tab.
+    _enr = res.enrichment if isinstance(res.enrichment, dict) else {}
+    _marts = _enr.get("marts") if isinstance(_enr.get("marts"), dict) else {}
+    if _marts or _enr.get("results"):
+        en_rows: List[list] = []
+        _tc = _marts.get("top_codes") or {}
+        if isinstance(_tc, dict) and _tc.get("codes"):
+            en_rows.append(_header(["Top code", "Description", "Lines",
+                                    "Charges", "% of $", "Trend"]))
+            for c in _tc["codes"]:
+                if not isinstance(c, dict):
+                    continue
+                tr = c.get("trend") or {}
+                tr_txt = (f"{tr.get('direction')} {tr.get('change_pct')}% "
+                          f"({tr.get('window')})" if tr else "")
+                en_rows.append([str(c.get("code") or ""),
+                                str(c.get("description") or ""),
+                                int(c.get("lines") or 0),
+                                round(float(c.get("charges") or 0.0), 2),
+                                c.get("pct_dollars"), tr_txt])
+            en_rows.append(["", "", "", "", "", ""])
+        _pr = _marts.get("provider_revenue") or {}
+        if isinstance(_pr, dict) and _pr.get("providers"):
+            en_rows.append(_header(["Billing NPI", "Name", "Lines",
+                                    "Charges", "% of $",
+                                    "Medicare payments (CMS)"]))
+            for p in _pr["providers"]:
+                if not isinstance(p, dict):
+                    continue
+                en_rows.append([str(p.get("npi") or ""),
+                                str(p.get("name") or ""),
+                                int(p.get("lines") or 0),
+                                round(float(p.get("charges") or 0.0), 2),
+                                p.get("pct_dollars"),
+                                p.get("medicare_payment")])
+            if _pr.get("hhi") is not None:
+                en_rows.append(["HHI (billed $ concentration)", "", "",
+                                "", "", _pr["hhi"]])
+            en_rows.append(["", "", "", "", "", ""])
+        _geo = _marts.get("geography") or {}
+        if isinstance(_geo, dict) and _geo.get("areas"):
+            en_rows.append(_header(["CBSA", "Metro area", "Lines",
+                                    "Charges", "% of $", ""]))
+            for a in _geo["areas"]:
+                if not isinstance(a, dict):
+                    continue
+                en_rows.append([str(a.get("cbsa") or ""),
+                                str(a.get("name") or ""),
+                                int(a.get("lines") or 0),
+                                round(float(a.get("charges") or 0.0), 2),
+                                a.get("pct_dollars"), ""])
+            en_rows.append(["", "", "", "", "", ""])
+        _mb = _marts.get("medicare_benchmark") or {}
+        if isinstance(_mb, dict) and (_mb.get("codes")
+                                      or _mb.get("pct_of_medicare")
+                                      is not None):
+            en_rows.append(_header(["Benchmark code", "File avg charge",
+                                    "Medicare avg allowed", "× Medicare",
+                                    "Medicare services (natl)", ""]))
+            for c in (_mb.get("codes") or []):
+                if not isinstance(c, dict):
+                    continue
+                en_rows.append([str(c.get("code") or ""),
+                                c.get("file_avg_charge"),
+                                c.get("medicare_avg_allowed"),
+                                c.get("ratio"),
+                                c.get("medicare_services"), ""])
+            if _mb.get("pct_of_medicare") is not None:
+                en_rows.append([
+                    "File charges as % of Medicare allowed",
+                    _mb.get("matched_dollars"),
+                    _mb.get("medicare_equivalent_dollars"),
+                    f"{_mb['pct_of_medicare']}%", "", ""])
+            if _mb.get("note"):
+                en_rows.append([str(_mb["note"]), "", "", "", "", ""])
+            en_rows.append(["", "", "", "", "", ""])
+        _eres = [r for r in (_enr.get("results") or [])
+                 if isinstance(r, dict)]
+        if _eres:
+            en_rows.append(_header(["Enrichment", "Rows enriched",
+                                    "Columns added", "Result", "", ""]))
+            for r in _eres:
+                en_rows.append([str(r.get("label") or r.get("id") or ""),
+                                int(r.get("rows_enriched") or 0),
+                                ", ".join(str(x) for x in
+                                          (r.get("columns_added") or [])),
+                                str(r.get("note") or ""), "", ""])
+        if en_rows:
+            sheets.append(Sheet("Enrichment", en_rows,
+                                col_widths=[24, 30, 12, 14, 14, 40]))
+
     # ---- Cleaned data (last; capped) ----
     data_rows: List[list] = []
     if headers:
