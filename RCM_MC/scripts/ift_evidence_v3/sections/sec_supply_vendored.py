@@ -607,13 +607,14 @@ def build(wb, ctx):
             'CHOWs are volatile year to year (38 in 2022, 127 in 2019); the '
             'SNF series is the deeper, steadier consolidation signal '
             '(244 > 882 events/yr 2016>2023).')
-    lib.add_chart(ws, f'N{a0}', 'CHOW events per year: SNF (left axis) vs '
-                  'hospital (right axis)',
+    lib.add_chart(ws, f'N{a0}', 'SNF CHOW events per year',
                   f'CHOW_Consolidation!$A${a0}:$A${a1}',
                   [('SNF CHOWs', f'CHOW_Consolidation!$C${a0}:$C${a1}')],
-                  kind='line', y_fmt='#,##0',
-                  secondary=[('Hospital CHOWs',
-                              f'CHOW_Consolidation!$B${a0}:$B${a1}', 'line')])
+                  kind='line', y_fmt='#,##0')
+    lib.add_chart(ws, f'X{a0}', 'Hospital CHOW events per year',
+                  f'CHOW_Consolidation!$A${a0}:$A${a1}',
+                  [('Hospital CHOWs', f'CHOW_Consolidation!$B${a0}:$B${a1}')],
+                  kind='line', y_fmt='#,##0')
 
     # Panel B: hospital state x year matrix
     sb.blank()

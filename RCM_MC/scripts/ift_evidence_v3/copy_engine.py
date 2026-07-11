@@ -77,26 +77,38 @@ def make_ref(wb, f):
                      max_col=max_col, max_row=max_row)
 
 
-def rebuild_charts(wb, charts_json, anchors_json):
-    charts = json.load(open(charts_json))
-    anchors = json.load(open(anchors_json))
+def rebuild_charts(wb, charts_json, anchors_json=None):
+    """Re-create the carried v2.7 charts from the full-fidelity re-parse
+    (v27_charts2.json: anchors embedded, categories and name refs kept).
+    House styling is applied here and again by the workbook-wide
+    normalize pass, so carried charts match the v3-built ones."""
+    import os
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import v3lib
+    from openpyxl.chart.data_source import StrRef
+    from openpyxl.chart.series import SeriesLabel
+
+    specs = json.load(open(charts_json))
     built = 0
-    for spec in charts:
-        anchor = anchors.get(spec['file'])
+    for spec in specs:
+        anchor = spec.get('anchor')
         sheet = spec['sheet']
-        if sheet is None or anchor is None:
+        if sheet is None or anchor is None or sheet not in wb.sheetnames:
             continue
         ws = wb[sheet]
-        subcharts = []
-        for pi, plot in enumerate(spec['plots']):
+        for plot in spec['plots']:   # v2.7 has no combo charts (verified)
             if plot['type'] == 'barChart':
                 ch = BarChart()
-                ch.type = 'col'
+                ch.type = plot.get('barDir') or 'col'
                 ch.grouping = plot.get('grouping') or 'clustered'
+                kind = 'bar'
             elif plot['type'] == 'lineChart':
                 ch = LineChart()
+                kind = 'line'
             else:
                 continue
+            cat = None
             for ser in plot['series']:
                 val = ser.get('val') or ser.get('y')
                 if not val:
@@ -105,39 +117,33 @@ def rebuild_charts(wb, charts_json, anchors_json):
                 if ref is None:
                     continue
                 s = Series(ref, title_from_data=False)
-                if ser.get('name'):
-                    if _SHEET_REF.match(ser['name']):
-                        from openpyxl.chart.series import SeriesLabel
-                        from openpyxl.chart.data_source import StrRef
-                        s.tx = SeriesLabel(strRef=StrRef(ser['name']))
-                    else:
-                        from openpyxl.chart.series import SeriesLabel
-                        s.tx = SeriesLabel(v=ser['name'])
+                if ser.get('name_ref') and _SHEET_REF.match(ser['name_ref']):
+                    s.tx = SeriesLabel(strRef=StrRef(ser['name_ref']))
+                elif ser.get('name'):
+                    s.tx = SeriesLabel(v=ser['name'])
                 ch.series.append(s)
-            cat = None
-            for ser in plot['series']:
-                if ser.get('cat') or ser.get('x'):
-                    cat = ser.get('cat') or ser.get('x')
-                    break
+                cat = cat or ser.get('cat') or ser.get('x')
+            if not ch.series:
+                continue
             if cat:
                 cref = make_ref(wb, cat)
                 if cref is not None:
                     ch.set_categories(cref)
-            subcharts.append(ch)
-        if not subcharts:
-            continue
-        main = subcharts[0]
-        main.title = (spec.get('title') or '').replace('\n', ' ') or None
-        # secondary-axis combo: attach later subcharts on y2
-        for extra in subcharts[1:]:
-            extra.y_axis.axId = 200
-            extra.y_axis.crosses = 'max'
-            main += extra
-        main.height = max(6.0, (anchor['to'][1] - anchor['from'][1]) * 0.53)
-        main.width = max(8.0, (anchor['to'][0] - anchor['from'][0]) * 2.29)
-        cell = f"{get_column_letter(anchor['from'][0] + 1)}{anchor['from'][1] + 1}"
-        ws.add_chart(main, cell)
-        built += 1
+            ch.title = (spec.get('title') or '').replace('\n', ' ') or None
+            for ax in spec.get('axes', []):
+                if ax['kind'] == 'valAx':
+                    if ax.get('numFmt'):
+                        ch.y_axis.number_format = ax['numFmt']
+                    if ax.get('title'):
+                        ch.y_axis.title = ax['title']
+                elif ax.get('title'):
+                    ch.x_axis.title = ax['title']
+            v3lib.style_chart(ch, kind, y_fmt=ch.y_axis.number_format)
+            ch.height = max(6.2, (anchor['to'][1] - anchor['from'][1]) * 0.529)
+            ch.width = max(11.0, (anchor['to'][0] - anchor['from'][0]) * 1.83)
+            cell = f"{get_column_letter(anchor['from'][0] + 1)}{anchor['from'][1] + 1}"
+            ws.add_chart(ch, cell)
+            built += 1
     return built
 
 

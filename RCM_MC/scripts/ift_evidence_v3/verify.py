@@ -33,11 +33,11 @@ _REPO_REF = '/home/user/RCM/RCM_MC/rcm_mc/market_reports/reference'
 V27 = _default('IFT_V27_XLSX',
                '/root/.claude/uploads/3de345a1-c58f-5ce6-b747-7cbb0636d5d9/bec059da-IFT_Sourced_Evidence_Master_v2_7.xlsx',
                os.path.join(_REPO_REF, 'IFT_Sourced_Evidence_Master_v2_7.xlsx'))
-V3 = _default('IFT_V3_OUT', os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_2.xlsx'))
+V3 = _default('IFT_V3_OUT', os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_3.xlsx'))
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 ERR = {'#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#N/A', '#NULL!', '#NUM!'}
-REBUILT = {'README', 'Source_Index'}
+REBUILT = {'README', 'Source_Index', 'Methodology'}
 
 
 def recalc(path):
@@ -246,6 +246,69 @@ def main():
     results['sources_max'] = smax
     results['tabs'] = len(v3.sheetnames)
     results['charts'] = sum(len(v3[n]._charts) for n in v3.sheetnames)
+
+    # V9: chart integrity - house axes, no combo/secondary, no overlaps,
+    # no smoothed lines, categories present on multi-point series
+    import zipfile
+    import chart_audit as CA
+    z = zipfile.ZipFile(V3)
+    smap = CA.sheet_map(z)
+    n_ch = 0
+    v9 = []
+    geo_by_sheet = {}
+    for sheet, spath in smap.items():
+        dpath = CA.drawing_for(z, spath)
+        if not dpath:
+            continue
+        for col, row, cx, cy, cpath in CA.charts_in_drawing(z, dpath):
+            if not cpath:
+                continue
+            info, _ = CA.audit_chart(z, cpath)
+            n_ch += 1
+            n_val = sum(1 for a in info['axes'] if a['kind'] == 'valAx')
+            if len(info['plots']) > 1 or n_val > 1:
+                v9.append(f'combo/secondary chart on {sheet} ({cpath})')
+            horiz = any(p.get('barDir') == 'bar' for p in info['plots'])
+            cat_pos, val_pos = ('l', 'b') if horiz else ('b', 'l')
+            for a in info['axes']:
+                if a['kind'] in ('catAx', 'dateAx') and a['pos'] != cat_pos:
+                    v9.append(f'category axis pos={a["pos"]} on {sheet}')
+                if a['kind'] == 'valAx' and a['pos'] != val_pos:
+                    v9.append(f'value axis pos={a["pos"]} on {sheet}')
+                if a['delete'] not in ('0', 'false'):
+                    v9.append(f'axis delete not explicit-0 on {sheet}')
+            for p in info['plots']:
+                if p['type'] == 'lineChart' and any(
+                        s not in ('0', 'false') for s in p['ser_smooth']):
+                    v9.append(f'smoothed line series on {sheet}')
+                if p['n_series'] == 0:
+                    v9.append(f'zero-series chart on {sheet}')
+    # exact overlap geometry from the loaded workbook (true col/row sizes)
+    del geo_by_sheet
+    for name in v3.sheetnames:
+        ws3 = v3[name]
+        rects = []
+        for ch in ws3._charts:
+            a = ch.anchor
+            frm = getattr(a, '_from', None)
+            ext = getattr(a, 'ext', None)
+            if frm is None or ext is None:
+                continue
+            x = v3lib._col_x_cm(ws3, frm.col + 1) + (frm.colOff or 0) / 360000
+            y = v3lib._row_y_cm(ws3, frm.row + 1) + (frm.rowOff or 0) / 360000
+            rects.append((x, y, ext.cx / 360000, ext.cy / 360000))
+        for i, (ax, ay, aw, ah) in enumerate(rects):
+            for bx, by, bw, bh in rects[i + 1:]:
+                ox = min(ax + aw, bx + bw) - max(ax, bx)
+                oy = min(ay + ah, by + bh) - max(ay, by)
+                if ox > 0.6 and oy > 0.6:
+                    v9.append(f'chart overlap on {name} (~{ox:.1f}x{oy:.1f}cm)')
+    results['charts_checked'] = n_ch
+    results['chart_defects'] = len(v9)
+    for msg in v9[:20]:
+        problems.append(f'V9: {msg}')
+    if len(v9) > 20:
+        problems.append(f'V9: ... +{len(v9) - 20} more chart defects')
 
     json.dump(results, open(os.path.join(SCRATCH, 'verify_results.json'), 'w'),
               indent=1)

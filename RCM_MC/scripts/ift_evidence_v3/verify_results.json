@@ -1,15 +1,17 @@
 {
- "n_formulas": "52,072",
+ "n_formulas": "52,074",
  "n_errors": 0,
- "copy_cells": "10,679",
+ "copy_cells": "10,464",
  "copy_diffs": 0,
  "copy_errors": 0,
  "n_recomputed": 9,
  "n_mismatch": 0,
- "pages": 12912,
- "file_mb": 30.4,
+ "pages": 12896,
+ "file_mb": 30.5,
  "facts_max": 442,
  "sources_max": 312,
  "tabs": 268,
- "charts": 195
+ "charts": 197,
+ "charts_checked": 197,
+ "chart_defects": 0
 }
