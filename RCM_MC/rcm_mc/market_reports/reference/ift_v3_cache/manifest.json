@@ -1,4 +1,16 @@
 {
+ "census_county_age_2024": {
+  "data_year": "July 2020-2024 estimate rows (YEAR codes 2-6)",
+  "dataset": "Census Bureau Vintage 2024 County Population Estimates by Age and Sex (CC-EST2024-AGESEX)",
+  "endpoint": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/asrh/cc-est2024-agesex-all.csv",
+  "file": "census_county_age_2024.json",
+  "filters": {
+   "client_side": "YEAR in (2,6); totals columns kept"
+  },
+  "retrieved_utc": "2026-07-11T16:30:59+00:00",
+  "rows": 15720,
+  "sha256": "7d5d6943e1be1b218444da3eb59eca9f4906311ac920c0c87dc73de449b02fcc"
+ },
  "census_state_age_2024": {
   "data_year": "2020-2024",
   "dataset": "Census Bureau Vintage 2024 State Population Estimates by Age and Sex, civilian (SC-EST2024-AGESEX-CIV)",
@@ -39,6 +51,19 @@
   "sha256": "18df4b89d0d6a069b9bc5631c2f74c4981747e4bd12c2645bd55cfd097f79882",
   "uuid": "d7fabe1e-d19b-4333-9eff-e80e0643f2fd"
  },
+ "hsa_2025_corridors_top15": {
+  "aggregation": "client-side: per hospital, ZIP rows ranked by total cases, top 15 kept; suppression drops small cells at source",
+  "data_year": "2025",
+  "dataset": "Hospital Service Area (top-15 ZIP corridors per hospital)",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b53af434-fbf7-44f1-898d-da73c45a767e/data",
+  "file": "hsa_2025_corridors_top15.json",
+  "filters": {},
+  "pages": 236,
+  "retrieved_utc": "2026-07-11T16:40:41+00:00",
+  "rows": 106799,
+  "sha256": "3177e11f81c9b7e11663530744c572d6007312bdc25b344e51bd5b81e89cb89a",
+  "uuid": "b53af434-fbf7-44f1-898d-da73c45a767e"
+ },
  "hsa_2025_hospital_agg": {
   "aggregation": "client-side per-hospital sums over hospital x ZIP rows (zips served, total cases/days/charges)",
   "data_year": "2025",
@@ -51,6 +76,19 @@
   "rows": 7452,
   "sha256": "7a9e459614df4058320c89995bcc8a0fca7bc555fca7637a63d8eabc4bcd7426",
   "uuid": "b53af434-fbf7-44f1-898d-da73c45a767e"
+ },
+ "leie_ambulance": {
+  "data_year": "current file, accessed 11 Jul 2026",
+  "dataset": "HHS OIG List of Excluded Individuals/Entities (LEIE)",
+  "endpoint": "https://oig.hhs.gov/exclusions/downloadables/UPDATED.csv",
+  "file": "leie_ambulance.json",
+  "filters": {
+   "client_side": "'AMBULANCE' in busname/general/specialty or EMT specialty"
+  },
+  "retrieved_utc": "2026-07-11T16:13:35+00:00",
+  "rows": 566,
+  "rows_scanned": 83665,
+  "sha256": "d2189d304f156a1c74070a178c5717ccc97198894e96b122e288e53b728e4321"
  },
  "marketsat_county_2020": {
   "data_year": "2020",
@@ -530,6 +568,1122 @@
   "rows_unfiltered": 13463,
   "sha256": "f016e0528aab647b2f4dc7f8b88037b835aaee6c7ee5c488ba025d97c673c372",
   "uuid": "0c75b0b3-b40f-4007-a5ac-f9f2fed95862"
+ },
+ "mup_provider_2013_A0425": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:31:47+00:00",
+  "rows": 9440,
+  "sha256": "dfd9c437ae2521eaa10e4213962ae529c5924c80eba11d3d89dc6d4d5ca2cf76",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0426": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:32:03+00:00",
+  "rows": 1839,
+  "sha256": "c3c18a165ae1dd5364a60c021ce14bbf697d8b14697fe8069ca57ff2509e6301",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0427": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:32:42+00:00",
+  "rows": 7201,
+  "sha256": "85c71089972809949eb67a65bb3b6594dda65ec00ae191ed00fff81a5f2fe054",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0428": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:33:03+00:00",
+  "rows": 3321,
+  "sha256": "a6c375748f250a03f51b465b5dadb86dca0c22f88dae95c6bab1b1870a157c42",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0429": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:33:57+00:00",
+  "rows": 8133,
+  "sha256": "27de07c018fbabef24244351b3cc20ae8fcb05cb9be2d37ed9ff1ec0af245e69",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0430": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:33:58+00:00",
+  "rows": 73,
+  "sha256": "d932b7f28e56d59768c528a3a81a19f84915cdfefd1f372b195a538d14a16e85",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0431": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:01+00:00",
+  "rows": 261,
+  "sha256": "b8cb87da9e9c79f4d457906d0ae9694e5bd2e7e6a10d9df895580eb0a5c88d44",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0432": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:02+00:00",
+  "rows": 31,
+  "sha256": "92aa38366a5340ddcfeec17b8f1032c622c65783a8a1add2b563175325f7bb3a",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0433": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:12+00:00",
+  "rows": 1939,
+  "sha256": "5f82656092d17a9d4dc9c1f62056e83963b6097191c293e73bf86197a5ec0575",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0434": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:17+00:00",
+  "rows": 683,
+  "sha256": "0bfeae478dbb578197e9ca5ccb39843109eb3b411341c97abd0f47daccd525d3",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0435": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:18+00:00",
+  "rows": 72,
+  "sha256": "0ce50317bf7062bb9ef208c2d8e7e22e89af3f59faff4237d607f15f7770dc73",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2013_A0436": {
+  "data_year": "2013",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/ad5e7548-98ab-4325-af4b-b2a7099b9351/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2013_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:34:21+00:00",
+  "rows": 260,
+  "sha256": "3fb2ec8482cc7e4ee71e98cbe4d7f02989dda5156585bd811962bdd7c1d5bfb5",
+  "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
+ },
+ "mup_provider_2019_A0425": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:15:15+00:00",
+  "rows": 9188,
+  "sha256": "d8b892f1ad3f24691818c0a04c6e319e03725300430aeacc4f6494fd9faa1303",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0426": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:15:23+00:00",
+  "rows": 1871,
+  "sha256": "6d4333a5b14d94f8220666cb334a9ef82f19b4e1444d381601e8c0d03173772e",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0427": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:15:58+00:00",
+  "rows": 7058,
+  "sha256": "d9cc5d8e62af63699aa19f174852cb98e43792ee07565ecf61dc77f732019cfc",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0428": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:16:06+00:00",
+  "rows": 3075,
+  "sha256": "31404762433ecf48e97075dc0d6758ee025d879599d534b6e3d8e49a32c9c479",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0429": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:16:42+00:00",
+  "rows": 8079,
+  "sha256": "a4f8945b1644c0d072ef04b30f99e3c06b3c02e9b886a1a809d0bb1f6bf03dc7",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0430": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:16:44+00:00",
+  "rows": 99,
+  "sha256": "ab4076f5a09d38cc408f630d3ef8748d74f22adab5de0b75690e8575055b53cb",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0431": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:16:48+00:00",
+  "rows": 319,
+  "sha256": "427b56dfd01ee223382e6198cb907724040b4305b08cb73a797868221b375b11",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0432": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:16:48+00:00",
+  "rows": 23,
+  "sha256": "5ef0a305d83c5cfd4b3f290abc61c0036f0df823bccd622b538acf2063b89efa",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0433": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:16:53+00:00",
+  "rows": 1978,
+  "sha256": "8b298b8eda45ce79f3c372395e7cfda63c0caa316cf85672f98575308aa40201",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0434": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:17:00+00:00",
+  "rows": 677,
+  "sha256": "667e53ca3501bc1063dfb54cf8af1321b56d64def0091d7eb9a99e66c480d4f0",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0435": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:17:01+00:00",
+  "rows": 99,
+  "sha256": "91823f7fcbc9eccc6cbb8b18323bf4bd3cb3af68b49502edf14da98542841d27",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2019_A0436": {
+  "data_year": "2019",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/867b8ac7-ccb7-4cc9-873d-b24340d89e32/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2019_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:17:03+00:00",
+  "rows": 319,
+  "sha256": "c0db72922d060d4178ba70de385f1c00e79c0e01e4501c6c0f5fd46c98817a0d",
+  "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2024_A0425": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:17:40+00:00",
+  "rows": 8929,
+  "sha256": "85bcd70aa1f22bea8945251b0f6be148e8d9bde22aeaaf994280da8b00979750",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0426": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:17:44+00:00",
+  "rows": 1507,
+  "sha256": "9594de2c950ad4e12421bc6a7d899f97c9e36f3ece3d7e505db5a3dcf6440a23",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0427": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:18:02+00:00",
+  "rows": 6857,
+  "sha256": "d379a59c2ec37d19b0864b2f9a11e7c52a4071069e92342c5709d6ae8904eba2",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0428": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:11+00:00",
+  "rows": 2683,
+  "sha256": "834a9991c8d4aa4e967c0fcc39c08b65ff8b2587f2a4687ee5fb21b1f002d703",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0429": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T16:18:28+00:00",
+  "rows": 7742,
+  "sha256": "96681ee44d6c172291683b5812326845c409b806fab91fdab5f48ac052b9ce07",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0430": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:29+00:00",
+  "rows": 89,
+  "sha256": "8ef07851ce8dfa9d1b74718407261d89bc8db7252cb287f1906c5b7454c82b40",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0431": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:30+00:00",
+  "rows": 347,
+  "sha256": "10cb9ae58edc9ba2809bd6f93ec96f8782fdaa35e4dee8eb52ec71379a2f0c0b",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0432": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:31+00:00",
+  "rows": 3,
+  "sha256": "6710ebf8ffddc4ed0c862f86b543df003cabb4fc3f34c5c571c143ee45d3a1d1",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0433": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:37+00:00",
+  "rows": 1660,
+  "sha256": "b76da1537e60846efb29b670b438695493fb434de2a0ba135357dbcd4e98fceb",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0434": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:39+00:00",
+  "rows": 573,
+  "sha256": "39828af6290e2b5e1c8d973bea674e5f1692fcc1ada32c4f2d35c44297594b76",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0435": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:40+00:00",
+  "rows": 89,
+  "sha256": "2fbfae5fbb4716bf4e2d68e03321b671149573bd3eb5a1e9777bc1a3511cbb22",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
+ },
+ "mup_provider_2024_A0436": {
+  "data_year": "2024",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/335e5f35-eca6-482d-87b3-f99883e213e3/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2024_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T16:18:42+00:00",
+  "rows": 348,
+  "sha256": "95144a8aa2db5dbda83eac0585c5f8222899b3cccb3a5158cd8b10c851ddbb6a",
+  "uuid": "335e5f35-eca6-482d-87b3-f99883e213e3"
  },
  "mup_state_2013_A0425": {
   "data_year": "2013",
@@ -3459,6 +4613,90 @@
   "sha256": "c58a53ec7566ab03a84220583716384e06cd7c698b59b9be391e9538e81c1352",
   "uuid": "2457ea29-fc82-48b0-86ec-3b0755de7515"
  },
+ "places_county_bphigh": {
+  "data_year": "2023",
+  "dataset": "CDC PLACES: Local Data for Better Health, County Data",
+  "endpoint": "https://data.cdc.gov/resource/swc5-untb.json",
+  "file": "places_county_bphigh.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "BPHIGH"
+  },
+  "note": "Model-based small-area estimates published by CDC (crude prevalence); carried as GOV published statistics with the CDC methodology caveat stated on-tab",
+  "retrieved_utc": "2026-07-11T16:38:18+00:00",
+  "rows": 2958,
+  "sha256": "44334ea6ca316faf1fd3700a842a28739d9b832fa10bc280f194624b24dd21d4"
+ },
+ "places_county_chd": {
+  "data_year": "2023",
+  "dataset": "CDC PLACES: Local Data for Better Health, County Data",
+  "endpoint": "https://data.cdc.gov/resource/swc5-untb.json",
+  "file": "places_county_chd.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "CHD"
+  },
+  "note": "Model-based small-area estimates published by CDC (crude prevalence); carried as GOV published statistics with the CDC methodology caveat stated on-tab",
+  "retrieved_utc": "2026-07-11T16:13:32+00:00",
+  "rows": 2958,
+  "sha256": "41b09f97b3aa18045509c7bc63bc0532565e59714380a61db415b9145a181719"
+ },
+ "places_county_copd": {
+  "data_year": "2023",
+  "dataset": "CDC PLACES: Local Data for Better Health, County Data",
+  "endpoint": "https://data.cdc.gov/resource/swc5-untb.json",
+  "file": "places_county_copd.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "COPD"
+  },
+  "note": "Model-based small-area estimates published by CDC (crude prevalence); carried as GOV published statistics with the CDC methodology caveat stated on-tab",
+  "retrieved_utc": "2026-07-11T16:38:19+00:00",
+  "rows": 2958,
+  "sha256": "7e429d7661618b2828776e900f10291d237735a627f8a598a0afa1dc0141e3dc"
+ },
+ "places_county_diabetes": {
+  "data_year": "2023",
+  "dataset": "CDC PLACES: Local Data for Better Health, County Data",
+  "endpoint": "https://data.cdc.gov/resource/swc5-untb.json",
+  "file": "places_county_diabetes.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "DIABETES"
+  },
+  "note": "Model-based small-area estimates published by CDC (crude prevalence); carried as GOV published statistics with the CDC methodology caveat stated on-tab",
+  "retrieved_utc": "2026-07-11T16:13:34+00:00",
+  "rows": 2958,
+  "sha256": "b04a4348e706a4927bdd05b7cc852b522e51d4a6fee97ff7e39d7e10d44e69b3"
+ },
+ "places_county_kidney": {
+  "data_year": "2021",
+  "dataset": "CDC PLACES: County Data (2023 release) \u2014 chronic kidney disease",
+  "endpoint": "https://data.cdc.gov/resource/h3ej-a9ec.json",
+  "file": "places_county_kidney.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "KIDNEY"
+  },
+  "note": "The KIDNEY measure was dropped from the newest PLACES release (swc5-untb); carried from the pinned 2023 county release instead \u2014 release vintages differ across measures and are stated per row",
+  "retrieved_utc": "2026-07-11T16:24:25+00:00",
+  "rows": 3077,
+  "sha256": "a08e54535e68305da09ddcc139f0ae817939add1984635b6f7c4f5f6195eff28"
+ },
+ "places_county_stroke": {
+  "data_year": "2023",
+  "dataset": "CDC PLACES: Local Data for Better Health, County Data",
+  "endpoint": "https://data.cdc.gov/resource/swc5-untb.json",
+  "file": "places_county_stroke.json",
+  "filters": {
+   "datavaluetypeid": "CrdPrv",
+   "measureid": "STROKE"
+  },
+  "note": "Model-based small-area estimates published by CDC (crude prevalence); carried as GOV published statistics with the CDC methodology caveat stated on-tab",
+  "retrieved_utc": "2026-07-11T16:13:33+00:00",
+  "rows": 2958,
+  "sha256": "32cb4cb9738f756d3e0f7c540fd88f449ed22d8ef5e94862cb6b9712bbd015da"
+ },
  "psps_agg_2010_A0425": {
   "aggregation": "client-side sum by HCPCS initial modifier",
   "data_year": "2010",
@@ -5333,5 +6571,581 @@
   "retrieved_utc": "2026-07-10T20:46:50+00:00",
   "rows": 1866,
   "sha256": "22845156f2cfbc5ca8218c55e04aefcbed214a28cbecf1c2e5e5aa6476309ed8"
+ },
+ "qcew_q_2014q1": {
+  "data_year": "2014Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2014/1/industry/621910.csv",
+  "file": "qcew_q_2014q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:51+00:00",
+  "rows": 100,
+  "sha256": "fc9eb1f5960af7879d382d50ea6f130962df2be647d1fe9b0131bf37b6b548ff"
+ },
+ "qcew_q_2014q2": {
+  "data_year": "2014Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2014/2/industry/621910.csv",
+  "file": "qcew_q_2014q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:52+00:00",
+  "rows": 100,
+  "sha256": "e118a32d79bf5017b1a066275f80050fc953f893381fb79883022d8b25cec799"
+ },
+ "qcew_q_2014q3": {
+  "data_year": "2014Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2014/3/industry/621910.csv",
+  "file": "qcew_q_2014q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:52+00:00",
+  "rows": 100,
+  "sha256": "64e8e2da14343e5b9aedea324bca2c3bef8dcd8ff6aecfb9a81953521f35c4ce"
+ },
+ "qcew_q_2014q4": {
+  "data_year": "2014Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2014/4/industry/621910.csv",
+  "file": "qcew_q_2014q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:53+00:00",
+  "rows": 100,
+  "sha256": "dddb455e2a27045c17b86c4542240076715f69ae36c152bca95baad5f2375cdc"
+ },
+ "qcew_q_2015q1": {
+  "data_year": "2015Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2015/1/industry/621910.csv",
+  "file": "qcew_q_2015q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:53+00:00",
+  "rows": 100,
+  "sha256": "465394f2387e161a9abf9950283489526dd5e9d0e2d10df192e9a8ae99226f37"
+ },
+ "qcew_q_2015q2": {
+  "data_year": "2015Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2015/2/industry/621910.csv",
+  "file": "qcew_q_2015q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:54+00:00",
+  "rows": 100,
+  "sha256": "43b9778e30bd10a71839a9455e487096b5bcb29dea640b29ba89fa59303be869"
+ },
+ "qcew_q_2015q3": {
+  "data_year": "2015Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2015/3/industry/621910.csv",
+  "file": "qcew_q_2015q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:54+00:00",
+  "rows": 100,
+  "sha256": "b75b956c8346f2faba7d1de492fc7f97d8d7a61ab137025e396ea1e646a3ecac"
+ },
+ "qcew_q_2015q4": {
+  "data_year": "2015Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2015/4/industry/621910.csv",
+  "file": "qcew_q_2015q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:55+00:00",
+  "rows": 100,
+  "sha256": "cfcb54154ce698cecf09693a35c0233a3e0954f671ca962a9dff100a48c9c775"
+ },
+ "qcew_q_2016q1": {
+  "data_year": "2016Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2016/1/industry/621910.csv",
+  "file": "qcew_q_2016q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:55+00:00",
+  "rows": 100,
+  "sha256": "b968a34a569104bc753bf1afa76ac0eeb515f2105aa734092f86b57860c5f6cc"
+ },
+ "qcew_q_2016q2": {
+  "data_year": "2016Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2016/2/industry/621910.csv",
+  "file": "qcew_q_2016q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:55+00:00",
+  "rows": 100,
+  "sha256": "d30dd5de8bc2e68aa03477cdac150a78267156b89a80fb9dedbd052dc78cf974"
+ },
+ "qcew_q_2016q3": {
+  "data_year": "2016Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2016/3/industry/621910.csv",
+  "file": "qcew_q_2016q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:56+00:00",
+  "rows": 100,
+  "sha256": "4043d81bb591cc095db38029bf70cf82e5e3de03cdbb285f60c9fcd1a204e325"
+ },
+ "qcew_q_2016q4": {
+  "data_year": "2016Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2016/4/industry/621910.csv",
+  "file": "qcew_q_2016q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:56+00:00",
+  "rows": 100,
+  "sha256": "130d82ce850abd21f03ce1118259215648342be9b7417345e8d6b43568dff0fe"
+ },
+ "qcew_q_2017q1": {
+  "data_year": "2017Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2017/1/industry/621910.csv",
+  "file": "qcew_q_2017q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:57+00:00",
+  "rows": 100,
+  "sha256": "74aeb27cbc6eab2eb24e2bf3a042046571767d0ca1a6c2abd4c8fa6794bbcf09"
+ },
+ "qcew_q_2017q2": {
+  "data_year": "2017Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2017/2/industry/621910.csv",
+  "file": "qcew_q_2017q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:57+00:00",
+  "rows": 100,
+  "sha256": "16175315a4ca97efee7b1dae587dd7fc97b687d2831212952f26d9080efd2abd"
+ },
+ "qcew_q_2017q3": {
+  "data_year": "2017Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2017/3/industry/621910.csv",
+  "file": "qcew_q_2017q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:57+00:00",
+  "rows": 100,
+  "sha256": "d551824f057b144e6d599e77b23cf51f6ae630eef3116b1e4719676c4bfd1623"
+ },
+ "qcew_q_2017q4": {
+  "data_year": "2017Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2017/4/industry/621910.csv",
+  "file": "qcew_q_2017q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:13:58+00:00",
+  "rows": 100,
+  "sha256": "bddecec9e6c925cab157b9457a9edb8bac6efa0de5605a84ed570ece8a2018a1"
+ },
+ "qcew_q_2018q1": {
+  "data_year": "2018Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2018/1/industry/621910.csv",
+  "file": "qcew_q_2018q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:11+00:00",
+  "rows": 100,
+  "sha256": "6a5a5ef0c93fb07ec5bc4d6fc66039381da8d72fc67b083333e676e2a87159ed"
+ },
+ "qcew_q_2018q2": {
+  "data_year": "2018Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2018/2/industry/621910.csv",
+  "file": "qcew_q_2018q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:11+00:00",
+  "rows": 100,
+  "sha256": "8c82438014dd2f7bbfc2e052501717f6a06e304b686e10c0f9726546060f6a1e"
+ },
+ "qcew_q_2018q3": {
+  "data_year": "2018Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2018/3/industry/621910.csv",
+  "file": "qcew_q_2018q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:11+00:00",
+  "rows": 100,
+  "sha256": "8230dd709d338435bc68385319c4ebef82e7d7fc94e13625f69a4ec4f1ecbb02"
+ },
+ "qcew_q_2018q4": {
+  "data_year": "2018Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2018/4/industry/621910.csv",
+  "file": "qcew_q_2018q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:12+00:00",
+  "rows": 100,
+  "sha256": "5fe37d9a5b32cc61bd692d940dbc5463b9b8a63e95e9b913848e8fab22e5076b"
+ },
+ "qcew_q_2019q1": {
+  "data_year": "2019Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2019/1/industry/621910.csv",
+  "file": "qcew_q_2019q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:12+00:00",
+  "rows": 100,
+  "sha256": "579be8f8c8574ee8cb09170ebffaa6bc89764df2ad69330642f6fc08197a2ddc"
+ },
+ "qcew_q_2019q2": {
+  "data_year": "2019Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2019/2/industry/621910.csv",
+  "file": "qcew_q_2019q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:13+00:00",
+  "rows": 100,
+  "sha256": "27f63d140b15620a9c69e7663a84b86bebd2182c68e819c36a5bb63374e18431"
+ },
+ "qcew_q_2019q3": {
+  "data_year": "2019Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2019/3/industry/621910.csv",
+  "file": "qcew_q_2019q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:13+00:00",
+  "rows": 100,
+  "sha256": "f54447ae1f600a766c8c9cc0db722d02a769bc639a28e89f9a12b120f54654ec"
+ },
+ "qcew_q_2019q4": {
+  "data_year": "2019Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2019/4/industry/621910.csv",
+  "file": "qcew_q_2019q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:13+00:00",
+  "rows": 100,
+  "sha256": "0ded1f08b5ae4a8d3bea12cf110f0f47afc3c5a5d606b97a025a77364514e8dd"
+ },
+ "qcew_q_2020q1": {
+  "data_year": "2020Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2020/1/industry/621910.csv",
+  "file": "qcew_q_2020q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:14+00:00",
+  "rows": 100,
+  "sha256": "39331f17393d864d5c79126ac748333629caacc611a13156f169d96ee0b52b67"
+ },
+ "qcew_q_2020q2": {
+  "data_year": "2020Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2020/2/industry/621910.csv",
+  "file": "qcew_q_2020q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:14+00:00",
+  "rows": 100,
+  "sha256": "bb70aa797d18545fbacc98356913355911375be318f1334dd3fc6874546cce95"
+ },
+ "qcew_q_2020q3": {
+  "data_year": "2020Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2020/3/industry/621910.csv",
+  "file": "qcew_q_2020q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:15+00:00",
+  "rows": 100,
+  "sha256": "bc09b7f49acb6a044e9e8fa3edb0250cc633508a4286d23a949d3b1414faf5d9"
+ },
+ "qcew_q_2020q4": {
+  "data_year": "2020Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2020/4/industry/621910.csv",
+  "file": "qcew_q_2020q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:15+00:00",
+  "rows": 100,
+  "sha256": "34976cd95edaf109476efc2b9e9661767f94854b7d6e7fb1b9f551474d6035af"
+ },
+ "qcew_q_2021q1": {
+  "data_year": "2021Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2021/1/industry/621910.csv",
+  "file": "qcew_q_2021q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:15+00:00",
+  "rows": 102,
+  "sha256": "212500bfa7479ba3730dfc52a19ecd2de75fdfefe3dd8de565585f5c38630f15"
+ },
+ "qcew_q_2021q2": {
+  "data_year": "2021Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2021/2/industry/621910.csv",
+  "file": "qcew_q_2021q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:16+00:00",
+  "rows": 102,
+  "sha256": "ff76391b7e7cb9571fa54057e641f7382e3919442da688f2e97cd8c231d0dfc0"
+ },
+ "qcew_q_2021q3": {
+  "data_year": "2021Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2021/3/industry/621910.csv",
+  "file": "qcew_q_2021q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:16+00:00",
+  "rows": 102,
+  "sha256": "6c05cd49baa0474a9868a910fd9013d2a6b398260031420a37502692f57705af"
+ },
+ "qcew_q_2021q4": {
+  "data_year": "2021Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2021/4/industry/621910.csv",
+  "file": "qcew_q_2021q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:17+00:00",
+  "rows": 102,
+  "sha256": "08d529ac352dfdf2533c72cea4e95e9e29187add71a9c91ec35b089a5ab11129"
+ },
+ "qcew_q_2022q1": {
+  "data_year": "2022Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2022/1/industry/621910.csv",
+  "file": "qcew_q_2022q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:17+00:00",
+  "rows": 102,
+  "sha256": "49805fe890cf0bac90071d2910643df8af402e889b3d36e418bf98ab036ba5c7"
+ },
+ "qcew_q_2022q2": {
+  "data_year": "2022Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2022/2/industry/621910.csv",
+  "file": "qcew_q_2022q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:17+00:00",
+  "rows": 102,
+  "sha256": "8645833a3a569244b6a628409fd9b5e2eca5e89cc2ef69c5e7c1e7fca9c44fe8"
+ },
+ "qcew_q_2022q3": {
+  "data_year": "2022Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2022/3/industry/621910.csv",
+  "file": "qcew_q_2022q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:18+00:00",
+  "rows": 102,
+  "sha256": "976270997ab11589f6d3153a37ccf1d1ec892b9b18b18116d9fc2587396aa5a2"
+ },
+ "qcew_q_2022q4": {
+  "data_year": "2022Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2022/4/industry/621910.csv",
+  "file": "qcew_q_2022q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:18+00:00",
+  "rows": 102,
+  "sha256": "2f1315e508a59c8bca830a46f07234c1ac7c0453aca902ddb56487137efe51a2"
+ },
+ "qcew_q_2023q1": {
+  "data_year": "2023Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2023/1/industry/621910.csv",
+  "file": "qcew_q_2023q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:19+00:00",
+  "rows": 101,
+  "sha256": "e185732cd5f14a8d2a0bf2c282f5138cbd4e5117254bf7f66097e94702832f95"
+ },
+ "qcew_q_2023q2": {
+  "data_year": "2023Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2023/2/industry/621910.csv",
+  "file": "qcew_q_2023q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:19+00:00",
+  "rows": 101,
+  "sha256": "66eedb0182dbd7239c9d012f0e7c348f333040ffb79814be371c8e56700cdcc8"
+ },
+ "qcew_q_2023q3": {
+  "data_year": "2023Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2023/3/industry/621910.csv",
+  "file": "qcew_q_2023q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:19+00:00",
+  "rows": 101,
+  "sha256": "5d4a3fbb42e948b139df78af32c947680cf7a1feb2e5d6cad9f3435b2dfdd9fe"
+ },
+ "qcew_q_2023q4": {
+  "data_year": "2023Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2023/4/industry/621910.csv",
+  "file": "qcew_q_2023q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:20+00:00",
+  "rows": 101,
+  "sha256": "345ac912b5f605b090094d64504836bcc2a210f21764d230b1dcadc459eaaabe"
+ },
+ "qcew_q_2024q1": {
+  "data_year": "2024Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2024/1/industry/621910.csv",
+  "file": "qcew_q_2024q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:20+00:00",
+  "rows": 101,
+  "sha256": "15e63430f8c6ba5966113ed100a9efedb888501d2d522d382e0b8e7adb24b6a0"
+ },
+ "qcew_q_2024q2": {
+  "data_year": "2024Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2024/2/industry/621910.csv",
+  "file": "qcew_q_2024q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:21+00:00",
+  "rows": 101,
+  "sha256": "e5a65ceb272c2c780893718b5d8f0d76639fa0b8b6c17d947214546a373ae381"
+ },
+ "qcew_q_2024q3": {
+  "data_year": "2024Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2024/3/industry/621910.csv",
+  "file": "qcew_q_2024q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:21+00:00",
+  "rows": 101,
+  "sha256": "4a5f11586d55405a0a77fa6a3f8ca281fc641822154b412afa7487a667902797"
+ },
+ "qcew_q_2024q4": {
+  "data_year": "2024Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2024/4/industry/621910.csv",
+  "file": "qcew_q_2024q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:21+00:00",
+  "rows": 101,
+  "sha256": "ebb32d85596efc4cca7c90bd5cf1e98b2b763a86d7532e5404a0617dec8dd876"
+ },
+ "qcew_q_2025q1": {
+  "data_year": "2025Q1",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2025/1/industry/621910.csv",
+  "file": "qcew_q_2025q1.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:22+00:00",
+  "rows": 102,
+  "sha256": "8cd5273627067a70020d7cc5e8afcd5f035bed63d2b78fdd514d231d1253b48d"
+ },
+ "qcew_q_2025q2": {
+  "data_year": "2025Q2",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2025/2/industry/621910.csv",
+  "file": "qcew_q_2025q2.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:22+00:00",
+  "rows": 102,
+  "sha256": "1c220caf04854c78af41de645867cbd1505217b298aea08477fd2add5834028b"
+ },
+ "qcew_q_2025q3": {
+  "data_year": "2025Q3",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2025/3/industry/621910.csv",
+  "file": "qcew_q_2025q3.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:23+00:00",
+  "rows": 102,
+  "sha256": "8e790f30f7d515759d48643e7c13003885c5f90dd8a41e29f71c0f7beb337888"
+ },
+ "qcew_q_2025q4": {
+  "data_year": "2025Q4",
+  "dataset": "BLS QCEW NAICS 621910, quarterly",
+  "endpoint": "https://data.bls.gov/cew/data/api/2025/4/industry/621910.csv",
+  "file": "qcew_q_2025q4.json",
+  "filters": {
+   "client_side": "US000 + statewide rows"
+  },
+  "retrieved_utc": "2026-07-11T16:14:23+00:00",
+  "rows": 102,
+  "sha256": "5b4367defbb2f98b75f7c65528c1302f61650e9880753716b9202095a3400a7a"
  }
 }

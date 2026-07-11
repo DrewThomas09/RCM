@@ -1,7 +1,7 @@
 # IFT Sourced Evidence Master v3 — build pipeline
 
 Deterministic pipeline that produces
-`RCM_MC/deliverables/IFT_Sourced_Evidence_Master_v3_1.xlsx` (259 tabs, ~7,000
+`RCM_MC/deliverables/IFT_Sourced_Evidence_Master_v3_2.xlsx` (259 tabs, ~7,000
 printed pages, 195 native charts, facts F001–F433, sources S001–S306) from:
 
 1. **The v2.7 master** (`rcm_mc/market_reports/reference/IFT_Sourced_Evidence_Master_v2_7.xlsx`)
@@ -31,7 +31,7 @@ python3 pull.py && python3 pull2.py && python3 pull3.py && python3 pull4.py && p
 #    numbers stamped into Verification_Log Panel K
 export IFT_V27_XLSX=../../rcm_mc/market_reports/reference/IFT_Sourced_Evidence_Master_v2_7.xlsx
 export IFT_V3_CACHE=../../rcm_mc/market_reports/reference/ift_v3_cache
-export IFT_V3_OUT=../../deliverables/IFT_Sourced_Evidence_Master_v3_1.xlsx
+export IFT_V3_OUT=../../deliverables/IFT_Sourced_Evidence_Master_v3_2.xlsx
 python3 assemble.py
 python3 verify.py                        # needs libreoffice-calc for the recalc gate
 python3 assemble.py verify_results.json

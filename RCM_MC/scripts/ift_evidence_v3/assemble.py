@@ -1,4 +1,4 @@
-"""Assemble IFT_Sourced_Evidence_Master_v3_1.xlsx.
+"""Assemble IFT_Sourced_Evidence_Master_v3_2.xlsx.
 
 Pipeline: faithful v2.7 copy -> logged corrections -> section modules (new
 tabs) -> ID assignment (F166+/S78+) -> governance extensions (Fact_Ledger,
@@ -36,10 +36,11 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_1.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_2.xlsx'))
 BUILT = '10 July 2026'
 
-SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'supply_vendored',
+SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
+                 'supply_vendored',
                  'payment', 'demand_clinical', 'demand_growth', 'v31', 'geo',
                  'metros', 'company', 'indepth_tabs', 'reference',
                  'state_profiles']
@@ -824,7 +825,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.1')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.2')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -918,6 +919,17 @@ def rebuild_readme(wb, stats, entries):
             'captured statement; and two citation corrections applied at '
             'source (the PMID 25397857 attribution and a dead MedPAC link).'],
            wrap=True, height=80)
+    sb.row([('8 (v3.2)', 'label'), '11 July 2026',
+            'The raw-granularity doubling: the provider-grain Medicare ambulance '
+            'registry (every billing NPI by name, 2019 and 2024, ~90,000 rows - '
+            'the most granular public Medicare ambulance record); hospital-to-'
+            'ZIP transfer corridors (top-10 origin ZIPs per hospital); the '
+            'county 65+/85+ age base 2020 vs 2024; county chronic-disease '
+            'prevalence (CKD/CHD/stroke/diabetes, CDC PLACES, methodology '
+            'stated); the quarterly QCEW industry series 2014-2025; the HCRIS '
+            'hospital capacity panel FY2020-2022 (17,974 hospital-years); and '
+            'the OIG ambulance-exclusion registry. All Tier A dataset '
+            'extractions on Pull_Manifest.'], wrap=True, height=80)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1037,10 +1049,14 @@ def main(verify_results_path=None):
     families = [
         ('Demand_Drivers', [n for n in ('ED_Timeliness_Registry',)
                             if n in wb.sheetnames]),
+        ('State_Age_65plus', [n for n in ('County_Age_65plus',
+                                          'PLACES_County_Chronic')
+                              if n in wb.sheetnames]),
         ('PSPS_Denial_Series', sorted(n for n in wb.sheetnames
                                       if n.startswith('PSPS_Detail_'))),
         ('MUP_Ambulance_State', sorted(n for n in wb.sheetnames
-                                       if n.startswith('MUP_State_'))),
+                                       if n.startswith('MUP_State_'))
+         + sorted(n for n in wb.sheetnames if n.startswith('MUP_Providers_'))),
         ('Enrollment_ESRD_State', sorted(n for n in wb.sheetnames
                                          if n.startswith('Enroll_State_'))),
         ('Market_Saturation_Ambulance', sorted(n for n in wb.sheetnames
@@ -1048,11 +1064,14 @@ def main(verify_results_path=None):
          + sorted(n for n in wb.sheetnames if n.startswith('MS_CtyWin_'))),
         ('QCEW_EMS_Employment', sorted(n for n in wb.sheetnames
                                        if n.startswith('QCEW_State_'))
-         + sorted(n for n in wb.sheetnames if n.startswith('QCEW_County_'))),
+         + sorted(n for n in wb.sheetnames if n.startswith('QCEW_County_'))
+         + [n for n in ('QCEW_Quarterly',) if n in wb.sheetnames]),
         ('Facility_Universe_State',
-         [n for n in ('Hosp_Registry', 'SNF_Registry', 'Dialysis_Registry',
-                      'IRF_Registry', 'LTCH_Registry', 'Hospice_Registry',
-                      'HHA_Registry', 'PECOS_Registry', 'HSA_Hospital_Catchment')
+         [n for n in ('Hosp_Registry', 'HCRIS_Hospital_Panel', 'SNF_Registry',
+                      'Dialysis_Registry', 'IRF_Registry', 'LTCH_Registry',
+                      'Hospice_Registry', 'HHA_Registry', 'PECOS_Registry',
+                      'LEIE_Ambulance_Exclusions', 'HSA_Hospital_Catchment',
+                      'HSA_Corridors')
           if n in wb.sheetnames]),
         ('Growth_Evidence_Registry', sorted(n for n in wb.sheetnames
                                             if n.startswith('InDepth_Q'))),
