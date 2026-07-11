@@ -1,4 +1,16 @@
 {
+ "census_state_age_2024": {
+  "data_year": "2020-2024",
+  "dataset": "Census Bureau Vintage 2024 State Population Estimates by Age and Sex, civilian (SC-EST2024-AGESEX-CIV)",
+  "endpoint": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/state/asrh/sc-est2024-agesex-civ.csv",
+  "file": "census_state_age_2024.json",
+  "filters": {
+   "client_side": "SEX=0 (total) rows, all ages incl. 85 = 85+"
+  },
+  "retrieved_utc": "2026-07-11T04:33:16+00:00",
+  "rows": 4524,
+  "sha256": "8f3771708d313498c0e55067048b20989d5042048797da99623b672c8daa9472"
+ },
  "enrollment_national_year": {
   "dataset": "Medicare Monthly Enrollment",
   "endpoint": "https://data.cms.gov/data-api/v1/dataset/d7fabe1e-d19b-4333-9eff-e80e0643f2fd/data",
@@ -2678,6 +2690,19 @@
   "rows": 42,
   "sha256": "b667ac326f1a02465765da6e30e146b498c2b92e039ffa4bcbd85638d99cf165",
   "uuid": "0c75b0b3-b40f-4007-a5ac-f9f2fed95862"
+ },
+ "oews_ems_state_2024": {
+  "data_year": "May 2024",
+  "dataset": "BLS Occupational Employment and Wage Statistics (OEWS), May 2024, state file \u2014 EMS occupations",
+  "endpoint": "https://www.bls.gov/oes/special-requests/oesm24st.zip",
+  "file": "oews_ems_state_2024.json",
+  "filters": {
+   "client_side": "OCC_CODE in ['29-2042', '29-2043', '53-3011']"
+  },
+  "note": "Closes v2.7 pending register P4 (OEWS state wage files). * and # cells are BLS suppression/top-code markers, kept as published.",
+  "retrieved_utc": "2026-07-11T04:35:24+00:00",
+  "rows": 144,
+  "sha256": "56c861772bf31533dde1b1ad8ffb077c8ba6ddd9017c1c4c5073d7c8937db13b"
  },
  "pdc2_dialysis": {
   "all_columns_sample": [

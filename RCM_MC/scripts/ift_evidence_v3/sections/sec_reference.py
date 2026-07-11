@@ -5,7 +5,7 @@ Data sources (all repo accessors / cache artifacts run or read at build time):
   * /home/user/RCM/connectors — registry.catalog() + all_registry_rows()
     (16 connectors / 204 registered datasets; counts pinned by unit tests)
   * rcm_mc.market_reports.ift_connectors.connector_estate_map() (probe registry)
-  * ift_v3_cache/manifest.json — the live-pull provenance manifest (164 pulls,
+  * ift_v3_cache/manifest.json — the live-pull provenance manifest (all pulls,
     sha256 + UTC timestamps, all retrieved 2026-07-10)
   * rcm_mc/npi_cleaner/refdata.py — POS / UB-04 / RARC / modifier / NUCC
     taxonomy vocabularies (static public CMS/X12/NUBC/NUCC reference data)
@@ -546,9 +546,9 @@ def _build_estate_map(wb, lib, cat, reg_rows, probes, summary, man, fams,
          'value_ref': f'Connector_Estate_Map!F{r_ctot}',
          'unit': 'artifacts', 'basis': 'DERIVED', 'tier': 'A',
          'source_keys': ['ift_v3_pull_manifest'],
-         'locator': 'live SUM over Panel C cache-file counts; manifest.json '
-                    'has 164 entries, each with sha256 + UTC timestamp',
-         'lives_on': 'Connector_Estate_Map', 'cross_check': '164'},
+         'locator': f'live SUM over Panel C cache-file counts; manifest.json '
+                    f'has {len(man)} entries, each with sha256 + UTC timestamp',
+         'lives_on': 'Connector_Estate_Map', 'cross_check': f'{len(man)}'},
         {'metric': 'Raw rows cached across all v3 live pulls',
          'year': '2026-07-10',
          'value_ref': f'Connector_Estate_Map!H{r_ctot}',
@@ -1243,7 +1243,7 @@ def _build_regulatory(wb, lib, reg, slv, accessed, facts):
          'unit': 'scenarios', 'basis': 'DERIVED', 'tier': 'B',
          'source_keys': ['ift_service_levels_mod', 'scope_model_2019',
                          'cfr_414_605'],
-         'locator': 'edge_cases(): 19 rows, 13 GOV / 6 FRAMEWORK, each '
+         'locator': 'edge_cases(): 19 rows, 14 GOV / 5 FRAMEWORK, each '
                     'citing regs/scope model',
          'lives_on': 'Regulatory_Register', 'cross_check': ''},
         {'metric': 'Misconceptions corrected with sourced rebuttals',
@@ -1326,14 +1326,14 @@ def build(wb, ctx):
          'powers': ['Connector_Estate_Map', 'Code_Vocabulary']},
         {'key': 'ift_v3_pull_manifest',
          'publisher': 'This build (live pulls from federal open-data APIs)',
-         'document': 'ift_v3_cache/manifest.json — 164 pull artifacts with '
-                     'endpoint, UUID, filters, pages, rows, sha256, UTC '
-                     'timestamp',
+         'document': f'ift_v3_cache/manifest.json — {len(man)} pull artifacts with '
+                     f'endpoint, UUID, filters, pages, rows, sha256, UTC '
+                     f'timestamp',
          'vintage': '2026-07-10 (all pulls)',
          'locator': 'manifest keys mup_national_*/mup_state_*/psps_agg_*/'
                     'qcew_621910_*/marketsat_state/enrollment_*/'
                     'pecos_stats_check/pdc_*',
-         'url': 'cache:ift_v3_cache/manifest.json',
+         'url': 'repo: RCM_MC/rcm_mc/market_reports/reference/ift_v3_cache/manifest.json',
          'tier': 'A', 'accessed': accessed,
          'powers': ['Connector_Estate_Map']},
         {'key': 'cms_mup_geo_service', 'publisher': 'CMS',
