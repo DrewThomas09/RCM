@@ -1,4 +1,4 @@
-"""Assemble IFT_Sourced_Evidence_Master_v3_2.xlsx.
+"""Assemble IFT_Sourced_Evidence_Master_v3_3.xlsx.
 
 Pipeline: faithful v2.7 copy -> logged corrections -> section modules (new
 tabs) -> ID assignment (F166+/S78+) -> governance extensions (Fact_Ledger,
@@ -17,6 +17,7 @@ sys.path.insert(0, SCRATCH)
 
 import v3lib  # noqa: E402
 from copy_engine import copy_sheet, rebuild_charts  # noqa: E402
+from methodology_tab import rebuild_methodology  # noqa: E402
 from corrections import apply_corrections  # noqa: E402
 
 def _default(env, *candidates):
@@ -36,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_2.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_3.xlsx'))
 BUILT = '10 July 2026'
 
 SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
@@ -707,7 +708,17 @@ def _first_value_ref(wb, tab, value, default):
 def add_gallery_charts(wb):
     """Headline v3 charts appended to the Charts gallery tab."""
     ws = wb['Charts']
-    r = ws.max_row + 2
+    # clear not just the data extent but the carried v2.7 chart drawings,
+    # whose anchors run past max_row (they are floating objects)
+    carried_bottom = ws.max_row
+    try:
+        specs = json.load(open(os.path.join(SCRATCH, 'v27_charts2.json')))
+        for spec in specs:
+            if spec['sheet'] == 'Charts' and spec.get('anchor'):
+                carried_bottom = max(carried_bottom, spec['anchor']['to'][1] + 1)
+    except FileNotFoundError:
+        pass
+    r = carried_bottom + 3
     _banner_row(ws, r, 'v3 additions: four headline series from the new '
                        'evidence layers. Same rule as the charts above: every '
                        'series is a live reference to the tab that carries the '
@@ -760,11 +771,22 @@ def add_gallery_charts(wb):
                         kind='line', y_fmt='$#,##0')
     age = wb['State_Age_65plus']
     us = _find_row(age, 'United States')
+    # small support block (green cross-tab links) so the bars carry real
+    # category labels instead of "1, 2"
+    sup = r + 33
+    ws.cell(row=sup, column=18, value='Year').font = v3lib.F_LABEL
+    ws.cell(row=sup, column=19, value='US 65+ population').font = v3lib.F_LABEL
+    for i, (yr, colletter) in enumerate([(2020, 'C'), (2024, 'E')]):
+        c1 = ws.cell(row=sup + 1 + i, column=18, value=yr)
+        c1.font = v3lib.F_FML
+        c2 = ws.cell(row=sup + 1 + i, column=19,
+                     value=f"='State_Age_65plus'!${colletter}${us}")
+        c2.font = v3lib.F_LINK
+        c2.number_format = v3lib.FMT_INT
     v3lib.add_chart(ws, f'J{r + 17}',
                     '65+ population, measured: 2020 vs 2024 (live)',
-                    None,
-                    [('65+ 2020', f'State_Age_65plus!$C${us}'),
-                     ('65+ 2024', f'State_Age_65plus!$E${us}')],
+                    f'Charts!$R${sup + 1}:$R${sup + 2}',
+                    [('US 65+ population', f'Charts!$S${sup + 1}:$S${sup + 2}')],
                     kind='bar', y_fmt='#,##0')
 
 
@@ -825,7 +847,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.2')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.3')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -930,6 +952,20 @@ def rebuild_readme(wb, stats, entries):
             'hospital capacity panel FY2020-2022 (17,974 hospital-years); and '
             'the OIG ambulance-exclusion registry. All Tier A dataset '
             'extractions on Pull_Manifest.'], wrap=True, height=80)
+    sb.row([('9 (v3.3)', 'label'), '11 July 2026',
+            'The presentation overhaul: every chart rebuilt through a single '
+            'hardened house-style layer - bottom category axes with real '
+            'year/state labels, explicit series colours and weights, legends '
+            'only where they earn their space, subtle gridlines, zero '
+            'chart-on-chart overlaps (19 collisions found and removed); the '
+            'two dual-axis combo charts split into paired single-axis charts; '
+            'the carried v2.7 charts re-parsed at full fidelity so every '
+            'series regained its category labels and names; the Methodology '
+            'tab rebuilt as a nine-section decision record covering the v3 '
+            'pipeline, the verification gates and a sixty-second audit path '
+            '(and repairing a v2.7 URL typo); and a workbook-wide format '
+            'sweep - print setup normalized on every tab, truncated columns '
+            'widened, header rows tightened.'], wrap=True, height=88)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1018,9 +1054,8 @@ def main(verify_results_path=None):
     add_v3_findings(wb, sid_map)
     add_gallery_charts(wb)
 
-    log('rebuilding v2.7 charts')
-    n_charts_v27 = rebuild_charts(wb, os.path.join(SCRATCH, 'v27_charts.json'),
-                                  os.path.join(SCRATCH, 'v27_chart_anchors.json'))
+    log('rebuilding v2.7 charts (full-fidelity re-parse)')
+    n_charts_v27 = rebuild_charts(wb, os.path.join(SCRATCH, 'v27_charts2.json'))
 
     # stats for README (chart count includes section charts already added)
     man = json.load(open(os.path.join(CACHE, 'manifest.json')))
@@ -1036,6 +1071,9 @@ def main(verify_results_path=None):
         'charts': n_charts,
         'pages': verify_results.get('pages', 'over 400'),
     }
+    stats['tabs'] = len(wb.sheetnames) + 2  # + V3_Change_Log + Index, built below
+    log('rebuilding Methodology (professional layout)')
+    rebuild_methodology(wb, stats, verify_results, entries)
     build_change_log_tab(wb, entries)   # entries complete except README note
     stats['tabs'] = len(wb.sheetnames) + 1  # + Index tab, built after the README
     rebuild_readme(wb, stats, entries)
@@ -1093,6 +1131,10 @@ def main(verify_results_path=None):
     build_index_tab(wb, [ws.title for ws in wb._sheets])
     wb._sheets.sort(key=lambda ws: order.get(ws.title, 9999)
                     if ws.title != 'Index' else -1)
+
+    log('format sweep + chart normalization')
+    v3lib.format_sweep(wb, log=log)
+    v3lib.normalize_all_charts(wb, log=log)
 
     wb.calculation.fullCalcOnLoad = True
     log(f'saving {OUT}')

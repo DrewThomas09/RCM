@@ -1,0 +1,2044 @@
+[
+ {
+  "file": "xl/charts/chart1.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    5
+   ],
+   "to": [
+    8,
+    19
+   ]
+  },
+  "title": "Total acute-to-acute\nepisodes",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "73321292",
+     "95270273"
+    ],
+    "series": [
+     {
+      "name_ref": "Acute_IFT_Series!D4",
+      "name": null,
+      "cat": "Acute_IFT_Series!$A$5:$A$21",
+      "val": "Acute_IFT_Series!$D$5:$D$21",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "73321292",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "95270273",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart2.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    30
+   ],
+   "to": [
+    8,
+    44
+   ]
+  },
+  "title": "Acute transfers by origin channel",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "64001432",
+     "4131062"
+    ],
+    "series": [
+     {
+      "name_ref": "Acute_IFT_Series!B4",
+      "name": null,
+      "cat": "Acute_IFT_Series!$A$5:$A$21",
+      "val": "Acute_IFT_Series!$B$5:$B$21",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     },
+     {
+      "name_ref": "Acute_IFT_Series!C4",
+      "name": null,
+      "cat": "Acute_IFT_Series!$A$5:$A$21",
+      "val": "Acute_IFT_Series!$C$5:$C$21",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "64001432",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "4131062",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart3.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    55
+   ],
+   "to": [
+    8,
+    69
+   ]
+  },
+  "title": "Transports",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "32117069",
+     "55511838"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_IFT_Series!B4",
+      "name": null,
+      "cat": "Medicare_IFT_Series!$A$5:$A$19",
+      "val": "Medicare_IFT_Series!$B$5:$B$19",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "32117069",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "55511838",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart4.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    80
+   ],
+   "to": [
+    8,
+    94
+   ]
+  },
+  "title": "Allowed per\ntransport",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "57777736",
+     "5785461"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_IFT_Series!G4",
+      "name": null,
+      "cat": "Medicare_IFT_Series!$A$5:$A$19",
+      "val": "Medicare_IFT_Series!$G$5:$G$19",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "57777736",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "5785461",
+    "title": null,
+    "numFmt": "\\$#,##0.00",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart5.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    105
+   ],
+   "to": [
+    8,
+    119
+   ]
+  },
+  "title": "% of transports",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "24266024",
+     "29354062"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_PSPS!G45",
+      "name": null,
+      "cat": "Medicare_PSPS!$B$46:$B$51",
+      "val": "Medicare_PSPS!$G$46:$G$51",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "24266024",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "29354062",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart6.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    8,
+    105
+   ],
+   "to": [
+    15,
+    119
+   ]
+  },
+  "title": "% of allowed $",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "62413603",
+     "9461889"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_PSPS!H45",
+      "name": null,
+      "cat": "Medicare_PSPS!$B$46:$B$51",
+      "val": "Medicare_PSPS!$H$46:$H$51",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "62413603",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "9461889",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart7.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    130
+   ],
+   "to": [
+    8,
+    144
+   ]
+  },
+  "title": "SCT share\nof transports",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "84293705",
+     "39318318"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_IFT_Series!K4",
+      "name": null,
+      "cat": "Medicare_IFT_Series!$A$5:$A$19",
+      "val": "Medicare_IFT_Series!$K$5:$K$19",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "84293705",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "39318318",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart8.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    155
+   ],
+   "to": [
+    8,
+    169
+   ]
+  },
+  "title": "Hospital throughput measures",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "88436095",
+     "52893221"
+    ],
+    "series": [
+     {
+      "name_ref": "Demand_Drivers!C20",
+      "name": null,
+      "cat": "Demand_Drivers!$A$21:$A$24",
+      "val": "Demand_Drivers!$C$21:$C$24",
+      "x": null,
+      "y": null,
+      "smooth": null
+     },
+     {
+      "name_ref": "Demand_Drivers!D20",
+      "name": null,
+      "cat": "Demand_Drivers!$A$21:$A$24",
+      "val": "Demand_Drivers!$D$21:$D$24",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "88436095",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "52893221",
+    "title": null,
+    "numFmt": "#,##0",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart9.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    178
+   ],
+   "to": [
+    8,
+    193
+   ]
+  },
+  "title": "Hospitals",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "25993468",
+     "4370390"
+    ],
+    "series": [
+     {
+      "name_ref": "Demand_Drivers!M5",
+      "name": null,
+      "cat": "Demand_Drivers!$L$6:$L$15",
+      "val": "Demand_Drivers!$M$6:$M$15",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "25993468",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "4370390",
+    "title": null,
+    "numFmt": "General",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart10.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    203
+   ],
+   "to": [
+    8,
+    217
+   ]
+  },
+  "title": "Mean cost per ground transport (MedPAC staging)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "39911412",
+     "78305627"
+    ],
+    "series": [
+     {
+      "name_ref": "Charts!T202",
+      "name": null,
+      "cat": "Charts!$S$203:$S$206",
+      "val": "Charts!$T$203:$T$206",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "39911412",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "78305627",
+    "title": null,
+    "numFmt": "\\$#,##0",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart11.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    1,
+    228
+   ],
+   "to": [
+    8,
+    241
+   ]
+  },
+  "title": "Community hospitals in a system",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "82842701",
+     "35144149"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Demand_Drivers!$B$5:$D$5",
+      "val": "Demand_Drivers!$B$8:$D$8",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "82842701",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "35144149",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart12.xml",
+  "sheet": "Charts",
+  "anchor": {
+   "from": [
+    8,
+    228
+   ],
+   "to": [
+    15,
+    241
+   ]
+  },
+  "title": "Independent community hospitals",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "79302230",
+     "80862562"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Demand_Drivers!$B$5:$D$5",
+      "val": "Demand_Drivers!$B$9:$D$9",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "79302230",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "80862562",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart13.xml",
+  "sheet": "Macro_Demand_Drivers",
+  "anchor": {
+   "from": [
+    10,
+    3
+   ],
+   "to": [
+    17,
+    12
+   ]
+  },
+  "title": "Population 65 and over, Census main series (thousands)",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "20496801",
+     "81133286"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Macro_Demand_Drivers!$B$5:$G$5",
+      "val": "Macro_Demand_Drivers!$B$6:$G$6",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "20496801",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "81133286",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart14.xml",
+  "sheet": "Medicare_OD_Matrix",
+  "anchor": {
+   "from": [
+    11,
+    3
+   ],
+   "to": [
+    18,
+    15
+   ]
+  },
+  "title": "Allowed dollars by origin-destination pair, 2024 (top pairs)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "70559114",
+     "68454664"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_OD_Matrix!D5",
+      "name": null,
+      "cat": "Medicare_OD_Matrix!$A$6:$A$15",
+      "val": "Medicare_OD_Matrix!$D$6:$D$15",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "70559114",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "68454664",
+    "title": null,
+    "numFmt": "\\$#,##0;\"($\"#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart15.xml",
+  "sheet": "Medicare_OD_Matrix",
+  "anchor": {
+   "from": [
+    11,
+    23
+   ],
+   "to": [
+    18,
+    34
+   ]
+  },
+  "title": "Transports by origin-destination pair, 2024 (top pairs)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "89874869",
+     "88313287"
+    ],
+    "series": [
+     {
+      "name_ref": "Medicare_OD_Matrix!C5",
+      "name": null,
+      "cat": "Medicare_OD_Matrix!$A$6:$A$15",
+      "val": "Medicare_OD_Matrix!$C$6:$C$15",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "89874869",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "88313287",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart16.xml",
+  "sheet": "Utilization_Normalized",
+  "anchor": {
+   "from": [
+    8,
+    4
+   ],
+   "to": [
+    15,
+    16
+   ]
+  },
+  "title": "Rotary-wing HH transports per 1,000 A and B FFS",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "54078755",
+     "30355218"
+    ],
+    "series": [
+     {
+      "name_ref": "Utilization_Normalized!B32",
+      "name": null,
+      "cat": "Utilization_Normalized!$A$33:$A$44",
+      "val": "Utilization_Normalized!$B$33:$B$44",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "54078755",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "30355218",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart17.xml",
+  "sheet": "Utilization_Normalized",
+  "anchor": {
+   "from": [
+    8,
+    21
+   ],
+   "to": [
+    15,
+    25
+   ]
+  },
+  "title": "Transports per 1,000 A and B FFS: 2019 against 2024",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "12315437",
+     "54748502"
+    ],
+    "series": [
+     {
+      "name_ref": "Utilization_Normalized!D23",
+      "name": null,
+      "cat": "Utilization_Normalized!$A$24:$A$27",
+      "val": "Utilization_Normalized!$D$24:$D$27",
+      "x": null,
+      "y": null,
+      "smooth": null
+     },
+     {
+      "name_ref": "Utilization_Normalized!E23",
+      "name": null,
+      "cat": "Utilization_Normalized!$A$24:$A$27",
+      "val": "Utilization_Normalized!$E$24:$E$27",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "12315437",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "54748502",
+    "title": null,
+    "numFmt": "#,##0.0;\\(#,##0.0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart18.xml",
+  "sheet": "Utilization_Normalized",
+  "anchor": {
+   "from": [
+    8,
+    39
+   ],
+   "to": [
+    15,
+    44
+   ]
+  },
+  "title": "Original Medicare against MA and other, 2013-2025",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "43830947",
+     "6379480"
+    ],
+    "series": [
+     {
+      "name_ref": "Utilization_Normalized!C5",
+      "name": null,
+      "cat": "Utilization_Normalized!$A$6:$A$18",
+      "val": "Utilization_Normalized!$C$6:$C$18",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     },
+     {
+      "name_ref": "Utilization_Normalized!E5",
+      "name": null,
+      "cat": "Utilization_Normalized!$A$6:$A$18",
+      "val": "Utilization_Normalized!$E$6:$E$18",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "43830947",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "6379480",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart19.xml",
+  "sheet": "Acuity_by_Channel",
+  "anchor": {
+   "from": [
+    13,
+    3
+   ],
+   "to": [
+    21,
+    13
+   ]
+  },
+  "title": "Clinical mix by channel, 2024",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "stacked",
+    "barDir": "col",
+    "axIds": [
+     "23213784",
+     "67548523"
+    ],
+    "series": [
+     {
+      "name_ref": "Acuity_by_Channel!J5",
+      "name": null,
+      "cat": "Acuity_by_Channel!$A$6:$A$12",
+      "val": "Acuity_by_Channel!$J$6:$J$12",
+      "x": null,
+      "y": null,
+      "smooth": null
+     },
+     {
+      "name_ref": "Acuity_by_Channel!K5",
+      "name": null,
+      "cat": "Acuity_by_Channel!$A$6:$A$12",
+      "val": "Acuity_by_Channel!$K$6:$K$12",
+      "x": null,
+      "y": null,
+      "smooth": null
+     },
+     {
+      "name_ref": "Acuity_by_Channel!L5",
+      "name": null,
+      "cat": "Acuity_by_Channel!$A$6:$A$12",
+      "val": "Acuity_by_Channel!$L$6:$L$12",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "23213784",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "67548523",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart20.xml",
+  "sheet": "Air_Ambulance_IFT",
+  "anchor": {
+   "from": [
+    7,
+    4
+   ],
+   "to": [
+    13,
+    16
+   ]
+  },
+  "title": "Medicare rotary-wing HH transports, 2010-2024",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "55857411",
+     "83597699"
+    ],
+    "series": [
+     {
+      "name_ref": "Air_Ambulance_IFT!B5",
+      "name": null,
+      "cat": "Air_Ambulance_IFT!$A$6:$A$20",
+      "val": "Air_Ambulance_IFT!$B$6:$B$20",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "55857411",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "83597699",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart21.xml",
+  "sheet": "Dialysis_ESRD_Channel",
+  "anchor": {
+   "from": [
+    1,
+    13
+   ],
+   "to": [
+    2,
+    15
+   ]
+  },
+  "title": "Dialysis-pair Medicare transports, 2019-2024",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "50383245",
+     "22415813"
+    ],
+    "series": [
+     {
+      "name_ref": "Dialysis_ESRD_Channel!B5",
+      "name": null,
+      "cat": "Dialysis_ESRD_Channel!$A$6:$A$11",
+      "val": "Dialysis_ESRD_Channel!$B$6:$B$11",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "50383245",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "22415813",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart22.xml",
+  "sheet": "Dialysis_ESRD_Channel",
+  "anchor": {
+   "from": [
+    6,
+    13
+   ],
+   "to": [
+    8,
+    15
+   ]
+  },
+  "title": "One payer lever, three trajectories (2019 = 100)",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "14258530",
+     "5093283"
+    ],
+    "series": [
+     {
+      "name_ref": "Dialysis_ESRD_Channel!H5",
+      "name": null,
+      "cat": "Dialysis_ESRD_Channel!$G$6:$G$11",
+      "val": "Dialysis_ESRD_Channel!$H$6:$H$11",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     },
+     {
+      "name_ref": "Dialysis_ESRD_Channel!I5",
+      "name": null,
+      "cat": "Dialysis_ESRD_Channel!$G$6:$G$11",
+      "val": "Dialysis_ESRD_Channel!$I$6:$I$11",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     },
+     {
+      "name_ref": "Dialysis_ESRD_Channel!J5",
+      "name": null,
+      "cat": "Dialysis_ESRD_Channel!$G$6:$G$11",
+      "val": "Dialysis_ESRD_Channel!$J$6:$J$11",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "14258530",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "5093283",
+    "title": null,
+    "numFmt": "#,##0.0;\\(#,##0.0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart23.xml",
+  "sheet": "Payment_Rules",
+  "anchor": {
+   "from": [
+    3,
+    14
+   ],
+   "to": [
+    4,
+    23
+   ]
+  },
+  "title": "The payment update is CPI-driven and volatile",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "69337502",
+     "40477671"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Payment_Rules!$A$16:$A$20",
+      "val": "Payment_Rules!$B$16:$B$20",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "69337502",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "40477671",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart24.xml",
+  "sheet": "Payer_Rates_Commercial",
+  "anchor": {
+   "from": [
+    4,
+    20
+   ],
+   "to": [
+    6,
+    21
+   ]
+  },
+  "title": "Published commercial allowed as a multiple of Medicare",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "17498492",
+     "89468563"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Payer_Rates_Commercial!$A$21:$A$22",
+      "val": "Payer_Rates_Commercial!$B$21:$B$22",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "17498492",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "89468563",
+    "title": null,
+    "numFmt": "0.0\\x",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart25.xml",
+  "sheet": "Supplier_Trend",
+  "anchor": {
+   "from": [
+    7,
+    3
+   ],
+   "to": [
+    14,
+    8
+   ]
+  },
+  "title": "Billing NPIs, 2014-2024",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "58186785",
+     "57706574"
+    ],
+    "series": [
+     {
+      "name_ref": "Supplier_Series_Raw!B4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$B$5:$B$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "58186785",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "57706574",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart26.xml",
+  "sheet": "Supplier_Trend",
+  "anchor": {
+   "from": [
+    7,
+    19
+   ],
+   "to": [
+    14,
+    33
+   ]
+  },
+  "title": "Approved Medicare ground services, 2014-2024",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "29913605",
+     "47032452"
+    ],
+    "series": [
+     {
+      "name_ref": "Supplier_Series_Raw!C4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$C$5:$C$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "29913605",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "47032452",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart27.xml",
+  "sheet": "Supplier_Trend",
+  "anchor": {
+   "from": [
+    7,
+    35
+   ],
+   "to": [
+    14,
+    49
+   ]
+  },
+  "title": "Median services per billing organization",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "94772044",
+     "21737446"
+    ],
+    "series": [
+     {
+      "name_ref": "Supplier_Series_Raw!F4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$F$5:$F$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "94772044",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "21737446",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart28.xml",
+  "sheet": "Supplier_Trend",
+  "anchor": {
+   "from": [
+    15,
+    3
+   ],
+   "to": [
+    22,
+    8
+   ]
+  },
+  "title": "Concentration moved only after 2021",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "72352167",
+     "33425967"
+    ],
+    "series": [
+     {
+      "name_ref": "Supplier_Series_Raw!D4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$D$5:$D$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     },
+     {
+      "name_ref": "Supplier_Series_Raw!E4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$E$5:$E$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "72352167",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "33425967",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart29.xml",
+  "sheet": "Supplier_Trend",
+  "anchor": {
+   "from": [
+    15,
+    19
+   ],
+   "to": [
+    22,
+    33
+   ]
+  },
+  "title": "The scheduled-transport exit: BLS non-emergency billers",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "7236069",
+     "78689988"
+    ],
+    "series": [
+     {
+      "name_ref": "Supplier_Series_Raw!G4",
+      "name": null,
+      "cat": "Supplier_Series_Raw!$A$5:$A$15",
+      "val": "Supplier_Series_Raw!$G$5:$G$15",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "7236069",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "78689988",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart30.xml",
+  "sheet": "Workforce_Supply",
+  "anchor": {
+   "from": [
+    7,
+    3
+   ],
+   "to": [
+    14,
+    10
+   ]
+  },
+  "title": "Paid EMS employment (jobs)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "14419011",
+     "9109090"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Workforce_Supply!$B$5:$E$5",
+      "val": "Workforce_Supply!$B$6:$E$6",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "14419011",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "9109090",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart31.xml",
+  "sheet": "Workforce_Supply",
+  "anchor": {
+   "from": [
+    7,
+    21
+   ],
+   "to": [
+    14,
+    28
+   ]
+  },
+  "title": "Median annual wage",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "col",
+    "axIds": [
+     "75314054",
+     "28048666"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Workforce_Supply!$B$5:$D$5",
+      "val": "Workforce_Supply!$B$7:$D$7",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "75314054",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "28048666",
+    "title": null,
+    "numFmt": "\\$#,##0;\"($\"#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart32.xml",
+  "sheet": "State_Saturation",
+  "anchor": {
+   "from": [
+    9,
+    19
+   ],
+   "to": [
+    13,
+    20
+   ]
+  },
+  "title": "Highest-utilization states, official services per 1,000 FFS",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "93760517",
+     "7274209"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "State_Saturation!$K$6:$K$15",
+      "val": "State_Saturation!$L$5:$L$15",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "93760517",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "7274209",
+    "title": null,
+    "numFmt": "#,##0.0;\\(#,##0.0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart33.xml",
+  "sheet": "State_Saturation",
+  "anchor": {
+   "from": [
+    15,
+    17
+   ],
+   "to": [
+    22,
+    19
+   ]
+  },
+  "title": "Largest dark markets: MA and other share of beneficiaries",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "35887729",
+     "88781346"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "State_Saturation!$Q$6:$Q$15",
+      "val": "State_Saturation!$R$5:$R$15",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "35887729",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "88781346",
+    "title": null,
+    "numFmt": "0.0%",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart34.xml",
+  "sheet": "State_Saturation",
+  "anchor": {
+   "from": [
+    9,
+    31
+   ],
+   "to": [
+    13,
+    32
+   ]
+  },
+  "title": "Thinnest supply: billing organizations per 100,000 FFS",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "95960798",
+     "1712601"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "State_Saturation!$Q$20:$Q$29",
+      "val": "State_Saturation!$R$20:$R$29",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "95960798",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "1712601",
+    "title": null,
+    "numFmt": "0.0",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart35.xml",
+  "sheet": "MSA_Landscape",
+  "anchor": {
+   "from": [
+    8,
+    3
+   ],
+   "to": [
+    16,
+    15
+   ]
+  },
+  "title": "Approved Medicare ground services, top metro markets, 2024 (floors)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "21978832",
+     "26224422"
+    ],
+    "series": [
+     {
+      "name_ref": "MSA_Landscape!C4",
+      "name": null,
+      "cat": "MSA_Landscape!$B$5:$B$14",
+      "val": "MSA_Landscape!$C$5:$C$14",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "21978832",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "26224422",
+    "title": null,
+    "numFmt": "#,##0;\\(#,##0\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart36.xml",
+  "sheet": "MSA_Landscape",
+  "anchor": {
+   "from": [
+    8,
+    23
+   ],
+   "to": [
+    16,
+    34
+   ]
+  },
+  "title": "Top-3 local share, top metro markets (floors)",
+  "plots": [
+   {
+    "type": "barChart",
+    "grouping": "clustered",
+    "barDir": "bar",
+    "axIds": [
+     "17072213",
+     "7878366"
+    ],
+    "series": [
+     {
+      "name_ref": "MSA_Landscape!E4",
+      "name": null,
+      "cat": "MSA_Landscape!$B$5:$B$14",
+      "val": "MSA_Landscape!$E$5:$E$14",
+      "x": null,
+      "y": null,
+      "smooth": null
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "17072213",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "7878366",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ },
+ {
+  "file": "xl/charts/chart37.xml",
+  "sheet": "Imbalance_Ledger",
+  "anchor": {
+   "from": [
+    5,
+    29
+   ],
+   "to": [
+    12,
+    32
+   ]
+  },
+  "title": "Share of Medicare beneficiaries outside measurable FFS claims",
+  "plots": [
+   {
+    "type": "lineChart",
+    "grouping": "standard",
+    "barDir": null,
+    "axIds": [
+     "50313876",
+     "154354"
+    ],
+    "series": [
+     {
+      "name_ref": null,
+      "name": null,
+      "cat": "Imbalance_Ledger!$A$28:$A$40",
+      "val": "Imbalance_Ledger!$B$28:$B$40",
+      "x": null,
+      "y": null,
+      "smooth": "1"
+     }
+    ]
+   }
+  ],
+  "axes": [
+   {
+    "axId": "50313876",
+    "title": null,
+    "numFmt": "General",
+    "pos": "b",
+    "kind": "catAx"
+   },
+   {
+    "axId": "154354",
+    "title": null,
+    "numFmt": "0.0%;\\(0.0%\\);\\-",
+    "pos": "l",
+    "kind": "valAx"
+   }
+  ]
+ }
+]

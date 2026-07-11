@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_2.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_3.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -92,6 +92,55 @@ class TestIFTEvidenceV3(unittest.TestCase):
         n = sum(len(self.wb[s]._charts) for s in self.wb.sheetnames)
         self.assertGreaterEqual(n, 150)
 
+    def test_chart_house_style(self):
+        """v3.3 chart regression guards: no combo/secondary-axis charts,
+        category axes on the bottom, no smoothed line series."""
+        import zipfile
+        import xml.etree.ElementTree as ET
+        C = '{http://schemas.openxmlformats.org/drawingml/2006/chart}'
+        z = zipfile.ZipFile(DELIV)
+        defects = []
+        n_charts = 0
+        for name in z.namelist():
+            if not re.fullmatch(r'xl/charts/chart\d+\.xml', name):
+                continue
+            n_charts += 1
+            plot = ET.fromstring(z.read(name)).find(f'.//{C}plotArea')
+            n_val = len(plot.findall(f'{C}valAx'))
+            n_plots = sum(len(plot.findall(f'{C}{t}'))
+                          for t in ('lineChart', 'barChart', 'areaChart'))
+            if n_val > 1 or n_plots > 1:
+                defects.append(f'{name}: combo/secondary axis')
+            horiz = any(bd.get('val') == 'bar'
+                        for bc in plot.findall(f'{C}barChart')
+                        for bd in bc.findall(f'{C}barDir'))
+            want_cat = 'l' if horiz else 'b'
+            for ax in plot.findall(f'{C}catAx'):
+                pos = ax.find(f'{C}axPos')
+                if pos is None or pos.get('val') != want_cat:
+                    defects.append(f'{name}: catAx not on {want_cat}')
+                dele = ax.find(f'{C}delete')
+                if dele is None or dele.get('val') not in ('0', 'false'):
+                    defects.append(f'{name}: catAx delete not explicit 0')
+            for lc in plot.findall(f'{C}lineChart'):
+                for ser in lc.findall(f'{C}ser'):
+                    sm = ser.find(f'{C}smooth')
+                    if sm is None or sm.get('val') not in ('0', 'false'):
+                        defects.append(f'{name}: smoothed line series')
+        self.assertGreaterEqual(n_charts, 150)
+        self.assertEqual(defects, [], f'chart defects: {defects[:8]}')
+
+    def test_methodology_rebuilt(self):
+        texts = []
+        for row in self.wb['Methodology'].iter_rows():
+            for c in row:
+                if isinstance(c.value, str):
+                    texts.append(c.value)
+        blob = '\n'.join(texts)
+        self.assertIn('9. How to verify any number in sixty seconds', blob)
+        self.assertIn('data-api/v1/', blob)
+        self.assertNotIn('data-api/revision 1/', blob)
+
     def test_granular_families_present(self):
         names = set(self.wb.sheetnames)
         for y in range(2010, 2025):
@@ -130,6 +179,7 @@ class TestPipelineArtifacts(unittest.TestCase):
         self.assertEqual(r.get('n_errors'), 0)
         self.assertEqual(r.get('copy_diffs'), 0)
         self.assertEqual(r.get('n_mismatch'), 0)
+        self.assertEqual(r.get('chart_defects', 0), 0)
         self.assertGreaterEqual(r.get('pages', 0), 200)
 
 

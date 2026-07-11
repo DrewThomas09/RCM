@@ -381,13 +381,15 @@ def build(wb, ctx):
             'Excluded_Not_Sourced.')
 
     lib.add_chart(
-        ws, f'X{a0}', 'Hospitals (bars, left) and SNF certified beds (line, '
-        'right) by metro',
+        ws, f'X{a0}', 'Hospitals by metro',
         f'Metro_Structure_20!$A${a0}:$A${a1}',
         [('Hospitals', f'Metro_Structure_20!$D${a0}:$D${a1}')],
-        kind='bar', height=12,
-        secondary=[('SNF certified beds',
-                    f'Metro_Structure_20!$K${a0}:$K${a1}', 'line')])
+        kind='bar', height=11.5)
+    lib.add_chart(
+        ws, f'AH{a0}', 'SNF certified beds by metro',
+        f'Metro_Structure_20!$A${a0}:$A${a1}',
+        [('SNF certified beds', f'Metro_Structure_20!$K${a0}:$K${a1}')],
+        kind='bar', height=11.5)
     lib.add_chart(
         ws, f'X{a0 + 26}', 'HCRIS occupancy by metro (patient days / '
         'bed-days available, FY2020-22 latest per CCN)',
