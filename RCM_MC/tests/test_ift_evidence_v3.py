@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_0.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_1.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -46,7 +46,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
             v = row[0].value
             if isinstance(v, str) and re.fullmatch(r'F\d+', v):
                 fids.append(int(v[1:]))
-        self.assertGreaterEqual(max(fids), 430)
+        self.assertGreaterEqual(max(fids), 433)
         missing = set(range(1, max(fids) + 1)) - set(fids)
         self.assertEqual(missing, set(), f'missing fact IDs: {sorted(missing)[:10]}')
 
@@ -56,7 +56,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
             v = row[0].value
             if isinstance(v, str) and re.fullmatch(r'S\d+', v):
                 sids.append(int(v[1:]))
-        self.assertGreaterEqual(max(sids), 300)
+        self.assertGreaterEqual(max(sids), 306)
         missing = set(range(1, max(sids) + 1)) - set(sids)
         self.assertEqual(missing, set(), f'missing source IDs: {sorted(missing)[:10]}')
 
@@ -101,7 +101,8 @@ class TestIFTEvidenceV3(unittest.TestCase):
         for y in range(2020, 2026):
             self.assertIn(f'MS_County_{y}', names)
         for tab in ('PECOS_Registry', 'Hosp_Registry', 'SNF_Registry',
-                    'HSA_Hospital_Catchment', 'ED_Timeliness_Registry', 'SP_Index'):
+                    'HSA_Hospital_Catchment', 'ED_Timeliness_Registry', 'SP_Index',
+                    'Index', 'State_Age_65plus', 'OEWS_EMS_Wages'):
             self.assertIn(tab, names)
 
     def test_state_profiles_are_formula_driven(self):

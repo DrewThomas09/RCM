@@ -1,4 +1,4 @@
-"""Assemble IFT_Sourced_Evidence_Master_v3_0.xlsx.
+"""Assemble IFT_Sourced_Evidence_Master_v3_1.xlsx.
 
 Pipeline: faithful v2.7 copy -> logged corrections -> section modules (new
 tabs) -> ID assignment (F166+/S78+) -> governance extensions (Fact_Ledger,
@@ -36,21 +36,62 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_0.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_1.xlsx'))
 BUILT = '10 July 2026'
 
 SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'supply_vendored',
-                 'payment', 'demand_clinical', 'demand_growth', 'geo', 'metros',
-                 'company', 'indepth_tabs', 'reference', 'state_profiles']
+                 'payment', 'demand_clinical', 'demand_growth', 'v31', 'geo',
+                 'metros', 'company', 'indepth_tabs', 'reference',
+                 'state_profiles']
+
+# Fills for sources whose builder carried no URL. Every non-repo URL below was
+# LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
+# here; press/contract captures that genuinely have no captured URL carry an
+# honest statement instead of a blank cell.
+NO_URL_NOTE = ('(no URL captured at research time — the re-verify flag travels '
+               'on every row this source powers)')
+URL_FILLS = {
+    'stefan_2013': 'https://pubmed.ncbi.nlm.nih.gov/23335231/',
+    'cms_rsnat': 'https://www.cms.gov/data-research/monitoring-programs/'
+                 'medicare-fee-service-compliance-programs/prior-authorization-'
+                 'and-pre-claim-review-initiatives/prior-authorization-'
+                 'repetitive-scheduled-non-emergent-ambulance-transport-rsnat',
+    'cms_cert': 'https://www.cms.gov/data-research/monitoring-programs/'
+                'improper-payment-measurement-programs/'
+                'comprehensive-error-rate-testing-cert',
+    'nhamcs': 'https://www.cdc.gov/nchs/ahcd/index.htm',
+    'pmc_discharge': 'https://pmc.ncbi.nlm.nih.gov/articles/PMC11023539/',
+    'kff_shf': 'https://www.kff.org/other/state-indicator/'
+               'expenses-per-inpatient-day/',
+    'omb_census': 'https://www.census.gov/geographies/reference-files/'
+                  'time-series/demo/metro-micro/delineation-files.html',
+    'cdc_samhsa': 'https://www.samhsa.gov/data/',
+    'cms_carecompare': 'https://data.cms.gov/provider-data/',
+    'ift_clinical_registry': 'repo: RCM_MC/rcm_mc/market_reports/'
+                             'ift_clinical_demand.py',
+    'clin_lit_estimates': 'repo: RCM_MC/rcm_mc/market_reports/'
+                          'ift_clinical_demand.py (per-row journal citations '
+                          'on Condition_Transfer_Registry)',
+    'repo_derived': 'repo: RCM_MC/rcm_mc/market_reports/ '
+                    '(ift_clinical_demand.py, ift_mmt.py — equations on-tab)',
+    'repo_framework': 'repo: RCM_MC/rcm_mc/market_reports/ '
+                      '(ift_study.py, ift_insourcing.py, ift_moat.py)',
+    'muni_911': NO_URL_NOTE, 'muni_contracts': NO_URL_NOTE,
+    'nemt_broker_tx': NO_URL_NOTE, 'nemt_contracts': NO_URL_NOTE,
+    'nemt_enforcement': NO_URL_NOTE, 'modivcare_ch11': NO_URL_NOTE,
+    'ne_press': NO_URL_NOTE, 'aha_alos': NO_URL_NOTE,
+}
 
 # Final tab order: v2.7 sections preserved, new tabs interleaved by subject.
 TAB_ORDER = [
     # Governance
+    'Index',
     'README', 'Methodology', 'Findings', 'Charts', 'Verification_Log', 'Fact_Ledger',
     'Source_Register', 'Source_Index', 'V3_Change_Log', 'Pull_Manifest',
     'Connector_Estate_Map', 'Engagement_Data_Map',
     # Demand
-    'Demand_Drivers', 'Macro_Demand_Drivers', 'Demand_Stack', 'Acute_IFT_Series',
+    'Demand_Drivers', 'Macro_Demand_Drivers', 'State_Age_65plus', 'Demand_Stack',
+    'Acute_IFT_Series',
     'Condition_Transfer_Anchors', 'Condition_Transfer_Registry', 'Clinical_Benchmarks',
     'Other_Transfer_Channels', 'Receiving_Side', 'EMS_Transports',
     'Demand_Evidence_Quotes', 'Growth_Evidence_Registry',
@@ -65,7 +106,8 @@ TAB_ORDER = [
     # Supply
     'Supplier_Landscape', 'Supplier_Series_Raw', 'Supplier_Trend',
     'PECOS_Suppliers_State', 'NPPES_Registry_NE_IA', 'Market_Saturation_Ambulance',
-    'QCEW_EMS_Employment', 'Workforce_Supply', 'Supply_Stack', 'CHOW_Consolidation',
+    'QCEW_EMS_Employment', 'Workforce_Supply', 'OEWS_EMS_Wages', 'Supply_Stack',
+    'CHOW_Consolidation',
     'Certification_Series', 'State_Facility_Structure', 'Post_Acute_Supply_State',
     'Facility_Universe_State',
     # Market structure
@@ -87,10 +129,10 @@ TAB_ORDER = [
 ]
 
 SECTION_MAP = [
-    ('Governance', 'README .. Connector_Estate_Map, Engagement_Data_Map',
+    ('Governance', 'Index, README .. Connector_Estate_Map, Engagement_Data_Map',
      'Why every number is here, the findings, the complete audit trail, the v3 change '
      'log, the live-pull manifest, and the connector estate that feeds the data tabs.'),
-    ('Demand', 'Demand_Drivers .. Growth_Evidence_Registry',
+    ('Demand', 'Demand_Drivers .. Growth_Evidence_Registry, InDepth_Q01-Q10',
      'How many patients move, from which settings, for which conditions, driven by '
      'which measured forces — with the verbatim evidence registry behind each claim.'),
     ('Medicare claims core', 'Medicare_PSPS .. MA_Geo_Variation',
@@ -100,11 +142,11 @@ SECTION_MAP = [
     ('Price and payment', 'Payment_Rules .. Commercial_Context_APCD',
      'What Medicare pays, locality by locality (GPCI), a worked derived rate card, '
      'service-level economics, and published commercial context.'),
-    ('Supply', 'Supplier_Landscape .. Facility_Universe_State',
+    ('Supply', 'Supplier_Landscape .. Facility_Universe_State + the full registries (Hosp/SNF/Dialysis/IRF/LTCH/Hospice/HHA, PECOS, HSA)',
      'Who provides transport and where: billing organizations, enrolled suppliers, '
      'workforce, certification vintages, ownership churn, and the facility universe '
      'that originates and receives transfers.'),
-    ('Market structure', 'State_Saturation_Raw .. Imbalance_Ledger',
+    ('Market structure', 'State_Saturation_Raw .. Imbalance_Ledger + SP_Index and the 51 state profiles',
      'State and metro screens, county-level supply density and whitespace bands, '
      'and demand-over-supply imbalances.'),
     ('Company & competitive', 'MMT_NPI_Estate .. Contract_Benchmarks',
@@ -207,6 +249,8 @@ def assign_ids(section_outputs):
         if not out:
             continue
         for s in out.get('sources', []):
+            if not (s.get('url') or '').strip():
+                s['url'] = URL_FILLS.get(s['key'], NO_URL_NOTE)
             if s['key'] not in sid_map:
                 sid_map[s['key']] = f'S{next_s}'
                 s['sid'] = f'S{next_s}'
@@ -443,6 +487,286 @@ def add_verification_panels(wb, section_outputs, verify_results):
     return r
 
 
+def build_index_tab(wb, full_order):
+    """Hyperlinked table of contents: one row per tab, grouped by section."""
+    ws = wb.create_sheet('Index', 0)
+    sb = v3lib.SheetBuilder(ws, 3, col_widths=[34, 96, 10], tab_color='FF00294C')
+    sb.title('Index: every tab, one click away')
+    sb.subtitle('The question: where does each answer live? One row per tab, in '
+                'book order, grouped by section. The link column is a live '
+                'HYPERLINK formula; the description is each tab\'s own title '
+                'line, read from the tab, not retyped. Sections mirror the map '
+                'on the README.')
+    sb.blank()
+    # section membership derived from the SECTION_MAP anchors in TAB_ORDER
+    bounds = []
+    for name, tabs, _ in SECTION_MAP:
+        first = tabs.split(' .. ')[0].split(',')[0].strip()
+        bounds.append((name, first))
+    ordered = [n for n in full_order if n in wb.sheetnames and n != 'Index']
+    ordered += [n for n in wb.sheetnames if n not in ordered and n != 'Index']
+    sec_starts = {first: name for name, first in bounds}
+    current = None
+    for name in ordered:
+        if name in sec_starts:
+            current = sec_starts[name]
+            sb.banner(current)
+            sb.headers(['Tab', 'What it carries (the tab\'s own title)', ''],
+                       freeze=False, height=15)
+        title = wb[name]['A1'].value if wb[name]['A1'].value else name
+        sb.row([(f'=HYPERLINK("#\'{name}\'!A1","{name}")', 'link'),
+                (str(title)[:180], 'text'), None], height=14)
+    sb.blank()
+    sb.note('Generated from the live workbook at build time: the tab list and '
+            'titles are read from the sheets themselves, so this index cannot '
+            'drift from the content.')
+    return ws
+
+
+def add_v3_findings(wb, sid_map):
+    """Continue the Findings register (42+) with v3-evidence findings whose
+    numbers are LIVE references to the new tabs. Every magnitude in the prose
+    was recomputed from the cached artifacts before being written."""
+    ws = wb['Findings']
+    r = ws.max_row + 2
+    _banner_row(ws, r, f'v3 findings (42 onward) - built {BUILT}. Same contract '
+                       'as findings 1-41: each rests on a published count or '
+                       'arithmetic over published counts, with sources, '
+                       'confidence, and an interpretation guardrail. NEW: the '
+                       '"numbers" column is a LIVE formula into the home tab, '
+                       'so these findings recalculate with the evidence.', 6)
+    r += 1
+    from v3lib import F_HDR, FILL_HDR
+    for i, h in enumerate(['#', 'Finding', 'The numbers (live)', 'Sources',
+                           'Confidence', 'Interpretation guardrail'], start=1):
+        c = ws.cell(row=r, column=i, value=h)
+        c.font = F_HDR
+        c.fill = FILL_HDR
+    r += 1
+
+    def sid(key, label):
+        return f"{sid_map.get(key, '?')} ({label})"
+
+    wage_row = _find_row(wb['OEWS_EMS_Wages'],
+                         'Median annual wage (employment-weighted mean of '
+                         'state medians)')
+    F = [
+        (42, 'The medical-necessity screen on scheduled transport is real and '
+             'measurable: roughly one in eight submitted BLS non-emergency '
+             'services is denied (12.9% in 2024, up from 11.6% in 2010), and '
+             'the fifteen-year series is on one tab for the first time.',
+         '=PSPS_Denial_Series!F' + str(_find_code_row(
+             wb['PSPS_Denial_Series'], 2024, 'A0428')),
+         sid('psps_v3', 'PSPS 2010-2024'), 'High',
+         'PSPS counts SUBMITTED services (a different universe from final-'
+         'action MUP); the rate is a ratio of floors where suppression binds. '
+         'Never compare these volumes to MUP volumes.'),
+        (43, 'Measured whitespace: 23% of US counties have fewer than three '
+             'Medicare-billing ambulance providers in the latest CMS market-'
+             'saturation window.',
+         '=Market_Saturation_Ambulance!G' + str(_find_row(
+             wb['Market_Saturation_Ambulance'], 'US total')),
+         sid('marketsat', 'CMS Market Saturation'), 'High',
+         'Measures FFS BILLING presence, not physical ambulance posts; '
+         'suppressed counties (<11 users) are grouped with zero as thin-'
+         'supply floors.'),
+        (44, 'Medicare Advantage crossed the majority line inside this '
+             'workbook\'s window: MA & other reached 50.1% of beneficiaries '
+             'in 2024 and 50.9% in 2025 - every FFS-claims series here now '
+             'watches a minority of the market, and the wedge widens yearly.',
+         '=Enrollment_ESRD_State!F' + str(_find_row(
+             wb['Enrollment_ESRD_State'], 2025)),
+         sid('enroll_monthly', 'Medicare Monthly Enrollment'), 'High',
+         'The "dark share" wedge: MA utilization is bounded on '
+         'MA_Geo_Variation but not claims-measurable. Never gross up FFS '
+         'volumes by this share without stating the assumption.'),
+        (45, 'The wage-payment scissors is measured, not asserted: private '
+             'ambulance average pay compounded +5.0% a year over 2014-2025 '
+             '($36,087 to $61,683), against an Ambulance Inflation Factor '
+             'that averaged +3.1% even across its 2020-2026 high-inflation '
+             'window and ran near +1% for years before it.',
+         '=QCEW_EMS_Employment!D' + str(_find_row(
+             wb['QCEW_EMS_Employment'], 'CAGR (full window)')),
+         sid('qcew_621910', 'BLS QCEW') + ' + Payment_Rules AIF series',
+         'High',
+         'Industry average pay (all occupations in NAICS 621910) against a '
+         'price index - a margin-pressure indicator, not a unit-cost series. '
+         'Crew labor is ~69.4% of ground cost (GADCS, Cost_and_Capacity).'),
+        (46, 'Three different supplier universes coexist and must never be '
+             'mixed: 10,465 PECOS-enrolled ambulance suppliers, 8,721 billing '
+             'NPIs (Supplier_Landscape), and 5,820 private QCEW '
+             'establishments - enrollment records, billing identities, and '
+             'worksites are three different objects.',
+         '=PECOS_Suppliers_State!' + _first_value_ref(
+             wb, 'PECOS_Suppliers_State', 10465, 'B5'),
+         sid('pecos_registry_src', 'PECOS') + ', '
+         + sid('qcew_621910', 'QCEW') + ', S59 (MUP NPIs)', 'High',
+         'Each count is a floor or census of a different thing; the workbook '
+         'carries all three, labeled, and quotes none of them as "the number '
+         'of ambulance companies".'),
+        (47, 'The realized Medicare price ladder tracks the statutory RVU '
+             'ladder: 2024 average allowed for SCT runs ~3.5x BLS non-'
+             'emergency against the 3.25x RVU ratio - the visible wedge is '
+             'geography and add-ons, and its size is itself evidence the '
+             'fee schedule binds.',
+         '=MUP_Ambulance_National!H' + str(_find_code_row(
+             wb['MUP_Ambulance_National'], 2024, 'A0434')) +
+         '/MUP_Ambulance_National!H' + str(_find_code_row(
+             wb['MUP_Ambulance_National'], 2024, 'A0428')),
+         sid('mup_geo', 'MUP by Geography & Service'), 'High',
+         'Averages over national POS-F rows; realized averages fold in '
+         'geography and add-ons, so the exact RVU ratio should NOT '
+         'reproduce - closeness is the check, identity would be suspicious.'),
+        (48, 'The dialysis natural experiment holds at the denominator: the '
+             'ESRD beneficiary base was roughly flat while dialysis-pair '
+             'transports collapsed -63% after RSNAT - the payer lever moved, '
+             'not the patients.',
+         '=Enrollment_ESRD_State!I' + str(_find_row(
+             wb['Enrollment_ESRD_State'], 2024)),
+         sid('enroll_monthly', 'enrollment') +
+         ' + Dialysis_ESRD_Channel (S39/S41/S42)', 'High',
+         'ESRD beneficiaries are not all in-center dialysis patients '
+         '(transplant and ESRD-only enrollees included); USRDS prevalence '
+         'stays pending (P5). Direction unambiguous; magnitudes not '
+         'per-patient.'),
+        (49, 'The paramedic certification ladder pays a measured ~39% premium '
+             'over EMT (employment-weighted state median annual wages, May '
+             '2024: ~$57.6k vs ~$41.4k) - the BLS-to-ALS staffing-cost cliff '
+             'is a wage fact, not a rule of thumb.',
+         f'=OEWS_EMS_Wages!C{wage_row}/OEWS_EMS_Wages!B{wage_row}-1',
+         sid('oews_ems_2024', 'BLS OEWS May 2024'), 'High',
+         'Occupation grain, all industries (hospital-based EMTs included); '
+         'QCEW is the employer-side industry companion. Weighted over '
+         'published state cells only - suppressed cells drop out.'),
+        (50, 'The 65+ demand base is compounding at +3.0% a year MEASURED '
+             '(2020-2024, 54.5M to 61.2M civilians), not just projected - '
+             'and its state dispersion is now on one tab for per-1,000 '
+             'joins.',
+         '=State_Age_65plus!G' + str(_find_row(
+             wb['State_Age_65plus'], 'United States')),
+         sid('census_age_2024', 'Census Vintage 2024 estimates'), 'High',
+         'Civilian resident ESTIMATES; the NP2023 projections on '
+         'Macro_Demand_Drivers are the forward series. An age tailwind is '
+         'not a transport forecast: per-beneficiary FFS utilization still '
+         'declines (Utilization_Normalized).'),
+        (51, 'Hospital catchment breadth is now measured for every hospital '
+             'in the service-area file: 7,452 hospitals with ZIP counts and '
+             'inpatient volumes - the denominator layer any transfer-'
+             'corridor claim has to clear.',
+         "=COUNTA(HSA_Hospital_Catchment!A5:A9000)",
+         sid('hsa_agg', 'CMS Hospital Service Area'), 'Moderate-High',
+         'Aggregates of hospital x ZIP inpatient rows; suppression drops '
+         'small cells, so ZIP counts are floors. Corridor-level pair flows '
+         'need the pair-grain pull (named on Dataset_Linkage_Map).'),
+    ]
+    from v3lib import F_FML, F_LABEL, F_TXT, _thin, AL_WRAP
+    for num, finding, numbers, srcs, conf, guard in F:
+        vals = [num, finding, numbers, srcs, conf, guard]
+        kinds = ['label', 'text', 'fml', 'text', 'text', 'text']
+        for i, (v, k) in enumerate(zip(vals, kinds), start=1):
+            c = ws.cell(row=r, column=i, value=v)
+            c.font = {'label': F_LABEL, 'fml': F_FML}.get(k, F_TXT)
+            c.border = _thin
+            c.alignment = AL_WRAP
+        ws.row_dimensions[r].height = 56
+        r += 1
+    from v3lib import F_NOTE
+    c = ws.cell(row=r, column=1)
+    c.value = ('The live column shows the raw referenced value (General '
+               'format, units in the finding text); open the home tab for '
+               'the formatted series. Prose magnitudes were recomputed from '
+               'the cached artifacts at build time.')
+    c.font = F_NOTE
+    return r
+
+
+def _find_row(ws, value, col=1):
+    for row in ws.iter_rows(min_col=col, max_col=col):
+        if row[0].value == value:
+            return row[0].row
+    return 1
+
+
+def _find_code_row(ws, year, code):
+    for row in ws.iter_rows():
+        if row[0].value == year and len(row) > 1 and row[1].value == code:
+            return row[0].row
+    return 1
+
+
+def _first_value_ref(wb, tab, value, default):
+    ws = wb[tab]
+    for row in ws.iter_rows():
+        for c in row:
+            if value is not None and c.value == value:
+                return f'{c.coordinate}'
+    return default
+
+
+def add_gallery_charts(wb):
+    """Headline v3 charts appended to the Charts gallery tab."""
+    ws = wb['Charts']
+    r = ws.max_row + 2
+    _banner_row(ws, r, 'v3 additions: four headline series from the new '
+                       'evidence layers. Same rule as the charts above: every '
+                       'series is a live reference to the tab that carries the '
+                       'data.', 8)
+    psps = wb['PSPS_Denial_Series']
+    # locate Panel B pivot span on PSPS_Denial_Series
+    b0 = _find_row(psps, 'Year', col=1)
+    # find the Panel B header row: first 'Year' following the Panel A block
+    year_rows = [row[0].row for row in psps.iter_rows(min_col=1, max_col=1)
+                 if row[0].value == 'Year']
+    if len(year_rows) >= 2:
+        hb = year_rows[1]
+        pb0, pb1 = hb + 1, hb + 15
+        v3lib.add_chart(ws, f'B{r + 2}',
+                        'Denial rate by level of service, 2010-2024 (live)',
+                        f'PSPS_Denial_Series!$A${pb0}:$A${pb1}',
+                        [(f'PSPS_Denial_Series!$B${hb}',
+                          f'PSPS_Denial_Series!$B${pb0}:$B${pb1}'),
+                         (f'PSPS_Denial_Series!$E${hb}',
+                          f'PSPS_Denial_Series!$E${pb0}:$E${pb1}'),
+                         (f'PSPS_Denial_Series!$H${hb}',
+                          f'PSPS_Denial_Series!$H${pb0}:$H${pb1}')],
+                        kind='line', y_fmt='0%')
+    enr = wb['Enrollment_ESRD_State']
+    e0 = _find_row(enr, 2013)
+    e1 = _find_row(enr, 2025)
+    if e1 > e0:
+        v3lib.add_chart(ws, f'J{r + 2}',
+                        'Original Medicare vs MA & other (the shrinking claims '
+                        'window), 2013-2025',
+                        f'Enrollment_ESRD_State!$A${e0}:$A${e1}',
+                        [('Original Medicare',
+                          f'Enrollment_ESRD_State!$D${e0}:$D${e1}'),
+                         ('MA & other',
+                          f'Enrollment_ESRD_State!$E${e0}:$E${e1}')],
+                        kind='line', y_fmt='#,##0,,"M"')
+    q = wb['QCEW_EMS_Employment']
+    qrows = [row[0].row for row in q.iter_rows(min_col=1, max_col=1)
+             if isinstance(row[0].value, (int, float))
+             and 2014 <= (row[0].value or 0) <= 2025]
+    if qrows:
+        # Panel B is the second run of year rows (formulas)
+        half = len(qrows) // 2
+        pb = qrows[half:] if half else qrows
+        v3lib.add_chart(ws, f'B{r + 17}',
+                        'Private ambulance average annual pay, 2014-2025 (live)',
+                        f'QCEW_EMS_Employment!$A${pb[0]}:$A${pb[-1]}',
+                        [('Avg annual pay',
+                          f'QCEW_EMS_Employment!$D${pb[0]}:$D${pb[-1]}')],
+                        kind='line', y_fmt='$#,##0')
+    age = wb['State_Age_65plus']
+    us = _find_row(age, 'United States')
+    v3lib.add_chart(ws, f'J{r + 17}',
+                    '65+ population, measured: 2020 vs 2024 (live)',
+                    None,
+                    [('65+ 2020', f'State_Age_65plus!$C${us}'),
+                     ('65+ 2024', f'State_Age_65plus!$E${us}')],
+                    kind='bar', y_fmt='#,##0')
+
+
 def build_pull_manifest_tab(wb):
     man = json.load(open(os.path.join(CACHE, 'manifest.json')))
     ws = wb.create_sheet('Pull_Manifest')
@@ -500,14 +824,15 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.0')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.1')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
                 'price, served by which suppliers, and where the whitespace is '
                 'measurable. v3 carries the entire verified v2.7 evidence base '
                 'forward unchanged and adds the platform IFT database and the full '
-                'government-connector layer. Built and verified 09-10 July 2026.',
+                'government-connector layer. Built and verified 09-11 July 2026. '
+                'Navigate with the Index tab: every tab, one click.',
                 height=44)
     sb.blank()
     sb.banner('What this workbook is, in one paragraph')
@@ -567,19 +892,32 @@ def rebuild_readme(wb, stats, entries):
         if row and row[0].strip() in {'1', '2', '3', '4', '5'}:
             sb.row([(row[0], 'label'), row[1] if len(row) > 1 else '',
                     row[2] if len(row) > 2 else ''], wrap=True, height=34)
-    sb.row([('6 (v3.0)', 'label'), BUILT,
-            f'The platform integration: all v2.7 content carried forward unchanged '
-            f'(faithful-copy proof on Verification_Log Panel I) plus {stats["new_tabs"]} '
-            f'new tabs built from the platform IFT database and {stats["pull_artifacts"]} '
-            f'live government-API extractions - the MUP ambulance utilization/price '
-            f'series 2013-2024, the PSPS denial-rate series 2010-2024, CMS market '
-            f'saturation 2020-2025 with county whitespace bands, BLS QCEW EMS industry '
-            f'series 2014-2025, the PECOS supplier universe, the facility O/D universe, '
-            f'CY2025 GPCI localities with a derived rate card, certification-vintage '
-            f'supply series, the OMB county-to-CBSA crosswalk, and the sourced '
-            f'clinical/growth/company evidence registries. Facts through '
-            f'F{stats["last_fact"]}; {stats["sources"]} sources; {stats["charts"]} '
-            f'charts; ~{stats["pages"]} printed pages.'], wrap=True, height=80)
+    sb.row([('6 (v3.0)', 'label'), '10 July 2026',
+            'The platform integration: all v2.7 content carried forward unchanged '
+            '(faithful-copy proof on Verification_Log Panel I) plus 209 '
+            'new tabs built from the platform IFT database and 321 '
+            'live government-API extractions - the MUP ambulance utilization/price '
+            'series 2013-2024, the PSPS denial-rate series 2010-2024, CMS market '
+            'saturation 2020-2025 with county whitespace bands, BLS QCEW EMS industry '
+            'series 2014-2025, the PECOS supplier universe, the facility O/D universe, '
+            'CY2025 GPCI localities with a derived rate card, certification-vintage '
+            'supply series, the OMB county-to-CBSA crosswalk, and the sourced '
+            'clinical/growth/company evidence registries. Facts through '
+            'F430; 304 sources; 189 charts; ~6,970 printed pages (as shipped in '
+            'v3.0 - this row records that revision, not the current file).'],
+           wrap=True, height=80)
+    sb.row([('7 (v3.1)', 'label'), '11 July 2026',
+            'The usability and closure pass: a hyperlinked Index tab covering '
+            'every tab; findings 42-51 appended with LIVE formula references '
+            'into the new evidence; the measured Census 65+/85+ state base '
+            '2020-2024 (State_Age_65plus - closes the state-grain half of '
+            'P20); the OEWS May 2024 EMS occupation wage ladder '
+            '(OEWS_EMS_Wages - closes P4); four gallery charts added to the '
+            'Charts tab; state profiles gain 65+ joins; every source now '
+            'carries a URL, a repo-file locator, or an explicit no-URL-'
+            'captured statement; and two citation corrections applied at '
+            'source (the PMID 25397857 attribution and a dead MedPAC link).'],
+           wrap=True, height=80)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -589,14 +927,16 @@ def rebuild_readme(wb, stats, entries):
                 'thin-supply counties; a population-weighted desert definition still '
                 'needs a licensed drive-time layer). P3 ZCTA/county-to-CBSA crosswalk '
                 '- CLOSED (CBSA_Crosswalk_Reference, OMB Bulletin 23-01). P4 BLS '
-                'OEWS state wage files - PARTIALLY CLOSED (QCEW_EMS_Employment '
-                'carries the QCEW industry wage series; occupation-grain OEWS still '
-                'open). P5 USRDS prevalent dialysis counts - OPEN (Enrollment_ESRD_'
+                'OEWS state wage files - CLOSED in v3.1 (OEWS_EMS_Wages: May 2024 '
+                'state file, EMT/paramedic/ambulance-driver occupations, beside '
+                'the QCEW industry series on QCEW_EMS_Employment). P5 USRDS '
+                'prevalent dialysis counts - OPEN (Enrollment_ESRD_'
                 'State carries the Medicare ESRD denominator instead). P14 locality '
                 'price adjustment - CLOSED (GPCI_Localities + Derived_Rate_Card). '
-                'NEW P20: Census ACS 65+ by state via API - OPEN (needs a free '
-                'CENSUS_API_KEY; the Census NP2023 national projections remain on '
-                'Macro_Demand_Drivers). NEW P21: NPPES monthly full-replacement file '
+                'P20: state-grain 65+ base - CLOSED in v3.1 for the state grain '
+                '(State_Age_65plus, Census Vintage 2024 measured estimates '
+                '2020-2024); the ACS API route stays OPEN for tract/county age '
+                'detail (needs a free CENSUS_API_KEY). P21: NPPES monthly full-replacement file '
                 'for the national supplier universe by taxonomy - OPEN (the live API '
                 'caps at 1,200 rows per query; PECOS_Suppliers_State is the '
                 'enrollment-based count today).', height=120)
@@ -610,8 +950,8 @@ def rebuild_readme(wb, stats, entries):
                     'old': 'v2.7 README (said 43 tabs / 73 sources; both stale even '
                            'for v2.7, which shipped 47 tabs and 77 sources)',
                     'new': f'Rebuilt for v3: {stats["tabs"]} tabs, {stats["sources"]} '
-                           'sources, revision 6 row, updated section map and pending '
-                           'register',
+                           'sources, revision 6-7 rows, updated section map and '
+                           'pending register',
                     'why': 'Stale self-description; v3 adds sections the old map '
                            'did not know about.',
                     'class': 'structural'})
@@ -663,6 +1003,8 @@ def main(verify_results_path=None):
     n_excl = extend_excluded(wb, sec_excluded)
     add_verification_panels(wb, section_outputs, verify_results)
     build_pull_manifest_tab(wb)
+    add_v3_findings(wb, sid_map)
+    add_gallery_charts(wb)
 
     log('rebuilding v2.7 charts')
     n_charts_v27 = rebuild_charts(wb, os.path.join(SCRATCH, 'v27_charts.json'),
@@ -683,7 +1025,7 @@ def main(verify_results_path=None):
         'pages': verify_results.get('pages', 'over 400'),
     }
     build_change_log_tab(wb, entries)   # entries complete except README note
-    stats['tabs'] = len(wb.sheetnames)  # true count now (before README rebuild swap)
+    stats['tabs'] = len(wb.sheetnames) + 1  # + Index tab, built after the README
     rebuild_readme(wb, stats, entries)
     # change log needs the README entry too - rebuild the tab now that entries grew
     wb.remove(wb['V3_Change_Log'])
@@ -724,11 +1066,14 @@ def main(verify_results_path=None):
     for anchor, names in families:
         if anchor in full_order:
             i = full_order.index(anchor) + 1
-            for j, n in enumerate(names):
-                if n not in full_order:
-                    full_order.insert(i + j, n)
+            for n in [x for x in names if x not in full_order]:
+                full_order.insert(i, n)
+                i += 1
     order = {n: i for i, n in enumerate(full_order)}
     wb._sheets.sort(key=lambda ws: order.get(ws.title, 9999))
+    build_index_tab(wb, [ws.title for ws in wb._sheets])
+    wb._sheets.sort(key=lambda ws: order.get(ws.title, 9999)
+                    if ws.title != 'Index' else -1)
 
     wb.calculation.fullCalcOnLoad = True
     log(f'saving {OUT}')

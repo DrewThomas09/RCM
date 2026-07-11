@@ -125,6 +125,17 @@ def _profile(wb, lib, name, ab):
       '=IFERROR(' + cagr[1:] + ',"n/a")', '%/yr',
       'Enroll_State_2013/_2024', lib.FMT_PCT1,
       'No series break 2013-2024 in this file — trend-eligible')
+    R('p65', 'Population 65+, 2024 (Census measured estimate)',
+      _idx('State_Age_65plus', 'E', K), 'persons',
+      'State_Age_65plus', F, 'Civilian resident population, Vintage 2024')
+    R('p65cagr', '65+ CAGR, 2020→2024 (measured)',
+      _idx('State_Age_65plus', 'G', K), '%/yr',
+      'State_Age_65plus', lib.FMT_PCT1, 'The measured age-demand tailwind')
+    R('mcper65', 'Medicare beneficiaries per 100 residents 65+',
+      f'=IFERROR(B{rows["tot24"]}/B{rows["p65"]}*100,"n/a")', 'per 100',
+      'Enroll_State_2024 + State_Age_65plus', lib.FMT_DEC1,
+      'Over 100 is normal: disabled under-65 beneficiaries are in the '
+      'numerator, not the denominator')
 
     # ── Section 2. Medicare ambulance utilization ───────────────────────
     sb.banner('2. Medicare ground ambulance utilization (CMS MUP Geo & Service; '
@@ -278,7 +289,7 @@ def build(wb, ctx):
                     'new external source; integrator should resolve these '
                     'facts to the S-IDs already registered for the named '
                     'detail tabs',
-        'url': '(workbook-internal cross-reference)',
+        'url': '(no external URL — workbook-internal cross-reference; every profile value resolves to a detail tab named on-row)',
         'tier': 'A', 'accessed': ctx['accessed'],
         'powers': ['SP_Index'] + [f'SP_{ab}' for _, ab in STATES]})
 
