@@ -267,27 +267,39 @@ def build(wb, ctx):
     # ---- Panel E: RSNAT cross-link ----
     sb.banner('Panel E. The enforcement arm - RSNAT prior authorization '
               '(cross-link; full timeline in handoff B.4)')
+    # Cross-link to the MEASURED RSNAT effect cells on Payment_Integrity
+    # (the definition rows carry their text in column A, so column B there is
+    # blank - link to the effect rows, which hold the published values).
     pi_rows = {}
     if 'Payment_Integrity' in wb.sheetnames:
         for row in wb['Payment_Integrity'].iter_rows(min_row=1, max_row=40,
                                                      max_col=2):
             v = row[0].value
             if isinstance(v, str):
-                if v.startswith('"Repetitive" definition'):
-                    pi_rows['def'] = row[0].row
-                elif v.startswith('National scope'):
-                    pi_rows['scope'] = row[0].row
+                if v.startswith('Effect 1'):
+                    pi_rows['use'] = row[0].row
+                elif v.startswith('Effect 2'):
+                    pi_rows['exp'] = row[0].row
+                elif v.startswith('Effect 3'):
+                    pi_rows['esrd'] = row[0].row
     if pi_rows:
-        for key, label in [('def', 'What RSNAT covers'),
-                           ('scope', 'National scope and codes')]:
+        for key, label in [
+                ('use', 'RSNAT effect on probability of scheduled-transport '
+                        'use (published)'),
+                ('exp', 'RSNAT effect on scheduled-transport expenditures '
+                        '(published)'),
+                ('esrd', 'RSNAT effect on emergency dialysis use, ESRD cohort '
+                         '(published)')]:
             if key in pi_rows:
                 sb.row([(label, 'label'),
-                        (f"='Payment_Integrity'!B{pi_rows[key]}", 'link'),
+                        (f"='Payment_Integrity'!B{pi_rows[key]}", 'link',
+                         lib.FMT_PCT1),
                         None, None, None, None, None, None, None,
                         ('the A0426/A0428 denial mechanics above are what '
-                         'RSNAT front-loads into prior authorization',
-                         'note') if key == 'scope' else None],
-                       wrap=True)
+                         'RSNAT front-loads into prior authorization; the '
+                         'measured effects are large and negative on '
+                         'scheduled volume', 'note') if key == 'use'
+                        else None], wrap=True)
     else:
         sb.row([('RSNAT timeline', 'label'), ('PENDING', 'note'), None,
                 None, None, None, None, None, None,

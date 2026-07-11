@@ -112,6 +112,24 @@ def _year_cell_row(ws, year, col='A', lo=1, hi=60):
     return None
 
 
+def _headline(wb, tab):
+    """Coordinate of a tab's first real data value: the first numeric cell,
+    or first live-formula cell, in column B below its header. Used to upgrade
+    the C.8 'title pull' fallbacks (which pointed at A1) to a cell that
+    actually shows a number now that every analysis tab exists in the
+    assembly. Falls back to A1 only if the tab has no such cell."""
+    if tab not in wb.sheetnames:
+        return 'A1'
+    ws = wb[tab]
+    for r in range(4, min(80, ws.max_row) + 1):
+        v = ws.cell(row=r, column=2).value
+        if isinstance(v, (int, float)):
+            return f'B{r}'
+        if isinstance(v, str) and v.startswith('='):
+            return f'B{r}'
+    return 'A1'
+
+
 def _parse_term_months(text):
     """Initial contract term in months from a term_and_renewal string."""
     if not text or str(text).strip().lower() == 'none':
@@ -1106,9 +1124,20 @@ def build(wb, ctx):
               if 'Market_Share_Panels' in wb.sheetnames else None)
     frag_top10 = None
     if frag_nm:
-        fcell = _scan(wb[frag_nm], 'top-10', max_col=3)
-        if fcell:
-            frag_top10 = f'B{fcell.row}'
+        # find a 'top-10' row whose value column (B) actually holds a number
+        # or formula - the subtitle prose also contains 'top-10' but its B
+        # cell is blank, which is what the loose scan used to grab.
+        fw = wb[frag_nm]
+        for row in fw.iter_rows(min_col=1, max_col=1):
+            a = row[0].value
+            if isinstance(a, str) and 'top-10' in a.lower():
+                b = fw.cell(row=row[0].row, column=2).value
+                if isinstance(b, (int, float)) or (isinstance(b, str)
+                                                   and b.startswith('=')):
+                    frag_top10 = f'B{row[0].row}'
+                    break
+        if not frag_top10:
+            frag_top10 = _headline(wb, frag_nm)
     wfd_nm = ('Workforce_Depth'
               if 'Workforce_Depth' in wb.sheetnames else None)
     mabc_nm = _tab_like(wb, 'MA_Book')
@@ -1225,7 +1254,7 @@ def build(wb, ctx):
               'Facility_Pay_Layer Panel B' if fpl_outside else
               'Facility_Pay_Layer lands earlier in assembly order'),
          (_num('Five-universe reconciliation (activations vs claims)',
-               _L(urec_nm, 'A1'), urec_nm + ' (title pull)')
+               _L(urec_nm, _headline(wb, urec_nm)), urec_nm + ' (title pull)')
           if urec_nm else
           _pnd('Five-universe reconciliation (activations vs claims)',
                'Universe_Reconciliation lands in a parallel module; '
@@ -1306,7 +1335,7 @@ def build(wb, ctx):
         'on. The GADCS census shows MA revenue per organization at '
         'parity or above FFS, so the dark half is not smaller business, '
         'just unmeasured.',
-        [(_num('MA book calibrator', _L(mabc_nm, 'A1'),
+        [(_num('MA book calibrator', _L(mabc_nm, _headline(wb, mabc_nm)),
                mabc_nm + ' (title pull)') if mabc_nm else
           _num('Share of beneficiaries outside the A and B FFS window, '
                '2024', _L('Imbalance_Ledger', 'B39', lib.FMT_PCT1),
@@ -1391,7 +1420,7 @@ def build(wb, ctx):
         'so every printed top share is a floor.',
         [(_num('National concentration (top-10 view)',
                _L(frag_nm, frag_top10, lib.FMT_PCT1)
-               if frag_top10 else _L(frag_nm, 'A1'),
+               if frag_top10 else _L(frag_nm, _headline(wb, frag_nm)),
                frag_nm + (' top-10 row' if frag_top10 else ' (title '
                           'pull)'))
           if frag_nm else
@@ -1399,7 +1428,7 @@ def build(wb, ctx):
                'Fragmentation_National lands in a parallel module; MUP '
                'inputs cached')),
          (_num('State share panels and per-state HHI',
-               _L(msp_nm, 'A1'), msp_nm + ' (title pull)')
+               _L(msp_nm, _headline(wb, msp_nm)), msp_nm + ' (title pull)')
           if msp_nm else
           _pnd('State share panels and per-state HHI',
                'Market_Share_Panels lands in a parallel module; MUP '
@@ -1441,7 +1470,7 @@ def build(wb, ctx):
         'is window-dependent, while county-level depth varies by an '
         'order of magnitude. Labor risk prices locally: thin-depth '
         'counties with hub demand are where service fails first.',
-        [(_num('Workforce depth panel', _L(wfd_nm, 'A1'),
+        [(_num('Workforce depth panel', _L(wfd_nm, _headline(wb, wfd_nm)),
                wfd_nm + ' (title pull)')
           if wfd_nm else
           _pnd('Workforce depth panel',
@@ -1478,7 +1507,7 @@ def build(wb, ctx):
          _num('Add-on expiry (per statute, carried live)',
               _L('Growth_Outlook_Shell', g_anchor['cliff']),
               'Growth_Outlook_Shell Panel B'),
-         (_num('Input cost index', _L(ici_nm, 'A1'),
+         (_num('Input cost index', _L(ici_nm, _headline(wb, ici_nm)),
                ici_nm + ' (title pull)')
           if ici_nm else
           _pnd('Input cost tracking',
@@ -1499,14 +1528,14 @@ def build(wb, ctx):
         'billing limits, reshaping out-of-network economics state by '
         'state. Barriers are real but jurisdictional; there is no '
         'single national moat number.',
-        [(_num('Entry barrier register', _L(ebr_nm, 'A1'),
+        [(_num('Entry barrier register', _L(ebr_nm, _headline(wb, ebr_nm)),
                ebr_nm + ' (title pull)')
           if ebr_nm else
           _pnd('Entry barrier register',
                'Entry_Barrier_Register lands in a parallel module; '
                'Regulatory_Register carries the statutory anchors '
                'today')),
-         (_num('State balance-billing pegs', _L(bbs_nm, 'A1'),
+         (_num('State balance-billing pegs', _L(bbs_nm, _headline(wb, bbs_nm)),
                bbs_nm + ' (title pull)')
           if bbs_nm else
           _num('State balance-billing status (carried text, live pull)',

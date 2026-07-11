@@ -23,6 +23,54 @@
   "rows": 4524,
   "sha256": "8f3771708d313498c0e55067048b20989d5042048797da99623b672c8daa9472"
  },
+ "cms_amb_zip": {
+  "dataset": "CMS Zip Code to Carrier Locality File (ambulance fee schedule rural/super-rural ZIP designations)",
+  "endpoint": "https://www.cms.gov/files/zip/zip-code-carrier-locality-file-updated-05-13-2026.zip",
+  "file": "cms_amb_zip.json",
+  "filters": {
+   "member": "ZIP5_JUL2026.txt",
+   "zip9_member": "skipped (89 MB)"
+  },
+  "note": "rural: ''=urban, 'R'=rural, 'B'=super rural (lowest-quartile rural); basis: 2010 RUCA + revised 2013 OMB delineations; same file is linked from the CMS Ambulance Fee Schedule page",
+  "retrieved_utc": "2026-07-11T20:51:34+00:00",
+  "rows": 42956,
+  "sha256": "14564aa69d37ef96fa6b1286065386149d74887e9183cbc3f651c41757951df1"
+ },
+ "dialysis_facilities": {
+  "dataset": "CMS Provider Data Catalog: Dialysis Facility - Listing by Facility",
+  "dkan_id": "23ew-n7w9",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/23ew-n7w9/0",
+  "fields_kept": {
+   "ccn": "cms_certification_number_ccn",
+   "chain": "chain_owned",
+   "city": "citytown",
+   "county": "countyparish",
+   "name": "facility_name",
+   "state": "state",
+   "stations": "of_dialysis_stations",
+   "zip": "zip_code"
+  },
+  "file": "dialysis_facilities.json",
+  "filters": {},
+  "note": "full Care Compare roster; PDC issued=2020-03-14 modified=2026-03-25",
+  "pages": 16,
+  "retrieved_utc": "2026-07-11T20:53:01+00:00",
+  "rows": 7557,
+  "sha256": "25467c5d40521df563f2ae65d1830535a4755745dfe69f568e4961aa8642096f"
+ },
+ "eia_diesel_padd": {
+  "dataset": "EIA Weekly Retail On-Highway Diesel Prices (psw18vw*, all areas)",
+  "endpoint": "https://www.eia.gov/petroleum/gasdiesel/xls/psw18vwall.xls",
+  "file": "eia_diesel_padd.json",
+  "filters": {
+   "client_side": "annual calendar-year means of weekly prices, 2013-2026 YTD, per sourcekey"
+  },
+  "n_series": 23,
+  "retrieved_utc": "2026-07-11T21:26:16+00:00",
+  "rows": 308,
+  "sha256": "783f310be040ef1f4e9817b1eeec75d588b98bf52fe118935c3dc5c70b2a7194",
+  "source_page": "https://www.eia.gov/petroleum/gasdiesel/"
+ },
  "enrollment_national_year": {
   "dataset": "Medicare Monthly Enrollment",
   "endpoint": "https://data.cms.gov/data-api/v1/dataset/d7fabe1e-d19b-4333-9eff-e80e0643f2fd/data",
@@ -941,6 +989,1866 @@
   "sha256": "3fb2ec8482cc7e4ee71e98cbe4d7f02989dda5156585bd811962bdd7c1d5bfb5",
   "uuid": "ad5e7548-98ab-4325-af4b-b2a7099b9351"
  },
+ "mup_provider_2014_A0425": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:29:51+00:00",
+  "rows": 9423,
+  "sha256": "c55b53b564c5dbd2c1541fa5c19acb54721d87defb53523c584c84e55d358ed3",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0426": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:30:07+00:00",
+  "rows": 1851,
+  "sha256": "23902b9f41f2169066bf8386942985c6c0f48334f411e9b6103f2ffbbc521ee1",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0427": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:30:54+00:00",
+  "rows": 7231,
+  "sha256": "f72b5e30d77db3ed4027bb6f47f335b7a7ec55d7c37eb04d4b9bf1e85a6df371",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0428": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:31:17+00:00",
+  "rows": 3329,
+  "sha256": "7d9706f053dc01fbae5226d5dec2ac15422b56aa3df5123637fbb316bc34a52e",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0429": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:31:55+00:00",
+  "rows": 8240,
+  "sha256": "5e89147783d7e6d15113be0549d622037ba8c99726bf736f73a87bba2c62d1c8",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0430": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:31:57+00:00",
+  "rows": 66,
+  "sha256": "746334941f0c5d4f048a4f6e1c39d02dc6a595598f0eff4c10eca838ff721909",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0431": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:31:59+00:00",
+  "rows": 275,
+  "sha256": "77d2964d248412659817838c87d17e3b1a6659d17bca7213e6e0091153443708",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0432": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:32:00+00:00",
+  "rows": 29,
+  "sha256": "08da23dd2c1a1462026b87e8cf14f565d5072d583e9bac5265430dc364d97d8f",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0433": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:32:13+00:00",
+  "rows": 1979,
+  "sha256": "2cdb8eb20b38f53bdfcb011e11bc988a985b3a3f860ad0b91750c983f8f41e9e",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0434": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:32:20+00:00",
+  "rows": 701,
+  "sha256": "5154f888c03693de044954b57c3087b3d107406edfaf4ac32c7e3981089c623f",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0435": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:32:21+00:00",
+  "rows": 66,
+  "sha256": "6c02bbd6585545228d115d8f7db57ec6835d16153d0ccc2e7c93a23693d72d29",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2014_A0436": {
+  "data_year": "2014",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f63b48ae-946e-48f7-9f56-327a68da4e0b/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2014_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:32:23+00:00",
+  "rows": 273,
+  "sha256": "e5b94b2e15a8d413c4ad2f693832561ae7fc744fb8c064acbf08ecb42c38200b",
+  "uuid": "f63b48ae-946e-48f7-9f56-327a68da4e0b"
+ },
+ "mup_provider_2015_A0425": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:33:16+00:00",
+  "rows": 9354,
+  "sha256": "a58bb35053fb2d60ddfffc3a84f96c8cb9043bad576ed021102f1f3d56cb881a",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0426": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:33:28+00:00",
+  "rows": 1849,
+  "sha256": "539d228ae17b3d51fc59d703a95ea27cd75bf2db9dc350f2a35a8d6e7f3076c3",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0427": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:33:50+00:00",
+  "rows": 7211,
+  "sha256": "31ed1af425b75ac8efbb94bea56e25e8a4676e6a125a36283da336ef93358050",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0428": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:34:11+00:00",
+  "rows": 3263,
+  "sha256": "2ae9e167f647d52f8d7cd714213234c8422e477af80b61e978b5bcbd36dea25b",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0429": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:34:46+00:00",
+  "rows": 8237,
+  "sha256": "0d452dea75ca8ea1c48edf1444473a38e34efc089f80bc3bc6f96a3a72e3a6e6",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0430": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:34:47+00:00",
+  "rows": 72,
+  "sha256": "011d46ad5defe24112e19d5ea6d9e8c0ce666add4249692bd44eac5cd7022e52",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0431": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:34:49+00:00",
+  "rows": 289,
+  "sha256": "a51a57676585742189d0982a0d3bd2fd678b6a49fceb3ac3b275d5677140c20b",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0432": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:34:50+00:00",
+  "rows": 25,
+  "sha256": "550d64c43c2b39e0508a4203c1457c0b1fd49d0cb454596a16c6334474ad5433",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0433": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:35:04+00:00",
+  "rows": 2000,
+  "sha256": "1e723423758d67440e228b0b2b35571d2f0fec8fc1214f43302f4eb6b6d65929",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0434": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:35:10+00:00",
+  "rows": 694,
+  "sha256": "88130f7d40d9860553f435b05e77932c4f9d405d2e471e67e947fe5006be5c3f",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0435": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:35:12+00:00",
+  "rows": 72,
+  "sha256": "8e9237c1183da785813657db43b27e6d5f22308fb0fa1be83b4a105f0928d8bc",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2015_A0436": {
+  "data_year": "2015",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2015_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:35:15+00:00",
+  "rows": 288,
+  "sha256": "c4e2e811fda7c2cf27faf9e1307ac39f2300dfffe602763332d75c736d5e4025",
+  "uuid": "f8cdb11a-d5f7-4fbe-aac4-05abc8ee2c83"
+ },
+ "mup_provider_2016_A0425": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:36:23+00:00",
+  "rows": 9281,
+  "sha256": "16ca84f1d9467fe825159a6d7436fd03008c9f9dad78e7e611404135013d033a",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0426": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:36:38+00:00",
+  "rows": 1854,
+  "sha256": "a44e71204799fb25f7fbcab200444a7f8a8e9e87203a4c9208619fd1cb762800",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0427": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:37:17+00:00",
+  "rows": 7190,
+  "sha256": "b674cb1d8130f047a387c4877e5868cc4c557a22e199256c39df4762c4dc7abf",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0428": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:37:32+00:00",
+  "rows": 3124,
+  "sha256": "00d44c9d887aed5253d1de788ae31be17c2d174108236e6bb04bed475fb9aeda",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0429": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:38:09+00:00",
+  "rows": 8206,
+  "sha256": "ba113d5fd9967c7856595d3476b4001e0c1bacb31480d7b83a5b120732cad6da",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0430": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:10+00:00",
+  "rows": 82,
+  "sha256": "948b1240628b94152b68a02e37a4f42659b8adb12e8a036bd68f1f00c33e4b28",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0431": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:13+00:00",
+  "rows": 294,
+  "sha256": "5353c2d17041c34d5d73e7699a9ab62dec46d97d2a7de38c65378613f97103d7",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0432": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:14+00:00",
+  "rows": 25,
+  "sha256": "26afe1fb8964f00cbce13e4ec55bf2336f0df584093070af7634458d9358c30d",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0433": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:27+00:00",
+  "rows": 2009,
+  "sha256": "3b7fecf1242cfc812fa4fc9707a4af624176960a4b2c29021a2bce3bbe2a85f9",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0434": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:30+00:00",
+  "rows": 670,
+  "sha256": "6e30730e2d50f894c64f76da47231b446cd47b9b979bcfaa1d89a5538e2345be",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0435": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:31+00:00",
+  "rows": 82,
+  "sha256": "c2799db2b1132ab2d9cf2dbd4ad9fad31eb70216879f7ec16779929c7ed68836",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2016_A0436": {
+  "data_year": "2016",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/7918e22a-fbfb-4a07-9f59-f8aab2b757d4/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2016_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:38:33+00:00",
+  "rows": 293,
+  "sha256": "e75c38c73df8bde4bdfd40b4f9ce48dfb55311ca4797c588c25c8f79c0dedd1c",
+  "uuid": "7918e22a-fbfb-4a07-9f59-f8aab2b757d4"
+ },
+ "mup_provider_2017_A0425": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:39:24+00:00",
+  "rows": 9266,
+  "sha256": "c86ea33b6bfa2092ccc93c73cf3a85aee221fbdc4dec0473e3eb7150e78cbe09",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0426": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:39:37+00:00",
+  "rows": 1892,
+  "sha256": "08184b47bb9e15c4fadec426cc88fad63c8a854216748a2269f302efbb94f5bb",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0427": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:39:52+00:00",
+  "rows": 7188,
+  "sha256": "1701f530f1075740cfdbb4b0bb28794224a34f2c5f8132959a8b18d5d35d838c",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0428": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:39:57+00:00",
+  "rows": 3108,
+  "sha256": "49d383ab1d986a103052bfe8e95d8087513282d02466bc2c8b1d8b05737546b1",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0429": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:40:25+00:00",
+  "rows": 8175,
+  "sha256": "33f0144f2d91c1d775b71515065a7eecf3f88bf4a49107d5201440244ff67904",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0430": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:27+00:00",
+  "rows": 90,
+  "sha256": "0707a0155245dfcb652eaad5656bac23715b00a0a5927b44c7ddc4165a73ccdf",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0431": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:30+00:00",
+  "rows": 303,
+  "sha256": "2da14835c11891e46c7a8cdd8d730f6fc34afda33051646c3161d2528add3af3",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0432": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:31+00:00",
+  "rows": 24,
+  "sha256": "6d06ce088dce4aa226adee2704b916dec42351abdaf5d0c6e5af1a05e56acfe1",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0433": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:44+00:00",
+  "rows": 2000,
+  "sha256": "92f303a0433c7ba9993101fd9cf59e9492d6cd2a1026c615fb6d83ddcfdd569e",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0434": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:47+00:00",
+  "rows": 653,
+  "sha256": "6e953f1182aa88e6997ea2a309bddcd92c742ec79fed95fcffe9d4e17d5d38aa",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0435": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:49+00:00",
+  "rows": 90,
+  "sha256": "9d82524ce9220037ca4b3370cd81925c36fd457f76de4c3f09c9092036a39dd6",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2017_A0436": {
+  "data_year": "2017",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/85bf3c9c-2244-490d-ad7d-c34e4c28f8ea/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2017_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:40:51+00:00",
+  "rows": 303,
+  "sha256": "3769fd833dd4dea96280ae73169c38cbbe06cccda6ce7b8182706a1c0e6e2869",
+  "uuid": "85bf3c9c-2244-490d-ad7d-c34e4c28f8ea"
+ },
+ "mup_provider_2018_A0425": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:41:40+00:00",
+  "rows": 9199,
+  "sha256": "e043cf4aa177b83d25c128b7fdd8d5be1df96efccd5439ac01851aba218f353d",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0426": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:41:51+00:00",
+  "rows": 1855,
+  "sha256": "14bc947df19cbb57408e8aafaebd4c9727d3c231b7a006b9c660671052a460af",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0427": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:42:16+00:00",
+  "rows": 7129,
+  "sha256": "4cc3a0ad4472f641130b2adc2bc7778951031e06c1c2b27d58c7bf505b8bfbe8",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0428": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:42:44+00:00",
+  "rows": 3117,
+  "sha256": "850f320e0f198738f3d0679aa4b71db4f3ff79c578e72a3e93759b94e1a3225f",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0429": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:43:03+00:00",
+  "rows": 8109,
+  "sha256": "8b8a67b841cf5efdfc8c0323d7132989478ef9171e17d50e95fb9a8d0ea23ec6",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0430": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:04+00:00",
+  "rows": 101,
+  "sha256": "26469556a5e571d7998c0332167c2606e6007aced5bbc97b8d6ab7353a02f027",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0431": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:07+00:00",
+  "rows": 312,
+  "sha256": "0e3b3299fce4cdc5783b0250a663533bc55c2654fe76fdc031d6c4f8a03e0ecd",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0432": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:07+00:00",
+  "rows": 20,
+  "sha256": "ff570c9af1db034ccee53b1a6dda5ea05487e649b42a877ccd379c035dd00cd9",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0433": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:24+00:00",
+  "rows": 2017,
+  "sha256": "6b6f730a6e7f9dc44bfef0d3505427ff2d98fc2c1e82bd12a31c00e73b7c7c15",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0434": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:31+00:00",
+  "rows": 677,
+  "sha256": "25b3868b9e7f0abd4bb63f3c585ad66e847f1ed0a863f7069633febc734bea5c",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0435": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:32+00:00",
+  "rows": 101,
+  "sha256": "662fe51b0f0f327508848415be4a01c743444def4774658158978bf6d35e08a5",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
+ "mup_provider_2018_A0436": {
+  "data_year": "2018",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/fb6d9fe8-38c1-4d24-83d4-0b7b291000b2/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2018_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:43:35+00:00",
+  "rows": 312,
+  "sha256": "88ccaa74dffb538b7b70b5d39b1c087ca58f0108818ec5297186eac82f4b9298",
+  "uuid": "fb6d9fe8-38c1-4d24-83d4-0b7b291000b2"
+ },
  "mup_provider_2019_A0425": {
   "data_year": "2019",
   "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
@@ -1312,6 +3220,1494 @@
   "rows": 319,
   "sha256": "c0db72922d060d4178ba70de385f1c00e79c0e01e4501c6c0f5fd46c98817a0d",
   "uuid": "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+ },
+ "mup_provider_2020_A0425": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:44:21+00:00",
+  "rows": 9105,
+  "sha256": "f1444050039c8c18b6d67bc1056dcdf9ea0d196ef6f54b3becb8300eccf7cf2d",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0426": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:44:25+00:00",
+  "rows": 1785,
+  "sha256": "0fef84bf48361ae2515d95442a89ac0a14adf7bfc94ccaaa79b1560e4a558495",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0427": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:44:44+00:00",
+  "rows": 6952,
+  "sha256": "75248064646e6053e0529a668eb4b4550919ca6fb7e36e79c80dee53192d1aee",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0428": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:45:11+00:00",
+  "rows": 3057,
+  "sha256": "3e12f8b3c6652a7ff249810fc7ae2ff243605efb953dfe743d813b5822b0d508",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0429": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:46:07+00:00",
+  "rows": 8010,
+  "sha256": "499600ce1ac29e9fff912ae3be54402810fc799dd2f1580609fe307a71681d7c",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0430": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:08+00:00",
+  "rows": 97,
+  "sha256": "f3e81b8ca3d38d4dc51e4001f236a7a97dbe2acc1bec0074ad5eb482baa10183",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0431": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:12+00:00",
+  "rows": 320,
+  "sha256": "c9b0ef56b81bec2bcf627197d38104053db803f5704debac7b8ada21e4827b2b",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0432": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:13+00:00",
+  "rows": 23,
+  "sha256": "87c1e268f7a1be3ffed5c6b54baaed37c63bc55de9dbacada5560f2f11e26298",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0433": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:23+00:00",
+  "rows": 1885,
+  "sha256": "8bf257ba64ff0636e2c4a9dba25f3ca3421d2df15d29db9861ffae80fe04765e",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0434": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:26+00:00",
+  "rows": 678,
+  "sha256": "7111371f039872bd99079ff8495609bdbc49ff4c1e12549af5de0d7601a84017",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0435": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:27+00:00",
+  "rows": 97,
+  "sha256": "a8f6bc6d72e959ff03defd0ed7ff46b2cd6dd12d1158a307764cba8febc32bf6",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2020_A0436": {
+  "data_year": "2020",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/c957b49e-1323-49e7-8678-c09da387551d/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2020_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:46:31+00:00",
+  "rows": 320,
+  "sha256": "80c5e49b110c67d8c2319f3027c95422782a141489069d5d1337fffd33917453",
+  "uuid": "c957b49e-1323-49e7-8678-c09da387551d"
+ },
+ "mup_provider_2021_A0425": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:47:25+00:00",
+  "rows": 9088,
+  "sha256": "2bc80d806ccf7641bf0309236af070ef15468d31de4d125b19f4df157cd94846",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0426": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:47:39+00:00",
+  "rows": 1666,
+  "sha256": "22e89e66291e4901c65914f201d0aa37dde4f987efc495bf5c1c96bd3ed76118",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0427": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:48:13+00:00",
+  "rows": 6963,
+  "sha256": "f369735a1a294c7e5ffff113efb44351a9daea6a906dfa57e3f47d7a25430054",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0428": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:48:27+00:00",
+  "rows": 3055,
+  "sha256": "3444d1112148f1669a24ac07907315b6248a4f1e5e5a7f498a8c052a998fd9a4",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0429": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:49:11+00:00",
+  "rows": 8016,
+  "sha256": "bb18481b91d9ba9a4ecf857714470c428026e233adc3642be5afb72672f4b9d3",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0430": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:12+00:00",
+  "rows": 95,
+  "sha256": "013c618701ad3a5846366a22fafd145a03c94e5ed7ad8319cae76365ce78733c",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0431": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:15+00:00",
+  "rows": 333,
+  "sha256": "741dbf95eec3d49fd55731cae0169d349a65cf28699f6e46dc08bef3c32e2e4d",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0432": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:16+00:00",
+  "rows": 20,
+  "sha256": "8a6794a7791b8dc7938d5ab277e04a59872f3ad6a5cb4629127702bc12b4d770",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0433": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:23+00:00",
+  "rows": 1835,
+  "sha256": "9703ac5b0b384bf8debf2e82258374fe5ce7507452b831c2662bf97229c5f218",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0434": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:26+00:00",
+  "rows": 633,
+  "sha256": "bfa29e89f99ca1dad9412e61f94e3927b65d0f3fce1dc4f72b2603a7876e455b",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0435": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:28+00:00",
+  "rows": 94,
+  "sha256": "299a4fe3dabb7bf90fb025fa5e11beaa79f7f02d1fcbd98105e3a817190aa131",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2021_A0436": {
+  "data_year": "2021",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/31dc2c47-f297-4948-bfb4-075e1bec3a02/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2021_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:49:31+00:00",
+  "rows": 332,
+  "sha256": "1e3f391b95cbef30af5f0c046c7ff8406110679115c5052599dc0622862df434",
+  "uuid": "31dc2c47-f297-4948-bfb4-075e1bec3a02"
+ },
+ "mup_provider_2022_A0425": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:50:16+00:00",
+  "rows": 8990,
+  "sha256": "ee24cd9f1a6319f2f15d6dd1d02b463488accae9a54fdb2aa82ff0397a9a7afe",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0426": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:50:21+00:00",
+  "rows": 1592,
+  "sha256": "ed90786586223a6e2eb3d3391c295f57990522af3a370c2bdbdbbb5eea67676b",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0427": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:50:53+00:00",
+  "rows": 6882,
+  "sha256": "b3e1e25b5e6c875dffe15da86ea38ccf03a5287f8c8b05d7b3b697267539509c",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0428": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:00+00:00",
+  "rows": 2897,
+  "sha256": "0413dfb1d4428f3ec1af652118493db5cbd929cf450b75fabec84a49a57535b9",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0429": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:51:36+00:00",
+  "rows": 7891,
+  "sha256": "8293fafbdb50cbf8838f78aaf5c53888ecc50679a917d9b0df1bd12121501993",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0430": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:38+00:00",
+  "rows": 95,
+  "sha256": "ca08ff32afd629a00991366e3b046a4d681c941ece1633a53b55d70f6ddbbafc",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0431": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:40+00:00",
+  "rows": 335,
+  "sha256": "6a30cfb129681e123eaea7b7b5fda27798da69864520f946eb7ccc8b9434d919",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0432": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:41+00:00",
+  "rows": 20,
+  "sha256": "cbf609dafdfe613e6894319cc33f88912474bcc6204672d8f488cd75fb35869d",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0433": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:44+00:00",
+  "rows": 1744,
+  "sha256": "5e376324a1c0b46248cc64e1aa7f7ea1df31c21e5237ac67cdf6a012370afdad",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0434": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:47+00:00",
+  "rows": 592,
+  "sha256": "1449ede5414f7cc67f803faadcb7552a761bdeeb8c1664345553bdb7286c5071",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0435": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:49+00:00",
+  "rows": 95,
+  "sha256": "76b9a1de583979637f3701983020613ed5aecfd9a78cc26848f9a397728b85c3",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2022_A0436": {
+  "data_year": "2022",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e650987d-01b7-4f09-b75e-b0b075afbf98/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2022_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:51:50+00:00",
+  "rows": 335,
+  "sha256": "2e34fd09aa30de4c9e8773a074cea39bdf97c5d6b5d30f436a821dbb92da39b9",
+  "uuid": "e650987d-01b7-4f09-b75e-b0b075afbf98"
+ },
+ "mup_provider_2023_A0425": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0425.json",
+  "filters": {
+   "HCPCS_Cd": "A0425"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:52:30+00:00",
+  "rows": 8934,
+  "sha256": "e91174a340cbaa3ad79902e2b7b978803bf713b95e43e5c9f3874c5d0262db21",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0426": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0426.json",
+  "filters": {
+   "HCPCS_Cd": "A0426"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:52:38+00:00",
+  "rows": 1568,
+  "sha256": "cea2aeb42c640470f92c3ff83eddf53bf3d1490932e456b8cac5baad19791ca4",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0427": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0427.json",
+  "filters": {
+   "HCPCS_Cd": "A0427"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:53:12+00:00",
+  "rows": 6841,
+  "sha256": "11f7784af5543679dd5dfda809e7f69b5606200bf97aa909e0a646465b5b6d17",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0428": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0428.json",
+  "filters": {
+   "HCPCS_Cd": "A0428"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:53:31+00:00",
+  "rows": 2772,
+  "sha256": "539a09f02e4164ef0b2f300307f1c2dd589af09b45572b983295b19f41678b4d",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0429": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0429.json",
+  "filters": {
+   "HCPCS_Cd": "A0429"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T20:54:04+00:00",
+  "rows": 7808,
+  "sha256": "327af8580992a08540aa01ecafeff1b60e64ac8fa89be19f87ed96ea4d9d4c11",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0430": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0430.json",
+  "filters": {
+   "HCPCS_Cd": "A0430"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:05+00:00",
+  "rows": 92,
+  "sha256": "828c80b63340558be3c2c2b65ad8a7c5bb9fc1df8058d525e8ea890c0055aa89",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0431": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0431.json",
+  "filters": {
+   "HCPCS_Cd": "A0431"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:08+00:00",
+  "rows": 348,
+  "sha256": "edaad96bb555482625c10f10c49d0e583b8e75064b743689ed4612233befdc67",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0432": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0432.json",
+  "filters": {
+   "HCPCS_Cd": "A0432"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:08+00:00",
+  "rows": 7,
+  "sha256": "bf26059cdf4e5eef608d6120f7404bede1b70c6f7090f46f8e63f625818db0a9",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0433": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0433.json",
+  "filters": {
+   "HCPCS_Cd": "A0433"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:13+00:00",
+  "rows": 1632,
+  "sha256": "21ef0790db18325cd010e93958ca572e8258275211ea08ed57a586a37addc318",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0434": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0434.json",
+  "filters": {
+   "HCPCS_Cd": "A0434"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:17+00:00",
+  "rows": 591,
+  "sha256": "82622b4ffb765f896a69b4de380cc32119a834e838a01777cf34746a244d84e3",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0435": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0435.json",
+  "filters": {
+   "HCPCS_Cd": "A0435"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:17+00:00",
+  "rows": 92,
+  "sha256": "3bca2dcee6f69d67168c4aea1086d1c01b9397d0ba01df9e9d2954c86025aad0",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
+ },
+ "mup_provider_2023_A0436": {
+  "data_year": "2023",
+  "dataset": "Medicare Physician & Other Practitioners - by Provider and Service",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0e9f2f2b-7bf9-451a-912c-e02e654dd725/data",
+  "fields_kept": [
+   "Rndrng_NPI",
+   "Rndrng_Prvdr_Last_Org_Name",
+   "Rndrng_Prvdr_First_Name",
+   "Rndrng_Prvdr_City",
+   "Rndrng_Prvdr_State_Abrvtn",
+   "Rndrng_Prvdr_Ent_Cd",
+   "HCPCS_Cd",
+   "Place_Of_Srvc",
+   "Tot_Benes",
+   "Tot_Srvcs",
+   "Tot_Bene_Day_Srvcs",
+   "Avg_Sbmtd_Chrg",
+   "Avg_Mdcr_Alowd_Amt",
+   "Avg_Mdcr_Pymt_Amt"
+  ],
+  "file": "mup_provider_2023_A0436.json",
+  "filters": {
+   "HCPCS_Cd": "A0436"
+  },
+  "note": "Provider grain (per NPI); rows with <=10 beneficiaries suppressed at source",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T20:54:20+00:00",
+  "rows": 348,
+  "sha256": "bcd8bd4d701c0532b96f5fbd0a226521dbd2ed173f767b98a892b20560c4247e",
+  "uuid": "0e9f2f2b-7bf9-451a-912c-e02e654dd725"
  },
  "mup_provider_2024_A0425": {
   "data_year": "2024",
@@ -4305,6 +7701,17 @@
   "rows": 7557,
   "sha256": "71444189d3d07f5ec4fa9e307377c487851722d5699af4a35be13a95fc3eb9d8"
  },
+ "pdc_dialysis_full": {
+  "dataset": "CMS Provider Data Catalog: Dialysis Facilities (full roster)",
+  "dkan_id": "23ew-n7w9",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/23ew-n7w9/0",
+  "file": "pdc_dialysis_full.json",
+  "note": "page size 500 (datastore cap); measure filter applied client-side where noted",
+  "pages": 16,
+  "retrieved_utc": "2026-07-11T20:54:38+00:00",
+  "rows": 7557,
+  "sha256": "d3e2b41b79379516d18d495c1bbb5794c6cc99217f05b19c7fdc6ca0811f5570"
+ },
  "pdc_home_health": {
   "all_columns_sample": [
    "address",
@@ -4561,6 +7968,17 @@
   "retrieved_utc": "2026-07-10T19:34:43+00:00",
   "rows": 14695,
   "sha256": "717ef3d89a97dbe7bb3e7d1e8d11de98f94e98c8b6890c24b26f1e08ccd485d3"
+ },
+ "pdc_timely_2026": {
+  "dataset": "CMS Provider Data Catalog: Timely and Effective Care - Hospital",
+  "dkan_id": "yv7e-xc69",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/yv7e-xc69/0",
+  "file": "pdc_timely_2026.json",
+  "note": "page size 500 (datastore cap); measure filter applied client-side where noted",
+  "pages": 277,
+  "retrieved_utc": "2026-07-11T21:22:40+00:00",
+  "rows": 32620,
+  "sha256": "246672f21bfec1c2736c3ccc9fd5b9bfbeac498c9bdb4b31fe0e0da0e0cf94ba"
  },
  "pdc_timely_ed_hospital": {
   "dataset": "CMS Provider Data Catalog: Timely and Effective Care - Hospital",
@@ -7147,5 +10565,329 @@
   "retrieved_utc": "2026-07-11T16:14:23+00:00",
   "rows": 102,
   "sha256": "5b4367defbb2f98b75f7c65528c1302f61650e9880753716b9202095a3400a7a"
+ },
+ "reh_list": {
+  "dataset": "CMS Hospital Enrollments (PECOS public enrollment file), Rural Emergency Hospital conversions",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f6f6505c-e8b0-4d57-b258-e2b94133aaf2/data",
+  "file": "reh_list.json",
+  "filters": {
+   "client_side": "REH CONVERSION FLAG == 'Y'"
+  },
+  "note": "REH CONVERSION DATE = effective date of REH status; CAH OR HOSPITAL CCN = pre-conversion CCN; includes main and practice-location rows per enrollment",
+  "pages": 2,
+  "retrieved_utc": "2026-07-11T21:22:42+00:00",
+  "rows": 48,
+  "rows_scanned": 9175,
+  "sha256": "84945a4c9eefebacf1c06a923069114c97af69312e49b5120de7f1135d08b8b6",
+  "uuid": "f6f6505c-e8b0-4d57-b258-e2b94133aaf2"
+ },
+ "reh_pdc_roster": {
+  "dataset": "CMS Provider Data Catalog: Rural Emergency Hospital Timely and Effective Care - Hospital (deduped roster)",
+  "dkan_id": "97xg-v3wv",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/97xg-v3wv/0",
+  "file": "reh_pdc_roster.json",
+  "filters": {
+   "client_side": "dedup by facility_id"
+  },
+  "note": "independent Care Compare REH roster used to cross-check the enrollment-file REH list",
+  "pages": 1,
+  "retrieved_utc": "2026-07-11T21:22:44+00:00",
+  "rows": 41,
+  "sha256": "dafea2df6d89b9451dedd35b0343da8bc710a8bd9d431ae865047b7138739516"
+ },
+ "ruca_tract": {
+  "dataset": "USDA ERS 2010 Rural-Urban Commuting Area Codes - census tract file (revised 7/3/2019)",
+  "endpoint": "https://www.ers.usda.gov/sites/default/files/_laserfiche/DataFiles/53241/ruca2010revised.xlsx?v=34773",
+  "file": "ruca_tract.json",
+  "filters": {
+   "fields": "State-County-Tract FIPS, primary RUCA, secondary RUCA"
+  },
+  "note": "tract grain; 2010 tract geography",
+  "retrieved_utc": "2026-07-11T20:51:33+00:00",
+  "rows": 74002,
+  "sha256": "b22ec47ba394788c30b4cb4860db22dd1f92eae1656ac9807aa9eca4f2c277bc"
+ },
+ "ruca_zip": {
+  "dataset": "USDA ERS 2010 Rural-Urban Commuting Area Codes - ZIP code file (approximation)",
+  "endpoint": "https://www.ers.usda.gov/sites/default/files/_laserfiche/DataFiles/53241/RUCA2010zipcode.xlsx?v=34773",
+  "file": "ruca_zip.json",
+  "filters": {
+   "fields": "ZIP_CODE, RUCA1, RUCA2"
+  },
+  "note": "ERS crosswalk approximating tract-level RUCA to USPS ZIPs; RUCA1=primary, RUCA2=secondary code",
+  "retrieved_utc": "2026-07-11T20:51:27+00:00",
+  "rows": 41164,
+  "sha256": "e7f502ea5a79630c0509752108232267226837f62166481e81bd9a3ad9c0d5a0"
+ },
+ "sheps_closures": {
+  "dataset": "UNC Sheps Center rural hospital closures list (2005-present, complete + converted closures)",
+  "endpoint": "https://www.shepscenter.unc.edu/programs-projects/rural-health/rural-hospital-closures/",
+  "file": "sheps_closures.json",
+  "filters": {
+   "headers": [
+    [
+     "Hospital",
+     "State",
+     "RUCA",
+     "CBSA",
+     "Medicare Payment",
+     "Closure Year",
+     "Number of Beds",
+     "Services Remaining"
+    ]
+   ],
+   "tables_found": 1
+  },
+  "note": "server-rendered TablePress tables parsed from HTML; _table index distinguishes the tables as published (closure vs conversion status is carried in the table columns/headers)",
+  "retrieved_utc": "2026-07-11T21:22:46+00:00",
+  "rows": 197,
+  "sha256": "93546c1680cead89d46066c78ee2dd9bb49cc14f669d3c0dc0f1a85e5b017f3a"
+ },
+ "snf_qrp": {
+  "dataset": "CMS Provider Data Catalog: Skilled Nursing Facility Quality Reporting Program - Provider Data",
+  "dkan_id": "fykj-qjee",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/fykj-qjee/0",
+  "fields_kept": {
+   "ccn": "cms_certification_number_ccn",
+   "measure_code": "measure_code",
+   "score": "score",
+   "state": "state"
+  },
+  "file": "snf_qrp.json",
+  "filters": {
+   "measure_code": "contains 'DTC' or 'PPR'",
+   "mode": "server-side contains"
+  },
+  "note": "slimmed to discharge-to-community (DTC) and potentially preventable readmission/rehospitalization (PPR) measures; PDC issued=2025-10-01 modified=2026-06-01",
+  "pages": 412,
+  "retrieved_utc": "2026-07-11T21:17:10+00:00",
+  "rows": 205730,
+  "sha256": "73f763dba62d2e58f53ff6e77abac22fec2f5b572969d42240ad93e4cb6ce709"
+ },
+ "timely_care_2026": {
+  "dataset": "CMS Provider Data Catalog: Timely and Effective Care - Hospital",
+  "dkan_id": "yv7e-xc69",
+  "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/yv7e-xc69/0",
+  "fields_kept": {
+   "ccn": "facility_id",
+   "end_date": "end_date",
+   "measure_id": "measure_id",
+   "score": "score",
+   "start_date": "start_date",
+   "state": "state"
+  },
+  "file": "timely_care_2026.json",
+  "filters": {
+   "client_side": "measure_id startswith ED/EDV/OP_18/OP_22/OP_23 or in OP_1/OP_2/OP_3/OP_3b/OP_5"
+  },
+  "measure_ids_kept": [
+   "EDV",
+   "OP_18a",
+   "OP_18b",
+   "OP_18c",
+   "OP_18d",
+   "OP_22",
+   "OP_23"
+  ],
+  "note": "latest PDC vintage; issued=2023-07-05 modified=2026-04-28",
+  "pages": 277,
+  "retrieved_utc": "2026-07-11T21:22:40+00:00",
+  "rows": 32620,
+  "rows_unfiltered": 138173,
+  "sha256": "472f86f845f0707d184235195637ed6ad22bb66b448c229ddc6ed81cb3a7f920"
+ },
+ "zcta_gazetteer": {
+  "dataset": "Census Bureau 2024 Gazetteer Files - ZIP Code Tabulation Areas (national)",
+  "endpoint": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip",
+  "file": "zcta_gazetteer.json",
+  "filters": {
+   "fields": "GEOID, INTPTLAT, INTPTLONG"
+  },
+  "note": "internal-point (centroid) coordinates per ZCTA; member 2024_Gaz_zcta_national.txt tab-delimited inside zip",
+  "retrieved_utc": "2026-07-11T20:51:25+00:00",
+  "rows": 33791,
+  "sha256": "9119507e9422316ed4ebf241fecd3c68c1783d461a797da713dfbe06fca76393"
+ },
+ "bls_input_series": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "cc66a12c76c97865",
+  "reconciled": true
+ },
+ "cms_aif_history": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "f452350feb9c5645",
+  "reconciled": true
+ },
+ "docgo_10k_fy2025.htm": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "a1c32b995aa52dc7",
+  "reconciled": true
+ },
+ "edgar_operator_facts": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "b716b7df1be80647",
+  "reconciled": true
+ },
+ "falck_annual_report": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "7cb85e86ed76cd5f",
+  "reconciled": true
+ },
+ "gadcs_appendix_y1y4.pdf": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "269ee49740df35a3",
+  "reconciled": true
+ },
+ "hcris_amb_cost_center": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 4346,
+  "sha256_16": "0bf9991b85bdfa08",
+  "reconciled": true
+ },
+ "hcris_amb_filer_counts": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "274588101d02ea07",
+  "reconciled": true
+ },
+ "hcris_amb_fy2019": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "d25b964dd6c7eac2",
+  "reconciled": true
+ },
+ "hcris_amb_fy2020": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "3d37260a7f8c1310",
+  "reconciled": true
+ },
+ "hcris_amb_fy2021": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "a93732392bc86a98",
+  "reconciled": true
+ },
+ "hcris_amb_fy2022": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "0e4370bbe7181360",
+  "reconciled": true
+ },
+ "hcris_amb_fy2023": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "9007c3395665cb08",
+  "reconciled": true
+ },
+ "manifest10": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "392ec2823900d4da",
+  "reconciled": true
+ },
+ "nppes_ambulance_roster": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 20401,
+  "sha256_16": "88b49151099889bd",
+  "reconciled": true
+ },
+ "nppes_participant_resolution": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 43,
+  "sha256_16": "09ed50d8539db428",
+  "reconciled": true
+ },
+ "nppes_roster_by_state": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "f0ee3ab86fa54406",
+  "reconciled": true
+ },
+ "press_registry": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "80ba6e4cc7c70dca",
+  "reconciled": true
+ },
+ "state_ems_rosters": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "37d1b479996831a0",
+  "reconciled": true
+ },
+ "usasp_v225_recipients_fy23": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "3295fae68062f12b",
+  "reconciled": true
+ },
+ "usasp_v225_recipients_fy24": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "ed3484a84ee3f07d",
+  "reconciled": true
+ },
+ "usasp_v225_recipients_fy25": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "241be38aa3d0b8ee",
+  "reconciled": true
+ },
+ "usasp_v225_states_fy25": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "f6c7776b642c7b85",
+  "reconciled": true
+ },
+ "usasp_v225_time_all": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "49ecced3cdb7ae2d",
+  "reconciled": true
+ },
+ "usasp_v225_time_va": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "aa5631da5624401e",
+  "reconciled": true
+ },
+ "wayback_footprint": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "rows": 1,
+  "sha256_16": "fa449978d0b3002d",
+  "reconciled": true
  }
 }

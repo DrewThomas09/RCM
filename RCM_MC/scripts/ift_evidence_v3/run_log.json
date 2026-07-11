@@ -230,5 +230,21 @@
   "status": "PENDING-blocked",
   "produced": "not written; agent process lost to the usage limit",
   "notes": "the 9-system cohort 990 sweep (E.3) is complete and shipped; the 40-system extension is deferred, dataset named (ProPublica + IRS e-file XML mirror)"
+ },
+ {
+  "start": "22:30",
+  "end": "22:55",
+  "task": "two-pass verify + SUMPRODUCT header-trap fixes",
+  "status": "DONE",
+  "produced": "Workforce_Depth: fixed 2 SUMPRODUCT ranges that started on text header rows (51 then 2 #VALUE! cells); ALL GATES PASS, 55,236 formulas 0 errors",
+  "notes": "agent smoke tests were build-only, not recalc; caught by the LibreOffice V2 gate"
+ },
+ {
+  "start": "22:55",
+  "end": "23:20",
+  "task": "adversarial agent-work audit + link-defect fixes",
+  "status": "DONE",
+  "produced": "Found+fixed: Denial RSNAT links -> blank definition rows (repointed to measured effect cells); Scenario hardest-floor left PENDING (finder matched int years, tab stores text -> now live ~$577M); Investor_QA 7 title-pull pointers -> headline data cells",
+  "notes": "these resolve to blank/0 not #VALUE!, so a recalc gate cannot see them - caught by static live-reference audit"
  }
 ]

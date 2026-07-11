@@ -78,10 +78,16 @@ def _find_row(ws, needle, col=1, exact=False):
 
 
 def _find_int_row(ws, target, col=1, after=0):
+    # Match a year whether it is stored as an int (2024) or as text ('2024').
+    # Medicare_IFT_Series carries its Year column as text, which silently
+    # defeated an int-only match and dropped the Scenario_Matrix hard floor
+    # to PENDING.
     for row in ws.iter_rows(min_row=after + 1, min_col=col, max_col=col):
-        c = row[0]
-        if isinstance(c.value, int) and c.value == target:
-            return c.row
+        v = row[0].value
+        if isinstance(v, int) and v == target:
+            return row[0].row
+        if isinstance(v, str) and v.strip() == str(target):
+            return row[0].row
     return None
 
 
