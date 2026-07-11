@@ -1,0 +1,298 @@
+{
+  "meta": {
+    "title": "Public evidence shelf: US interfacility medical transport workbook",
+    "compiled": "2026-07-11",
+    "verification": "All PMIDs verified via NCBI eutils esummary/efetch on 2026-07-11. All URLs fetched and confirmed live on 2026-07-11 (GAO product pages return 403 to plain curl but were fetched successfully via browser-agent fetch; OIG PDFs and PubMed pages return HTTP 200). Figures are taken only from abstracts, report highlights, or report body text that was directly read.",
+    "style_note": "No em dashes. Neutral wording. No non-public performance claims."
+  },
+  "boarding_cost": [
+    {
+      "citation": "Falvo T, Grove L, Stachura R, Vega D, Stike R, Schlenker M, Zirkin W. The opportunity loss of boarding admitted patients in the emergency department. Acad Emerg Med. 2007;14(4):332-337.",
+      "year": 2007,
+      "pmid_or_doi": "PMID 17331916; DOI 10.1197/j.aem.2006.11.011",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17331916/",
+      "figure": "Boarding consumed 10,397 hours of functional ED treatment capacity in 12 months at one 450-bed community hospital; recovering that capacity could have accommodated 3,175 additional patient encounters and generated $3,960,264 in additional net revenue.",
+      "unit": "ED bed-hours per year; USD net revenue per year",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Canonical bed-hour opportunity-cost study. Implies roughly $381 of net revenue per boarding bed-hour at this site (derived; the paper reports the aggregate figures)."
+    },
+    {
+      "citation": "Bayley MD, Schwartz JS, Shofer FS, Weiner M, Sites FD, Traber KB, Hollander JE. The financial burden of emergency department congestion and hospital crowding for chest pain patients awaiting admission. Ann Emerg Med. 2005;45(2):110-117.",
+      "year": 2005,
+      "pmid_or_doi": "PMID 15671965; DOI 10.1016/j.annemergmed.2004.09.010",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/15671965/",
+      "figure": "Annual opportunity cost in lost hospital revenue of $168,300 for boarded chest pain patients at one urban university hospital; $204 per patient waiting more than 3 hours for an inpatient bed.",
+      "unit": "USD per year; USD per boarded patient",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Extended ED stay showed no association with total hospital costs or LOS; the loss is ED throughput opportunity cost."
+    },
+    {
+      "citation": "Pines JM, Batt RJ, Hilton JA, Terwiesch C. The financial consequences of lost demand and reducing boarding in hospital emergency departments. Ann Emerg Med. 2011;58(4):331-340.",
+      "year": 2011,
+      "pmid_or_doi": "PMID 21514004; DOI 10.1016/j.annemergmed.2011.03.004",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/21514004/",
+      "figure": "A 1-hour reduction in ED boarding time would yield $9,693 to $13,298 of additional daily revenue by capturing left-without-being-seen and diverted-ambulance demand; non-ED admissions generated $4,118 versus $2,268 per inpatient day for ED admissions; optimal bed-management policies gained an estimated $2.7 million to $3.6 million net revenue per year.",
+      "unit": "USD per day per boarding-hour reduced; USD per inpatient day; USD per year",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Simulation plus regression at one inner-city teaching hospital (118,000 ED visits over 2 years). Widely cited hospital-level revenue value of a boarding hour."
+    },
+    {
+      "citation": "Foley M, Kifaieh N, Mallon WK. Financial impact of emergency department crowding. West J Emerg Med. 2011;12(2):192-197.",
+      "year": 2011,
+      "pmid_or_doi": "PMID 21691525; PMCID PMC3099606",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3099606/",
+      "figure": "Eliminating ED boarding of adult admitted patients could save approximately $9.8 million per year in charges at a county hospital and $3.9 million per year in costs at a university hospital (Brooklyn, NY, 2006-2007 data); 6,205 (5.0 percent) and 3,017 (3.4 percent) of admitted adults were held in the ED more than one day.",
+      "unit": "USD per hospital per year; patients boarded more than 24 hours per year",
+      "exact_locator": "Abstract, Results and Conclusion",
+      "notes": "Extrapolates the Krochmal and Riley finding that extended ED stays add about 11.7 percent to total hospital LOS. Open access full text."
+    },
+    {
+      "citation": "Canellas MM, Jewell M, Edwards JL, Olivier D, Jun-O'Connell AH, Reznek MA. Measurement of Cost of Boarding in the Emergency Department Using Time-Driven Activity-Based Costing. Ann Emerg Med. 2024;84(4):376-385.",
+      "year": 2024,
+      "pmid_or_doi": "PMID 38795079; DOI 10.1016/j.annemergmed.2024.04.012",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38795079/",
+      "figure": "Total daily cost per boarded acute stroke patient was $1,856 for med/surg boarding versus $993 for med/surg inpatient care, and $2,267 for ICU boarding versus $2,165 for ICU inpatient care; differences were larger when traveler-nurse costs were included.",
+      "unit": "USD per patient per day",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Most rigorous per-day boarding cost measurement to date (time-driven activity-based costing at a comprehensive stroke center). Implies med/surg boarding costs about $77 per bed-hour versus $41 inpatient (derived from the daily figures)."
+    },
+    {
+      "citation": "Chalfin DB, Trzeciak S, Likourezos A, Baumann BM, Dellinger RP; DELAY-ED study group. Impact of delayed transfer of critically ill patients from the emergency department to the intensive care unit. Crit Care Med. 2007;35(6):1477-1483.",
+      "year": 2007,
+      "pmid_or_doi": "PMID 17440421; DOI 10.1097/01.CCM.0000266585.74905.5A",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/17440421/",
+      "figure": "ED boarding of 6 hours or more before ICU transfer: ICU mortality 10.7 percent versus 8.4 percent, in-hospital mortality 17.4 percent versus 12.9 percent, median hospital LOS 7.0 versus 6.0 days (n = 50,322; multicenter Project IMPACT database, 2000-2003).",
+      "unit": "percent mortality; days LOS",
+      "exact_locator": "Abstract, Measurements and Main Results",
+      "notes": "Canonical transfer-delay outcome study for critically ill ED patients."
+    },
+    {
+      "citation": "Singer AJ, Thode HC Jr, Viccellio P, Pines JM. The association between length of emergency department boarding and mortality. Acad Emerg Med. 2011;18(12):1324-1329.",
+      "year": 2011,
+      "pmid_or_doi": "PMID 22168198; DOI 10.1111/j.1553-2712.2011.01236.x",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/22168198/",
+      "figure": "In-hospital mortality rose from 2.5 percent with boarding under 2 hours to 4.5 percent with boarding 12 hours or more; mean hospital LOS rose from 5.6 days (under 2 hours) to 8.7 days (over 24 hours); 41,256 admissions.",
+      "unit": "percent mortality; days LOS by boarding duration band",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Single suburban academic ED, Oct 2005 to Sep 2008; associations persisted after comorbidity adjustment."
+    },
+    {
+      "citation": "Cardoso LT, Grion CM, Matsuo T, Anami EH, Kauss IA, Seko L, Bonametti AM. Impact of delayed admission to intensive care units on mortality of critically ill patients: a cohort study. Crit Care. 2011;15(1):R28.",
+      "year": 2011,
+      "pmid_or_doi": "PMID 21244671; DOI 10.1186/cc9975",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/21244671/",
+      "figure": "Each hour of waiting for ICU admission was independently associated with a 1.5 percent increased risk of ICU death (HR 1.015; 95 percent CI 1.006 to 1.023); fraction of mortality risk attributable to ICU delay was 30 percent (95 percent CI 11.2 to 44.8 percent).",
+      "unit": "percent increased ICU death risk per hour of delay",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Prospective cohort, 401 patients. The per-hour hazard figure is the most quoted dose-response number in the ICU-delay literature. Open access (PMC3222064)."
+    },
+    {
+      "citation": "Churpek MM, Wendlandt B, Zadravecz FJ, Adhikari R, Winslow C, Edelson DP. Association between intensive care unit transfer delay and hospital mortality: A multicenter investigation. J Hosp Med. 2016;11(11):757-762.",
+      "year": 2016,
+      "pmid_or_doi": "PMID 27352032; DOI 10.1002/jhm.2630",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/27352032/",
+      "figure": "Ward-to-ICU transfer delay over 6 hours occurred in 46 percent of critically ill ward patients and was associated with higher mortality (33.2 percent versus 24.5 percent); each 1-hour increase in delay was associated with an adjusted 3 percent increase in odds of in-hospital death; median LOS 13 versus 11 days among survivors.",
+      "unit": "percent mortality; percent odds increase per hour; days LOS",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Five hospitals, objective eCART criterion for critical illness. Open access (PMC5119525)."
+    },
+    {
+      "citation": "Stamm B, Royan R, Giurcanu M, Messe SR, Jauch EC, et al. Door-in-Door-out Times for Interhospital Transfer of Patients With Stroke. JAMA. 2023;330(7):636-649.",
+      "year": 2023,
+      "pmid_or_doi": "PMID 37581671; DOI 10.1001/jama.2023.12739",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/37581671/",
+      "figure": "Among 108,913 stroke patients transferred from 1,925 US hospitals, median door-in-door-out time at the referring hospital was 174 minutes (IQR 116 to 276); only 27.3 percent achieved the recommended 120 minutes or less.",
+      "unit": "minutes of referring-hospital dwell time per interfacility transfer",
+      "exact_locator": "Abstract, Results section",
+      "notes": "Largest published measurement of interfacility transfer delay at sending hospitals; directly relevant to transport dispatch and ordering friction. Open access (PMC10427946)."
+    },
+    {
+      "citation": "US Government Accountability Office. Hospital Emergency Departments: Crowding Continues to Occur, and Some Patients Wait Longer than Recommended Time Frames. GAO-09-347. April 2009.",
+      "year": 2009,
+      "pmid_or_doi": "GAO-09-347",
+      "url": "https://www.gao.gov/products/gao-09-347",
+      "figure": "In 2006, ED patients triaged as needing to be seen immediately waited an average of 28 minutes, and waits exceeded the recommended time frame in 73.9 percent of such visits; average metropolitan ED wait to see a physician rose from 51 minutes in 2003 to 60 minutes in 2006.",
+      "unit": "minutes; percent of visits exceeding recommended time frame",
+      "exact_locator": "Highlights page figure (Average Wait Time to See a Physician by Acuity Level, 2006) and Appendix IV wait-time tables of the full PDF",
+      "notes": "Government framing document; identifies boarding of admitted patients as a core crowding indicator alongside diversion and wait times."
+    }
+  ],
+  "ehr_transport_ordering": [
+    {
+      "label": "PUBLIC-WEB",
+      "source": "Epic (EHR vendor newsroom). Lyft to Integrate with Epic, Enabling Ride Scheduling within EHR Workflow.",
+      "date_published": "2020-10-13",
+      "url": "https://www.epic.com/epic/post/lyft-integrate-epic-enabling-ride-scheduling-within-ehr-workflow/",
+      "access_date": "2026-07-11",
+      "establishes": "The EHR vendor itself published that health system staff can schedule Lyft rides for patients directly from the patient profile in Epic; patients do not need the Lyft app. Establishes that native EHR-integrated transport ordering exists in the largest US EHR."
+    },
+    {
+      "label": "PUBLIC-WEB",
+      "source": "Healthcare Dive. Lyft integrates with Epic, exponentially growing NEMT reach.",
+      "date_published": "2020-10-08",
+      "url": "https://www.healthcaredive.com/news/lyft-integrates-with-epic-exponentially-growing-nemt-reach/586420/",
+      "access_date": "2026-07-11",
+      "establishes": "Independent trade-press confirmation of the Lyft-Epic integration and named early adopters: Tampa General Hospital and Ochsner Health committed before the November 2020 launch. Establishes named health system adoption, not performance."
+    },
+    {
+      "label": "PUBLIC-WEB",
+      "source": "GlobeNewswire (joint press release). Uber Health and Cerner Announce Plan to Help Consumers Gain Easier Access to Medical Appointments.",
+      "date_published": "2019-10-28",
+      "url": "https://www.globenewswire.com/news-release/2019/10/28/1936452/0/en/Uber-Health-and-Cerner-Announce-Plan-to-Help-Consumers-Gain-Easier-Access-to-Medical-Appointments.html",
+      "access_date": "2026-07-11",
+      "establishes": "Primary press release: clinicians can arrange non-emergency medical transportation from within the Cerner EHR, with patient name, phone, and pickup address auto-populated from the record; BayCare Health System named as a client. Establishes EHR-integrated ordering in the second major US EHR."
+    },
+    {
+      "label": "PUBLIC-WEB",
+      "source": "Uber Health vendor page. Cerner EHR integration.",
+      "date_published": "undated vendor page (integration announced 2019)",
+      "url": "https://www.uberhealth.com/us/en/api-integration/cerner/",
+      "access_date": "2026-07-11",
+      "establishes": "Vendor listing confirming the capability to arrange medical transportation using Uber Health directly from Cerner's EHR. Recorded as evidence that the named integration exists; the page's pickup-time marketing claims are excluded per shelf rules."
+    },
+    {
+      "label": "PUBLIC-WEB",
+      "source": "PR Newswire (Roundtrip press release). Roundtrip Launches Industry-Leading FHIR-Powered EHR Integration to Transform Transportation Workflows.",
+      "date_published": "2025-08-18",
+      "url": "https://www.prnewswire.com/news-releases/roundtrip-launches-industry-leading-fhir-powered-ehr-integration-to-transform-transportation-workflows-302531326.html",
+      "access_date": "2026-07-11",
+      "establishes": "A multi-modal medical transportation marketplace (rideshare through wheelchair van, stretcher, and ALS/BLS ambulance) announced a FHIR-based Epic integration connecting EHR data to transport booking, developed with an integrated health system in Northern California. Establishes that EHR-integrated ordering now extends to ambulance-level interfacility modes."
+    },
+    {
+      "label": "PUBLIC-WEB",
+      "source": "VectorCare vendor page. FHIR Integration: Patient Logistics Inside Your EHR.",
+      "date_published": "undated vendor page",
+      "url": "https://www.vectorcare.com/fhir",
+      "access_date": "2026-07-11",
+      "establishes": "Vendor listing stating that clinical staff can initiate patient transport requests (including ambulance and interfacility patient logistics) without leaving Epic via a SMART on FHIR app, with real-time vehicle status inside the EHR. Recorded as evidence the named integration category exists; the site's time-savings and customer-count claims are excluded per shelf rules."
+    }
+  ],
+  "gao_oig_shelf": [
+    {
+      "report_no": "GAO-07-383",
+      "title": "Ambulance Providers: Costs and Expected Medicare Margins Vary Greatly",
+      "date": "2007-05-23",
+      "url": "https://www.gao.gov/products/gao-07-383",
+      "headline_stats": [
+        {"stat": "Average cost per ground ambulance transport, 2004", "value": "$415 (95 percent CI $381 to $450); provider range $99 to $1,218", "locator": "Results in Brief and Highlights; full text at https://www.gao.gov/assets/a261088.html"},
+        {"stat": "Expected 2010 Medicare margins by service area", "value": "urban -6 percent (range -18 to +6); rural -1 percent (-13 to +12); super-rural -17 percent (-35 to +2)", "locator": "Table 4"},
+        {"stat": "Survey base", "value": "215 providers without shared costs, representing about 5,200 providers nationally", "locator": "Highlights and Methodology"}
+      ]
+    },
+    {
+      "report_no": "GAO-13-6",
+      "title": "Ambulance Providers: Costs and Medicare Margins Varied Widely; Transports of Beneficiaries Have Increased",
+      "date": "2012-10-01",
+      "url": "https://www.gao.gov/products/gao-13-6",
+      "headline_stats": [
+        {"stat": "Median cost per ground ambulance transport, 2010", "value": "$429 (range $224 to $2,204)", "locator": "Highlights, What GAO Found"},
+        {"stat": "Median Medicare margin, 2010", "value": "+2 percent with temporary add-on payments; -1 percent without add-ons", "locator": "Highlights, What GAO Found"},
+        {"stat": "Growth in Medicare FFS ground transports, 2004-2010", "value": "+33 percent overall; BLS nonemergency transports +59 percent; super-rural BLS nonemergency +82 percent", "locator": "Highlights, What GAO Found"}
+      ]
+    },
+    {
+      "report_no": "OEI-09-12-00350",
+      "title": "Memorandum Report: Utilization of Medicare Ambulance Transports, 2002-2011",
+      "date": "2013-09-24",
+      "url": "https://oig.hhs.gov/oei/reports/oei-09-12-00350.pdf",
+      "headline_stats": [
+        {"stat": "Growth in Part B ambulance transports, 2002-2011", "value": "+69 percent, while total Medicare FFS beneficiaries grew just 7 percent (beneficiaries receiving transports +34 percent)", "locator": "Summary, page 1"},
+        {"stat": "Dialysis-related transport growth, 2002-2011", "value": "+269 percent (from 753,741 transports in 2002), the fastest of any origin-destination category", "locator": "Summary page 1 and finding section 'The Number of Dialysis-Related Transports Increased 269 Percent'"},
+        {"stat": "Supplier mix shift", "value": "Suppliers primarily providing BLS nonemergency transports nearly doubled, 2002-2011", "locator": "Summary, page 1"}
+      ]
+    },
+    {
+      "report_no": "OEI-09-12-00351",
+      "title": "Inappropriate Payments and Questionable Billing for Medicare Part B Ambulance Transports",
+      "date": "2015-09",
+      "url": "https://oig.hhs.gov/oei/reports/oei-09-12-00351.pdf",
+      "headline_stats": [
+        {"stat": "Program size", "value": "Medicare Part B paid $5.8 billion for ambulance transports in 2012, almost double 2003", "locator": "Executive Summary, Why We Did This Study"},
+        {"stat": "Improper and potentially inappropriate payments, first half of 2012", "value": "$24 million for transports not meeting program requirements (including $17 million to or from noncovered destinations) plus $30 million where the beneficiary received no Medicare services at pickup, drop-off, or anywhere else", "locator": "Executive Summary and Findings, pages 12-14"},
+        {"stat": "Questionable billing prevalence", "value": "About 1 in 5 ambulance suppliers had questionable billing; more than half of questionable transports were for beneficiaries in four metropolitan areas", "locator": "Findings, pages 15-20"}
+      ]
+    },
+    {
+      "report_no": "GAO-17-637",
+      "title": "Air Ambulance: Data Collection and Transparency Needed to Enhance DOT Oversight",
+      "date": "2017-07-27",
+      "url": "https://www.gao.gov/products/gao-17-637",
+      "headline_stats": [
+        {"stat": "Median helicopter air ambulance charge", "value": "approximately doubled from about $15,000 (2010) to about $30,000 (2014) per transport", "locator": "Highlights, What GAO Found"},
+        {"stat": "Median Medicare payment per helicopter transport, 2014", "value": "$6,502", "locator": "Highlights, What GAO Found"},
+        {"stat": "Market concentration", "value": "Three large independent providers operated 73 percent of the industry's helicopters in 2016", "locator": "Highlights, What GAO Found"}
+      ],
+      "notes": "Air ambulance rather than ground; included because air is a material interfacility transport mode and the block otherwise runs ground-only."
+    },
+    {
+      "report_no": "GAO-18-341",
+      "title": "Medicare: CMS Should Take Actions to Continue Prior Authorization Efforts to Reduce Spending",
+      "date": "2018-04-20",
+      "url": "https://www.gao.gov/products/gao-18-341",
+      "headline_stats": [
+        {"stat": "Estimated savings from all prior authorization demonstrations through March 2017", "value": "as high as about $1.1 to $1.9 billion", "locator": "Highlights, What GAO Found"},
+        {"stat": "RSNAT (repetitive scheduled non-emergent ambulance transport) estimated potential savings", "value": "$349.5 million in the 3 initial demonstration states (NJ, PA, SC) plus $38.0 million in 6 expansion states, implementation through March 2017", "locator": "Table 2, page 16"},
+        {"stat": "RSNAT provisional affirmation rate", "value": "rose from 28 percent (Dec 2014 to May 2015) to 66 percent (Oct 2016 to Mar 2017)", "locator": "page 12"}
+      ],
+      "notes": "RSNAT prior authorization targets repetitive nonemergency transports, dominated by dialysis runs; the model was later made national by statute."
+    },
+    {
+      "report_no": "A-09-17-03018",
+      "title": "Medicare Improperly Paid Providers for Nonemergency Ambulance Transports to Destinations Not Covered by Medicare",
+      "date": "2018-07-11",
+      "url": "https://oig.hhs.gov/oas/reports/region9/91703018.asp",
+      "headline_stats": [
+        {"stat": "Improper payments for nonemergency transports to noncovered destinations", "value": "$8.7 million ($8,633,940) during the audit period", "locator": "What OIG Found summary and first recommendation on report page"},
+        {"stat": "Composition of improper claim lines", "value": "59 percent were transports to diagnostic or therapeutic sites (other than physician offices or hospitals) that did not originate from SNFs", "locator": "What OIG Found summary on report page"}
+      ]
+    },
+    {
+      "report_no": "GAO-19-292",
+      "title": "Air Ambulance: Available Data Show Privately-Insured Patients Are Frequently Out of Network",
+      "date": "2019-03-20",
+      "url": "https://www.gao.gov/products/gao-19-292",
+      "headline_stats": [
+        {"stat": "Out-of-network share of privately insured air ambulance transports, 2017", "value": "69 percent of about 20,700 transports in the data set", "locator": "Highlights, What GAO Found"},
+        {"stat": "Median provider price for a helicopter transport, 2017", "value": "about $36,400", "locator": "Highlights, What GAO Found"}
+      ],
+      "notes": "Air ambulance; balance-billing exposure evidence that preceded the No Surprises Act."
+    },
+    {
+      "report_no": "A-09-18-03030",
+      "title": "Medicare Incorrectly Paid Providers for Emergency Ambulance Transports From Hospitals to Skilled Nursing Facilities",
+      "date": "2019-09-11",
+      "url": "https://oig.hhs.gov/oas/reports/region9/91803030.asp",
+      "headline_stats": [
+        {"stat": "Incorrect payments for hospital-to-SNF transports billed at emergency rates, CYs 2015-2017", "value": "$849,170", "locator": "What OIG Found section on report page"},
+        {"stat": "Projected additional incorrect payments if billing continued through CY 2018", "value": "$119,548", "locator": "What OIG Found section on report page"}
+      ],
+      "notes": "Small dollars but squarely about interfacility (hospital to SNF) transport billing integrity."
+    },
+    {
+      "report_no": "OEI-03-90-02130",
+      "title": "Ambulance Services for Medicare End-Stage Renal Disease Beneficiaries: Medical Necessity",
+      "date": "1994-08",
+      "url": "https://oig.hhs.gov/oei/reports/oei-03-90-02130.pdf",
+      "headline_stats": [
+        {"stat": "Dialysis-related ambulance claims not meeting Medicare coverage guidelines", "value": "70 percent of dialysis-related transports reviewed did not meet coverage guidelines for medical necessity", "locator": "Findings, page 4 of PDF (heading 'Seventy percent of dialysis-related ambulance claim allowances did not meet Medicare coverage')"},
+        {"stat": "Concentration of ESRD ambulance spending, 1991", "value": "$101 million in Part B ambulance allowances for ESRD beneficiaries; 75 percent went to fewer than 2 percent (2,573) of those beneficiaries", "locator": "Purpose/Background, pages 1-2 of PDF"}
+      ],
+      "notes": "Earliest OIG evidence that dialysis ambulance utilization is an integrity hotspot; context for the later RSNAT prior authorization model."
+    }
+  ],
+  "rejected": [
+    "PMID 21691524: initially recorded for Foley 2011 but eutils shows it is a different paper (rapid triage lean implementation); corrected to PMID 21691525.",
+    "GAO-12-901: no such ambulance report number could be located; the October 2012 ambulance cost report is numbered GAO-13-6 and is recorded instead.",
+    "showroom.epic.com/Listing?id=3548: Epic Showroom listing page is JS-rendered and returns only a page title to fetch; content not verifiable without login, so no Showroom listing entry is recorded.",
+    "healthcareitnews.com Lyft-Epic article: HTTP 403 on fetch; replaced by the Epic newsroom post and Healthcare Dive article.",
+    "emergencyphysicians.org (ACEP) 2024 press release on boarding costs: secondary press release; primary source (Canellas 2024, Ann Emerg Med) recorded instead.",
+    "medicalxpress.com and physiciansweekly.com boarding-cost items: secondary news aggregation, not primary.",
+    "researchgate.net and academia.edu copies of Falvo/Foley/Pines/Singer: mirrors, not the publisher or PubMed record.",
+    "annemergmed.com and sciencedirect.com full-text pages for Bayley/Pines/Canellas: paywalled; abstract-stated figures recorded from PubMed instead.",
+    "GAO-02-244T (Ambulance Services: Changes Needed...): congressional testimony largely superseded by GAO-07-383 and GAO-13-6; not recorded.",
+    "ridehealth.com homepage: vendor site fetched but no specific verifiable EHR-integration listing page located; no entry recorded.",
+    "vectorcare.com programmatic 'feeds/service' pages (e.g., 31-minutes-to-3-minutes claim): vendor performance claims from marketing pages; excluded. Only the integration-existence page (/fhir) is recorded.",
+    "CMS GADCS Year 1-2 cohort report (Dec 2024): CMS publication, not GAO/OIG; out of scope for Block 3 and not needed since GAO/OIG did not run dry.",
+    "uberhealth.com Cerner page returned HTTP 406 to direct curl; retained only because a browser-agent fetch succeeded and content was read; flagged here for transparency."
+  ]
+}

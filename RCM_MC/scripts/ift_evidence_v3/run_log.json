@@ -1,0 +1,90 @@
+[
+ {
+  "start": "20:25",
+  "end": "20:27",
+  "task": "v3.4 setup",
+  "status": "DONE",
+  "produced": "branch restarted on v3.3 merge; ledger maxima verified F442/S312/finding 51",
+  "notes": "IDs reserved: F443+/S313+/52+"
+ },
+ {
+  "start": "20:27",
+  "end": "20:35",
+  "task": "5.1 fact-tag scan",
+  "status": "DONE",
+  "produced": "scan_fact_tags.py committed; 640 tags checked, ZERO stale F431-F433 citations",
+  "notes": "The feared v3.2 tag break does not exist in the shipped file; acknowledged on V3_Change_Log"
+ },
+ {
+  "start": "20:35",
+  "end": "20:40",
+  "task": "5.3 DQ rows",
+  "status": "DONE",
+  "produced": "DATA QUALITY rows added to all seven v3.2 raw tabs (in-builder)",
+  "notes": ""
+ },
+ {
+  "start": "20:29",
+  "end": "20:31",
+  "task": "B.1 primaries pulled",
+  "status": "DONE",
+  "produced": "GADCS appendix PDF (12.4MB), DocGo 10-K, 6 USAspending V225 slices, all hashed",
+  "notes": "VA FY23-25 verified to the cent vs handoff"
+ },
+ {
+  "start": "20:31",
+  "end": "20:37",
+  "task": "B.1 document verification",
+  "status": "DONE",
+  "produced": "b1_verified.json: 29/29 claims verified with table+page locators",
+  "notes": "GADCS cover is December 2025 (order said Aug); recipients refreshed vs order"
+ },
+ {
+  "start": "20:37",
+  "end": "20:52",
+  "task": "B.1 Facility_Pay_Layer module",
+  "status": "DONE",
+  "produced": "sec_b1_facility_pay.py: 13 facts (F443-F455), 3 sources (S313-S315), finding 52",
+  "notes": "smoke-tested against v3.3 workbook"
+ },
+ {
+  "start": "20:40",
+  "end": "20:55",
+  "task": "A.1 MMT_Medicare_Book module",
+  "status": "DONE",
+  "produced": "sec_a1_mmt.py: 5 facts, finding 53; 2024 floor 69,684 base transports / $22.0M allowed",
+  "notes": "Finding corrected to measured mix: BLS non-emergency 75.4%, book 7x 2013-2024"
+ },
+ {
+  "start": "20:26",
+  "end": "20:54",
+  "task": "X-A.1 nine MUP vintages",
+  "status": "DONE",
+  "produced": "144 mup_provider caches: 12 codes x 12 vintages 2013-2024, all manifested",
+  "notes": "exceeds the 11-vintage acceptance; unlocks X-F.1"
+ },
+ {
+  "start": "20:32",
+  "end": "20:39",
+  "task": "A.2 NPPES resolution",
+  "status": "DONE",
+  "produced": "pull11: 42 names resolved (38 with NPIs), crosswalk + manifest",
+  "notes": ""
+ },
+ {
+  "start": "20:33",
+  "end": "20:47",
+  "task": "X-A.2 geo keys + registries",
+  "status": "PARTIAL",
+  "produced": "ZCTA gazetteer 33,791; RUCA 74,002; CMS ambulance ZIP 42,956; REH 48; Sheps 197",
+  "notes": "PARKED: PDC datastore 400s (retried in pull13), AHCAH live list (JS-only portal; 2021 PDF stale)"
+ },
+ {
+  "start": "20:34",
+  "end": "20:49",
+  "task": "E.4 + X-E.3 literature shelf",
+  "status": "DONE",
+  "produced": "throughput_shelf.json: 11 boarding-cost entries (PMIDs verified), 6 EHR rows, 10 GAO/OIG reports",
+  "notes": "caught 1 wrong PMID and 1 nonexistent GAO number; 13 rejects logged"
+ }
+]

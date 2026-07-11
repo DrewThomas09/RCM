@@ -1,0 +1,331 @@
+{
+ "1003266339": {
+  "npi": "1003266339",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "1812 4TH ST SW",
+   "city": "MASON CITY",
+   "state": "IA",
+   "postal_code": "504011609"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1003266339"
+ },
+ "1053162420": {
+  "npi": "1053162420",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "1144 N ROAD ST",
+   "city": "ELIZABETH CITY",
+   "state": "NC",
+   "postal_code": "279093473"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1053162420"
+ },
+ "1073296893": {
+  "npi": "1073296893",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "4780 NE 3RD ST",
+   "city": "DES MOINES",
+   "state": "IA",
+   "postal_code": "503132362"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1073296893"
+ },
+ "1134670219": {
+  "npi": "1134670219",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC-HURON, SD",
+  "status": "A",
+  "location": {
+   "address_1": "1199 DAKOTA AVE N",
+   "city": "HURON",
+   "state": "SD",
+   "postal_code": "573504548"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1134670219"
+ },
+ "1205387545": {
+  "npi": "1205387545",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC-ABERDEEN, SD",
+  "status": "A",
+  "location": {
+   "address_1": "2919 INDUSTRIAL AVENUE",
+   "city": "ABERDEEN",
+   "state": "SD",
+   "postal_code": "57401"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1205387545"
+ },
+ "1235681354": {
+  "npi": "1235681354",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC DBA FRASER TRANSPORTATION SERVI",
+  "status": "A",
+  "location": {
+   "address_1": "4780 NE 3RD ST",
+   "city": "DES MOINES",
+   "state": "IA",
+   "postal_code": "503132362"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1235681354"
+ },
+ "1235998626": {
+  "npi": "1235998626",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "3198 MERCIER ST",
+   "city": "KANSAS CITY",
+   "state": "MO",
+   "postal_code": "641113632"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1235998626"
+ },
+ "1346792371": {
+  "npi": "1346792371",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC-DBA SOUTHEAST IOWA AMBULANCE",
+  "status": "A",
+  "location": {
+   "address_1": "2155 33RD AVE",
+   "city": "COLUMBUS",
+   "state": "NE",
+   "postal_code": "686013148"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1346792371"
+ },
+ "1356115562": {
+  "npi": "1356115562",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "13326 B ST",
+   "city": "OMAHA",
+   "state": "NE",
+   "postal_code": "681443612"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1356115562"
+ },
+ "1477490381": {
+  "npi": "1477490381",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "320 TRANSFER DR",
+   "city": "INDIANAPOLIS",
+   "state": "IN",
+   "postal_code": "462142994"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1477490381"
+ },
+ "1538612320": {
+  "npi": "1538612320",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "118 N RUNGER AVENUE",
+   "city": "SHELDON",
+   "state": "IA",
+   "postal_code": "512011558"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1538612320"
+ },
+ "1548034754": {
+  "npi": "1548034754",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "3729 CORPORATE DR",
+   "city": "COLUMBUS",
+   "state": "OH",
+   "postal_code": "432314964"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1548034754"
+ },
+ "1548047152": {
+  "npi": "1548047152",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "9401 W BROWN DEER RD",
+   "city": "MILWAUKEE",
+   "state": "WI",
+   "postal_code": "532242009"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1548047152"
+ },
+ "1588115893": {
+  "npi": "1588115893",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC-SIOUX CITY, IA.",
+  "status": "A",
+  "location": {
+   "address_1": "1015 COURT ST",
+   "city": "SIOUX CITY",
+   "state": "IA",
+   "postal_code": "511051708"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1588115893"
+ },
+ "1629831102": {
+  "npi": "1629831102",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "3515 N PROSPECT ST",
+   "city": "COLORADO SPRINGS",
+   "state": "CO",
+   "postal_code": "809075450"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1629831102"
+ },
+ "1689665143": {
+  "npi": "1689665143",
+  "org_name": "PLATTE COUNTY AMBULANCE COMPANY",
+  "status": "A",
+  "location": {
+   "address_1": "2155 33RD AVE",
+   "city": "COLUMBUS",
+   "state": "NE",
+   "postal_code": "686013148"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1689665143"
+ },
+ "1740645332": {
+  "npi": "1740645332",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "2110 23RD AVE STE A",
+   "city": "COUNCIL BLUFFS",
+   "state": "IA",
+   "postal_code": "515017054"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1740645332"
+ },
+ "1760832695": {
+  "npi": "1760832695",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "59706 AIRPORT RD",
+   "city": "ATLANTIC",
+   "state": "IA",
+   "postal_code": "500228269"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1760832695"
+ },
+ "1871991125": {
+  "npi": "1871991125",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "2155 33RD AVENUE",
+   "city": "COLUMBUS",
+   "state": "NE",
+   "postal_code": "686013148"
+  },
+  "practice_locations": [
+   {
+    "address_1": "3729 CORPORATE DR",
+    "city": "COLUMBUS",
+    "state": "OH",
+    "postal_code": "432314964"
+   }
+  ],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1871991125"
+ },
+ "1922872134": {
+  "npi": "1922872134",
+  "org_name": "MIDWEST MEDICAL TRANSPORT LLC",
+  "status": "A",
+  "location": {
+   "address_1": "5792 ARROWHEAD DR",
+   "city": "VIRGINIA BEACH",
+   "state": "VA",
+   "postal_code": "234623219"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1922872134"
+ },
+ "1932650272": {
+  "npi": "1932650272",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY, LLC-ALBIA, IA",
+  "status": "A",
+  "location": {
+   "address_1": "521 I AVENUE WEST",
+   "city": "ALBIA",
+   "state": "IA",
+   "postal_code": "52531"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1932650272"
+ },
+ "1982069134": {
+  "npi": "1982069134",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "705 E DIVISION ST",
+   "city": "AUDUBON",
+   "state": "IA",
+   "postal_code": "500251316"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1982069134"
+ },
+ "1992579338": {
+  "npi": "1992579338",
+  "org_name": "MIDWEST MEDICAL TRANSPORT COMPANY LLC",
+  "status": "A",
+  "location": {
+   "address_1": "290 ARMISTICE BLVD",
+   "city": "PAWTUCKET",
+   "state": "RI",
+   "postal_code": "028612330"
+  },
+  "practice_locations": [],
+  "fetched": "2026-07-11",
+  "url": "https://npiregistry.cms.hhs.gov/api/?version=2.1&number=1992579338"
+ }
+}

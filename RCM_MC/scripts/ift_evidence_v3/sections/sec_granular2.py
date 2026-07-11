@@ -122,6 +122,11 @@ def build(wb, ctx):
                     'beneficiaries on a code are suppressed at source: every count '
                     'is a floor, and small rural suppliers are undercounted. '
                     'Join keys: NPI to PECOS_Registry and NPPES_Registry_NE_IA.')
+        sb.note('DATA QUALITY: per-NPI rows with 10 or fewer beneficiaries on a '
+                'code are suppressed at source, so every per-NPI total on this '
+                'tab is a FLOOR; final-action basis (never mix with PSPS '
+                'submitted); Medicare FFS only - MA, Medicaid, commercial and '
+                'facility-paid volume is invisible here.')
         sb.blank()
         sb.headers(['NPI', 'Organization / last name', 'First name', 'City',
                     'State', 'HCPCS', 'POS', 'Level of service', 'Beneficiaries',
@@ -181,6 +186,10 @@ def build(wb, ctx):
                     'absent at source: floors. Join CCN to Hosp_Registry and '
                     'HSA_Hospital_Catchment; ZIP rolls up to CBSA via '
                     'CBSA_Crosswalk_Reference.')
+        sb.note('DATA QUALITY: corridors derive from Medicare FFS inpatient '
+                'claims ONLY - commercial, MA and non-inpatient flows are '
+                'invisible; suppressed hospital-ZIP cells are absent at source '
+                '(floors); cases are admissions, not transports.')
         sb.blank()
         sb.headers(['Provider (CCN)', 'Rank', 'Origin ZIP', 'Total cases',
                     'Total days', 'Total charges $', ''])
@@ -229,6 +238,11 @@ def build(wb, ctx):
                     'projected; pulled 11 Jul 2026). FIPS joins to QCEW_County_*, '
                     'MS_County_* and CBSA_Crosswalk_Reference. State roll-up: '
                     'State_Age_65plus.')
+        sb.note('DATA QUALITY: Vintage 2024 estimates are measured post-census '
+                'estimates, not projections, and are revised with each vintage; '
+                'small-county age cells carry wider relative uncertainty; the '
+                'YEAR-code mapping (2=Jul 2020 ... 6=Jul 2024) is stated on '
+                'Pull_Manifest.')
         sb.blank()
         sb.headers(['State', 'County', 'FIPS', 'Population 2024', '65+ 2020',
                     '65+ 2021', '65+ 2022', '65+ 2023', '65+ 2024',
@@ -291,6 +305,11 @@ def build(wb, ctx):
                     'methodology stated - they are not claims counts and must '
                     'never be multiplied into volumes. Release vintages differ by measure (CKD from the 2023 county release; the year column states each row vintage). FIPS joins to '
                     'County_Age_65plus and MS_County_*.')
+        sb.note('DATA QUALITY: PLACES values are model-based small-area '
+                'estimates (BRFSS + ACS + Census inputs), not claims or '
+                'surveillance counts; they carry model uncertainty that CDC '
+                'does not publish at county grain; NEVER multiply them into '
+                'volumes - use as a relative concentration screen only.')
         sb.blank()
         sb.headers(['Year', 'State', 'County FIPS', 'County', 'Measure',
                     'Measure (full)', 'Crude prevalence %', 'County population'])
@@ -343,6 +362,11 @@ def build(wb, ctx):
                     'quarterly slices, national and statewide rows, private and '
                     'government ownership (pulled 11 Jul 2026). Annual-average '
                     'series: QCEW_EMS_Employment; county grain: QCEW_County_*.')
+        sb.note('DATA QUALITY: cells BLS suppresses for disclosure render as '
+                'zero-employment government rows - a zero here can be a '
+                'suppression, not an absence; UI-covered employment only '
+                '(volunteer squads never appear); latest quarters are '
+                'preliminary until the annual revision.')
         sb.blank()
         sb.headers(['Year', 'Qtr', 'Area FIPS', 'Ownership', 'Establishments',
                     'Employment M1', 'Employment M2', 'Employment M3',
@@ -410,6 +434,11 @@ def build(wb, ctx):
                     'as filed by the hospital and unaudited (MedPAC\'s GADCS '
                     'caution on self-reported cost data applies to cost fields '
                     'generally). Join CCN to Hosp_Registry, HSA_Corridors.')
+        sb.note('DATA QUALITY: self-reported cost-report fields, unaudited; '
+                'fiscal-year ends differ by hospital so FY columns are not '
+                'calendar-aligned; late and amended filings mean the newest '
+                'year is incomplete; bed counts are licensed-in-service as '
+                'filed, not staffed beds.')
         sb.blank()
         sb.headers([c.replace('_', ' ') for c in keep])
         num_cols = {'beds', 'bed_days_available', 'inpatient_days',
@@ -455,6 +484,11 @@ def build(wb, ctx):
                     'stated on Pull_Manifest; the full file is the screen of '
                     'record). NPI joins to PECOS_Registry and MUP_Providers_* '
                     'where populated (older exclusions predate NPI).')
+        sb.note('DATA QUALITY: keyword filter (AMBULANCE / EMT) on business '
+                'name, general and specialty fields - exclusions of ambulance '
+                'personnel recorded under other specialties are missed; NPI is '
+                'blank on older rows; integrity context only, never a sizing '
+                'input.')
         sb.blank()
         sb.headers(['Last name', 'First name', 'Business name', 'General',
                     'Specialty', 'NPI', 'State', 'Exclusion type',

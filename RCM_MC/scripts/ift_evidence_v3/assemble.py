@@ -37,14 +37,19 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_3.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_4.xlsx'))
 BUILT = '10 July 2026'
 
+# v3.4 modules append AFTER state_profiles so their facts/sources take the
+# reserved ranges: b1_facility_pay is first by order (F443-F455 / S313-S315).
 SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'supply_vendored',
                  'payment', 'demand_clinical', 'demand_growth', 'v31', 'geo',
                  'metros', 'company', 'indepth_tabs', 'reference',
-                 'state_profiles']
+                 'state_profiles',
+                 'b1_facility_pay', 'a1_mmt', 'a4_insourcing',
+                 'b2_reh_closures', 'b13_usaspending', 'b14_requests',
+                 'd_quality', 'run_log']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
 # LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
@@ -525,6 +530,102 @@ def build_index_tab(wb, full_order):
     return ws
 
 
+def add_v34_findings(wb, section_outputs, sid_map):
+    """Findings 52+ supplied by the v3.4 section modules themselves: each
+    module returns findings with live cell references; numbering continues
+    sequentially in SECTION_ORDER order."""
+    items = []
+    for key in SECTION_ORDER:
+        out = section_outputs.get(key) or {}
+        items += out.get('findings', [])
+    if not items:
+        return 0
+    ws = wb['Findings']
+    r = ws.max_row + 2
+    _banner_row(ws, r, 'v3.4 findings (52 onward) - the specificity-and-'
+                       'analysis pass. Same contract: published counts or '
+                       'arithmetic over published counts, live references, '
+                       'a guardrail in every row.', 6)
+    r += 1
+    from v3lib import F_HDR, FILL_HDR
+    for i, h in enumerate(['#', 'Finding', 'The numbers (live)', 'Sources',
+                           'Confidence', 'Interpretation guardrail'], start=1):
+        c = ws.cell(row=r, column=i, value=h)
+        c.font = F_HDR
+        c.fill = FILL_HDR
+    r += 1
+    from v3lib import AL_WRAP, F_FML, F_LINK, F_TXT
+    n = 52
+    for f in items:
+        src_txt = '; '.join(f"{sid_map.get(k.strip(), k.strip())}"
+                            for k in str(f.get('sources', '')).split(';'))
+        vals = [str(n), f['finding'], f.get('numbers', ''), src_txt,
+                f.get('confidence', ''), f.get('guardrail', '')]
+        for i, v in enumerate(vals, start=1):
+            c = ws.cell(row=r, column=i, value=v)
+            c.font = F_LINK if (i == 3 and str(v).startswith('=')) else F_TXT
+            c.alignment = AL_WRAP
+        ws.row_dimensions[r].height = 64
+        r += 1
+        n += 1
+    return n - 52
+
+
+def add_v34_governance(wb, entries):
+    """v3.4 change-log acknowledgments (handoff task 5.1) and the
+    Sizing_Playbook facility-pay pointer (task B.1)."""
+    entries.append({
+        'tab': 'Fact_Ledger', 'cell': '(rows F431-F442)',
+        'old': 'v3.2 inserted nine KPI-dictionary facts as F431-F439 without '
+               'a change-log row; the SP_Index national-sum facts moved to '
+               'F440-F442 in the same build',
+        'new': 'Acknowledged and verified: the committed scan '
+               '(scripts/ift_evidence_v3/scan_fact_tags.py) checked every '
+               'in-cell tag workbook-wide (640 tags) and found ZERO stale '
+               'F431-F433 citations - IDs are assigned at assembly, so tags '
+               'and ledger rows never diverged in the shipped file',
+        'why': 'Handoff 5.1: log the unlogged insertion; repair stale tags '
+               '(none existed); commit the scan.',
+        'class': 'governance'})
+    entries.append({
+        'tab': 'V3_Change_Log', 'cell': 'entry 15',
+        'old': 'Entry 15 text was edited in place during the v3.2 build',
+        'new': 'Acknowledged here as its own appended row; the append-only '
+               'rule holds from this row forward',
+        'why': 'Handoff 5.1: never edit an existing log row.',
+        'class': 'governance'})
+    entries.append({
+        'tab': 'MUP_Providers_2024 (+6 siblings)', 'cell': '(DQ row)',
+        'old': 'Seven v3.2 raw tabs shipped without dedicated data-quality '
+               'rows',
+        'new': 'DATA QUALITY row added under each subtitle: MUP suppression '
+               'floors, PLACES model-based estimates, HSA Medicare-FFS-only '
+               'corridors, QCEW disclosure suppressions, HCRIS unaudited '
+               'self-reports, Census vintage revisions, LEIE filter scope',
+        'why': 'Handoff 5.3.', 'class': 'quality'})
+    # Sizing_Playbook pointer (B.1 Panel D map)
+    if 'Sizing_Playbook' in wb.sheetnames:
+        ws = wb['Sizing_Playbook']
+        r = ws.max_row + 2
+        c = ws.cell(row=r, column=1, value=(
+            'v3.4 pointer: the facility-pay layer this playbook rows 2-3 '
+            'could only name is now MEASURED on Facility_Pay_Layer - GADCS '
+            'incidence and magnitudes, the DocGo outside-per-trip share, '
+            'and the USAspending V225 federal channel, with the IFT-specific '
+            'share explicitly PENDING.'))
+        import v3lib as _v3
+        c.font = _v3.F_LINK
+        c.alignment = _v3.AL_WRAP
+        ws.row_dimensions[r].height = 40
+        entries.append({
+            'tab': 'Sizing_Playbook', 'cell': f'A{r}',
+            'old': '(absent)',
+            'new': 'Appended pointer row to Facility_Pay_Layer (B.1 Panel D)',
+            'why': 'Handoff B.1: append the row-3 pointer sentence, '
+                   'change-logged.',
+            'class': 'cross-reference'})
+
+
 def add_v3_findings(wb, sid_map):
     """Continue the Findings register (42+) with v3-evidence findings whose
     numbers are LIVE references to the new tabs. Every magnitude in the prose
@@ -847,7 +948,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.3')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.4')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -966,6 +1067,20 @@ def rebuild_readme(wb, stats, entries):
             '(and repairing a v2.7 URL typo); and a workbook-wide format '
             'sweep - print setup normalized on every tab, truncated columns '
             'widened, header rows tightened.'], wrap=True, height=88)
+    sb.row([('10 (v3.4)', 'label'), '11 July 2026',
+            'The specificity-and-analysis pass (worker handoff + eight-hour '
+            'extension order): the facility-pay evidence layer '
+            '(Facility_Pay_Layer - GADCS revenue-source census, the DocGo '
+            'outside-per-trip decomposition, USAspending V225, all verified '
+            'against the primary documents); the subject company\'s measured '
+            'Medicare book (MMT_Medicare_Book - consolidated and per-NPI '
+            'volumes, acuity mix with volume-weighted RVU, mileage '
+            'economics, three-vintage trajectory); the handoff 5.1-5.3 '
+            'repairs (committed fact-tag scan - zero stale tags found - and '
+            'data-quality rows on all seven v3.2 raw tabs); findings 52 '
+            'onward with live references; plus the analysis and cohort '
+            'layers this revision row is extended by as they land.'],
+           wrap=True, height=88)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1041,6 +1156,11 @@ def main(verify_results_path=None):
         section_outputs[key] = out
         log(f'  {key}: sheets={[s["name"] for s in mod.SHEETS]}')
 
+    # v3.4 modules may carry their own change-log entries
+    for key in SECTION_ORDER:
+        out = section_outputs.get(key) or {}
+        entries.extend(out.get('entries', []))
+
     log('assigning IDs and extending governance')
     sources, facts, sid_map = assign_ids(section_outputs)
     extend_fact_ledger(wb, facts)
@@ -1052,6 +1172,9 @@ def main(verify_results_path=None):
     add_verification_panels(wb, section_outputs, verify_results)
     build_pull_manifest_tab(wb)
     add_v3_findings(wb, sid_map)
+    n_f34 = add_v34_findings(wb, section_outputs, sid_map)
+    log(f'v3.4 findings appended: {n_f34} (52 onward)')
+    add_v34_governance(wb, entries)
     add_gallery_charts(wb)
 
     log('rebuilding v2.7 charts (full-fidelity re-parse)')
@@ -1118,6 +1241,10 @@ def main(verify_results_path=None):
         ('Imbalance_Ledger', (['SP_Index'] if 'SP_Index' in wb.sheetnames else [])
          + sorted(n for n in wb.sheetnames
                   if n.startswith('SP_') and n != 'SP_Index')),
+        ('Sizing_Playbook', [n for n in ('Facility_Pay_Layer',)
+                             if n in wb.sheetnames]),
+        ('MMT_NPI_Estate', [n for n in ('MMT_Medicare_Book',)
+                            if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)
     for anchor, names in families:

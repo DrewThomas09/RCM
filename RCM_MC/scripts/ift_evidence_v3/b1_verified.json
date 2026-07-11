@@ -1,0 +1,217 @@
+{
+  "gadcs": [
+    {
+      "claim": "Table 2.32: facility-contract revenue ('Contracts with facilities') reported by 18.6% of organizations",
+      "verified_value": 18.6,
+      "match": true,
+      "actual": "18.6% share with Section 13, Question 5 revenue >$0",
+      "locator": "Table 2.32, p.70 (PDF p.87), GADCS Appendix Y1-Y4 (PR-A2743-9)"
+    },
+    {
+      "claim": "Table 2.32: Contracts with facilities conditional mean $922,555",
+      "verified_value": 922555,
+      "match": true,
+      "actual": "$922,555 conditional mean (revenue >$0)",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Contracts with facilities conditional median $48,393",
+      "verified_value": 48393,
+      "match": true,
+      "actual": "$48,393 conditional median (revenue >$0)",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Total across all Question 5 categories 74.5% / mean $2,177,569 / median $162,265",
+      "verified_value": "74.5% / $2,177,569 / $162,265",
+      "match": true,
+      "actual": "'Total across all Question 5 categories': 74.5% share, $2,177,569 conditional mean, $162,265 conditional median",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Contract revenue from local governments in return for services 15.4% / $556,091 / $112,426",
+      "verified_value": "15.4% / $556,091 / $112,426",
+      "match": true,
+      "actual": "15.4% share, $556,091 conditional mean, $112,426 conditional median",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Local taxes earmarked for EMS 23.4% / $3,135,660 / $352,117",
+      "verified_value": "23.4% / $3,135,660 / $352,117",
+      "match": true,
+      "actual": "23.4% share, $3,135,660 conditional mean, $352,117 conditional median",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Fees for standby events reported by 24.5%",
+      "verified_value": 24.5,
+      "match": true,
+      "actual": "24.5% share (conditional mean $77,192, median $5,313)",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.32: Membership fees reported by 7.6%",
+      "verified_value": 7.6,
+      "match": true,
+      "actual": "7.6% share (conditional mean $101,355, median $31,000)",
+      "locator": "Table 2.32, p.70 (PDF p.87)"
+    },
+    {
+      "claim": "Table 2.30: mean total payer revenue per NPI $3,914,787 (All NPIs)",
+      "verified_value": 3914787,
+      "match": true,
+      "actual": "$3,914,787, n=9,608 (All NPIs, Total Payer Revenue column)",
+      "locator": "Table 2.30, p.64 (PDF p.81)"
+    },
+    {
+      "claim": "Table 2.30: Traditional FFS Medicare mean $1,193,046 (All NPIs)",
+      "verified_value": 1193046,
+      "match": true,
+      "actual": "$1,193,046, n=6,957",
+      "locator": "Table 2.30, p.64 (PDF p.81)"
+    },
+    {
+      "claim": "Table 2.30: Medicare Advantage mean $1,238,482 (All NPIs)",
+      "verified_value": 1238482,
+      "match": true,
+      "actual": "$1,238,482, n=6,112",
+      "locator": "Table 2.30, p.64 (PDF p.81)"
+    },
+    {
+      "claim": "Table 2.30: Medicaid mean $732,436 (All NPIs)",
+      "verified_value": 732436,
+      "match": true,
+      "actual": "$732,436, n=6,318 (table continuation)",
+      "locator": "Table 2.30 (continued), pp.64-65 (PDF pp.81-82)"
+    },
+    {
+      "claim": "Table 2.30: Commercial insurance mean $1,322,170 (All NPIs)",
+      "verified_value": 1322170,
+      "match": true,
+      "actual": "$1,322,170, n=6,687 (table continuation)",
+      "locator": "Table 2.30 (continued), pp.64-65 (PDF pp.81-82)"
+    },
+    {
+      "claim": "Section 13 summary: Traditional FFS Medicare = 29% of transport revenue per NPI on average",
+      "verified_value": "29 percent",
+      "match": true,
+      "actual": "'Traditional FFS Medicare accounted for 29 percent of transport revenue per NPI on average'",
+      "locator": "Table S.1 (Selected GADCS Descriptive Statistics), Section 13 rows, p.ix (Summary front matter)"
+    },
+    {
+      "claim": "Section 13 summary: Medicare Advantage a further 18% of total transport revenue",
+      "verified_value": "18 percent",
+      "match": true,
+      "actual": "'Medicare Advantage (\"Medicare managed care\") plans accounted for an additional 18 percent of total transport revenue'",
+      "locator": "Table S.1, Section 13 rows, p.ix"
+    },
+    {
+      "claim": "Section 13 summary: top three payer categories (Traditional Medicare, MA, commercial) about 75% of transport revenue",
+      "verified_value": "approximately 75 percent",
+      "match": true,
+      "actual": "'Traditional Medicare, Medicare Advantage, and commercial insurers together accounted for approximately 75 percent of transport revenue on average'",
+      "locator": "Table S.1, Section 13 rows, p.ix"
+    },
+    {
+      "claim": "Section 13 summary: about one in five organizations did not always bill in at least one payer category",
+      "verified_value": "about one in five",
+      "match": true,
+      "actual": "'About one in five organizations reported that they did not always bill patients in one or more payer categories for transports'",
+      "locator": "Table S.1, Section 13 rows, p.ix"
+    },
+    {
+      "claim": "Table 2.6: for-profit organizations with 81-100% interfacility share = 20.2%",
+      "verified_value": 20.2,
+      "match": true,
+      "actual": "20.2% (For-Profit Organizations Only column, '81 to 100 percent' row)",
+      "locator": "Table 2.6, p.33 (PDF p.50)"
+    },
+    {
+      "claim": "Table 2.6: for-profit organizations with 21-80% interfacility share = 42.8%",
+      "verified_value": 42.8,
+      "match": true,
+      "actual": "42.8% (For-Profit Organizations Only column, '21 to 80 percent' row)",
+      "locator": "Table 2.6, p.33 (PDF p.50)"
+    },
+    {
+      "claim": "Table 2.6: all organizations with 81-100% interfacility share = 7.4%",
+      "verified_value": 7.4,
+      "match": true,
+      "actual": "7.4% (All Organizations column, '81 to 100 percent' row); excluding for-profits = 5.1%",
+      "locator": "Table 2.6, p.33 (PDF p.50)"
+    }
+  ],
+  "docgo": [
+    {
+      "claim": "Transportation Services segment revenue FY2025 $200,765,608",
+      "verified_value": 200765608,
+      "match": true,
+      "actual": "$200,765,608 (also stated as $200.8 million in MD&A)",
+      "locator": "Note 2 (Summary of Significant Accounting Policies), Revenue Breakdown disaggregation table, F-22; also Note 11 (Business Segment Information), F-37; MD&A Item 7, p.62"
+    },
+    {
+      "claim": "Transportation Services segment revenue FY2024 $193,429,092",
+      "verified_value": 193429092,
+      "match": true,
+      "actual": "$193,429,092",
+      "locator": "Note 2 Revenue Breakdown table, F-22; Note 11, F-37"
+    },
+    {
+      "claim": "Transportation Services segment revenue FY2023 $181,495,105",
+      "verified_value": 181495105,
+      "match": true,
+      "actual": "$181,495,105",
+      "locator": "Note 2 Revenue Breakdown table, F-22; Note 11, F-37"
+    },
+    {
+      "claim": "Trips FY2025 = 296,014; FY2024 = 283,570; FY2023 = 250,114",
+      "verified_value": "296,014 / 283,570 / 250,114",
+      "match": true,
+      "actual": "'from 283,570 trips for the year ended December 31, 2024 to 296,014 trips for the year ended December 31, 2025' (a 4.4% increase); 'from 250,114 trips for the year ended December 31, 2023 to 283,570 trips for the year ended December 31, 2024' (a 13.4% increase)",
+      "locator": "Item 7 MD&A, Results of Operations, Transportation Services, pp.62 and 66"
+    },
+    {
+      "claim": "Average trip price $401 (FY2025) / $402 (FY2024)",
+      "verified_value": "$401 / $402",
+      "match": true,
+      "actual": "'Our average trip price decreased slightly from $402 in the year ended December 31, 2024 to $401 in the year ended December 31, 2025.' (FY2023 average trip price was $407)",
+      "locator": "Item 7 MD&A, Results of Operations, Transportation Services, p.62 (FY2023 figure on p.66)"
+    },
+    {
+      "claim": "Filing excludes fixed hourly-or-daily dedicated-ambulance program revenue from trip counts and average trip price by its own definition",
+      "verified_value": "confirmed",
+      "match": true,
+      "actual": "'Revenues generated from programs under which the Company is paid a fixed hourly or daily rate for the use of a fully staffed and equipped ambulance do not factor in the trip counts or average trip prices mentioned above. We expect these fixed rate, \"leased hour\" programs to continue to account for an increasing proportion of the Transportation Services segment's revenues in the future.'",
+      "locator": "Item 7 MD&A, 'Trip Volumes and Average Trip Price', p.57"
+    },
+    {
+      "claim": "Revenue recognition language names billings to third-party payors AND healthcare facilities",
+      "verified_value": "confirmed",
+      "match": true,
+      "actual": "'Net revenue from Transportation Services is derived from the transportation of patients based on billings to third party payors and healthcare facilities.' (identical wording in MD&A segment description and in the accounting-policy note)",
+      "locator": "Note 2, Revenue Recognition, Nature of the Company's Services (ii. Transportation Services), F-22; also Item 7 MD&A Overview, p.57"
+    },
+    {
+      "claim": "Computed: revenue outside per-trip billing FY2025 = 1 - (296,014 x $401)/$200,765,608 = 40.9%",
+      "verified_value": 40.9,
+      "match": true,
+      "actual": "296,014 x $401 = $118,701,614; 1 - 118,701,614/200,765,608 = 0.40876 = 40.9% (rounds to claimed value)",
+      "locator": "Computed from Item 7 MD&A p.62 (trips, ATP) and Note 2 table F-22 (segment revenue)"
+    },
+    {
+      "claim": "Computed: revenue outside per-trip billing FY2024 = 1 - (283,570 x $402)/$193,429,092 = 41.1%",
+      "verified_value": 41.1,
+      "match": true,
+      "actual": "283,570 x $402 = $113,995,140; 1 - 113,995,140/193,429,092 = 0.41066 = 41.1% (rounds to claimed value)",
+      "locator": "Computed from Item 7 MD&A p.62 (trips, ATP) and Note 2 table F-22 (segment revenue)"
+    }
+  ],
+  "notes": [
+    "GADCS source: SCRATCH/gadcs_text.txt and SCRATCH/ift_v3_cache/_gadcs_appendix_y1y4.pdf (116 PDF pages; printed page N = PDF page N+17 in the body chapters). Cover page is dated December 2025 (data reported through May 15, 2025); the work order's 'Aug 2025' date does not match the cover but the document identity (PR-A2743-9 GADCS Report Appendix, Year 1-Year 4 Cohort Analysis) is otherwise as described.",
+    "All GADCS table values were cross-checked in pdftotext -layout renderings of the original PDF pages (Table 2.6 on PDF p.50, Table 2.30 on PDF pp.81-82, Table 2.32 on PDF p.87) to confirm column alignment; the plain-text extraction had displaced one Table 2.6 cell (5.1%, the excluding-for-profit 81-100% value), which does not affect any claimed figure.",
+    "The 'Section 13 summary' claims appear in Table S.1 'Selected GADCS Descriptive Statistics' in the front-matter Summary (Section 13 rows, printed p.ix). The FFS 29% figure is expressed 'per NPI on average' in the source.",
+    "DocGo source: SCRATCH/ift_v3_cache/_docgo_10k_fy2025.htm (Form 10-K FY2025, accession 0001628280-26-018214). Segment revenues appear identically in the Note 2 revenue-disaggregation table (F-22) and Note 11 Business Segment Information (F-37). Note 2 also confirms the FY2023 average trip price was $407.",
+    "The 40.9%/41.1% figures are derived (not stated in the 10-K); arithmetic re-verified from the verified inputs. Because the ATP is rounded to whole dollars in the filing, the derived shares carry roughly +/-0.1 pp of rounding uncertainty.",
+    "All 20 GADCS claims and all 9 DocGo claims verified as stated; no corrections required."
+  ]
+}
