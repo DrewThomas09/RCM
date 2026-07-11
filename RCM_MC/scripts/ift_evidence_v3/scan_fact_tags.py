@@ -32,8 +32,12 @@ def main(path):
     orphans = []       # tag cites an ID with no ledger row
     ambiguous = []     # tag cites F431-F433 outside the tabs those facts live on
     n_tags = 0
+    # Skip the ledger itself and the governance/operational tabs that
+    # DISCUSS fact IDs as prose (change log, run log, methodology) rather
+    # than cite them as evidence.
     for name in wb.sheetnames:
-        if name in ('Fact_Ledger', 'V3_Change_Log'):
+        if name in ('Fact_Ledger', 'V3_Change_Log', 'Run_Log',
+                    'Methodology'):
             continue
         for row in wb[name].iter_rows():
             for c in row:

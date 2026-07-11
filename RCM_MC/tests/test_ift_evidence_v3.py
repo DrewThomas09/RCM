@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_3.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_4.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -46,7 +46,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
             v = row[0].value
             if isinstance(v, str) and re.fullmatch(r'F\d+', v):
                 fids.append(int(v[1:]))
-        self.assertGreaterEqual(max(fids), 433)
+        self.assertGreaterEqual(max(fids), 460)
         missing = set(range(1, max(fids) + 1)) - set(fids)
         self.assertEqual(missing, set(), f'missing fact IDs: {sorted(missing)[:10]}')
 
@@ -56,7 +56,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
             v = row[0].value
             if isinstance(v, str) and re.fullmatch(r'S\d+', v):
                 sids.append(int(v[1:]))
-        self.assertGreaterEqual(max(sids), 306)
+        self.assertGreaterEqual(max(sids), 313)
         missing = set(range(1, max(sids) + 1)) - set(sids)
         self.assertEqual(missing, set(), f'missing source IDs: {sorted(missing)[:10]}')
 
@@ -156,6 +156,54 @@ class TestIFTEvidenceV3(unittest.TestCase):
                     'PLACES_County_Chronic', 'QCEW_Quarterly',
                     'HCRIS_Hospital_Panel', 'LEIE_Ambulance_Exclusions'):
             self.assertIn(tab, names)
+
+    def test_v34_analysis_tabs_present(self):
+        """v3.4 specificity-and-analysis pass: the facility-pay layer, the
+        subject-company book, the A-part analysis tabs, the cohort program,
+        the C-part assembly, and the run governance."""
+        names = set(self.wb.sheetnames)
+        for tab in ('Facility_Pay_Layer', 'MMT_Medicare_Book',
+                    'Market_Share_Panels', 'Fragmentation_National',
+                    'Insourcing_Bounds', 'HCRIS_Ambulance_CostCenters',
+                    'Cohort_Corridors', 'Hub_Spoke_Map', 'Contract_Corpus',
+                    'Cohort_990_Contractors', 'System_Research_Cohort',
+                    'Footprint_Determination', 'Prospect_Landscape',
+                    'County_Whitespace_Screens', 'Growth_Decomposition',
+                    'Denial_Economics', 'Transfer_Delay_Burden',
+                    'Workforce_Depth', 'Universe_Reconciliation',
+                    'LEIE_Read_Panel', 'Throughput_Economics_Public',
+                    'GAO_OIG_Shelf', 'REH_Closure_Flow', 'Medicaid_Rate_Card',
+                    'RSNAT_Series', 'MA_Book_Calibrator',
+                    'Entry_Barrier_Register', 'Balance_Billing_States',
+                    'Receiving_Center_Registry', 'Federal_Ambulance_Contracts',
+                    'Annual_Market_Structure', 'Realized_Price_Ladders',
+                    'Registered_vs_Billing', 'Metro_TAM_Panels',
+                    'TAM_Assembly_State', 'Scenario_Matrix',
+                    'Growth_Outlook_Shell', 'Vendor_Share_Stack',
+                    'Stickiness_Evidence', 'Investor_QA', 'Slide_Feed',
+                    'Refresh_Calendar', 'Run_Log',
+                    'Claims_Vendor_Recv', 'Commercial_Rate_MRF'):
+            self.assertIn(tab, names)
+
+    def test_findings_extended_past_51(self):
+        """v3.4 appended findings 52 onward with live references."""
+        ws = self.wb['Findings']
+        ids = []
+        for row in ws.iter_rows(min_col=1, max_col=1):
+            v = row[0].value
+            if isinstance(v, str) and v.strip().isdigit():
+                ids.append(int(v.strip()))
+        self.assertGreaterEqual(max(ids), 80)
+
+    def test_leak_check_clean(self):
+        """The v3.4 firewall leak check ran and found no violations."""
+        p = os.path.join(PIPE, 'leak_check.json')
+        if not os.path.exists(p):
+            self.skipTest('leak_check.json not present')
+        r = json.load(open(p))
+        self.assertEqual(r.get('customer_account_violations'), [])
+        self.assertEqual(r.get('survey_statistic_violations'), [])
+        self.assertEqual(r.get('em_dash_violations'), [])
 
     def test_state_profiles_are_formula_driven(self):
         ws = self.wb['SP_TX']

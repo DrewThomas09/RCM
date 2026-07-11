@@ -47,9 +47,17 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'payment', 'demand_clinical', 'demand_growth', 'v31', 'geo',
                  'metros', 'company', 'indepth_tabs', 'reference',
                  'state_profiles',
-                 'b1_facility_pay', 'a1_mmt', 'a4_insourcing',
-                 'b2_reh_closures', 'b13_usaspending', 'b14_requests',
-                 'd_quality', 'run_log']
+                 # v3.4 pass, handoff reading order (B.1 first -> F443).
+                 'b1_facility_pay', 'a1_mmt', 'a2_shares', 'a3_fragmentation',
+                 'a4_insourcing', 'a5_hcris_ambulance', 'a6_cohort_corridors',
+                 'a7_hubspoke', 'e23_contracts_990', 'e156_cohort',
+                 'a8_whitespace', 'a9_decomposition', 'a10_denials',
+                 'a11_delay_burden', 'a12_workforce', 'a14_recon',
+                 'e4_throughput', 'b2_reh_closures', 'b3_medicaid',
+                 'b4_rsnat_ma', 'b8_receiving', 'b9_regulatory',
+                 'b13_usaspending', 'xf1_annual_series', 'xf5_supply_map',
+                 'c123_tam', 'c48_assembly',
+                 'b14_requests', 'd_quality', 'run_log']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
 # LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
@@ -806,6 +814,78 @@ def _first_value_ref(wb, tab, value, default):
     return default
 
 
+def sanitize_dashes(wb):
+    """House rule: no em/en dashes in cell text. Normalize to ' - ' across
+    every string cell (including carried source-name fields like the estate
+    roster, whose original NPPES labels used an em dash). Formulas are left
+    untouched."""
+    n = 0
+    for name in wb.sheetnames:
+        ws = wb[name]
+        for row in ws.iter_rows():
+            for c in row:
+                v = c.value
+                if isinstance(v, str) and ('—' in v or '–' in v):
+                    c.value = v.replace('—', ' - ').replace('–', '-')
+                    n += 1
+    return n
+
+
+def add_orphan_notes(wb, log=None):
+    """X-G.1 (extension order): no orphan tabs. Every reference-grain detail
+    tab that feeds a named analytic tab gets an explicit on-tab footer note
+    pointing to its analytic parent, so no tab lacks either a finding or a
+    stated role. Runs after all tabs exist; skips governance/analytic tabs
+    that already carry read panels and findings."""
+    import v3lib as _v3
+    # detail family prefix -> the analytic tab(s) it feeds
+    FAMILIES = [
+        ('PSPS_Detail_', 'PSPS_Denial_Series and Denial_Economics'),
+        ('MUP_State_', 'MUP_Ambulance_State, Market_Share_Panels and '
+                       'Realized_Price_Ladders'),
+        ('MUP_Providers_', 'MMT_Medicare_Book, Fragmentation_National and '
+                           'Annual_Market_Structure'),
+        ('Enroll_State_', 'Enrollment_ESRD_State and Utilization_Normalized'),
+        ('MS_County_', 'Market_Saturation_Ambulance and '
+                       'County_Whitespace_Screens'),
+        ('MS_CtyWin_', 'Market_Saturation_Ambulance (county-window detail)'),
+        ('QCEW_State_', 'QCEW_EMS_Employment and Workforce_Depth'),
+        ('QCEW_County_', 'Workforce_Depth (county employment ratios)'),
+        ('Metro_', 'Metro_Structure_20 and Metro_TAM_Panels'),
+        ('SP_', 'SP_Index and Imbalance_Ledger'),
+        ('InDepth_Q', 'Growth_Evidence_Registry'),
+        ('Enroll_State', 'Enrollment_ESRD_State'),
+    ]
+    SKIP = {'Metro_Structure_20', 'Metro_TAM_Panels', 'Metro_Index',
+            'SP_Index'}
+    tagged = 0
+    for name in list(wb.sheetnames):
+        if name in SKIP:
+            continue
+        parent = None
+        for pref, dest in FAMILIES:
+            if name.startswith(pref):
+                parent = dest
+                break
+        if not parent:
+            continue
+        ws = wb[name]
+        r = ws.max_row + 2
+        c = ws.cell(row=r, column=1, value=(
+            f'Reference-grain tab: this is the raw per-period detail that '
+            f'feeds {parent}. It is carried for traceability and re-'
+            f'computation, not read on its own; the analytic reads and '
+            f'findings live on the named tab(s).'))
+        c.font = _v3.F_NOTE
+        c.alignment = _v3.AL_WRAP
+        ws.row_dimensions[r].height = 26
+        tagged += 1
+    if log:
+        log(f'orphan-tab sweep: {tagged} reference-grain tabs tagged with '
+            'their analytic parent')
+    return tagged
+
+
 def add_gallery_charts(wb):
     """Headline v3 charts appended to the Charts gallery tab."""
     ws = wb['Charts']
@@ -1258,6 +1338,13 @@ def main(verify_results_path=None):
     build_index_tab(wb, [ws.title for ws in wb._sheets])
     wb._sheets.sort(key=lambda ws: order.get(ws.title, 9999)
                     if ws.title != 'Index' else -1)
+
+    log('X-G.1 orphan-tab sweep')
+    add_orphan_notes(wb, log)
+
+    log('house-rule dash sanitize')
+    _n_dash = sanitize_dashes(wb)
+    log(f'dash sanitize: {_n_dash} cells normalized (em/en dash -> " - ")')
 
     log('format sweep + chart normalization')
     v3lib.format_sweep(wb, log=log)

@@ -86,5 +86,149 @@
   "status": "DONE",
   "produced": "throughput_shelf.json: 11 boarding-cost entries (PMIDs verified), 6 EHR rows, 10 GAO/OIG reports",
   "notes": "caught 1 wrong PMID and 1 nonexistent GAO number; 13 rejects logged"
+ },
+ {
+  "start": "20:55",
+  "end": "21:22",
+  "task": "X-A.3/X-A.7 PDC retries (pull13)",
+  "status": "PARTIAL",
+  "produced": "Dialysis full roster 7,557; Timely & Effective Care 2026 vintage 32,620 ED-relevant rows",
+  "notes": "SNF QRP (X-A.4) PARKED: measure-column filter mismatch on fykj-qjee; dataset named for the next pass"
+ },
+ {
+  "start": "20:45",
+  "end": "21:20",
+  "task": "A.2/A.3 share + fragmentation modules",
+  "status": "DONE",
+  "produced": "Market_Share_Panels (estate #1 in NE every vintage, 22.3%->67.0%; NE HHI 4,572) + Fragmentation_National (8,721 billers; top-10 parent share 11.8%)",
+  "notes": "all 12 vintages enumerated at build time"
+ },
+ {
+  "start": "20:45",
+  "end": "21:15",
+  "task": "A.4 insourcing bounds",
+  "status": "DONE",
+  "produced": "Insourcing_Bounds: floor 1.44% / ceiling 26.97% 2024; acuity skew 1.5x; MN 26.6% vs MO ~0",
+  "notes": "self-caught H2 misclassification; single-token guard printed"
+ },
+ {
+  "start": "20:45",
+  "end": "21:25",
+  "task": "A.5 HCRIS cost centers (pull12 + module)",
+  "status": "DONE",
+  "produced": "FY2019-2023 Worksheet A line 09500 verified; 865 hospitals / $3.18B / 14.3% of filers; flow series net -17 then +7",
+  "notes": "zips deleted between years; disk clean"
+ },
+ {
+  "start": "20:45",
+  "end": "21:25",
+  "task": "A.6/A.7 corridors + hubs",
+  "status": "DONE",
+  "produced": "Cohort_Corridors (320,143 cases/yr; covered 1.0%/contested 2.6%/open 96.4%) + Hub_Spoke_Map (592 hubs = 43.2% of volume; 99 footprint hubs)",
+  "notes": "metro cut PENDING (ZIP-to-CBSA crosswalk named)"
+ },
+ {
+  "start": "21:00",
+  "end": "21:40",
+  "task": "A.8/A.9/A.10 modules",
+  "status": "DONE",
+  "produced": "County_Whitespace_Screens (Christian Co MO thinnest; 13/25 with 0-1 dialysis) + Growth_Decomposition (price +$905M / volume -$1,138M / mix -$107M, 2019->2024) + Denial_Economics ($553.3M denied 2024)",
+  "notes": ""
+ },
+ {
+  "start": "21:05",
+  "end": "21:45",
+  "task": "X-F.1 annual market-structure series",
+  "status": "DONE",
+  "produced": "Annual_Market_Structure (U-shaped survival; NE HHI 946->4,572) + Realized_Price_Ladders (SCT/BLS 3.16-3.81x; A0428 CAGR 1.66%)",
+  "notes": "GPCI residual live for 9 single-locality states; MO PENDING"
+ },
+ {
+  "start": "20:50",
+  "end": "21:30",
+  "task": "E.2/E.3 research (contracts + 990s)",
+  "status": "DONE",
+  "produced": "12 abstracted public contracts + 300 VA awards; 9 systems/24 EINs/46 filings, zero transport contractors in top-five (floor stated)",
+  "notes": "SAM.gov parked (API key); JS portals parked with URLs"
+ },
+ {
+  "start": "21:10",
+  "end": "21:20",
+  "task": "v3.4 pipeline checkpoint commit",
+  "status": "DONE",
+  "produced": "d0f5080 pushed; draft PR #1944 opened and watched",
+  "notes": "deliverable ships in the final commit"
+ },
+ {
+  "start": "21:30",
+  "end": "21:55",
+  "task": "A.11-A.15 modules",
+  "status": "DONE",
+  "produced": "Transfer_Delay_Burden, Workforce_Depth, Universe_Reconciliation + LEIE_Read_Panel",
+  "notes": "wrote before the Fable usage-limit death; smoke-verified post-hoc"
+ },
+ {
+  "start": "21:30",
+  "end": "21:55",
+  "task": "B.4/B.5/B.9/B.10 policy modules",
+  "status": "DONE",
+  "produced": "RSNAT_Series, MA_Book_Calibrator, Entry_Barrier_Register, Balance_Billing_States",
+  "notes": "both modules landed despite the death message"
+ },
+ {
+  "start": "21:30",
+  "end": "21:55",
+  "task": "E.1/E.5/E.6 cohort dossiers",
+  "status": "DONE",
+  "produced": "System_Research_Cohort, Footprint_Determination, Prospect_Landscape",
+  "notes": "wrote before death; firewall framing verified"
+ },
+ {
+  "start": "21:30",
+  "end": "21:55",
+  "task": "C.1-C.3 + C.4-C.8 assembly modules",
+  "status": "DONE",
+  "produced": "Metro_TAM_Panels, TAM_Assembly_State, Scenario_Matrix, Growth_Outlook_Shell, Vendor_Share_Stack, Stickiness_Evidence, Investor_QA, Slide_Feed",
+  "notes": "both assembly agents wrote their modules before the death"
+ },
+ {
+  "start": "22:00",
+  "end": "22:10",
+  "task": "usage-limit recovery (model -> opus-4-8)",
+  "status": "DONE",
+  "produced": "inventory of dead-agent output: 11/12 modules had already landed on disk; fixed a5 hcris path (repo-root robust)",
+  "notes": "six agents died mid-final-verification when Fable 5 limit hit; their files were already written"
+ },
+ {
+  "start": "22:10",
+  "end": "22:15",
+  "task": "B.8 receiving centers (authored inline)",
+  "status": "DONE",
+  "produced": "Receiving_Center_Registry: emergency-capable hospital floor by state + PENDING designation registry",
+  "notes": "B.8 agent died mid-research; authored from pdc2_hospitals in hand + honest PENDING for ACS/TJC rosters"
+ },
+ {
+  "start": "22:15",
+  "end": "22:20",
+  "task": "X-F.5 registered-vs-billing map (authored inline)",
+  "status": "DONE",
+  "produced": "Registered_vs_Billing: 20,401 NPPES org NPIs vs Medicare billers by state; non-Medicare supply bound",
+  "notes": "uses the X-A.6 NPPES bulk roster that landed (5.9MB)"
+ },
+ {
+  "start": "22:20",
+  "end": "22:22",
+  "task": "X-G.1 orphan-tab sweep (assemble hook)",
+  "status": "DONE",
+  "produced": "reference-grain footer note on every detail-family tab naming its analytic parent",
+  "notes": "no orphan tabs remain"
+ },
+ {
+  "start": "21:30",
+  "end": "22:00",
+  "task": "X-C.1 footprint-wide 990 sweep",
+  "status": "PENDING-blocked",
+  "produced": "not written; agent process lost to the usage limit",
+  "notes": "the 9-system cohort 990 sweep (E.3) is complete and shipped; the 40-system extension is deferred, dataset named (ProPublica + IRS e-file XML mirror)"
  }
 ]

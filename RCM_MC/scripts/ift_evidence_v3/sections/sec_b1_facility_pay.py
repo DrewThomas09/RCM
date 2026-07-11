@@ -200,16 +200,16 @@ def build(wb, ctx):
             (407, 'src', lib.FMT_USD), None, None,
             ('MD&A pp.57/62/66; FY23 ATP from Note 2', 'note')])
     sb.row([('Implied per-trip billed revenue $', 'label'),
+            (f'=B{b0 + 1}*B{b0 + 2}', 'fml', lib.FMT_USD),
             (f'=C{b0 + 1}*C{b0 + 2}', 'fml', lib.FMT_USD),
-            (f'=D{b0 + 1}*D{b0 + 2}', 'fml', lib.FMT_USD),
-            (f'=E{b0 + 1}*E{b0 + 2}', 'fml', lib.FMT_USD), None, None,
+            (f'=D{b0 + 1}*D{b0 + 2}', 'fml', lib.FMT_USD), None, None,
             ('trips x ATP', 'note')])
     sb.row([('Revenue OUTSIDE per-trip billing (dedicated-unit programs '
              'billed hourly or daily to facilities, excluded from trips and '
              'ATP by the filing itself)', 'label'),
+            (f'=1-B{b0 + 3}/B{b0}', 'fml', lib.FMT_PCT1),
             (f'=1-C{b0 + 3}/C{b0}', 'fml', lib.FMT_PCT1),
-            (f'=1-D{b0 + 3}/D{b0}', 'fml', lib.FMT_PCT1),
-            (f'=1-E{b0 + 3}/E{b0}', 'fml', lib.FMT_PCT1), None, None,
+            (f'=1-D{b0 + 3}/D{b0}', 'fml', lib.FMT_PCT1), None, None,
             ('MD&A p.57 exclusion language; arithmetic live', 'note')])
     sb.note('Guardrail: one operator, and the plus-or-minus 0.1pp rounding '
             'from whole-dollar ATP is real. What it establishes is '

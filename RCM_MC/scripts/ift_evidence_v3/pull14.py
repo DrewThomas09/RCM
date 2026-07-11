@@ -90,20 +90,23 @@ def pull_eia_diesel(man):
             ok = dates.notna() & vals.notna()
             if not ok.any():
                 continue
+            # the workbook repeats each sourcekey on a weekly sheet AND a
+            # monthly-rollup sheet; keep the higher-frequency (weekly) one
+            if k in series and series[k]['n_obs_total'] >= int(ok.sum()):
+                continue
             yr = dates[ok].dt.year
             v = vals[ok]
             ann = v.groupby(yr).mean()
             nwk = v.groupby(yr).size()
-            ent = series.setdefault(k, {'name': nm, 'annual_avg': {},
-                                        'n_weeks': {},
-                                        'last_week': None})
+            ent = series[k] = {'name': nm, 'annual_avg': {}, 'n_weeks': {},
+                               'last_week': None,
+                               'n_obs_total': int(ok.sum()),
+                               'sheet': sname}
             for y in ann.index:
                 if 2013 <= int(y) <= 2026:
                     ent['annual_avg'][str(int(y))] = round(float(ann[y]), 4)
                     ent['n_weeks'][str(int(y))] = int(nwk[y])
-            lw = dates[ok].max()
-            if ent['last_week'] is None or str(lw.date()) > ent['last_week']:
-                ent['last_week'] = str(lw.date())
+            ent['last_week'] = str(dates[ok].max().date())
     diesel = {k: v for k, v in series.items()
               if k.upper().startswith('EMD_')}
     if not diesel:

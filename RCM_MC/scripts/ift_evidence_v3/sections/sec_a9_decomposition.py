@@ -28,10 +28,13 @@ def _fl(v):
 
 
 def _find_year_rows(ws, years, col=1, max_row=60):
-    """Rows on a carried tab whose column-A value is one of the years."""
+    """Rows on a carried tab whose column-A value is one of the years
+    (carried tabs store years as int or as text)."""
     out = {}
     for row in ws.iter_rows(min_row=1, max_row=max_row, max_col=col):
         v = row[col - 1].value
+        if isinstance(v, str) and v.strip().isdigit():
+            v = int(v)
         if isinstance(v, (int, float)) and int(v) in years:
             out[int(v)] = row[col - 1].row
     return out

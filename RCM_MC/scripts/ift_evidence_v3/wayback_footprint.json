@@ -1,0 +1,207 @@
+{
+ "subject": "Midwest Medical Transport Company, LLC dba MMT Ambulance",
+ "domains": {
+  "historical": "midwestmedicaltransport.com (Wayback captures 2014; Common Crawl 2018-2022 robots.txt only)",
+  "task_hypothesis_domain": "midwestmedtrans.com - ZERO captures per archive.org availability API (checked 2014-2026); domain does not resolve as of 2026-07-11",
+  "current": "mmtamb.com (captures from 2023-03 onward)"
+ },
+ "cdx_query": [
+  "BLOCKED: http://web.archive.org/cdx/search/cdx?url=midwestmedtrans.com&output=json&fl=timestamp,original&filter=statuscode:200&collapse=timestamp:4 (web.archive.org unreachable from this environment: HTTPS TLS reset, HTTP 403 'Blocked by egress policy'; WebFetch also blocked)",
+  "USED instead: https://archive.org/wayback/available?url={domain}&timestamp={yyyy}0701 for domains midwestmedtrans.com, midwestmedicaltransport.com, www variants, mmtamb.com, years 2014-2026",
+  "USED instead: https://index.commoncrawl.org/{CC-MAIN-*}-index?url={domain}&matchType=domain&output=json&filter=status:200 across 38 sampled collections 2014-2026; page content fetched as WARC records from https://data.commoncrawl.org/ via byte-range requests"
+ ],
+ "retrieved": "2026-07-11",
+ "rows": [
+  {
+   "snapshot_date": "2014-05-17",
+   "timestamp": "20140517215931",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "midwestmedicaltransport.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20140517215931/http://midwestmedicaltransport.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction."
+  },
+  {
+   "snapshot_date": "2014-12-17",
+   "timestamp": "20141217230238",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "midwestmedicaltransport.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20141217230238/http://midwestmedicaltransport.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction. Availability API returns this capture as closest for all query years 2015-2026, implying no later 200 capture of this URL."
+  },
+  {
+   "snapshot_date": "2023-03-07",
+   "timestamp": "20230307172802",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "mmtamb.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20230307172802/https://mmtamb.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction."
+  },
+  {
+   "snapshot_date": "2023-06-07",
+   "timestamp": "20230607191847",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "mmtamb.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20230607191847/https://mmtamb.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction."
+  },
+  {
+   "snapshot_date": "2024-06-25",
+   "timestamp": "20240625193329",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "mmtamb.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20240625193329/https://mmtamb.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction."
+  },
+  {
+   "snapshot_date": "2026-06-13",
+   "timestamp": "20260613092259",
+   "archive": "Wayback Machine (Internet Archive)",
+   "page": "mmtamb.com",
+   "claim_text": null,
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "http://web.archive.org/web/20260613092259/https://mmtamb.com/",
+   "note": "Snapshot recorded via archive.org availability API; snapshot CONTENT not retrievable from this environment (web.archive.org blocked by egress policy - HTTP 403 'Blocked by egress policy'; TLS reset on https). PARKED for content extraction."
+  },
+  {
+   "snapshot_date": "2023-03-24",
+   "timestamp": "20230324134522",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/",
+   "claim_text": "'The Communities We Serve - Click on a state below to learn more. Currently Serving / Coming Soon' ... state panels: Missouri ('Proudly Serving St. Louis and the Kansas City Metro Area'), Iowa ('Proudly Serving Iowa City, Sioux City, and the Des Moines Metro Areas.'), Nebraska ('Proudly Serving Omaha Metro Area since 1987.'), Wisconsin ('...Metro Milwaukee and Madison Areas since 1973'), Ohio ('...Dayton, Cincinnati, Columbus, and Cleveland Metro Areas.'), Virginia, Massachusetts, Rhode Island, Washington DC, Kansas ('Proudly Serving Kansas and the Kansas City Metro area'), North Carolina ('...Elizabeth City Metro Area'). Coming Soon: Connecticut, South Carolina, Illinois, Indiana, Colorado, Florida.",
+   "states_claimed_if_enumerable": [
+    "MO",
+    "IA",
+    "NE",
+    "WI",
+    "OH",
+    "VA",
+    "MA",
+    "RI",
+    "DC",
+    "KS",
+    "NC"
+   ],
+   "n_states_claimed": 11,
+   "url": "https://index.commoncrawl.org/CC-MAIN-2023-14-index?url=mmtamb.com (capture 20230324134522 of https://mmtamb.com/)",
+   "note": "n_states_claimed counts DC as one of 11 'Currently Serving' entries (10 states + DC). Six additional states listed as 'MMT is Coming Soon!'. Also on page: 'In 2022, MMT's fleet traveled more than 9,000,000 miles'; 'MMT began in 1987 in rural Nebraska operating one ambulance and has since become a national industry leader and one of the largest EMS (Emergency Medical Services) companies of its kind.'"
+  },
+  {
+   "snapshot_date": "2023-03-24",
+   "timestamp": "20230324121017",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/about-us/",
+   "claim_text": "With a growing fleet of 500+ vehicles and a workforce of 4,000+ providers, MMT strives to provide the absolute best patient care 24/7/365.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20230324121017 of https://mmtamb.com/about-us/",
+   "note": null
+  },
+  {
+   "snapshot_date": "2023-03-24",
+   "timestamp": "20230324130554",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/partnerships/",
+   "claim_text": "MMT has operations spread out across multiple states and offers premier, reliable ambulance transportation services to dozens of communities and thousands of medical centers and healthcare organizations.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20230324130554 of https://mmtamb.com/partnerships/",
+   "note": null
+  },
+  {
+   "snapshot_date": "2024-02-24",
+   "timestamp": "20240224203538",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/",
+   "claim_text": "MMT began in 1987 in rural Nebraska operating one ambulance and has since become a national industry leader and one of the largest EMS (Emergency Medical Services) companies of its kind.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20240224203538 of https://mmtamb.com/",
+   "note": "The state-by-state 'Communities We Serve / Currently Serving' section present in the 2023-03 capture is ABSENT from this capture; no state enumeration on page."
+  },
+  {
+   "snapshot_date": "2024-02-24",
+   "timestamp": "20240224194946",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/partnerships/",
+   "claim_text": "MMT has operations spread out across multiple states and offers premier, reliable ambulance transportation services to dozens of communities and thousands of medical centers and healthcare organizations.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20240224194946 of https://mmtamb.com/partnerships/",
+   "note": "Multiple-states sentence unchanged from 2023-03 capture."
+  },
+  {
+   "snapshot_date": "2025-01-20",
+   "timestamp": "20250120000550",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/",
+   "claim_text": "For over 35 years, MMT has partnered with some of the largest and most prestigious health systems across the country to provide patient ambulance transportation solutions to improve throughput.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20250120000550 of https://mmtamb.com/",
+   "note": "Redesigned homepage; no state enumeration. State names appear only inside a customer-style testimonial referencing 'the Missouri Valley, Iowa station'."
+  },
+  {
+   "snapshot_date": "2025-05-22",
+   "timestamp": "20250522221503",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/about-us/",
+   "claim_text": "Our team of more than 2,800+ dedicated emergency medicine professionals is committed to providing optimal care to each patient and exceptional service to the health system partners within our communities.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20250522221503 of https://mmtamb.com/about-us/",
+   "note": null
+  },
+  {
+   "snapshot_date": "2026-01-14",
+   "timestamp": "20260114034214",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/about-us/",
+   "claim_text": "Our team of more than 2,800+ dedicated emergency medicine professionals is committed to providing optimal care to each patient and exceptional service to the health system partners within our communities.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20260114034214 of https://mmtamb.com/about-us/",
+   "note": "2,800+ staffing self-claim unchanged from 2025-05 capture."
+  },
+  {
+   "snapshot_date": "2026-01-14",
+   "timestamp": "20260114051617",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/",
+   "claim_text": "Patient Transport Programs that Improve Health System Throughput - For over 35 years, MMT has partnered with some of the largest and most prestigious health systems across the country to provide patient ambulance transportation solutions to improve throughput.",
+   "states_claimed_if_enumerable": null,
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20260114051617 of https://mmtamb.com/",
+   "note": "No state enumeration on page."
+  },
+  {
+   "snapshot_date": "2026-05-16",
+   "timestamp": "20260516044433",
+   "archive": "Common Crawl (WARC record, index.commoncrawl.org / data.commoncrawl.org)",
+   "page": "https://mmtamb.com/careers-iowa/",
+   "claim_text": "(Iowa-specific careers page present; page text includes '...MMT creates a fun, rewarding, growth-oriented culture for our 2,800+ team members'.)",
+   "states_claimed_if_enumerable": [
+    "IA"
+   ],
+   "n_states_claimed": null,
+   "url": "Common Crawl capture 20260516044433 of https://mmtamb.com/careers-iowa/",
+   "note": "Existence of a state-specific careers page recorded as-is; not a footprint enumeration."
+  }
+ ],
+ "format_notes": "Domain history: midwestmedicaltransport.com was the public site through at least Dec 2014 (Wayback) and still served robots.txt to Common Crawl through 2022; mmtamb.com (MMT Ambulance rebrand) appears in archives from Mar 2023. No archive captures exist for midwestmedtrans.com. Wayback snapshot CONTENT could not be fetched from this environment (egress block) - Wayback rows are recorded with URL + timestamp and PARKED for content; content rows are Common Crawl WARC captures, an independent public web archive, labeled per row. 2015-2022 content: no non-robots captures found in either reachable archive for the old domain; gap is recorded, not interpolated. Self-claims by the subject company on its own public website, recorded verbatim; labeled PUBLIC-WEB self-claim. No inference beyond page text."
+}

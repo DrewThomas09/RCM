@@ -22,7 +22,18 @@ SHEETS = [{'name': 'HCRIS_Ambulance_CostCenters',
                        'and where are hospitals entering or exiting the '
                        'business?'}]
 
-HCRIS_GZ = os.path.join('RCM_MC', 'rcm_mc', 'data', 'hcris.csv.gz')
+HCRIS_REL = os.path.join('rcm_mc', 'data', 'hcris.csv.gz')
+
+
+def _hcris_path(repo):
+    """Resolve the HCRIS panel under either repo-root convention
+    (ctx['repo'] may be the git root or the RCM_MC package root)."""
+    for cand in (os.path.join(repo, HCRIS_REL),
+                 os.path.join(repo, 'RCM_MC', HCRIS_REL),
+                 '/home/user/RCM/RCM_MC/rcm_mc/data/hcris.csv.gz'):
+        if os.path.exists(cand):
+            return cand
+    return os.path.join(repo, HCRIS_REL)
 FOOTPRINT = ['NE', 'IA', 'KS', 'MO', 'OH', 'WI', 'VA', 'MN', 'IN', 'KY']
 SHOW_YEARS = [2019, 2020, 2021, 2022, 2023, 2024]
 COMPLETE_YEARS = [2020, 2021, 2022, 2023]
@@ -79,7 +90,7 @@ def build(wb, ctx):
     #    empirical SSA-prefix majority vote for brand-new CCNs ──
     st, nm = {}, {}
     prefix_votes = defaultdict(Counter)
-    with gzip.open(os.path.join(repo, HCRIS_GZ), 'rt') as f:
+    with gzip.open(_hcris_path(repo), 'rt') as f:
         for row in csv.DictReader(f):
             ccn, s = row['ccn'], row['state']
             st[ccn] = s
