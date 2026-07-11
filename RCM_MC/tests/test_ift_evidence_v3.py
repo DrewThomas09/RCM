@@ -2,7 +2,7 @@
 
 Validates the shipped workbook without regenerating it (no network, no
 LibreOffice): structure, governance integrity, the no-illustrative rule, and
-the deliverable gates (tabs >= 200, printed-page estimate >= 200, >= 15MB).
+the deliverable gates (tabs >= 200, printed-page estimate >= 200, >= 29MB).
 """
 import json
 import os
@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_1.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_2.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -32,7 +32,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
 
     def test_deliverable_gates(self):
         self.assertGreaterEqual(len(self.wb.sheetnames), 200)
-        self.assertGreaterEqual(os.path.getsize(DELIV), 15_000_000)
+        self.assertGreaterEqual(os.path.getsize(DELIV), 29_000_000)
 
     def test_governance_tabs_present(self):
         for tab in ('README', 'Methodology', 'Fact_Ledger', 'Source_Register',
@@ -102,7 +102,10 @@ class TestIFTEvidenceV3(unittest.TestCase):
             self.assertIn(f'MS_County_{y}', names)
         for tab in ('PECOS_Registry', 'Hosp_Registry', 'SNF_Registry',
                     'HSA_Hospital_Catchment', 'ED_Timeliness_Registry', 'SP_Index',
-                    'Index', 'State_Age_65plus', 'OEWS_EMS_Wages'):
+                    'Index', 'State_Age_65plus', 'OEWS_EMS_Wages',
+                    'MUP_Providers_2024', 'HSA_Corridors', 'County_Age_65plus',
+                    'PLACES_County_Chronic', 'QCEW_Quarterly',
+                    'HCRIS_Hospital_Panel', 'LEIE_Ambulance_Exclusions'):
             self.assertIn(tab, names)
 
     def test_state_profiles_are_formula_driven(self):

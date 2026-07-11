@@ -33,7 +33,7 @@ _REPO_REF = '/home/user/RCM/RCM_MC/rcm_mc/market_reports/reference'
 V27 = _default('IFT_V27_XLSX',
                '/root/.claude/uploads/3de345a1-c58f-5ce6-b747-7cbb0636d5d9/bec059da-IFT_Sourced_Evidence_Master_v2_7.xlsx',
                os.path.join(_REPO_REF, 'IFT_Sourced_Evidence_Master_v2_7.xlsx'))
-V3 = _default('IFT_V3_OUT', os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_1.xlsx'))
+V3 = _default('IFT_V3_OUT', os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_2.xlsx'))
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 ERR = {'#REF!', '#DIV/0!', '#VALUE!', '#NAME?', '#N/A', '#NULL!', '#NUM!'}
@@ -211,8 +211,8 @@ def main():
         problems.append(f'V7 FAIL: {len(v3.sheetnames)} tabs < 200')
     size_mb = os.path.getsize(V3) / 1e6
     results['file_mb'] = round(size_mb, 1)
-    if size_mb < 15:
-        problems.append(f'V7 FAIL: file {size_mb:.1f}MB < 15MB')
+    if size_mb < 29:
+        problems.append(f'V7 FAIL: file {size_mb:.1f}MB < 29MB')
 
     # V8: ledger integrity
     fl = v3['Fact_Ledger']
