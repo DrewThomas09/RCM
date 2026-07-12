@@ -1,0 +1,121 @@
+{
+  "_meta": {
+    "task": "B.3 Medicaid ambulance rate card, footprint states",
+    "accessed": "11 Jul 2026",
+    "unit_note": "All rates USD per one-way base transport unless unit says per mile",
+    "medicare_comparator": "CY2026 AFS national unadjusted base (Derived_Rate_Card col D: RVU x CF $284.56; A0425 $9.15/mile)"
+  },
+  "NE": {
+    "codes": {
+      "A0425": {"rate": 6.35, "unit": "per mile", "notes": "GROUND MILEAGE PER STATUTE MILE"},
+      "A0426": {"rate": 387.24, "unit": "base", "notes": "ALS non-emergency; same rate as A0427/A0433/A0434 (flat ALS rate)"},
+      "A0427": {"rate": 387.24, "unit": "base", "notes": ""},
+      "A0428": {"rate": 154.89, "unit": "base", "notes": "Schedule comment: INCLUDES BARIATRIC TRANSFERS"},
+      "A0429": {"rate": 189.93, "unit": "base", "notes": ""},
+      "A0433": {"rate": 387.24, "unit": "base", "notes": ""},
+      "A0434": {"rate": 387.24, "unit": "base", "notes": ""}
+    },
+    "effective": "1 Jul 2026 (fee schedule 471-000-504, Ambulance Services, July 1 2026); schedule cover states rates carry NO increase vs prior year - no rate increase appropriations this state fiscal year",
+    "pa_rules": "PA column on the schedule is blank for every ground ambulance code (no prior-authorization flag); A0888/A0999 are BR (by report). Nebraska Medicaid ambulance policy is 471 NAC 4.",
+    "broker_carve": "YES (managed care). Heritage Health MCOs carve NEMT to transportation brokers: MTM Inc. for Nebraska Total Care and Molina, ModivCare for UnitedHealthcare with MTM Health taking over 1 Jan 2026 (UHCprovider notice). Residual FFS members get NET arranged by DHHS Medicaid transportation staff under the separate 471-000-503 NET fee schedule (1 Jan 2026 revision).",
+    "dialysis_policy": "No dialysis-specific restriction or rate row printed on the ambulance schedule; scheduled dialysis travel routes through the NET benefit (MCO broker or DHHS FFS NET). Not stated at code level in the retrieved schedule.",
+    "source_url": "https://dhhs.ne.gov/Medicaid%20Practitioner%20Fee%20Schedules/471-000-504%20Ambulance%20-%20July%20%2726.xlsx",
+    "retrieval": "Direct download of the July 2026 xlsx from the DHHS Medicaid Provider Rates and Fee Schedules page; parsed with openpyxl. File title row: NEBRASKA MEDICAID FEE SCHEDULE, AMBULANCE SERVICES JULY 1, 2026 / 471-000-504."
+  },
+  "IA": {
+    "codes": {
+      "A0425": {"rate": 2.61, "unit": "per mile", "notes": "eff 07/01/2014"},
+      "A0426": {"rate": 101.60, "unit": "base", "notes": "eff 10/01/2015"},
+      "A0427": {"rate": 127.01, "unit": "base", "notes": "eff 10/01/2015"},
+      "A0428": {"rate": 84.67, "unit": "base", "notes": "eff 07/01/2014"},
+      "A0429": {"rate": 114.30, "unit": "base", "notes": "eff 10/01/2015"},
+      "A0433": {"rate": 232.84, "unit": "base", "notes": "eff 05/01/2020"},
+      "A0434": {"rate": 232.84, "unit": "base", "notes": "eff 12/01/2020"}
+    },
+    "effective": "Current portal extract accessed 11 Jul 2026; per-code effective dates 2014-2020 with open end dates (99999999). Public GEMT providers get a separate cost-based supplemental (Iowa GEMT program).",
+    "pa_rules": "No PA flag; non-emergency ambulance requires medical-necessity criteria - bed confinement before and after the trip, or restraint risk, ongoing IV, oxygen without portable system, or isolation (Ambulance Services Provider Manual, Ch. III, dated 1 Oct 2015).",
+    "broker_carve": "YES. NEMT broker for the three IA Health Link MCOs was Access2Care, renamed to MTM Health effective 18 Sep 2025; MTM also administers FFS NEMT (hhs.iowa.gov Medical Transportation page).",
+    "dialysis_policy": "NEMT rides for dialysis, chemo, or radiation can be scheduled up to 90 days in advance (member NEMT policy); ambulance claims carry destination modifiers G (hospital-based dialysis facility) and J (non-hospital dialysis facility) per the provider manual.",
+    "source_url": "https://secureapp.dhs.state.ia.us/MedicaidFeeSched/C11.csv",
+    "retrieval": "Interactive fee-schedule portal (I Accept gate on hhs.iowa.gov fee-schedules page -> XML index -> provider type 11 AMBULANCE -> C11.csv). Values read from the CSV: code, description, Factor column."
+  },
+  "KS": {
+    "codes": {
+      "A0425": {"rate": 13.20, "unit": "per mile", "notes": "Ambulance rate-type schedule, eff 07/01/2023; the general Medicaid-rate schedule still carries a legacy $3.00 row eff 07/01/2022"},
+      "A0426": {"rate": 306.84, "unit": "base", "notes": "eff 07/01/2023"},
+      "A0427": {"rate": 485.83, "unit": "base", "notes": "eff 07/01/2023"},
+      "A0428": {"rate": 255.70, "unit": "base", "notes": "eff 07/01/2023"},
+      "A0429": {"rate": 409.12, "unit": "base", "notes": "eff 07/01/2023"},
+      "A0433": {"rate": 703.18, "unit": "base", "notes": "eff 07/01/2023"},
+      "A0434": {"rate": 831.03, "unit": "base", "notes": "eff 07/01/2023"}
+    },
+    "effective": "Current KMAP files posted with version date 7/1/2026 (FeeSchedule_20260701_TXIX_AMB.txt and FeeSchedule_20260701_TXIX_DEF.txt); ambulance code rates effective 7/1/2023 (the SFY2024 ambulance rebase).",
+    "pa_rules": "No PA, but ALL nonemergent transportation requires medical necessity and a Medical Necessity (MN) form attached to the claim at submission (KMAP professional/ambulance manual guidance).",
+    "broker_carve": "YES (managed care). KanCare is near-total managed care; NEMT runs through the MCO broker ModivCare (Kansas NEMT provider manual), which coordinates taxi, van, wheelchair, stretcher van and ambulance NEMT.",
+    "dialysis_policy": "Dialysis is named among critical services eligible for NEMT in the Kansas NEMT provider manual (ModivCare, May 2022).",
+    "source_url": "https://portal.kmap-state-ks.us/PublicPage/ProviderPricing/FeeSchedules",
+    "retrieval": "KMAP public portal defeats simple fetch (Kendo grid + session). Replicated the AJAX flow with a session cookie jar: GetFeeScheduleProgram -> GetFeeScheduleRateType?program=TXIX -> POST FeeSheduleSearchCurrentResultList (program=TXIX, ratetype=AMB / DEF) -> GET DownloadFSFile?arg1=<zip> with referer. Files parsed as fixed-width text."
+  },
+  "MO": {
+    "codes": {
+      "A0425": {"rate": 7.04, "unit": "per mile", "notes": "eff 07/01/2024"},
+      "A0426": {"rate": 172.26, "unit": "base", "notes": "HH (hospital-to-hospital) modifier only; base code noncovered; eff 07/01/2019"},
+      "A0427": {"rate": 474.75, "unit": "base", "notes": "eff 07/01/2024"},
+      "A0428": {"rate": 105.62, "unit": "base", "notes": "HH and HD (hospital-to-diagnostic) modifiers only; base code noncovered; eff 07/01/2019"},
+      "A0429": {"rate": 379.69, "unit": "base", "notes": "eff 07/01/2024"},
+      "A0433": {"rate": 215.20, "unit": "base", "notes": "eff 07/01/2019"},
+      "A0434": {"rate": null, "unit": "base", "notes": "NONCOVERED under MO HealthNet FFS (fee schedule row, since 07/01/2002)"}
+    },
+    "effective": "Fee schedule file generated 7 Jul 2026 (provider files updated 07/08/2026); per-row rate effective dates 2019-2024 as noted.",
+    "pa_rules": "Prior Authorization column is No on every covered ambulance row. A0428 is billable ONLY for hospital-to-hospital transfer (HH) or hospital-to-diagnostic/therapeutic site (HD) per the MHD hot tip 'Ambulance Billing for Procedure Code A0428'.",
+    "broker_carve": "YES. Statewide NEMT broker is MTM (mydss.mo.gov/mhd/nemt: 'To become a NEMT provider, contact MTM'). Scheduled non-emergency transports outside the HH/HD ambulance contexts route through the broker, not the FFS schedule.",
+    "dialysis_policy": "Dialysis transports are not billable as FFS A0428 (HH/HD contexts only); scheduled dialysis travel is a broker (MTM) trip under the NEMT program.",
+    "source_url": "https://apps.dss.mo.gov/fmsfeeschedules/dlfiles/Ambulance.xlsx",
+    "retrieval": "Direct download from the MHD fee schedule downloads page (apps.dss.mo.gov/fmsfeeschedules/DLFiles.aspx); parsed with openpyxl."
+  },
+  "OH": {
+    "codes": {
+      "A0425": {"rate": 5.05, "unit": "per mile", "notes": ""},
+      "A0426": {"rate": 244.50, "unit": "base", "notes": ""},
+      "A0427": {"rate": 289.75, "unit": "base", "notes": ""},
+      "A0428": {"rate": 203.75, "unit": "base", "notes": ""},
+      "A0429": {"rate": 244.00, "unit": "base", "notes": ""},
+      "A0433": {"rate": 349.50, "unit": "base", "notes": ""},
+      "A0434": {"rate": 413.00, "unit": "base", "notes": ""}
+    },
+    "effective": "1 Jan 2024 (appendix to OAC rule 5160-15-28, appendix file dated 22 Dec 2023; rule effective 1 Jan 2024).",
+    "pa_rules": "No prior authorization in rule; non-emergency ground ambulance requires necessity per OAC 5160-15-23(B): EMT treatment/supervision, oxygen administration, or supervised protective restraint during transport, or a qualifying hospital-to-hospital transfer.",
+    "broker_carve": "PARTIAL / NO STATEWIDE BROKER. Non-ambulance NET runs through county CDJFS programs (OAC 5160-15-10) and MCO transportation benefits; ambulance remains a direct ODM FFS or MCO claim. Public EMS providers also receive a GEMT supplemental payment (OAC 5160-15-30, eff 7 Apr 2025) up to the Medicare payment ceiling.",
+    "dialysis_policy": "Rules retrieved are silent on dialysis-specific transport; no dialysis rate row in the appendix.",
+    "source_url": "https://codes.ohio.gov/assets/laws/administrative-code/pdfs/5160/0/15/5160-15-28_PH_FF_A_APP1_20231222_0942.pdf",
+    "retrieval": "Direct download of the appendix PDF linked from codes.ohio.gov rule 5160-15-28; parsed with pdftotext."
+  },
+  "WI": {
+    "codes": {
+      "A0425": {"rate": 5.56, "unit": "per mile", "notes": "GM (multi-patient) half-rate $2.78"},
+      "A0426": {"rate": 113.88, "unit": "base", "notes": "GM half-rate $56.94"},
+      "A0427": {"rate": 180.31, "unit": "base", "notes": ""},
+      "A0428": {"rate": 94.90, "unit": "base", "notes": ""},
+      "A0429": {"rate": 151.84, "unit": "base", "notes": ""},
+      "A0433": {"rate": 260.97, "unit": "base", "notes": ""},
+      "A0434": {"rate": 308.42, "unit": "base", "notes": ""}
+    },
+    "effective": "Every ground code carries effective date 07/01/2008 on the live max-fee report (accessed 11 Jul 2026) - the schedule has not moved in 18 years.",
+    "pa_rules": "No code-level PA flag on the schedule (PA listed among general limitations). Non-emergency ambulance eligibility requires life support services (ALS/BLS) or supine transport; when NEMT-by-ambulance is coordinated through the NEMT manager the provider must obtain a trip ID within two business days and submit the claim to the manager (ForwardHealth Update 2014-32).",
+    "broker_carve": "YES. Statewide NEMT manager (MTM Inc.; Veyo held the contract from 1 Nov 2021 until MTM's acquisition; DHS NEMT pages now point to the MTM Link portal). Scheduled NEMT ambulance claims coordinated through the manager are paid by the manager, not ForwardHealth; FFS pays emergencies and NEMT not coordinated through the manager.",
+    "dialysis_policy": "Recurring-treatment rides (dialysis) are scheduled as standing rides through the NEMT manager; the ambulance max-fee schedule itself is silent on dialysis. Stretcher vans are a separate SMV max-fee schedule.",
+    "source_url": "https://www.forwardhealth.wi.gov/WIPortal/Tab/42/icscontent/provider/maxfee/pdf/maxfee06_ambulance.pdf.spage",
+    "retrieval": "Direct download of the ForwardHealth portal-generated AMBULANCE MAXIMUM ALLOWABLE FEE SCHEDULE PDF; parsed with pdftotext."
+  },
+  "VA": {
+    "codes": {
+      "A0428": {"rate": null, "unit": "base", "notes": "PENDING - not payable on the public FFS schedule: must be preauthorized and billed to the FFS NEMT broker (DMAS Transportation manual Ch.5, rev 12/5/2025: 'A0428 Non-Emergency Basic Life Support Ambulance - These transports need to be preauthorized and billed to the Non-Emergency Medicaid Transportation Broker (866) 386-8331')"}
+    },
+    "effective": "PARKED for dollar rates: the posted emergency ground ambulance PDF on dmas.virginia.gov (fee-schedules-for-emergency-ground-ambulance) is the Nov 2009 - Jun 2012 sliding-scale vintage; current per-code rates sit in the DMAS procedure fee file search portal, which requires interactive per-code lookup that could not be completed in-window.",
+    "pa_rules": "Non-emergency ambulance (A0426/A0428) requires broker preauthorization BEFORE transport; emergency codes billed FFS without broker contact.",
+    "broker_carve": "YES - the strongest carve in the set: FFS non-emergency ambulance itself is billed to the DMAS NEMT broker, so no public FFS price exists for scheduled ambulance transport.",
+    "dialysis_policy": "Scheduled dialysis transport is a broker trip (all nine FFS NEMT service types must be arranged and confirmed by the broker before transport).",
+    "source_url": "https://vamedicaid.dmas.virginia.gov/sites/default/files/2025-12/Transportation%20Chapter%205%20(updated%2012.5.25)_Final.pdf",
+    "retrieval": "Transportation manual PDF fetched and verified (pdftotext); rate rows PARKED as PENDING with the DMAS procedure fee file portal named as the filler dataset."
+  }
+}

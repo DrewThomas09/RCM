@@ -1,0 +1,2005 @@
+{
+ "generated": "2026-07-11",
+ "method": "ProPublica Nonprofit Explorer API v2 for EIN resolution and filing lists; IRS e-file XML fetched via projects.propublica.org/nonprofits/download-xml?object_id=...; Part VII Section B parsed from ContractorCompensationGrp / CntrctRcvdGreaterThan100KCnt. Latest two XML-available filings per EIN. Public filings; entries recorded verbatim; no inference beyond the filing text.",
+ "transport_keyword_regex": "ambulanc|medical transport|patient transport|transport(?:ation)? of patients|\\bems\\b|emergency medical|air medical|life ?flight|med ?flight|medevac|medivac|paramedic|ambulette|american medical response|\\bamr\\b|ambulnz|\\bnemt\\b|critical care transport|mobile intensive care|superior air|midwest medical transport|transport",
+ "systems": [
+  {
+   "system": "Cleveland Clinic (OH)",
+   "eins": [
+    {
+     "ein": 340714585,
+     "name": "The Cleveland Clinic Foundation",
+     "filings": [
+      {
+       "object_id": "202513189349302136",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 626,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "QUALIVIS LLC",
+         "address": "PO BOX 674913, DALLAS, TX, 75267",
+         "services": "PERSONNEL SERVICES",
+         "amount": 91837852
+        },
+        {
+         "name": "TURNER CONSTRUCTION CO",
+         "address": "1422 EUCLID AVE STE 1400, CLEVELAND, OH, 44115",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 44259662
+        },
+        {
+         "name": "GILBANE BUILDING CO",
+         "address": "950 MAIN AVE 1410, CLEVELAND, OH, 44113",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 32320738
+        },
+        {
+         "name": "SIEMENS MEDICAL SOLUTIONS INC",
+         "address": "PO BOX 121102, DALLAS, TX, 75312",
+         "services": "HEALTHCARE IT & ENGINEERING SERVICES",
+         "amount": 29380339
+        },
+        {
+         "name": "WHITING-TURNER CONTRACTING",
+         "address": "5875 LANDERBROOK DR 100, CLEVELAND, OH, 44124",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 24668781
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202423199349303332",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 619,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "QUALIVIS LLC",
+         "address": "PO BOX 674913, DALLAS, TX, 75267",
+         "services": "PERSONNEL SERVICES",
+         "amount": 115425612
+        },
+        {
+         "name": "SIEMENS MEDICAL SOLUTIONS INC",
+         "address": "PO BOX 121102, DALLAS, TX, 75312",
+         "services": "HEALTHCARE IT & ENGINEERING SERVICES",
+         "amount": 27741803
+        },
+        {
+         "name": "MEDIA STORM LLC",
+         "address": "PO BOX 321, NORWALK, CT, 06856",
+         "services": "ADVERTISING AND MARKETING SERVICES",
+         "amount": 20488595
+        },
+        {
+         "name": "TOWNE PARK LLC",
+         "address": "555 E N LANE STE 5020, CONSHOHOCKEN, PA, 19428",
+         "services": "PARKING SERVICES",
+         "amount": 19757599
+        },
+        {
+         "name": "GILBANE BUILDING CO",
+         "address": "950 MAIN AVE 1410, CLEVELAND, OH, 44113",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 14170826
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 912153073,
+     "name": "Cleveland Clinic Foundation",
+     "filings": [
+      {
+       "object_id": "202523179349308727",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 821,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "QUALIVIS LLC",
+         "address": "PO BOX 674913, DALLAS, TX, 75267",
+         "services": "PERSONNEL SERVICES",
+         "amount": 199590256
+        },
+        {
+         "name": "TURNER CONSTRUCTION CO",
+         "address": "1422 EUCLID AVE STE 1400, CLEVELAND, OH, 44115",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 45057174
+        },
+        {
+         "name": "SIEMENS MEDICAL SOLUTIONS INC",
+         "address": "PO BOX 121102, DALLAS, TX, 75312",
+         "services": "HEALTHCARE IT & ENGINEERING SERVICES",
+         "amount": 33251685
+        },
+        {
+         "name": "GILBANE BUILDING CO",
+         "address": "950 MAIN AVE 1410, CLEVELAND, OH, 44113",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 32320738
+        },
+        {
+         "name": "WHITING-TURNER CONTRACTING",
+         "address": "5875 LANDERBROOK DR 100, CLEVELAND, OH, 44124",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 26134952
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202433199349303353",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 840,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "QUALIVIS LLC",
+         "address": "PO BOX 674913, DALLAS, TX, 75267",
+         "services": "PERSONNEL SERVICES",
+         "amount": 251088741
+        },
+        {
+         "name": "SIEMENS MEDICAL SOLUTIONS INC",
+         "address": "PO BOX 121102, DALLAS, TX, 75312",
+         "services": "HEALTHCARE IT CONSULTING & ENGINEERING S",
+         "amount": 28867043
+        },
+        {
+         "name": "MEDIA STORM LLC",
+         "address": "PO BOX 321, NORWALK, CT, 06856",
+         "services": "ADVERTISING & MARKETING SERVICES",
+         "amount": 20764324
+        },
+        {
+         "name": "TOWNE PARK LLC",
+         "address": "555 E N LANE STE 5020, CONSHOHOCKEN, PA, 19428",
+         "services": "PARKING SERVICES",
+         "amount": 19757599
+        },
+        {
+         "name": "WHITING-TURNER CONTRACTING",
+         "address": "5875 LANDERBROOK DR 100, CLEVELAND, OH, 44124",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 18368706
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 340714593,
+     "name": "Cleveland Clinic Health System East Region",
+     "filings": [],
+     "errors": [],
+     "note": "No IRS e-file XML links exposed on the public ProPublica page for this EIN; most recent extract-backed filings are older and this entity appears to be reported within the Cleveland Clinic group return (91-2153073) in recent years. Parked."
+    }
+   ],
+   "disambiguation_notes": "Main filer The Cleveland Clinic Foundation (34-0714585); Cleveland Clinic Foundation Group Return (91-2153073) covers subordinate hospitals; Cleveland Clinic Health System East Region (34-0714593) is the largest regional hospital filer. Florida/Nevada entities excluded as outside study footprint."
+  },
+  {
+   "system": "Inova Health System (VA)",
+   "eins": [
+    {
+     "ein": 540620889,
+     "name": "Inova Health Care Services",
+     "filings": [
+      {
+       "object_id": "202543159349304194",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 679,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "DPR CONSTRUCTION",
+         "address": "11109 SUNSET HILLS RD 200, RESTON, VA, 20190",
+         "services": "CONSTRUCTION",
+         "amount": 77059697
+        },
+        {
+         "name": "NORTHSTAR ANESTHESIA OF VIRGINIA",
+         "address": "6225 N STATE HWY 161 200, IRVING, TX, 75038",
+         "services": "MEDICAL SERVICES",
+         "amount": 56347763
+        },
+        {
+         "name": "GILBANE BUILDING COMPANY",
+         "address": "7 JACKSON WALKWAY, PROVIDENCE, RI, 02903",
+         "services": "CONSTRUCTION",
+         "amount": 37772813
+        },
+        {
+         "name": "RANDSTAD HEALTHCARE",
+         "address": "PO BOX 742689, ATLANTA, GA, 30374",
+         "services": "STAFFING",
+         "amount": 35091851
+        },
+        {
+         "name": "HITT CONTRACTING INC",
+         "address": "2900 FAIRVIEW PARK DRIVE, FALLS CHURCH, VA, 22042",
+         "services": "CONSTRUCTION",
+         "amount": 34622645
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202403139349300445",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 646,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "RANDSTAD HEALTHCARE",
+         "address": "PO BOX 742689, ATLANTA, GA, 30374",
+         "services": "STAFFING",
+         "amount": 105200644
+        },
+        {
+         "name": "DNR CONSTRUCTION",
+         "address": "11109 SUNSET HILLS RD 200, RESTON, VA, 20190",
+         "services": "CONSTRUCTION",
+         "amount": 43194424
+        },
+        {
+         "name": "NORTHSTAR ANESTHESIA OF VIRGINIA",
+         "address": "6225 N STATE HWY 161 200, IRVING, TX, 75038",
+         "services": "MEDICAL SERVICES",
+         "amount": 31809405
+        },
+        {
+         "name": "HITT CONTRACTING INC",
+         "address": "2900 FAIRVIEW PARK DRIVE, FALLS CHURCH, VA, 22042",
+         "services": "CONSTRUCTION",
+         "amount": 31608019
+        },
+        {
+         "name": "THE BALLINGER COMPANY",
+         "address": "833 CHESTNUT ST SUITE 1400, PHILADELPHIA, PA, 19107",
+         "services": "CONSTRUCTION",
+         "amount": 29872703
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 541071867,
+     "name": "Inova Health System Foundation",
+     "filings": [
+      {
+       "object_id": "202503159349304435",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 13,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ARTISAN",
+         "address": "875 E WISCONSIN AVE SUITE 800, MILWAUKEE, WI, 53202",
+         "services": "INVESTMENT FEES",
+         "amount": 1861742
+        },
+        {
+         "name": "NORTHERN TRUST",
+         "address": "50 S LASALLE STREET, CHICAGO, IL, 60603",
+         "services": "INVESTMENT FEES",
+         "amount": 1184441
+        },
+        {
+         "name": "MARKETEAM LLC",
+         "address": "1200 ABERNATHY ROAD NE SUITE 400, ATLANTA, GA, 30328",
+         "services": "MARKETING",
+         "amount": 995766
+        },
+        {
+         "name": "AETNA LIFE INSURANCE",
+         "address": "151 FARMINGTON AVE, HARTFORD, CT, 06156",
+         "services": "INSURANCE FEES",
+         "amount": 845258
+        },
+        {
+         "name": "KOAN HEALTH LLC",
+         "address": "5100 N OCONNER BLVD SUITE 325, IRVING, TX, 75039",
+         "services": "INSURANCE FEES",
+         "amount": 694261
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202403139349301460",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 15,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ARTISAN",
+         "address": "875 E WISCONSIN AVE SUITE 800, MILWAUKEE, WI, 53202",
+         "services": "INVESTMENT FEES",
+         "amount": 1599170
+        },
+        {
+         "name": "NORTHERN TRUST",
+         "address": "50 S LASALLE STREET, CHICAGO, IL, 60603",
+         "services": "INVESTMENT FEES",
+         "amount": 1375588
+        },
+        {
+         "name": "MARKETEAM LLC",
+         "address": "1200 ABERNATHY ROAD NE SUITE 400, ATLANTA, GA, 30328",
+         "services": "MARKETING",
+         "amount": 1280995
+        },
+        {
+         "name": "HITT CONTRACTING INC",
+         "address": "2900 FAIRVIEW PARK DRIVE, FALLS CHURCH, VA, 22042",
+         "services": "CONSTRUCTION",
+         "amount": 660416
+        },
+        {
+         "name": "LEGAL & GENERAL INVESTMENT MGMT AMERICA",
+         "address": "71 S WACKER DR 800, CHICAGO, IL, 60606",
+         "services": "INVESTMENT FEES",
+         "amount": 597031
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Inova Health Care Services (54-0620889) is the main operating filer holding the hospitals; Inova Health System Foundation (54-1071867) is the parent/foundation filer. 'Inova Vna Home Health' (Kettering OH) is an unrelated org, excluded."
+  },
+  {
+   "system": "CommonSpirit Health / CHI Health (NE)",
+   "eins": [
+    {
+     "ein": 470617373,
+     "name": "Commonspirit Health",
+     "filings": [
+      {
+       "object_id": "202641339349307439",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202641339349307439",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202531349349305488",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 294,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "CONIFER HEALTH SOLUTIONS",
+         "address": "3560 DALLAS PARKWAY, FRISCO, TX, 75034",
+         "services": "REVENUE CYCLE SERVICES",
+         "amount": 628570681
+        },
+        {
+         "name": "POLSINELLI PC",
+         "address": "PO BOX 878681, KANSAS CITY, MO, 64187",
+         "services": "LEGAL SERVICES",
+         "amount": 34315730
+        },
+        {
+         "name": "SIEMENS MEDICAL SOLUTIONS USA",
+         "address": "40 LIBERTY BOULEVARD, MALVERN, PA, 19355",
+         "services": "CLINICAL ENGINEERING",
+         "amount": 24011096
+        },
+        {
+         "name": "EPIC SYSTEMS CORPORATION",
+         "address": "1979 MILKY WAY, VERONA, WI, 53593",
+         "services": "EHR MANAGEMENT",
+         "amount": 23402533
+        },
+        {
+         "name": "GE PRECISION HEALTHCARE LLC",
+         "address": "120 WEST OPUS DRIVE, MILWAUKEE, WI, 53154",
+         "services": "CLINICAL ENGINEERING",
+         "amount": 16450625
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202441329349301254",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 261,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "CONIFER HEALTH SOLUTIONS",
+         "address": "3560 DALLAS PARKWAY, FRISCO, TX, 75034",
+         "services": "REVENUE CYCLE SERVICES",
+         "amount": 594289564
+        },
+        {
+         "name": "SODEXO INC & AFFILIATES",
+         "address": "PO BOX 360170, PITTSBURGH, PA, 15251",
+         "services": "FOOD SERVICES",
+         "amount": 68833455
+        },
+        {
+         "name": "POLSINELLI PC",
+         "address": "PO BOX 878681, KANSAS CITY, MO, 64187",
+         "services": "LEGAL SERVICES",
+         "amount": 31150594
+        },
+        {
+         "name": "EPIC SYSTEMS CORPORATION",
+         "address": "1979 MILKY WAY, VERONA, WI, 53593",
+         "services": "EHR MANAGEMENT",
+         "amount": 21571584
+        },
+        {
+         "name": "HCL TECHNOLOGIES LTD",
+         "address": "SEZ UNIT - III SDB2 GF PLOT NO 3A, NOIDA, UTTAR PRADESH, IN, 201304",
+         "services": "IT SUPPORT SERVICES",
+         "amount": 18212011
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 470757164,
+     "name": "Alegent Creighton Health",
+     "filings": [
+      {
+       "object_id": "202631339349303658",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631339349303658",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202511339349306291",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 117,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "MEDICAL SOLUTIONS LLC",
+         "address": "1010 N 102ND ST SUITE 300, OMAHA, NE, 68114",
+         "services": "TRAVEL NURSING COMPANY",
+         "amount": 30928336
+        },
+        {
+         "name": "AMERGIS HEALTHCARE STAFFING",
+         "address": "7227 LEE DEFOREST DR, COLUMBIA, MD, 21046",
+         "services": "STAFFING SERVICES",
+         "amount": 24914987
+        },
+        {
+         "name": "WALZ TETRICK ADVERTISING INC",
+         "address": "5201 JOHNSON DRIVE SUITE 500, MISSION, KS, 66205",
+         "services": "ADVERTISING SERVICES",
+         "amount": 3505708
+        },
+        {
+         "name": "MMC MECHANICAL CONTRACTORS INC",
+         "address": "9751 S 142ND STREET, OMAHA, NE, 68138",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 3075479
+        },
+        {
+         "name": "MCCARTHY BUILDING COMPANIES",
+         "address": "14217 DAYTON CIRCLE SUITE 8, OMAHA, NE, 68137",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 2926483
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202431319349303908",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 120,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "MEDICAL SOLUTIONS LLC",
+         "address": "1010 N 102ND ST SUITE 300, OMAHA, NE, 68114",
+         "services": "TRAVEL NURSING COMPANY",
+         "amount": 24423983
+        },
+        {
+         "name": "MAXIM HEALTHCARE STAFFING SERVICES",
+         "address": "7227 LEE DEFOREST DR, COLUMBIA, MD, 21046",
+         "services": "STAFFING SERVICES",
+         "amount": 18095607
+        },
+        {
+         "name": "MILLER ELECTRIC COMPANY",
+         "address": "2501 SAINT MARYS AVENUE, OMAHA, NE, 68105",
+         "services": "ELECTRICAL SERVICES",
+         "amount": 7122121
+        },
+        {
+         "name": "MCCARTHY BUILDING COMPANIES",
+         "address": "14217 DAYTON CIRCLE SUITE 8, OMAHA, NE, 68137",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 5112456
+        },
+        {
+         "name": "WALZ TETRICK ADVERTISING INC",
+         "address": "5201 JOHNSON DRIVE SUITE 500, MISSION, KS, 66205",
+         "services": "ADVERTISING SERVICES",
+         "amount": 4232494
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 363233121,
+     "name": "Chi Nebraska",
+     "filings": [
+      {
+       "object_id": "202631339349304038",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631339349304038",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202541339349306569",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202401319349303710",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "CommonSpirit Health parent filer 47-0617373 (Phoenix AZ HQ, ex-Dignity Health EIN). Nebraska division filers: Alegent Creighton Health (47-0757164, dba CHI Health, Omaha metro hospitals) and CHI Nebraska (36-3233121, statewide NE hospitals incl. Good Samaritan Kearney, St. Elizabeth Lincoln). Other CHI regional filers (CO, IA, TX) excluded as outside NE focus."
+  },
+  {
+   "system": "Nebraska Methodist Health System (Omaha NE)",
+   "eins": [
+    {
+     "ein": 470639839,
+     "name": "Nebraska Methodist Health System Inc",
+     "filings": [
+      {
+       "object_id": "202533189349309428",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 16,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ANDERSON PARTNERS",
+         "address": "444 REGENCY PARKWAY, OMAHA, NE, 68114",
+         "services": "ADVERTISING SERVICES",
+         "amount": 2051982
+        },
+        {
+         "name": "UKG KRONOS SYSTEMS LLC",
+         "address": "900 CHELMSFORD STREET, LOWELL, MA, 01851",
+         "services": "SOFTWARE",
+         "amount": 663793
+        },
+        {
+         "name": "KPMG LLP",
+         "address": "1212 N 96TH STREET, OMAHA, NE, 68114",
+         "services": "CONSULTING SERVICES",
+         "amount": 609217
+        },
+        {
+         "name": "QGENDA LLC",
+         "address": "3280 PEACHTREE ROAD, ATLANTA, GA, 30305",
+         "services": "SOFTWARE",
+         "amount": 545021
+        },
+        {
+         "name": "KBL ASSOCIATES",
+         "address": "1600 BROWN SPRINGS RD, GREENEVILLE, TN, 37743",
+         "services": "CONSULTING SERVICES",
+         "amount": 285019
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202413199349312551",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 11,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ANDERSON PARTNERS",
+         "address": "444 REGENCY PARKWAY, OMAHA, NE, 68114",
+         "services": "ADVERTISING SERVICES",
+         "amount": 1847612
+        },
+        {
+         "name": "KPMG LLP",
+         "address": "1212 N 96TH STREET, OMAHA, NE, 68114",
+         "services": "ACCOUNTING SERVICES",
+         "amount": 425700
+        },
+        {
+         "name": "ADVISORY BOARD",
+         "address": "P O BOX 79461, BALTIMORE, MD, 21279",
+         "services": "CONSULTING SERVICES",
+         "amount": 380238
+        },
+        {
+         "name": "TOWNE PARK LLC",
+         "address": "450 PLYMOUTH ROAD, PLYMOUTH MEETING, PA, 19462",
+         "services": "VALET SERVICES",
+         "amount": 362174
+        },
+        {
+         "name": "KBL ASSOCIATES",
+         "address": "311 WHITE AVE, MORRISTOWN, TN, 37814",
+         "services": "CONSULTING SERVICES",
+         "amount": 295243
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 470376604,
+     "name": "Nebraska Methodist Hospital",
+     "filings": [
+      {
+       "object_id": "202543189349309409",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 54,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "PERINATAL ASSOCIATES",
+         "address": "717 N 190TH PLAZA, OMAHA, NE, 68022",
+         "services": "MEDICAL SERVICES",
+         "amount": 9919556
+        },
+        {
+         "name": "MCLMEYERS-CARLISLE-LEAPLEY",
+         "address": "14124 INDUSTRIAL ROAD, OMAHA, NE, 681443332",
+         "services": "CONSTRUCTION",
+         "amount": 8062479
+        },
+        {
+         "name": "TRIMEDX HOLDING",
+         "address": "5451 LAKEVIEW PKWY S DRIVE, INDIANAPOLIS, IN, 46268",
+         "services": "MEDICAL CONSULTING SERVICES",
+         "amount": 6998864
+        },
+        {
+         "name": "WEST DODGE IMAGING",
+         "address": "515 N 162ND AVE, OMAHA, NE, 68118",
+         "services": "MEDICAL SERVICES",
+         "amount": 3300027
+        },
+        {
+         "name": "ABBVIE US",
+         "address": "N WAUKEGAN RD, NORTH CHICAGO, IL, 60064",
+         "services": "PHARMACEUTICALS",
+         "amount": 3063994
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202423199349311417",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 32,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "WEST DODGE IMAGING",
+         "address": "515 N 162ND AVE, OMAHA, NE, 68118",
+         "services": "MEDICAL SERVICES",
+         "amount": 3881586
+        },
+        {
+         "name": "EDWARDS LIFESCIENCES",
+         "address": "1 EWARDS WAY, IRVINE, CA, 68118",
+         "services": "MEDICAL EQUIPMENT",
+         "amount": 3771377
+        },
+        {
+         "name": "MCLMEYERS-CARLISLE-LEAPLEY",
+         "address": "14124 INDUSTRIAL ROAD, OMAHA, NE, 681443332",
+         "services": "CONSTRUCTION",
+         "amount": 3564460
+        },
+        {
+         "name": "CASSLING DIAGNOSTIC IMAGING",
+         "address": "13810 FNB PKWY, OMAHA, NE, 68154",
+         "services": "MEDICAL SERVICES",
+         "amount": 1903161
+        },
+        {
+         "name": "JE DUNN CONSTRUCTION",
+         "address": "14606 BRANCH ST SUITE 300, OMAHA, NE, 68154",
+         "services": "CONSTRUCTION",
+         "amount": 1861588
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Nebraska Methodist Health System Inc (47-0639839) parent filer; Nebraska Methodist Hospital (47-0376604) flagship hospital filer."
+  },
+  {
+   "system": "Premier Health (Dayton OH)",
+   "eins": [
+    {
+     "ein": 311446699,
+     "name": "Premier Health Partners",
+     "filings": [
+      {
+       "object_id": "202523109349304057",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 467,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "BESPOKE WORKFORCE LLC",
+         "address": "5930 CORNERSTONE CT W 300, SAN DIEGO, CA, 92121",
+         "services": "MEDICAL SERVICES",
+         "amount": 81459549
+        },
+        {
+         "name": "ANESTHESIOLOGY SERVICES",
+         "address": "ONE WYOMING ST, DAYTON, OH, 45409",
+         "services": "MEDICAL SERVICES",
+         "amount": 38974920
+        },
+        {
+         "name": "MORRISON HEALTHCARE",
+         "address": "400 NORTHRIDGE ROAD 600, ATLANTA, GA, 30350",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 23272172
+        },
+        {
+         "name": "COMMONSPIRIT HEALTH",
+         "address": "444 W LAKE ST 2500, CHICAGO, IL, 60606",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 18737925
+        },
+        {
+         "name": "CROTHALL HEALTHCARE",
+         "address": "1500 LIBERTY RIDGE DR 210, WAYNE, PA, 19087",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 16461247
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202443209349315194",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 423,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "BESPOKE WORKFORCE LLC",
+         "address": "5930 CORNERSTONE CT W 300, SAN DIEGO, CA, 92121",
+         "services": "MEDICAL SERVICES",
+         "amount": 121456298
+        },
+        {
+         "name": "ANESTHESIOLOGY SERVICES",
+         "address": "ONE WYOMING ST, DAYTON, OH, 45409",
+         "services": "MEDICAL SERVICES",
+         "amount": 31011223
+        },
+        {
+         "name": "MORRISON HEALTHCARE",
+         "address": "400 NORTHRIDGE ROAD 600, ATLANTA, GA, 30350",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 26105785
+        },
+        {
+         "name": "CROTHALL HEALTHCARE",
+         "address": "1500 LIBERTY RIDGE DR 210, WAYNE, PA, 19087",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 15802152
+        },
+        {
+         "name": "COMMONSPIRIT HEALTH",
+         "address": "444 W LAKE ST 2500, CHICAGO, IL, 60606",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 14359831
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 310537504,
+     "name": "Miami Valley Hospital",
+     "filings": [
+      {
+       "object_id": "202543099349303864",
+       "tax_year": "2024",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202443199349317604",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Premier Health Partners (31-1446699) parent filer; Miami Valley Hospital (31-0537504) largest hospital filer."
+  },
+  {
+   "system": "Saint Luke's Health System (Kansas City MO)",
+   "eins": [
+    {
+     "ein": 431747502,
+     "name": "Saint Lukes Health System Inc",
+     "filings": [
+      {
+       "object_id": "202413199349314861",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 139,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "TRIMEDX",
+         "address": "5451 Lakeview Pkwy S Drive, Indianapolis, IN, 46268",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 19510560
+        },
+        {
+         "name": "SIRIUS COMPUTER SOLUTIONS INC",
+         "address": "10100 REUNION PLACE, SUITE 500, SAN ANTONIO, TX, 78216",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 11313985
+        },
+        {
+         "name": "HCTEC PARTNERS",
+         "address": "5106 MARYLAND WAY, BRENTWOOD, TN, 37027",
+         "services": "TEMPORARY LABOR",
+         "amount": 6145787
+        },
+        {
+         "name": "EPIC SYSTEMS CORP",
+         "address": "1979 MILKY WAY, VERONA, WI, 53593",
+         "services": "CONSULTING SERVICES",
+         "amount": 5710061
+        },
+        {
+         "name": "Microsoft Corporation",
+         "address": "One Microsoft Way, Redmond, WA, 980526399",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 5687287
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202313189349313761",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 131,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "TRIMEDX",
+         "address": "5451 Lakeview Pkwy S Drive, Indianapolis, IN, 46268",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 18432995
+        },
+        {
+         "name": "SIRIUS COMPUTER SOLUTIONS INC",
+         "address": "10100 REUNION PLACE, SUITE 500, SAN ANTONIO, TX, 78216",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 9163283
+        },
+        {
+         "name": "HCTEC PARTNERS",
+         "address": "5106 MARYLAND WAY, BRENTWOOD, TN, 37027",
+         "services": "TEMPORARY LABOR",
+         "amount": 7226073
+        },
+        {
+         "name": "EPIC SYSTEMS CORP",
+         "address": "1979 MILKY WAY, VERONA, WI, 53593",
+         "services": "CONSULTING SERVICES",
+         "amount": 6035914
+        },
+        {
+         "name": "Microsoft Corporation",
+         "address": "One Microsoft Way, Redmond, WA, 980526399",
+         "services": "SOFTWARE SUPPORT",
+         "amount": 4912298
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 440545297,
+     "name": "St Lukes Hospital Of Kansas City",
+     "filings": [
+      {
+       "object_id": "202433199349315133",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 61,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "Vaya Workforce Solutions LLC",
+         "address": "5930 Cornerstone Court West, Suite 300, San Diego, CA, 92121",
+         "services": "Temporary Labor",
+         "amount": 33180890
+        },
+        {
+         "name": "J E DUNN CONSTRUCTION CO INC",
+         "address": "1001 Locust Street, Kansas City, MO, 64106",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 11296628
+        },
+        {
+         "name": "UNIVERSITY OF MISSOURI - KANSAS CITY",
+         "address": "PO BOX 805111, KANSAS CITY, MO, 64180",
+         "services": "MEDICAL SERVICES",
+         "amount": 11096351
+        },
+        {
+         "name": "MIDWEST TRANSPLANT NETWORK",
+         "address": "1900 W 47TH PLACE STE 400, WESTWOOD, KS, 66205",
+         "services": "MEDICAL SERVICES",
+         "amount": 10784423
+        },
+        {
+         "name": "P1 GROUP",
+         "address": "16210 W 108TH ST, LENEXA, KS, 66219",
+         "services": "FACILITIES MANAGEMENT",
+         "amount": 6420247
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202313189349314406",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 61,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "Vaya Workforce Solutions LLC",
+         "address": "5930 Cornerstone Court West, Suite 300, San Diego, CA, 92121",
+         "services": "Temporary Labor",
+         "amount": 78375345
+        },
+        {
+         "name": "J E DUNN CONSTRUCTION CO INC",
+         "address": "1001 Locust Street, Kansas City, MO, 64106",
+         "services": "CONSTRUCTION SERVICES",
+         "amount": 17964529
+        },
+        {
+         "name": "MIDWEST TRANSPLANT NETWORK",
+         "address": "1900 W 47TH PLACE STE 400, WESTWOOD, KS, 66205",
+         "services": "MEDICAL SERVICES",
+         "amount": 14481047
+        },
+        {
+         "name": "UNIVERSITY OF MISSOURI - KANSAS CITY",
+         "address": "PO BOX 805111, KANSAS CITY, MO, 64180",
+         "services": "MEDICAL SERVICES",
+         "amount": 12154361
+        },
+        {
+         "name": "P1 GROUP",
+         "address": "16210 W 108TH ST, LENEXA, KS, 66219",
+         "services": "FACILITIES MANAGEMENT",
+         "amount": 5801278
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Saint Luke's Health System Inc (43-1747502) parent filer; St. Luke's Hospital of Kansas City (44-0545297) flagship hospital filer. System affiliated with BJC Health System since 2024; BJC-side EINs not swept here."
+  },
+  {
+   "system": "Froedtert Health (WI)",
+   "eins": [
+    {
+     "ein": 392014409,
+     "name": "Froedtert Thedacare Health Inc",
+     "filings": [
+      {
+       "object_id": "202601329349304745",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601329349304745",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202531359349311273",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 152,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "MEDICAL COLLEGE OF WI",
+         "address": "8701 WATERTOWN PLANK ROAD, MILWAUKEE, WI, 53226",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 308362570
+        },
+        {
+         "name": "RIGHTSOURCING INC",
+         "address": "999 STEWART AVE SUITE 100, BETHPAGE, NY, 11714",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 41529893
+        },
+        {
+         "name": "MILWAUKEE REG MED CTR FLIGHT FOR LIFE",
+         "address": "2661 AVIATION ROAD, WAUKESHA, WI, 53188",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 17264040
+        },
+        {
+         "name": "HOSPITAL BILLING AND COLLECTION SERVICE",
+         "address": "118 Lukens Drive, New Castle, DE, 19720",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 11196978
+        },
+        {
+         "name": "HRSE CORE HOLDING 1 LLC",
+         "address": "444 WEST LAKE STREET, SUITE 2100, CHICAGO, IL, 60606",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 10994105
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202401289349302165",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 204,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "MEDICAL COLLEGE OF WI",
+         "address": "8701 WATERTOWN PLANK ROAD, MILWAUKEE, WI, 53226",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 252315086
+        },
+        {
+         "name": "RIGHTSOURCING INC",
+         "address": "999 STEWART AVE SUITE 100, BETHPAGE, NY, 11714",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 75745408
+        },
+        {
+         "name": "CG SCHMIDT INC",
+         "address": "11777 W LAKE PARK DR, MILWAUKEE, WI, 53224",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 27790327
+        },
+        {
+         "name": "MILWAUKEE REG MED CTR FLIGHT FOR LIFE",
+         "address": "2661 AVIATION ROAD, WAUKESHA, WI, 53188",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 18580564
+        },
+        {
+         "name": "CARE STAT INC",
+         "address": "13355 W WASHINGTON BLVD, LOS ANGELES, CA, 90066",
+         "services": "PROFESSIONAL SERVICE",
+         "amount": 17301938
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 396105970,
+     "name": "Froedtert Memorial Lutheran Hospital Inc",
+     "filings": [
+      {
+       "object_id": "202601329349306520",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601329349306520",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202501359349311760",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202441289349302169",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 0,
+       "contractors_total_listed": 0,
+       "transport_contractors": [],
+       "all_contractors": [],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Froedtert ThedaCare Health Inc (39-2014409) is the parent filer (formerly Froedtert Health Inc; ThedaCare merger closed 2024); Froedtert Memorial Lutheran Hospital Inc (39-6105970) flagship hospital filer. Froedtert South Inc (Kenosha) is a separate affiliate, not swept."
+  },
+  {
+   "system": "Baptist Health (Kentucky/Indiana)",
+   "eins": [
+    {
+     "ein": 610444707,
+     "name": "Baptist Healthcare System Inc",
+     "filings": [
+      {
+       "object_id": "202521969349302307",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 220,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "LabCorp",
+         "address": "531 South Spring Street, Burlington, NC, 27215",
+         "services": "Service Contract",
+         "amount": 35081404
+        },
+        {
+         "name": "One Anesthesia PLLC",
+         "address": "320 Whittington Parkway, Louisville, KY, 40222",
+         "services": "Medical Staffing",
+         "amount": 13206939
+        },
+        {
+         "name": "Northstar Anesthesia of Kentucky LLC",
+         "address": "6255 State Highway 161, Irving, TX, 75038",
+         "services": "Medical Staffing",
+         "amount": 12547939
+        },
+        {
+         "name": "Logans",
+         "address": "PO Box 643958, Cincinnati, OH, 45264",
+         "services": "Service Contract",
+         "amount": 11204327
+        },
+        {
+         "name": "Siemens Medical Solutions USA Inc",
+         "address": "51 Valley Stream Parkway, Malvern, PA, 19355",
+         "services": "Service Contract",
+         "amount": 9522322
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202421959349300212",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 221,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "LabCorp",
+         "address": "531 South Spring Street, Burlington, NC, 27215",
+         "services": "Service Contract",
+         "amount": 33158897
+        },
+        {
+         "name": "One Anesthesia PLLC",
+         "address": "320 Whittington Parkway, Louisville, KY, 40222",
+         "services": "Medical Staffing",
+         "amount": 10479160
+        },
+        {
+         "name": "Logans",
+         "address": "PO Box 643958, Cincinnati, OH, 45264",
+         "services": "Service Contract",
+         "amount": 10319920
+        },
+        {
+         "name": "Siemens Medical Solutions USA Inc",
+         "address": "51 Valley Stream Parkway, Malvern, PA, 19355",
+         "services": "Service Contract",
+         "amount": 8551033
+        },
+        {
+         "name": "Northstar Anesthesia of Kentucky LLC",
+         "address": "6255 State Highway 161, Irving, TX, 75038",
+         "services": "Medical Staffing",
+         "amount": 8427184
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "DISAMBIGUATION RULE: study footprint is Midwest/Ohio Valley. Among US 'Baptist Health' systems (Little Rock AR 71-0236856; Montgomery AL 63-0366289; Jacksonville FL 59-2487136; Pensacola FL 59-2425151; Birmingham AL 63-0312913; South Florida; Baptist Memorial Memphis TN), only Baptist Health Kentucky (legal name Baptist Healthcare System Inc, Louisville KY, EIN 61-0444707) operates hospitals in the Ohio Valley: nine KY hospitals plus Baptist Health Floyd in New Albany, Indiana, per its public system profile. Selected on that basis. A second Louisville entity with the same name (61-6145328, ~$6.8M revenue, latest filing 2021) is a small affiliate and was excluded."
+  },
+  {
+   "system": "Ascension (multi-state)",
+   "eins": [
+    {
+     "ein": 453358926,
+     "name": "Ascension Health Alliance",
+     "filings": [
+      {
+       "object_id": "202641359349311999",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202641359349311999",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202521359349310967",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 91,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ERNST & YOUNG LLP",
+         "address": "1201 MAIN STREET, SUITE 2000, DALLAS, TX, 75202",
+         "services": "Audit & Professional Services",
+         "amount": 19596707
+        },
+        {
+         "name": "CROWE LLP",
+         "address": "PO BOX 71570, CHICAGO, IL, 606941570",
+         "services": "Consulting & Tax Services",
+         "amount": 7054517
+        },
+        {
+         "name": "DELOITTE AND TOUCHE LLP",
+         "address": "4022 SELLS DRIVE, HERMITAGE, TN, 370762903",
+         "services": "INTERNAL AUDIT SERVICES",
+         "amount": 3949939
+        },
+        {
+         "name": "RQI PARTNERS LLC",
+         "address": "7272 GREENVILLE AVENUE, SUITE P2020, DALLAS, TX, 75231",
+         "services": "Clinical Education & Quality Services",
+         "amount": 2165792
+        },
+        {
+         "name": "WINSTON & STRAWN LLP",
+         "address": "35 W WACKER DRIVE, CHICAGO, IL, 606011723",
+         "services": "LEGAL SERVICES",
+         "amount": 2074307
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202441369349309039",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 89,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ERNST & YOUNG LLP",
+         "address": "1201 MAIN STREET, SUITE 2000, DALLAS, TX, 75202",
+         "services": "Audit & Professional Services",
+         "amount": 13411956
+        },
+        {
+         "name": "ACCENTURE LLP",
+         "address": "1255 TREAT BLVD, STE 250, WALNUT CREEK, CA, 94597",
+         "services": "Consulting & Implementation",
+         "amount": 10230604
+        },
+        {
+         "name": "DELOITTE AND TOUCHE LLP",
+         "address": "4022 SELLS DRIVE, HERMITAGE, TN, 370762903",
+         "services": "INTERNAL AUDIT SERVICES",
+         "amount": 7171759
+        },
+        {
+         "name": "CROWE LLP",
+         "address": "PO BOX 71570, CHICAGO, IL, 606941570",
+         "services": "Consulting & Tax Services",
+         "amount": 7025569
+        },
+        {
+         "name": "RQI PARTNERS LLC",
+         "address": "7272 GREENVILLE AVENUE, SUITE P2020, DALLAS, TX, 75231",
+         "services": "Clinical Education & Quality Services",
+         "amount": 2165792
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 311662309,
+     "name": "Ascension Health",
+     "filings": [
+      {
+       "object_id": "202631359349313718",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631359349313718",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202531359349310558",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 12,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "DELOITTE CONSULTING LLP",
+         "address": "4022 SELLS DRIVE, HERMITAGE, TN, 37076",
+         "services": "CONSULTING SERVICES",
+         "amount": 10541190
+        },
+        {
+         "name": "RXSENSE GROUP LLC",
+         "address": "99 HIGH STREET, SUITE 2800, BOSTON, MA, 02110",
+         "services": "TECHNOLOGY SERVICES",
+         "amount": 1084847
+        },
+        {
+         "name": "PARATA SYSTEMS LLC",
+         "address": "2600 MERIDIAN PKWY, STE 100, DURHAM, NC, 27713",
+         "services": "PHARMACY TECHNOLOGY SERVICES",
+         "amount": 429635
+        },
+        {
+         "name": "EIGHT ELEVEN GROUP LLC",
+         "address": "PO BOX 55767, INDIANAPOLIS, IN, 46205",
+         "services": "TECHNOLOGY SERVICES",
+         "amount": 218947
+        },
+        {
+         "name": "MOHAMMED ALSAKKA",
+         "address": "PO BOX 416, MOUNT VERNON, IL, 628640009",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 178133
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202401369349308790",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 14,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "QUALTRICS LLC",
+         "address": "2250 N UNIVERSITY PKWY, STE 48C, PROVO, UT, 84604",
+         "services": "TECHNOLOGY SERVICES",
+         "amount": 533538
+        },
+        {
+         "name": "BRASFIELD & GORRIE LLC",
+         "address": "3021 7TH AVENUE S, BIRMINGHAM, AL, 35233",
+         "services": "Construction Services",
+         "amount": 488635
+        },
+        {
+         "name": "EIGHT ELEVEN GROUP LLC",
+         "address": "PO BOX 55767, INDIANAPOLIS, IN, 46205",
+         "services": "TECHNOLOGY SERVICES",
+         "amount": 441022
+        },
+        {
+         "name": "PARATA SYSTEMS LLC",
+         "address": "2600 MERIDIAN PKWY, STE 100, DURHAM, NC, 27713",
+         "services": "PHARMACY TECHNOLOGY SERVICES",
+         "amount": 396766
+        },
+        {
+         "name": "DELOITTE CONSULTING LLP",
+         "address": "4022 SELLS DRIVE, HERMITAGE, TN, 37076",
+         "services": "CONSULTING SERVICES",
+         "amount": 363903
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 382631907,
+     "name": "Ascension Michigan",
+     "filings": [
+      {
+       "object_id": "202531359349304413",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 1,
+       "contractors_total_listed": 1,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "MICHIGAN HEALTH & HOSPITAL ASSOCIATION S",
+         "address": "6215 W ST JOE HWY, LANSING, MI, 489174852",
+         "services": "BILLING SERVICES",
+         "amount": 247018
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202441359349307729",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 2,
+       "contractors_total_listed": 2,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "HEART CARDIOLOGY CONSULTANTS",
+         "address": "22250 PROVIDENCE DR STE 705, SOUTHFIELD, MI, 480756215",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 408476
+        },
+        {
+         "name": "THE PORRETTA CENTER FOR ORTHOPAEDIC SURG",
+         "address": "22250 PROVIDENCE DR STE 401, SOUTHFIELD, MI, 48075",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 399586
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 390816857,
+     "name": "Ascension Se Wisconsin Hospital Inc",
+     "filings": [
+      {
+       "object_id": "202631329349306598",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631329349306598",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202501339349305010",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 5,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "PT SOLUTIONS HOLDINGS LLC",
+         "address": "1990 VAUGHN RD NW STE 330, KENNESAW, GA, 301447817",
+         "services": "PHYSICAL THERAPY",
+         "amount": 6041120
+        },
+        {
+         "name": "MIDWEST CRITICAL CARE SC",
+         "address": "401 E INDUSTRIAL DR UNIT 627, HARTLAND, WI, 53029",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 2305743
+        },
+        {
+         "name": "NEWBORN CARE PHYSICIANS OF SE WISCONSIN",
+         "address": "PO BOX 1327, BROOKFIELD, WI, 530081327",
+         "services": "CHILDREN PHYSICIAN SERVICES",
+         "amount": 429500
+        },
+        {
+         "name": "3DR LABS LLC",
+         "address": "1941 BISHOP LN STE 807, LOUISVILLE, KY, 40218",
+         "services": "LABORATORY SERVICES",
+         "amount": 209756
+        },
+        {
+         "name": "MIDWEST UROLOGY ASSOCIATES LLC",
+         "address": "2600 N MAYFAIR RD STE 580, MILWAUKEE, WI, 532261321",
+         "services": "PHYSICIAN UROLOGY SERVICES",
+         "amount": 128375
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202401319349305330",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 12,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "OBHG WISCONSIN SC",
+         "address": "777 LOWNDES HILL RD BLDG 1, GREENVILLE, SC, 29607",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 1274099
+        },
+        {
+         "name": "ORTHOPEDIC SURGEONS OF WISCONSIN SC",
+         "address": "3077 N MAYFAIR RD STE 305, WAUWATOSA, WI, 532224305",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 589383
+        },
+        {
+         "name": "NEWBORN CARE PHYSICIANS OF SE WISCONSIN",
+         "address": "PO BOX 1327, BROOKFIELD, WI, 530081327",
+         "services": "CHILDREN PHYSICIAN SERVICES",
+         "amount": 410000
+        },
+        {
+         "name": "PULMONARY AND CRITICAL CARE ASSOC SC",
+         "address": "DR AJITKUMAR PAREKH, 5900 S LAKE DR, CUDAHY, WI, 531103171",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 342936
+        },
+        {
+         "name": "FRESENIUS MANAGEMENT SERVICES",
+         "address": "16343 COLLECTION CENTER DR, CHICAGO, IL, 606930163",
+         "services": "DIALYSIS SERVICES",
+         "amount": 261962
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 390816818,
+     "name": "Ascension Ne Wisconsin Inc",
+     "filings": [
+      {
+       "object_id": "202621329349307387",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202621329349307387",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202541339349304834",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 6,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "GREEN BAY ONCOLOGY LTD",
+         "address": "1726 SHAWANO AVE, GREEN BAY, WI, 543033216",
+         "services": "ONCOLOGY SERVICES",
+         "amount": 5844896
+        },
+        {
+         "name": "PT SOLUTIONS HOLDINGS LLC",
+         "address": "1990 VAUGHN RD NW, STE 330, KENNESAW, GA, 301447817",
+         "services": "PHYSICAL THERAPY SERVICES",
+         "amount": 4164640
+        },
+        {
+         "name": "GREAT LAKES LITHOTRIPSY PARTNERSHIP LP",
+         "address": "PO BOX 95333, GRAPEVINE, TX, 760999732",
+         "services": "LITHOTRIPSY SERVICES",
+         "amount": 218300
+        },
+        {
+         "name": "WOMENS HEALTH SPECIALISTS",
+         "address": "1818 N MEADE ST, STE 330, APPLETON, WI, 549113454",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 187200
+        },
+        {
+         "name": "MIDWEST CRITICAL CARE SC",
+         "address": "401 E INDUSTRIAL DR, UNIT 627, HARTLAND, WI, 53029",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 166851
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202411349349306226",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 13,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "GREEN BAY ONCOLOGY LTD",
+         "address": "1726 SHAWANO AVE, GREEN BAY, WI, 543033216",
+         "services": "ONCOLOGY SERVICES",
+         "amount": 4786606
+        },
+        {
+         "name": "KENNEDY CENTER FOR THE HIP AND KNEE SC",
+         "address": "2700 W 9TH AVE STE 125, OSHKOSH, WI, 549047864",
+         "services": "MEDICAL SERVICES",
+         "amount": 3096249
+        },
+        {
+         "name": "CHILDRENS HOSPITAL OF WISCONSIN",
+         "address": "PO BOX 1997, MILWAUKEE, WI, 53201",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 2258787
+        },
+        {
+         "name": "ANESTHESIA SERVICES OF FOX VALLEY SC",
+         "address": "3420 JACKSON ST STE E, OSHKOSH, WI, 549018145",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 1728376
+        },
+        {
+         "name": "CATALPA HEALTH",
+         "address": "ATTN TRACY GUIOU, 4635 W COLLEGE AVE, APPLETON, WI, 549145715",
+         "services": "MENTAL HEALTH SERVICES",
+         "amount": 1330000
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 481172106,
+     "name": "Ascension Via Christi Hospitals Wichita Inc",
+     "filings": [
+      {
+       "object_id": "202621329349306027",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202621329349306027",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202511349349313466",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 13,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "PROLINK HEALTHCARE LLC",
+         "address": "4600 MONTGOMERY RD STE 300, CINCINNATI, OH, 452122600",
+         "services": "MEDICAL SERVICES",
+         "amount": 6573971
+        },
+        {
+         "name": "CEP AMERICA KANSAS LLC",
+         "address": "2100 POWELL ST, SUITE 400, EMERYVILLE, CA, 946081826",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 5196163
+        },
+        {
+         "name": "LINEN KING LLC",
+         "address": "1521 W 36TH PL, TULSA, OK, 741075639",
+         "services": "LAUNDRY SERVICES",
+         "amount": 2076905
+        },
+        {
+         "name": "KANSAS ACUTE CARE MIDLEVEL STAFFING LLC",
+         "address": "12738 E BIRCHWOOD DR, WICHITA, KS, 672063619",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 1280985
+        },
+        {
+         "name": "MID-CONTINENT ANESTHESIOLOGY CHARTERED",
+         "address": "6505 E CENTRAL AVE STE 288, WICHITA, KS, 672061924",
+         "services": "MEDICAL SERVICES",
+         "amount": 983800
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202431339349301408",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 27,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "ANESTHESIA CONSULTING SERVICES PA",
+         "address": "PO BOX 356, WICHITA, KS, 672010356",
+         "services": "ANESTHESIA SERVICES",
+         "amount": 7345407
+        },
+        {
+         "name": "MID-CONTINENT ANESTHESIOLOGY CHARTERED",
+         "address": "6505 E CENTRAL AVE STE 288, WICHITA, KS, 672061924",
+         "services": "MEDICAL SERVICES",
+         "amount": 5768787
+        },
+        {
+         "name": "CEP AMERICA KANSAS LLC",
+         "address": "2100 POWELL ST, SUITE 900, EMERYVILLE, CA, 946081844",
+         "services": "MEDICAL SERVICES",
+         "amount": 5604136
+        },
+        {
+         "name": "WICHITA SURGICAL SPECIALISTS PA",
+         "address": "10090 E SHANNON WOODS CIR, WICHITA, KS, 672264107",
+         "services": "SURGICAL SERVICES",
+         "amount": 3316519
+        },
+        {
+         "name": "HOSPITALIST MEDICINE PHYSICIANS OF TEXAS PLLC",
+         "address": "1498 PACIFIC AVE, SUITE 400, TACOMA, WA, 984024208",
+         "services": "PHYSICIAN SERVICES",
+         "amount": 2939264
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    },
+    {
+     "ein": 350869066,
+     "name": "St Vincent Hospital & Health Care",
+     "filings": [
+      {
+       "object_id": "202611329349305816",
+       "error": "xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611329349305816",
+       "blocker": "IRS e-file XML for this newest filing not yet available via public mirror; ProPublica download-xml endpoint is bot-gated (HTTP 403)"
+      },
+      {
+       "object_id": "202511339349304961",
+       "tax_year": "2023",
+       "form_type": "990",
+       "contractors_gt100k_count": 50,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "Surgery Center of Indianapolis LLC",
+         "address": "2007 N Capitol Ave, Indianapolis, IN, 46202",
+         "services": "MEDICAL SERVICES",
+         "amount": 25622370
+        },
+        {
+         "name": "MID AMERICA CLINICAL LABORATORIES LLC",
+         "address": "6704 RELIABLE PKWY, CHICAGO, IL, 606860067",
+         "services": "LAB SERVICES",
+         "amount": 19972560
+        },
+        {
+         "name": "PT SOLUTIONS HOLDINGS LLC",
+         "address": "1990 VAUGHN RD NW STE 330, KENNESAW, GA, 301447817",
+         "services": "PHYSICAL THERAPY SERVICES",
+         "amount": 12395080
+        },
+        {
+         "name": "CEP AMERICA LLC",
+         "address": "2100 POWELL ST STE 400, EMERYVILLE, CA, 946081844",
+         "services": "STAFFING SERVICES",
+         "amount": 7438276
+        },
+        {
+         "name": "ORTHOPAEDICS INDIANAPOLIS PC",
+         "address": "10601 N MERIDIAN STREET, STE 200, INDIANAPOLIS, IN, 462901152",
+         "services": "MEDICAL SERVICES",
+         "amount": 5700000
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      },
+      {
+       "object_id": "202421369349312282",
+       "tax_year": "2022",
+       "form_type": "990",
+       "contractors_gt100k_count": 56,
+       "contractors_total_listed": 5,
+       "transport_contractors": [],
+       "all_contractors": [
+        {
+         "name": "Surgery Center of Indianapolis LLC",
+         "address": "2007 N Capitol Ave, Indianapolis, IN, 46202",
+         "services": "MEDICAL SERVICES",
+         "amount": 23737075
+        },
+        {
+         "name": "MID AMERICA CLINICAL LABORATORIES LLC",
+         "address": "6704 RELIABLE PKWY, CHICAGO, IL, 606860067",
+         "services": "LAB SERVICES",
+         "amount": 23310087
+        },
+        {
+         "name": "INDIANAPOLIS NEUROSURGICAL GROUP",
+         "address": "8333 NAAB ROAD STE 255, Indianapolis, IN, 462601983",
+         "services": "MEDICAL SERVICES",
+         "amount": 9453214
+        },
+        {
+         "name": "HANCOCK PHYSICIAN NETWORK LLC",
+         "address": "156 W Muskegon Drive, GREENFIELD, IN, 46140",
+         "services": "MEDICAL SERVICES",
+         "amount": 7829722
+        },
+        {
+         "name": "ORTHOPAEDICS INDIANAPOLIS PC",
+         "address": "10601 N MERIDIAN STREET, STE 200, INDIANAPOLIS, IN, 462901152",
+         "services": "MEDICAL SERVICES",
+         "amount": 5700000
+        }
+       ],
+       "information_floor_note": "Form 990 Part VII Section B lists only the five highest-compensated independent contractors above $100,000; contractors below the fifth-highest are not disclosed."
+      }
+     ],
+     "errors": []
+    }
+   ],
+   "disambiguation_notes": "Parent filers: Ascension Health Alliance dba Ascension (45-3358926) and Ascension Health (31-1662309). Largest resolvable Midwest subordinate filers: Ascension Michigan (38-2631907, consolidated MI hospitals incl. St. John Detroit); Ascension SE Wisconsin Hospital Inc (39-0816857, Milwaukee); Ascension NE Wisconsin Inc (39-0816818, Appleton); Ascension Via Christi Hospitals Wichita Inc (48-1172106, KS); St Vincent Hospital & Health Care Center (35-0869066, Indianapolis IN, ~$1.5B revenue). Illinois hospitals file under Alexian Brothers/Presence EINs (now AMITA legacy), not swept individually."
+  }
+ ],
+ "parked": [
+  {
+   "item": "Cleveland Clinic Health System East Region EIN 34-0714593 Part VII Section B",
+   "source": "https://projects.propublica.org/nonprofits/organizations/340714593",
+   "blocker": "no e-file XML available on public page; recent activity consolidated in group return 91-2153073"
+  },
+  {
+   "item": "EIN 470617373 newest filing object_id 202641339349307439",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202641339349307439",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 470757164 newest filing object_id 202631339349303658",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202631339349303658",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 363233121 newest filing object_id 202631339349304038",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202631339349304038",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 392014409 newest filing object_id 202601329349304745",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202601329349304745",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 396105970 newest filing object_id 202601329349306520",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202601329349306520",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 453358926 newest filing object_id 202641359349311999",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202641359349311999",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 311662309 newest filing object_id 202631359349313718",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202631359349313718",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 390816857 newest filing object_id 202631329349306598",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202631329349306598",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 390816818 newest filing object_id 202621329349307387",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202621329349307387",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 481172106 newest filing object_id 202621329349306027",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202621329349306027",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  },
+  {
+   "item": "EIN 350869066 newest filing object_id 202611329349305816",
+   "source": "https://projects.propublica.org/nonprofits/download-xml?object_id=202611329349305816",
+   "blocker": "newest-season e-file XML not yet in public GivingTuesday mirror; ProPublica download endpoint bot-gated (HTTP 403); next-oldest XML filing parsed instead"
+  }
+ ],
+ "headline_result": "Across 46 parsed filings (latest two XML-available Form 990s per resolved EIN), zero of the disclosed five-highest-compensated independent contractors per filing had a name or services description matching ambulance / EMS / medical transport keywords. Form 990 Part VII Section B discloses only the top five contractors over $100,000, so transport vendors billing below each filer's fifth-highest contractor would not appear; the count of contractors over $100,000 (contractors_gt100k_count) is recorded per filing as the information floor."
+}

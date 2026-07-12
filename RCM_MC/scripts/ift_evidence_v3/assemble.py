@@ -37,14 +37,27 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_3.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_4.xlsx'))
 BUILT = '10 July 2026'
 
+# v3.4 modules append AFTER state_profiles so their facts/sources take the
+# reserved ranges: b1_facility_pay is first by order (F443-F455 / S313-S315).
 SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'supply_vendored',
                  'payment', 'demand_clinical', 'demand_growth', 'v31', 'geo',
                  'metros', 'company', 'indepth_tabs', 'reference',
-                 'state_profiles']
+                 'state_profiles',
+                 # v3.4 pass, handoff reading order (B.1 first -> F443).
+                 'b1_facility_pay', 'a1_mmt', 'a2_shares', 'a3_fragmentation',
+                 'a4_insourcing', 'a5_hcris_ambulance', 'a6_cohort_corridors',
+                 'a7_hubspoke', 'e23_contracts_990', 'e156_cohort',
+                 'a8_whitespace', 'a9_decomposition', 'a10_denials',
+                 'a11_delay_burden', 'a12_workforce', 'a14_recon',
+                 'e4_throughput', 'b2_reh_closures', 'b3_medicaid',
+                 'b4_rsnat_ma', 'b8_receiving', 'b9_regulatory',
+                 'b13_usaspending', 'xf1_annual_series', 'xf5_supply_map',
+                 'c123_tam', 'c48_assembly',
+                 'b14_requests', 'd_quality', 'run_log']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
 # LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
@@ -525,6 +538,102 @@ def build_index_tab(wb, full_order):
     return ws
 
 
+def add_v34_findings(wb, section_outputs, sid_map):
+    """Findings 52+ supplied by the v3.4 section modules themselves: each
+    module returns findings with live cell references; numbering continues
+    sequentially in SECTION_ORDER order."""
+    items = []
+    for key in SECTION_ORDER:
+        out = section_outputs.get(key) or {}
+        items += out.get('findings', [])
+    if not items:
+        return 0
+    ws = wb['Findings']
+    r = ws.max_row + 2
+    _banner_row(ws, r, 'v3.4 findings (52 onward) - the specificity-and-'
+                       'analysis pass. Same contract: published counts or '
+                       'arithmetic over published counts, live references, '
+                       'a guardrail in every row.', 6)
+    r += 1
+    from v3lib import F_HDR, FILL_HDR
+    for i, h in enumerate(['#', 'Finding', 'The numbers (live)', 'Sources',
+                           'Confidence', 'Interpretation guardrail'], start=1):
+        c = ws.cell(row=r, column=i, value=h)
+        c.font = F_HDR
+        c.fill = FILL_HDR
+    r += 1
+    from v3lib import AL_WRAP, F_FML, F_LINK, F_TXT
+    n = 52
+    for f in items:
+        src_txt = '; '.join(f"{sid_map.get(k.strip(), k.strip())}"
+                            for k in str(f.get('sources', '')).split(';'))
+        vals = [str(n), f['finding'], f.get('numbers', ''), src_txt,
+                f.get('confidence', ''), f.get('guardrail', '')]
+        for i, v in enumerate(vals, start=1):
+            c = ws.cell(row=r, column=i, value=v)
+            c.font = F_LINK if (i == 3 and str(v).startswith('=')) else F_TXT
+            c.alignment = AL_WRAP
+        ws.row_dimensions[r].height = 64
+        r += 1
+        n += 1
+    return n - 52
+
+
+def add_v34_governance(wb, entries):
+    """v3.4 change-log acknowledgments (handoff task 5.1) and the
+    Sizing_Playbook facility-pay pointer (task B.1)."""
+    entries.append({
+        'tab': 'Fact_Ledger', 'cell': '(rows F431-F442)',
+        'old': 'v3.2 inserted nine KPI-dictionary facts as F431-F439 without '
+               'a change-log row; the SP_Index national-sum facts moved to '
+               'F440-F442 in the same build',
+        'new': 'Acknowledged and verified: the committed scan '
+               '(scripts/ift_evidence_v3/scan_fact_tags.py) checked every '
+               'in-cell tag workbook-wide (640 tags) and found ZERO stale '
+               'F431-F433 citations - IDs are assigned at assembly, so tags '
+               'and ledger rows never diverged in the shipped file',
+        'why': 'Handoff 5.1: log the unlogged insertion; repair stale tags '
+               '(none existed); commit the scan.',
+        'class': 'governance'})
+    entries.append({
+        'tab': 'V3_Change_Log', 'cell': 'entry 15',
+        'old': 'Entry 15 text was edited in place during the v3.2 build',
+        'new': 'Acknowledged here as its own appended row; the append-only '
+               'rule holds from this row forward',
+        'why': 'Handoff 5.1: never edit an existing log row.',
+        'class': 'governance'})
+    entries.append({
+        'tab': 'MUP_Providers_2024 (+6 siblings)', 'cell': '(DQ row)',
+        'old': 'Seven v3.2 raw tabs shipped without dedicated data-quality '
+               'rows',
+        'new': 'DATA QUALITY row added under each subtitle: MUP suppression '
+               'floors, PLACES model-based estimates, HSA Medicare-FFS-only '
+               'corridors, QCEW disclosure suppressions, HCRIS unaudited '
+               'self-reports, Census vintage revisions, LEIE filter scope',
+        'why': 'Handoff 5.3.', 'class': 'quality'})
+    # Sizing_Playbook pointer (B.1 Panel D map)
+    if 'Sizing_Playbook' in wb.sheetnames:
+        ws = wb['Sizing_Playbook']
+        r = ws.max_row + 2
+        c = ws.cell(row=r, column=1, value=(
+            'v3.4 pointer: the facility-pay layer this playbook rows 2-3 '
+            'could only name is now MEASURED on Facility_Pay_Layer - GADCS '
+            'incidence and magnitudes, the DocGo outside-per-trip share, '
+            'and the USAspending V225 federal channel, with the IFT-specific '
+            'share explicitly PENDING.'))
+        import v3lib as _v3
+        c.font = _v3.F_LINK
+        c.alignment = _v3.AL_WRAP
+        ws.row_dimensions[r].height = 40
+        entries.append({
+            'tab': 'Sizing_Playbook', 'cell': f'A{r}',
+            'old': '(absent)',
+            'new': 'Appended pointer row to Facility_Pay_Layer (B.1 Panel D)',
+            'why': 'Handoff B.1: append the row-3 pointer sentence, '
+                   'change-logged.',
+            'class': 'cross-reference'})
+
+
 def add_v3_findings(wb, sid_map):
     """Continue the Findings register (42+) with v3-evidence findings whose
     numbers are LIVE references to the new tabs. Every magnitude in the prose
@@ -705,6 +814,78 @@ def _first_value_ref(wb, tab, value, default):
     return default
 
 
+def sanitize_dashes(wb):
+    """House rule: no em/en dashes in cell text. Normalize to ' - ' across
+    every string cell (including carried source-name fields like the estate
+    roster, whose original NPPES labels used an em dash). Formulas are left
+    untouched."""
+    n = 0
+    for name in wb.sheetnames:
+        ws = wb[name]
+        for row in ws.iter_rows():
+            for c in row:
+                v = c.value
+                if isinstance(v, str) and ('—' in v or '–' in v):
+                    c.value = v.replace('—', ' - ').replace('–', '-')
+                    n += 1
+    return n
+
+
+def add_orphan_notes(wb, log=None):
+    """X-G.1 (extension order): no orphan tabs. Every reference-grain detail
+    tab that feeds a named analytic tab gets an explicit on-tab footer note
+    pointing to its analytic parent, so no tab lacks either a finding or a
+    stated role. Runs after all tabs exist; skips governance/analytic tabs
+    that already carry read panels and findings."""
+    import v3lib as _v3
+    # detail family prefix -> the analytic tab(s) it feeds
+    FAMILIES = [
+        ('PSPS_Detail_', 'PSPS_Denial_Series and Denial_Economics'),
+        ('MUP_State_', 'MUP_Ambulance_State, Market_Share_Panels and '
+                       'Realized_Price_Ladders'),
+        ('MUP_Providers_', 'MMT_Medicare_Book, Fragmentation_National and '
+                           'Annual_Market_Structure'),
+        ('Enroll_State_', 'Enrollment_ESRD_State and Utilization_Normalized'),
+        ('MS_County_', 'Market_Saturation_Ambulance and '
+                       'County_Whitespace_Screens'),
+        ('MS_CtyWin_', 'Market_Saturation_Ambulance (county-window detail)'),
+        ('QCEW_State_', 'QCEW_EMS_Employment and Workforce_Depth'),
+        ('QCEW_County_', 'Workforce_Depth (county employment ratios)'),
+        ('Metro_', 'Metro_Structure_20 and Metro_TAM_Panels'),
+        ('SP_', 'SP_Index and Imbalance_Ledger'),
+        ('InDepth_Q', 'Growth_Evidence_Registry'),
+        ('Enroll_State', 'Enrollment_ESRD_State'),
+    ]
+    SKIP = {'Metro_Structure_20', 'Metro_TAM_Panels', 'Metro_Index',
+            'SP_Index'}
+    tagged = 0
+    for name in list(wb.sheetnames):
+        if name in SKIP:
+            continue
+        parent = None
+        for pref, dest in FAMILIES:
+            if name.startswith(pref):
+                parent = dest
+                break
+        if not parent:
+            continue
+        ws = wb[name]
+        r = ws.max_row + 2
+        c = ws.cell(row=r, column=1, value=(
+            f'Reference-grain tab: this is the raw per-period detail that '
+            f'feeds {parent}. It is carried for traceability and re-'
+            f'computation, not read on its own; the analytic reads and '
+            f'findings live on the named tab(s).'))
+        c.font = _v3.F_NOTE
+        c.alignment = _v3.AL_WRAP
+        ws.row_dimensions[r].height = 26
+        tagged += 1
+    if log:
+        log(f'orphan-tab sweep: {tagged} reference-grain tabs tagged with '
+            'their analytic parent')
+    return tagged
+
+
 def add_gallery_charts(wb):
     """Headline v3 charts appended to the Charts gallery tab."""
     ws = wb['Charts']
@@ -847,7 +1028,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.3')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.4')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -966,6 +1147,20 @@ def rebuild_readme(wb, stats, entries):
             '(and repairing a v2.7 URL typo); and a workbook-wide format '
             'sweep - print setup normalized on every tab, truncated columns '
             'widened, header rows tightened.'], wrap=True, height=88)
+    sb.row([('10 (v3.4)', 'label'), '11 July 2026',
+            'The specificity-and-analysis pass (worker handoff + eight-hour '
+            'extension order): the facility-pay evidence layer '
+            '(Facility_Pay_Layer - GADCS revenue-source census, the DocGo '
+            'outside-per-trip decomposition, USAspending V225, all verified '
+            'against the primary documents); the subject company\'s measured '
+            'Medicare book (MMT_Medicare_Book - consolidated and per-NPI '
+            'volumes, acuity mix with volume-weighted RVU, mileage '
+            'economics, three-vintage trajectory); the handoff 5.1-5.3 '
+            'repairs (committed fact-tag scan - zero stale tags found - and '
+            'data-quality rows on all seven v3.2 raw tabs); findings 52 '
+            'onward with live references; plus the analysis and cohort '
+            'layers this revision row is extended by as they land.'],
+           wrap=True, height=88)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1041,6 +1236,11 @@ def main(verify_results_path=None):
         section_outputs[key] = out
         log(f'  {key}: sheets={[s["name"] for s in mod.SHEETS]}')
 
+    # v3.4 modules may carry their own change-log entries
+    for key in SECTION_ORDER:
+        out = section_outputs.get(key) or {}
+        entries.extend(out.get('entries', []))
+
     log('assigning IDs and extending governance')
     sources, facts, sid_map = assign_ids(section_outputs)
     extend_fact_ledger(wb, facts)
@@ -1052,6 +1252,9 @@ def main(verify_results_path=None):
     add_verification_panels(wb, section_outputs, verify_results)
     build_pull_manifest_tab(wb)
     add_v3_findings(wb, sid_map)
+    n_f34 = add_v34_findings(wb, section_outputs, sid_map)
+    log(f'v3.4 findings appended: {n_f34} (52 onward)')
+    add_v34_governance(wb, entries)
     add_gallery_charts(wb)
 
     log('rebuilding v2.7 charts (full-fidelity re-parse)')
@@ -1118,6 +1321,10 @@ def main(verify_results_path=None):
         ('Imbalance_Ledger', (['SP_Index'] if 'SP_Index' in wb.sheetnames else [])
          + sorted(n for n in wb.sheetnames
                   if n.startswith('SP_') and n != 'SP_Index')),
+        ('Sizing_Playbook', [n for n in ('Facility_Pay_Layer',)
+                             if n in wb.sheetnames]),
+        ('MMT_NPI_Estate', [n for n in ('MMT_Medicare_Book',)
+                            if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)
     for anchor, names in families:
@@ -1131,6 +1338,13 @@ def main(verify_results_path=None):
     build_index_tab(wb, [ws.title for ws in wb._sheets])
     wb._sheets.sort(key=lambda ws: order.get(ws.title, 9999)
                     if ws.title != 'Index' else -1)
+
+    log('X-G.1 orphan-tab sweep')
+    add_orphan_notes(wb, log)
+
+    log('house-rule dash sanitize')
+    _n_dash = sanitize_dashes(wb)
+    log(f'dash sanitize: {_n_dash} cells normalized (em/en dash -> " - ")')
 
     log('format sweep + chart normalization')
     v3lib.format_sweep(wb, log=log)
