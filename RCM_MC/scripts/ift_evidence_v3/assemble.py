@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_4.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_5.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -1028,7 +1028,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.4')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.5')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1161,6 +1161,18 @@ def rebuild_readme(wb, stats, entries):
             'onward with live references; plus the analysis and cohort '
             'layers this revision row is extended by as they land.'],
            wrap=True, height=88)
+    sb.row([('11 (v3.5)', 'label'), '12 July 2026',
+            'The completion pass: the market-wide 990 contractor sweep across '
+            'the footprint nonprofit systems (Footprint_990_Sweep - the '
+            'largest public window into facility-direct transport payments, '
+            'with the top-five information floor stated); the Medicaid '
+            'ambulance rate card extended toward the full ten-state '
+            'footprint; and the retried parked pulls (SNF return-leg quality, '
+            'Hospital-at-Home participants) landed where public data allowed '
+            'and left as bordered PENDING with the named dataset where it did '
+            'not. Findings continue past the v3.4 register; every new tab '
+            'carries a read panel, a finding and a data-quality row.'],
+           wrap=True, height=76)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
