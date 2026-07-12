@@ -27,7 +27,8 @@ cp "$SCRATCH"/CONTRACT_V34.md "$PIPE/" 2>/dev/null || true
 for j in v34_seed.json nppes_crosswalk.json throughput_shelf.json \
          b1_verified.json run_log.json medicaid_rates.json \
          contract_corpus.json cohort_990.json state_ems_rosters.json \
-         press_registry.json wayback_footprint.json estate_addresses.json; do
+         press_registry.json wayback_footprint.json estate_addresses.json \
+         footprint_990_sweep.json; do
   [ -f "$SCRATCH/$j" ] && cp "$SCRATCH/$j" "$PIPE/"
 done
 rm -f "$PIPE"/v27_charts.json "$PIPE"/v27_chart_anchors.json

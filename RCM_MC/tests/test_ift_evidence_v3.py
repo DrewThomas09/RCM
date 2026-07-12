@@ -195,6 +195,32 @@ class TestIFTEvidenceV3(unittest.TestCase):
                 ids.append(int(v.strip()))
         self.assertGreaterEqual(max(ids), 80)
 
+    def test_v35_completion_tabs_present(self):
+        """v3.5 completion pass closed the deferred v3.4 PENDING items from
+        public sources: the footprint-wide 990 sweep, the SNF return-leg
+        quality layer, and the CMS Hospital-at-Home participant list."""
+        names = set(self.wb.sheetnames)
+        for tab in ('Footprint_990_Sweep', 'SNF_Return_Leg_Quality',
+                    'Hospital_at_Home_Participants'):
+            self.assertIn(tab, names)
+
+    def test_v35_findings_and_ledgers(self):
+        """v3.5 added three live-referenced findings and extended the ledgers
+        contiguously past the v3.4 maxima (F585 / S409)."""
+        ws = self.wb['Findings']
+        ids = [int(r[0].value.strip())
+               for r in ws.iter_rows(min_col=1, max_col=1)
+               if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
+        self.assertGreaterEqual(max(ids), 102)
+        fids = [int(r[0].value[1:])
+                for r in self.wb['Fact_Ledger'].iter_rows(min_col=1, max_col=1)
+                if isinstance(r[0].value, str) and re.fullmatch(r'F\d+', r[0].value)]
+        sids = [int(r[0].value[1:])
+                for r in self.wb['Source_Index'].iter_rows(min_col=1, max_col=1)
+                if isinstance(r[0].value, str) and re.fullmatch(r'S\d+', r[0].value)]
+        self.assertGreaterEqual(max(fids), 596)
+        self.assertGreaterEqual(max(sids), 417)
+
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""
         p = os.path.join(PIPE, 'leak_check.json')

@@ -1,4 +1,31 @@
 {
+ "ahcah_participants": {
+  "as_of": "2021-04-05",
+  "current_roster": "PENDING",
+  "dataset": "CMS Acute Hospital Care at Home Program - Approved List of Hospitals as of 4/5/2021 (only public machine-readable roster); current roster PENDING (JS portal + DUA-gated)",
+  "file": "ahcah_participants.json",
+  "footprint_entries": 27,
+  "footprint_states_with_entries": [
+   "IA",
+   "IN",
+   "MN",
+   "MO",
+   "OH",
+   "VA",
+   "WI"
+  ],
+  "retrieved_utc": "2026-07-12T00:37:40+00:00",
+  "rows": 27,
+  "sha256": "01b93de2980c2b23efd0b6f2fe68b2aca09b4d1ee9fa91598360714a9d56e508",
+  "source_pdf": "https://www.cms.gov/files/document/covid-acute-hospital-care-home-program-approved-list-hospitals.pdf"
+ },
+ "bls_input_series": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "cc66a12c76c97865"
+ },
  "census_county_age_2024": {
   "data_year": "July 2020-2024 estimate rows (YEAR codes 2-6)",
   "dataset": "Census Bureau Vintage 2024 County Population Estimates by Age and Sex (CC-EST2024-AGESEX)",
@@ -22,6 +49,13 @@
   "retrieved_utc": "2026-07-11T04:33:16+00:00",
   "rows": 4524,
   "sha256": "8f3771708d313498c0e55067048b20989d5042048797da99623b672c8daa9472"
+ },
+ "cms_aif_history": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "f452350feb9c5645"
  },
  "cms_amb_zip": {
   "dataset": "CMS Zip Code to Carrier Locality File (ambulance fee schedule rural/super-rural ZIP designations)",
@@ -57,6 +91,20 @@
   "retrieved_utc": "2026-07-11T20:53:01+00:00",
   "rows": 7557,
   "sha256": "25467c5d40521df563f2ae65d1830535a4755745dfe69f568e4961aa8642096f"
+ },
+ "docgo_10k_fy2025.htm": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "a1c32b995aa52dc7"
+ },
+ "edgar_operator_facts": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "b716b7df1be80647"
  },
  "eia_diesel_padd": {
   "dataset": "EIA Weekly Retail On-Highway Diesel Prices (psw18vw*, all areas)",
@@ -99,6 +147,69 @@
   "sha256": "18df4b89d0d6a069b9bc5631c2f74c4981747e4bd12c2645bd55cfd097f79882",
   "uuid": "d7fabe1e-d19b-4333-9eff-e80e0643f2fd"
  },
+ "falck_annual_report": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "7cb85e86ed76cd5f"
+ },
+ "gadcs_appendix_y1y4.pdf": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "269ee49740df35a3"
+ },
+ "hcris_amb_cost_center": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 4346,
+  "sha256_16": "0bf9991b85bdfa08"
+ },
+ "hcris_amb_filer_counts": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "274588101d02ea07"
+ },
+ "hcris_amb_fy2019": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "d25b964dd6c7eac2"
+ },
+ "hcris_amb_fy2020": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "3d37260a7f8c1310"
+ },
+ "hcris_amb_fy2021": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "a93732392bc86a98"
+ },
+ "hcris_amb_fy2022": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "0e4370bbe7181360"
+ },
+ "hcris_amb_fy2023": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "9007c3395665cb08"
+ },
  "hsa_2025_corridors_top15": {
   "aggregation": "client-side: per hospital, ZIP rows ranked by total cases, top 15 kept; suppression drops small cells at source",
   "data_year": "2025",
@@ -137,6 +248,13 @@
   "rows": 566,
   "rows_scanned": 83665,
   "sha256": "d2189d304f156a1c74070a178c5717ccc97198894e96b122e288e53b728e4321"
+ },
+ "manifest10": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "392ec2823900d4da"
  },
  "marketsat_county_2020": {
   "data_year": "2020",
@@ -7241,6 +7359,27 @@
   "sha256": "b667ac326f1a02465765da6e30e146b498c2b92e039ffa4bcbd85638d99cf165",
   "uuid": "0c75b0b3-b40f-4007-a5ac-f9f2fed95862"
  },
+ "nppes_ambulance_roster": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 20401,
+  "sha256_16": "88b49151099889bd"
+ },
+ "nppes_participant_resolution": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 43,
+  "sha256_16": "09ed50d8539db428"
+ },
+ "nppes_roster_by_state": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "f0ee3ab86fa54406"
+ },
  "oews_ems_state_2024": {
   "data_year": "May 2024",
   "dataset": "BLS Occupational Employment and Wage Statistics (OEWS), May 2024, state file \u2014 EMS occupations",
@@ -8114,6 +8253,13 @@
   "retrieved_utc": "2026-07-11T16:13:33+00:00",
   "rows": 2958,
   "sha256": "32cb4cb9738f756d3e0f7c540fd88f449ed22d8ef5e94862cb6b9712bbd015da"
+ },
+ "press_registry": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "80ba6e4cc7c70dca"
  },
  "psps_agg_2010_A0425": {
   "aggregation": "client-side sum by HCPCS initial modifier",
@@ -10647,22 +10793,33 @@
   "dataset": "CMS Provider Data Catalog: Skilled Nursing Facility Quality Reporting Program - Provider Data",
   "dkan_id": "fykj-qjee",
   "endpoint": "https://data.cms.gov/provider-data/api/1/datastore/query/fykj-qjee/0",
-  "fields_kept": {
-   "ccn": "cms_certification_number_ccn",
-   "measure_code": "measure_code",
-   "score": "score",
-   "state": "state"
-  },
   "file": "snf_qrp.json",
   "filters": {
-   "measure_code": "contains 'DTC' or 'PPR'",
-   "mode": "server-side contains"
+   "client_side": "kept measure_code in S_004_01_PPR_PD_* and S_005_02_DTC_*, pivoted to one record per CCN"
   },
-  "note": "slimmed to discharge-to-community (DTC) and potentially preventable readmission/rehospitalization (PPR) measures; PDC issued=2025-10-01 modified=2026-06-01",
-  "pages": 412,
-  "retrieved_utc": "2026-07-11T21:17:10+00:00",
-  "rows": 205730,
-  "sha256": "73f763dba62d2e58f53ff6e77abac22fec2f5b572969d42240ad93e4cb6ce709"
+  "kept_measure_rows": 117560,
+  "measure_fields": {
+   "S_004_01_PPR_PD_COMP_PERF": "ppr_comp_perf",
+   "S_004_01_PPR_PD_OBS": "ppr_obs",
+   "S_004_01_PPR_PD_RSRR": "ppr_rsrr",
+   "S_004_01_PPR_PD_VOLUME": "ppr_volume",
+   "S_005_02_DTC_COMP_PERF": "dtc_comp_perf",
+   "S_005_02_DTC_OBS_RATE": "dtc_obs_rate",
+   "S_005_02_DTC_RS_RATE": "dtc_rs_rate",
+   "S_005_02_DTC_VOLUME": "dtc_volume"
+  },
+  "pages": 1676,
+  "retrieved_utc": "2026-07-12T01:43:14+00:00",
+  "rows": 14695,
+  "sha256": "5ddd7e62f9967b53a816db5113cf593e84caf22adae53a91a6939ec7c270d1e6",
+  "total_rows_scanned": 837615
+ },
+ "state_ems_rosters": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "37d1b479996831a0"
  },
  "timely_care_2026": {
   "dataset": "CMS Provider Data Catalog: Timely and Effective Care - Hospital",
@@ -10696,6 +10853,55 @@
   "rows_unfiltered": 138173,
   "sha256": "472f86f845f0707d184235195637ed6ad22bb66b448c229ddc6ed81cb3a7f920"
  },
+ "usasp_v225_recipients_fy23": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "3295fae68062f12b"
+ },
+ "usasp_v225_recipients_fy24": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "ed3484a84ee3f07d"
+ },
+ "usasp_v225_recipients_fy25": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "241be38aa3d0b8ee"
+ },
+ "usasp_v225_states_fy25": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "f6c7776b642c7b85"
+ },
+ "usasp_v225_time_all": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "49ecced3cdb7ae2d"
+ },
+ "usasp_v225_time_va": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "aa5631da5624401e"
+ },
+ "wayback_footprint": {
+  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
+  "endpoint": "(see the pull script named by the key prefix)",
+  "reconciled": true,
+  "rows": 1,
+  "sha256_16": "fa449978d0b3002d"
+ },
  "zcta_gazetteer": {
   "dataset": "Census Bureau 2024 Gazetteer Files - ZIP Code Tabulation Areas (national)",
   "endpoint": "https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/2024_Gaz_zcta_national.zip",
@@ -10707,187 +10913,5 @@
   "retrieved_utc": "2026-07-11T20:51:25+00:00",
   "rows": 33791,
   "sha256": "9119507e9422316ed4ebf241fecd3c68c1783d461a797da713dfbe06fca76393"
- },
- "bls_input_series": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "cc66a12c76c97865",
-  "reconciled": true
- },
- "cms_aif_history": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "f452350feb9c5645",
-  "reconciled": true
- },
- "docgo_10k_fy2025.htm": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "a1c32b995aa52dc7",
-  "reconciled": true
- },
- "edgar_operator_facts": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "b716b7df1be80647",
-  "reconciled": true
- },
- "falck_annual_report": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "7cb85e86ed76cd5f",
-  "reconciled": true
- },
- "gadcs_appendix_y1y4.pdf": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "269ee49740df35a3",
-  "reconciled": true
- },
- "hcris_amb_cost_center": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 4346,
-  "sha256_16": "0bf9991b85bdfa08",
-  "reconciled": true
- },
- "hcris_amb_filer_counts": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "274588101d02ea07",
-  "reconciled": true
- },
- "hcris_amb_fy2019": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "d25b964dd6c7eac2",
-  "reconciled": true
- },
- "hcris_amb_fy2020": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "3d37260a7f8c1310",
-  "reconciled": true
- },
- "hcris_amb_fy2021": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "a93732392bc86a98",
-  "reconciled": true
- },
- "hcris_amb_fy2022": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "0e4370bbe7181360",
-  "reconciled": true
- },
- "hcris_amb_fy2023": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "9007c3395665cb08",
-  "reconciled": true
- },
- "manifest10": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "392ec2823900d4da",
-  "reconciled": true
- },
- "nppes_ambulance_roster": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 20401,
-  "sha256_16": "88b49151099889bd",
-  "reconciled": true
- },
- "nppes_participant_resolution": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 43,
-  "sha256_16": "09ed50d8539db428",
-  "reconciled": true
- },
- "nppes_roster_by_state": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "f0ee3ab86fa54406",
-  "reconciled": true
- },
- "press_registry": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "80ba6e4cc7c70dca",
-  "reconciled": true
- },
- "state_ems_rosters": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "37d1b479996831a0",
-  "reconciled": true
- },
- "usasp_v225_recipients_fy23": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "3295fae68062f12b",
-  "reconciled": true
- },
- "usasp_v225_recipients_fy24": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "ed3484a84ee3f07d",
-  "reconciled": true
- },
- "usasp_v225_recipients_fy25": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "241be38aa3d0b8ee",
-  "reconciled": true
- },
- "usasp_v225_states_fy25": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "f6c7776b642c7b85",
-  "reconciled": true
- },
- "usasp_v225_time_all": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "49ecced3cdb7ae2d",
-  "reconciled": true
- },
- "usasp_v225_time_va": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "aa5631da5624401e",
-  "reconciled": true
- },
- "wayback_footprint": {
-  "dataset": "(re-registered by reconcile_manifest after a concurrent-write race; original pull meta lost, payload hash is of the surviving canonical file)",
-  "endpoint": "(see the pull script named by the key prefix)",
-  "rows": 1,
-  "sha256_16": "fa449978d0b3002d",
-  "reconciled": true
  }
 }

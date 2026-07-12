@@ -57,6 +57,10 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'b4_rsnat_ma', 'b8_receiving', 'b9_regulatory',
                  'b13_usaspending', 'xf1_annual_series', 'xf5_supply_map',
                  'c123_tam', 'c48_assembly',
+                 # v3.5 completion pass (append after the v3.4 set; b3_medicaid
+                 # is extended in place, not re-added). Missing modules are
+                 # skipped gracefully by the section loop.
+                 'xc1_footprint990', 'xa4_snfqrp', 'b7_ahcah',
                  'b14_requests', 'd_quality', 'run_log']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was

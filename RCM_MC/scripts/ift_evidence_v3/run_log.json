@@ -246,5 +246,53 @@
   "status": "DONE",
   "produced": "Found+fixed: Denial RSNAT links -> blank definition rows (repointed to measured effect cells); Scenario hardest-floor left PENDING (finder matched int years, tab stores text -> now live ~$577M); Investor_QA 7 title-pull pointers -> headline data cells",
   "notes": "these resolve to blank/0 not #VALUE!, so a recalc gate cannot see them - caught by static live-reference audit"
+ },
+ {
+  "start": "00:10",
+  "end": "00:12",
+  "task": "v3.4 merged; v3.5 completion pass begun",
+  "status": "DONE",
+  "produced": "PR #1944 squash-merged (bfa29d8); branch restarted on merged main; version bump to v3_5",
+  "notes": "continuing the extension order unfinished items"
+ },
+ {
+  "start": "00:12",
+  "end": "00:24",
+  "task": "X-C.1 footprint-wide 990 sweep (40+ systems)",
+  "status": "DONE",
+  "produced": "Footprint_990_Sweep: 78 systems attempted / 64 resolved / 128 filings parsed; 7 transport-contractor appearances (4 operators, $2.06M-$12.9M) incl. Mercury Ambulance (UofL KY) ground + PHI Air Medical (Centra VA)",
+  "notes": "unlike the cohort zero, regionals DO disclose transport vendors in top-five; information floor stark (one filer 2,090 contractors >$100K, 5 named)"
+ },
+ {
+  "start": "00:12",
+  "end": "00:50",
+  "task": "Medicaid rate card completion (10-state footprint + VA)",
+  "status": "DONE",
+  "produced": "Medicaid_Rate_Card extended NE/IA/KS/MO/OH/WI to add MN, IN, KY, VA; 12 facts, 10 sources (one per state file)",
+  "notes": "VA non-emergency is broker-billed (DMAS NEMT) - recorded with the broker-carve caveat"
+ },
+ {
+  "start": "00:12",
+  "end": "00:37",
+  "task": "Hospital-at-Home participants (B.7 retry)",
+  "status": "DONE",
+  "produced": "Hospital_at_Home_Participants: CMS AHCAH approved-list retrieved (machine-readable), footprint slice + cohort join",
+  "notes": "earlier parked as JS-portal; the current CMS list was retrievable this pass"
+ },
+ {
+  "start": "00:12",
+  "end": "01:43",
+  "task": "SNF QRP return-leg quality (X-A.4 retry)",
+  "status": "DONE",
+  "produced": "SNF_Return_Leg_Quality: CMS SNF QRP measure table paginated (837,615 rows) and pivoted per CCN to 14,695 SNFs; footprint slice 3,997 SNFs, pooled median PPR 10.6% vs national 10.7%, 286 footprint SNFs in the worst national PPR decile (p90=12.49%); Panel C names the worst by CCN + city",
+  "notes": "two measures: discharge-to-community (S_005_02) and potentially preventable readmission (S_004_01), both risk-standardized; transport demand inferred, not counted"
+ },
+ {
+  "start": "02:30",
+  "end": "12:25",
+  "task": "v3.5 adversarial multi-agent audit (5 dimensions) + fixes",
+  "status": "DONE",
+  "produced": "deterministic gates green (two-pass recalc 0 errors / 0 diffs / 0 chart defects; leak check clean 12 tabs; static live-ref audit 0 suspect). Adversarial audit surfaced 3 real defects, all fixed: AHCAH unsourced \"419 hospitals\" stat dropped (firewall); SNF national worst-decile share made a live E/B formula (was hardcoded 0.10); VA Medicaid PENDING cells given bordered boxes",
+  "notes": "1 audit finding rejected as false positive (Gundersen 990: two filings same tax year 2023 = original+amended, legitimate under \"latest two per filer\"). Sources and joins dimensions verified clean directly (every v3.5 source has URL + locator; all cross-tab join keys and referenced tabs resolve)"
  }
 ]

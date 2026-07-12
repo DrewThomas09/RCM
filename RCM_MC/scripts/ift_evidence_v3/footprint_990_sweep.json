@@ -1,0 +1,3367 @@
+{
+ "generated": "2026-07-12",
+ "block": "X-C.1 footprint-wide nonprofit health-system 990 contractor sweep",
+ "footprint_states": [
+  "NE",
+  "IA",
+  "KS",
+  "MO",
+  "OH",
+  "WI",
+  "VA",
+  "MN",
+  "IN",
+  "KY"
+ ],
+ "transport_keyword_regex": "ambulanc|medical transport|patient transport|transport(?:ation)? of patients|\\bems\\b|emergency medical|air medical|life ?flight|med ?flight|medevac|medivac|paramedic|ambulette|american medical response|\\bamr\\b|ambulnz|\\bnemt\\b|critical care transport|mobile intensive care|superior air|midwest medical transport|transport",
+ "method_notes": "Seed universe: 40+ large nonprofit health systems operating hospitals in the footprint states (NE IA KS MO OH WI VA MN IN KY), enumerated from the HCRIS hospital roster (recognizable multi-hospital system families) BEYOND the 9 cohort systems already swept in cohort_990.json (Cleveland Clinic, Inova, CommonSpirit/CHI Health NE, Nebraska Methodist, Premier, Saint Luke's KC, Froedtert, Baptist Health KY, Ascension). Public/state-authority systems and for-profit chains excluded. Main filer EIN resolved via ProPublica Nonprofit Explorer API v2 search (filtered by state and name, foundation/health-plan/auxiliary filers excluded, highest-revenue matching filer chosen; one main filer per system, runner-up candidates recorded). Latest two XML-available Form 990s per filer; object_ids scraped from the public ProPublica organization page; XML fetched from the GivingTuesday 990 data-lake public S3 mirror (gt990datalake-rawdata.s3.amazonaws.com), ProPublica download-xml as fallback. Part VII Section B parsed from IndependentContractorCompensationGrp / ContractorCompensationGrp (ContractorName, ServicesDesc, CompensationAmt) and CntrctRcvdGreaterThan100KCnt. INFORMATION FLOOR: Form 990 Part VII Section B discloses only the five highest-compensated independent contractors above $100,000, so a transport vendor billing below a filer's fifth-highest contractor never appears; contractors_total per filing is the count of contractors over $100,000. Transport screen: a contractor is kept when its disclosed name OR services string matches the ambulance/EMS/medical-transport regex; the verbatim service description is preserved so genuine transport operators can be distinguished from emergency-department physician-coverage groups the broad 'emergency medical' term also catches. Public filings; entries recorded verbatim; no share-of-wallet or relationship inference beyond the filing text.",
+ "attempted": 78,
+ "resolved": 64,
+ "filings_parsed": 128,
+ "systems": [
+  {
+   "system": "Mercy (Chesterfield MO)",
+   "state_anchor": "MO",
+   "eins": [
+    431856028
+   ],
+   "resolved_filer": {
+    "ein": 431856028,
+    "name": "Mercy Health Springfield Communities",
+    "city": "Springfield",
+    "state": "MO",
+    "max_totrevenue": 475021906,
+    "runner_up_candidates": [
+     {
+      "ein": 431423050,
+      "name": "Mercy Health",
+      "city": "Chesterfield",
+      "state": "MO",
+      "max_totrevenue": 328088371
+     },
+     {
+      "ein": 431718408,
+      "name": "Mercy Health East Communities",
+      "city": "Chesterfield",
+      "state": "MO",
+      "max_totrevenue": 271620074
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 431856028,
+     "tax_year": "2023",
+     "object_id": "202541339349301849",
+     "form_type": "990",
+     "contractors_total": 22,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 431856028,
+     "tax_year": "2022",
+     "object_id": "202441349349309604",
+     "form_type": "990",
+     "contractors_total": 14,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202631289349301708: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631289349301708"
+   ]
+  },
+  {
+   "system": "SSM Health (St. Louis MO)",
+   "state_anchor": "MO",
+   "eins": [
+    431343281
+   ],
+   "resolved_filer": {
+    "ein": 431343281,
+    "name": "Ssm Health Care St Louis",
+    "city": "Saint Louis",
+    "state": "MO",
+    "max_totrevenue": 2154244003,
+    "runner_up_candidates": [
+     {
+      "ein": 466029223,
+      "name": "Ssm Health Care Corporation",
+      "city": "Saint Louis",
+      "state": "MO",
+      "max_totrevenue": 1194913384
+     },
+     {
+      "ein": 730657693,
+      "name": "Ssm Health Care Of Oklahoma Inc",
+      "city": "Saint Louis",
+      "state": "MO",
+      "max_totrevenue": 1066559255
+     },
+     {
+      "ein": 880988603,
+      "name": "Ssm Health Care Group",
+      "city": "Saint Louis",
+      "state": "MO",
+      "max_totrevenue": 334917297
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 431343281,
+     "tax_year": "2024",
+     "object_id": "202513219349322931",
+     "form_type": "990",
+     "contractors_total": 63,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 431343281,
+     "tax_year": "2023",
+     "object_id": "202403209349327315",
+     "form_type": "990",
+     "contractors_total": 159,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "BJC HealthCare (St. Louis MO)",
+   "state_anchor": "MO",
+   "eins": [
+    753052953
+   ],
+   "resolved_filer": {
+    "ein": 753052953,
+    "name": "Bjc Health System",
+    "city": "Saint Louis",
+    "state": "MO",
+    "max_totrevenue": 6738340519,
+    "runner_up_candidates": [
+     {
+      "ein": 431617558,
+      "name": "Bjc Health System",
+      "city": "Saint Louis",
+      "state": "MO",
+      "max_totrevenue": 1601631049
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 753052953,
+     "tax_year": "2024",
+     "object_id": "202533219349324948",
+     "form_type": "990",
+     "contractors_total": 617,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 753052953,
+     "tax_year": "2023",
+     "object_id": "202413179349308566",
+     "form_type": "990",
+     "contractors_total": 371,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "CoxHealth (Springfield MO)",
+   "state_anchor": "MO",
+   "eins": [
+    440577118
+   ],
+   "resolved_filer": {
+    "ein": 440577118,
+    "name": "Lester E Cox Medical Center",
+    "city": "Springfield",
+    "state": "MO",
+    "max_totrevenue": 1639754736,
+    "runner_up_candidates": [
+     {
+      "ein": 471087427,
+      "name": "Coxhealth",
+      "city": "Springfield",
+      "state": "MO",
+      "max_totrevenue": 663843880
+     },
+     {
+      "ein": 431641927,
+      "name": "Cox Hps Of The Ozarks Inc",
+      "city": "Springfield",
+      "state": "MO",
+      "max_totrevenue": 53397148
+     },
+     {
+      "ein": 366668576,
+      "name": "Lester E Cox Medical Center General Professional Liability Loss Fund C",
+      "city": "Springfield",
+      "state": "MO",
+      "max_totrevenue": 4354284
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 440577118,
+     "tax_year": "2023",
+     "object_id": "202532269349300348",
+     "form_type": "990",
+     "contractors_total": 107,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 440577118,
+     "tax_year": "2022",
+     "object_id": "202442279349303254",
+     "form_type": "990",
+     "contractors_total": 104,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Children's Mercy Kansas City (MO)",
+   "state_anchor": "MO",
+   "eins": [
+    440605373
+   ],
+   "resolved_filer": {
+    "ein": 440605373,
+    "name": "Childrens Mercy Hospital",
+    "city": "Kansas City",
+    "state": "MO",
+    "max_totrevenue": 2052831088,
+    "runner_up_candidates": [
+     {
+      "ein": 436321807,
+      "name": "Childrens Mercy Hospital Self Ins Trust",
+      "city": "Kansas City",
+      "state": "MO",
+      "max_totrevenue": 6166301
+     },
+     {
+      "ein": 446007539,
+      "name": "Walter Jaccard Tr Uw Fbo Childrens Mercy Hospital",
+      "city": "Kansas City",
+      "state": "MO",
+      "max_totrevenue": 246226
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 440605373,
+     "tax_year": "2023",
+     "object_id": "202511329349305096",
+     "form_type": "990",
+     "contractors_total": 516,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 440605373,
+     "tax_year": "2022",
+     "object_id": "202401289349302460",
+     "form_type": "990",
+     "contractors_total": 545,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601319349305760: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601319349305760"
+   ]
+  },
+  {
+   "system": "Saint Francis Healthcare System (Cape Girardeau MO)",
+   "state_anchor": "MO",
+   "eins": [
+    237246265
+   ],
+   "resolved_filer": {
+    "ein": 237246265,
+    "name": "Saint Francis Medical Center",
+    "city": "Cpe Girardeau",
+    "state": "MO",
+    "max_totrevenue": 698681811,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 237246265,
+     "tax_year": "2023",
+     "object_id": "202501359349305375",
+     "form_type": "990",
+     "contractors_total": 24,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 237246265,
+     "tax_year": "2022",
+     "object_id": "202431369349317523",
+     "form_type": "990",
+     "contractors_total": 5,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202641359349311254: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202641359349311254"
+   ]
+  },
+  {
+   "system": "Mosaic Life Care (St. Joseph MO)",
+   "state_anchor": "MO",
+   "eins": [
+    440545289
+   ],
+   "resolved_filer": {
+    "ein": 440545289,
+    "name": "Heartland Regional Medical Center",
+    "city": "Saint Joseph",
+    "state": "MO",
+    "max_totrevenue": 727817821,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 440545289,
+     "tax_year": "2023",
+     "object_id": "202541329349302574",
+     "form_type": "990",
+     "contractors_total": 24,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 440545289,
+     "tax_year": "2022",
+     "object_id": "202431299349303283",
+     "form_type": "990",
+     "contractors_total": 26,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601319349303920: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601319349303920"
+   ]
+  },
+  {
+   "system": "Freeman Health System (Joplin MO)",
+   "state_anchor": "MO",
+   "eins": [
+    431704371
+   ],
+   "resolved_filer": {
+    "ein": 431704371,
+    "name": "Freeman Health System",
+    "city": "Joplin",
+    "state": "MO",
+    "max_totrevenue": 654512246,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 431704371,
+     "tax_year": "2024",
+     "object_id": "202620469349300317",
+     "form_type": "990",
+     "contractors_total": 39,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 431704371,
+     "tax_year": "2023",
+     "object_id": "202540389349300229",
+     "form_type": "990",
+     "contractors_total": 50,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "St. Luke's Hospital (Chesterfield MO)",
+   "state_anchor": "MO",
+   "eins": [
+    430652680
+   ],
+   "resolved_filer": {
+    "ein": 430652680,
+    "name": "St Lukes Episcopal Presbyterian Hospital",
+    "city": "Chesterfield",
+    "state": "MO",
+    "max_totrevenue": 652146267,
+    "runner_up_candidates": [
+     {
+      "ein": 824314522,
+      "name": "St Lukes Des Peres Episcopal Presbyterian Hospital",
+      "city": "Chesterfield",
+      "state": "MO",
+      "max_totrevenue": 98028939
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 430652680,
+     "tax_year": "2023",
+     "object_id": "202531339349307023",
+     "form_type": "990",
+     "contractors_total": 86,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 430652680,
+     "tax_year": "2022",
+     "object_id": "202431349349301838",
+     "form_type": "990",
+     "contractors_total": 79,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601339349305540: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601339349305540"
+   ]
+  },
+  {
+   "system": "Bryan Health (Lincoln NE)",
+   "state_anchor": "NE",
+   "eins": [
+    470376552
+   ],
+   "resolved_filer": {
+    "ein": 470376552,
+    "name": "Bryan Medical Center",
+    "city": "Lincoln",
+    "state": "NE",
+    "max_totrevenue": 917018660,
+    "runner_up_candidates": [
+     {
+      "ein": 363414823,
+      "name": "Bryan Health",
+      "city": "Lincoln",
+      "state": "NE",
+      "max_totrevenue": 6842361
+     },
+     {
+      "ein": 510179556,
+      "name": "Bryan College Of Health Sciences Alumni Association",
+      "city": "Lincoln",
+      "state": "NE",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 470376552,
+     "tax_year": "2024",
+     "object_id": "202533189349312163",
+     "form_type": "990",
+     "contractors_total": 80,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 470376552,
+     "tax_year": "2023",
+     "object_id": "202403209349320715",
+     "form_type": "990",
+     "contractors_total": 79,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Nebraska Medicine (Omaha NE)",
+   "state_anchor": "NE",
+   "eins": [
+    911858433
+   ],
+   "resolved_filer": {
+    "ein": 911858433,
+    "name": "The Nebraska Medical Center",
+    "city": "Omaha",
+    "state": "NE",
+    "max_totrevenue": 2083654888,
+    "runner_up_candidates": [
+     {
+      "ein": 813158267,
+      "name": "Nebraska Medicine",
+      "city": "Omaha",
+      "state": "NE",
+      "max_totrevenue": 191588374
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 911858433,
+     "tax_year": "2023",
+     "object_id": "202531339349308678",
+     "form_type": "990",
+     "contractors_total": 96,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 911858433,
+     "tax_year": "2022",
+     "object_id": "202441349349307864",
+     "form_type": "990",
+     "contractors_total": 82,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202641349349302129: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202641349349302129"
+   ]
+  },
+  {
+   "system": "UnityPoint Health (Des Moines IA)",
+   "state_anchor": "IA",
+   "eins": [
+    421435199
+   ],
+   "resolved_filer": {
+    "ein": 421435199,
+    "name": "Iowa Health System",
+    "city": "Wdm",
+    "state": "IA",
+    "max_totrevenue": 495106486,
+    "runner_up_candidates": [
+     {
+      "ein": 815034179,
+      "name": "Unitypoint Health Marshalltown",
+      "city": "Marshalltown",
+      "state": "IA",
+      "max_totrevenue": 76201417
+     },
+     {
+      "ein": 852370921,
+      "name": "Unitypoint Rural Health Alliance Benefits Trust",
+      "city": "Wdm",
+      "state": "IA",
+      "max_totrevenue": 27775046
+     },
+     {
+      "ein": 810872241,
+      "name": "Unitypoint Health At Work",
+      "city": "Wdm",
+      "state": "IA",
+      "max_totrevenue": 14141073
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 421435199,
+     "tax_year": "2024",
+     "object_id": "202523179349312502",
+     "form_type": "990",
+     "contractors_total": 73,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 421435199,
+     "tax_year": "2023",
+     "object_id": "202443199349309429",
+     "form_type": "990",
+     "contractors_total": 148,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Genesis Health System (Davenport IA)",
+   "state_anchor": "IA",
+   "eins": [
+    421418847
+   ],
+   "resolved_filer": {
+    "ein": 421418847,
+    "name": "Genesis Health System",
+    "city": "Davenport",
+    "state": "IA",
+    "max_totrevenue": 566591612,
+    "runner_up_candidates": [
+     {
+      "ein": 391905171,
+      "name": "Genesis Health System Workers Compensation Pl & Tr",
+      "city": "Davenport",
+      "state": "IA",
+      "max_totrevenue": 2396859
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 421418847,
+     "tax_year": "2023",
+     "object_id": "202511359349304046",
+     "form_type": "990",
+     "contractors_total": 100,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 421418847,
+     "tax_year": "2022",
+     "object_id": "202411369349308526",
+     "form_type": "990",
+     "contractors_total": 101,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601349349305875: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601349349305875"
+   ]
+  },
+  {
+   "system": "Stormont Vail Health (Topeka KS)",
+   "state_anchor": "KS",
+   "eins": [
+    480543789
+   ],
+   "resolved_filer": {
+    "ein": 480543789,
+    "name": "Stormont Vail Healthcare Inc",
+    "city": "Topeka",
+    "state": "KS",
+    "max_totrevenue": 1008939878,
+    "runner_up_candidates": [
+     {
+      "ein": 480980926,
+      "name": "Stormont Vail Foundation",
+      "city": "Topeka",
+      "state": "KS",
+      "max_totrevenue": 4009334
+     },
+     {
+      "ein": 486140517,
+      "name": "Stormont Vail Healthcare Auxiliary",
+      "city": "Topeka",
+      "state": "KS",
+      "max_totrevenue": 730064
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 480543789,
+     "tax_year": "2023",
+     "object_id": "202630429349301913",
+     "form_type": "990",
+     "contractors_total": 91,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 480543789,
+     "tax_year": "2022",
+     "object_id": "202432279349301318",
+     "form_type": "990",
+     "contractors_total": 91,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Salina Regional Health Center (KS)",
+   "state_anchor": "KS",
+   "eins": [
+    481169103
+   ],
+   "resolved_filer": {
+    "ein": 481169103,
+    "name": "Salina Regional Health Center Inc",
+    "city": "Salina",
+    "state": "KS",
+    "max_totrevenue": 350557075,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 481169103,
+     "tax_year": "2023",
+     "object_id": "202522119349300617",
+     "form_type": "990",
+     "contractors_total": 60,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 481169103,
+     "tax_year": "2022",
+     "object_id": "202422229349300747",
+     "form_type": "990",
+     "contractors_total": 38,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Hutchinson Regional Medical Center (KS)",
+   "state_anchor": "KS",
+   "eins": [
+    480774005
+   ],
+   "resolved_filer": {
+    "ein": 480774005,
+    "name": "Hutchinson Regional Medical Center Inc",
+    "city": "Hutchinson",
+    "state": "KS",
+    "max_totrevenue": 162371292,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 480774005,
+     "tax_year": "2023",
+     "object_id": "202541359349304899",
+     "form_type": "990",
+     "contractors_total": 29,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 480774005,
+     "tax_year": "2022",
+     "object_id": "202441369349304504",
+     "form_type": "990",
+     "contractors_total": 139,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202631339349308568: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631339349308568"
+   ]
+  },
+  {
+   "system": "Advocate Aurora Health / Advocate Health (WI)",
+   "state_anchor": "WI",
+   "eins": [
+    391442285
+   ],
+   "resolved_filer": {
+    "ein": 391442285,
+    "name": "Aurora Health Care Inc",
+    "city": "Milwaukee",
+    "state": "WI",
+    "max_totrevenue": 1249974452,
+    "runner_up_candidates": [
+     {
+      "ein": 824184596,
+      "name": "Advocate Aurora Health Inc",
+      "city": "Downers Grove",
+      "state": "IL",
+      "max_totrevenue": 175431990
+     },
+     {
+      "ein": 390806181,
+      "name": "Aurora Health Care Inc",
+      "city": "Milwaukee",
+      "state": "WI",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 391211629,
+      "name": "Aurora Health Care Inc",
+      "city": "Milwaukee",
+      "state": "WI",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 391442285,
+     "tax_year": "2024",
+     "object_id": "202513219349328571",
+     "form_type": "990",
+     "contractors_total": 23,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 391442285,
+     "tax_year": "2023",
+     "object_id": "202443219349301019",
+     "form_type": "990",
+     "contractors_total": 37,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "ThedaCare (Appleton WI)",
+   "state_anchor": "WI",
+   "eins": [
+    392014409
+   ],
+   "resolved_filer": {
+    "ein": 392014409,
+    "name": "Froedtert Thedacare Health Inc",
+    "city": "Milwaukee",
+    "state": "WI",
+    "max_totrevenue": 1101803802,
+    "runner_up_candidates": [
+     {
+      "ein": 391509362,
+      "name": "Thedacare Inc",
+      "city": "Appleton",
+      "state": "WI",
+      "max_totrevenue": 439639874
+     },
+     {
+      "ein": 390824015,
+      "name": "Thedacare Regional Medical Center  Appleton Inc",
+      "city": "Appleton",
+      "state": "WI",
+      "max_totrevenue": 429132232
+     },
+     {
+      "ein": 390807068,
+      "name": "Thedacare Medical Center Shawano Inc",
+      "city": "Appleton",
+      "state": "WI",
+      "max_totrevenue": 92235137
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 392014409,
+     "tax_year": "2023",
+     "object_id": "202531359349311273",
+     "form_type": "990",
+     "contractors_total": 152,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 392014409,
+     "tax_year": "2022",
+     "object_id": "202401289349302165",
+     "form_type": "990",
+     "contractors_total": 204,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601329349304745: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601329349304745"
+   ]
+  },
+  {
+   "system": "Marshfield Clinic Health System (WI)",
+   "state_anchor": "WI",
+   "eins": [
+    810977948
+   ],
+   "resolved_filer": {
+    "ein": 810977948,
+    "name": "Mchs Hospitals Inc",
+    "city": "Marshfield",
+    "state": "WI",
+    "max_totrevenue": 1503791909,
+    "runner_up_candidates": [
+     {
+      "ein": 390452970,
+      "name": "Marshfield Clinic Inc",
+      "city": "Marshfield",
+      "state": "WI",
+      "max_totrevenue": 1253250279
+     },
+     {
+      "ein": 461495343,
+      "name": "Marshfield Clinic Health System Inc",
+      "city": "Marshfield",
+      "state": "WI",
+      "max_totrevenue": 356577991
+     },
+     {
+      "ein": 811617859,
+      "name": "Raymond A And Amella P Beilke Tr For Marshfield Clinic Dtd 02 15 16",
+      "city": "Wausau",
+      "state": "WI",
+      "max_totrevenue": 41826
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 810977948,
+     "tax_year": "2024",
+     "object_id": "202533089349302333",
+     "form_type": "990",
+     "contractors_total": 227,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 810977948,
+     "tax_year": "2023",
+     "object_id": "202433189349306153",
+     "form_type": "990",
+     "contractors_total": 265,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Gundersen Health System / Emplify (La Crosse WI)",
+   "state_anchor": "WI",
+   "eins": [
+    390813416
+   ],
+   "resolved_filer": {
+    "ein": 390813416,
+    "name": "Gundersen Lutheran Medical Center Inc",
+    "city": "La Crosse",
+    "state": "WI",
+    "max_totrevenue": 1368537872,
+    "runner_up_candidates": [
+     {
+      "ein": 391606449,
+      "name": "Gundersen Lutheran Administrative Services Inc",
+      "city": "La Crosse",
+      "state": "WI",
+      "max_totrevenue": 993740336
+     },
+     {
+      "ein": 391866425,
+      "name": "Gundersen Lutheran Health System Inc",
+      "city": "La Crosse",
+      "state": "WI",
+      "max_totrevenue": 15902164
+     },
+     {
+      "ein": 391856898,
+      "name": "Gundersen Lutheran Credentialing Services Inc",
+      "city": "La Crosse",
+      "state": "WI",
+      "max_totrevenue": 1021253
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 390813416,
+     "tax_year": "2023",
+     "object_id": "202502269349303160",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    },
+    {
+     "ein": 390813416,
+     "tax_year": "2023",
+     "object_id": "202422289349300847",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 1,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Bellin Health (Green Bay WI)",
+   "state_anchor": "WI",
+   "eins": [
+    390884478
+   ],
+   "resolved_filer": {
+    "ein": 390884478,
+    "name": "Bellin Memorial Hospital Inc",
+    "city": "Green Bay",
+    "state": "WI",
+    "max_totrevenue": 746094277,
+    "runner_up_candidates": [
+     {
+      "ein": 391512904,
+      "name": "Bellin Health Systems Inc",
+      "city": "Green Bay",
+      "state": "WI",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 920504278,
+      "name": "Bellin Gundersen Health System Inc",
+      "city": "La Crosse",
+      "state": "WI",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 390884478,
+     "tax_year": "2023",
+     "object_id": "202542259349302559",
+     "form_type": "990",
+     "contractors_total": 62,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 390884478,
+     "tax_year": "2022",
+     "object_id": "202412289349300211",
+     "form_type": "990",
+     "contractors_total": 66,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Aspirus Health (Wausau WI)",
+   "state_anchor": "WI",
+   "eins": [
+    391138241
+   ],
+   "resolved_filer": {
+    "ein": 391138241,
+    "name": "Aspirus Wausau Hospital Inc",
+    "city": "Wausau",
+    "state": "WI",
+    "max_totrevenue": 702469178,
+    "runner_up_candidates": [
+     {
+      "ein": 391670223,
+      "name": "Aspirus Medical Group Inc",
+      "city": "Wausau",
+      "state": "WI",
+      "max_totrevenue": 121696619
+     },
+     {
+      "ein": 381443361,
+      "name": "Aspirus Keweenaw",
+      "city": "Laurium",
+      "state": "MI",
+      "max_totrevenue": 70859801
+     },
+     {
+      "ein": 391328331,
+      "name": "Aspirus Inc",
+      "city": "Wausau",
+      "state": "WI",
+      "max_totrevenue": 45369822
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 391138241,
+     "tax_year": "2023",
+     "object_id": "202501359349305080",
+     "form_type": "990",
+     "contractors_total": 227,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "WISCONSIN EMERGENCY MEDICAL SERVICE ASSO",
+       "services": "EMERGENCY ROOM PROVIDER COVERAGE",
+       "amount": 6974442,
+       "address": "333 PINE RIDGE BLVD, WAUSAU, WI, 54401",
+       "match_term": "EMERGENCY MEDICAL"
+      }
+     ]
+    },
+    {
+     "ein": 391138241,
+     "tax_year": "2022",
+     "object_id": "202411369349303826",
+     "form_type": "990",
+     "contractors_total": 249,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "WISCONSIN EMERGENCY MEDICAL SERVICE ASSO",
+       "services": "EMERGENCY ROOM PROVIDER COVERAGE",
+       "amount": 12910581,
+       "address": "333 PINE RIDGE BLVD, WAUSAU, WI, 54401",
+       "match_term": "EMERGENCY MEDICAL"
+      }
+     ]
+    }
+   ],
+   "errors": [
+    "202601349349304470: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601349349304470"
+   ]
+  },
+  {
+   "system": "Children's Wisconsin (Milwaukee WI)",
+   "state_anchor": "WI",
+   "eins": [
+    390812532
+   ],
+   "resolved_filer": {
+    "ein": 390812532,
+    "name": "Childrens Hospital Of Wisconsin Inc",
+    "city": "Milwaukee",
+    "state": "WI",
+    "max_totrevenue": 938005417,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 390812532,
+     "tax_year": "2024",
+     "object_id": "202513219349312761",
+     "form_type": "990",
+     "contractors_total": 101,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 390812532,
+     "tax_year": "2023",
+     "object_id": "202413199349313271",
+     "form_type": "990",
+     "contractors_total": 113,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Hospital Sisters Health System (IL/WI)",
+   "state_anchor": "WI",
+   "eins": [
+    371058692
+   ],
+   "resolved_filer": {
+    "ein": 371058692,
+    "name": "Hospital Sisters Health System",
+    "city": "Springfield",
+    "state": "IL",
+    "max_totrevenue": 339284535,
+    "runner_up_candidates": [
+     {
+      "ein": 371137724,
+      "name": "Hospital Sisters Health System Health Care Plan Trust Fund",
+      "city": "Springfield",
+      "state": "IL",
+      "max_totrevenue": 156979337
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 371058692,
+     "tax_year": "2023",
+     "object_id": "202531269349302073",
+     "form_type": "990",
+     "contractors_total": 93,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 371058692,
+     "tax_year": "2022",
+     "object_id": "202431319349303528",
+     "form_type": "990",
+     "contractors_total": 90,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202631269349303243: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631269349303243"
+   ]
+  },
+  {
+   "system": "ProHealth Care (Waukesha WI)",
+   "state_anchor": "WI",
+   "eins": [
+    390910727
+   ],
+   "resolved_filer": {
+    "ein": 390910727,
+    "name": "Prohealth Waukesha Memorial Hospital Inc",
+    "city": "Waukesha",
+    "state": "WI",
+    "max_totrevenue": 586869994,
+    "runner_up_candidates": [
+     {
+      "ein": 391486873,
+      "name": "Prohealth Care Inc",
+      "city": "Waukesha",
+      "state": "WI",
+      "max_totrevenue": 198013454
+     },
+     {
+      "ein": 200067392,
+      "name": "Prohealth Home Care Inc",
+      "city": "Waukesha",
+      "state": "WI",
+      "max_totrevenue": 19189765
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 390910727,
+     "tax_year": "2023",
+     "object_id": "202532109349300208",
+     "form_type": "990",
+     "contractors_total": 63,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 390910727,
+     "tax_year": "2022",
+     "object_id": "202432129349301213",
+     "form_type": "990",
+     "contractors_total": 64,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Mayo Clinic (Rochester MN)",
+   "state_anchor": "MN",
+   "eins": [
+    416011702
+   ],
+   "resolved_filer": {
+    "ein": 416011702,
+    "name": "Mayo Clinic",
+    "city": "Rochester",
+    "state": "MN",
+    "max_totrevenue": 7993241004,
+    "runner_up_candidates": [
+     {
+      "ein": 410944601,
+      "name": "Mayo Clinic",
+      "city": "Rochester",
+      "state": "MN",
+      "max_totrevenue": 2021770805
+     },
+     {
+      "ein": 860800150,
+      "name": "Mayo Clinic",
+      "city": "Rochester",
+      "state": "MN",
+      "max_totrevenue": 1082111859
+     },
+     {
+      "ein": 593337028,
+      "name": "Mayo Clinic",
+      "city": "Rochester",
+      "state": "MN",
+      "max_totrevenue": 657549856
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 416011702,
+     "tax_year": "2024",
+     "object_id": "202513219349301796",
+     "form_type": "990",
+     "contractors_total": 6,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 416011702,
+     "tax_year": "2023",
+     "object_id": "202433209349305418",
+     "form_type": "990",
+     "contractors_total": 2,
+     "contractors_disclosed": 2,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Allina Health (Minneapolis MN)",
+   "state_anchor": "MN",
+   "eins": [
+    363261413
+   ],
+   "resolved_filer": {
+    "ein": 363261413,
+    "name": "Allina Health System",
+    "city": "Minneapolis",
+    "state": "MN",
+    "max_totrevenue": 5383327820,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 363261413,
+     "tax_year": "2024",
+     "object_id": "202503159349305270",
+     "form_type": "990",
+     "contractors_total": 361,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 363261413,
+     "tax_year": "2023",
+     "object_id": "202443169349301629",
+     "form_type": "990",
+     "contractors_total": 355,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Fairview Health Services / M Health Fairview (MN)",
+   "state_anchor": "MN",
+   "eins": [
+    410991680
+   ],
+   "resolved_filer": {
+    "ein": 410991680,
+    "name": "Fairview Health Services",
+    "city": "Minneapolis",
+    "state": "MN",
+    "max_totrevenue": 4707970630,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 410991680,
+     "tax_year": "2024",
+     "object_id": "202543149349301849",
+     "form_type": "990",
+     "contractors_total": 91,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 410991680,
+     "tax_year": "2023",
+     "object_id": "202433179349301603",
+     "form_type": "990",
+     "contractors_total": 82,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "HealthPartners (Bloomington MN)",
+   "state_anchor": "MN",
+   "eins": [
+    411693838
+   ],
+   "resolved_filer": {
+    "ein": 411693838,
+    "name": "Healthpartners Inc",
+    "city": "Minneapolis",
+    "state": "MN",
+    "max_totrevenue": 3345003598,
+    "runner_up_candidates": [
+     {
+      "ein": 410797853,
+      "name": "Group Health Inc",
+      "city": "Bloomington",
+      "state": "MN",
+      "max_totrevenue": 1927944004
+     },
+     {
+      "ein": 410956618,
+      "name": "Regions Hospital",
+      "city": "Bloomington",
+      "state": "MN",
+      "max_totrevenue": 1059136492
+     },
+     {
+      "ein": 411670163,
+      "name": "Healthpartners Institute",
+      "city": "Minneapolis",
+      "state": "MN",
+      "max_totrevenue": 52624063
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 411693838,
+     "tax_year": "2024",
+     "object_id": "202503219349309915",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    },
+    {
+     "ein": 411693838,
+     "tax_year": "2023",
+     "object_id": "202413189349305226",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Essentia Health (Duluth MN)",
+   "state_anchor": "MN",
+   "eins": [
+    200360007
+   ],
+   "resolved_filer": {
+    "ein": 200360007,
+    "name": "Essentia Health",
+    "city": "Duluth",
+    "state": "MN",
+    "max_totrevenue": 416911579,
+    "runner_up_candidates": [
+     {
+      "ein": 845099016,
+      "name": "Essentia Health Moose Lake",
+      "city": "Moose Lake",
+      "state": "MN",
+      "max_totrevenue": 51236732
+     },
+     {
+      "ein": 200479568,
+      "name": "Bridges Medical Center",
+      "city": "Ada",
+      "state": "MN",
+      "max_totrevenue": 12296334
+     },
+     {
+      "ein": 271291124,
+      "name": "Essentia Institute Of Rural Health",
+      "city": "Duluth",
+      "state": "MN",
+      "max_totrevenue": 11564234
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 200360007,
+     "tax_year": "2023",
+     "object_id": "202531269349302468",
+     "form_type": "990",
+     "contractors_total": 293,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 200360007,
+     "tax_year": "2022",
+     "object_id": "202401249349300730",
+     "form_type": "990",
+     "contractors_total": 292,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202621319349301822: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202621319349301822"
+   ]
+  },
+  {
+   "system": "CentraCare (St. Cloud MN)",
+   "state_anchor": "MN",
+   "eins": [
+    410695596
+   ],
+   "resolved_filer": {
+    "ein": 410695596,
+    "name": "St Cloud Hospital",
+    "city": "Saint Cloud",
+    "state": "MN",
+    "max_totrevenue": 1141045824,
+    "runner_up_candidates": [
+     {
+      "ein": 411813221,
+      "name": "Centracare Health System",
+      "city": "Saint Cloud",
+      "state": "MN",
+      "max_totrevenue": 622933545
+     },
+     {
+      "ein": 411806657,
+      "name": "Centracare Clinic",
+      "city": "Saint Cloud",
+      "state": "MN",
+      "max_totrevenue": 299509090
+     },
+     {
+      "ein": 411865315,
+      "name": "Centracare Health System Of Melrose",
+      "city": "Melrose",
+      "state": "MN",
+      "max_totrevenue": 58974975
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 410695596,
+     "tax_year": "2023",
+     "object_id": "202521339349308992",
+     "form_type": "990",
+     "contractors_total": 40,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 410695596,
+     "tax_year": "2022",
+     "object_id": "202411369349300811",
+     "form_type": "990",
+     "contractors_total": 42,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202611329349302956: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611329349302956"
+   ]
+  },
+  {
+   "system": "North Memorial Health (Robbinsdale MN)",
+   "state_anchor": "MN",
+   "eins": [
+    410729979
+   ],
+   "resolved_filer": {
+    "ein": 410729979,
+    "name": "North Memorial Health Care",
+    "city": "Robbinsdale",
+    "state": "MN",
+    "max_totrevenue": 907618737,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 410729979,
+     "tax_year": "2024",
+     "object_id": "202523219349323137",
+     "form_type": "990",
+     "contractors_total": 89,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 410729979,
+     "tax_year": "2023",
+     "object_id": "202433209349319113",
+     "form_type": "990",
+     "contractors_total": 80,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Avera Health (Sioux Falls SD; IA/NE/MN hospitals)",
+   "state_anchor": "SD (IA/NE/MN hospitals)",
+   "eins": [
+    460224743
+   ],
+   "resolved_filer": {
+    "ein": 460224743,
+    "name": "Avera Mckennan",
+    "city": "Sioux Falls",
+    "state": "SD",
+    "max_totrevenue": 1488868703,
+    "runner_up_candidates": [
+     {
+      "ein": 460422673,
+      "name": "Avera Health",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "max_totrevenue": 441737044
+     },
+     {
+      "ein": 460225483,
+      "name": "Sacred Heart Health Services",
+      "city": "Yankton",
+      "state": "SD",
+      "max_totrevenue": 160143371
+     },
+     {
+      "ein": 460226738,
+      "name": "St Benedict Health Center",
+      "city": "Parkston",
+      "state": "SD",
+      "max_totrevenue": 30198335
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 460224743,
+     "tax_year": "2023",
+     "object_id": "202531349349308693",
+     "form_type": "990",
+     "contractors_total": 88,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 460224743,
+     "tax_year": "2022",
+     "object_id": "202431359349310158",
+     "form_type": "990",
+     "contractors_total": 76,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202621359349301797: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202621359349301797"
+   ]
+  },
+  {
+   "system": "OhioHealth (Columbus OH)",
+   "state_anchor": "OH",
+   "eins": [
+    320007056
+   ],
+   "resolved_filer": {
+    "ein": 320007056,
+    "name": "Ohiohealth Corporation",
+    "city": "Columbus",
+    "state": "OH",
+    "max_totrevenue": 1881908199,
+    "runner_up_candidates": [
+     {
+      "ein": 316059784,
+      "name": "Ohiohealth Corporation",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 311351965,
+      "name": "Ohiohealth Corporation",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 331539810,
+      "name": "Ohiohealth Corporation",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 320007056,
+     "tax_year": "2023",
+     "object_id": "202501349349309680",
+     "form_type": "990",
+     "contractors_total": 7,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    },
+    {
+     "ein": 320007056,
+     "tax_year": "2022",
+     "object_id": "202411369349304561",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601339349308015: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601339349308015"
+   ]
+  },
+  {
+   "system": "Bon Secours Mercy Health (Cincinnati OH)",
+   "state_anchor": "OH",
+   "eins": [
+    521301088
+   ],
+   "resolved_filer": {
+    "ein": 521301088,
+    "name": "Bon Secours Mercy Health Inc",
+    "city": "Blue Ash",
+    "state": "OH",
+    "max_totrevenue": 8710340168,
+    "runner_up_candidates": [
+     {
+      "ein": 521732800,
+      "name": "Bon Secours Community Works Inc",
+      "city": "Baltimore",
+      "state": "MD",
+      "max_totrevenue": 7439223
+     },
+     {
+      "ein": 311007881,
+      "name": "Mercy Health Physicians Cincinnati Llc",
+      "city": "Cincinnati",
+      "state": "OH",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 521301088,
+     "tax_year": "2024",
+     "object_id": "202543189349312314",
+     "form_type": "990",
+     "contractors_total": 2041,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 521301088,
+     "tax_year": "2023",
+     "object_id": "202413189349301411",
+     "form_type": "990",
+     "contractors_total": 2090,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "University Hospitals Health System (Cleveland OH)",
+   "state_anchor": "OH",
+   "eins": [
+    340714775
+   ],
+   "resolved_filer": {
+    "ein": 340714775,
+    "name": "University Hospitals Health System Inc",
+    "city": "Shaker Hts",
+    "state": "OH",
+    "max_totrevenue": 960105000,
+    "runner_up_candidates": [
+     {
+      "ein": 341425870,
+      "name": "University Hospitals Health System Inc",
+      "city": "Shaker Hts",
+      "state": "OH",
+      "max_totrevenue": 475459739
+     },
+     {
+      "ein": 340827442,
+      "name": "University Hospitals Health System Inc",
+      "city": "Shaker Hts",
+      "state": "OH",
+      "max_totrevenue": 183564923
+     },
+     {
+      "ein": 461382538,
+      "name": "University Hospitals Health System Inc",
+      "city": "Shaker Hts",
+      "state": "OH",
+      "max_totrevenue": 160569000
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 340714775,
+     "tax_year": "2024",
+     "object_id": "202533219349319143",
+     "form_type": "990",
+     "contractors_total": 947,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 340714775,
+     "tax_year": "2023",
+     "object_id": "202423209349327422",
+     "form_type": "990",
+     "contractors_total": 993,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "TriHealth (Cincinnati OH)",
+   "state_anchor": "OH",
+   "eins": [
+    311383365
+   ],
+   "resolved_filer": {
+    "ein": 311383365,
+    "name": "Trihealth Physician Enterprises Corp",
+    "city": "Cincinnati",
+    "state": "OH",
+    "max_totrevenue": 433667375,
+    "runner_up_candidates": [
+     {
+      "ein": 311438846,
+      "name": "Trihealth Inc",
+      "city": "Cincinnati",
+      "state": "OH",
+      "max_totrevenue": 357555649
+     },
+     {
+      "ein": 311074519,
+      "name": "Trihealth Physician Institute",
+      "city": "Cincinnati",
+      "state": "OH",
+      "max_totrevenue": 158103017
+     },
+     {
+      "ein": 461393755,
+      "name": "Trihealth Hospital Inc",
+      "city": "Cincinnati",
+      "state": "OH",
+      "max_totrevenue": 69125973
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 311383365,
+     "tax_year": "2023",
+     "object_id": "202511339349303941",
+     "form_type": "990",
+     "contractors_total": 21,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 311383365,
+     "tax_year": "2022",
+     "object_id": "202411349349303766",
+     "form_type": "990",
+     "contractors_total": 25,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202611339349302946: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611339349302946"
+   ]
+  },
+  {
+   "system": "Nationwide Children's Hospital (Columbus OH)",
+   "state_anchor": "OH",
+   "eins": [
+    10782751
+   ],
+   "resolved_filer": {
+    "ein": 10782751,
+    "name": "Nationwide Childrens Hospital",
+    "city": "Columbus",
+    "state": "OH",
+    "max_totrevenue": 3899652946,
+    "runner_up_candidates": [
+     {
+      "ein": 311036372,
+      "name": "Nationwide Childrens Hospital Inc",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 25025001
+     },
+     {
+      "ein": 314379441,
+      "name": "Nationwide Childrens Hospital Inc",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 311036370,
+      "name": "Nationwide Childrens Hospital Inc",
+      "city": "Columbus",
+      "state": "OH",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 10782751,
+     "tax_year": "2024",
+     "object_id": "202543179349311834",
+     "form_type": "990",
+     "contractors_total": 350,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 10782751,
+     "tax_year": "2023",
+     "object_id": "202423209349307837",
+     "form_type": "990",
+     "contractors_total": 298,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Akron Children's Hospital (OH)",
+   "state_anchor": "OH",
+   "eins": [
+    340714357
+   ],
+   "resolved_filer": {
+    "ein": 340714357,
+    "name": "Childrens Hospital Medical Center Of Akron",
+    "city": "Akron",
+    "state": "OH",
+    "max_totrevenue": 1383190674,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 340714357,
+     "tax_year": "2024",
+     "object_id": "202523179349300537",
+     "form_type": "990",
+     "contractors_total": 61,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 340714357,
+     "tax_year": "2023",
+     "object_id": "202403199349306435",
+     "form_type": "990",
+     "contractors_total": 72,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Dayton Children's Hospital (OH)",
+   "state_anchor": "OH",
+   "eins": [
+    310672132
+   ],
+   "resolved_filer": {
+    "ein": 310672132,
+    "name": "Dayton Childrens Hospital",
+    "city": "Dayton",
+    "state": "OH",
+    "max_totrevenue": 651323624,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 310672132,
+     "tax_year": "2023",
+     "object_id": "202521359349314587",
+     "form_type": "990",
+     "contractors_total": 26,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 310672132,
+     "tax_year": "2022",
+     "object_id": "202441359349310954",
+     "form_type": "990",
+     "contractors_total": 29,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202601349349304635: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202601349349304635"
+   ]
+  },
+  {
+   "system": "ProMedica (Toledo OH)",
+   "state_anchor": "OH",
+   "eins": [
+    341517671
+   ],
+   "resolved_filer": {
+    "ein": 341517671,
+    "name": "Promedica Health System Inc",
+    "city": "Toledo",
+    "state": "OH",
+    "max_totrevenue": 525216605,
+    "runner_up_candidates": [
+     {
+      "ein": 341881137,
+      "name": "Promedica Central Physicians Llc",
+      "city": "Toledo",
+      "state": "OH",
+      "max_totrevenue": 410365778
+     },
+     {
+      "ein": 341880767,
+      "name": "Promedica Continuum Services",
+      "city": "Toledo",
+      "state": "OH",
+      "max_totrevenue": 88615174
+     },
+     {
+      "ein": 386108110,
+      "name": "Promedica Coldwater Regional Hospital",
+      "city": "Flint",
+      "state": "MI",
+      "max_totrevenue": 80532810
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 341517671,
+     "tax_year": "2024",
+     "object_id": "202512879349301781",
+     "form_type": "990",
+     "contractors_total": 336,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "EMERGENCY PHYSICIANS OF NWO",
+       "services": "EMERGENCY MEDICAL STAFF",
+       "amount": 7557917,
+       "address": "PO BOX 638133, CINCINNATI, OH, 45263",
+       "match_term": "EMERGENCY MEDICAL"
+      }
+     ]
+    },
+    {
+     "ein": 341517671,
+     "tax_year": "2023",
+     "object_id": "202433199349306048",
+     "form_type": "990",
+     "contractors_total": 678,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "EMERGENCY PHYSICIANS OF NWO",
+       "services": "EMERGENCY MEDICAL STAFF",
+       "amount": 10471419,
+       "address": "PO BOX 638133, CINCINNATI, OH, 45263",
+       "match_term": "EMERGENCY MEDICAL"
+      }
+     ]
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Mount Carmel Health System (Columbus OH; Trinity Health)",
+   "state_anchor": "OH",
+   "eins": [
+    311439334
+   ],
+   "resolved_filer": {
+    "ein": 311439334,
+    "name": "Mount Carmel Health System",
+    "city": "Columbus",
+    "state": "OH",
+    "max_totrevenue": 1427634955,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 311439334,
+     "tax_year": "2023",
+     "object_id": "202531349349306268",
+     "form_type": "990",
+     "contractors_total": 167,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 311439334,
+     "tax_year": "2022",
+     "object_id": "202411369349307261",
+     "form_type": "990",
+     "contractors_total": 142,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202621339349301547: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202621339349301547"
+   ]
+  },
+  {
+   "system": "Genesis HealthCare System (Zanesville OH)",
+   "state_anchor": "OH",
+   "eins": [
+    311480941
+   ],
+   "resolved_filer": {
+    "ein": 311480941,
+    "name": "Genesis Healthcare System",
+    "city": "Zanesville",
+    "state": "OH",
+    "max_totrevenue": 610505890,
+    "runner_up_candidates": [
+     {
+      "ein": 311773259,
+      "name": "Genesis Healthcare System  Group Return ",
+      "city": "Zanesville",
+      "state": "OH",
+      "max_totrevenue": 12981447
+     },
+     {
+      "ein": 311282152,
+      "name": "Genesis Healthcare System",
+      "city": "Zanesville",
+      "state": "OH",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 311099924,
+      "name": "Genesis Healthcare System",
+      "city": "Zanesville",
+      "state": "OH",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 311480941,
+     "tax_year": "2024",
+     "object_id": "202503219349306690",
+     "form_type": "990",
+     "contractors_total": 80,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 311480941,
+     "tax_year": "2023",
+     "object_id": "202443199349305144",
+     "form_type": "990",
+     "contractors_total": 24,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Indiana University Health (Indianapolis IN)",
+   "state_anchor": "IN",
+   "eins": [
+    351955872
+   ],
+   "resolved_filer": {
+    "ein": 351955872,
+    "name": "Indiana University Health Inc",
+    "city": "Indianapolis",
+    "state": "IN",
+    "max_totrevenue": 5752062837,
+    "runner_up_candidates": [
+     {
+      "ein": 351720796,
+      "name": "Indiana University Health Bloomingon Inc",
+      "city": "Indianapolis",
+      "state": "IN",
+      "max_totrevenue": 772996782
+     },
+     {
+      "ein": 263162145,
+      "name": "Indiana University Health Arnett Inc",
+      "city": "Indianapolis",
+      "state": "IN",
+      "max_totrevenue": 641512534
+     },
+     {
+      "ein": 237042323,
+      "name": "Indiana University Health Bedford Inc",
+      "city": "Indianapolis",
+      "state": "IN",
+      "max_totrevenue": 113965486
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 351955872,
+     "tax_year": "2024",
+     "object_id": "202523209349300732",
+     "form_type": "990",
+     "contractors_total": 1390,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 351955872,
+     "tax_year": "2023",
+     "object_id": "202443209349310559",
+     "form_type": "990",
+     "contractors_total": 1181,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Franciscan Health / Franciscan Alliance (IN)",
+   "state_anchor": "IN",
+   "eins": [
+    351330472
+   ],
+   "resolved_filer": {
+    "ein": 351330472,
+    "name": "Franciscan Alliance Inc",
+    "city": "Mishawaka",
+    "state": "IN",
+    "max_totrevenue": 3598454885,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 351330472,
+     "tax_year": "2024",
+     "object_id": "202513219349322136",
+     "form_type": "990",
+     "contractors_total": 220,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 351330472,
+     "tax_year": "2023",
+     "object_id": "202433209349322078",
+     "form_type": "990",
+     "contractors_total": 243,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Parkview Health (Fort Wayne IN)",
+   "state_anchor": "IN",
+   "eins": [
+    350868085
+   ],
+   "resolved_filer": {
+    "ein": 350868085,
+    "name": "Parkview Hospital Inc",
+    "city": "Fort Wayne",
+    "state": "IN",
+    "max_totrevenue": 1934664467,
+    "runner_up_candidates": [
+     {
+      "ein": 351972384,
+      "name": "Parkview Health System Inc",
+      "city": "Fort Wayne",
+      "state": "IN",
+      "max_totrevenue": 1111131836
+     },
+     {
+      "ein": 471753440,
+      "name": "Parkview Wabash Hospital Inc",
+      "city": "Wabash",
+      "state": "IN",
+      "max_totrevenue": 82239223
+     },
+     {
+      "ein": 352064353,
+      "name": "Parkview Occupational Health Centers Inc",
+      "city": "Fort Wayne",
+      "state": "IN",
+      "max_totrevenue": 14681645
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 350868085,
+     "tax_year": "2024",
+     "object_id": "202513109349304191",
+     "form_type": "990",
+     "contractors_total": 89,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 350868085,
+     "tax_year": "2023",
+     "object_id": "202413109349301996",
+     "form_type": "990",
+     "contractors_total": 88,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Community Health Network (Indianapolis IN)",
+   "state_anchor": "IN",
+   "eins": [
+    350983617
+   ],
+   "resolved_filer": {
+    "ein": 350983617,
+    "name": "Community Health Network Inc",
+    "city": "Indianapolis",
+    "state": "IN",
+    "max_totrevenue": 2181454561,
+    "runner_up_candidates": [
+     {
+      "ein": 351088640,
+      "name": "Community Hospitals Of Indiana Inc",
+      "city": "Indianapolis",
+      "state": "IN",
+      "max_totrevenue": 322956027
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 350983617,
+     "tax_year": "2024",
+     "object_id": "202543189349307034",
+     "form_type": "990",
+     "contractors_total": 225,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 350983617,
+     "tax_year": "2023",
+     "object_id": "202403199349306965",
+     "form_type": "990",
+     "contractors_total": 202,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Deaconess Health System (Evansville IN)",
+   "state_anchor": "IN",
+   "eins": [
+    351532889
+   ],
+   "resolved_filer": {
+    "ein": 351532889,
+    "name": "Deaconess Health System Inc",
+    "city": "Evansville",
+    "state": "IN",
+    "max_totrevenue": 99884307,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 351532889,
+     "tax_year": "2023",
+     "object_id": "202542279349303179",
+     "form_type": "990",
+     "contractors_total": 9,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 351532889,
+     "tax_year": "2022",
+     "object_id": "202402289349302995",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Beacon Health System (South Bend IN)",
+   "state_anchor": "IN",
+   "eins": [
+    350868132
+   ],
+   "resolved_filer": {
+    "ein": 350868132,
+    "name": "Memorial Hospital Of South Bend",
+    "city": "South Bend",
+    "state": "IN",
+    "max_totrevenue": 730542248,
+    "runner_up_candidates": [
+     {
+      "ein": 453864076,
+      "name": "Beacon Health System Inc",
+      "city": "South Bend",
+      "state": "IN",
+      "max_totrevenue": 210781525
+     },
+     {
+      "ein": 356068581,
+      "name": "Memorial Endowment Fund Of Memorial Hospital Of South Bend",
+      "city": "South Bend",
+      "state": "IN",
+      "max_totrevenue": 291933
+     },
+     {
+      "ein": 351947917,
+      "name": "The Medical Staff Of Memorial Hospital Of South Bend Inc",
+      "city": "South Bend",
+      "state": "IN",
+      "max_totrevenue": 118142
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 350868132,
+     "tax_year": "2024",
+     "object_id": "202543189349310539",
+     "form_type": "990",
+     "contractors_total": 33,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 350868132,
+     "tax_year": "2023",
+     "object_id": "202403159349300130",
+     "form_type": "990",
+     "contractors_total": 27,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Reid Health (Richmond IN)",
+   "state_anchor": "IN",
+   "eins": [
+    350892672
+   ],
+   "resolved_filer": {
+    "ein": 350892672,
+    "name": "Reid Hospital & Health Care Services Inc",
+    "city": "Richmond",
+    "state": "IN",
+    "max_totrevenue": 692459515,
+    "runner_up_candidates": [
+     {
+      "ein": 832911570,
+      "name": "Reid Health Ambulance Inc",
+      "city": "Richmond",
+      "state": "IN",
+      "max_totrevenue": 4059999
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 350892672,
+     "tax_year": "2024",
+     "object_id": "202503219349321560",
+     "form_type": "990",
+     "contractors_total": 46,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 350892672,
+     "tax_year": "2023",
+     "object_id": "202413209349324166",
+     "form_type": "990",
+     "contractors_total": 277,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Norton Healthcare (Louisville KY)",
+   "state_anchor": "KY",
+   "eins": [
+    610703799
+   ],
+   "resolved_filer": {
+    "ein": 610703799,
+    "name": "Norton Hospitals Inc",
+    "city": "Louisville",
+    "state": "KY",
+    "max_totrevenue": 2999781942,
+    "runner_up_candidates": [
+     {
+      "ein": 611028725,
+      "name": "Norton Healthcare Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 617825151
+     },
+     {
+      "ein": 850513259,
+      "name": "Norton Healthcare Indiana Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 48965742
+     },
+     {
+      "ein": 464271004,
+      "name": "Norton Healthcare Indiana Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 610703799,
+     "tax_year": "2024",
+     "object_id": "202533119349301303",
+     "form_type": "990",
+     "contractors_total": 158,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 610703799,
+     "tax_year": "2023",
+     "object_id": "202443179349300429",
+     "form_type": "990",
+     "contractors_total": 126,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Owensboro Health (KY)",
+   "state_anchor": "KY",
+   "eins": [
+    611286361
+   ],
+   "resolved_filer": {
+    "ein": 611286361,
+    "name": "Owensboro Health Regional Hospital",
+    "city": "Owensboro",
+    "state": "KY",
+    "max_totrevenue": 822447186,
+    "runner_up_candidates": [
+     {
+      "ein": 611197638,
+      "name": "Owensboro Health Medical Group Inc",
+      "city": "Owensboro",
+      "state": "KY",
+      "max_totrevenue": 108261546
+     },
+     {
+      "ein": 853033915,
+      "name": "Owensboro Health Twin Lakes Regional Medical Center Inc",
+      "city": "Owensboro",
+      "state": "KY",
+      "max_totrevenue": 73294481
+     },
+     {
+      "ein": 850805989,
+      "name": "Borrowed Hearts Owensboro",
+      "city": "Owensboro",
+      "state": "KY",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 611286361,
+     "tax_year": "2024",
+     "object_id": "202502879349302350",
+     "form_type": "990",
+     "contractors_total": 109,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 611286361,
+     "tax_year": "2023",
+     "object_id": "202432869349300318",
+     "form_type": "990",
+     "contractors_total": 110,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Appalachian Regional Healthcare (Lexington KY)",
+   "state_anchor": "KY",
+   "eins": [
+    520795508
+   ],
+   "resolved_filer": {
+    "ein": 520795508,
+    "name": "Appalachian Regional Healthcare Inc",
+    "city": "Lexington",
+    "state": "KY",
+    "max_totrevenue": 882926110,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 520795508,
+     "tax_year": "2023",
+     "object_id": "202511349349307256",
+     "form_type": "990",
+     "contractors_total": 200,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 520795508,
+     "tax_year": "2022",
+     "object_id": "202441369349307559",
+     "form_type": "990",
+     "contractors_total": 213,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202611279349303381: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611279349303381"
+   ]
+  },
+  {
+   "system": "Pikeville Medical Center (KY)",
+   "state_anchor": "KY",
+   "eins": [
+    610458376
+   ],
+   "resolved_filer": {
+    "ein": 610458376,
+    "name": "Pikeville Medical Center Inc",
+    "city": "Pikeville",
+    "state": "KY",
+    "max_totrevenue": 652780410,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 610458376,
+     "tax_year": "2023",
+     "object_id": "202512269349300636",
+     "form_type": "990",
+     "contractors_total": 82,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 610458376,
+     "tax_year": "2022",
+     "object_id": "202402289349300045",
+     "form_type": "990",
+     "contractors_total": 71,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "UofL Health (Louisville KY)",
+   "state_anchor": "KY",
+   "eins": [
+    843178470
+   ],
+   "resolved_filer": {
+    "ein": 843178470,
+    "name": "Uofl Health Louisville Inc",
+    "city": "Louisville",
+    "state": "KY",
+    "max_totrevenue": 1246089040,
+    "runner_up_candidates": [
+     {
+      "ein": 843196350,
+      "name": "Uofl Health Shelbyville Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 35925141
+     },
+     {
+      "ein": 843125292,
+      "name": "Uofl Health Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 934917801,
+      "name": "Uofl Health Assurance Inc",
+      "city": "Louisville",
+      "state": "KY",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 843178470,
+     "tax_year": "2023",
+     "object_id": "202533089349300348",
+     "form_type": "990",
+     "contractors_total": 128,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 843178470,
+     "tax_year": "2022",
+     "object_id": "202421359349308732",
+     "form_type": "990",
+     "contractors_total": 13,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "MERCURY AMBULANCE SERVICE",
+       "services": "AMBULANCE SERVICES",
+       "amount": 2058817,
+       "address": "PO BOX 100217, ATLANTA, GA, 30384",
+       "match_term": "AMBULANC"
+      }
+     ]
+    }
+   ],
+   "errors": [
+    "202631349349309713: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202631349349309713"
+   ]
+  },
+  {
+   "system": "Med Center Health / Commonwealth Health Corp (Bowling Green KY)",
+   "state_anchor": "KY",
+   "eins": [
+    311118087
+   ],
+   "resolved_filer": {
+    "ein": 311118087,
+    "name": "Commonwealth Health Corporation Inc",
+    "city": "Bowling Green",
+    "state": "KY",
+    "max_totrevenue": 131659305,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 311118087,
+     "tax_year": "2024",
+     "object_id": "202610479349300836",
+     "form_type": "990",
+     "contractors_total": 31,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 311118087,
+     "tax_year": "2023",
+     "object_id": "202510459349301081",
+     "form_type": "990",
+     "contractors_total": 24,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "King's Daughters Medical Center (Ashland KY)",
+   "state_anchor": "KY",
+   "eins": [
+    610444716
+   ],
+   "resolved_filer": {
+    "ein": 610444716,
+    "name": "Ashland Hospital Corporation",
+    "city": "Ashland",
+    "state": "KY",
+    "max_totrevenue": 854143689,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 610444716,
+     "tax_year": "2023",
+     "object_id": "202521359349306807",
+     "form_type": "990",
+     "contractors_total": 39,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 610444716,
+     "tax_year": "2022",
+     "object_id": "202431369349303168",
+     "form_type": "990",
+     "contractors_total": 43,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202611359349310271: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611359349310271"
+   ]
+  },
+  {
+   "system": "Sentara Health (Norfolk VA)",
+   "state_anchor": "VA",
+   "eins": [
+    541547408
+   ],
+   "resolved_filer": {
+    "ein": 541547408,
+    "name": "Sentara Hospitals",
+    "city": "Virginia Bch",
+    "state": "VA",
+    "max_totrevenue": 3993811707,
+    "runner_up_candidates": [
+     {
+      "ein": 521271901,
+      "name": "Sentara Health",
+      "city": "Virginia Bch",
+      "state": "VA",
+      "max_totrevenue": 1030614538
+     },
+     {
+      "ein": 540506331,
+      "name": "Sentara Rmh Medical Center",
+      "city": "Rockingham",
+      "state": "VA",
+      "max_totrevenue": 527169045
+     },
+     {
+      "ein": 273208969,
+      "name": "Sentara Princess Anne Hospital",
+      "city": "Virginia Bch",
+      "state": "VA",
+      "max_totrevenue": 409147925
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 541547408,
+     "tax_year": "2024",
+     "object_id": "202533109349303188",
+     "form_type": "990",
+     "contractors_total": 290,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 541547408,
+     "tax_year": "2023",
+     "object_id": "202403139349301645",
+     "form_type": "990",
+     "contractors_total": 309,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Carilion Clinic (Roanoke VA)",
+   "state_anchor": "VA",
+   "eins": [
+    540506332
+   ],
+   "resolved_filer": {
+    "ein": 540506332,
+    "name": "Carilion Medical Center",
+    "city": "Roanoke",
+    "state": "VA",
+    "max_totrevenue": 1763656748,
+    "runner_up_candidates": [
+     {
+      "ein": 541190879,
+      "name": "Carilion Services Inc",
+      "city": "Roanoke",
+      "state": "VA",
+      "max_totrevenue": 382602553
+     },
+     {
+      "ein": 540549603,
+      "name": "Carilion Giles Community Hospital",
+      "city": "Roanoke",
+      "state": "VA",
+      "max_totrevenue": 97569672
+     },
+     {
+      "ein": 540480606,
+      "name": "Carilion Franklin Memorial Hospital",
+      "city": "Roanoke",
+      "state": "VA",
+      "max_totrevenue": 82260724
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 540506332,
+     "tax_year": "2023",
+     "object_id": "202522279349303772",
+     "form_type": "990",
+     "contractors_total": 116,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 540506332,
+     "tax_year": "2022",
+     "object_id": "202412289349303876",
+     "form_type": "990",
+     "contractors_total": 127,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Centra Health (Lynchburg VA)",
+   "state_anchor": "VA",
+   "eins": [
+    540715569
+   ],
+   "resolved_filer": {
+    "ein": 540715569,
+    "name": "Centra Health Inc",
+    "city": "Lynchburg",
+    "state": "VA",
+    "max_totrevenue": 1164575682,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 540715569,
+     "tax_year": "2024",
+     "object_id": "202543099349303919",
+     "form_type": "990",
+     "contractors_total": 95,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "PHI AIR MEDICAL",
+       "services": "TRANSPORTATION",
+       "amount": 2593452,
+       "address": "43 AVIATION CIR, WEYERS CAVE, VA, 24486",
+       "match_term": "AIR MEDICAL"
+      }
+     ]
+    },
+    {
+     "ein": 540715569,
+     "tax_year": "2023",
+     "object_id": "202403209349326690",
+     "form_type": "990",
+     "contractors_total": 93,
+     "contractors_disclosed": 5,
+     "transport_contractors": [
+      {
+       "name": "PHI AIR MEDICAL",
+       "services": "AVIATION TRANS. SVCS",
+       "amount": 2786213,
+       "address": "2001 SE EVANGELINE THRUWAY, LAFAYETTE, LA, 70508",
+       "match_term": "AIR MEDICAL"
+      }
+     ]
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Mary Washington Healthcare (Fredericksburg VA)",
+   "state_anchor": "VA",
+   "eins": [
+    201106426
+   ],
+   "resolved_filer": {
+    "ein": 201106426,
+    "name": "Mary Washington Healthcare",
+    "city": "Fredericksbrg",
+    "state": "VA",
+    "max_totrevenue": 937169829,
+    "runner_up_candidates": [
+     {
+      "ein": 541240646,
+      "name": "Mary Washington Healthcare",
+      "city": "Fredericksbrg",
+      "state": "VA",
+      "max_totrevenue": 172020782
+     },
+     {
+      "ein": 262546097,
+      "name": "Mary Washington Healthcare",
+      "city": "Fredericksbrg",
+      "state": "VA",
+      "max_totrevenue": 0
+     },
+     {
+      "ein": 541552324,
+      "name": "Mary Washington Healthcare",
+      "city": "Fredericksbrg",
+      "state": "VA",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 201106426,
+     "tax_year": "2024",
+     "object_id": "202503189349301835",
+     "form_type": "990",
+     "contractors_total": 35,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 201106426,
+     "tax_year": "2023",
+     "object_id": "202432899349302238",
+     "form_type": "990",
+     "contractors_total": 31,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "VHC Health / Virginia Hospital Center (Arlington VA)",
+   "state_anchor": "VA",
+   "eins": [
+    540505989
+   ],
+   "resolved_filer": {
+    "ein": 540505989,
+    "name": "Virginia Hospital Center Arlington Health System",
+    "city": "Alexandria",
+    "state": "VA",
+    "max_totrevenue": 824880162,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 540505989,
+     "tax_year": "2024",
+     "object_id": "202523219349313062",
+     "form_type": "990",
+     "contractors_total": 70,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 540505989,
+     "tax_year": "2023",
+     "object_id": "202443199349305119",
+     "form_type": "990",
+     "contractors_total": 33,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Augusta Health (Fishersville VA)",
+   "state_anchor": "VA",
+   "eins": [
+    541453954
+   ],
+   "resolved_filer": {
+    "ein": 541453954,
+    "name": "Augusta Health Care Inc",
+    "city": "Fishersville",
+    "state": "VA",
+    "max_totrevenue": 491996774,
+    "runner_up_candidates": []
+   },
+   "filings": [
+    {
+     "ein": 541453954,
+     "tax_year": "2024",
+     "object_id": "202503219349305330",
+     "form_type": "990",
+     "contractors_total": 73,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    },
+    {
+     "ein": 541453954,
+     "tax_year": "2023",
+     "object_id": "202443189349305524",
+     "form_type": "990",
+     "contractors_total": 67,
+     "contractors_disclosed": 5,
+     "transport_contractors": []
+    }
+   ],
+   "errors": []
+  },
+  {
+   "system": "Ballad Health (TN/VA)",
+   "state_anchor": "VA (TN/VA system)",
+   "eins": [
+    620476282
+   ],
+   "resolved_filer": {
+    "ein": 620476282,
+    "name": "Mountain States Health Alliance",
+    "city": "Johnson City",
+    "state": "TN",
+    "max_totrevenue": 974896547,
+    "runner_up_candidates": [
+     {
+      "ein": 611771290,
+      "name": "Ballad Health",
+      "city": "Johnson City",
+      "state": "TN",
+      "max_totrevenue": 90929944
+     },
+     {
+      "ein": 923891827,
+      "name": "Ballad Health Center For Early Learning",
+      "city": "Johnson City",
+      "state": "TN",
+      "max_totrevenue": 0
+     }
+    ]
+   },
+   "filings": [
+    {
+     "ein": 620476282,
+     "tax_year": "2023",
+     "object_id": "202501279349302015",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    },
+    {
+     "ein": 620476282,
+     "tax_year": "2022",
+     "object_id": "202411359349309566",
+     "form_type": "990",
+     "contractors_total": 0,
+     "contractors_disclosed": 0,
+     "transport_contractors": []
+    }
+   ],
+   "errors": [
+    "202611339349302256: xml fetch failed: 403 https://projects.propublica.org/nonprofits/download-xml?object_id=202611339349302256"
+   ]
+  }
+ ],
+ "parked": [
+  {
+   "system": "Children's Nebraska (Omaha NE)",
+   "state_anchor": "NE",
+   "reason": "largest matching filer only $11,912,120 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "MercyOne (Des Moines IA)",
+   "state_anchor": "IA",
+   "reason": "largest matching filer only $38,987,227 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Great River Health (Burlington IA)",
+   "state_anchor": "IA",
+   "reason": "largest matching filer only $43,034,353 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Children's Minnesota (Minneapolis MN)",
+   "state_anchor": "MN",
+   "reason": "largest matching filer only $21,459,818 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Sanford Health (Sioux Falls SD; MN/IA hospitals)",
+   "state_anchor": "SD (MN/IA hospitals)",
+   "reason": "largest matching filer only $49,986,329 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Summa Health (Akron OH)",
+   "state_anchor": "OH",
+   "reason": "largest matching filer only $0 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Kettering Health (Dayton OH)",
+   "state_anchor": "OH",
+   "reason": "largest matching filer only $40,891,675 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "The Christ Hospital (Cincinnati OH)",
+   "state_anchor": "OH",
+   "reason": "no ProPublica search hit matched name/state filters (EIN ambiguous or not found)"
+  },
+  {
+   "system": "Cincinnati Children's Hospital Medical Center (OH)",
+   "state_anchor": "OH",
+   "reason": "no ProPublica search hit matched name/state filters (EIN ambiguous or not found)"
+  },
+  {
+   "system": "Aultman Health Foundation (Canton OH)",
+   "state_anchor": "OH",
+   "reason": "largest matching filer only $1,812,239 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Union Health (Terre Haute IN)",
+   "state_anchor": "IN",
+   "reason": "no ProPublica search hit matched name/state filters (EIN ambiguous or not found)"
+  },
+  {
+   "system": "St. Elizabeth Healthcare (Edgewood KY)",
+   "state_anchor": "KY",
+   "reason": "no ProPublica search hit matched name/state filters (EIN ambiguous or not found)"
+  },
+  {
+   "system": "Riverside Health System (Newport News VA)",
+   "state_anchor": "VA",
+   "reason": "largest matching filer only $39,613,541 revenue - main filer likely elsewhere (EIN ambiguous)"
+  },
+  {
+   "system": "Valley Health System (Winchester VA)",
+   "state_anchor": "VA",
+   "reason": "largest matching filer only $0 revenue - main filer likely elsewhere (EIN ambiguous)"
+  }
+ ],
+ "observed_payments": [
+  {
+   "payer_system": "Aspirus Health (Wausau WI)",
+   "payer_ein": 391138241,
+   "contractor": "WISCONSIN EMERGENCY MEDICAL SERVICE ASSO",
+   "services": "EMERGENCY ROOM PROVIDER COVERAGE",
+   "amount": 12910581,
+   "tax_year": "2022"
+  },
+  {
+   "payer_system": "ProMedica (Toledo OH)",
+   "payer_ein": 341517671,
+   "contractor": "EMERGENCY PHYSICIANS OF NWO",
+   "services": "EMERGENCY MEDICAL STAFF",
+   "amount": 10471419,
+   "tax_year": "2023"
+  },
+  {
+   "payer_system": "ProMedica (Toledo OH)",
+   "payer_ein": 341517671,
+   "contractor": "EMERGENCY PHYSICIANS OF NWO",
+   "services": "EMERGENCY MEDICAL STAFF",
+   "amount": 7557917,
+   "tax_year": "2024"
+  },
+  {
+   "payer_system": "Aspirus Health (Wausau WI)",
+   "payer_ein": 391138241,
+   "contractor": "WISCONSIN EMERGENCY MEDICAL SERVICE ASSO",
+   "services": "EMERGENCY ROOM PROVIDER COVERAGE",
+   "amount": 6974442,
+   "tax_year": "2023"
+  },
+  {
+   "payer_system": "Centra Health (Lynchburg VA)",
+   "payer_ein": 540715569,
+   "contractor": "PHI AIR MEDICAL",
+   "services": "AVIATION TRANS. SVCS",
+   "amount": 2786213,
+   "tax_year": "2023"
+  },
+  {
+   "payer_system": "Centra Health (Lynchburg VA)",
+   "payer_ein": 540715569,
+   "contractor": "PHI AIR MEDICAL",
+   "services": "TRANSPORTATION",
+   "amount": 2593452,
+   "tax_year": "2024"
+  },
+  {
+   "payer_system": "UofL Health (Louisville KY)",
+   "payer_ein": 843178470,
+   "contractor": "MERCURY AMBULANCE SERVICE",
+   "services": "AMBULANCE SERVICES",
+   "amount": 2058817,
+   "tax_year": "2022"
+  }
+ ],
+ "contractor_frequency": [
+  {
+   "contractor": "WISCONSIN EMERGENCY MEDICAL SERVICE ASSO",
+   "appearances": 2
+  },
+  {
+   "contractor": "EMERGENCY PHYSICIANS OF NWO",
+   "appearances": 2
+  },
+  {
+   "contractor": "PHI AIR MEDICAL",
+   "appearances": 2
+  },
+  {
+   "contractor": "MERCURY AMBULANCE SERVICE",
+   "appearances": 1
+  }
+ ]
+}
