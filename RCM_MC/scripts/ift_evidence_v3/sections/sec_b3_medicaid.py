@@ -1,13 +1,17 @@
 """B.3: the Medicaid ambulance rate card for the footprint states.
 
-Six state Medicaid fee schedules pulled and verified against the actual
-published file or portal extract on 11 Jul 2026 (medicaid_rates.json):
-Nebraska 471-000-504 (July 2026 xlsx), Iowa MedicaidFeeSched portal C11.csv,
-Kansas KMAP TXIX fee schedule files (7/1/2026 versions), Missouri MHD
-Ambulance.xlsx (7/7/2026), Ohio OAC 5160-15-28 appendix (1/1/2024),
-Wisconsin ForwardHealth ambulance max-fee report (rates of 7/1/2008).
+Nine footprint-state Medicaid FFS fee schedules pulled and verified against
+the actual published file or portal extract (medicaid_rates.json):
+  Nebraska 471-000-504 (July 2026 xlsx), Iowa MedicaidFeeSched portal
+  C11.csv, Kansas KMAP TXIX fee schedule files (7/1/2026), Missouri MHD
+  Ambulance.xlsx (7/7/2026), Ohio OAC 5160-15-28 appendix (1/1/2024),
+  Wisconsin ForwardHealth ambulance max-fee report (rates of 7/1/2008),
+  Minnesota MHCP Fee Schedule xlsx (rates eff 1/1/2026), Indiana IHCP
+  Professional Fee Schedule xlsx (eff 1/1/2026, 100% of CY2025 Medicare),
+  Kentucky DMS 2026 Transportation Rates PDF (rev 1/9/2026).
 Virginia is PARKED for dollar rates (broker-billed non-emergency ambulance;
-verified in the DMAS Transportation manual) and carried as PENDING rows.
+the only public rate files are the 2009 / 2009-2012 vintage) and carried as
+PENDING rows.
 
 Comparison panel prices each state's rate against the CY2026 Medicare
 national unadjusted base located by scanning Derived_Rate_Card for the
@@ -29,11 +33,14 @@ AFS_RVU = {'A0428': 1.0, 'A0429': 1.6, 'A0426': 1.2, 'A0427': 1.9,
            'A0433': 2.75, 'A0434': 3.25}
 AFS_CF, AFS_MILE = 284.56, 9.15
 
-STATES = ['NE', 'IA', 'KS', 'MO', 'OH', 'WI']
+# Nine covered footprint states (VA parked separately). NE-WI unchanged from
+# the original six; MN/IN/KY added and verified 12 Jul 2026.
+STATES = ['NE', 'IA', 'KS', 'MO', 'OH', 'WI', 'MN', 'IN', 'KY']
 SNAME = {'NE': 'Nebraska', 'IA': 'Iowa', 'KS': 'Kansas', 'MO': 'Missouri',
-         'OH': 'Ohio', 'WI': 'Wisconsin', 'VA': 'Virginia'}
+         'OH': 'Ohio', 'WI': 'Wisconsin', 'MN': 'Minnesota',
+         'IN': 'Indiana', 'KY': 'Kentucky', 'VA': 'Virginia'}
 
-# rate, effective (as printed), in-row note  (None rate = not covered)
+# rate, effective (as printed), in-row note  (None rate = not covered / n/a)
 RATES = {
  'NE': {'A0425': (6.35, '07/01/2026', 'per statute mile'),
         'A0426': (387.24, '07/01/2026', 'flat ALS rate: A0426=A0427=A0433=A0434'),
@@ -45,7 +52,7 @@ RATES = {
  'IA': {'A0425': (2.61, '07/01/2014', 'per statute mile'),
         'A0426': (101.60, '10/01/2015', ''),
         'A0427': (127.01, '10/01/2015', ''),
-        'A0428': (84.67, '07/01/2014', 'lowest A0428 in the footprint'),
+        'A0428': (84.67, '07/01/2014', 'lowest true BLS A0428 in the footprint'),
         'A0429': (114.30, '10/01/2015', ''),
         'A0433': (232.84, '05/01/2020', ''),
         'A0434': (232.84, '12/01/2020', 'same rate as ALS2')},
@@ -53,8 +60,7 @@ RATES = {
                   'row (eff 07/01/2022) persists on the general schedule'),
         'A0426': (306.84, '07/01/2023', ''),
         'A0427': (485.83, '07/01/2023', ''),
-        'A0428': (255.70, '07/01/2023', 'highest A0428 in the footprint '
-                  '(SFY2024 rebase)'),
+        'A0428': (255.70, '07/01/2023', 'SFY2024 rebase'),
         'A0429': (409.12, '07/01/2023', ''),
         'A0433': (703.18, '07/01/2023', ''),
         'A0434': (831.03, '07/01/2023', '')},
@@ -81,8 +87,42 @@ RATES = {
         'A0429': (151.84, '07/01/2008', ''),
         'A0433': (260.97, '07/01/2008', ''),
         'A0434': (308.42, '07/01/2008', '')},
+ # ── added 12 Jul 2026, verified against the primary files ──
+ 'MN': {'A0425': (9.51, '04/01/2026', 'per statute mile (ground codes eff '
+                  '01/01/2026; mileage 04/01/2026)'),
+        'A0426': (341.47, '01/01/2026', ''),
+        'A0427': (540.66, '01/01/2026', ''),
+        'A0428': (284.56, '01/01/2026', 'highest A0428 in the footprint - '
+                  'exactly the CY2026 Medicare conversion factor ($284.56), '
+                  'i.e. Medicare parity'),
+        'A0429': (455.29, '01/01/2026', ''),
+        'A0433': (782.54, '01/01/2026', ''),
+        'A0434': (924.82, '01/01/2026', 'highest SCT in the footprint')},
+ 'IN': {'A0425': (9.15, '01/01/2026', 'per statute mile; reduced-modifier '
+                  'variants (U3/U5, MRT/SE) pay $1.67'),
+        'A0426': (322.83, '01/01/2026', ''),
+        'A0427': (511.14, '01/01/2026', ''),
+        'A0428': (269.02, '01/01/2026', '100% of CY2025 Medicare (BT2025156)'),
+        'A0429': (430.44, '01/01/2026', ''),
+        'A0433': (739.81, '01/01/2026', ''),
+        'A0434': (None, '04/01/2004', 'NONCOVERED (NOCOV) under IHCP')},
+ 'KY': {'A0425': (2.50, '01/09/2026', 'BLS mileage (A0425 UB) Other $2.50 / '
+                  'Hospital $3.00; ALS mileage $2.50/$4.00; stretcher and '
+                  'return-trip mileage $2.00'),
+        'A0426': (None, '01/09/2026', 'NOT LISTED - no ALS1 non-emergency '
+                  'line on the KY transportation schedule'),
+        'A0427': (60.00, '01/09/2026', 'Other (independent) $60.00 / '
+                  'Hospital-based $110.00; A0427 GM add-patient $25'),
+        'A0428': (55.00, '01/09/2026', 'NON-EMERGENCY STRETCHER line (PT56 '
+                  'Specialty 16), flat $55 - a stretcher-van rate, NOT a full '
+                  'BLS ambulance; formerly T2005, renamed A0428 eff 1/1/2025'),
+        'A0429': (60.00, '01/09/2026', 'Other (independent) $60.00 / '
+                  'Hospital-based $82.50; A0429 GM add-patient $20'),
+        'A0433': (None, '01/09/2026', 'NOT LISTED - no ALS2 line'),
+        'A0434': (None, '01/09/2026', 'NOT LISTED - no SCT line')},
 }
 
+# (effective, pa, broker, dialysis) per state
 META = {
  'NE': ('Nebraska DHHS fee schedule 471-000-504, Ambulance Services, '
         'July 1 2026 (xlsx). Schedule cover: rates carry NO increase - no '
@@ -139,6 +179,46 @@ META = {
         'paid by the manager, NOT ForwardHealth.',
         'Recurring dialysis rides are standing rides with the NEMT '
         'manager; stretcher vans sit on the separate SMV schedule.'),
+ 'MN': ('Minnesota MHCP Fee Schedule xlsx (mn.gov/dhs), downloaded 12 Jul '
+        '2026; ground rates effective 01/01/2026 (mileage A0425 04/01/2026); '
+        'one max-fee row per code, status A.',
+        'No PA flag on the ambulance rows; MHCP covers emergency and '
+        'non-emergency ground/air ambulance billed directly to MHCP by '
+        'enrolled providers (ambulance is not routed through the '
+        'administered NEMT system).',
+        'MIXED / STATE-ADMINISTERED (no single MCO broker) - split between '
+        'local county/tribal agency-administered NEMT and State-Administered '
+        'NEMT (Acentra Health / Kepro); ambulance itself stays FFS. NEMT '
+        'providers need MnDOT STS certification.',
+        'Explicit RETURN-LEG rule: for dialysis members eligible for local '
+        'NEMT, State-Administered NEMT covers the RETURN trip - Kepro enters '
+        'a single-day certification for dialysis return trips only.'),
+ 'IN': ('Indiana IHCP Professional Fee Schedule xlsx (in-session portal '
+        'download), last updated 9 Jun 2026; ambulance rates effective '
+        '01/01/2026, set to 100% of the CY2025 Medicare fee schedule '
+        '(bulletin BT2025156).',
+        'No PA flag on covered ambulance rows; A0434 SCT is Non-Covered '
+        '(PA=Y, $0.00). ALS/BLS ambulance is EXEMPT from the FFS NEMT '
+        'brokerage and billed FFS directly.',
+        'PARTIAL - non-ambulance FFS NEMT brokered statewide through Verida '
+        '(formerly Southeastrans); managed care via the MCE. ALS/BLS '
+        'ambulance is carved OUT of the broker and billed FFS.',
+        'Recurring dialysis trips are standing orders through the Verida '
+        'FFS broker (or the MCE); the ambulance schedule is silent at code '
+        'level.'),
+ 'KY': ('KY Medicaid Transportation Fee Schedule 2026, revised 1/9/2026 '
+        '(no changes vs prior year). PT55 emergency ambulance, PT56 '
+        'Specialty 16 non-emergency stretcher; Hospital vs Other variants, '
+        'Other recorded as headline.',
+        'No code-level PA on the schedule; emergency ambulance (PT55) billed '
+        'FFS. Only non-emergency ambulance line is the PT56 stretcher; '
+        'broader NEMT goes through the HSTD regional broker, off-schedule.',
+        'YES - Human Service Transportation Delivery (HSTD): DMS contracts '
+        'with the KY Transportation Cabinet, which assigns a regional broker '
+        'per county; providers contract with the broker, trips booked 72h '
+        'ahead. Five MCOs administer NEMT for their members.',
+        'Recurring dialysis trips route through the HSTD regional broker (or '
+        'the MCO); the ambulance/stretcher schedule is silent on dialysis.'),
 }
 
 URLS = {
@@ -152,9 +232,19 @@ URLS = {
        '15/5160-15-28_PH_FF_A_APP1_20231222_0942.pdf',
  'WI': 'https://www.forwardhealth.wi.gov/WIPortal/Tab/42/icscontent/'
        'provider/maxfee/pdf/maxfee06_ambulance.pdf.spage',
- 'VA': 'https://vamedicaid.dmas.virginia.gov/sites/default/files/2025-12/'
-       'Transportation%20Chapter%205%20(updated%2012.5.25)_Final.pdf',
+ 'MN': 'https://mn.gov/dhs/assets/mhcp-fee-schedule_tcm1053-293968.xlsx',
+ 'IN': 'https://provider.indianamedicaid.com/ihcp/Publications/MaxFee/'
+       'Professional%20Fee%20Schedule.xlsx',
+ 'KY': 'https://www.chfs.ky.gov/agencies/dms/DMSFeeRateSchedules/'
+       '2026TransportationRates.pdf',
+ 'VA': 'https://www.dmas.virginia.gov/media/1569/'
+       'fee-schedules-for-emergency-ground-ambulance-a0427-and-a0429.pdf',
 }
+
+N = len(STATES)                       # 9 covered states
+LAST_STATE_COL = 2 + N                # column of the last state in the matrix
+# True-BLS A0428 comparison excludes KY (stretcher line) at the last column.
+BLS_A0428_STATES = [s for s in STATES if s != 'KY']
 
 
 def _mc_refs(wb):
@@ -176,6 +266,7 @@ def _mc_refs(wb):
 
 
 def build(wb, ctx):
+    from openpyxl.utils import get_column_letter
     lib = ctx['lib']
     accessed = ctx['accessed']
     facts, sources, excluded, findings = [], [], [], []
@@ -238,96 +329,158 @@ def build(wb, ctx):
          'supplies': 'WI ambulance max fees + NEMT manager carve',
          'url': URLS['WI'], 'tier': 'A', 'accessed': accessed,
          'powers': ['Medicaid_Rate_Card']},
-        {'key': 'va_dmas_manual', 'publisher': 'Virginia DMAS',
-         'document': 'Transportation provider manual Chapter 5, revision '
-                     '5 Dec 2025 (Transportation Chapter 5 Final.pdf)',
-         'vintage': 'Rev 12/5/2025',
-         'locator': 'FFS Non-Emergency Transportation Broker section: '
-                    '"A0428 ... preauthorized and billed to the Non-'
-                    'Emergency Medicaid Transportation Broker"',
-         'supplies': 'VA broker carve of non-emergency ambulance (rates '
-                     'PARKED: posted emergency PDF is 2009-2012 vintage)',
+        {'key': 'mn_mhcp_fs', 'publisher': 'Minnesota DHS (MHCP)',
+         'document': 'Minnesota Health Care Programs (MHCP) Fee Schedule '
+                     '(mhcp-fee-schedule_tcm1053-293968.xlsx)',
+         'vintage': 'Downloaded 12 Jul 2026; ground rates eff 01/01/2026 '
+                    '(mileage A0425 eff 04/01/2026)',
+         'locator': 'Sheet1 rows A0425-A0434, Max Fee column, factor code B, '
+                    'status A',
+         'supplies': 'MN ground ambulance FFS rates + effective dates',
+         'url': URLS['MN'], 'tier': 'A', 'accessed': accessed,
+         'powers': ['Medicaid_Rate_Card']},
+        {'key': 'in_ihcp_fs', 'publisher': 'Indiana FSSA (IHCP)',
+         'document': 'IHCP Professional Fee Schedule (Professional Fee '
+                     'Schedule.xlsx) with bulletin BT2025156',
+         'vintage': 'Last updated 9 Jun 2026; ambulance rates eff 01/01/2026 '
+                    '(100% of CY2025 Medicare per BT2025156)',
+         'locator': 'Rows A0425-A0434, Max Fee/Non-Facility column, Rate '
+                    'Effective Date 01/01/2026; retrieved in-session via the '
+                    'maxfee agreement gate (maxfee_validate.asp?agreement='
+                    'accept then fee_home.asp download)',
+         'supplies': 'IN ground ambulance FFS rates; A0434 noncovered',
+         'url': URLS['IN'], 'tier': 'A', 'accessed': accessed,
+         'powers': ['Medicaid_Rate_Card']},
+        {'key': 'ky_dms_fs', 'publisher': 'Kentucky CHFS DMS',
+         'document': 'KY Medicaid Transportation Fee Schedule 2026 '
+                     '(2026TransportationRates.pdf, revised 1/9/2026)',
+         'vintage': 'Revised 1/9/2026 (no rate change vs prior year)',
+         'locator': 'Provider Type 55 (emergency ambulance) and Provider '
+                    'Type 56 Specialty 16 (non-emergency stretcher), '
+                    'Reimbursement Rate column (Hospital vs Other)',
+         'supplies': 'KY emergency ambulance + non-emergency stretcher FFS '
+                     'rates (no ALS1-nonE / ALS2 / SCT lines)',
+         'url': URLS['KY'], 'tier': 'A', 'accessed': accessed,
+         'powers': ['Medicaid_Rate_Card']},
+        {'key': 'va_dmas_amb', 'publisher': 'Virginia DMAS',
+         'document': 'DMAS Emergency Ground Ambulance rate PDF (A0427/A0429) '
+                     'and Crossover rate table (A0425-A0434); Transportation '
+                     'provider manual Chapter 5 (rev 12/5/2025)',
+         'vintage': 'Rate PDFs are the 2009 and 2009-2012 vintages; manual '
+                    'rev 12/5/2025',
+         'locator': 'Emergency Ground PDF "DOS October 31 2009 and Before" '
+                    'sliding scale; Crossover table "DOS Nov 1 2009 - Jun 30 '
+                    '2012"; manual Ch.5 FFS NEMT Broker section for A0428',
+         'supplies': 'VA broker carve + stale sliding-scale (current per-code '
+                     'FFS rates PARKED as PENDING)',
          'url': URLS['VA'], 'tier': 'A', 'accessed': accessed,
          'powers': ['Medicaid_Rate_Card']},
     ]
 
+    n_cols = 12
     ws = wb.create_sheet('Medicaid_Rate_Card')
-    sb = lib.SheetBuilder(ws, 9, col_widths=[34, 13, 11, 11, 11, 11, 11, 11, 48],
-                          tab_color='FF8C1D40')
+    sb = lib.SheetBuilder(
+        ws, n_cols, tab_color='FF8C1D40',
+        col_widths=[32, 15, 11, 10, 11, 8, 8, 9, 9, 9, 9, 44])
     sb.title('Medicaid ground ambulance rate card - the footprint states')
     sb.subtitle('The question: what does each footprint state Medicaid FFS '
                 'schedule actually pay for ground ambulance (A0425-A0434), '
                 'and how much scheduled transport is carved out to NEMT '
-                'brokers and never priced on these schedules? Sources: the '
-                'six published state fee schedules named on each panel, each '
-                'fetched and parsed on 11 Jul 2026; join key is the HCPCS '
-                'code. Comparison prices each state against the CY2026 '
+                'brokers and never priced on these schedules? Sources: nine '
+                'published state fee schedules named on each panel, each '
+                'fetched and parsed from the primary file or portal (NE/IA/KS/'
+                'MO/OH/WI on 11 Jul 2026; MN/IN/KY on 12 Jul 2026); Virginia '
+                'is PARKED (only 2009-vintage public files). Join key is the '
+                'HCPCS code. Comparison prices each state against the CY2026 '
                 'Medicare national unadjusted base on Derived_Rate_Card.')
     sb.note('DATA QUALITY: Medicaid FFS schedule rates ONLY - managed-care '
-            'plans (KanCare, Heritage Health, IA Health Link, MO Managed '
-            'Care, OH Next Gen, BadgerCare HMOs) negotiate their own rates, '
-            'and broker-carve states route scheduled volume outside these '
-            'schedules entirely, so the real price of scheduled transport is '
-            'unobservable here. Effective dates differ by 18 years (WI '
-            '7/1/2008 vs NE 7/1/2026): the cross-state comparison mixes '
-            'vintages by construction. MO rates are context-restricted '
-            '(A0428 HH/HD only); KS carries two conflicting A0425 rows.')
+            'plans negotiate their own rates and broker-carve states route '
+            'scheduled volume outside these schedules, so the real price of '
+            'scheduled transport is unobservable here. Effective dates differ '
+            'by 18 years (WI 7/1/2008 vs MN/IN 1/1/2026): the cross-state '
+            'comparison mixes vintages by construction. Rates are NOT '
+            'apples-to-apples product-for-product: MO A0428 is HH/HD-context '
+            'only; KY has NO ALS1-nonemergency, ALS2, or SCT line and its '
+            'A0428 is a non-emergency STRETCHER-van line (formerly T2005), '
+            'not a full BLS ambulance; IN and MO do not cover SCT (A0434). '
+            'KY is therefore excluded from the A0428 BLS comparison range.')
     sb.blank()
 
+    def _pad(cells):
+        """Right-pad a cell list to n_cols so the last item lands in col 12."""
+        return cells + [None] * (n_cols - len(cells))
+
     cell = {}     # (state, code) -> rate cell 'C12'
-    for st in STATES:
+    for idx, st in enumerate(STATES):
         eff, pa, brk, dia = META[st]
-        sb.banner(f'Panel {chr(65 + STATES.index(st))}. {SNAME[st]} - '
-                  f'{eff.split("(")[0].strip()[:80]}')
-        sb.headers(['HCPCS', 'Service level', 'Rate $', 'Unit',
-                    'Rate eff.', '', '', '', 'In-row note'])
+        sb.banner(f'Panel {chr(65 + idx)}. {SNAME[st]} - '
+                  f'{eff.split(";")[0].strip()[:82]}')
+        sb.headers(_pad(['HCPCS', 'Service level', 'Rate $', 'Unit',
+                         'Rate eff.']) [:-1] + ['In-row note'])
         for code in CODES:
             rate, reff, note = RATES[st][code]
             r = sb.r + 1
             if rate is None:
-                sb.row([(code, 'text'), (DESC[code], 'text'),
-                        ('NONCOVERED', 'src'), ('base', 'text'),
-                        (reff, 'src'), None, None, None, (note, 'note')])
+                lbl = 'NOT LISTED' if 'NOT LISTED' in note else 'NONCOVERED'
+                sb.row(_pad([(code, 'text'), (DESC[code], 'text'),
+                             (lbl, 'src'), ('base', 'text'),
+                             (reff, 'src')])[:-1] + [(note, 'note')])
             else:
-                fmt = lib.FMT_USD2
-                sb.row([(code, 'text'), (DESC[code], 'text'),
-                        (rate, 'src', fmt),
-                        ('per mile' if code == 'A0425' else 'base', 'text'),
-                        (reff, 'src'), None, None, None,
-                        (note, 'note') if note else None])
+                sb.row(_pad([(code, 'text'), (DESC[code], 'text'),
+                             (rate, 'src', lib.FMT_USD2),
+                             ('per mile' if code == 'A0425' else 'base', 'text'),
+                             (reff, 'src')])[:-1]
+                       + [(note, 'note') if note else None])
                 cell[(st, code)] = f'C{r}'
-        sb.row([('Source file', 'label'), None, None, None, None, None, None,
-                None, (URLS[st], 'note')])
-        sb.row([('PA rule', 'label'), (pa, 'note')], height=22)
-        sb.row([('Broker carve', 'label'), (brk, 'note')], height=22)
-        sb.row([('Dialysis policy', 'label'), (dia, 'note')], height=22)
+        sb.row(_pad([('Source file', 'label')])[:-1] + [(URLS[st], 'note')])
+        sb.row([('PA rule', 'label'), (pa, 'note')], height=30)
+        sb.row([('Broker carve', 'label'), (brk, 'note')], height=30)
+        sb.row([('Dialysis policy', 'label'), (dia, 'note')], height=30)
         sb.blank()
 
     # ── Virginia: parked ─────────────────────────────────────────────
-    sb.banner('Panel G. Virginia (extension state) - rates PARKED, carve '
-              'verified')
-    sb.headers(['HCPCS', 'Service level', 'Rate $', '', '', '', '', '',
-                'Why parked / what fills it'])
-    sb.row([('A0428', 'text'), (DESC['A0428'], 'text'), ('PENDING', 'note'),
-            None, None, None, None, None,
-            ('Not payable on a public FFS schedule: DMAS Transportation '
-             'manual Ch.5 (rev 12/5/2025) requires A0428 to be preauthorized '
-             'and billed to the FFS NEMT broker. Filler dataset: DMAS '
-             'procedure fee file search portal (interactive per-code '
-             'lookup).', 'note')], height=30)
-    sb.row([('A0427/A0429/A0433', 'text'), ('Emergency codes', 'text'),
-            ('PENDING', 'note'), None, None, None, None, None,
-            ('Posted PDF on dmas.virginia.gov is the Nov 2009-Jun 2012 '
-             'sliding-scale vintage (payment caps $75-$150 by mileage band); '
-             'current rates sit in the DMAS procedure fee file portal.',
-             'note')], height=30)
-    sb.row([('Source (verified)', 'label'), None, None, None, None, None,
-            None, None, (URLS['VA'], 'note')])
+    va_letter = chr(65 + N)
+    sb.banner(f'Panel {va_letter}. Virginia (extension state) - rates PARKED, '
+              'carve verified')
+    sb.headers(_pad(['HCPCS', 'Service level', 'Rate $'])[:-1]
+               + ['Why parked / what fills it'])
+    from openpyxl.styles import Border, Side
+    va_pend_rows = []
+    sb.row(_pad([('A0427/A0429', 'text'), ('Emergency codes', 'text'),
+                 ('PENDING', 'note')])[:-1]
+           + [('The only public DMAS emergency ground file is the 2009 '
+               'sliding scale (VERIFIED "DOS October 31 2009 and Before"): '
+               '1-5 mi $75, 6-10 mi $150, then +$2.50/mi. No current-'
+               'effective FFS rate file is published; the DMAS procedure fee '
+               'file search portal (interactive per-code lookup) would fill '
+               'it.', 'note')], height=42)
+    va_pend_rows.append(sb.r)
+    sb.row(_pad([('A0428', 'text'), (DESC['A0428'], 'text'),
+                 ('PENDING', 'note')])[:-1]
+           + [('Not payable on a public FFS schedule: DMAS Transportation '
+               'manual Ch.5 (rev 12/5/2025) requires A0428 to be '
+               'preauthorized and billed to the FFS NEMT broker.', 'note')],
+           height=30)
+    va_pend_rows.append(sb.r)
+    sb.row(_pad([('A0425/A0426/A0433/A0434', 'text'), ('Mileage / ALS / SCT',
+                 'text'), ('PENDING', 'note')])[:-1]
+           + [('Appear only on the 2009-2012 crossover rate table "for '
+               'crossover calculation only"; no current standalone FFS '
+               'rate is published.', 'note')], height=30)
+    va_pend_rows.append(sb.r)
+    # Bordered PENDING boxes (house rule: an unpriceable cell is a bordered
+    # PENDING box naming the public dataset, visually distinct from priced
+    # rate cells). The dataset filler is named in the adjacent note column.
+    _pend_box = Border(*(Side(style='dotted', color='FF8C1D40'),) * 4)
+    for rn in va_pend_rows:
+        ws.cell(row=rn, column=3).border = _pend_box
+    sb.row(_pad([('Source (verified)', 'label')])[:-1] + [(URLS['VA'], 'note')])
     sb.blank()
 
     # ── Comparison panel ─────────────────────────────────────────────
-    sb.banner('Panel H. Comparison - each state as a multiple of the CY2026 '
-              'Medicare national unadjusted base (live formulas)')
+    cmp_letter = chr(65 + N + 1)
+    sb.banner(f'Panel {cmp_letter}. Comparison - each state as a multiple of '
+              'the CY2026 Medicare national unadjusted base (live formulas)')
     if scan_ok:
         sb.note('Medicare column is a GREEN link to Derived_Rate_Card '
                 '(located by scanning that tab for the code labels: base '
@@ -338,8 +491,8 @@ def build(wb, ctx):
                 '(RVU x $284.56 CF; mileage $9.15) as blue, per the CMS '
                 'CY2026 Ambulance Fee Schedule public use file.')
     hdr_r = sb.r + 1
-    sb.headers(['HCPCS (service)', 'Medicare CY26 $', 'NE', 'IA', 'KS', 'MO',
-                'OH', 'WI', 'Confound printed with the ratio'])
+    sb.headers(['HCPCS (service)', 'Medicare CY26 $'] + STATES
+               + ['Confound printed with the ratio'])
     cmp_row = {}
     for code in CODES:
         r = sb.r + 1
@@ -357,45 +510,66 @@ def build(wb, ctx):
                 row.append(('n/a', 'note'))
             else:
                 row.append((f'={ref}/$B${r}', 'fml', lib.FMT_X))
-        conf = ('Vintages differ (WI 2008, IA 2014-20, KS/OH 2023-24, MO '
-                '2019-24, NE 2026); MO is HH/HD-restricted'
+        conf = ('IA lowest true-BLS floor, MN at Medicare parity (1.00x); KY '
+                'excluded (its A0428 is a stretcher-van line, not a BLS '
+                'ambulance); MO HH/HD-context only'
                 if code == 'A0428' else
-                'MO NONCOVERED - no ratio' if code == 'A0434' else
+                'MO and IN NONCOVERED - no ratio; KY has no SCT line'
+                if code == 'A0434' else
                 'KS mileage from the ambulance rate-type file, not the '
-                'legacy $3.00 row' if code == 'A0425' else
-                'MO rate is HH-modifier context' if code == 'A0426' else
+                'legacy $3.00 row; KY mileage is the BLS/Other rate'
+                if code == 'A0425' else
+                'MO A0426 is HH-modifier context; KY has no ALS1-nonE line'
+                if code == 'A0426' else
+                'KY has no ALS2 line (n/a)' if code == 'A0433' else
                 'Same-code comparison; state schedules do not adjust for '
                 'geography the way Medicare does')
         row.append((conf, 'note'))
         sb.row(row)
+    # A0428 range over the true-BLS states (KY = last column, excluded)
+    a_row = cmp_row['A0428']
+    last_bls_col = get_column_letter(2 + len(BLS_A0428_STATES))   # skip KY
     r_min = sb.r + 1
-    sb.row([('Footprint A0428 range - LOWEST multiple (Iowa)', 'label'),
-            None, (f'=MIN(C{cmp_row["A0428"]}:H{cmp_row["A0428"]})', 'fml',
-                   lib.FMT_X), None, None, None, None, None,
-            ('min over the six live A0428 ratios', 'note')])
+    sb.row(_pad([('Footprint A0428 range - LOWEST multiple (Iowa)', 'label'),
+                 None, (f'=MIN(C{a_row}:{last_bls_col}{a_row})', 'fml',
+                        lib.FMT_X)])[:-1]
+           + [('min over the eight true-BLS A0428 ratios (KY stretcher '
+               'excluded)', 'note')])
     r_max = sb.r + 1
-    sb.row([('Footprint A0428 range - HIGHEST multiple (Kansas)', 'label'),
-            None, (f'=MAX(C{cmp_row["A0428"]}:H{cmp_row["A0428"]})', 'fml',
-                   lib.FMT_X), None, None, None, None, None,
-            ('max over the six live A0428 ratios', 'note')])
-    sb.row([('Dispersion: highest / lowest A0428 rate', 'label'), None,
-            (f'=C{r_max}/C{r_min}', 'fml', lib.FMT_X), None, None, None,
-            None, None, ('KS pays 3.0x what IA pays for the same code',
-                         'note')])
-    lib.add_chart(ws, f'K{hdr_r}',
+    sb.row(_pad([('Footprint A0428 range - HIGHEST multiple (Minnesota)',
+                  'label'), None,
+                 (f'=MAX(C{a_row}:{last_bls_col}{a_row})', 'fml',
+                  lib.FMT_X)])[:-1]
+           + [('max over the eight true-BLS A0428 ratios; MN = Medicare '
+               'parity', 'note')])
+    r_disp = sb.r + 1
+    sb.row(_pad([('Dispersion: highest / lowest A0428 rate', 'label'), None,
+                 (f'=C{r_max}/C{r_min}', 'fml', lib.FMT_X)])[:-1]
+           + [('MN pays about 3.4x what IA pays for the same code', 'note')])
+    ky_ref = cell.get(('KY', 'A0428'))
+    if ky_ref:
+        sb.row(_pad([('Memo - KY non-emergency STRETCHER (not BLS ambulance)',
+                      'label'), None,
+                     (f'={ky_ref}/$B${a_row}', 'fml', lib.FMT_X)])[:-1]
+               + [('A0428 stretcher-van line (formerly T2005), $55 flat - a '
+                   'different product; shown for context, excluded from the '
+                   'range', 'note')])
+    chart_anchor = f'{get_column_letter(n_cols + 2)}{hdr_r}'
+    lib.add_chart(ws, chart_anchor,
                   'Medicaid A0428 as a multiple of Medicare CY2026',
-                  f"'Medicaid_Rate_Card'!$C${hdr_r}:$H${hdr_r}",
+                  f"'Medicaid_Rate_Card'!$C${hdr_r}:${get_column_letter(LAST_STATE_COL)}${hdr_r}",
                   [('A0428 multiple',
-                    f"'Medicaid_Rate_Card'!$C${cmp_row['A0428']}:"
-                    f"$H${cmp_row['A0428']}")],
+                    f"'Medicaid_Rate_Card'!$C${a_row}:"
+                    f"${get_column_letter(LAST_STATE_COL)}${a_row}")],
                   kind='bar', y_fmt='0.00"x"')
     sb.blank()
 
     # ── Broker-carve summary ─────────────────────────────────────────
-    sb.banner('Panel I. Broker carve-out summary - who actually buys '
-              'scheduled transport')
-    sb.headers(['State', 'Carve?', 'Broker / manager', '', '', '', '', '',
-                'What is carved'])
+    carve_letter = chr(65 + N + 2)
+    sb.banner(f'Panel {carve_letter}. Broker carve-out summary - who actually '
+              'buys scheduled transport')
+    sb.headers(_pad(['State', 'Carve?', 'Broker / manager'])[:-1]
+               + ['What is carved'])
     b0 = sb.r + 1
     carves = [
         ('NE', 'YES', 'MTM / ModivCare (MTM Health from 1/1/26)',
@@ -411,39 +585,55 @@ def build(wb, ctx):
         ('WI', 'YES', 'MTM Inc. (NEMT manager; Veyo 2021-22)',
          'Manager-coordinated NEMT ambulance is paid by the MANAGER, '
          'not ForwardHealth'),
+        ('MN', 'YES', 'Acentra/Kepro (State-Admin) + county/tribal',
+         'State-administered + local-agency NEMT (no single MCO broker); '
+         'ambulance stays FFS'),
+        ('IN', 'YES', 'Verida (formerly Southeastrans)',
+         'Non-ambulance FFS NEMT brokered; ALS/BLS ambulance EXEMPT and '
+         'billed FFS'),
+        ('KY', 'YES', 'HSTD regional brokers (via KY Transp. Cabinet)',
+         'NEMT via county regional brokers; emergency ambulance + PT56 '
+         'stretcher billed FFS'),
     ]
     for st, y, who, what in carves:
-        sb.row([(SNAME[st], 'text'), (y, 'src'), (who, 'src'), None, None,
-                None, None, None, (what, 'note')])
+        sb.row(_pad([(SNAME[st], 'text'), (y, 'src'), (who, 'src')])[:-1]
+               + [(what, 'note')])
     r_cnt = sb.r + 1
-    sb.row([('Broker-carve states among the six footprint states', 'label'),
-            (f'=COUNTIF(B{b0}:B{b0 + 5},"YES")', 'fml', lib.FMT_INT),
-            None, None, None, None, None, None,
-            ('live count over the column above', 'note')])
-    sb.row([('Memo - Virginia (extension state)', 'text'), ('YES', 'src'),
-            ('DMAS FFS NEMT broker', 'src'), None, None, None, None, None,
-            ('Broker pays FFS NON-EMERGENCY AMBULANCE itself: no public '
-             'FFS price for scheduled ambulance exists', 'note')])
+    sb.row(_pad([('Broker/administered-carve states of the nine footprint '
+                  'states', 'label'),
+                 (f'=COUNTIF(B{b0}:B{b0 + N - 1},"YES")', 'fml',
+                  lib.FMT_INT)])[:-1]
+           + [('live count over the column above (OH is the only NO)',
+               'note')])
+    sb.row(_pad([('Memo - Virginia (extension state)', 'text'), ('YES', 'src'),
+                 ('DMAS FFS NEMT broker', 'src')])[:-1]
+           + [('Broker pays FFS NON-EMERGENCY AMBULANCE itself: no public '
+               'FFS price for scheduled ambulance exists', 'note')])
     sb.blank()
 
     sb.banner('Read panel')
-    sb.prose('What is measured: six published state Medicaid FFS ambulance '
+    sb.prose('What is measured: nine published state Medicaid FFS ambulance '
              'schedules, fetched and parsed from the primary file or portal '
-             'on 11 Jul 2026. The BLS non-emergency base (A0428), the '
-             'workhorse code of scheduled interfacility transport, pays '
-             '$84.67 (IA, unchanged since 2014) to $255.70 (KS, 2023 '
-             'rebase) - roughly 0.30x to 0.90x the CY2026 Medicare national '
-             'base, with WI frozen at $94.90 since 2008. Five of the six '
-             'states route scheduled NEMT through a broker or manager (MTM, '
-             'MTM Health, ModivCare), and in WI the manager, not '
-             'ForwardHealth, pays coordinated NEMT ambulance claims; OH '
-             'runs county NET instead. Missouri will not pay A0428 at all '
-             'outside hospital-to-hospital or hospital-to-diagnostic '
-             'contexts, and will not pay SCT (A0434) at all. What is NOT '
-             'measured: managed-care negotiated rates, broker-paid trip '
-             'prices, and GEMT supplemental payments - the real price of '
-             'most scheduled Medicaid transport is set inside those '
-             'channels and is not public.')
+             '(NE/IA/KS/MO/OH/WI on 11 Jul 2026; MN/IN/KY on 12 Jul 2026); '
+             'Virginia is parked because its only public rate files are the '
+             '2009 / 2009-2012 vintage. The BLS non-emergency base (A0428), '
+             'the workhorse code of scheduled interfacility transport, ranges '
+             'from $84.67 (IA, unchanged since 2014) to $284.56 (MN, exactly '
+             'the Medicare conversion factor - full parity) - roughly 0.30x '
+             'to 1.00x the CY2026 Medicare national base, a 3.4x spread, with '
+             'WI frozen at $94.90 since 2008 and IN pinned to 100% of CY2025 '
+             'Medicare. Kentucky is the outlier: it has NO ALS1-nonemergency, '
+             'ALS2, or SCT line at all, and its only non-emergency ground '
+             'line is a $55 stretcher-van rate (formerly T2005), so it is '
+             'excluded from the BLS comparison. Eight of the nine states '
+             'route scheduled NEMT through a broker, transportation manager, '
+             'or a state-administered system (only OH runs county NET '
+             'instead), and Missouri will not pay A0428 outside HH/HD '
+             'contexts nor SCT at all (IN also does not cover SCT). What is '
+             'NOT measured: managed-care negotiated rates, broker-paid trip '
+             'prices, and GEMT supplemental payments - the real price of most '
+             'scheduled Medicaid transport is set inside those channels and '
+             'is not public.')
 
     A = 'Medicaid FFS ambulance fee schedule'
     fact_rows = [
@@ -452,10 +642,10 @@ def build(wb, ctx):
          'Schedule cover states no increase for SFY2027'),
         ('IA', 84.67, 'eff 1 Jul 2014, current 11 Jul 2026', 'ia_amb_fs',
          'C11.csv row A0428, Factor column',
-         'Lowest in footprint; unchanged 12 years'),
+         'Lowest true-BLS A0428 in footprint; unchanged 12 years'),
         ('KS', 255.70, 'eff 1 Jul 2023, posted 7/1/2026', 'ks_kmap_fs',
          'FeeSchedule_20260701_TXIX_DEF.txt row A0428 MAX FEE',
-         'Highest in footprint; SFY2024 rebase'),
+         'SFY2024 rebase'),
         ('MO', 105.62, 'eff 1 Jul 2019, file 7 Jul 2026', 'mo_mhd_fs',
          'Ambulance.xlsx rows A0428 HH / A0428 HD',
          'Payable ONLY in HH/HD contexts; base code noncovered'),
@@ -465,40 +655,51 @@ def build(wb, ctx):
         ('WI', 94.90, 'eff 1 Jul 2008, report 11 Jul 2026', 'wi_maxfee_amb',
          'maxfee06_ambulance.pdf row A0428 MAX FEE',
          'Unchanged 18 years; manager-coordinated NEMT paid off-schedule'),
+        ('MN', 284.56, 'eff 1 Jan 2026', 'mn_mhcp_fs',
+         'MHCP Fee Schedule xlsx row A0428, Max Fee column',
+         'Highest A0428; exactly the CY2026 Medicare CF (parity)'),
+        ('IN', 269.02, 'eff 1 Jan 2026', 'in_ihcp_fs',
+         'IHCP Professional Fee Schedule xlsx row A0428, Rate Eff 01/01/2026',
+         '100% of CY2025 Medicare (BT2025156); A0434 SCT noncovered'),
+        ('KY', 55.00, 'eff 1 Jan 2026 (rev 1/9/2026)', 'ky_dms_fs',
+         '2026 Transportation Rates PDF, PT56 Specialty 16 A0428',
+         'Non-emergency STRETCHER-van line (formerly T2005), not a full BLS '
+         'ambulance'),
     ]
     for st, val, eff, key, loc, xc in fact_rows:
-        facts.append({'metric': f'{SNAME[st]} {A}: A0428 BLS non-emergency '
-                                f'base rate ({eff})',
+        facts.append({'metric': f'{SNAME[st]} {A}: A0428 base rate ({eff})',
                       'year': 2026, 'value': val, 'unit': 'USD per transport',
                       'basis': 'GOV', 'tier': 'A', 'source_keys': [key],
                       'locator': loc, 'lives_on': 'Medicaid_Rate_Card',
                       'cross_check': xc})
     facts += [
-        {'metric': 'Lowest footprint Medicaid A0428 rate as a multiple of '
-                   'the CY2026 Medicare national base (Iowa)',
+        {'metric': 'Lowest footprint Medicaid true-BLS A0428 rate as a '
+                   'multiple of the CY2026 Medicare national base (Iowa)',
          'year': 2026, 'value': 0.2975, 'unit': 'x Medicare',
          'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['ia_amb_fs'],
-         'locator': 'Medicaid_Rate_Card Panel H, MIN over the A0428 row; '
-                    '84.67 / 284.56',
+         'locator': 'Medicaid_Rate_Card Panel, MIN over the true-BLS A0428 '
+                    'ratios; 84.67 / 284.56 (KY stretcher excluded)',
          'lives_on': 'Medicaid_Rate_Card',
          'cross_check': 'Vintage confound printed in-row: IA rate is a 2014 '
                         'rate against a 2026 Medicare base'},
         {'metric': 'Highest footprint Medicaid A0428 rate as a multiple of '
-                   'the CY2026 Medicare national base (Kansas)',
-         'year': 2026, 'value': 0.8986, 'unit': 'x Medicare',
-         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['ks_kmap_fs'],
-         'locator': 'Medicaid_Rate_Card Panel H, MAX over the A0428 row; '
-                    '255.70 / 284.56',
+                   'the CY2026 Medicare national base (Minnesota)',
+         'year': 2026, 'value': 1.0000, 'unit': 'x Medicare',
+         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['mn_mhcp_fs'],
+         'locator': 'Medicaid_Rate_Card Panel, MAX over the true-BLS A0428 '
+                    'ratios; 284.56 / 284.56 = exact parity',
          'lives_on': 'Medicaid_Rate_Card',
-         'cross_check': 'KS 2023 rebase; still below Medicare parity'},
-        {'metric': 'Footprint states routing scheduled NEMT through a '
-                   'broker or transportation manager',
-         'year': 2026, 'value': 5, 'unit': 'of 6 states',
+         'cross_check': 'MN A0428 equals the CY2026 Medicare conversion '
+                        'factor to the cent'},
+        {'metric': 'Footprint states routing scheduled NEMT through a broker, '
+                   'transportation manager, or state-administered system',
+         'year': 2026, 'value': 8, 'unit': 'of 9 states',
          'basis': 'DERIVED', 'tier': 'A',
          'source_keys': ['ne_amb_fs', 'ia_amb_fs', 'ks_kmap_fs', 'mo_mhd_fs',
-                         'oh_odm_fs', 'wi_maxfee_amb'],
-         'locator': 'Medicaid_Rate_Card Panel I, COUNTIF over the carve '
-                    'column (OH is the exception: county NET)',
+                         'oh_odm_fs', 'wi_maxfee_amb', 'mn_mhcp_fs',
+                         'in_ihcp_fs', 'ky_dms_fs'],
+         'locator': 'Medicaid_Rate_Card carve panel, COUNTIF over the carve '
+                    'column (OH is the only exception: county NET)',
          'lives_on': 'Medicaid_Rate_Card',
          'cross_check': 'VA (extension) goes further: the broker pays FFS '
                         'non-emergency ambulance itself'},
@@ -507,18 +708,23 @@ def build(wb, ctx):
     findings.append({
         'id_hint': 75,
         'finding': 'The Medicaid price floor for scheduled ambulance '
-                   'transport is low and wildly dispersed: the six footprint '
-                   'FFS schedules pay $84.67 (IA, set 2014) to $255.70 (KS, '
-                   'set 2023) for the same A0428 BLS non-emergency transport '
-                   '- about 0.30x to 0.90x the CY2026 Medicare national base '
-                   'and a 3.0x spread between neighbouring states - with WI '
-                   'frozen since 2008 and NE explicitly flat for SFY2027. '
-                   'Five of the six states carve scheduled NEMT to brokers '
-                   '(MTM, MTM Health, ModivCare), so the schedule price is '
-                   'not even the paid price for most scheduled volume.',
-        'numbers': f"='Medicaid_Rate_Card'!C{r_min}",
+                   'transport is low, wildly dispersed, and largely carved '
+                   'away from the schedules entirely. Across the nine '
+                   'footprint FFS schedules the same A0428 BLS non-emergency '
+                   'transport pays $84.67 (IA, set 2014) to $284.56 (MN, '
+                   '2026) - about 0.30x to a full 1.00x the CY2026 Medicare '
+                   'national base and a 3.4x spread, with WI frozen since '
+                   '2008 and IN pinned to 100% of CY2025 Medicare. Kentucky '
+                   'has no ALS1-nonemergency, ALS2, or SCT line at all and '
+                   'prices non-emergency ground as a $55 stretcher-van rate. '
+                   'Eight of the nine states carve scheduled NEMT to brokers, '
+                   'managers, or a state-administered system (only OH runs '
+                   'county NET), so the schedule price is not even the paid '
+                   'price for most scheduled volume.',
+        'numbers': f"='Medicaid_Rate_Card'!C{r_disp}",
         'sources': 'ne_amb_fs; ia_amb_fs; ks_kmap_fs; mo_mhd_fs; oh_odm_fs; '
-                   'wi_maxfee_amb; va_dmas_manual',
+                   'wi_maxfee_amb; mn_mhcp_fs; in_ihcp_fs; ky_dms_fs; '
+                   'va_dmas_amb',
         'confidence': 'High on the schedule values (each read from the '
                       'primary file); the multiples mix rate vintages by '
                       'construction',
@@ -526,12 +732,15 @@ def build(wb, ctx):
                      'pay, and broker-carve states hide the real '
                      'scheduled-transport price inside broker and MCO '
                      'contracts; these floors bound the public price, not '
-                     'the market price. MO A0428 exists only in HH/HD '
-                     'contexts and MO pays nothing for SCT.'})
+                     'the market price. Products are not identical across '
+                     'states - MO A0428 exists only in HH/HD contexts, KY '
+                     'A0428 is a stretcher-van line, and MO/IN pay nothing '
+                     'for SCT.'})
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
             'findings': findings,
             'meta': {'states_landed': STATES, 'states_parked': ['VA'],
+                     'states_added_v34b': ['MN', 'IN', 'KY'],
                      'medicare_scan': 'green links' if scan_ok
                                       else 'blue AFS re-carry',
                      'research_record': 'medicaid_rates.json'}}

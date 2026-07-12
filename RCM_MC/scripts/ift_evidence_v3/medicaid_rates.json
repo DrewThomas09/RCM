@@ -107,15 +107,74 @@
     "source_url": "https://www.forwardhealth.wi.gov/WIPortal/Tab/42/icscontent/provider/maxfee/pdf/maxfee06_ambulance.pdf.spage",
     "retrieval": "Direct download of the ForwardHealth portal-generated AMBULANCE MAXIMUM ALLOWABLE FEE SCHEDULE PDF; parsed with pdftotext."
   },
+  "MN": {
+    "codes": {
+      "A0425": {"rate": 9.51, "unit": "per mile", "notes": "GROUND MILEAGE; eff 04/01/2026 (other ground codes eff 01/01/2026); factor code B"},
+      "A0426": {"rate": 341.47, "unit": "base", "notes": "ALS1 non-emergency"},
+      "A0427": {"rate": 540.66, "unit": "base", "notes": "ALS1 emergency"},
+      "A0428": {"rate": 284.56, "unit": "base", "notes": "BLS non-emergency; highest A0428 base in the footprint - coincidentally equals the CY2026 Medicare ambulance conversion factor ($284.56)"},
+      "A0429": {"rate": 455.29, "unit": "base", "notes": "BLS emergency"},
+      "A0433": {"rate": 782.54, "unit": "base", "notes": "ALS2"},
+      "A0434": {"rate": 924.82, "unit": "base", "notes": "Specialty Care Transport; highest SCT in the footprint"}
+    },
+    "effective": "Rates effective 01/01/2026 (ground mileage A0425 effective 04/01/2026); MHCP Fee Schedule xlsx downloaded 12 Jul 2026. One max-fee row per ground code (factor code B), status A (active).",
+    "pa_rules": "No PA flag on the ambulance rows of the MHCP fee schedule. MHCP covers emergency and non-emergency ground and air ambulance, billed directly to MHCP by enrolled ambulance providers (ambulance is NOT routed through the administered NEMT system). Non-ambulance NEMT modes (Mode 1-4) must be billed through the administered system.",
+    "broker_carve": "MIXED / STATE-ADMINISTERED (no single statewide MCO broker). NEMT is split between local county/tribal agency-administered NEMT and State-Administered NEMT (administered by Acentra Health / Kepro). Ambulance is billed FFS by enrolled providers; the non-ambulance NEMT modes route through the administered system. NEMT providers must hold MnDOT Special Transportation Service (STS) certification.",
+    "dialysis_policy": "Explicit return-leg rule: for dialysis members eligible for local county/tribal NEMT, State-Administered NEMT may cover the RETURN trip; Kepro/Acentra enters a single-day state-administered NEMT certification for dialysis return trips only, unless state-administered NEMT is determined necessary at all times.",
+    "source_url": "https://mn.gov/dhs/assets/mhcp-fee-schedule_tcm1053-293968.xlsx",
+    "retrieval": "Direct download of the MHCP Fee Schedule xlsx (Sheet1, 48,924 rows) from mn.gov/dhs; parsed with openpyxl. Ground rows A0425-A0434 read from the Max Fee column; effective dates 01/01/2026 (A0425 04/01/2026), status A."
+  },
+  "IN": {
+    "codes": {
+      "A0425": {"rate": 9.15, "unit": "per mile", "notes": "GROUND MILEAGE (TRANS service category); reduced-modifier variants (U3/U5, MRT/SE) pay $1.67; eff 01/01/2026"},
+      "A0426": {"rate": 322.83, "unit": "base", "notes": "ALS 1 non-emergency"},
+      "A0427": {"rate": 511.14, "unit": "base", "notes": "ALS1 emergency"},
+      "A0428": {"rate": 269.02, "unit": "base", "notes": "BLS non-emergency"},
+      "A0429": {"rate": 430.44, "unit": "base", "notes": "BLS emergency"},
+      "A0433": {"rate": 739.81, "unit": "base", "notes": "ALS 2"},
+      "A0434": {"rate": null, "unit": "base", "notes": "NONCOVERED (NOCOV, $0.00, PA=Y) under IHCP since 04/01/2004"}
+    },
+    "effective": "Rates effective 01/01/2026, updated to reflect 100% of the CY2025 Medicare fee schedule per IHCP bulletin BT2025156; IHCP Professional Fee Schedule xlsx last updated 9 Jun 2026 (changes through 5/26/2026). Prior-year (2025) rate rows carried for DOS through 12/31/2025 (e.g. A0428 $262.72 in 2025 -> $269.02 in 2026).",
+    "pa_rules": "No PA flag on the covered ambulance rows (PA column blank). A0434 SCT is Non-Covered (PA=Y, $0.00). ALS/BLS ambulance is EXEMPT from the FFS NEMT brokerage requirement and arranged directly with the transportation provider (billed FFS).",
+    "broker_carve": "PARTIAL. FFS NEMT for non-ambulance modes (common carrier, taxi, wheelchair van) is brokered statewide through Verida (formerly Southeastrans); managed-care members go through their MCE. ALS/BLS ambulance is carved OUT of the broker requirement and billed FFS directly, so the ambulance base rates are the real FFS price.",
+    "dialysis_policy": "Recurring dialysis trips are arranged as standing orders through the Verida FFS broker (or the MCE for managed-care members); the ambulance fee schedule itself is silent on dialysis at code level.",
+    "source_url": "https://provider.indianamedicaid.com/ihcp/Publications/MaxFee/Professional Fee Schedule.xlsx",
+    "retrieval": "IHCP maxfee portal (agreement gate): GET maxfee_validate.asp?agreement=accept to set the session cookie, then fee_home.asp -> download 'Professional Fee Schedule.xlsx' (37,422 rows) in-session; parsed with openpyxl. Ground rows A0425-A0434, Max Fee/Non-Facility column, Rate Effective Date 01/01/2026. Policy confirmed in bulletin BT2025156 (in.gov/medicaid)."
+  },
+  "KY": {
+    "codes": {
+      "A0425": {"rate": 2.50, "unit": "per mile", "notes": "BLS mileage (A0425 UB) Other $2.50 / Hospital $3.00; ALS mileage (A0425 UA) Other $2.50 / Hospital $4.00; non-emergency stretcher mileage $2.00; return-trip mileage $2.00"},
+      "A0426": {"rate": null, "unit": "base", "notes": "NOT LISTED on the KY transportation fee schedule (no ALS1 non-emergency line)"},
+      "A0427": {"rate": 60.00, "unit": "base", "notes": "ALS1 emergency BASE RATE, Other (independent) $60.00 / Hospital-based $110.00; additional-patient A0427 GM $25.00"},
+      "A0428": {"rate": 55.00, "unit": "base", "notes": "NON-EMERGENCY STRETCHER base rate (Provider Type 56, Specialty 16), flat $55.00 - a stretcher-van line, not a full BLS ambulance; formerly billed as T2005 until renamed A0428 eff 01/01/2025; additional-patient $10.00"},
+      "A0429": {"rate": 60.00, "unit": "base", "notes": "BLS emergency BASE RATE, Other (independent) $60.00 / Hospital-based $82.50; additional-patient A0429 GM $20.00; medical first response A0429 UC $110.00"},
+      "A0433": {"rate": null, "unit": "base", "notes": "NOT LISTED on the KY transportation fee schedule (no ALS2 line)"},
+      "A0434": {"rate": null, "unit": "base", "notes": "NOT LISTED on the KY transportation fee schedule (no SCT line)"}
+    },
+    "effective": "KY Medicaid Transportation Fee Schedule 2026, revised 1/9/2026 (schedule update log: 'No changes or updates to the 2026 fee schedule'). Provider Type 55 = emergency ambulance; Provider Type 56 Specialty 16 = non-emergency stretcher. Rates carry Hospital vs Other (independent provider) destination variants; the 'Other' rate is recorded as headline.",
+    "pa_rules": "Schedule does not flag PA at code level. Emergency ambulance (PT55) billed FFS; the only non-emergency ambulance line is the PT56 non-emergency stretcher (A0428). Broader NEMT is arranged through the HSTD regional broker and not billed on this schedule.",
+    "broker_carve": "YES. NEMT runs through the Human Service Transportation Delivery (HSTD) program - DMS contracts with the Kentucky Transportation Cabinet (KYTC), which assigns a regional broker to each county; providers contract with the broker and normal trips must be booked 72 hours ahead. The five KY Medicaid MCOs administer NEMT for their members.",
+    "dialysis_policy": "Recurring dialysis trips route through the HSTD regional broker (or the member's MCO); the ambulance/stretcher fee schedule is silent on dialysis at code level.",
+    "source_url": "https://www.chfs.ky.gov/agencies/dms/DMSFeeRateSchedules/2026TransportationRates.pdf",
+    "retrieval": "Direct download (browser UA + referer) of the CHFS DMS 2026 Transportation Rates PDF; parsed with pdftotext -layout. Rates read from the 'Reimbursement Rate & Destination in parenthesis' column."
+  },
   "VA": {
     "codes": {
-      "A0428": {"rate": null, "unit": "base", "notes": "PENDING - not payable on the public FFS schedule: must be preauthorized and billed to the FFS NEMT broker (DMAS Transportation manual Ch.5, rev 12/5/2025: 'A0428 Non-Emergency Basic Life Support Ambulance - These transports need to be preauthorized and billed to the Non-Emergency Medicaid Transportation Broker (866) 386-8331')"}
+      "A0425": {"rate": null, "unit": "per mile", "notes": "PENDING current - 2009 crossover table has A0425 built into the sliding scale (see A0427/A0429 notes); no current-effective standalone mileage rate on a public file"},
+      "A0426": {"rate": null, "unit": "base", "notes": "PENDING current - appears only on the 2009-2012 crossover rate table 'for crossover calculation only'; no current standalone FFS rate published"},
+      "A0427": {"rate": null, "unit": "base", "notes": "PENDING current. VERIFIED STALE 2009 sliding scale (DMAS Emergency Ground Ambulance PDF, 'Rates Effective with Dates of Service October 31, 2009 and Before'): 1-5 mi = $75.00 total, 6-10 mi = $150.00 total, then $150 plus $2.50 per mile for 11+ miles. Managed-care enrollees are paid by their MCO, not this file."},
+      "A0428": {"rate": null, "unit": "base", "notes": "PENDING - not payable on a public FFS schedule: must be preauthorized and billed to the FFS NEMT broker (DMAS Transportation manual Ch.5, rev 12/5/2025: 'A0428 Non-Emergency Basic Life Support Ambulance - These transports need to be preauthorized and billed to the Non-Emergency Medicaid Transportation Broker (866) 386-8331')"},
+      "A0429": {"rate": null, "unit": "base", "notes": "PENDING current. Same verified STALE 2009 sliding scale as A0427 (1-5 mi $75 / 6-10 mi $150 / +$2.50 per mile after 10)."},
+      "A0433": {"rate": null, "unit": "base", "notes": "PENDING current - crossover-only on the 2009-2012 table; no current standalone FFS rate published"},
+      "A0434": {"rate": null, "unit": "base", "notes": "PENDING current - crossover-only on the 2009-2012 table; no current standalone FFS rate published"}
     },
-    "effective": "PARKED for dollar rates: the posted emergency ground ambulance PDF on dmas.virginia.gov (fee-schedules-for-emergency-ground-ambulance) is the Nov 2009 - Jun 2012 sliding-scale vintage; current per-code rates sit in the DMAS procedure fee file search portal, which requires interactive per-code lookup that could not be completed in-window.",
-    "pa_rules": "Non-emergency ambulance (A0426/A0428) requires broker preauthorization BEFORE transport; emergency codes billed FFS without broker contact.",
+    "effective": "PARKED for current dollar rates. VERIFIED 12 Jul 2026: the two public DMAS ambulance rate files are both stale - the Emergency Ground Ambulance PDF (A0427/A0429) is captioned 'Rates Effective with Dates of Service October 31, 2009 and Before', and the crossover rate table (A0425/A0426/A0427/A0428/A0429/A0433/A0434) is captioned 'For all Dates of Service November 1, 2009 to June 30, 2012' and is for Medicare crossover calculation only. No current-effective standalone FFS ambulance fee file is published; the DMAS procedure fee file search portal (interactive per-code lookup) would fill the current rate.",
+    "pa_rules": "Non-emergency ambulance (A0426/A0428) requires broker preauthorization BEFORE transport; emergency codes (A0427/A0429) billed FFS without broker contact.",
     "broker_carve": "YES - the strongest carve in the set: FFS non-emergency ambulance itself is billed to the DMAS NEMT broker, so no public FFS price exists for scheduled ambulance transport.",
-    "dialysis_policy": "Scheduled dialysis transport is a broker trip (all nine FFS NEMT service types must be arranged and confirmed by the broker before transport).",
-    "source_url": "https://vamedicaid.dmas.virginia.gov/sites/default/files/2025-12/Transportation%20Chapter%205%20(updated%2012.5.25)_Final.pdf",
-    "retrieval": "Transportation manual PDF fetched and verified (pdftotext); rate rows PARKED as PENDING with the DMAS procedure fee file portal named as the filler dataset."
+    "dialysis_policy": "Scheduled dialysis transport is a broker trip (all FFS NEMT service types must be arranged and confirmed by the broker before transport).",
+    "source_url": "https://www.dmas.virginia.gov/media/1569/fee-schedules-for-emergency-ground-ambulance-a0427-and-a0429.pdf",
+    "source_url_crossover": "https://www.dmas.virginia.gov/media/1564/fee-schedule-for-cross-over-air-and-ground-ambulance-claims.pdf",
+    "source_url_manual": "https://vamedicaid.dmas.virginia.gov/sites/default/files/2025-12/Transportation%20Chapter%205%20(updated%2012.5.25)_Final.pdf",
+    "retrieval": "Both DMAS ambulance rate PDFs fetched (browser UA + referer) and verified with pdftotext -layout: emergency ground (DOS Oct 31 2009 and before) and crossover table (DOS Nov 1 2009 - Jun 30 2012). Transportation manual Ch.5 (rev 12/5/2025) confirms the A0428 broker carve. Current per-code FFS rates PARKED as PENDING with the DMAS procedure fee file portal named as the filler dataset."
   }
 }
