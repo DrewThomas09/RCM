@@ -433,6 +433,75 @@ def _build_rate_card(wb, lib, sl, a0432, gpci_mean_row, accessed, facts):
            ('', 'note')])
 
     b.blank()
+    # ---- 4.3 Mileage-loaded price per transport (base + mileage) ----------
+    b.banner('Mileage-loaded price per transport (4.3) - base allowed plus '
+             'A0425 units per transport x mileage rate, two ways')
+    b.headers(['Item', 'Value', 'Unit', 'Detail', '', '', '', '', '', '',
+               'Basis', 'Source'])
+    b.row([('A0425 miles per base transport - MMT book, 2024', 'label'),
+           ("=IF('MMT_Medicare_Book'!C25=0,0,"
+            "'MMT_Medicare_Book'!B25/'MMT_Medicare_Book'!C25)", 'fml',
+            lib.FMT_DEC1), ('miles', 'text'),
+           ('Live: MMT_Medicare_Book A0425 units / base services, 2024', 'text'),
+           None, None, None, None, None, None, ('DERIVED', 'text'),
+           ('MMT_Medicare_Book Panel C', 'note')])
+    r_mmt_miles = b.r
+    b.row([('A0425 miles per transport - national registry, 2024', 'label'),
+           ("=IF(OR('Medicare_IFT_Series'!B19=0,B%d=0),0,"
+            "('Medicare_IFT_Series'!D19/'Medicare_IFT_Series'!B19)/B%d)"
+            % (r_mi25, r_mi25), 'fml', lib.FMT_DEC1), ('miles', 'text'),
+           ('Live: national mileage $ per transport (Medicare_IFT_Series) / '
+            'A0425 CY2025 rate', 'text'), None, None, None, None, None, None,
+           ('DERIVED', 'text'), ('Medicare_IFT_Series 2024 row', 'note')])
+    r_nat_miles = b.r
+    b.row([('CY2024 base allowed per transport (measured)', 'label'),
+           ("=IF('Medicare_IFT_Series'!B19=0,0,"
+            "'Medicare_IFT_Series'!C19/'Medicare_IFT_Series'!B19)", 'fml',
+            lib.FMT_USD2), ('$/transport', 'text'),
+           ('Live: national base-rate allowed $ / transports, 2024', 'text'),
+           None, None, None, None, None, None, ('DERIVED', 'text'),
+           ('Medicare_IFT_Series', 'note')])
+    r_base24 = b.r
+    b.row([('CY2024 mileage-LOADED price per transport (measured)', 'label'),
+           ("=IF('Medicare_IFT_Series'!B19=0,0,"
+            "'Medicare_IFT_Series'!E19/'Medicare_IFT_Series'!B19)", 'fml',
+            lib.FMT_USD2), ('$/transport', 'text'),
+           ('Live: national TOTAL allowed $ / transports = base + mileage, '
+            '2024. This is the loaded price the metro/state panels omit.',
+            'text'), None, None, None, None, None, None, ('DERIVED', 'text'),
+           ('Medicare_IFT_Series 2024 (mileage 43-45% of allowed $)', 'note')])
+    r_loaded24 = b.r
+    b.row([('CY2024 mileage loading factor (loaded / base)', 'label'),
+           (f'=IF(B{r_base24}=0,0,B{r_loaded24}/B{r_base24})', 'fml',
+            lib.FMT_DEC2), ('x', 'text'),
+           ('Live: how much bigger the loaded price is than base-only', 'text'),
+           None, None, None, None, None, None, ('DERIVED', 'text'), ('', 'note')])
+    r_load_factor = b.r
+    b.row([('CY2026 A0428 base rate (worked, geographic)', 'label'),
+           (f"=E{card_rows['A0428']}", 'fml', lib.FMT_USD2), ('$', 'text'),
+           ('Live green link to the worked A0428 rate above', 'text'),
+           None, None, None, None, None, None, ('DERIVED', 'text'),
+           ('Derived_Rate_Card worked card', 'note')])
+    r_base26 = b.r
+    b.row([('CY2026 mileage-LOADED A0428 price (base + miles x rate)', 'label'),
+           (f'=B{r_base26}+B{r_mmt_miles}*B{r_mi26}', 'fml', lib.FMT_USD2),
+           ('$', 'text'),
+           ('Live forward: CY2026 A0428 base + MMT miles/transport x A0425 '
+            'CY2026 rate. Both the base-only (above) and this loaded price '
+            'thread into Metro_TAM_Panels, TAM_Assembly_State and '
+            'Scenario_Matrix.', 'text'), None, None, None, None, None, None,
+           ('DERIVED', 'text'), ('4.3 loaded price', 'note')])
+    r_loaded26 = b.r
+    b.note('Read (4.3): the workbook itself measures mileage at 43-45% of '
+           'Medicare interfacility allowed dollars, so a base-only price '
+           'understates revenue per transport by that much. The loaded price '
+           'is derived two ways - the MMT book (A0425 units / base services) '
+           'and the national registry (mileage $ / transports) - and both the '
+           'base-only and the loaded price are carried, labelled, into every '
+           'dollar panel. CY2024 is measured (Medicare_IFT_Series total vs '
+           'base); CY2026 is the forward AFS-rate build.')
+
+    b.blank()
     b.banner('Add-on authority + policy risk (GOV)')
     b.row([('+2% urban / +3% rural add-ons', 'label'), None, None,
            ('42 U.S.C. 1395m(l)(12)(A): temporary percentage increases for '

@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_7.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_8.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -56,6 +56,12 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'e4_throughput', 'b2_reh_closures', 'b3_medicaid',
                  'b4_rsnat_ma', 'b8_receiving', 'b9_regulatory',
                  'b13_usaspending', 'xf1_annual_series', 'xf5_supply_map',
+                 # Run 4 outcome 3 (zero RED): these two land BEFORE c48 so the
+                 # Slide_Feed live-status scan sees their tabs and flips the two
+                 # RED rows (Input cost index, Footprint determination) to GREEN.
+                 # Their IDs are still appended LAST via id_order() below, so no
+                 # existing fact/source/finding is renumbered (append-only).
+                 'b11_inputs', 'xb_registries',
                  'c123_tam', 'c48_assembly',
                  # v3.5 completion pass (append after the v3.4 set; b3_medicaid
                  # is extended in place, not re-added). Missing modules are
@@ -65,6 +71,19 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'b14_requests', 'd_quality', 'run_log',
                  # v3.7 presentation pass (Run 3, Block U)
                  'style_standard']
+
+# Sections whose facts/sources/findings must be numbered LAST regardless of
+# where they build. b11_inputs/xb_registries build early (before c48, so the
+# Slide_Feed status scan sees their tabs) but their IDs append at the tail so
+# every already-shipped ID keeps its number (append-only firewall rule).
+_ID_TAIL = ('b11_inputs', 'xb_registries')
+
+
+def id_order():
+    """SECTION_ORDER with the append-only tail sections moved to the end, used
+    only for ID/finding NUMBER assignment (not build order)."""
+    return ([k for k in SECTION_ORDER if k not in _ID_TAIL]
+            + [k for k in SECTION_ORDER if k in _ID_TAIL])
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
 # LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
@@ -266,7 +285,7 @@ def assign_ids(section_outputs):
     """Assign S-IDs (S78+) and F-IDs (F166+) deterministically in section order."""
     sid_map, sources, facts = {}, [], []
     next_s, next_f = 78, 166
-    for key in SECTION_ORDER:
+    for key in id_order():
         out = section_outputs.get(key)
         if not out:
             continue
@@ -548,9 +567,9 @@ def build_index_tab(wb, full_order):
 def add_v34_findings(wb, section_outputs, sid_map):
     """Findings 52+ supplied by the v3.4 section modules themselves: each
     module returns findings with live cell references; numbering continues
-    sequentially in SECTION_ORDER order."""
+    sequentially in id_order() order (append-only tail sections last)."""
     items = []
-    for key in SECTION_ORDER:
+    for key in id_order():
         out = section_outputs.get(key) or {}
         items += out.get('findings', [])
     if not items:
@@ -1035,7 +1054,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.7')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.8')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1202,6 +1221,23 @@ def rebuild_readme(wb, stats, entries):
             'tab stating the rules. No evidence changed; every tab is now '
             'screenshot-worthy at 100% zoom.'],
            wrap=True, height=76)
+    sb.row([('14 (v3.8)', 'label'), '12 July 2026',
+            'Evidence-integrity pass (Run 4, outcomes 1-2). (1) The '
+            'footprint-wide 990 sweep (Footprint_990_Sweep) now classifies '
+            'every transport-keyword hit - GROUND TRANSPORT / AIR TRANSPORT / '
+            'ED STAFFING / COURIER-LOGISTICS / OTHER-AMBIGUOUS - from the '
+            'verbatim services text and the contractor name, with the rules '
+            'printed on the tab; the read panels and finding now rest on the '
+            'ground+air transport subset only, and the emergency-department '
+            'staffing contractors are quarantined in a labelled exclusion '
+            'panel rather than headlined as transport. (2) Every dollar cell '
+            'now ships as a base-only / mileage-loaded PAIR: Derived_Rate_Card '
+            'carries a two-way A0425 mileage-loading derivation (MMT book and '
+            'national registry) and Scenario_Matrix Panel B2 states the '
+            'base-only and mileage-loaded price per transport side by side, '
+            'both live formulas, so the ~43-45% mileage share of allowed '
+            'dollars is never dropped.'],
+           wrap=True, height=104)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1366,6 +1402,15 @@ def main(verify_results_path=None):
                              if n in wb.sheetnames]),
         ('MMT_NPI_Estate', [n for n in ('MMT_Medicare_Book',)
                             if n in wb.sheetnames]),
+        # Run 4 outcome 3: the two modules that close the RED rows, placed by
+        # subject (cost/benchmark tabs beside the commercial rate tab; the
+        # registry tabs beside the regulatory register).
+        ('Payer_Rates_Commercial',
+         [n for n in ('Input_Cost_Index', 'Public_Operator_Benchmarks')
+          if n in wb.sheetnames]),
+        ('Regulatory_Register',
+         [n for n in ('State_EMS_Licensure', 'Press_Footprint_Registry')
+          if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)
     for anchor, names in families:

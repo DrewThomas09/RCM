@@ -294,5 +294,21 @@
   "status": "DONE",
   "produced": "deterministic gates green (two-pass recalc 0 errors / 0 diffs / 0 chart defects; leak check clean 12 tabs; static live-ref audit 0 suspect). Adversarial audit surfaced 3 real defects, all fixed: AHCAH unsourced \"419 hospitals\" stat dropped (firewall); SNF national worst-decile share made a live E/B formula (was hardcoded 0.10); VA Medicaid PENDING cells given bordered boxes",
   "notes": "1 audit finding rejected as false positive (Gundersen 990: two filings same tax year 2023 = original+amended, legitimate under \"latest two per filer\"). Sources and joins dimensions verified clean directly (every v3.5 source has URL + locator; all cross-tab join keys and referenced tabs resolve)"
+ },
+ {
+  "start": "Run4-H1",
+  "end": "H2",
+  "task": "4.1 990 sweep reclassification (OUTCOME 1)",
+  "status": "DONE",
+  "produced": "Footprint_990_Sweep: added CLASSIFICATION column + printed rules (GROUND/AIR TRANSPORT/ED STAFFING/COURIER-LOGISTICS/OTHER-AMBIGUOUS). The 7 raw keyword hits reclassified: 4 ED STAFFING (WI Emergency Medical Service Asso ER provider coverage $12.9M+$6.97M; Emergency Physicians of NWO ED staff $10.5M+$7.56M) quarantined in a labeled exclusion panel; 2 AIR (PHI Air Medical) + 1 GROUND (Mercury Ambulance) = 3 classified transport appearances feed all headlines/read/finding",
+  "notes": "CHECK PASS: \"EMERGENCY ROOM PROVIDER COVERAGE\" and \"EMERGENCY MEDICAL STAFF\" appear only in ED STAFFING data rows, never in any headline figure, read panel or finding; corrected transport count 3 (was overstated as 7), amounts $2.06M-$2.79M"
+ },
+ {
+  "start": "Run4-H2",
+  "end": "H4",
+  "task": "4.3 mileage-loaded pricing (OUTCOME 2)",
+  "status": "DONE",
+  "produced": "Derived_Rate_Card: added mileage-loading derivation panel - A0425 miles per transport two ways (MMT_Medicare_Book B25/C25 ~14.6; national Medicare_IFT_Series mileage$ /transport), CY2024 measured base (C19/B19) vs loaded (E19/B19 = total incl mileage) and CY2026 forward (A0428 base + miles x AFS rate). Scenario_Matrix: added Panel B2 with two price columns per basis (base-only =Derived_Rate_Card!B34, mileage-loaded =B35), both live formulas, base-only vs loaded floor per volume basis",
+  "notes": "CHECK: Scenario_Matrix has two price columns per price basis (base-only + mileage-loaded), both live formulas, loading derivation printed on Derived_Rate_Card. Full metro/state threading references the same Derived_Rate_Card loading cells"
  }
 ]
