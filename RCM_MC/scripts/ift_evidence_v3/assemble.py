@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_5.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_6.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -60,7 +60,8 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  # v3.5 completion pass (append after the v3.4 set; b3_medicaid
                  # is extended in place, not re-added). Missing modules are
                  # skipped gracefully by the section loop.
-                 'xc1_footprint990', 'xa4_snfqrp', 'b7_ahcah',
+                 'xc1_footprint990', 'xa4_snfqrp', 'xa5_snfownership',
+                 'b7_ahcah',
                  'b14_requests', 'd_quality', 'run_log']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
@@ -1032,7 +1033,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.5')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.6')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1177,6 +1178,17 @@ def rebuild_readme(wb, stats, entries):
             'not. Findings continue past the v3.4 register; every new tab '
             'carries a read panel, a finding and a data-quality row.'],
            wrap=True, height=76)
+    sb.row([('12 (v3.6)', 'label'), '12 July 2026',
+            'Return-leg structure pass: joins the SNF Quality Reporting '
+            'Program claims measures to the CMS Nursing Home provider-info '
+            'file on the CCN (all reporting SNFs, 1:1) and cross-tabs the '
+            'bounce-back (potentially preventable readmission) and discharge-'
+            'to-community rates by ownership, certified-bed scale and 5-star '
+            'rating (SNF_ReturnLeg_Structure) - the structural cut of where '
+            'return-leg transport demand concentrates. This revision also '
+            'restores the verification gate script (verify.py), which the v3.5 '
+            'package had picked up in a stale form.'],
+           wrap=True, height=64)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
