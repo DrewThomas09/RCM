@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.properties import PageSetupProperties
 
 SAMPLE = [
-    'README', 'Style_Standard', 'Methodology',
+    'README', 'Study_Synthesis', 'Style_Standard', 'Methodology',
     'Macro_Demand_Drivers', 'Fragmentation_National',
     'MMT_Medicare_Book', 'SNF_ReturnLeg_Structure', 'SNF_Return_Leg_Quality',
     'Facility_Pay_Layer', 'Medicaid_Rate_Card', 'Scenario_Matrix',
@@ -21,7 +21,7 @@ SAMPLE = [
 
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else \
-        'IFT_Sourced_Evidence_Master_v3_8.xlsx'
+        'IFT_Sourced_Evidence_Master_v3_9.xlsx'
     out = sys.argv[2] if len(sys.argv) > 2 else '_proof.xlsx'
     wb = load_workbook(src)
     keep = [n for n in SAMPLE if n in wb.sheetnames]

@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_8.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_9.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -70,7 +70,12 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  'b7_ahcah',
                  'b14_requests', 'd_quality', 'run_log',
                  # v3.7 presentation pass (Run 3, Block U)
-                 'style_standard']
+                 'style_standard',
+                 # v3.9: deck-facing synthesis (Run 4 outcome 6). Pure summary
+                 # of linked cells - emits no facts/sources/findings, so its
+                 # position never renumbers anything. Builds last so every home
+                 # tab it links already exists.
+                 'study_synthesis']
 
 # Sections whose facts/sources/findings must be numbered LAST regardless of
 # where they build. b11_inputs/xb_registries build early (before c48, so the
@@ -127,7 +132,8 @@ URL_FILLS = {
 TAB_ORDER = [
     # Governance
     'Index',
-    'README', 'Methodology', 'Findings', 'Charts', 'Verification_Log', 'Fact_Ledger',
+    'README', 'Study_Synthesis',
+    'Methodology', 'Findings', 'Charts', 'Verification_Log', 'Fact_Ledger',
     'Source_Register', 'Source_Index', 'V3_Change_Log', 'Pull_Manifest',
     'Connector_Estate_Map', 'Engagement_Data_Map',
     # Demand
@@ -532,18 +538,25 @@ def build_index_tab(wb, full_order):
     """Hyperlinked table of contents: one row per tab, grouped by section."""
     ws = wb.create_sheet('Index', 0)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[34, 96, 10], tab_color='FF00294C')
-    sb.title('Index: every tab, one click away')
-    sb.subtitle('The question: where does each answer live? One row per tab, in '
-                'book order, grouped by section. The link column is a live '
-                'HYPERLINK formula; the description is each tab\'s own title '
-                'line, read from the tab, not retyped. Sections mirror the map '
-                'on the README.')
+    sb.title('Index: every tab, one click away, with its role in the IFT study')
+    sb.subtitle('The question: where does each answer live, and why is it here? '
+                'One row per tab, in book order, grouped by section. Each '
+                'section banner carries the ROLE that section plays in the '
+                'interfacility-transport study - what an investor learns from '
+                'it - so every tab inherits a stated purpose; the row shows the '
+                'tab\'s own title (the specific answer it carries), and each '
+                'tab\'s own top-of-page subtitle states its individual '
+                'usefulness in full. The link column is a live HYPERLINK '
+                'formula; titles are read from the tabs, not retyped. Sections '
+                'mirror the map on the README.')
     sb.blank()
     # section membership derived from the SECTION_MAP anchors in TAB_ORDER
     bounds = []
-    for name, tabs, _ in SECTION_MAP:
+    purpose_by_section = {}
+    for name, tabs, purpose in SECTION_MAP:
         first = tabs.split(' .. ')[0].split(',')[0].strip()
         bounds.append((name, first))
+        purpose_by_section[name] = purpose
     ordered = [n for n in full_order if n in wb.sheetnames and n != 'Index']
     ordered += [n for n in wb.sheetnames if n not in ordered and n != 'Index']
     sec_starts = {first: name for name, first in bounds}
@@ -552,6 +565,11 @@ def build_index_tab(wb, full_order):
         if name in sec_starts:
             current = sec_starts[name]
             sb.banner(current)
+            # the section's role in the IFT study, so every tab below inherits
+            # a stated usefulness (not just a title)
+            role = purpose_by_section.get(current)
+            if role:
+                sb.subtitle('Role in the IFT study: ' + role, height=30)
             sb.headers(['Tab', 'What it carries (the tab\'s own title)', ''],
                        freeze=False, height=15)
         title = wb[name]['A1'].value if wb[name]['A1'].value else name
@@ -560,7 +578,9 @@ def build_index_tab(wb, full_order):
     sb.blank()
     sb.note('Generated from the live workbook at build time: the tab list and '
             'titles are read from the sheets themselves, so this index cannot '
-            'drift from the content.')
+            'drift from the content. Each section role is the purpose stated on '
+            'the README section map; each tab\'s own subtitle states its '
+            'specific usefulness for the study.')
     return ws
 
 
@@ -1054,7 +1074,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.8')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.9')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1238,6 +1258,26 @@ def rebuild_readme(wb, stats, entries):
             'both live formulas, so the ~43-45% mileage share of allowed '
             'dollars is never dropped.'],
            wrap=True, height=104)
+    sb.row([('15 (v3.9)', 'label'), '12 July 2026',
+            'Usefulness-and-portability pass (Run 4, outcomes 4 and 6). (1) '
+            'A new Study_Synthesis tab (up front, after the README) states the '
+            'IFT thesis as nine measured pillars - demand, the measured TAM '
+            'floor, price and its mileage load, input-cost risk, supply '
+            'fragmentation, the subject-company book, the return-leg driver '
+            'and the named risks - each headline a LIVE link to its home tab '
+            'and each row carrying its guardrail, plus a plain-language '
+            'firewall panel; it creates no evidence, only a map of what each '
+            'block contributes. (2) The Index now prints each section\'s ROLE '
+            'in the IFT study under its banner, so every tab inherits a stated '
+            'usefulness, not just a title. (3) Contract-corpus portability: '
+            'non-retrievable local file paths (pdfs/...) are stripped from '
+            'every corpus citation and source locator - the retrievable public '
+            'URL already rides in its own column - and the federal award '
+            'ladder is widened to the top 25 Department of Veterans Affairs '
+            'V225 awards by amount. A companion IFT_Deck_Feed_Extract workbook '
+            'ships the three deck-facing tabs with values resolved. No '
+            'existing fact/source/finding is renumbered.'],
+           wrap=True, height=128)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
