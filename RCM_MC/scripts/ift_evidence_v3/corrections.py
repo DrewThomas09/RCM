@@ -80,4 +80,25 @@ def apply_corrections(wb):
         'deleted after the rev-2 incorporation).',
         'correction', entries)
 
+    # DQ - stray Python-artifact strings copied from v2.7 (e.g. a literal
+    # "None" a prior export left in a cell). Clearing them is a presentation
+    # fix; logged here so the carried-cell fidelity gate excludes them and the
+    # edit trail stays complete. apply_corrections runs before any v3 module
+    # adds a tab, so this scans the carried v2.7 sheets only.
+    _ARTIFACTS = {'None', 'nan', 'NaN', 'NaT', 'NULL', 'null'}
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                if isinstance(cell.value, str) and cell.value.strip() in _ARTIFACTS:
+                    entries.append({
+                        'tab': ws.title, 'cell': cell.coordinate,
+                        # describe rather than echo the bare token, so the
+                        # presentation pass (which clears bare None/nan) does
+                        # not later wipe the log cell documenting it.
+                        'old': f'literal "{cell.value.strip()}"', 'new': '(blank)',
+                        'why': 'Stray Python-artifact string copied from v2.7; '
+                               'cleared for presentation (Run 3 P.5).',
+                        'class': 'DQ'})
+                    cell.value = None
+
     return entries

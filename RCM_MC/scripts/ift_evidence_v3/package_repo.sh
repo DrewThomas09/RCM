@@ -16,7 +16,7 @@ cp "$SCRATCH"/v3lib.py "$SCRATCH"/copy_engine.py "$SCRATCH"/corrections.py \
    "$SCRATCH"/harness.py "$SCRATCH"/methodology_tab.py \
    "$SCRATCH"/reparse_v27.py "$SCRATCH"/chart_audit.py \
    "$SCRATCH"/scan_fact_tags.py "$SCRATCH"/reconcile_manifest.py \
-   "$SCRATCH"/leak_check.py "$SCRATCH"/DELTA_NOTE_v3_6.md "$PIPE/"
+   "$SCRATCH"/leak_check.py "$SCRATCH"/cim_format.py "$SCRATCH"/format_gate.py "$SCRATCH"/render_proof.py "$SCRATCH"/DELTA_NOTE_v3_7.md "$PIPE/"
 for p in "$SCRATCH"/pull1*.py "$SCRATCH"/pull[2-9].py; do
   [ -f "$p" ] && cp "$p" "$PIPE/"
 done
@@ -47,8 +47,9 @@ for f in "$SCRATCH"/ift_v3_cache/*.json; do
 done
 
 # deliverable
-cp "$SCRATCH/IFT_Sourced_Evidence_Master_v3_6.xlsx" "$DELIV/"
-rm -f "$DELIV/IFT_Sourced_Evidence_Master_v3_5.xlsx"
+cp "$SCRATCH/IFT_Sourced_Evidence_Master_v3_7.xlsx" "$DELIV/"
+rm -f "$DELIV/IFT_Sourced_Evidence_Master_v3_6.xlsx"
+cp "$SCRATCH/Render_Proof_v3_7.pdf" "$DELIV/"
 cp "$SCRATCH/verify_results.json" "$PIPE/"
 
-du -sh "$REF/ift_v3_cache" "$DELIV"/IFT_Sourced_Evidence_Master_v3_6.xlsx "$PIPE"
+du -sh "$REF/ift_v3_cache" "$DELIV"/IFT_Sourced_Evidence_Master_v3_7.xlsx "$PIPE"

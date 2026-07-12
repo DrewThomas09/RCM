@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_6.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_7.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -62,7 +62,9 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  # skipped gracefully by the section loop.
                  'xc1_footprint990', 'xa4_snfqrp', 'xa5_snfownership',
                  'b7_ahcah',
-                 'b14_requests', 'd_quality', 'run_log']
+                 'b14_requests', 'd_quality', 'run_log',
+                 # v3.7 presentation pass (Run 3, Block U)
+                 'style_standard']
 
 # Fills for sources whose builder carried no URL. Every non-repo URL below was
 # LIVE-VERIFIED (2xx) or PMID-verified via NCBI eutils before being written
@@ -1033,7 +1035,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.6')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.7')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1189,6 +1191,17 @@ def rebuild_readme(wb, stats, entries):
             'restores the verification gate script (verify.py), which the v3.5 '
             'package had picked up in a stale form.'],
            wrap=True, height=64)
+    sb.row([('13 (v3.7)', 'label'), '12 July 2026',
+            'CIM-grade presentation pass (Run 3, Block U): a committed format '
+            'gate (format_gate.py) and a presentation pass (cim_format.py) now '
+            'enforce the deck-ready standard on every tab - gridlines off, a '
+            'section tab colour, freeze panes, a bold A1 title, and an '
+            'explicit number format on every numeric cell (no raw floats, no '
+            'unformatted counts, no Python artifacts), including the carried '
+            'tabs the builder never touched. Adds the Style_Standard reference '
+            'tab stating the rules. No evidence changed; every tab is now '
+            'screenshot-worthy at 100% zoom.'],
+           wrap=True, height=76)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1377,6 +1390,13 @@ def main(verify_results_path=None):
     log('format sweep + chart normalization')
     v3lib.format_sweep(wb, log=log)
     v3lib.normalize_all_charts(wb, log=log)
+
+    # CIM-grade presentation pass (Run 3, Block U): gridlines off, section tab
+    # colours, freeze panes, number formats and None/nan cleanup on EVERY tab,
+    # including the carried tabs the SheetBuilder never touched. Runs last so it
+    # normalizes whatever the section modules and carried content produced.
+    import cim_format
+    cim_format.cim_pass(wb, log=log)
 
     wb.calculation.fullCalcOnLoad = True
     log(f'saving {OUT}')
