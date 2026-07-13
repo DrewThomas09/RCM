@@ -39,6 +39,40 @@ def _clean(s):
     return str(s).replace('—', ' - ').replace('–', ' - ').strip()
 
 
+# 4.1 classification rules (printed on the tab). Decided from the verbatim
+# Form 990 ServicesDesc text first, then the contractor name; NPPES taxonomy is
+# the tiebreaker where a contractor resolves to an NPI. ED-STAFFING is tested
+# first so an emergency-physician / provider-coverage group is never counted as
+# transport even when its name contains "emergency medical" or "ambulance".
+_ED_SERVICE = ('EMERGENCY ROOM PROVIDER', 'EMERGENCY MEDICAL STAFF',
+               'PROVIDER COVERAGE', 'MEDICAL STAFF', 'PHYSICIAN', 'HOSPITALIST',
+               'ANESTHESIA', 'RADIOLOG', 'PROFESSIONAL SERVICES', 'STAFFING',
+               'LOCUM')
+_AIR = ('AIR MEDICAL', 'AIR AMBULANCE', 'AVIATION', 'FLIGHT', 'HELICOPTER',
+        'LIFE FLIGHT', 'AIR EVAC', 'MED-TRANS', 'MEDEVAC')
+_GROUND = ('AMBULANCE', 'EMS', 'PARAMEDIC', 'MEDICAL TRANSPORT',
+           'MEDICAL TRANSPORTATION')
+_COURIER = ('COURIER', 'LOGISTIC', 'DELIVERY', 'FREIGHT')
+
+
+def _classify(contractor, services):
+    """GROUND TRANSPORT / AIR TRANSPORT / ED STAFFING / COURIER-LOGISTICS /
+    OTHER-AMBIGUOUS from the verbatim services text plus the contractor name."""
+    c = (contractor or '').upper()
+    s = (services or '').upper()
+    if any(k in s for k in _ED_SERVICE) or any(
+            k in c for k in ('PHYSICIAN', 'ANESTHESIA', 'RADIOLOG',
+                             'HOSPITALIST', 'LOCUM')):
+        return 'ED STAFFING'
+    if any(k in c for k in _AIR) or any(k in s for k in _AIR):
+        return 'AIR TRANSPORT'
+    if any(k in c for k in _GROUND) or any(k in s for k in _GROUND):
+        return 'GROUND TRANSPORT'
+    if any(k in c for k in _COURIER) or any(k in s for k in _COURIER):
+        return 'COURIER-LOGISTICS'
+    return 'OTHER-AMBIGUOUS'
+
+
 def _emit_wrap(sb, cells, widths, cap=190):
     """A wrapped row sized to the tallest cell given per-column widths."""
     lines = 1
@@ -64,9 +98,27 @@ def build(wb, ctx):
     resolved = data['resolved']
     n_filings = data['filings_parsed']
     parked = data['parked']
-    observed = data['observed_payments']
-    freq = data['contractor_frequency']
+    observed_all = data['observed_payments']
+    freq_all = data['contractor_frequency']
     systems = data['systems']
+
+    # 4.1 CLASSIFICATION: the transport-keyword screen is deliberately broad and
+    # also catches emergency-department physician/provider-coverage groups. Every
+    # observed row is classified from the verbatim services text plus the
+    # contractor name (NPPES taxonomy is the tiebreaker where a contractor
+    # resolves to an NPI; here the services text is decisive). Only GROUND and
+    # AIR TRANSPORT rows feed the headlines; the rest are quarantined in a
+    # labelled exclusion panel and never enter a read panel, fact or finding.
+    for o in observed_all:
+        o['classification'] = _classify(o.get('contractor'), o.get('services'))
+    TRANSPORT_CLASSES = ('GROUND TRANSPORT', 'AIR TRANSPORT')
+    observed = [o for o in observed_all
+                if o['classification'] in TRANSPORT_CLASSES]
+    excluded = [o for o in observed_all
+                if o['classification'] not in TRANSPORT_CLASSES]
+    transport_contractor_names = {_clean(o['contractor']) for o in observed}
+    freq = [fr for fr in freq_all
+            if _clean(fr['contractor']) in transport_contractor_names]
 
     # per-system roster rows (one row per system: EIN, tax years, filings,
     # contractors-over-$100K min/max, transport-matched count)
@@ -81,7 +133,11 @@ def build(wb, ctx):
         gts = [f['contractors_total'] for f in s['filings']
                if isinstance(f['contractors_total'], int)]
         gt_all += gts
-        ntrans = sum(len(f['transport_contractors']) for f in s['filings'])
+        # classified-transport count only (GROUND + AIR); ED-staffing keyword
+        # matches are excluded from the count that feeds the headline total.
+        ntrans = sum(1 for f in s['filings'] for t in f['transport_contractors']
+                     if _classify(t.get('name'), t.get('services'))
+                     in TRANSPORT_CLASSES)
         roster.append({'system': s['system'], 'anchor': s['state_anchor'],
                        'ein': ein_fmt, 'name': rf['name'],
                        'years': ', '.join(yrs) or '-',
@@ -140,20 +196,42 @@ def build(wb, ctx):
         'that bar or the registry search returned no clean match (Panel D). '
         'The keyword screen matches the disclosed name OR services string and '
         'is deliberately broad: the term "emergency medical" also catches '
-        'emergency-department physician-coverage groups, so the VERBATIM '
-        'service description is shown in Panel A and the reader distinguishes '
-        'transport operators (ground ambulance, air medical) from clinical-'
-        'staffing contractors. Entries recorded verbatim from filings; no '
-        'inference beyond the filing text.', height=74)
+        'emergency-department physician-coverage groups. Every hit is therefore '
+        'CLASSIFIED (rules panel below) from the verbatim service text; only '
+        'GROUND and AIR TRANSPORT rows feed the headlines (Panel A), and the '
+        'clinical-staffing hits are quarantined in the exclusion panel. Entries '
+        'recorded verbatim from filings; no inference beyond the filing text.',
+        height=74)
+    sb.blank()
+
+    # ---------------------------------------------------- classification rules
+    sb.banner('Classification rules (4.1): every keyword hit is classed from '
+              'the verbatim services text, then the contractor name')
+    sb.headers(['Class', 'Rule (services text first, then name)', '', '', '',
+                '', '', ''])
+    for cls, rule in [
+        ('ED STAFFING', 'services or name names physician / provider coverage / '
+         'medical staff / hospitalist / anesthesia / radiology / staffing - '
+         'clinical labor, NOT a transport of a patient. Tested first.'),
+        ('AIR TRANSPORT', 'air medical / air ambulance / aviation / flight / '
+         'life flight / med-trans - a rotary or fixed-wing patient transport.'),
+        ('GROUND TRANSPORT', 'ambulance / EMS / paramedic / medical transport - '
+         'a ground patient transport operator.'),
+        ('COURIER-LOGISTICS', 'courier / logistics / delivery / freight - moves '
+         'specimens or goods, not patients.'),
+        ('OTHER-AMBIGUOUS', 'no rule fires; carried but excluded from every '
+         'transport headline until resolved.')]:
+        _emit_wrap(sb, [(cls, 'label'), (rule, 'note'), None, None, None,
+                        None, None, None], widths)
     sb.blank()
 
     # ------------------------------------------------------------- Panel A
-    sb.banner('Panel A. Observed facility-direct transport payments: transport-'
-              'keyword contractors in the disclosed top five (public-filing '
-              'facts)')
+    sb.banner('Panel A. Observed facility-direct TRANSPORT payments - GROUND '
+              'and AIR TRANSPORT only (the headline subset; ED-staffing and '
+              'other keyword hits are quarantined in the exclusion panel)')
     sb.headers(['Payer system (public Form 990 filer)', 'Filer EIN',
                 'Contractor (as disclosed)', 'Services (verbatim)',
-                'Amount $', 'Tax year', '', 'Keyword matched'])
+                'Amount $', 'Tax year', 'Classification', 'Keyword matched'])
     a0 = sb.r + 1
     for o in observed:
         ein = f"{o['payer_ein']:09d}"
@@ -165,47 +243,88 @@ def build(wb, ctx):
             (o['amount'], 'src', lib.FMT_USD),
             (int(o['tax_year']) if str(o['tax_year']).isdigit()
              else o['tax_year'], 'src', lib.FMT_INT),
-            None,
-            (_clean(next((f['transport_contractors'][0].get('match_term')
+            (o['classification'], 'label'),
+            (_clean(next((t.get('match_term')
                           for s in systems for f in s['filings']
                           for t in f['transport_contractors']
                           if t['name'] == o['contractor']
                           and t['amount'] == o['amount']), '')) or '-', 'note'),
         ], widths)
     a1 = sb.r
+    a_tot = sb.r + 1
+    sb.row([('Transport appearances (GROUND + AIR)', 'label'), None, None, None,
+            (f'=SUM(E{a0}:E{a1})', 'fml', lib.FMT_USD), None,
+            (f'=COUNTA(A{a0}:A{a1})', 'fml', lib.FMT_INT), None])
     sb.note(
-        'Read: two of these are unambiguous transport operators paid directly '
-        'by the facility - a GROUND ambulance operator (Mercury Ambulance '
+        'Read: every row here is an unambiguous facility-direct patient-'
+        'transport payment - a GROUND ambulance operator (Mercury Ambulance '
         'Service, services "AMBULANCE SERVICES") and an AIR-medical operator '
-        '(PHI Air Medical, services "TRANSPORTATION" / "AVIATION TRANS. SVCS"). '
-        'The other two filers name emergency-department physician / provider '
-        'coverage groups (services "EMERGENCY MEDICAL STAFF", "EMERGENCY ROOM '
-        'PROVIDER COVERAGE"); the broad "emergency medical" keyword catches '
-        'them and the verbatim service text is shown so they read as what they '
-        'are. All four are recorded as public-filing facts, not as vendor '
-        'relationships.')
+        '(PHI Air Medical, services "AVIATION TRANS. SVCS" / "TRANSPORTATION"). '
+        'The count cell is a live COUNTA and the amount a live SUM, so every '
+        'headline downstream reads the transport subset only. Recorded as '
+        'public-filing facts, not vendor relationships.')
+    sb.blank()
+
+    # ------------------------------------------------- Exclusion panel (4.1)
+    sb.banner('Exclusion panel. Keyword hits that are NOT transport - excluded '
+              'from every headline figure, read panel and finding')
+    sb.headers(['Payer system (public Form 990 filer)', 'Filer EIN',
+                'Contractor (as disclosed)', 'Services (verbatim)',
+                'Amount $', 'Tax year', 'Classification',
+                'Why excluded'])
+    x0 = sb.r + 1
+    for o in excluded:
+        ein = f"{o['payer_ein']:09d}"
+        _emit_wrap(sb, [
+            (_clean(o['payer_system']), 'src'),
+            (f'{ein[:2]}-{ein[2:]}', 'src'),
+            (_clean(o['contractor']), 'src'),
+            (_clean(o['services']), 'src'),
+            (o['amount'], 'src', lib.FMT_USD),
+            (int(o['tax_year']) if str(o['tax_year']).isdigit()
+             else o['tax_year'], 'src', lib.FMT_INT),
+            (o['classification'], 'label'),
+            ('emergency-department physician / provider-coverage group: '
+             'clinical staffing, not patient transport', 'note'),
+        ], widths)
+    x1 = sb.r
+    sb.note(
+        f'These {len(excluded)} rows are emergency-department physician and '
+        'provider-coverage contractors (their verbatim service strings are in '
+        'the Services column of each row above, classed ED STAFFING) that the '
+        'broad "emergency medical" keyword caught. They are clinical labor, not '
+        'a transport of a patient, so they are excluded from every transport '
+        'figure, read panel and finding on this tab. The largest of them (over '
+        '$12M) is why the raw pre-classification count would have overstated '
+        'the transport layer roughly fourfold; the corrected transport count is '
+        'the live COUNTA in Panel A.')
     sb.blank()
 
     # ------------------------------------------------------------- Panel B
-    sb.banner('Panel B. Contractor frequency: which transport-keyword operators '
-              'recur across the parsed filings')
+    sb.banner('Panel B. Transport-operator frequency: GROUND and AIR operators '
+              'that recur across the parsed filings (ED-staffing excluded)')
     sb.headers(['Transport operator (as disclosed)', 'Appearances (filings)',
                 'Payer systems (public filers)', 'Service type (verbatim)',
-                '', '', '', ''])
+                'Classification', '', '', ''])
     b0 = sb.r + 1
     for fr in freq:
         d = op_detail.get(_clean(fr['contractor']), {'systems': [],
                                                      'services': []})
+        cls = next((o['classification'] for o in observed
+                    if _clean(o['contractor']) == _clean(fr['contractor'])), '-')
         _emit_wrap(sb, [
             (_clean(fr['contractor']), 'src'),
             (fr['appearances'], 'src', lib.FMT_INT),
             ('; '.join(d['systems']) or '-', 'src'),
             ('; '.join(d['services']) or '-', 'src'),
-            None, None, None, None], widths)
+            (cls, 'label'), None, None, None], widths)
     b1 = sb.r
-    sb.note('Frequency is appearances across the 128 parsed filings, not a '
-            'share of any system\'s spend. Four distinct operators, seven '
-            'filing appearances; no operator appears at more than one system.')
+    sb.note(f'Frequency is appearances across the {n_filings} parsed filings, '
+            'not a share of any system\'s spend. After classification: '
+            f'{n_ops} distinct transport operators, {n_obs} filing appearances '
+            '(one ground, one air); no operator appears at more than one '
+            'system. The four ED-staffing appearances are in the exclusion '
+            'panel above.')
     sb.blank()
 
     # ------------------------------------------------------------- Panel C
@@ -246,11 +365,11 @@ def build(wb, ctx):
         f'at a single filer, with only five named. A transport vendor billing '
         f'below a filer\'s fifth-highest contractor - at these systems, slots '
         f'held by nine-figure staffing, physician-group and construction '
-        f'vendors - is invisible by form design. The seven transport '
-        f'appearances in Panels A and B establish only what CRACKED the top '
-        f'five at four regional filers; they are NOT an upper bound on '
-        f'transport spend, NOT a count of transport relationships, and NOT '
-        f'evidence of absence anywhere they do not appear.')
+        f'vendors - is invisible by form design. The {n_obs} classified '
+        f'transport appearances in Panel A establish only what CRACKED the top '
+        f'five at {n_sys_transport} regional filers; they are NOT an upper '
+        f'bound on transport spend, NOT a count of transport relationships, and '
+        f'NOT evidence of absence anywhere they do not appear.')
     sb.blank()
 
     # ------------------------------------------------------------- Panel D
@@ -280,12 +399,12 @@ def build(wb, ctx):
         f'({attempted} attempted, {len(parked)} parked) resolved to public '
         f'Form 990 filers, {n_filings} filings parsed. At this breadth the '
         f'facility-pay transport layer becomes VISIBLE in public filings: '
-        f'transport-keyword contractors surface in the disclosed top five at '
-        f'{n_sys_transport} regional systems ({n_ops} distinct operators, '
-        f'{n_obs} filing appearances), spanning an unambiguous ground-ambulance '
-        f'operator and an air-medical operator alongside emergency-department '
-        f'coverage groups, with observed amounts from ${amt_lo:,} to '
-        f'${amt_hi:,}. What that means - and all it means: at market scale a '
+        f'CLASSIFIED transport contractors (ground and air; ED-staffing keyword '
+        f'hits excluded to the exclusion panel) surface in the disclosed top '
+        f'five at {n_sys_transport} regional systems ({n_ops} distinct '
+        f'operators, {n_obs} filing appearances) - a ground-ambulance operator '
+        f'and an air-medical operator - with observed amounts from ${amt_lo:,} '
+        f'to ${amt_hi:,}. What that means - and all it means: at market scale a '
         f'facility DOES sometimes pay a transport operator enough to crack its '
         f'five-slot disclosure window, which the 9-system cohort never showed. '
         f'What it cannot mean: the window still discloses only five contractors '
@@ -365,18 +484,20 @@ def build(wb, ctx):
          'lives_on': 'Footprint_990_Sweep',
          'cross_check': f'{resolved} filers; latest two filings each where '
                         'XML available'},
-        {'metric': 'Transport-keyword contractors observed in the disclosed '
-                   'five-highest-paid contractors (footprint sweep)',
+        {'metric': 'Classified transport contractors (ground + air) observed in '
+                   'the disclosed five-highest-paid contractors (footprint '
+                   'sweep, ED-staffing excluded)',
          'year': 2024, 'value': n_obs,
          'unit': f'filing appearances ({n_ops} distinct operators across '
                  f'{n_sys_transport} systems)', 'basis': 'GOV', 'tier': 'A',
          'source_keys': ['irs990_partvii_footprint'],
-         'locator': 'Panel A observed payments; Panel B frequency; '
-                    'Panel C total transport column',
+         'locator': 'Panel A (GROUND + AIR only), live COUNTA in the transport '
+                    'total row; Panel B frequency; Panel C classified column',
          'lives_on': 'Footprint_990_Sweep',
-         'cross_check': f'Observed amounts ${amt_lo:,} to ${amt_hi:,}; includes '
-                        'a ground-ambulance and an air-medical operator plus '
-                        'ED-coverage groups (verbatim services shown, Panel A)'},
+         'cross_check': f'Observed amounts ${amt_lo:,} to ${amt_hi:,}; a '
+                        'ground-ambulance and an air-medical operator; the four '
+                        'ED-staffing keyword hits are quarantined in the '
+                        'exclusion panel and excluded from this count'},
         {'metric': 'Maximum contractors over $100,000 disclosed at a single '
                    'filer (the five-slot information floor)', 'year': 2024,
          'value': floor_max, 'unit': 'contractors over $100K (only five named)',
@@ -396,17 +517,19 @@ def build(wb, ctx):
         'finding': (
             f'The market-wide 990 window makes the facility-pay transport layer '
             f'VISIBLE where the 9-system cohort could not: across {resolved} '
-            f'footprint health systems and {n_filings} parsed filings, '
-            f'transport-keyword vendors surface among the disclosed five '
-            f'highest-paid contractors at {n_sys_transport} regional systems - '
-            f'a ground-ambulance operator (Mercury Ambulance Service), an '
-            f'air-medical operator (PHI Air Medical), and two '
-            f'emergency-medical / ED-coverage groups (verbatim service text '
-            f'shown) - at observed amounts from ${amt_lo:,} to ${amt_hi:,}. '
-            f'That a facility can pay a transport operator enough to crack its '
+            f'footprint health systems and {n_filings} parsed filings, and '
+            f'after classifying every keyword hit, {n_obs} CLASSIFIED transport '
+            f'appearances surface among the disclosed five highest-paid '
+            f'contractors at {n_sys_transport} regional systems - a '
+            f'ground-ambulance operator (Mercury Ambulance Service) and an '
+            f'air-medical operator (PHI Air Medical) - at observed amounts from '
+            f'${amt_lo:,} to ${amt_hi:,}. The four emergency-department '
+            f'staffing contractors the broad keyword also caught are '
+            f'quarantined in the exclusion panel and enter no figure here. That '
+            f'a facility can pay a transport operator enough to crack its '
             f'five-slot window is the measured, neutral fact; it establishes '
             f'the layer exists at market scale, nothing more.'),
-        'numbers': f"='Footprint_990_Sweep'!H{tot}",
+        'numbers': f"='Footprint_990_Sweep'!G{a_tot}",
         'sources': 'irs990_partvii_footprint; propublica_registry_footprint',
         'confidence': 'High that the parsed filings disclose what Panels A-C '
                       'record; the transport hits are verbatim public-filing '
@@ -415,8 +538,9 @@ def build(wb, ctx):
             f'This BOUNDS NOTHING. Part VII Section B discloses only the five '
             f'highest-paid contractors over $100,000 while a single filer '
             f'reports up to {floor_max:,} of them, so a transport vendor below '
-            f'the fifth slot is invisible by form design. The seven appearances '
-            f'establish only what cracked the top five at four filers; they are '
+            f'the fifth slot is invisible by form design. The {n_obs} '
+            f'classified transport appearances establish only what cracked the '
+            f'top five at {n_sys_transport} filers; they are '
             f'not an upper bound on transport spend, not a count of '
             f'relationships, and absence elsewhere is not evidence of absence. '
             f'No share-of-wallet inference; systems appear solely as filers of '

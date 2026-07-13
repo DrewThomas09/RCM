@@ -20,6 +20,7 @@ system names appear here strictly as filers of public documents.
 """
 import json
 import os
+import re
 
 SHEETS = [
     {'name': 'Contract_Corpus',
@@ -94,6 +95,24 @@ def _clean(s):
     return str(s).replace('—', ' - ').replace('–', ' - ').strip()
 
 
+_LOCAL_RX = re.compile(
+    r'\s*\.?\s*(?:local copy[:\s]*)?pdfs/\S+?\.(?:pdf|docx?|xlsx?)\b\.?',
+    re.I)
+
+
+def _strip_local(s):
+    """Drop non-retrievable local-copy file-path fragments (e.g. 'Local copy:
+    pdfs/topeka_amr_franchise_2021.pdf') from a scope note. The retrievable
+    public URL already sits in its own column, so a local path only breaks the
+    reproducible-from-the-public-internet promise for a third-party reader.
+    Returns None when nothing substantive remains."""
+    if s is None:
+        return None
+    out = _LOCAL_RX.sub('', str(s))
+    out = re.sub(r'\s{2,}', ' ', out).strip(' .;,-')
+    return out or None
+
+
 def _per_trip_text(d):
     """Render the per_trip_rates_by_level dict compactly; None -> None."""
     if not d:
@@ -139,11 +158,17 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
     docs = corpus['public_contracts']
     parked = corpus['parked']
     va = corpus['va_awards']
-    top15 = sorted([a for a in va if a.get('top15_document_lookup_flag')],
-                   key=lambda a: -a['award_amount'])
     n_va_dept = sum(1 for a in va
                     if a['awarding_agency'] == 'Department of Veterans '
                                                'Affairs')
+    # The IFT-relevant federal ladder is the Department of Veterans Affairs
+    # subset (VA facilities buying interfacility ambulance transport); show the
+    # top 25 by award amount so a reader sees the real recipient set, not a
+    # 4-row sample. Falls back to all VA awards when fewer than 25 exist.
+    top25 = sorted([a for a in va
+                    if a['awarding_agency'] == 'Department of Veterans '
+                                               'Affairs'],
+                   key=lambda a: -a['award_amount'])[:25]
 
     # classification aligned by URL token, never by list position alone
     cls = []
@@ -170,9 +195,10 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
                 'SLAs, penalties? Sources: 12 abstracted public contract '
                 'documents (state, county and municipal issuers; per-row '
                 'URLs in column O) on the 6.4 field schema, plus the '
-                'USAspending PSC V225 award ladder (top 15 by award amount, '
-                'FY2023-FY2025 activity window) flagged for PIID document '
-                'lookup. Join keys: document URL for the corpus; PIID for '
+                'USAspending PSC V225 award ladder (top 25 Department of '
+                'Veterans Affairs awards by amount, FY2023-FY2025 activity '
+                'window), each retrievable by PIID. Join keys: document URL '
+                'for the corpus; PIID for '
                 'federal awards. Blue = lifted from the fetched document; '
                 'black = assigned or computed here; null fields render '
                 'as - meaning NOT STATED in the fetched document.',
@@ -213,7 +239,7 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
                 v = _per_trip_text(v)
             cells.append(_src_or_dash(v))
         cells.append((_clean(d['url']), 'text'))
-        cells.append(((_clean(d['notes']) or '-'), 'note'))
+        cells.append(((_strip_local(_clean(d['notes'])) or '-'), 'note'))
         cells.append((klass, 'text'))
         cells.append((esc, 'src', lib.FMT_PCT1) if esc is not None
                      else ('-', 'note'))
@@ -230,14 +256,16 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
     sb.blank()
 
     # ---------------------------------------------------------- Panel B
-    sb.banner('Panel B. Federal award ladder: USAspending PSC V225, top 15 '
-              'awards by amount, FY2023-FY2025 activity window (blue = '
-              'USAspending record)')
+    sb.banner('Panel B. Federal award ladder: USAspending PSC V225 '
+              '(Ambulance Service), top 25 Department of Veterans Affairs '
+              'awards by amount, FY2023-FY2025 activity window - the VA is '
+              'the largest public interfacility-transport buyer in the data '
+              '(blue = USAspending record)')
     sb.headers(['Recipient', 'PoP state', 'Period of performance', 'PIID',
                 'Awarding agency / sub-agency', 'Award amount $',
                 'Award type', 'Award description (as recorded)'])
     b0 = sb.r + 1
-    for a in top15:
+    for a in top25:
         rr.emit([
             (_clean(a['recipient']), 'src'),
             (_clean(a['pop_state']), 'src'),
@@ -249,22 +277,24 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
             (_clean(a['contract_award_type']), 'src'),
             (_clean(a['description']), 'src')])
     b1 = sb.r
-    sb.row([('Top-15 award amounts, total', 'label'), None, None, None,
+    sb.row([('Top-25 VA award amounts, total', 'label'), None, None, None,
             None, (f'=SUM(F{b0}:F{b1})', 'fml', lib.FMT_USD), None,
             ('live over the ladder above', 'note')])
     sb.note(f'Source: USAspending award search API '
             f'(spending_by_award, psc_codes V225, award types A-D, '
             f'FY2023-FY2025 activity window, sorted by award amount, 300 '
             f'records pulled; assembly method recorded with the corpus '
-            f'register). {n_va_dept} of 300 records are Department of '
-            f'Veterans Affairs awards; the rest are DoD, State, HHS and '
-            f'Peace Corps under the same PSC. All 15 rows above are '
-            f'flagged top15_document_lookup_flag for price-schedule '
-            f'lookup by PIID; SAM.gov attachment retrieval is key-gated, '
-            f'so the documents themselves sit in the parked register '
+            f'register). {n_va_dept} of the 300 records are Department of '
+            f'Veterans Affairs awards (the VA runs the largest public '
+            f'interfacility-transport book in the data); the ladder above is '
+            f'the top 25 of them by amount. The rest of the 300 are DoD, '
+            f'State, HHS and Peace Corps under the same PSC. Each row is '
+            f'retrievable by PIID on USAspending.gov; the underlying '
+            f'price-schedule DOCUMENTS require SAM.gov attachment retrieval '
+            f'which is key-gated, so those sit in the parked register '
             f'(Panel D, first row). Award amounts are contract ceilings / '
             f'obligated amounts as recorded, NOT annual revenue.',
-            height=44)
+            height=52)
     sb.blank()
 
     # ---------------------------------------------------------- Panel C
@@ -313,7 +343,8 @@ def _build_corpus_tab(wb, ctx, corpus, sources, facts, findings):
     d0 = sb.r + 1
     for p in parked:
         rr.emit([(_clean(p['source']), 'src'), None, None, None,
-                 (_clean(p['blocker']), 'note'), None, None, None, None,
+                 (_strip_local(_clean(p['blocker'])) or '-', 'note'),
+                 None, None, None, None,
                  None, None, None, None, None,
                  ((_clean(p['url']) or '-'), 'text')])
     d1 = sb.r
@@ -940,6 +971,16 @@ def build(wb, ctx):
     facts, sources, findings = [], [], []
     m1 = _build_corpus_tab(wb, ctx, corpus, sources, facts, findings)
     m2 = _build_cohort_tab(wb, ctx, cohort, sources, facts, findings)
+
+    # Portability firewall: no non-retrievable local file paths in any source
+    # citation. The retrievable public URL rides in each source's own url
+    # field; a 'local copy pdfs/...' fragment in a locator/document only breaks
+    # the reproducible-from-the-public-internet promise for a third-party
+    # reader, so strip it from every source this module emits.
+    for s in sources:
+        for k in ('locator', 'document', 'vintage', 'supplies'):
+            if s.get(k):
+                s[k] = _strip_local(s[k]) or s[k]
 
     return {'facts': facts, 'sources': sources, 'excluded': [],
             'findings': findings,

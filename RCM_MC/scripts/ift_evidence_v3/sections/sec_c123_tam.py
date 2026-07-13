@@ -1055,6 +1055,48 @@ def build(wb, ctx):
              'dataset', 'note')])
     r_live_cnt = sb.r
     sb.blank()
+
+    # ---- Panel B2 (4.3): base-only vs mileage-loaded price, both live -------
+    sb.banner('Panel B2 (4.3). Two price columns per price basis: BASE-ONLY '
+              'vs MILEAGE-LOADED, Medicare-anchored (both live formulas; '
+              'loading derived on Derived_Rate_Card)')
+    sb.headers(['Volume basis', 'Base-only price/transport',
+                'Mileage-loaded price/transport', 'Base-only floor $',
+                'Mileage-loaded floor $', 'Loading (loaded/base)', 'Note'])
+    b2_price_base = "'Derived_Rate_Card'!$B$34"     # measured base-only, 2024
+    b2_price_load = (f'=B{r_p1}' if (mis_vol_ref and mis_ppt_ref)
+                     else "='Derived_Rate_Card'!$B$35")   # allowed incl mileage
+    sb.row([
+        ('V1 claims-visible (Medicare FFS, 2024)', 'label'),
+        (f'={b2_price_base}', 'link', lib.FMT_USD),
+        (b2_price_load, 'link', lib.FMT_USD),
+        (f'=B{r_v1}*{b2_price_base}', 'fml', lib.FMT_USD)
+        if mis_vol_ref else PEND,
+        (f'=B{r_v1}*B{r_p1}', 'fml', lib.FMT_USD)
+        if (mis_vol_ref and mis_ppt_ref) else PEND,
+        ("='Derived_Rate_Card'!$B$36", 'link', lib.FMT_DEC2),
+        ('base-only omits A0425 mileage (43-45% of allowed $); the loaded '
+         'column is the measured total per transport. Metro_TAM_Panels and '
+         'TAM_Assembly_State carry both.', 'note')], wrap=True)
+    r_b2 = sb.r
+    sb.row([('V2 NEMSIS-anchored (all-payer legs, 2024)', 'label'),
+            (f'={b2_price_base}', 'link', lib.FMT_USD),
+            (b2_price_load, 'link', lib.FMT_USD),
+            (f'=B{r_v2}*{b2_price_base}', 'fml', lib.FMT_USD)
+            if ems_ref else PEND,
+            (f'=B{r_v2}*B{r_p1}', 'fml', lib.FMT_USD)
+            if (ems_ref and mis_ppt_ref) else PEND,
+            ("='Derived_Rate_Card'!$B$36", 'link', lib.FMT_DEC2),
+            ('same two prices applied to the NEMSIS leg count', 'note')],
+           wrap=True)
+    sb.note('4.3: every dollar cell now ships as a base-only / mileage-loaded '
+            'PAIR. The base-only column multiplies the measured A0428-anchored '
+            'base allowed per transport (Derived_Rate_Card B34); the '
+            'mileage-loaded column multiplies the measured total allowed per '
+            'transport (base + A0425 mileage). The loading factor is live from '
+            'Derived_Rate_Card, where its two-way derivation (MMT book and '
+            'national registry) is printed.')
+    sb.blank()
     sb.banner('Panel C. Tornado: five levers, public bounds only, swings '
               'live against the grid and assembly cells')
     sb.headers(['Lever', 'Base value', 'Low bound', 'High bound',

@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_5.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v3_9.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -220,6 +220,16 @@ class TestIFTEvidenceV3(unittest.TestCase):
                 if isinstance(r[0].value, str) and re.fullmatch(r'S\d+', r[0].value)]
         self.assertGreaterEqual(max(fids), 596)
         self.assertGreaterEqual(max(sids), 417)
+
+    def test_v36_returnleg_structure_tab(self):
+        """v3.6 return-leg structure pass: the SNF QRP claims measures joined
+        to the CMS Nursing Home provider-info file on the CCN, cross-tabbed by
+        ownership, scale and star rating."""
+        self.assertIn('SNF_ReturnLeg_Structure', self.wb.sheetnames)
+        ids = [int(r[0].value.strip())
+               for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
+               if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
+        self.assertGreaterEqual(max(ids), 103)
 
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""
