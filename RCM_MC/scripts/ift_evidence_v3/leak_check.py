@@ -21,11 +21,11 @@ import sys
 
 from openpyxl import load_workbook
 
-DEFAULT = '/tmp/claude-0/-home-user-RCM/3de345a1-c58f-5ce6-b747-7cbb0636d5d9/scratchpad/IFT_Sourced_Evidence_Master_v3_9.xlsx'
+DEFAULT = '/tmp/claude-0/-home-user-RCM/3de345a1-c58f-5ce6-b747-7cbb0636d5d9/scratchpad/IFT_Sourced_Evidence_Master_v3_10.xlsx'
 # Baseline = the last shipped version whose new tabs were already leak-checked
 # clean; anything ADDED since it (plus the tabs v3.5 extended in place) gets
 # scanned. v3.3 was removed when v3.4 packaged, so baseline on v3.4.
-V33 = '/home/user/RCM/RCM_MC/deliverables/IFT_Sourced_Evidence_Master_v3_8.xlsx'
+V33 = '/home/user/RCM/RCM_MC/deliverables/IFT_Sourced_Evidence_Master_v3_9.xlsx'
 # Tabs that already existed but were EXTENDED with new-authored content, so
 # a pure new-tab diff would skip them. Force them into the scan. Contract_Corpus
 # and Index carry the v3.9 portability / usefulness edits.
