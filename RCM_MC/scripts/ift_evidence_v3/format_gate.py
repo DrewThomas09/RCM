@@ -16,7 +16,7 @@ import sys
 from openpyxl import load_workbook
 
 SCRATCH = os.path.dirname(os.path.abspath(__file__))
-DEFAULT = os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_0.xlsx')
+DEFAULT = os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_2.xlsx')
 _NONE_TEXT = {'None', 'nan', 'NaN', 'NaT', 'NULL', 'null'}
 _YEAR_MIN, _YEAR_MAX = 1990, 2035
 
