@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_10.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_11.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -1074,7 +1074,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.10')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.11')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1292,6 +1292,19 @@ def rebuild_readme(wb, stats, entries):
             'v2.7 tabs are recorded and excluded from the carried-cell '
             'fidelity gate.'],
            wrap=True, height=90)
+    sb.row([('17 (v3.11)', 'label'), '13 July 2026',
+            'Visual pass: house-style charts added to the load-bearing measured '
+            'series that carried numbers but no chart - the Medicare '
+            'interfacility transports and allowed dollars by year '
+            '(Medicare_IFT_Series), the subject-company allowed dollars by '
+            'vintage (MMT_Medicare_Book), the acute-to-acute ED-origin transfer '
+            'series (Acute_IFT_Series), the NEMSIS type-of-service split '
+            '(EMS_Transports), the payer revenue-per-NPI mix (Facility_Pay_Layer) '
+            'and the RSNAT savings ladder (RSNAT_Series). Each is a live range '
+            'reference and passes the chart-integrity gate. Plus a formatting '
+            'tidy that collapses inconsistent double-spacing in body text on '
+            'v3-authored tabs. No evidence changed.'],
+           wrap=True, height=78)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1390,6 +1403,11 @@ def main(verify_results_path=None):
 
     log('rebuilding v2.7 charts (full-fidelity re-parse)')
     n_charts_v27 = rebuild_charts(wb, os.path.join(SCRATCH, 'v27_charts2.json'))
+
+    # v3.11: extra house-style charts on the load-bearing analytical series
+    # (added before the count + normalize pass so they are styled and included).
+    import extra_charts
+    extra_charts.add_extra_charts(wb, v3lib, log=log)
 
     # stats for README (chart count includes section charts already added)
     man = json.load(open(os.path.join(CACHE, 'manifest.json')))
