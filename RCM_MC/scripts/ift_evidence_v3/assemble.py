@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_11.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_12.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -1074,7 +1074,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.11')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.12')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1305,6 +1305,17 @@ def rebuild_readme(wb, stats, entries):
             'tidy that collapses inconsistent double-spacing in body text on '
             'v3-authored tabs. No evidence changed.'],
            wrap=True, height=78)
+    sb.row([('18 (v3.12)', 'label'), '13 July 2026',
+            'Presentation polish: RAG status cells (GREEN / AMBER / RED / '
+            'PENDING) now carry a semantic fill so the exhibit register and '
+            'quality gates read at a glance; the long reference tables '
+            '(Source_Register, Source_Index, Findings, Slide_Feed) get zebra '
+            'row banding matching the grey already on the Fact_Ledger and '
+            'Verification_Log; and section-header cells are normalized to white '
+            'bold. Pure formatting - no cell value, chart, finding or ledger '
+            'entry changes, and the bordered PENDING markers keep their '
+            'border.'],
+           wrap=True, height=78)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1524,6 +1535,13 @@ def main(verify_results_path=None):
         wb, carried=set(src.sheetnames), log=log)
     json.dump(_prof_changes,
               open(os.path.join(SCRATCH, 'professionalize_changes.json'), 'w'))
+
+    # Presentation polish (v3.12): semantic RAG status fills, zebra banding on
+    # the long reference tables, white-bold section headers. Pure formatting -
+    # no cell value changes, so it is invisible to the carried-cell fidelity
+    # gate, the recompute gate and the firewall leak check. Runs last.
+    import polish_format
+    polish_format.polish(wb, log=log)
 
     wb.calculation.fullCalcOnLoad = True
     log(f'saving {OUT}')
