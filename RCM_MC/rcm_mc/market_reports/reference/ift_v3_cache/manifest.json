@@ -10913,5 +10913,1580 @@
   "retrieved_utc": "2026-07-11T20:51:25+00:00",
   "rows": 33791,
   "sha256": "9119507e9422316ed4ebf241fecd3c68c1783d461a797da713dfbe06fca76393"
+ },
+ "psps_mod2_2010_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 7,
+  "rows": 30506,
+  "sha256": "489ba707334e298903aa0aad98abf7677f8e5d38aa343fd5655887567a6ddccc",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0425.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 2,
+  "rows": 6146,
+  "sha256": "412808968e2b694d3c7f6d25b3648d6ba32c403f8a112b253ad259895043a9fb",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0426.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 9811,
+  "sha256": "df1814b509876337478d5279e6fc16f3598befe896c1425a135f07a5a6326966",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0427.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 5,
+  "rows": 24443,
+  "sha256": "56534b0dec83fc5d26a9de866de5e30c322c2d8d9197094671d5570728c7a226",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0428.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 3,
+  "rows": 10541,
+  "sha256": "c9f74e279d58e5f31bacc8b2b07962dcb3bc9cf13d47287c374def3e7ce916d1",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0429.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 2769,
+  "sha256": "3649cf8362c4eee552f7432be0a0f2baf6470f971e3c0782f3df467f5fe38cd3",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0433.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2010_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2010",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f4344bd9-ac34-43f0-b144-0186f6fa099f/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 2179,
+  "sha256": "66125609ec2f8527bccc73aacc2ef5fbe2bcee269da22725f6a942db1f5885c5",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2010_A0434.json",
+  "uuid": "f4344bd9-ac34-43f0-b144-0186f6fa099f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 21911,
+  "sha256": "b77c918bcbac57cd5e1a4d09126c61da519722d82f2cd38d1ad61cb5c258055b",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0425.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4616,
+  "sha256": "6677119ad8e110662b43cab262e40782d2cacc242feedd2f944b1562db7cbdd8",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0426.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 7141,
+  "sha256": "763b70ed2fcc7d81cf94fe12d1dc9b05bc8282a5846e3750c413d49c7f23ef7d",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0427.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 17775,
+  "sha256": "2df3be6a7ba832de835d7755bc2b62b109914f8dffbb5ca311e465544afe471f",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0428.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7675,
+  "sha256": "f62716bcfbe16f0b2ce098cd54d5a7d3400ffaf0635299f02bee7c2bea0f87ab",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0429.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1963,
+  "sha256": "418d3e96314eafea8439f1e8a40af6c0ef4e9c869f327c20a62e66be7f1110ff",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0433.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2011_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2011",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/1e9f7a5a-5550-4525-bbbf-ef66115184b8/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1729,
+  "sha256": "04b6e0d8b0057e5d4c1621b197aa98cbee7a2b26e525e6171992f38f57f5935a",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2011_A0434.json",
+  "uuid": "1e9f7a5a-5550-4525-bbbf-ef66115184b8",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 22101,
+  "sha256": "e46952f5b5e0b0c5e58564d97a5062bba1b9d8a63de2d568e4a55d38691b38e5",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0425.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4667,
+  "sha256": "f2f1244d10bbd18b8c421c7626ea8e466b7238923dfcd4c2b18868678e8f420b",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0426.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 7368,
+  "sha256": "5ab75b49154c182ace6c12522d9453d6015ffd9acd611d7e0ae72c4199f01da3",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0427.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 17817,
+  "sha256": "58784a16b6cf16c48d43f8b8b4f10fd9a079037d3e7f6e5379d70ef6b2efc8f9",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0428.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7916,
+  "sha256": "b79721de3156869a5237a6e824b4afa97872647b128610b6529d7a375ffe9567",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0429.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 2135,
+  "sha256": "b6d2e7bff98d88131647f0cae928e8b92120eeb6e5d0f5daae3e7e9241e1b9c7",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0433.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2012_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2012",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b597d146-81bc-43f7-80b1-c2e85168170d/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1785,
+  "sha256": "ebb3878040605018a1e94ab9eeed0c282aa85573bef13d1e3c9d13a66b536d11",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2012_A0434.json",
+  "uuid": "b597d146-81bc-43f7-80b1-c2e85168170d",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 21537,
+  "sha256": "85aa33339321ca3803d485aead643a5aaab93fa8d97719e3545706eea953e4bf",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0425.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4576,
+  "sha256": "1a8c6a4dceb6408c6cc8618308fef83a2a34c070ecf315cfd0f15c18a7a176df",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0426.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 7068,
+  "sha256": "3fdb4bfedef4c67267348d2185edbbb96526dc56dc1c091fd77fbeb14de60a96",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0427.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 17323,
+  "sha256": "327d9246f19ccb3f7abcb87f5b0699f0cdbd007bc5d495bfe41e6ddb1ba3672b",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0428.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7825,
+  "sha256": "54a89835e4ddd89bab9387b60990438f3eefc5fca3c825fbbfd12f9e08cd8618",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0429.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 2037,
+  "sha256": "f0f2cfb4bb95019e4c4589c19ef5765d1db1f468104c606e64f0c21a8626b616",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0433.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2013_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2013",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/53027e7f-1b1d-4628-a286-03b0bc0b5f2f/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1803,
+  "sha256": "4fb624842885c9fbb916228e591dbfaa37d48e2ea4000250fcfd54e23c9dc8cd",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2013_A0434.json",
+  "uuid": "53027e7f-1b1d-4628-a286-03b0bc0b5f2f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 19105,
+  "sha256": "338a8ebd739c0c686aafbd5874fe358e75e7e5af0c1de7062bf5e3bafbe23fd5",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0425.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4195,
+  "sha256": "35cdb762546caeca878eb53d0e1df3dadd3a3e3e4a9151d42a65635c0ec43d56",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0426.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6394,
+  "sha256": "d4d776b368dc9922b95ccd4e9bf83abead84442c860afe79c9f6ac7ef56af3de",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0427.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 15402,
+  "sha256": "91bc3b4af448687c1bb7bfe40f97c63683457f943a64338438751f2e014bfc1d",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0428.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7123,
+  "sha256": "4f0c38a19a0ef04ec4557b0023ff433ae6389863f4cd2fb7440c0bd8545d1a16",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0429.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1916,
+  "sha256": "756ce4be2bb8cd21de3fcd7f7ec14c2bcaddf9c2fba5b5cbb9738aabb5b296af",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0433.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2014_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2014",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1524,
+  "sha256": "be0be4ab3a5119b6505c43fba31131a3fa6481223743575f7ec8eb28402ccd5d",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2014_A0434.json",
+  "uuid": "3d28f6b0-e9df-48ea-b2eb-5cac10eaaf45",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 18638,
+  "sha256": "b4f9412b692e02c4755a6b15b6b40d55fb858e22965829e80d96b1e3a0779d57",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0425.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4061,
+  "sha256": "bb4e089959ebdbe8ab815d5cc52f6d2bfa6feb100e90396780993dc570298be7",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0426.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6376,
+  "sha256": "9e34ce06a2b8d7f4a594086f339f6abd21e2505a766598711f45f40c2ff7b069",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0427.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 15029,
+  "sha256": "7b22ca1f6c103848560c9291dcf6494aeec8d0012a2a708e9bb2c53688a817c4",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0428.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7240,
+  "sha256": "1d9cdc03ca242057f22553ae667e81b0536ea63d12059c1cc0e0848e899b2719",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0429.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1807,
+  "sha256": "500f00578a3d4456184cd25201c70b2cbb49eddd53a65bd87677c23e0daf55b0",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0433.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2015_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2015",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/f8392bbd-981b-4ea6-b9f9-0891825105d7/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1485,
+  "sha256": "4d66a80612b522fd3055248aa20e53f73cb326e321f9056726c3bdfe127c4a63",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2015_A0434.json",
+  "uuid": "f8392bbd-981b-4ea6-b9f9-0891825105d7",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 18279,
+  "sha256": "587a1900346ad48b1e02b0fc8b63846df1c11fe7c9691e83f894cc078add28ec",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0425.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3886,
+  "sha256": "cd668aaf085861de4c617e65e2315a4094989fc9d0cb4dbdf4ce4efd829ef305",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0426.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6161,
+  "sha256": "cc93481d84472feb28062354ae0baec4d7f2f5da84823a03582f0e5d7b639a57",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0427.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 3,
+  "rows": 14753,
+  "sha256": "6e31c8a4c0b5d15e8afa3410fd7b12951b2a2a9b7d0fed1993d1f7e7060d902f",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0428.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7145,
+  "sha256": "ffe8df7f45df012eb8bf6ae70fb5840f8a04d976bc3a4cd5f27a15cc37b29096",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0429.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1800,
+  "sha256": "600b09407db94ad5f43c23bdd0ae3ee94fc962c27465d0643509803c2fe7c272",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0433.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2016_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2016",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b8a1bee7-62b2-44eb-8585-0c257a3d8c3f/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1412,
+  "sha256": "be5c2e9a39a552d187c13ba6cf18fd34d8b1aaa8b6a1571f451f4bf60098eeea",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2016_A0434.json",
+  "uuid": "b8a1bee7-62b2-44eb-8585-0c257a3d8c3f",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 20054,
+  "sha256": "b6a840c75167f21317888281a5dbedc6b3ca7a4c2fbf46539b96eefaf2d5bffc",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0425.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4078,
+  "sha256": "d51c83f2ee9b12882995af149ab27b3fcfc017e46086f64fb77dac607b551b73",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0426.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6761,
+  "sha256": "cf6e3a04993111a98a2f8e2d61aae9b1e81edade33ccd1eb69db5856ffc06be8",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0427.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 15694,
+  "sha256": "4e139ccf067955a023714ada12610b639837e4135ef4d845f907ba37f277a280",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0428.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7725,
+  "sha256": "26aee9f1d5ae94a2d2fae99f7fab9252cdb56afa445c84750b7e1b9c47ad1025",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0429.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1970,
+  "sha256": "312928fae219d2c24304e9ddaf0930b6d01b858da1e44f457cc19c5652ddd240",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0433.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2017_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2017",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/3060244e-269e-4442-a983-8c190adfe7f1/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1574,
+  "sha256": "0311f4dd05436b6b1e6974c9d3bcf5cf3cce3984985725f8d59912b6ee5a4fec",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2017_A0434.json",
+  "uuid": "3060244e-269e-4442-a983-8c190adfe7f1",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 19627,
+  "sha256": "284cf28e025a8842036f3604abe2c3435bbf9c33d70b9bad01b8edb52d78e46e",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0425.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 4052,
+  "sha256": "55cf7781060b93a70d514edb556d4e38431d127381f725672702d40896eb6929",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0426.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6567,
+  "sha256": "dbac7dc1a0bdf7459fc1e2889cdd525516d1c811e255c6daac6a51463cb83e81",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0427.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 15210,
+  "sha256": "ea15a17dee05b3c44bab2d33ea406d572efc24d486c86938950fc8553541a415",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0428.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7467,
+  "sha256": "0f1f930ec520a1917ab62ca8248dba1f8baef686fd86ca4beaafc8d6d16a96a9",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0429.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1960,
+  "sha256": "0a7ea9fb31c6f2444450e3fdaca9d396e536266e78028565d94f01dcb0d70671",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0433.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2018_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2018",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/6056deb7-17a7-49bc-a5b3-c799b4f91568/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1548,
+  "sha256": "d56dbebe291dbfa7065d65caae33be889fb41008655583d1d598e0d552307aa3",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2018_A0434.json",
+  "uuid": "6056deb7-17a7-49bc-a5b3-c799b4f91568",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 19354,
+  "sha256": "2a879e73596eb897b7d73611dac863819ddcea301c98061de94059f9781a523b",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0425.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3983,
+  "sha256": "4719ff3fffe33b67c6a2ab330d770ef001bd6b610630dd230d43d77a6bf2cd36",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0426.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6596,
+  "sha256": "0771f3f3edc11f854707065a63bfd38371764fee747f52c6b660953159446237",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0427.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 3,
+  "rows": 14794,
+  "sha256": "f4b1da9283d106f33c7a8cf0396d4bb40e35aa445a43a3a12c82a8fcaf109365",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0428.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7419,
+  "sha256": "8d8325a017fdf62838a7872e5855a5164575f20791aa2cec670bcb844db41fcd",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0429.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1902,
+  "sha256": "589fac7b1320668d6b70acf903b5109846de6305da395d08a3e6b25b03f54e6e",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0433.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2019_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2019",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/0ce67ad8-524b-4d4f-8ac8-55f4a68f0711/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1571,
+  "sha256": "b685ab68ec1c0952b25a71cab4879561d53701dd011116ca69c348ab0788c4ec",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2019_A0434.json",
+  "uuid": "0ce67ad8-524b-4d4f-8ac8-55f4a68f0711",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 21501,
+  "sha256": "b9a2fcdf3b957ba92bff22b7d90961a81ee1a537d9cd5a0472b1c11c0ee29b59",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0425.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3815,
+  "sha256": "64513ce1d0b85851050f8bb456046a7da18a2e31063862018f027a03251087bb",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0426.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6998,
+  "sha256": "c07e2111295a482943f862e546a601d9d1ede07783a5fd39df33b390b50f92a5",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0427.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 16215,
+  "sha256": "b7bf787184214f677fe34702b4fd05af96ea996f357cec6431fe95d50063c7d7",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0428.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 8027,
+  "sha256": "346a3549508a92aa58681b306c5fb4d5c5d4241e618787eb65faa0f7b26aa301",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0429.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 2127,
+  "sha256": "dd7356031e21fd57fce6934d7232940cf7d30d7f8c3a7f78aaef537336e3fcec",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0433.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2020_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2020",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/5eb3eebe-20cb-405c-864f-444873134f24/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1643,
+  "sha256": "e5e5f748c142cc2f9839f6f191866704cc02fb3d11eb7f6378a96ee807c5a581",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2020_A0434.json",
+  "uuid": "5eb3eebe-20cb-405c-864f-444873134f24",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 20187,
+  "sha256": "665f68a171662c8eade29aa6b492a251a6df609e8937f4de131ce502a0a93caa",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0425.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3608,
+  "sha256": "8f0bb2d3ddc47f19f19bd9d317ee573717c62e2a867023fe3676df630cc09156",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0426.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6666,
+  "sha256": "3d3497c0a8294de7b1228defb9d87c857163ec78a22f1fd07618361dbf66ca3c",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0427.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 4,
+  "rows": 15289,
+  "sha256": "445d8ee206e0b450aaf70c206603ac8457c1b88d9c17405f32113f9ee4c7024c",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0428.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7635,
+  "sha256": "11da9ef1d3f9d55107b1a13d4cdd9c21a6f98979fa0c6869c0dad267a78a9cb8",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0429.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1913,
+  "sha256": "e56cfdaf14acc328ed03bffe05601ce33a78fe5edc6a77818f8a44e92fac8fa4",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0433.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2021_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2021",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/72200613-6706-4ad2-8219-e200cc4391cc/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1494,
+  "sha256": "482a0a1d3376647962fd7d245352f9fbaf56d3483ffc43e15c86eeee23bdab9c",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2021_A0434.json",
+  "uuid": "72200613-6706-4ad2-8219-e200cc4391cc",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 19350,
+  "sha256": "7e4c4de2814fe09db5d8ab070b3ec6e2ce9a67e4218b856d3301bba691c7094f",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0425.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3266,
+  "sha256": "7d03639d620f7ce79079daabbf0e4592e3ca9d5878271d5d53145b0a74cc8359",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0426.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 6618,
+  "sha256": "fe107a3961854beadbb4b9323939e79a2fa06501c24393ac9807e0c56986d97c",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0427.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 3,
+  "rows": 14221,
+  "sha256": "8ced10b27e2fe649b17da9a699b8bd6cdc9a3056e10c59af53f2cb3d80621efb",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0428.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 7852,
+  "sha256": "1fde454ad52a08ff379a109cf3642204e79543873848d765295ef9311d382b86",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0429.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1874,
+  "sha256": "8039e6cfb2464a80693ef733c145dc530ad79d8bf4c794d20e63ec4f7e91ad7e",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0433.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2022_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2022",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/e4786716-10e9-40f2-b936-7444177474d5/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1395,
+  "sha256": "9eea4a09fed12351c342cdcb90086c0b8c09a54ebd19371a33207380f14d2dab",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2022_A0434.json",
+  "uuid": "e4786716-10e9-40f2-b936-7444177474d5",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 4,
+  "rows": 19937,
+  "sha256": "5301d2a042906f751062d93c4d0a3dbd1bd2dcff30e9112d1bb58135cdd22805",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0425.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3160,
+  "sha256": "b975241329f4c87e8960abbd378fa14a664357c3094bf5859e594d1600320be8",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0426.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 7186,
+  "sha256": "38bf2d722abdf143f3fbc593b741ab7e780c0d4aafbc8fd60e2415c5f627be7e",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0427.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 3,
+  "rows": 13973,
+  "sha256": "47457ea9fa3e6aa8947fa0ddce30d450bcc2559397255dd7520120b92cf25921",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0428.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 8331,
+  "sha256": "eaa879a32e992a2898fa0ca933fd17d047b4a8e3ef5bbf29bf3498dd9149eda3",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0429.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 1992,
+  "sha256": "9768601beb00b6607743d89fd3c1c92abdd97d48208ddd547bcb07bbcf35df7e",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0433.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2023_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2023",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/b72adfb6-22cf-4241-9c64-050ad9061e03/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1452,
+  "sha256": "9446f547503ffc072a5cd1cae23da86489f1a1d40832533a9e820146b2d4fcc4",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2023_A0434.json",
+  "uuid": "b72adfb6-22cf-4241-9c64-050ad9061e03",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0425": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0425"
+  },
+  "pages": 5,
+  "rows": 21497,
+  "sha256": "be0b9de975f3e2d3b991c274847b7b4c021e877c67355bc5642c8e636168c36a",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0425.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0426": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0426"
+  },
+  "pages": 1,
+  "rows": 3524,
+  "sha256": "697988c5c918b333229a10c60c16007aecd27b20d79aced9d2bb8b26600d78a4",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0426.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0427": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0427"
+  },
+  "pages": 2,
+  "rows": 7890,
+  "sha256": "07ca2da6a686e6f59abbdf1f50f93347476646da4ae8cfab070f439701837476",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0427.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0428": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0428"
+  },
+  "pages": 3,
+  "rows": 14977,
+  "sha256": "400394d9d038940dbbc410f0c69280c3766d9e5d393867598e4efae0564a092d",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0428.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0429": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0429"
+  },
+  "pages": 2,
+  "rows": 9008,
+  "sha256": "86418de1a0e60ab4b64131546568f74bd1640f656f56d4261f4b63c8d8daeded",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0429.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0433": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0433"
+  },
+  "pages": 1,
+  "rows": 2330,
+  "sha256": "798a6c3ab513d2386d5ee18ed564b5ea52be99067fea2b2f6806db85d42bf3cf",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0433.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
+ },
+ "psps_mod2_2024_A0434": {
+  "dataset": "Physician/Supplier Procedure Summary",
+  "data_year": "2024",
+  "endpoint": "https://data.cms.gov/data-api/v1/dataset/647c8fa8-5dd6-460d-a2ec-18faf15b3fb2/data",
+  "filters": {
+   "HCPCS_CD": "A0434"
+  },
+  "pages": 1,
+  "rows": 1519,
+  "sha256": "828dbb5ddaf96b18843433b09e47d4496a9dc05743d53ebb64ae7aa9c373cd55",
+  "retrieved_utc": "2026-07-13T00:00:00+00:00",
+  "file": "psps_mod2_2024_A0434.json",
+  "uuid": "647c8fa8-5dd6-460d-a2ec-18faf15b3fb2",
+  "aggregation": "client-side sum by HCPCS second modifier (QN/QM/none)"
  }
 }

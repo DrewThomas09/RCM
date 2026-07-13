@@ -34,6 +34,23 @@ PENDING_REGISTER = [
      'SAM.gov Opportunities/Contract Data APIs',
      'API key required (api.data.gov); not provisioned in this environment',
      'Free api.data.gov key; the state-portal corpus stands in meanwhile'),
+    ('Run 5.5b Annual per-NPI Medicare book to twelve years',
+     'MUP by Provider and Service, data-api NPI filter, 2014-2023',
+     'Not pulled in this run window; the book stays three vintages '
+     '(2013/2019/2024)',
+     'Per-NPI MUP pulls for the estate NPIs plus the top-30 participants, '
+     '2014-2023, then extend MMT_Medicare_Book to annual columns'),
+    ('Run 5.4 Participant additions (Allegiance Mobile Health, PHI Air '
+     'Medical)', 'NPPES / MUP / USAspending / press registry',
+     'Resolution queue not run in this window',
+     'The standing resolution pull for each NPI; PHI carries the air-boundary '
+     'label'),
+    ('Run 5.5a Commercial MRF rate (now formally closed)',
+     'Licensed Transparency-in-Coverage feed',
+     'Three public attempts failed (MRF_Attempt_Log): portals bot-blocked '
+     '(403) or moved (404), reachable host returns only an index stub',
+     'A licensed TiC feed or a payer index that resolves to the in-network '
+     'rate file; interim anchor = balance-billing statutory pegs'),
 ]
 
 
@@ -47,7 +64,7 @@ def build(wb, ctx):
     ws = wb.create_sheet('Run_Log')
     sb = lib.SheetBuilder(ws, 6, col_widths=[8, 8, 40, 12, 60, 46],
                           tab_color='FF6B7C93')
-    sb.title('Run log: the v3.4 pass, task by task')
+    sb.title('Run log: the extension passes, task by task')
     sb.subtitle('The extension-order operating record: one row per task '
                 'attempt with status and what it produced. Statuses: DONE, '
                 'PARTIAL, PENDING-blocked (blocker named), '

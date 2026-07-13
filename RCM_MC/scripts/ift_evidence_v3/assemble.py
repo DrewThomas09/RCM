@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_12.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_0.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -75,13 +75,21 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  # of linked cells - emits no facts/sources/findings, so its
                  # position never renumbers anything. Builds last so every home
                  # tab it links already exists.
-                 'study_synthesis']
+                 'study_synthesis',
+                 # Run 5 (v4.0). New evidence layers append after everything
+                 # shipped through v3.12; their IDs are numbered at the tail via
+                 # _ID_TAIL so no existing fact/source/finding is renumbered.
+                 '51_modifier', '52_snfcb', '53_software', '54_prevalence',
+                 '55_mrf']
 
 # Sections whose facts/sources/findings must be numbered LAST regardless of
 # where they build. b11_inputs/xb_registries build early (before c48, so the
 # Slide_Feed status scan sees their tabs) but their IDs append at the tail so
-# every already-shipped ID keeps its number (append-only firewall rule).
-_ID_TAIL = ('b11_inputs', 'xb_registries')
+# every already-shipped ID keeps its number (append-only firewall rule). The
+# Run 5 sections append after them, so v3.12 IDs (through F609/S435/#107) are
+# untouched and Run 5 facts/sources/findings start at F610/S436/#108.
+_ID_TAIL = ('b11_inputs', 'xb_registries', '51_modifier', '52_snfcb',
+            '53_software', '54_prevalence', '55_mrf')
 
 
 def id_order():
@@ -1074,7 +1082,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.12')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v4.0')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1316,6 +1324,22 @@ def rebuild_readme(wb, stats, entries):
             'entry changes, and the bordered PENDING markers keep their '
             'border.'],
            wrap=True, height=78)
+    sb.row([('19 (v4.0)', 'label'), '13 July 2026',
+            'Run 5 - the billing-flag pass. Five new evidence layers, all '
+            'public and appended (facts from F610, sources from S436, findings '
+            'from 108). Modifier_QM_QN_Series measures the hospital billing '
+            'relationship directly from the QN/QM carrier claim modifier, '
+            '2010-2024, as a third measured leg on Insourcing_Bounds. '
+            'Payment_Rules states the SNF consolidated-billing wedge from '
+            'primary CMS sources. IFT_Software_Landscape maps the dispatch, '
+            'ePCR, billing and transfer-center platforms from the public '
+            'record with the request-cascade workflow. '
+            'Hospital_Ambulance_Prevalence answers how many hospitals field '
+            'their own ambulance (a strict ~14% HCRIS floor). MRF_Attempt_Log '
+            'closes the commercial machine-readable-file attempt with three '
+            'logged failures and names the interim anchor. The annual per-NPI '
+            'book extension to twelve years remains the named next pull.'],
+           wrap=True, height=104)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1485,11 +1509,22 @@ def main(verify_results_path=None):
                              if n in wb.sheetnames]),
         ('MMT_NPI_Estate', [n for n in ('MMT_Medicare_Book',)
                             if n in wb.sheetnames]),
+        # Run 5: the claim-level QN/QM billing-relationship cut sits beside the
+        # name-rule insourcing bounds it corroborates; the SNF payment-rule tab
+        # sits beside the reconciliation whose wedge it names.
+        ('Insourcing_Bounds', [n for n in ('Modifier_QM_QN_Series',
+                                           'Hospital_Ambulance_Prevalence')
+                               if n in wb.sheetnames]),
+        ('Universe_Reconciliation', [n for n in ('Payment_Rules',)
+                                     if n in wb.sheetnames]),
+        ('Stickiness_Evidence', [n for n in ('IFT_Software_Landscape',)
+                                 if n in wb.sheetnames]),
         # Run 4 outcome 3: the two modules that close the RED rows, placed by
         # subject (cost/benchmark tabs beside the commercial rate tab; the
         # registry tabs beside the regulatory register).
         ('Payer_Rates_Commercial',
-         [n for n in ('Input_Cost_Index', 'Public_Operator_Benchmarks')
+         [n for n in ('Input_Cost_Index', 'Public_Operator_Benchmarks',
+                      'MRF_Attempt_Log')
           if n in wb.sheetnames]),
         ('Regulatory_Register',
          [n for n in ('State_EMS_Licensure', 'Press_Footprint_Registry')
