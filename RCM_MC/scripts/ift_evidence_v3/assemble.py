@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_9.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v3_10.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -1074,7 +1074,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v3.9')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v3.10')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1278,6 +1278,20 @@ def rebuild_readme(wb, stats, entries):
             'ships the three deck-facing tabs with values resolved. No '
             'existing fact/source/finding is renumbered.'],
            wrap=True, height=128)
+    sb.row([('16 (v3.10)', 'label'), '12 July 2026',
+            'Editorial pass: every tab title and subtitle rewritten out of the '
+            'conversational register into a declarative one. The "The '
+            'question: ..." subtitle frame (313 tabs), the title flourishes '
+            '(" - the decision record", ", measured:", ": the full certified '
+            'registry"), and rhetorical asides ("stated plainly", "at a '
+            'glance") are removed; titles are plain descriptive names and '
+            'subtitles lead with what the exhibit shows and its source. Marquee '
+            'narrative tabs (Methodology, Study_Synthesis) get a bespoke '
+            'declarative subtitle. Presentation only: no data, finding, ledger '
+            'or read-panel content changes, and title-block edits on carried '
+            'v2.7 tabs are recorded and excluded from the carried-cell '
+            'fidelity gate.'],
+           wrap=True, height=90)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1482,6 +1496,16 @@ def main(verify_results_path=None):
     # normalizes whatever the section modules and carried content produced.
     import cim_format
     cim_format.cim_pass(wb, log=log)
+
+    # Professional-tone pass (v3.10): rewrite every tab's title and subtitle out
+    # of the conversational "The question: ..." register into a declarative one.
+    # Title-block edits on carried v2.7 tabs are presentation, not evidence, so
+    # they are recorded and excluded from the V1 carried-cell fidelity gate.
+    import professionalize
+    _prof_changes = professionalize.professionalize(
+        wb, carried=set(src.sheetnames), log=log)
+    json.dump(_prof_changes,
+              open(os.path.join(SCRATCH, 'professionalize_changes.json'), 'w'))
 
     wb.calculation.fullCalcOnLoad = True
     log(f'saving {OUT}')
