@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_1.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_2.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -83,7 +83,12 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  '55_mrf',
                  # Run 6 (v4.1): the institutional wedge - the model's #1 open
                  # question. Appends after all Run 5 layers.
-                 '61_wedge']
+                 '61_wedge',
+                 # Run 6.5 (v4.2): the Komodo linkage spec - a named plan for the
+                 # one licensed all-payer dataset that would close the commercial
+                 # rate, all-payer volume, the wedge, payer mix and transfer flows.
+                 # Outputs bordered PENDING; no Komodo-derived figure is asserted.
+                 '62_komodo']
 
 # Sections whose facts/sources/findings must be numbered LAST regardless of
 # where they build. b11_inputs/xb_registries build early (before c48, so the
@@ -92,7 +97,7 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
 # Run 5 sections append after them, so v3.12 IDs (through F609/S435/#107) are
 # untouched and Run 5 facts/sources/findings start at F610/S436/#108.
 _ID_TAIL = ('b11_inputs', 'xb_registries', '51_modifier', '52_snfcb',
-            '53_software', '54_prevalence', '55_mrf', '61_wedge')
+            '53_software', '54_prevalence', '55_mrf', '61_wedge', '62_komodo')
 
 
 def id_order():
@@ -1085,7 +1090,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v4.1')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v4.2')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1357,6 +1362,24 @@ def rebuild_readme(wb, stats, entries):
             'application and commercial-extract specs ready to send. Appended '
             'F619 onward; no shipped ID renumbered.'],
            wrap=True, height=104)
+    sb.row([('21 (v4.2)', 'label'), '13 July 2026',
+            'Run 6.5 - the Komodo linkage spec. Komodo_Linkage_Spec names the '
+            'one licensed all-payer dataset (Komodo Health\'s Healthcare Map) '
+            'that would close five of the study\'s hardest open questions at '
+            'once: the commercial IFT rate the payer machine-readable files '
+            'would not surrender, all-payer transport volume beyond the 11.3M '
+            'Medicare book, the institutional wedge measured rather than '
+            'inferred, payer mix per operator, and the real sending-to-'
+            'receiving transfer network. It is LICENSED and commercial, so it '
+            'sits outside the public-source firewall as evidence and enters '
+            'only as a named linkage PLAN, parallel to the ResDAC receiving '
+            'schema: the tab maps the join keys (NPI, HCPCS and QN/QM '
+            'modifiers, revenue centre 054x, payer, encounter linkage) and the '
+            'receiving schema, and every Komodo output cell is bordered '
+            'PENDING an engagement. The only Komodo values shown are Komodo\'s '
+            'own public scale claims, labeled CLAIMED (tier C). Appended F622-'
+            'F623, S447, finding 117; no shipped ID renumbered.'],
+           wrap=True, height=118)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1536,6 +1559,11 @@ def main(verify_results_path=None):
          [n for n in ('Payment_Rules', 'Institutional_Ambulance_Wedge',
                       'HCRIS_Institutional_Roster')
           if n in wb.sheetnames]),
+        # Run 6.5: the Komodo linkage plan sits right after the institutional
+        # wedge and its HCRIS roster - the "here is the licensed all-payer route
+        # that measures what the public files only estimate" capstone.
+        ('HCRIS_Institutional_Roster',
+         [n for n in ('Komodo_Linkage_Spec',) if n in wb.sheetnames]),
         ('Stickiness_Evidence', [n for n in ('IFT_Software_Landscape',)
                                  if n in wb.sheetnames]),
         # Run 4 outcome 3: the two modules that close the RED rows, placed by

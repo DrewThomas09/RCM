@@ -22,7 +22,7 @@ SAMPLE = [
 
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else \
-        'IFT_Sourced_Evidence_Master_v4_1.xlsx'
+        'IFT_Sourced_Evidence_Master_v4_2.xlsx'
     out = sys.argv[2] if len(sys.argv) > 2 else '_proof.xlsx'
     wb = load_workbook(src)
     keep = [n for n in SAMPLE if n in wb.sheetnames]
