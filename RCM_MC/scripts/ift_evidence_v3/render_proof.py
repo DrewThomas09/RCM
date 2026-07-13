@@ -16,12 +16,13 @@ SAMPLE = [
     'TAM_Assembly_State', 'Fact_Ledger', 'Verification_Log',
     'Slide_Feed', 'Investor_QA',
     'Input_Cost_Index', 'Press_Footprint_Registry',
+    'Medicare_IFT_Series', 'EMS_Transports',
 ]
 
 
 def main():
     src = sys.argv[1] if len(sys.argv) > 1 else \
-        'IFT_Sourced_Evidence_Master_v3_10.xlsx'
+        'IFT_Sourced_Evidence_Master_v4_0.xlsx'
     out = sys.argv[2] if len(sys.argv) > 2 else '_proof.xlsx'
     wb = load_workbook(src)
     keep = [n for n in SAMPLE if n in wb.sheetnames]

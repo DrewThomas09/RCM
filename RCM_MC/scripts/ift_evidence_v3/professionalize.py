@@ -133,6 +133,30 @@ def fix_title(name, t):
     return _cap(_clean(out))
 
 
+_WS = re.compile(r'  +')
+
+
+def tidy_body(wb, carried=frozenset()):
+    """Formatting polish: collapse inconsistent double-spacing (e.g. the
+    "  -  " left by dash sanitization) to single spaces in body text, below the
+    title block. Whitespace only - no content change. Restricted to v3-authored
+    tabs so carried v2.7 evidence cells stay byte-identical."""
+    n = 0
+    for name in wb.sheetnames:
+        if name in carried:
+            continue
+        ws = wb[name]
+        for row in ws.iter_rows(min_row=4):
+            for c in row:
+                v = c.value
+                if isinstance(v, str) and '  ' in v and not v.startswith('='):
+                    nv = re.sub(r' ([;:,.])', r'\1', _WS.sub(' ', v)).strip()
+                    if nv and nv != v:
+                        c.value = nv
+                        n += 1
+    return n
+
+
 def professionalize(wb, carried=frozenset(), log=None):
     """Rewrite A1 title and A2/A3 subtitle on every tab. Returns the list of
     [tab, coord] cells changed on CARRIED v2.7 tabs, for the V1 exclusion."""
@@ -158,7 +182,9 @@ def professionalize(wb, carried=frozenset(), log=None):
                     n_s += 1
                 if name in carried:
                     carried_changes.append([name, coord])
+    n_body = tidy_body(wb, carried)
     if log:
         log(f'professionalize: {n_t} titles, {n_s} subtitles rewritten '
-            f'({len(carried_changes)} on carried tabs, excluded from V1)')
+            f'({len(carried_changes)} on carried tabs, excluded from V1); '
+            f'{n_body} body cells de-double-spaced (v3 tabs)')
     return carried_changes

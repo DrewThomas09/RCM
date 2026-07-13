@@ -310,5 +310,69 @@
   "status": "DONE",
   "produced": "Derived_Rate_Card: added mileage-loading derivation panel - A0425 miles per transport two ways (MMT_Medicare_Book B25/C25 ~14.6; national Medicare_IFT_Series mileage$ /transport), CY2024 measured base (C19/B19) vs loaded (E19/B19 = total incl mileage) and CY2026 forward (A0428 base + miles x AFS rate). Scenario_Matrix: added Panel B2 with two price columns per basis (base-only =Derived_Rate_Card!B34, mileage-loaded =B35), both live formulas, base-only vs loaded floor per volume basis",
   "notes": "CHECK: Scenario_Matrix has two price columns per price basis (base-only + mileage-loaded), both live formulas, loading derivation printed on Derived_Rate_Card. Full metro/state threading references the same Derived_Rate_Card loading cells"
+ },
+ {
+  "start": "Run5-H1",
+  "end": "H2",
+  "task": "5.1 QM/QN modifier cut (CHECK 1)",
+  "status": "DONE",
+  "produced": "Modifier_QM_QN_Series (QN/QM by year 2010-2024, level split, O-D joint cut, live reconciliation to psps_agg) + Insourcing_Bounds Panel F third leg",
+  "notes": "PSPS second-modifier re-cut, 105 slices pulled and manifested. Provider-flagged share 0.120% of 2024 transports, a STRICT compliance floor an order of magnitude below the name-rule floor; no acuity skew. F610-F614, findings 108-109."
+ },
+ {
+  "start": "Run5-H2",
+  "end": "H3",
+  "task": "5.2 SNF consolidated-billing wedge (CHECK 2)",
+  "status": "DONE",
+  "produced": "Payment_Rules (rule + exclusions + claims-invisible wedge, PENDING magnitude)",
+  "notes": "Primary CMS sources (SSA 1888(e), 42 CFR 411.15(p), Pub 100-04 Ch 6). No magnitude asserted; wedge PENDING with T-MSIS TAF named. Finding 110."
+ },
+ {
+  "start": "Run5-H3",
+  "end": "H4",
+  "task": "5.3 IFT software landscape (CHECK 3)",
+  "status": "DONE",
+  "produced": "IFT_Software_Landscape (14 platforms + request-cascade workflow panel)",
+  "notes": "Public record only, per-row URL + retrieval date. EMS-ops and transfer-center layers; PE consolidation; VectorCare/Central Logic/Motient cascade + AutoLaunch acceptance-vs-dispatch. F615-F616, findings 111-112."
+ },
+ {
+  "start": "Run5-H4",
+  "end": "H5",
+  "task": "5.4 hospital-team prevalence (CHECK 4)",
+  "status": "DONE",
+  "produced": "Hospital_Ambulance_Prevalence (HCRIS floor + registry ceiling)",
+  "notes": "Measured answer to few-hospitals guess: ~14% strict HCRIS line-95 floor vs ~52% loose registry ceiling. F617-F618, finding 113. Participant NPPES adds (Allegiance/PHI) and throughput DRG slot deferred to next pull."
+ },
+ {
+  "start": "Run5-H5",
+  "end": "H7",
+  "task": "5.5a MRF final attempt (CHECK 5)",
+  "status": "CLOSED-PENDING",
+  "produced": "MRF_Attempt_Log (3 logged attempts + interim anchor)",
+  "notes": "Medica 403, BCBS-NE 404 + 2.5KB index stub, Wellmark 403. Nothing retrievable; row PENDING, interim anchor = balance-billing statutory pegs. Finding 114. No fourth deferral."
+ },
+ {
+  "start": "Run5-H7",
+  "end": "H7",
+  "task": "5.5b annual per-NPI book to 12 years",
+  "status": "PENDING",
+  "produced": "named next pull",
+  "notes": "MMT_Medicare_Book stays three vintages (2013/2019/2024); the 2014-2023 per-NPI MUP pulls (estate + top-30 via data-api NPI filter) are the named next increment."
+ },
+ {
+  "start": "Run5-H7",
+  "end": "H8",
+  "task": "5.5c deck extract v4.0 (CHECK 6)",
+  "status": "DONE",
+  "produced": "IFT_Deck_Feed_Extract_v4_0.xlsx",
+  "notes": "Values-only cut of the deck-facing tabs from the recalced workbook."
+ },
+ {
+  "start": "Run5-H8",
+  "end": "H8",
+  "task": "Consolidation + ship v4.0",
+  "status": "DONE",
+  "produced": "two-pass recalc, gates, package, ship",
+  "notes": "Recalc to zero errors, format gate, firewall leak check with new-cell conversation scan, ledger sweep, README rev row 19."
  }
 ]

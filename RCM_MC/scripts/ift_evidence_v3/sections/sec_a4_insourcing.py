@@ -465,6 +465,65 @@ def build(wb, ctx):
             'not the decimals.')
     sb.blank()
 
+    # ---------------------------------------------------------- Panel F ---
+    # Run 5, Task 5.1: the third measured leg. QN (furnished directly) and QM
+    # (under arrangement) are provider-of-services carrier modifiers - a direct,
+    # name-free, claim-level read of the same hospital-billed distinction the
+    # name rules (Panels A-E) bound. Pure presentation: this panel emits no new
+    # fact, source or finding (those live on Modifier_QM_QN_Series), so the
+    # append-only ledger is untouched.
+    _m2 = {'QN': 0.0, 'QM': 0.0, 'tot': 0.0}
+    for code in BASE:
+        try:
+            d = lib.load_cache(cache, f'psps_mod2_2024_{code}')
+        except Exception:
+            continue
+        for b, bk in d.get('buckets', {}).items():
+            _m2['tot'] += bk.get('services', 0.0)
+            if b in ('QN', 'QM'):
+                _m2[b] += bk.get('services', 0.0)
+    sb.banner('Panel F. Third measured leg: the QN / QM carrier claim modifier '
+              '(2024 direct read; full 2010-2024 series on '
+              'Modifier_QM_QN_Series)')
+    sb.headers(['Billing relationship (carrier modifier)',
+                '2024 transport services', 'Share of 2024 transports', '', '',
+                '', '', '', '', 'Note'])
+    f0 = sb.r + 1
+    sb.row([('QN furnished DIRECTLY by a provider of services', 'text'),
+            (round(_m2['QN']), 'src', lib.FMT_INT),
+            (f'=B{f0}/B${f0 + 3}', 'fml', lib.FMT_PCT2),
+            None, None, None, None, None, None,
+            ('the direct hospital-furnished signal', 'note')])
+    sb.row([('QM UNDER ARRANGEMENT by a provider of services', 'text'),
+            (round(_m2['QM']), 'src', lib.FMT_INT),
+            (f'=B{f0 + 1}/B${f0 + 3}', 'fml', lib.FMT_PCT2),
+            None, None, None, None, None, None,
+            ('billing-in-lieu: the arrangement that inflates the name ceiling',
+             'note')], wrap=True, height=28)
+    sb.row([('Provider-flagged (QN + QM): the direct measurement', 'label'),
+            (f'=B{f0}+B{f0 + 1}', 'fml', lib.FMT_INT),
+            (f'=B{f0 + 2}/B${f0 + 3}', 'fml', lib.FMT_PCT2),
+            None, None, None, None, None, None,
+            ('a name-free STRICT floor: it lands BELOW even the name floor '
+             'above because QN/QM modifier use is incomplete', 'note')],
+           wrap=True, height=28)
+    sb.row([('All 2024 ground transport services (denominator)', 'text'),
+            (round(_m2['tot']), 'src', lib.FMT_INT),
+            (f'=B{f0 + 3}/B${f0 + 3}', 'fml', lib.FMT_PCT2),
+            None, None, None, None, None, None,
+            ('PSPS second-modifier cut, codes A0426-A0429/A0433/A0434', 'note')])
+    sb.note('The flag is a third classifier beside the H1/H2 name bounds and '
+            'the Care Compare facility roster - name-free, read straight off '
+            'the claim. It is a STRICT floor: because most hospital billers '
+            'never append QN/QM, it lands an order of magnitude below even the '
+            'name floor above, so it confirms the DIRECTION of hospital billing '
+            'without settling its level. Same carrier-file limit as the rest of '
+            'this tab (Part A bundled and SNF consolidated-billing transports '
+            'carry no modifier), and CMS suppression thins it further. Full '
+            'annual series, service-level split and origin-destination cut: '
+            'Modifier_QM_QN_Series.')
+    sb.blank()
+
     # ------------------------------------------------------- read panel ---
     floor24 = r24['srv_and'] / r24['tot']
     ceil24 = r24['srv_or'] / r24['tot']
@@ -490,7 +549,16 @@ def build(wb, ctx):
              f'hospital-affiliated floor billers put {acu_fl * 100:.1f}% '
              'of base services in SCT+ALS2 versus '
              f'{acu_in * 100:.1f}% for explicitly independent billers - a '
-             'real but modest skew on a small base. What this tab does '
+             'real but modest skew on a small base. A third classifier now '
+             'agrees on DIRECTION without any name test at all: the QN/QM '
+             'provider-of-services carrier modifier (Panel F) reads the billing '
+             'relationship straight off the claim and flags a Part A '
+             'institution as biller on '
+             f'{((_m2["QN"] + _m2["QM"]) / _m2["tot"] * 100) if _m2["tot"] else 0:.3f}% '
+             'of 2024 ground transports - a name-free STRICT floor that lands '
+             'BELOW even this floor because most hospital billers omit the '
+             'modifier, confirming the direction without settling the level. '
+             'What this tab does '
              'NOT say: the hospital share of ground ambulance OPERATIONS. '
              'Billing-in-lieu inflates these bounds, never-bill and Part '
              'A bundling deflate them, and none of the three appears in '
