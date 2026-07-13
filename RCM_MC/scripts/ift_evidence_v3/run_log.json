@@ -374,5 +374,37 @@
   "status": "DONE",
   "produced": "two-pass recalc, gates, package, ship",
   "notes": "Recalc to zero errors, format gate, firewall leak check with new-cell conversation scan, ledger sweep, README rev row 19."
+ },
+ {
+  "start": "Run6-H1",
+  "end": "H4",
+  "task": "6.1A/1C Institutional wedge + HCRIS roster",
+  "status": "DONE",
+  "produced": "Institutional_Ambulance_Wedge + HCRIS_Institutional_Roster",
+  "notes": "Top-down MedPAC 11.4M(2023) minus carrier 10.72M = 682K institutional (6.0%). Bottom-up HCRIS FY2019-2023 line-95: 875 hospitals, $3.27B cost, GADCS-bounded implied volume. Charge columns fee-schedule-inconsistent -> COST used instead. F619 onward, findings 115-116."
+ },
+ {
+  "start": "Run6-H5",
+  "end": "H5",
+  "task": "6.2A/2B/3A specs + receiving schemas",
+  "status": "DONE",
+  "produced": "Wedge Panel C (ResDAC LDS schema) + Panel D (application/coordination specs)",
+  "notes": "ResDAC LDS extract spec (rev 0540-0549, HOP+IP+SNF 2019-2024) + T-MSIS TAF + 3A commercial-extract sentence, all bordered/labeled and ready to send. Human action items in delta note."
+ },
+ {
+  "start": "Run6-H6",
+  "end": "H7",
+  "task": "6.WS5 integration wiring",
+  "status": "PARTIAL",
+  "produced": "wedge tab anchored to Universe_Reconciliation",
+  "notes": "Wedge is the institutional-row home tab; full reconciliation-cell rewire and Study_Synthesis pillar update are the light next touch."
+ },
+ {
+  "start": "Run6-H8",
+  "end": "H8",
+  "task": "Consolidation + ship v4.1",
+  "status": "DONE",
+  "produced": "two-pass recalc, gates, package, ship",
+  "notes": "MedPAC ground-ambulance mandated report (March 2025) sourced for the 11.4M count. HCRIS download switched to curl (pull OPENER breaks on empty HTTPS_PROXY)."
  }
 ]

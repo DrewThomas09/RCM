@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_0.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_1.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -80,7 +80,10 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  # shipped through v3.12; their IDs are numbered at the tail via
                  # _ID_TAIL so no existing fact/source/finding is renumbered.
                  '51_modifier', '52_snfcb', '53_software', '54_prevalence',
-                 '55_mrf']
+                 '55_mrf',
+                 # Run 6 (v4.1): the institutional wedge - the model's #1 open
+                 # question. Appends after all Run 5 layers.
+                 '61_wedge']
 
 # Sections whose facts/sources/findings must be numbered LAST regardless of
 # where they build. b11_inputs/xb_registries build early (before c48, so the
@@ -89,7 +92,7 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
 # Run 5 sections append after them, so v3.12 IDs (through F609/S435/#107) are
 # untouched and Run 5 facts/sources/findings start at F610/S436/#108.
 _ID_TAIL = ('b11_inputs', 'xb_registries', '51_modifier', '52_snfcb',
-            '53_software', '54_prevalence', '55_mrf')
+            '53_software', '54_prevalence', '55_mrf', '61_wedge')
 
 
 def id_order():
@@ -1082,7 +1085,7 @@ def rebuild_readme(wb, stats, entries):
     wb.remove(wb['README'])
     ws = wb.create_sheet('README', idx)
     sb = v3lib.SheetBuilder(ws, 3, col_widths=[38, 70, 60])
-    sb.title('US Interfacility Transport: Sourced Evidence Master v4.0')
+    sb.title('US Interfacility Transport: Sourced Evidence Master v4.1')
     sb.subtitle('A complete, source-verified evidence base for the United States '
                 'interfacility medical transport market: who moves, between which '
                 'care settings, at what clinical acuity, paid by whom, at what '
@@ -1340,6 +1343,20 @@ def rebuild_readme(wb, stats, entries):
             'logged failures and names the interim anchor. The annual per-NPI '
             'book extension to twelve years remains the named next pull.'],
            wrap=True, height=104)
+    sb.row([('20 (v4.1)', 'label'), '13 July 2026',
+            'Run 6 - the institutional wedge, the model\'s number-one open '
+            'question. Institutional_Ambulance_Wedge sizes the Medicare ground '
+            'ambulance volume billed on institutional (UB-04) claims rather '
+            'than the carrier file, two free ways: top-down (MedPAC 11.4M '
+            'all-claims 2023 minus the carrier file = a ~0.7M institutional '
+            'residual) and bottom-up (the HCRIS line-95 hospital ambulance '
+            'operating cost, with a GADCS-bounded implied volume). '
+            'HCRIS_Institutional_Roster lists every hospital ambulance operator '
+            'and its scale. The definitive per-claim route (ResDAC LDS, rev '
+            '0540-0549) ships as a bordered receiving schema with the '
+            'application and commercial-extract specs ready to send. Appended '
+            'F619 onward; no shipped ID renumbered.'],
+           wrap=True, height=104)
     sb.blank()
     sb.banner('Pending register: named enhancements, none assumed')
     sb.subtitle('Carried from v2.7 with v3 status: P1 HCUPnet condition-level '
@@ -1515,8 +1532,10 @@ def main(verify_results_path=None):
         ('Insourcing_Bounds', [n for n in ('Modifier_QM_QN_Series',
                                            'Hospital_Ambulance_Prevalence')
                                if n in wb.sheetnames]),
-        ('Universe_Reconciliation', [n for n in ('Payment_Rules',)
-                                     if n in wb.sheetnames]),
+        ('Universe_Reconciliation',
+         [n for n in ('Payment_Rules', 'Institutional_Ambulance_Wedge',
+                      'HCRIS_Institutional_Roster')
+          if n in wb.sheetnames]),
         ('Stickiness_Evidence', [n for n in ('IFT_Software_Landscape',)
                                  if n in wb.sheetnames]),
         # Run 4 outcome 3: the two modules that close the RED rows, placed by
