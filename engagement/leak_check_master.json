@@ -1,0 +1,8 @@
+{
+ "master_workbook": "IFT_Sourced_Evidence_Master_v4_2.xlsx",
+ "signatures_scanned": 22,
+ "workbook_hits": [],
+ "repo_hits": [],
+ "clean": true,
+ "statement": "Zero Komodo-derived values in the master or its RCM_MC tree; the engagement extract stays engagement-side."
+}
