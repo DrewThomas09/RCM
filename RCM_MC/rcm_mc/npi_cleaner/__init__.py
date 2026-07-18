@@ -6,9 +6,11 @@ Public surface:
     engine.classify_npi(...)  -> blank | malformed | checksum | valid
     engine.luhn_npi_valid(..) -> official NPI Luhn check
 
-The uploaded ``NPI_Recovery_and_Cleaner_v48`` modules are vendored under
-``vendor_v48/`` for provenance; see ``vendor_v48/README.md`` for why they are
-reference-only (missing engine core + heavy deps).
+The ``NPI_Recovery_and_Cleaner v49`` deterministic engine is vendored under
+``vendor_v49/`` and is live — ``vendor_adapter`` drives it
+(``schema.standardize_any`` -> ``clean_orchestrator.clean_all``) and
+``deep_pipeline`` runs its full networked recovery pipeline. See
+``vendor_v49/README.md`` for the module map and reference CSVs.
 """
 from . import engine
 

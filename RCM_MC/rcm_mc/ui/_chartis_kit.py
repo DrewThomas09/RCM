@@ -224,6 +224,7 @@ _SUB_NAV = {
         {"label": "Visuals (Charts)",    "href": "/visuals"},
         {"label": "Further Analysis",    "href": "/further-analysis"},
         {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
+        {"label": "Data Hub",            "href": "/data-hub"},
         {"label": "Public Data APIs",    "href": "/data-apis"},
         {"label": "Connector Estate",    "href": "/connector-estate"},
         {"label": "Market Scan",         "href": "/market-scan"},
@@ -363,6 +364,7 @@ _NAV_FLAGSHIPS = {
     # House views lead with the analytical reads; the chart/export utilities
     # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
     "research": [
+        "/data-hub",
         "/market-intel",
         "/industry",
         "/healthcare-verticals",
@@ -7556,6 +7558,7 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "further-analysis", "title": "Further Analysis · Tableau-style data explorer over CMS/CDC/Census/labor/market datasets", "route": "/further-analysis"},
     {"id": "cross-analysis", "title": "Cross-Dataset Analysis · correlate any two state-grain public datasets (Pearson r, R², scatter + trendline)", "route": "/cross-analysis"},
     {"id": "data-apis", "title": "Public Data APIs · catalog of free non-CMS healthcare data sources (NPPES, openFDA, ClinicalTrials, Census, ProPublica 990) by diligence question", "route": "/data-apis"},
+    {"id": "data-hub", "title": "Data Hub · central CMS & public-API research console — every data source, live cache freshness, one-click warm/fill", "route": "/data-hub"},
     {"id": "connector-estate", "title": "Connector Estate · the repo-root public healthcare API estate (openFDA, CMS, Medicaid, CDC, HRSA, NIH, Census) — every registered dataset behind one uniform query surface", "route": "/connector-estate"},
     {"id": "market-scan", "title": "Market Scan · one-input PE market brief per state/county — demographics, disease burden, HPSA shortage, Medicare spend/MA share, facility stars, Open Payments, NIH awards, OIG exclusions, QCEW labor", "route": "/market-scan"},
     {"id": "rxnorm", "title": "Drug Reference (RxNorm) · NDC→RxCUI crosswalk, concepts, drug classes & competitive-set sizing", "route": "/rxnorm"},
@@ -11338,6 +11341,7 @@ _SUB_SECTION_MAP = {
     "/cross-analysis": "research",
     "/data-apis": "research",
     "/connector-estate": "research",
+    "/data-hub": "research",
     "/market-scan": "research",
     "/rxnorm": "research",
     "/benchmark-reference": "research",

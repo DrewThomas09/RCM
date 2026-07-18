@@ -4911,6 +4911,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.connector_estate_page import render_connector_estate
             return self._send_html(render_connector_estate(_qp))
+        if path == "/data-hub":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.data_hub_page import render_data_hub
+            # Warm buttons are admin-only — they run public-API ingests, so
+            # gate on the session role the same way the warm endpoint does.
+            _cu = self._current_user() or {}
+            _can_warm = _cu.get("role") == "admin"
+            return self._send_html(render_data_hub(
+                _qp, db_path=self.config.db_path, can_warm=_can_warm))
         if path == "/market-scan":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
@@ -21721,6 +21731,141 @@ class RCMHandler(BaseHTTPRequestHandler):
                 {"job_id": job_id,
                  "status_url": f"/api/jobs/{job_id}",
                  "source": source},
+                status=HTTPStatus.ACCEPTED,
+            )
+
+        # POST /api/data-hub/warm/<connector> — fill the public-API estate
+        # from the UI. Runs the connector refresh (a polite, page-capped
+        # slice) as a background job and returns 202 + job_id; the Data Hub
+        # polls GET /api/jobs/<id>. Admin-only (it triggers outbound public
+        # API pulls + subprocesses), rate-limited to 1 warm per (connector,
+        # hour) so a button-masher can't hammer CMS. <connector> is
+        # validated against the estate's own connector list (or "all"), so
+        # only a fixed allowlist ever reaches the ingest argv.
+        if (len(parts) == 4 and parts[0] == "api" and parts[1] == "data-hub"
+                and parts[2] == "warm"):
+            connector = urllib.parse.unquote(parts[3])
+            cu = self._current_user()
+            if cu is None or cu.get("role") != "admin":
+                return self._send_json(
+                    {"error": "admin role required to warm data sources",
+                     "code": "FORBIDDEN"},
+                    status=HTTPStatus.FORBIDDEN,
+                )
+            from .data_public import connector_estate as ce
+            if not ce.estate_available():
+                return self._send_json(
+                    {"error": "public-API estate is not available on this "
+                              "deployment",
+                     "code": "ESTATE_UNAVAILABLE"},
+                    status=HTTPStatus.SERVICE_UNAVAILABLE,
+                )
+            # Allowlist: the estate's planned connectors + "all". Manual-
+            # ingest connectors (openfda/npi_registry/icd10) need domain
+            # args the sweep can't supply, so refresh skips them — warming
+            # one from here would exit non-zero. Reject with a clear hint.
+            summaries = ce.connectors_summary()
+            planned = {
+                str(s.get("connector"))
+                for s in summaries
+                if ce.ingest_hint(str(s.get("connector"))).get("planned")
+            }
+            if connector != "all" and connector not in planned:
+                known = {str(s.get("connector")) for s in summaries}
+                if connector in known:
+                    hint = ce.ingest_hint(connector).get("command", "")
+                    return self._send_json(
+                        {"error": f"{connector!r} ingests manually; run: "
+                                  f"{hint}",
+                         "code": "MANUAL_INGEST",
+                         "detail": {"command": hint}},
+                        status=HTTPStatus.BAD_REQUEST,
+                    )
+                return self._send_json(
+                    {"error": f"unknown connector {connector!r}",
+                     "code": "UNKNOWN_CONNECTOR",
+                     "detail": {"known": sorted(planned) + ["all"]}},
+                    status=HTTPStatus.BAD_REQUEST,
+                )
+            ok, wait = _REFRESH_RATE_LIMITER.check(f"estate_warm:{connector}")
+            if not ok:
+                return self._send_json(
+                    {"error": f"rate limited on {connector!r}; "
+                              f"wait {int(wait)}s",
+                     "code": "RATE_LIMITED",
+                     "detail": {"retry_after_seconds": int(wait)}},
+                    status=HTTPStatus.TOO_MANY_REQUESTS,
+                )
+            from .infra.job_queue import get_default_registry
+
+            def _warm_runner(p: Dict[str, Any]) -> Dict[str, Any]:
+                # Runs on the job worker thread. The app ships its OWN
+                # top-level ``connectors`` package (NPPES workstream), which
+                # shadows the repo-root estate — so we cannot import
+                # ``connectors.cli`` here. Shell out from the estate root
+                # instead (exactly the command the estate hands operators),
+                # which gets its own clean import world.
+                import json as _json
+                import subprocess as _sp
+                import os as _os
+                from .data_public import connector_estate as _ce
+
+                conn = p["connector"]
+                root = _ce.repo_root()
+                db_dir = _ce.db_dir()
+                if not root:
+                    return {"ok": False, "error": "estate root unresolved"}
+                _os.makedirs(db_dir, exist_ok=True)
+                argv = [sys.executable, "-m", "connectors.cli", "refresh",
+                        "--db", db_dir, "--json"]
+                if conn != "all":
+                    argv += ["--connector", conn]
+                proc = _sp.run(argv, cwd=root, capture_output=True, text=True,
+                               timeout=1800)
+                report: Dict[str, Any] = {}
+                # The report is the last JSON object on stdout (progress
+                # lines may precede it); scan from the end for a parseable
+                # object.
+                out = (proc.stdout or "").strip()
+                if out:
+                    try:
+                        report = _json.loads(out)
+                    except ValueError:
+                        for line in reversed(out.splitlines()):
+                            line = line.strip()
+                            if line.startswith("{"):
+                                try:
+                                    report = _json.loads(line)
+                                    break
+                                except ValueError:
+                                    continue
+                # Real row totals: recount the cached DBs after the pull.
+                try:
+                    counts = _ce.ingested_counts()
+                    rows_written = (int(counts.get(conn, 0)) if conn != "all"
+                                    else int(sum(counts.values())))
+                except Exception:  # noqa: BLE001
+                    rows_written = None
+                return {
+                    "connector": conn,
+                    "ok": bool(report.get("ok", proc.returncode == 0)),
+                    "returncode": proc.returncode,
+                    "n_steps": report.get("n_steps"),
+                    "n_failed": report.get("n_failed"),
+                    "rows_written": rows_written,
+                    "stderr_tail": (proc.stderr or "")[-500:],
+                }
+
+            job_id = get_default_registry().submit_callable(
+                kind="estate_warm",
+                runner=_warm_runner,
+                params={"connector": connector},
+                idempotency_key=f"estate_warm:{connector}",
+            )
+            return self._send_json(
+                {"job_id": job_id,
+                 "status_url": f"/api/jobs/{job_id}",
+                 "connector": connector},
                 status=HTTPStatus.ACCEPTED,
             )
 
