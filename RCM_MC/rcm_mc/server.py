@@ -4921,6 +4921,11 @@ class RCMHandler(BaseHTTPRequestHandler):
             _can_warm = _cu.get("role") == "admin"
             return self._send_html(render_data_hub(
                 _qp, db_path=self.config.db_path, can_warm=_can_warm))
+        if path == "/national-data":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.national_data_page import render_national_data
+            return self._send_html(render_national_data(_qp))
         if path == "/market-scan":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

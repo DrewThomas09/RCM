@@ -308,6 +308,72 @@ class TestCmsDataBrowserReal(unittest.TestCase):
         self.assertIn('id="cms-catalog-filter"', html)
 
 
+class TestNationalDataCatalog(unittest.TestCase):
+    """The National Data Catalog maps the whole national-database universe,
+    including restricted ones (HCUP/NEDS) that can't be auto-ingested."""
+
+    def test_registry_is_well_formed(self):
+        from rcm_mc.data_public import national_data_registry as ndr
+        req = {"id", "name", "agency", "access", "url", "blurb",
+               "relevance", "wired"}
+        ids = set()
+        agencies = {a for a, _ in ndr.AGENCIES}
+        for d in ndr.DATABASES:
+            self.assertEqual(set(d), req, d.get("id"))
+            self.assertIn(d["access"],
+                          {"estate", "api", "bulk", "query", "restricted"})
+            self.assertIn(d["agency"], agencies, d["id"])
+            # estate entries name their connector; others don't claim one.
+            if d["access"] == "estate":
+                self.assertTrue(d["wired"], d["id"])
+            else:
+                self.assertEqual(d["wired"], "", d["id"])
+            self.assertNotIn(d["id"], ids, f"dup id {d['id']}")
+            ids.add(d["id"])
+        cov = ndr.coverage()
+        self.assertEqual(cov["total"], len(ndr.DATABASES))
+        self.assertEqual(cov["wired"],
+                         sum(1 for d in ndr.DATABASES if d["access"] == "estate"))
+        self.assertGreater(cov["restricted"], 0)
+
+    def test_includes_key_national_databases(self):
+        from rcm_mc.data_public import national_data_registry as ndr
+        ids = {d["id"] for d in ndr.DATABASES}
+        for must in ("hcup_neds", "hcup_nis", "meps", "nhanes", "usrds",
+                     "seer", "nsduh"):
+            self.assertIn(must, ids, f"catalog missing {must}")
+        # NEDS is honestly marked restricted (DUA + purchase), not auto-ingest.
+        self.assertEqual(ndr.get("hcup_neds")["access"], "restricted")
+
+    def test_wired_entries_match_real_estate_connectors(self):
+        from rcm_mc.data_public import national_data_registry as ndr
+        from rcm_mc.data_public import connector_estate as ce
+        if not _estate_available():
+            self.skipTest("estate not available on this deployment")
+        real = {s["connector"] for s in ce.connectors_summary()}
+        for d in ndr.DATABASES:
+            if d["wired"]:
+                self.assertIn(d["wired"], real,
+                              f"{d['id']} wired to unknown connector {d['wired']}")
+
+    def test_page_renders(self):
+        from rcm_mc.ui.data_public.national_data_page import render_national_data
+        html = render_national_data({})
+        for needle in ("National Data Catalog", "HCUP NEDS", "RESTRICTED",
+                       "WIRED", "nd-filter"):
+            self.assertIn(needle, html, f"missing {needle!r}")
+
+    def test_nav_wiring(self):
+        from rcm_mc.ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, _SUB_NAV, _resolve_sub_section,
+        )
+        self.assertEqual(_resolve_sub_section("/national-data"), "research")
+        self.assertIn("/national-data",
+                      {m["route"] for m in _DEFAULT_PALETTE_MODULES})
+        self.assertTrue(any(x["href"] == "/national-data"
+                            for x in _SUB_NAV["research"]))
+
+
 class TestNotReadyHidden(unittest.TestCase):
     """Synthetic 'not ready' pages are hidden from partner catalogs but
     stay reachable by URL."""

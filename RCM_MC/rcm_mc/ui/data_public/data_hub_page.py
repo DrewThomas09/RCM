@@ -273,6 +273,9 @@ def _world_a_section(db_path: Optional[str]) -> str:
 
 # ── research tools ───────────────────────────────────────────────────
 _TOOLS = [
+    ("National Data Catalog", "/national-data",
+     "Every major U.S. national health database — HCUP/NEDS, MEPS, NHANES, "
+     "SAMHSA, USRDS, SEER — with access model + how to get it."),
     ("Connector Estate", "/connector-estate",
      "Browse every dataset, search by id/table, sample rows + copy-ready queries."),
     ("NPI Cleaner", "/npi-cleaner",
