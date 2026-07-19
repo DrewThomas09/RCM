@@ -252,5 +252,75 @@ class TestWarmEndpoint(unittest.TestCase):
         self.assertEqual(second[1].get("code"), "RATE_LIMITED")
 
 
+class TestCmsDataBrowserReal(unittest.TestCase):
+    """The CMS Data Browser must render REAL estate data, not synthetic."""
+
+    def test_compute_is_estate_scoped(self):
+        from rcm_mc.data_public.cms_data_browser import (
+            compute_cms_data_browser, _CMS_CONNECTORS,
+        )
+        r = compute_cms_data_browser()
+        if not _estate_available():
+            self.assertFalse(r.available)
+            return
+        self.assertTrue(r.available)
+        # Every catalog row belongs to a CMS connector, and counts are the
+        # real ingested totals (>= 0), never fabricated.
+        for d in r.datasets:
+            self.assertIn(d.connector, _CMS_CONNECTORS)
+            self.assertGreaterEqual(d.record_count, 0)
+        # cached_datasets is exactly the count of rows actually on disk.
+        self.assertEqual(
+            r.cached_datasets,
+            sum(1 for d in r.datasets if d.record_count > 0))
+
+    def test_page_renders_real_sections(self):
+        from rcm_mc.ui.data_public.cms_data_browser_page import (
+            render_cms_data_browser,
+        )
+        html = render_cms_data_browser({})
+        if _estate_available():
+            for needle in ("CMS Public Data Browser", "CMS Connectors",
+                           "Dataset Catalog", "/data-hub"):
+                self.assertIn(needle, html, f"missing {needle!r}")
+        else:
+            # honest empty state, never a 500
+            self.assertIn("/data-hub", html)
+
+
+class TestNotReadyHidden(unittest.TestCase):
+    """Synthetic 'not ready' pages are hidden from partner catalogs but
+    stay reachable by URL."""
+
+    def test_ma_star_is_hidden(self):
+        from rcm_mc.ui._surface_visibility import (
+            is_internal, curate_rows, NOT_READY_ROUTES,
+        )
+        self.assertIn("/ma-star", NOT_READY_ROUTES)
+        self.assertTrue(is_internal("/ma-star"))
+        kept = [r["route"] for r in curate_rows(
+            [{"route": "/ma-star", "label": "MA Star"},
+             {"route": "/data-hub", "label": "Data Hub"}])]
+        self.assertEqual(kept, ["/data-hub"])
+
+    def test_hidden_page_not_pinned_in_nav_or_palette(self):
+        # A hidden route must not be pinned anywhere that requires it to
+        # render as a card (else the nav/palette walk tests would fail).
+        from rcm_mc.ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, _NAV_FLAGSHIPS, _SUB_NAV,
+        )
+        self.assertNotIn("/ma-star",
+                         {m["route"] for m in _DEFAULT_PALETTE_MODULES})
+        self.assertNotIn("/ma-star",
+                         {r for v in _NAV_FLAGSHIPS.values() for r in v})
+        self.assertNotIn("/ma-star",
+                         {x["href"] for v in _SUB_NAV.values() for x in v})
+
+    def test_real_data_pages_stay_visible(self):
+        from rcm_mc.ui._surface_visibility import is_internal
+        for route in ("/data-hub", "/cms-data-browser", "/connector-estate"):
+            self.assertFalse(is_internal(route), route)
+
+
 if __name__ == "__main__":
     unittest.main()
