@@ -137,6 +137,16 @@ _QUICK_PLAN: Dict[str, List[List[str]]] = {
         ["fetch", "--dataset", "industry_area", "--industry", "622",
          "--max-rows", "5000"],
     ],
+    "qpp": [
+        # Benchmarks pull unattended (one request per performance year);
+        # eligibility stays roster-driven via --npis and is not swept.
+        ["fetch", "--dataset", "benchmarks", "--year", "2025"],
+    ],
+    "hcpcs": [
+        # The full Level II set is ~8k codes (~40 requests); one bounded
+        # sweep of the letter seeds is already the complete ingest.
+        ["ingest", "--max-steps", "64"],
+    ],
     "healthdata_gov": [
         ["discover"],
         ["fetch", "--dataset", "hospital_ids"],

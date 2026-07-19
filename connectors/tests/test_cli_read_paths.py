@@ -14,10 +14,12 @@ import tempfile
 import unittest
 
 from ..cms_coverage import cli as cms_coverage_cli
+from ..hcpcs import cli as hcpcs_cli
 from ..hrsa_data import cli as hrsa_cli
 from ..icd10 import cli as icd10_cli
 from ..npi_registry import cli as npi_cli
 from ..openfda import cli as openfda_cli
+from ..qpp import cli as qpp_cli
 
 # (cli module, sample read-verb argvs) per root-style connector. Every
 # argv runs against a --root that does not exist and must leave zero
@@ -44,6 +46,16 @@ _CASES = [
     (hrsa_cli, [
         ["query", "hrsa_data_mua", "--limit", "1"],
         ["lookup-shortage-area", "MD"],
+    ]),
+    (hcpcs_cli, [
+        ["query", "hcpcs_lvl2", "--limit", "1"],
+        ["lookup-code", "J9271"],
+        ["search", "pembrolizumab"],
+    ]),
+    (qpp_cli, [
+        ["query", "qpp_benchmarks", "--limit", "1"],
+        ["lookup-clinician", "1234567893"],
+        ["lookup-benchmarks", "001"],
     ]),
 ]
 
