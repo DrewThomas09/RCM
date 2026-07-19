@@ -107,9 +107,46 @@ def _catalog_table(datasets) -> str:
             + _status_pill(d.ingestion_status)
             + "</tr>"
         )
-    return (f'<div class="ck-data-table-scroll"><table class="ck-data-table">'
+    return (f'<div class="ck-data-table-scroll">'
+            f'<table class="ck-data-table" id="cms-catalog">'
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
             f'</table></div>')
+
+
+# Client-side filter over the 133-row catalog — pure DOM, no backend. Lets a
+# partner narrow to "the dataset I need" (by id, connector, or endpoint)
+# without a round-trip; deep drill still lives on /connector-estate.
+_FILTER_JS = r"""
+(function(){
+  var box=document.getElementById('cms-catalog-filter');
+  var tbl=document.getElementById('cms-catalog');
+  if(!box||!tbl) return;
+  var count=document.getElementById('cms-catalog-count');
+  box.addEventListener('input', function(){
+    var q=box.value.trim().toLowerCase();
+    var rows=tbl.tBodies[0].rows, shown=0;
+    for(var i=0;i<rows.length;i++){
+      var hit = !q || rows[i].textContent.toLowerCase().indexOf(q)>-1;
+      rows[i].style.display = hit ? '' : 'none';
+      if(hit) shown++;
+    }
+    if(count) count.textContent = shown + ' shown';
+  });
+})();
+"""
+
+
+def _catalog_filter() -> str:
+    return (
+        '<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">'
+        '<input type="search" id="cms-catalog-filter" '
+        'placeholder="Filter datasets — id, connector, or endpoint…" '
+        'aria-label="Filter CMS datasets" '
+        'style="flex:1;max-width:420px;padding:7px 11px;border:1px solid #d8cfbf;'
+        'border-radius:6px;font-size:12px;background:#fff;color:#1a2332;">'
+        '<span id="cms-catalog-count" style="font-size:11px;color:#7a8699;'
+        'font-family:JetBrains Mono,monospace;"></span></div>'
+    )
 
 
 def render_cms_data_browser(params: dict = None) -> str:
@@ -195,7 +232,7 @@ def render_cms_data_browser(params: dict = None) -> str:
   {value_anchor}
   {warm_hint}
   <div style="{cell}"><div style="{h3}">CMS Connectors — Cache Status</div>{_connectors_table(r.connectors)}</div>
-  <div style="{cell}"><div style="{h3}">Dataset Catalog ({r.total_datasets} datasets · cached first)</div>{_catalog_chart(r.datasets)}{_catalog_table(r.datasets)}</div>
+  <div style="{cell}"><div style="{h3}">Dataset Catalog ({r.total_datasets} datasets · cached first)</div>{_catalog_filter()}{_catalog_chart(r.datasets)}{_catalog_table(r.datasets)}</div>
 </div>"""
 
     body = body + ck_page_actions()
@@ -204,4 +241,5 @@ def render_cms_data_browser(params: dict = None) -> str:
         active_nav="/cms-data-browser",
         subtitle=meta_line,
         editorial_intro=intro,
+        extra_js=_FILTER_JS,
     )

@@ -68,6 +68,15 @@ class TestDataHubPage(unittest.TestCase):
             # A non-admin never gets a warm button — only the copy command.
             self.assertNotIn('class="dh-warm"', guest_html)
 
+    def test_has_find_data_search(self):
+        # The hub is a "find the data" entry point: a search box that GETs
+        # into the estate search.
+        from rcm_mc.ui.data_public.data_hub_page import render_data_hub
+        with tempfile.TemporaryDirectory() as tmp:
+            html = render_data_hub({}, db_path=os.path.join(tmp, "p.db"))
+        self.assertIn('action="/connector-estate"', html)
+        self.assertIn('name="q"', html)
+
     def test_nav_wiring(self):
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _NAV_FLAGSHIPS, _SUB_NAV,
@@ -286,6 +295,17 @@ class TestCmsDataBrowserReal(unittest.TestCase):
         else:
             # honest empty state, never a 500
             self.assertIn("/data-hub", html)
+
+    def test_page_has_catalog_filter(self):
+        from rcm_mc.ui.data_public.cms_data_browser_page import (
+            render_cms_data_browser,
+        )
+        if not _estate_available():
+            self.skipTest("estate not available on this deployment")
+        html = render_cms_data_browser({})
+        # client-side filter over the catalog (id + input + wiring)
+        self.assertIn('id="cms-catalog"', html)
+        self.assertIn('id="cms-catalog-filter"', html)
 
 
 class TestNotReadyHidden(unittest.TestCase):

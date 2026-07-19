@@ -315,6 +315,27 @@ def _tools_section() -> str:
     )
 
 
+def _search_box() -> str:
+    """Find-the-data entry point. GETs into the Connector Estate search
+    (``/connector-estate?q=``), which resolves a query against every
+    registered dataset id / table / endpoint across the estate — so a
+    partner can go from "I need X" to the dataset in one step.
+    """
+    return (
+        '<form action="/connector-estate" method="get" '
+        'style="margin:16px 0 4px;display:flex;gap:8px;max-width:560px;">'
+        '<input type="search" name="q" '
+        'placeholder="Search all datasets — e.g. hospital, drug spending, NPI, wages…" '
+        'aria-label="Search CMS and public datasets" '
+        'style="flex:1;padding:9px 12px;border:1px solid #d8cfbf;border-radius:6px;'
+        'font-size:13px;background:#fff;color:#1a2332;">'
+        '<button type="submit" '
+        'style="background:#155752;color:#fff;border:none;padding:9px 18px;'
+        'border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">'
+        'Find data</button></form>'
+    )
+
+
 def _section_head(title: str, sub: str) -> str:
     return (
         f'<div style="margin-bottom:10px;">'
@@ -426,6 +447,7 @@ def render_data_hub(params: Optional[Dict[str, Any]] = None, *,
                       meta=meta)
         + explainer
         + f'<div class="ck-kpi-grid" style="margin-top:14px;">{kpis}</div>'
+        + _search_box()
         + _estate_section(can_warm)
         + _world_a_section(db_path)
         + _tools_section()
