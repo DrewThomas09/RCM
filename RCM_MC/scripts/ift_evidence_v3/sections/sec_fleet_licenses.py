@@ -69,6 +69,10 @@ SHEETS = [
      'question': 'How big is the EMS clinician workforce, how fast is it turning '
                  'over, and what public shortage signals exist - nationally and '
                  'in the states that publish data?'},
+    {'name': 'Fleet_Data_Pull_Worklist',
+     'question': 'The exact lookups to pull the per-operator fleet (licensed '
+                 'vehicle) and license data - per state and the national routes - '
+                 'as an actionable worklist.'},
 ]
 
 ACC = '2026-07-20'
@@ -512,6 +516,17 @@ def _meta(st):
     m = dict(_NORM)
     m.update(STATE_META.get(st, {}))
     return m
+
+
+def _clean(s, cap=None):
+    """No em dashes in cell text; keep single-line; optional length cap."""
+    if s is None:
+        return None
+    s = str(s).replace('—', ' - ').replace('–', '-')
+    s = ' '.join(s.split())
+    if cap and len(s) > cap:
+        s = s[:cap - 3].rstrip() + '...'
+    return s
 
 
 # Whether a per-operator VEHICLE count is genuinely PUBLIC (distinct from the
@@ -1339,6 +1354,89 @@ def build(wb, ctx):
         'are the local read on this supply; where a state publishes a workforce '
         'trend (NY, MI here) it confirms the national direction. Per-state '
         'shortage rates are largely unpublished and are the next data to pull.')
+
+    # ================================================ TAB 6: Pull Worklist
+    ws6 = wb.create_sheet('Fleet_Data_Pull_Worklist')
+    sb6 = lib.SheetBuilder(ws6, 5, col_widths=[22, 30, 40, 40, 44],
+                           tab_color='FF2E5A3A')
+    sb6.title('Fleet-data pull worklist: the exact lookups to retrieve the '
+              'per-operator fleet and license data')
+    sb6.subtitle('The question: what exactly do you look up, per jurisdiction, to '
+                 'pull the operator/service roster and the per-operator licensed-'
+                 'VEHICLE (fleet) count? This is the action checklist behind '
+                 'Fleet_License_State_Matrix: for each state the EMS authority, '
+                 'the roster pull, the vehicle-count pull, and the public URL; '
+                 'plus the three national routes. Where a per-operator vehicle '
+                 'count is not open data the cell says how to request it. Use '
+                 'this to fill the PENDING cells on IFT_License_Tracker.')
+    sb6.note('DATA QUALITY: these are retrieval instructions against PUBLIC state '
+             'and federal sources, not asserted counts. State licensure portals '
+             'are the authority; the FMCSA route covers only interstate non-'
+             'emergency carriers (not 911 / intrastate); NPPES is operator '
+             'identity, not vehicles. Verify the live URL - state EMS sites '
+             'reorganize.')
+    sb6.blank()
+    sb6.banner('Panel A. National routes (work these first)')
+    sb6.headers(['Route', 'What it yields', 'Exact lookup', 'Scope / caveat', ''])
+    for route, yields, how, caveat in [
+        ('FMCSA Motor Carrier Census',
+         'Per-operator POWER_UNITS (vehicles) + DRIVERS',
+         'data.transportation.gov "Company Census File" (dataset az4n-8mr2; also '
+         'Motor Carrier Registrations 4a2k-zf79); filter operation/classification '
+         'for ambulance / NEMT; read POWER_UNITS per USDOT number',
+         'Interstate NEMT carriers only; self-reported; excludes 911/intrastate'),
+        ('FMCSA SAFER Company Snapshot',
+         'One operator\'s Power Units (vehicles)',
+         'safer.fmcsa.dot.gov/CompanySnapshot.aspx - search by USDOT number or '
+         'name; read the "Power Units" field',
+         'One carrier at a time; interstate NEMT'),
+        ('NPPES (operator identity floor, all 51)',
+         'Organization NPIs per state + transport mode',
+         'npiregistry.cms.hhs.gov - search Organization NPIs by taxonomy 3416 '
+         '(Land 3416L0300X, Air 3416A0800X, Water 3416S0300X, Ambulance '
+         '341600000X) and state',
+         'Identity, not vehicles; one NPI is not one truck'),
+    ]:
+        sb6.row([(route, 'label'), (yields, 'text'), (how, 'text'),
+                 (caveat, 'note'), None], wrap=True, height=54)
+    sb6.blank()
+    sb6.banner('Panel B. Per-state pull instructions (50 states + DC)')
+    sb6.headers(['Jurisdiction', 'EMS licensing authority', 'Roster pull '
+                 '(operator list)', 'Vehicle-count (fleet) pull', 'Public source'])
+    for st in JURIS:
+        meta = _meta(st)
+        fp, _k = _fleet_count_public(st)
+        # translate the fleet-count status into an action
+        if st in VEHICLE_PUBLIC:
+            action = VEHICLE_PUBLIC[st]
+        elif st in DOWNLOADABLE_ROSTER:
+            action = ('Download the ' + DOWNLOADABLE_ROSTER[st] + ' service '
+                      'roster; then request the per-vehicle permit count from the '
+                      'office')
+        else:
+            action = ('Request the per-vehicle permit list/count from the office '
+                      '(portal/FOIA); ' + _clean(meta['count_route'], 60))
+        sb6.row([
+            (f'{STATE_NAME[st]} ({st})', 'label'),
+            (_clean(meta['authority'], 60), 'text'),
+            (_clean(meta['roster_route'], 90), 'text'),
+            (action, 'note'),
+            (meta['url'], 'note'),
+        ], wrap=True, height=44)
+    sb6.blank()
+    sb6.banner('Panel C. Fastest wins')
+    sb6.prose(
+        'Start where the data is already public. Statewide licensed-VEHICLE '
+        'totals are published for New Jersey (~4,500) and Michigan (3,847), and '
+        'Washington has a public per-vehicle license-verification lookup. A '
+        'downloadable licensed-SERVICE roster exists for Kentucky (XLSX+PDF), '
+        'Maine (XLSX), Massachusetts, Arkansas and Arizona (PDF), Missouri '
+        '(Socrata open data), and Rhode Island, South Dakota, Connecticut, '
+        'Indiana, Tennessee and Oklahoma (public lists). For the true fleet count '
+        'everywhere else, the per-vehicle-permit states (FL, MT, NJ, WA, IL, CO, '
+        'MI, UT, MS, VT) hold a vehicle-level permit per ambulance - ask the '
+        'office for the vehicle-permit register - and the FMCSA census closes the '
+        'interstate-NEMT operators nationally.')
 
     # ------------------------------------------------------------ facts ---
     facts += [

@@ -85,6 +85,15 @@ S458-S461 (NREMT, BLS OOH, AAA, NY Senate), finding 123. The point: a permitted
 ambulance with no crew does not roll, so fleet-license counts must be read
 against this supply.
 
+**Fleet_Data_Pull_Worklist (the action checklist).** The retrieval instructions
+behind the matrix: per jurisdiction, the exact roster pull and per-operator
+vehicle-count pull with the public URL, plus the three national routes worked
+first - FMCSA Motor Carrier Census (data.transportation.gov Company Census File
+az4n-8mr2; POWER_UNITS per USDOT number for interstate NEMT), FMCSA SAFER Company
+Snapshot, and NPPES taxonomy 3416. A "fastest wins" panel points at the states
+whose vehicle totals or downloadable rosters are already public. This is the
+worklist for filling every PENDING cell on IFT_License_Tracker.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
