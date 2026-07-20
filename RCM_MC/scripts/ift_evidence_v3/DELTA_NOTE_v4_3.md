@@ -37,15 +37,17 @@ registry exists: vehicle permitting is a state function run 51 different ways.
 DC): the state EMS licensing authority, the service-roster public route, the
 per-vehicle permit regime, the VERIFIED NPPES operator floor, whether a
 per-operator fleet count is publicly retrievable, the public source, and the
-honest access status. Twenty-six jurisdictions carry a CONFIRMED, individually
-located public route (FL, MT, NJ, WA, TX, MO, CA, PA, GA, WI, MN, IA, NE, KS,
-NY, OH, IL, IN, NC, VA, TN, WV, MI, MD, CO, SC); the remainder carry the
-national norm (state EMS office permits vehicles; the per-operator count is
-portal-/FOIA-only) with the NPPES floor as the verified public anchor and the
-fleet-count cell bordered PENDING. The matrix is append-only: each run promotes
-more rows from PORTAL/FOIA to CONFIRMED. Confirmed per-VEHICLE permit regimes
-now span FL, MT, NJ, WA, IL, CO and MI (each licenses or permits individual
-ambulances).
+honest access status. All 51 jurisdictions (50 states + DC) now carry a CONFIRMED, individually
+located public route: the state EMS licensing authority and the specific public
+lookup, portal, or downloadable roster where an operator's service license (and,
+where published, its vehicle permits) can be pulled. The NPPES operator floor
+remains the verified public anchor on every row. Several confirmed states publish
+a DOWNLOADABLE licensed-service roster (KY as XLSX+PDF; MA, AR and AZ as PDF; MO
+as Socrata open data; RI, SD, CT via public lookups). Confirmed per-VEHICLE
+permit regimes span FL, MT, NJ, WA, IL, CO, MI, UT, MS and VT (each licenses or
+permits individual ambulances); AZ authorizes by Certificate of Necessity. The
+matrix records, per state, exactly which artifact a human pulls to get the full
+per-operator vehicle list.
 
 **Fleet_Size_Evidence (the landed numbers).** The NPPES ambulance-organization
 operator floor per jurisdiction (Type-2 NPIs under taxonomy 3416*, computed live

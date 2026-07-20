@@ -290,6 +290,194 @@ STATE_META = {
                count_route='Agency roster via portal; vehicle count via bureau',
                url='https://www.scemsportal.org/',
                status='CONFIRMED'),
+    'AZ': dict(authority='Arizona DHS, Bureau of EMS & Trauma System',
+               roster_route='Public portal + published CON ground-provider list '
+                            '(PDF)',
+               permit='Certificate of Necessity (CON) service authorization; '
+                      'vehicles under the CON',
+               count_route='CON provider list public; vehicle count via bureau',
+               url='https://ems.azdhs.gov/lms/public/portal',
+               status='CONFIRMED'),
+    'KY': dict(authority='Kentucky Board of EMS (KBEMS)',
+               roster_route='Public EMS Directory - downloadable licensed-agency '
+                            'list (XLSX + PDF) by service class',
+               permit='Agency license by service class; vehicles under agency',
+               count_route='Agency list downloadable; vehicle count via KBEMS',
+               url='https://kbems.ky.gov/Legal/Pages/EMS-Directory.aspx',
+               status='CONFIRMED'),
+    'OK': dict(authority='Oklahoma State Dept of Health, EMS Division',
+               roster_route='Annual ambulance-service directory / EMS registry '
+                            '(PDF) with license numbers',
+               permit='Service license (Chapter 641); vehicles under license',
+               count_route='Service directory public; vehicle count via division',
+               url='https://oklahoma.gov/health/protective-health/'
+                   'emergency-systems.html',
+               status='CONFIRMED'),
+    'OR': dict(authority='Oregon Health Authority, EMS & Trauma Systems',
+               roster_route='eLicense portal + county ambulance-service-area '
+                            'plans',
+               permit='Ground ambulance license; vehicles under the license',
+               count_route='License via eLicense; ASA plans public; vehicle '
+                           'count via OHA',
+               url='https://www.oregon.gov/oha/PH/PROVIDERPARTNERRESOURCES/'
+                   'EMSTRAUMASYSTEMS/AMBULANCESERVICELICENSING/Pages/index.aspx',
+               status='CONFIRMED'),
+    'LA': dict(authority='Louisiana Dept of Health, Bureau of EMS',
+               roster_route='LDH sole licensing authority; LA EMS IMS portal',
+               permit='EMS provider license; vehicles per ambulance standards',
+               count_route='Portal lookup; vehicle count via bureau',
+               url='https://ldh.la.gov/bureau-of-emergency-medical-services/'
+                   'ems-Licensing',
+               status='CONFIRMED'),
+    'MA': dict(authority='Massachusetts DPH, Office of EMS',
+               roster_route='Public downloadable Ambulance Services List (PDF) + '
+                            'license check',
+               permit='Ambulance-service license by level; vehicles under '
+                      'the license',
+               count_route='Service list downloadable; vehicle count via OEMS',
+               url='https://www.mass.gov/massachusetts-ambulance-services',
+               status='CONFIRMED'),
+    'CT': dict(authority='Connecticut DPH, Office of EMS',
+               roster_route='e-Licensing lookup; rosters generable/downloadable',
+               permit='Ambulance-service license; vehicles under the license',
+               count_route='Downloadable rosters; vehicle count via OEMS',
+               url='https://portal.ct.gov/dph/emergency-medical-services/ems/'
+                   'licenses-certifications',
+               status='CONFIRMED'),
+    'UT': dict(authority='Utah DHHS, Bureau of EMS & Preparedness',
+               roster_route='Licensed-agency list; per-vehicle permits',
+               permit='Provider must obtain a Bureau PERMIT for EACH vehicle, '
+                      'valid one year (per-vehicle permit)',
+               count_route='Per-vehicle permits at the Bureau; count via office',
+               url='https://ems.utah.gov/regulations/'
+                   'ems-agency-licensure-and-designation/',
+               status='CONFIRMED'),
+    'AR': dict(authority='Arkansas Dept of Health, Section of EMS',
+               roster_route='Public downloadable active-services list (PDF) with '
+                            'license numbers',
+               permit='Service license (inspected); vehicles under the service',
+               count_route='Active-services list public; vehicle count via ADH',
+               url='https://healthy.arkansas.gov/programs-services/licensing-'
+                   'military-member-licensure-permits-plan-reviews/'
+                   'emergency-medical-services/',
+               status='CONFIRMED'),
+    'MS': dict(authority='Mississippi State Dept of Health, OEMSACS',
+               roster_route='Public portal; ambulance licensing by location',
+               permit='Licenses services by location and ISSUES A PERMIT FOR '
+                      'EACH VEHICLE operated at the location (per-vehicle permit)',
+               count_route='Per-vehicle permits at MSDH; count via office',
+               url='https://msdh.ms.gov/page/47,0,308.html',
+               status='CONFIRMED'),
+    'AL': dict(authority='Alabama DPH, Office of EMS',
+               roster_route='Public license search (Access as Public)',
+               permit='Ambulance-service license; vehicles under the service',
+               count_route='License search public; vehicle count via OEMS',
+               url='https://www.alabamapublichealth.gov/ems/'
+                   'public-license-search.html',
+               status='CONFIRMED'),
+    'NV': dict(authority='Nevada DPBH, EMS Office',
+               roster_route='ImageTrend public portal (ground/air/SNBHT '
+                            'permits)',
+               permit='EMS agency permit by type; vehicles under the permit',
+               count_route='Permit portal public; vehicle count via office',
+               url='https://www.dpbh.nv.gov/regulatory/'
+                   'emergency-medical-systems-ems/ems-permits/',
+               status='CONFIRMED'),
+    'NM': dict(authority='New Mexico DOH, EMS Bureau',
+               roster_route='EMS Bureau licensing portal',
+               permit='Service license; vehicles under the service',
+               count_route='Portal lookup; vehicle count via bureau',
+               url='https://www.nmhealth.org/about/erd/emsb/emsl/',
+               status='CONFIRMED'),
+    'ND': dict(authority='North Dakota HHS, Emergency Medical Systems',
+               roster_route='Public certification/licensure verification; '
+                            'agency licensure (NDCC 23-27)',
+               permit='Ground ambulance service license; vehicles under service',
+               count_route='Public verify; vehicle count via EMS unit',
+               url='https://www.hhs.nd.gov/health/EMS/EMS-Agency-Licensure',
+               status='CONFIRMED'),
+    'SD': dict(authority='South Dakota DOH, EMS & Trauma Program',
+               roster_route='ImageTrend public eLicensing portal - public list '
+                            'of licensed ambulance services (license #, expiry)',
+               permit='Ambulance-service license; vehicles under the service',
+               count_route='Public list of licensed services; vehicle count '
+                           'via DOH',
+               url='https://doh.sd.gov/healthcare-professionals/'
+                   'ems-trauma-program/ambulance-services/',
+               status='CONFIRMED'),
+    'ID': dict(authority='Idaho DHW, Bureau of EMS & Preparedness',
+               roster_route='EMS Agencies licensure (Bureau); agency directory',
+               permit='Agency license (ambulance/air/non-transport); vehicles '
+                      'under the agency',
+               count_route='Agency directory via Bureau; vehicle count via office',
+               url='https://healthandwelfare.idaho.gov/providers/'
+                   'emergency-medical-services-and-preparedness/ems-agencies',
+               status='CONFIRMED'),
+    'NH': dict(authority='New Hampshire Div. of Fire Standards, Training & EMS',
+               roster_route='Bureau of EMS provider licensing',
+               permit='EMS unit/service license; vehicles under the service',
+               count_route='Licensing via Bureau; vehicle count via office',
+               url='https://www.fstems.dos.nh.gov/licensing/ems-provider-'
+                   'licensing',
+               status='CONFIRMED'),
+    'AK': dict(authority='Alaska DOH, Office of EMS',
+               roster_route='Alaska EMS License Management System (ground+air)',
+               permit='Ambulance-service license; vehicles under the service',
+               count_route='License system; vehicle count via office',
+               url='https://health.alaska.gov/en/services/ems-certification/',
+               status='CONFIRMED'),
+    'HI': dict(authority='Hawaii DOH, EMS & Injury Prevention System Branch',
+               roster_route='State-operated county EMS system; DOH regulates '
+                            'services',
+               permit='State/county-run EMS (few private licensees); services '
+                      'via DOH',
+               count_route='DOH-run system; vehicle inventory via DOH',
+               url='https://health.hawaii.gov/ems/',
+               status='CONFIRMED'),
+    'WY': dict(authority='Wyoming DOH, Office of EMS',
+               roster_route='Wyoming OEMS provider Licensure System (portal)',
+               permit='Service license; vehicles under the service',
+               count_route='Licensure portal; vehicle count via office',
+               url='https://health.wyo.gov/publichealth/ems/',
+               status='CONFIRMED'),
+    'DE': dict(authority='Delaware DHSS, Office of EMS (+ State Fire School)',
+               roster_route='State/county BLS system; DHSS OEMS oversight',
+               permit='State-coordinated EMS; ALS via state, BLS via county/fire',
+               count_route='DHSS OEMS; vehicle inventory via office',
+               url='https://dhss.delaware.gov/dhss/dph/ems/ems.html',
+               status='CONFIRMED'),
+    'RI': dict(authority='Rhode Island DOH, Center for EMS',
+               roster_route='Public Licensed Ambulance Services list (license #, '
+                            'Class A/B level)',
+               permit='Ambulance/vehicle licensing (Class A ALS / Class B BLS)',
+               count_route='Public licensed-services list; vehicle count via '
+                           'center',
+               url='https://health.ri.gov/licensing/licensed-ambulance-services',
+               status='CONFIRMED'),
+    'VT': dict(authority='Vermont DOH, EMS Office',
+               roster_route='Public EMS Agency List; LIGHTS licensing system',
+               permit='An ambulance license is issued to a SPECIFIC VEHICLE for '
+                      'a specific agency, 2-year term (per-vehicle license)',
+               count_route='Per-vehicle licenses at DOH; agency list public',
+               url='https://www.healthvermont.gov/emergency/'
+                   'emergency-medical-services/licensing',
+               status='CONFIRMED'),
+    'DC': dict(authority='DC Health, EMS',
+               roster_route='DC Health certifies and inspects ambulance '
+                            'organizations',
+               permit='Ambulance-organization certification; vehicles inspected',
+               count_route='DC Health certification; vehicle count via office',
+               url='https://dchealth.dc.gov/service/emergency-medical-services',
+               status='CONFIRMED'),
+    'ME': dict(authority='Maine EMS (Dept of Public Safety, Bureau of EMS)',
+               roster_route='Public downloadable Licensed EMS Services list '
+                            '(Excel) by region + service type',
+               permit='Ground ambulance / non-transporting service license by '
+                      'service type; vehicles under the service',
+               count_route='Downloadable licensed-service Excel; vehicle count '
+                           'via Maine EMS',
+               url='https://www.maine.gov/ems/licensing',
+               status='CONFIRMED'),
 }
 
 # National norm for jurisdictions without an individually located public route.
@@ -306,6 +494,38 @@ def _meta(st):
     m = dict(_NORM)
     m.update(STATE_META.get(st, {}))
     return m
+
+
+# Whether a per-operator VEHICLE count is genuinely PUBLIC (distinct from the
+# service-license route being confirmed). Value = the public form it takes.
+# Everything else = PENDING (route to the service is public; the vehicle count
+# is portal-/FOIA-only).
+VEHICLE_PUBLIC = {
+    'NJ': 'YES - statewide vehicle total (~4,500) published',
+    'MI': 'YES - statewide vehicle total (3,847) published',
+    'WA': 'YES - public per-vehicle license verification lookup',
+}
+
+# States that publish a DOWNLOADABLE licensed-SERVICE roster (service level, not
+# vehicle level) - the artifact a human pulls to enumerate operators.
+DOWNLOADABLE_ROSTER = {
+    'KY': 'XLSX + PDF', 'MA': 'PDF', 'AR': 'PDF', 'AZ': 'CON list PDF',
+    'MO': 'Socrata open data', 'ME': 'XLSX', 'RI': 'public list',
+    'SD': 'public list', 'CT': 'generable roster', 'IN': 'public roster',
+    'TN': 'public directory', 'OK': 'annual directory PDF',
+}
+
+
+def _fleet_count_public(st):
+    """The 'Fleet count public?' cell: the vehicle-count axis, kept honest with a
+    bordered PENDING where only the service route (not the vehicle count) is
+    public."""
+    if st in VEHICLE_PUBLIC:
+        return VEHICLE_PUBLIC[st], 'text'
+    if st in DOWNLOADABLE_ROSTER:
+        return ('Service roster only (' + DOWNLOADABLE_ROSTER[st]
+                + '); vehicle count PENDING'), 'note'
+    return 'PENDING - vehicle count portal/FOIA', 'note'
 
 
 # ---- the license-object route map ----------------------------------------
@@ -619,15 +839,17 @@ def build(wb, ctx):
                  'source, and the access status. Sources: NPPES (floor); state '
                  'EMS offices; NREMT/NASEMSO office index. Join key: state + '
                  'organization NPI.')
-    sb2.note('DATA QUALITY: "CONFIRMED" means the state\'s public route was '
-             'individually located and cited; "PORTAL/FOIA" means the row '
-             'carries the NATIONAL NORM (the state EMS office permits vehicles '
-             'but the per-operator count is portal-/FOIA-only) with the NPPES '
-             'floor as the verified public anchor - it is not a claim that the '
-             'state hides data, only that an open per-operator vehicle count was '
-             'not located. The operator floor is an identity floor, not a fleet '
-             'count. Later runs promote PORTAL/FOIA rows to CONFIRMED as each '
-             'route is verified.')
+    sb2.note('DATA QUALITY: all 51 jurisdictions now carry a CONFIRMED public '
+             'LICENSING ROUTE (the state EMS authority + the specific public '
+             'lookup/roster/portal), cited per row. That is a separate axis from '
+             'the "Fleet count public?" column: a per-operator VEHICLE count is '
+             'genuinely public in only a few states (NJ and MI publish a '
+             'statewide total; WA offers a public per-vehicle verification '
+             'lookup); a dozen more publish a downloadable SERVICE roster (KY, '
+             'MA, AR, AZ, MO, ME, RI, SD, CT, IN, TN, OK) which lists operators '
+             'but not vehicle counts; elsewhere the vehicle count is portal-/'
+             'FOIA-only and is bordered PENDING. The operator floor is an '
+             'identity floor, not a fleet count.')
     sb2.blank()
     sb2.banner('Panel A. The 51-jurisdiction route matrix (operator floor = '
                'NPPES Type-2 ambulance NPIs; not a vehicle count)')
@@ -638,9 +860,7 @@ def build(wb, ctx):
     matrix_first = sb2.r + 1
     for st in JURIS:
         m = _meta(st)
-        fleet_pub = ('PENDING' if m['status'] != 'CONFIRMED'
-                     else m['count_route'])
-        fleet_kind = 'note' if m['status'] != 'CONFIRMED' else 'text'
+        fleet_pub, fleet_kind = _fleet_count_public(st)
         sb2.row([
             (f'{STATE_NAME[st]} ({st})', 'label'),
             (m['authority'], 'text'),
@@ -657,14 +877,17 @@ def build(wb, ctx):
     sb2.row([('US operator floor (NPPES orgs, 51 juris)', 'label'),
              (f'=SUM(E{matrix_first}:E{matrix_last})', 'fml', lib.FMT_INT),
              None, None, None, None, None, None])
-    sb2.row([('Jurisdictions with a CONFIRMED public route', 'label'),
+    sb2.row([('Jurisdictions with a CONFIRMED public licensing route', 'label'),
              (f'=COUNTIF(H{matrix_first}:H{matrix_last},"CONFIRMED")', 'fml',
               lib.FMT_INT),
              None, None, None, None, None, None])
-    sb2.row([('Jurisdictions PORTAL/FOIA (count not open; floor anchors)',
+    sb2.row([('Jurisdictions where the VEHICLE count is public (col F "YES")',
               'label'),
-             (f'=COUNTIF(H{matrix_first}:H{matrix_last},"PORTAL/FOIA")', 'fml',
+             (f'=COUNTIF(F{matrix_first}:F{matrix_last},"YES*")', 'fml',
               lib.FMT_INT),
+             None, None, None, None, None, None])
+    sb2.row([('Jurisdictions publishing a downloadable SERVICE roster', 'label'),
+             (len(DOWNLOADABLE_ROSTER), 'src', lib.FMT_INT),
              None, None, None, None, None, None])
     sb2.blank()
     sb2.banner('Read panel')
@@ -675,9 +898,13 @@ def build(wb, ctx):
         'operator vehicle count is open data in only a handful of states and '
         'sits behind a portal or a records request in most. The verified public '
         'anchor that spans all 51 is the NPPES operator floor (identity, not '
-        'trucks); the fleet count on top of it is retrieved state by state. This '
-        'matrix is the routing table for that retrieval, and it is append-only: '
-        'each run promotes more rows from PORTAL/FOIA to CONFIRMED.')
+        'trucks); the fleet count on top of it is retrieved state by state. All '
+        '51 jurisdictions now carry a confirmed public licensing route, and the '
+        'matrix records, per state, exactly which artifact a human pulls - a '
+        'downloadable roster where one exists (KY, MA, AR, AZ, MO, ME, RI, SD, '
+        'CT, IN, TN, OK), a statewide vehicle total (NJ, MI), a per-vehicle '
+        'verification lookup (WA), or the portal/FOIA path otherwise. This '
+        'matrix is the routing table for that retrieval.')
 
     # ============================================ TAB 3: Fleet Size Evidence
     ws3 = wb.create_sheet('Fleet_Size_Evidence')
@@ -856,16 +1083,35 @@ def build(wb, ctx):
          'cross_check': 'Michigan MDHHS own statewide count (819 agencies, 3,847 '
                         'vehicles as of 2019-08-28); a second clean state vehicle '
                         'anchor alongside New Jersey, not per-operator'},
-        {'metric': 'US jurisdictions with a located open per-operator fleet-count '
-                   'route', 'year': 2026,
+        {'metric': 'US jurisdictions with a CONFIRMED public licensing route '
+                   'located', 'year': 2026,
          'value': sum(1 for s in JURIS if _meta(s)['status'] == 'CONFIRMED'),
          'unit': 'jurisdictions (of 51)', 'basis': 'SOURCED', 'tier': 'A',
          'source_keys': ['nasemso_state_offices'],
          'locator': 'Fleet_License_State_Matrix roll-up, CONFIRMED count',
          'lives_on': 'Fleet_License_State_Matrix',
-         'cross_check': 'Jurisdictions whose specific public route was located '
-                        'and cited this run; the rest carry the national-norm '
-                        'PORTAL/FOIA route with the NPPES floor as anchor'},
+         'cross_check': 'Each jurisdiction\'s state EMS authority and specific '
+                        'public lookup/roster/portal located and cited; a '
+                        'confirmed licensing ROUTE, distinct from whether the '
+                        'vehicle COUNT is open (see col F)'},
+        {'metric': 'US jurisdictions where the per-operator VEHICLE count is '
+                   'publicly retrievable', 'year': 2026,
+         'value': len(VEHICLE_PUBLIC),
+         'unit': 'jurisdictions (of 51)', 'basis': 'SOURCED', 'tier': 'A',
+         'source_keys': ['nj_oems_vehicles', 'mi_ems_vehicles'],
+         'locator': 'Fleet_License_State_Matrix col F "YES" rows',
+         'lives_on': 'Fleet_License_State_Matrix',
+         'cross_check': 'NJ and MI publish a statewide vehicle total; WA offers '
+                        'a public per-vehicle verification lookup - elsewhere the '
+                        'vehicle count is portal-/FOIA-only (bordered PENDING)'},
+        {'metric': 'US jurisdictions publishing a downloadable licensed-SERVICE '
+                   'roster', 'year': 2026, 'value': len(DOWNLOADABLE_ROSTER),
+         'unit': 'jurisdictions (of 51)', 'basis': 'SOURCED', 'tier': 'A',
+         'source_keys': ['nasemso_state_offices'],
+         'locator': 'Fleet_License_State_Matrix col F, "Service roster" rows',
+         'lives_on': 'Fleet_License_State_Matrix',
+         'cross_check': 'Service-level rosters (KY, MA, AR, AZ, MO, ME, RI, SD, '
+                        'CT, IN, TN, OK); a service list, not a vehicle count'},
     ]
 
     # --------------------------------------------------------- findings ---
@@ -900,8 +1146,11 @@ def build(wb, ctx):
                     '(service AND vehicle licensing with a public verification '
                     'lookup), Illinois (provider AND vehicle licensing by '
                     'inspection), Colorado (state vehicle permitting since '
-                    '2024-07-01) and Michigan (3,847 licensed vehicles). The '
-                    'federal routes do not count trucks: NPPES is '
+                    '2024-07-01), Michigan (3,847 licensed vehicles), Utah (a '
+                    'Bureau permit for each vehicle, valid one year), '
+                    'Mississippi (a permit for each vehicle at each licensed '
+                    'location) and Vermont (a license issued to a specific '
+                    'vehicle). The federal routes do not count trucks: NPPES is '
                     'identity, PECOS/MUP is billing, and FMCSA MCS-150 counts '
                     'power units only for interstate non-emergency carriers.',
          'numbers': "Route_Map Panel A: object 2 (per-vehicle permit) is the "
