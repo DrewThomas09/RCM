@@ -31,6 +31,15 @@ vehicle-license anchors (New Jersey's ~4,500 licensed EMS vehicles). Every numbe
 is public and re-derivable; per-operator vehicle counts that are not public are
 PENDING with the named state registry.
 
+IFT_License_Tracker - the one-grid tracker. Per US jurisdiction, every public
+ambulance/IFT license count in a single grid across four universes that must not
+be summed: the NPPES operator-identity floor (all 51), the licensed-service count
+where a state publishes one (MO, IA, MI), the licensed-vehicle total where
+published (NJ, MI), and the EMT and paramedic workforce with mean wage from BLS
+OEWS 2024 (SOC 29-2042 / 29-2043) so wages per state can be backed into. Every
+unpublished service or vehicle count is bordered PENDING with the State_Matrix
+route that fills it.
+
 FIREWALL: public sources only. No operator is described as a customer/prospect of
 any company. The NPPES floor is an identity floor, not a fleet count - a single
 operator may hold many vehicle permits under one NPI, and one NPI is not one
@@ -51,6 +60,11 @@ SHEETS = [
      'question': 'What ambulance-operator and fleet counts are public and '
                  're-derivable today - the NPPES operator floor per state, the '
                  'taxonomy split, and the confirmed vehicle-license anchors?'},
+    {'name': 'IFT_License_Tracker',
+     'question': 'Per US jurisdiction, every ambulance/IFT license count that is '
+                 'public and sourced today - operator identities (NPPES), '
+                 'licensed services and vehicles where published, and the EMT / '
+                 'paramedic workforce with mean wage (BLS) to back into?'},
 ]
 
 ACC = '2026-07-20'
@@ -528,6 +542,47 @@ def _fleet_count_public(st):
     return 'PENDING - vehicle count portal/FOIA', 'note'
 
 
+# Published licensed-SERVICE counts (sourced, per state). Blank = not published /
+# not extracted (the downloadable roster exists but the count is PENDING a pull).
+PUBLISHED_SERVICES = {
+    'MO': (486, 'DHSS open data (455 ground + 26 air + 5 stretcher van)'),
+    'IA': (724, 'Iowa HHS June-2025 roll-up (authorized service programs; '
+                '901 service locations)'),
+    'MI': (819, 'MDHHS (life-support agencies, 2019)'),
+}
+
+# Published licensed-VEHICLE counts (sourced statewide totals).
+PUBLISHED_VEHICLES = {
+    'NJ': (4500, 'NJ OEMS (all vehicle classes, approx)'),
+    'MI': (3847, 'MDHHS life-support vehicles (2019)'),
+}
+
+
+def _oews_by_state(lib, cache):
+    """Per-state EMT (29-2042) and paramedic (29-2043) employment + mean wage
+    from the manifested BLS OEWS state file. Returns {st: {emt_emp, para_emp,
+    emt_wage, para_wage}}."""
+    out = {}
+    try:
+        rows = lib.load_cache(cache, 'oews_ems_state_2024')
+    except FileNotFoundError:
+        return out
+    for r in rows:
+        st = r.get('PRIM_STATE')
+        if not st:
+            continue
+        d = out.setdefault(st, {})
+        emp = r.get('TOT_EMP')
+        wage = r.get('A_MEAN')
+        if r.get('OCC_CODE') == '29-2042':
+            d['emt_emp'] = emp if isinstance(emp, (int, float)) else None
+            d['emt_wage'] = wage if isinstance(wage, (int, float)) else None
+        elif r.get('OCC_CODE') == '29-2043':
+            d['para_emp'] = emp if isinstance(emp, (int, float)) else None
+            d['para_wage'] = wage if isinstance(wage, (int, float)) else None
+    return out
+
+
 # ---- the license-object route map ----------------------------------------
 # (object, what it is, public route, what it yields, per-operator vehicle
 #  count? , access tier)
@@ -751,6 +806,17 @@ def build(wb, ctx):
                 'cdphe-ground-ambulance-agency-licensing', 'tier': 'B',
          'accessed': accessed,
          'powers': ['Fleet_License_Route_Map', 'Fleet_License_State_Matrix']},
+        {'key': 'bls_oews_ems_state', 'publisher': 'US BLS (OEWS)',
+         'document': 'Occupational Employment and Wage Statistics, May 2024, '
+                     'state grain - Emergency Medical Technicians (SOC 29-2042) '
+                     'and Paramedics (SOC 29-2043): TOT_EMP and A_MEAN per state',
+         'vintage': 'OEWS May 2024 release',
+         'locator': 'cache key oews_ems_state_2024; PRIM_STATE, OCC_CODE, '
+                    'TOT_EMP, A_MEAN',
+         'supplies': 'The EMT and paramedic workforce and mean-wage columns per '
+                     'state on IFT_License_Tracker',
+         'url': 'https://www.bls.gov/oes/current/oes292040.htm', 'tier': 'A',
+         'accessed': accessed, 'powers': ['IFT_License_Tracker']},
         {'key': 'fmcsa_safer', 'publisher': 'US DOT FMCSA',
          'document': 'FMCSA SAFER Company Snapshot - MCS-150 self-reported '
                      'power-unit (vehicle) counts for interstate motor carriers, '
@@ -1037,6 +1103,116 @@ def build(wb, ctx):
         'vehicle-permit count that State_Matrix routes to state by state - the '
         'work this workbook now extends run over run.')
 
+    # ==================================================== TAB 4: License Tracker
+    oews = _oews_by_state(lib, cache)
+    ws4 = wb.create_sheet('IFT_License_Tracker')
+    sb4 = lib.SheetBuilder(ws4, 8,
+                           col_widths=[24, 16, 16, 30, 14, 16, 16, 16],
+                           tab_color='FF2E5A3A')
+    sb4.title('IFT license tracker: every public per-state license count, in '
+              'one grid')
+    sb4.subtitle('The question: for every US jurisdiction, what ambulance/IFT '
+                 'license counts are PUBLIC and sourced today? Each row joins the '
+                 'operator-identity floor (NPPES Type-2 NPIs), the licensed-'
+                 'SERVICE count where a state publishes one, the licensed-VEHICLE '
+                 'total where published, and the EMT and paramedic WORKFORCE with '
+                 'mean wage (BLS OEWS May 2024, SOC 29-2042 / 29-2043) so wages '
+                 'per state can be backed into. Sources: NPPES; state EMS offices '
+                 '(published counts); BLS OEWS 2024. Join key: state. A blank '
+                 'PENDING cell names where the count would come from.')
+    sb4.note('DATA QUALITY: these are FOUR different universes and must not be '
+             'summed across columns. Operator floor = NPI organizations '
+             '(identity, not vehicles). Licensed services / vehicles = state '
+             'credentials (published only where shown; else PENDING via the '
+             'State_Matrix route). EMT / paramedic workforce = BLS OEWS JOBS '
+             '(employment, not licenses or people - a person can hold two jobs, '
+             'and a licensed clinician may not be employed). Wages are BLS mean '
+             'annual. Blank workforce cells are BLS nondisclosure (small cell), '
+             'not zero.')
+    sb4.blank()
+    sb4.banner('Panel A. Per-jurisdiction license + workforce tracker (do not '
+               'sum across columns - four different universes)')
+    sb4.headers(['Jurisdiction', 'Operator floor (NPPES)', 'Licensed services',
+                 'Services source / note', 'Licensed vehicles',
+                 'EMT jobs (BLS)', 'Paramedic jobs (BLS)', 'EMS mean wage (BLS)'])
+    t_first = sb4.r + 1
+    for st in JURIS:
+        svc = PUBLISHED_SERVICES.get(st)
+        veh = PUBLISHED_VEHICLES.get(st)
+        o = oews.get(st, {})
+        emt_e, para_e = o.get('emt_emp'), o.get('para_emp')
+        # EMS mean wage: employment-weighted blend of EMT + paramedic where both
+        # present, else whichever is present.
+        ew, pw = o.get('emt_wage'), o.get('para_wage')
+        wage = None
+        if emt_e and para_e and ew and pw:
+            wage = (emt_e * ew + para_e * pw) / (emt_e + para_e)
+        elif ew:
+            wage = ew
+        elif pw:
+            wage = pw
+        svc_cell = ((svc[0], 'src', lib.FMT_INT) if svc
+                    else ('PENDING', 'note'))
+        svc_note = ((svc[1], 'note') if svc
+                    else ('via State_Matrix route (roster/portal)', 'note'))
+        veh_cell = ((veh[0], 'src', lib.FMT_INT) if veh
+                    else ('PENDING', 'note'))
+        sb4.row([
+            (f'{STATE_NAME[st]} ({st})', 'label'),
+            (tot[st], 'src', lib.FMT_INT),
+            svc_cell, svc_note, veh_cell,
+            ((emt_e, 'src', lib.FMT_INT) if emt_e is not None
+             else ('n/d', 'note')),
+            ((para_e, 'src', lib.FMT_INT) if para_e is not None
+             else ('n/d', 'note')),
+            ((wage, 'src', lib.FMT_USD) if wage else ('n/d', 'note')),
+        ], wrap=True, height=26)
+    t_last = sb4.r
+    sb4.row([('United States (51 juris)', 'label'),
+             (f'=SUM(B{t_first}:B{t_last})', 'fml', lib.FMT_INT),
+             (f'=SUM(C{t_first}:C{t_last})', 'fml', lib.FMT_INT),
+             ('published services only (subset)', 'note'),
+             (f'=SUM(E{t_first}:E{t_last})', 'fml', lib.FMT_INT),
+             (f'=SUM(F{t_first}:F{t_last})', 'fml', lib.FMT_INT),
+             (f'=SUM(G{t_first}:G{t_last})', 'fml', lib.FMT_INT),
+             ('col sums; wage is not summable', 'note')])
+    sb4.blank()
+    # national workforce totals for the read panel / facts
+    us_emt = sum((oews.get(s, {}).get('emt_emp') or 0) for s in JURIS)
+    us_para = sum((oews.get(s, {}).get('para_emp') or 0) for s in JURIS)
+    sb4.banner('Panel B. What each column is (the four universes)')
+    for lbl, desc in [
+        ('Operator floor (NPPES)', 'Type-2 ambulance NPIs - legal entities, an '
+         'identity floor. One operator may hold many vehicle permits under one '
+         'NPI; one NPI is not one ambulance.'),
+        ('Licensed services', 'State EMS service/agency licenses where the state '
+         'publishes a count (MO, IA, MI here). Elsewhere PENDING via the '
+         'State_Matrix roster/portal route.'),
+        ('Licensed vehicles', 'State per-vehicle permits/licenses where a '
+         'statewide total is published (NJ, MI). This is the true fleet-size '
+         'unit; elsewhere portal-/FOIA-only.'),
+        ('EMT / paramedic jobs', 'BLS OEWS employment (SOC 29-2042 EMT, 29-2043 '
+         'paramedic), May 2024. JOBS, not licenses or headcount; excludes '
+         'self-employed and understates dual-role fire/EMS.'),
+        ('EMS mean wage', 'BLS OEWS annual mean, employment-weighted across EMT '
+         'and paramedic. The wage-per-state figure to back into.')]:
+        sb4.row([(lbl, 'label'), (desc, 'text'), None, None, None, None, None,
+                 None], wrap=True, height=40)
+    sb4.blank()
+    sb4.banner('Read panel')
+    sb4.prose(
+        'This is the single grid a diligence desk wants: per state, the operator '
+        'floor, the licensed services and vehicles where a state publishes them, '
+        'and the EMT and paramedic workforce with the wage to back into. The four '
+        'columns are four universes and must never be summed together - identity '
+        f'(NPPES: ~{us_total:,} operators), state credentials (services / '
+        'vehicles), and BLS jobs (roughly '
+        f'{us_emt:,} EMT and {us_para:,} paramedic jobs across the 51) each count '
+        'a different thing. Where a licensed-service or vehicle count is not '
+        'published it is bordered PENDING with the State_Matrix route that '
+        'retrieves it, so the grid doubles as the worklist for filling every '
+        'remaining cell.')
+
     # ------------------------------------------------------------ facts ---
     facts += [
         {'metric': 'US ambulance-operator floor (NPPES Type-2 NPIs, 51 juris)',
@@ -1112,6 +1288,20 @@ def build(wb, ctx):
          'lives_on': 'Fleet_License_State_Matrix',
          'cross_check': 'Service-level rosters (KY, MA, AR, AZ, MO, ME, RI, SD, '
                         'CT, IN, TN, OK); a service list, not a vehicle count'},
+        {'metric': 'US EMT jobs, 51-jurisdiction sum (BLS OEWS 29-2042)',
+         'year': 2024, 'value': us_emt, 'unit': 'jobs (employment)',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['bls_oews_ems_state'],
+         'locator': 'IFT_License_Tracker Panel A, EMT-jobs column US sum',
+         'lives_on': 'IFT_License_Tracker',
+         'cross_check': 'Sum of per-state OEWS EMT employment; jobs not licenses, '
+                        'and states with nondisclosed cells are excluded (a floor)'},
+        {'metric': 'US paramedic jobs, 51-jurisdiction sum (BLS OEWS 29-2043)',
+         'year': 2024, 'value': us_para, 'unit': 'jobs (employment)',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['bls_oews_ems_state'],
+         'locator': 'IFT_License_Tracker Panel A, paramedic-jobs column US sum',
+         'lives_on': 'IFT_License_Tracker',
+         'cross_check': 'Sum of per-state OEWS paramedic employment; jobs not '
+                        'licenses; a floor excluding nondisclosed states'},
     ]
 
     # --------------------------------------------------------- findings ---
@@ -1200,7 +1390,27 @@ def build(wb, ctx):
          'guardrail': 'Statewide averages hide a skewed distribution (a few '
                       'large operators run most vehicles); the MI counts are '
                       '2019 vintage. Neither is a per-operator fleet figure.'},
-    ]
+        {'id_hint': 122,
+         'finding': 'The IFT_License_Tracker puts every public per-state count in '
+                    'one grid across four universes that must never be summed '
+                    f'together: the NPPES operator floor (~{us_total:,} '
+                    'organizations), the licensed-service and licensed-vehicle '
+                    'counts states publish (MO, IA, MI services; NJ, MI '
+                    'vehicles), and the BLS EMS workforce (about '
+                    f'{us_emt:,} EMT and {us_para:,} paramedic jobs across the 51, '
+                    'with a per-state mean wage to back into). Every unpublished '
+                    'service or vehicle count is bordered PENDING with the '
+                    'State_Matrix route that fills it, so the grid is both the '
+                    'evidence and the worklist.',
+         'numbers': f"='IFT_License_Tracker'!F{t_last + 1}+"
+                    f"'IFT_License_Tracker'!G{t_last + 1}",
+         'sources': 'nppes_amb_roster; bls_oews_ems_state; mo_ems_socrata',
+         'confidence': 'High on each sourced column; the four universes are not '
+                       'additive and the workforce is jobs, not licenses',
+         'guardrail': 'Do not sum across columns: NPPES counts entities, state '
+                      'counts count credentials, BLS counts jobs. Workforce sums '
+                      'are floors (nondisclosed states excluded) and understate '
+                      'dual-role fire/EMS staffing.'}]
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
             'findings': findings, 'meta': {'run': 7}}

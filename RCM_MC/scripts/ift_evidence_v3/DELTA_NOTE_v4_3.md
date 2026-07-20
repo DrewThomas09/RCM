@@ -61,6 +61,17 @@ chart ranks the top-12 jurisdictions by operator floor. Two independent states
 now show several licensed vehicles per operator, confirming the NPPES operator
 floor systematically understates fleet size.
 
+**IFT_License_Tracker (the one-grid tracker).** Per US jurisdiction, every public
+ambulance/IFT license count in a single grid across four universes that must
+never be summed together: the NPPES operator-identity floor (all 51), the
+licensed-SERVICE count where a state publishes one (MO 486, IA 724, MI 819), the
+licensed-VEHICLE total where published (NJ ~4,500, MI 3,847), and the EMT and
+paramedic WORKFORCE with mean wage from BLS OEWS May 2024 (SOC 29-2042 / 29-2043,
+all states) so wages per state can be backed into. Every unpublished service or
+vehicle count is bordered PENDING with the State_Matrix route that fills it, so
+the grid is both the evidence and the worklist. New facts F633-F634 (US EMT and
+paramedic job sums), source S457 (BLS OEWS state), finding 122.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
