@@ -37,21 +37,27 @@ registry exists: vehicle permitting is a state function run 51 different ways.
 DC): the state EMS licensing authority, the service-roster public route, the
 per-vehicle permit regime, the VERIFIED NPPES operator floor, whether a
 per-operator fleet count is publicly retrievable, the public source, and the
-honest access status. Fifteen jurisdictions carry a CONFIRMED, individually
+honest access status. Twenty-six jurisdictions carry a CONFIRMED, individually
 located public route (FL, MT, NJ, WA, TX, MO, CA, PA, GA, WI, MN, IA, NE, KS,
-NY); the remainder carry the national norm (state EMS office permits vehicles;
-the per-operator count is portal-/FOIA-only) with the NPPES floor as the
-verified public anchor and the fleet-count cell bordered PENDING. The matrix is
-append-only: each run promotes more rows from PORTAL/FOIA to CONFIRMED.
+NY, OH, IL, IN, NC, VA, TN, WV, MI, MD, CO, SC); the remainder carry the
+national norm (state EMS office permits vehicles; the per-operator count is
+portal-/FOIA-only) with the NPPES floor as the verified public anchor and the
+fleet-count cell bordered PENDING. The matrix is append-only: each run promotes
+more rows from PORTAL/FOIA to CONFIRMED. Confirmed per-VEHICLE permit regimes
+now span FL, MT, NJ, WA, IL, CO and MI (each licenses or permits individual
+ambulances).
 
 **Fleet_Size_Evidence (the landed numbers).** The NPPES ambulance-organization
 operator floor per jurisdiction (Type-2 NPIs under taxonomy 3416*, computed live
 from the manifested NPPES roster - about 19,400 organizations across the 51
 jurisdictions), the national taxonomy split (land/unspecified/air/water), the
 Missouri open-data service counts (from the manifested data.mo.gov Socrata
-pull), and the confirmed statewide vehicle-license anchor (New Jersey's ~4,500
-licensed EMS vehicles and ~1,700 MICPs). A native bar chart ranks the top-12
-jurisdictions by operator floor.
+pull), and two confirmed statewide vehicle-license anchors: New Jersey (~4,500
+licensed EMS vehicles and ~1,700 MICPs) and Michigan (3,847 licensed life-support
+vehicles across 819 agencies, 2019 - about 4.7 vehicles per agency). A native bar
+chart ranks the top-12 jurisdictions by operator floor. Two independent states
+now show several licensed vehicles per operator, confirming the NPPES operator
+floor systematically understates fleet size.
 
 ## The guardrail, held throughout
 

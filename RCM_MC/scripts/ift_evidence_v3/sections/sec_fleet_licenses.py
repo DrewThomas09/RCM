@@ -209,6 +209,87 @@ STATE_META = {
                            'centralized public',
                url='https://www.health.ny.gov/professionals/ems/',
                status='CONFIRMED'),
+    'OH': dict(authority='Ohio DPS, Division of EMS',
+               roster_route='Public EMS/Fire provider verification portal',
+               permit='EMS organization certification; vehicles under the org',
+               count_route='Provider verification public; vehicle count via '
+                           'Division',
+               url='https://services.dps.ohio.gov/EMSProviders/Verification',
+               status='CONFIRMED'),
+    'IL': dict(authority='Illinois DPH, Division of EMS',
+               roster_route='EMS provider AND vehicle licensing (inspection)',
+               permit='Licenses provider agencies AND their transport/non-'
+                      'transport vehicles and stretcher vans, per inspection',
+               count_route='Vehicle licenses issued per provider; count via '
+                           'IDPH',
+               url='https://dph.illinois.gov/topics-services/emergency-'
+                   'preparedness-response/ems/provider-vehicle-licensing.html',
+               status='CONFIRMED'),
+    'IN': dict(authority='Indiana DHS, Office of EMS',
+               roster_route='Public Providers and Supervising Hospitals Roster '
+                            '(EMS Data)',
+               permit='Service-provider certification + vehicle certification',
+               count_route='Provider roster public; vehicle certs via DHS',
+               url='https://www.in.gov/dhs/ems/ems-data/',
+               status='CONFIRMED'),
+    'NC': dict(authority='North Carolina DHHS, Office of EMS (DHSR)',
+               roster_route='OEMS credentialing; provider list via NCOEMS',
+               permit='EMS provider credentialing; vehicles under the provider',
+               count_route='Provider list via OEMS; vehicle count via office',
+               url='https://oems.nc.gov/credentialing/',
+               status='CONFIRMED'),
+    'VA': dict(authority='Virginia DOH, Office of EMS',
+               roster_route='Public EMS Agency Search portal + credential '
+                            'verification',
+               permit='EMS agency license; vehicle permits under the agency',
+               count_route='Agency search public; vehicle count via OEMS',
+               url='https://vdhems.vdh.virginia.gov/emsapps/f?p=200:2',
+               status='CONFIRMED'),
+    'TN': dict(authority='Tennessee DOH, EMS Board',
+               roster_route='Public Ambulance Service Directory (by county) + '
+                            'EMS Directory',
+               permit='Ambulance-service license; vehicles under the license',
+               count_route='Service directory public; vehicle count via board',
+               url='https://internet.health.tn.gov/EMSDirectory',
+               status='CONFIRMED'),
+    'WV': dict(authority='West Virginia DHHR, Office of EMS',
+               roster_route='Public ImageTrend license portal + agency '
+                            'licensure',
+               permit='Agency license; vehicles under the agency',
+               count_route='License portal public; vehicle count via OEMS',
+               url='https://westvirginia.imagetrendlicense.com/lms/public/portal',
+               status='CONFIRMED'),
+    'MI': dict(authority='Michigan DHHS, Bureau of EMS/Trauma/Prep',
+               roster_route='Public eLicensing portal (search agencies + '
+                            'vehicles)',
+               permit='Licenses life-support AGENCIES and each life-support '
+                      'VEHICLE; ~3,847 vehicles / 819 agencies statewide (2019)',
+               count_route='Statewide vehicle total published; per-agency via '
+                           'portal',
+               url='https://www.mi-emsis.org/lms/public/portal',
+               status='CONFIRMED'),
+    'MD': dict(authority='Maryland MIEMSS, Commercial Ambulance Licensing '
+                         '(SOCALR)',
+               roster_route='State Office of Commercial Ambulance Licensing & '
+                            'Regulation',
+               permit='Commercial ambulance service + vehicle licensing',
+               count_route='Licensed commercial services/vehicles via SOCALR',
+               url='https://www.miemss.org/home/commercial-ambulance',
+               status='CONFIRMED'),
+    'CO': dict(authority='Colorado DPHE (state licensing since 2024-07-01)',
+               roster_route='OATH public license/permit lookup',
+               permit='State licenses ambulance services AND permits ambulance '
+                      'VEHICLES (since 2024-07-01; formerly county-based)',
+               count_route='OATH lookup public; vehicle permits per agency',
+               url='https://cdphe.colorado.gov/ems-system-oversight/'
+                   'cdphe-ground-ambulance-agency-licensing',
+               status='CONFIRMED'),
+    'SC': dict(authority='South Carolina Dept of Public Health, Bureau of EMS',
+               roster_route='SC EMS portal (agency roster)',
+               permit='EMS agency license; vehicles/permits under the agency',
+               count_route='Agency roster via portal; vehicle count via bureau',
+               url='https://www.scemsportal.org/',
+               status='CONFIRMED'),
 }
 
 # National norm for jurisdictions without an individually located public route.
@@ -410,6 +491,45 @@ def build(wb, ctx):
                      'Route_Map and State_Matrix',
          'url': 'https://dphhs.mt.gov/publichealth/EMSTS/ems/servicelicensing',
          'tier': 'B', 'accessed': accessed,
+         'powers': ['Fleet_License_Route_Map', 'Fleet_License_State_Matrix']},
+        {'key': 'mi_ems_vehicles', 'publisher': 'Michigan DHHS, Bureau of EMS',
+         'document': 'Michigan EMS licensure scale: as of 2019-08-28 the state '
+                     'licenses 819 life-support agencies and 3,847 life-support '
+                     'vehicles (plus 28,804 EMS providers), searchable in the '
+                     'public eLicensing portal',
+         'vintage': 'counts as of 2019-08-28 (michigan.gov MDHHS EMS)',
+         'locator': 'MDHHS EMS licensure pages / eLicensing portal',
+         'supplies': 'The confirmed statewide agency+vehicle anchor (MI) on '
+                     'Fleet_Size_Evidence and the MI row on State_Matrix',
+         'url': 'https://www.michigan.gov/mdhhs/inside-mdhhs/legislationpolicy/'
+                'ems/agencylic', 'tier': 'A', 'accessed': accessed,
+         'powers': ['Fleet_Size_Evidence', 'Fleet_License_State_Matrix']},
+        {'key': 'il_ems_vehicle', 'publisher': 'Illinois DPH, Division of EMS',
+         'document': 'Illinois EMS provider AND vehicle licensing: IDPH licenses '
+                     'provider agencies and their transport and non-transport '
+                     'vehicles (and stretcher vans) to equipment/staffing/build '
+                     'standards, enforced by inspection',
+         'vintage': f'dph.illinois.gov as retrieved {ACC}',
+         'locator': 'EMS provider and vehicle licensing page',
+         'supplies': 'The per-vehicle licensing confirmation (IL) on Route_Map '
+                     'and State_Matrix',
+         'url': 'https://dph.illinois.gov/topics-services/emergency-preparedness'
+                '-response/ems/provider-vehicle-licensing.html', 'tier': 'B',
+         'accessed': accessed,
+         'powers': ['Fleet_License_Route_Map', 'Fleet_License_State_Matrix']},
+        {'key': 'co_ems_vehicle',
+         'publisher': 'Colorado DPHE, EMS System Oversight',
+         'document': 'Colorado ground-ambulance agency licensing: since '
+                     '2024-07-01 the state (CDPHE) licenses ambulance services '
+                     'and permits ambulance vehicles (formerly county-based); '
+                     'OATH public lookup',
+         'vintage': f'cdphe.colorado.gov as retrieved {ACC}',
+         'locator': 'CDPHE Ground Ambulance Agency Licensing page',
+         'supplies': 'The per-vehicle permit confirmation (CO) on Route_Map and '
+                     'State_Matrix',
+         'url': 'https://cdphe.colorado.gov/ems-system-oversight/'
+                'cdphe-ground-ambulance-agency-licensing', 'tier': 'B',
+         'accessed': accessed,
          'powers': ['Fleet_License_Route_Map', 'Fleet_License_State_Matrix']},
         {'key': 'fmcsa_safer', 'publisher': 'US DOT FMCSA',
          'document': 'FMCSA SAFER Company Snapshot - MCS-150 self-reported '
@@ -639,10 +759,22 @@ def build(wb, ctx):
              ('service licenses', 'text'), (mo_air, 'src', lib.FMT_INT),
              ('services (open data)', 'note'),
              ('data.mo.gov 6xq5-em5d', 'note')], wrap=True, height=30)
+    sb3.row([('Statewide licensed life-support VEHICLES', 'label'), ('MI', 'src'),
+             ('vehicle licenses', 'text'), (3847, 'src', lib.FMT_INT),
+             ('vehicles (2019-08-28)', 'note'),
+             ('michigan.gov MDHHS EMS', 'note')], wrap=True, height=30)
+    sb3.row([('Licensed life-support AGENCIES', 'label'), ('MI', 'src'),
+             ('service licenses', 'text'), (819, 'src', lib.FMT_INT),
+             ('agencies (2019-08-28)', 'note'),
+             ('michigan.gov MDHHS EMS', 'note')], wrap=True, height=30)
     sb3.row([('Ambulance operators (NPPES floor)', 'label'), ('MO', 'src'),
              ('org identities', 'text'), (tot['MO'], 'src', lib.FMT_INT),
              ('NPIs (identity floor)', 'note'),
              ('NPPES 3416*', 'note')], wrap=True, height=30)
+    sb3.row([('Vehicles per agency (MI, statewide avg)', 'label'), ('MI', 'src'),
+             ('ratio', 'text'), (3847 / 819, 'src', lib.FMT_DEC1),
+             ('avg only, not a distribution', 'note'),
+             ('3,847 vehicles / 819 agencies', 'note')], wrap=True, height=30)
     sb3.blank()
 
     # bar chart: top-12 jurisdictions by operator floor
@@ -716,6 +848,14 @@ def build(wb, ctx):
          'lives_on': 'Fleet_Size_Evidence',
          'cross_check': 'Count of ground-classified rows in the data.mo.gov '
                         'directory; services, not vehicles'},
+        {'metric': 'Michigan statewide licensed life-support vehicles',
+         'year': 2019, 'value': 3847, 'unit': 'licensed vehicles',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['mi_ems_vehicles'],
+         'locator': 'Fleet_Size_Evidence Panel C, MI vehicles row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'Michigan MDHHS own statewide count (819 agencies, 3,847 '
+                        'vehicles as of 2019-08-28); a second clean state vehicle '
+                        'anchor alongside New Jersey, not per-operator'},
         {'metric': 'US jurisdictions with a located open per-operator fleet-count '
                    'route', 'year': 2026,
          'value': sum(1 for s in JURIS if _meta(s)['status'] == 'CONFIRMED'),
@@ -756,9 +896,12 @@ def build(wb, ctx):
                     '(ALS/BLS/dual) - equals fleet SIZE. States confirmed to '
                     'permit each vehicle include Florida (2-yr ALS/BLS/dual '
                     'permits), Montana (a displayed permit per ambulance), New '
-                    'Jersey (~4,500 licensed vehicles statewide) and Washington '
+                    'Jersey (~4,500 licensed vehicles statewide), Washington '
                     '(service AND vehicle licensing with a public verification '
-                    'lookup). The federal routes do not count trucks: NPPES is '
+                    'lookup), Illinois (provider AND vehicle licensing by '
+                    'inspection), Colorado (state vehicle permitting since '
+                    '2024-07-01) and Michigan (3,847 licensed vehicles). The '
+                    'federal routes do not count trucks: NPPES is '
                     'identity, PECOS/MUP is billing, and FMCSA MCS-150 counts '
                     'power units only for interstate non-emergency carriers.',
          'numbers': "Route_Map Panel A: object 2 (per-vehicle permit) is the "
@@ -789,6 +932,25 @@ def build(wb, ctx):
                       'per-operator count, and the NPPES floor is organizations '
                       'not vehicles - the ratio is illustrative of the gap, not a '
                       'fleet-size estimate for any operator.'},
+        {'id_hint': 121,
+         'finding': 'Michigan is the second clean statewide vehicle anchor and '
+                    'sharpens the operator-floor-vs-fleet gap: the state licenses '
+                    '819 life-support agencies and 3,847 life-support vehicles '
+                    '(2019), an average of roughly 4.7 licensed vehicles per '
+                    'agency. Two independent states (NJ and MI) both show several '
+                    'licensed vehicles per operator, confirming that the NPPES '
+                    'operator floor systematically understates fleet size and '
+                    'that the vehicle-permit count - not the operator count - is '
+                    'the number a fleet valuation turns on.',
+         'numbers': 'Fleet_Size_Evidence Panel C: MI 3,847 vehicles / 819 '
+                    'agencies = ~4.7 vehicles per agency',
+         'sources': 'mi_ems_vehicles; nj_oems_vehicles',
+         'confidence': 'High on both state totals (state-office figures); the '
+                       'per-agency ratio is a statewide average, not a '
+                       'distribution',
+         'guardrail': 'Statewide averages hide a skewed distribution (a few '
+                      'large operators run most vehicles); the MI counts are '
+                      '2019 vintage. Neither is a per-operator fleet figure.'},
     ]
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
