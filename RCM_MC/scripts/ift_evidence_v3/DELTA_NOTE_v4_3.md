@@ -54,30 +54,31 @@ operator floor per jurisdiction (Type-2 NPIs under taxonomy 3416*, computed live
 from the manifested NPPES roster - about 19,400 organizations across the 51
 jurisdictions), the national taxonomy split (land/unspecified/air/water), the
 Missouri open-data service counts (from the manifested data.mo.gov Socrata
-pull), and THREE confirmed statewide vehicle-license anchors: Texas (over 5,000
+pull), and SIX confirmed statewide vehicle-license anchors: Texas (over 5,000
 licensed ambulances across almost 800 provider services - DSHS), New Jersey
-(~4,500 licensed EMS vehicles and ~1,700 MICPs) and Michigan (3,847 licensed
-life-support vehicles across 819 agencies, 2019 - about 4.7 vehicles per agency).
-Four more states now carry a published statewide licensed-SERVICE count without
-the vehicle level: Pennsylvania (1,205 EMS agencies / 46,057 personnel),
-California (700+ public and private ambulance services, EMSA 2022-2023),
-Florida (346 licensed service providers: 302 ALS + 37 AIR + 7 BLS) and Missouri
-(486). A native bar chart ranks the top-12 jurisdictions by operator floor.
-Texas at ~6.3 vehicles per provider (over 5,000 / ~800) alongside Michigan's
-~4.7 confirms the NPPES operator floor systematically understates fleet size.
+(~4,500 licensed EMS vehicles and ~1,700 MICPs), Michigan (3,847 licensed
+life-support vehicles across 819 agencies, 2019), Indiana (nearly 2,000
+ambulances across 800+ agencies - DHS), Tennessee (1,300 ambulances across 210
+services - EMS Board) and Minnesota (838 = 804 ground + 34 air across 266
+services - EMSRB). A dozen states now carry a published statewide licensed-
+SERVICE count: TX ~800, PA 1,205, WI 822, IA 724, CA 700+, MI 819, MO 486, FL
+346, MN 266, TN 210, CO 205, IN 800+. A native bar chart ranks the top-12
+jurisdictions by operator floor. Texas at ~6.3 vehicles per provider (with
+Tennessee ~6.2) confirms the NPPES operator floor systematically understates
+fleet size.
 
 **IFT_License_Tracker (the one-grid tracker).** Per US jurisdiction, every public
 ambulance/IFT license count in a single grid across four universes that must
 never be summed together: the NPPES operator-identity floor (all 51), the
-licensed-SERVICE count where a state publishes one (TX ~800, PA 1,205, CA 700+,
-FL 346, MO 486, IA 724, MI 819), the licensed-VEHICLE total where published (TX
-over 5,000, NJ ~4,500, MI 3,847), and the EMT and paramedic WORKFORCE with mean
-wage from BLS OEWS May 2024 (SOC 29-2042 / 29-2043, all states) so wages per
-state can be backed into. Every unpublished service or vehicle count is bordered
-PENDING with the State_Matrix route that fills it, so the grid is both the
-evidence and the worklist. Adding the Texas / Pennsylvania / California / Florida
-published counts fills seven more service cells and one more vehicle cell that
-were PENDING.
+licensed-SERVICE count where a state publishes one (a dozen: TX ~800, PA 1,205, WI 822,
+IA 724, CA 700+, MI 819, MO 486, FL 346, MN 266, TN 210, CO 205, IN 800+), the
+licensed-VEHICLE total where published (six: TX over 5,000, NJ ~4,500, MI 3,847,
+IN ~2,000, TN 1,300, MN 838), and the EMT and paramedic WORKFORCE with mean wage
+from BLS OEWS May 2024 (SOC 29-2042 / 29-2043, all states) so wages per state can
+be backed into. Every unpublished service or vehicle count is bordered PENDING
+with the State_Matrix route that fills it, so the grid is both the evidence and
+the worklist. Landing the TX/PA/CA/FL then MN/CO/WI/TN/IN published counts fills
+a dozen service cells and six vehicle cells that were PENDING.
 
 **EMS_Workforce_Shortage (the supply behind the fleet).** A fleet is only as
 deployable as its crews. This tab pairs the national clinician supply - NREMT
