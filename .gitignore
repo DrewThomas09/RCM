@@ -109,3 +109,9 @@ design_handoff_portfolio_map/
 design_handoff_pipeline/
 design_handoff_portfolio_analytics/
 var/
+
+# ift_evidence_v3 build byproducts (derived from v2.7 at build time)
+RCM_MC/scripts/ift_evidence_v3/v27_dump.json
+RCM_MC/scripts/ift_evidence_v3/professionalize_changes.json
+RCM_MC/scripts/ift_evidence_v3/recalc_out/
+RCM_MC/scripts/ift_evidence_v3/lo_profile/
