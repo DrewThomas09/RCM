@@ -27,15 +27,17 @@ Fleet_Size_Evidence - the landed numbers. The NPPES ambulance-organization
 operator floor per jurisdiction (computed live from the manifested NPPES roster),
 the taxonomy split (land / generic / air), the Missouri open-data service
 directory counts (from the manifested Socrata pull), and the confirmed statewide
-vehicle-license anchors (New Jersey's ~4,500 licensed EMS vehicles). Every number
-is public and re-derivable; per-operator vehicle counts that are not public are
-PENDING with the named state registry.
+vehicle-license anchors (Texas' over 5,000 licensed ambulances, New Jersey's
+~4,500 and Michigan's 3,847). Every number is public and re-derivable;
+per-operator vehicle counts that are not public are PENDING with the named state
+registry.
 
 IFT_License_Tracker - the one-grid tracker. Per US jurisdiction, every public
 ambulance/IFT license count in a single grid across four universes that must not
 be summed: the NPPES operator-identity floor (all 51), the licensed-service count
-where a state publishes one (MO, IA, MI), the licensed-vehicle total where
-published (NJ, MI), and the EMT and paramedic workforce with mean wage from BLS
+where a state publishes one (TX, PA, CA, FL, MO, IA, MI), the licensed-vehicle
+total where published (TX, NJ, MI), and the EMT and paramedic workforce with mean
+wage from BLS
 OEWS 2024 (SOC 29-2042 / 29-2043) so wages per state can be backed into. Every
 unpublished service or vehicle count is bordered PENDING with the State_Matrix
 route that fills it.
@@ -156,7 +158,8 @@ STATE_META = {
                             'data.texas.gov all-licenses open dataset',
                permit='EMS provider license; vehicles staffed/equipped to '
                       'the provider level',
-               count_route='Provider roster public; vehicle count via DSHS',
+               count_route='Statewide totals published: ~800 provider services, '
+                           'over 5,000 ambulances (DSHS)',
                url='https://www.dshs.texas.gov/dshs-ems-trauma-systems/'
                    'ems-provider-licensing',
                status='CONFIRMED'),
@@ -534,6 +537,7 @@ def _clean(s, cap=None):
 # Everything else = PENDING (route to the service is public; the vehicle count
 # is portal-/FOIA-only).
 VEHICLE_PUBLIC = {
+    'TX': 'YES - statewide vehicle total (over 5,000) published',
     'NJ': 'YES - statewide vehicle total (~4,500) published',
     'MI': 'YES - statewide vehicle total (3,847) published',
     'WA': 'YES - public per-vehicle license verification lookup',
@@ -564,6 +568,14 @@ def _fleet_count_public(st):
 # Published licensed-SERVICE counts (sourced, per state). Blank = not published /
 # not extracted (the downloadable roster exists but the count is PENDING a pull).
 PUBLISHED_SERVICES = {
+    'TX': (800, 'Texas DSHS EMS Careers (almost 800 provider licenses; '
+                '72,000+ personnel)'),
+    'PA': (1205, 'PA DOH Bureau of EMS (licensed EMS agencies; 46,057 '
+                 'certified personnel)'),
+    'CA': (700, 'CA EMSA 2022-2023 Annual EMS Data Report (700+ public/'
+                'private ambulance services; over)'),
+    'FL': (346, 'FL DOH EMS Provider Licensure Report (302 ALS + 37 AIR '
+                '+ 7 BLS)'),
     'MO': (486, 'DHSS open data (455 ground + 26 air + 5 stretcher van)'),
     'IA': (724, 'Iowa HHS June-2025 roll-up (authorized service programs; '
                 '901 service locations)'),
@@ -572,6 +584,7 @@ PUBLISHED_SERVICES = {
 
 # Published licensed-VEHICLE counts (sourced statewide totals).
 PUBLISHED_VEHICLES = {
+    'TX': (5000, 'Texas DSHS EMS Careers (over 5,000 ambulances statewide)'),
     'NJ': (4500, 'NJ OEMS (all vehicle classes, approx)'),
     'MI': (3847, 'MDHHS life-support vehicles (2019)'),
 }
@@ -825,6 +838,58 @@ def build(wb, ctx):
                 'cdphe-ground-ambulance-agency-licensing', 'tier': 'B',
          'accessed': accessed,
          'powers': ['Fleet_License_Route_Map', 'Fleet_License_State_Matrix']},
+        {'key': 'tx_ems_stats', 'publisher': 'Texas DSHS, EMS/Trauma Systems',
+         'document': 'Texas EMS scale as published by DSHS: almost 800 licensed '
+                     'EMS provider services, over 5,000 ambulances and 72,000+ '
+                     'responding EMS professionals statewide; each provider is '
+                     'licensed by DSHS and each vehicle inspected under that '
+                     'license',
+         'vintage': f'ems.texas.gov / dshs.texas.gov as retrieved {ACC}',
+         'locator': 'Texas DSHS EMS Careers / EMS provider licensing statistics',
+         'supplies': 'The statewide Texas vehicle anchor (over 5,000) and the '
+                     'licensed-service count (~800) on Fleet_Size_Evidence and '
+                     'IFT_License_Tracker',
+         'url': 'https://www.dshs.texas.gov/dshs-ems-trauma-systems/'
+                'ems-provider-licensing', 'tier': 'A', 'accessed': accessed,
+         'powers': ['Fleet_Size_Evidence', 'Fleet_License_State_Matrix',
+                    'IFT_License_Tracker']},
+        {'key': 'pa_doh_ems', 'publisher': 'Pennsylvania DOH, Bureau of EMS',
+         'document': 'Pennsylvania EMS scale as published by the Department of '
+                     'Health: 1,205 licensed EMS agencies comprising 46,057 '
+                     'EMS-certified professionals statewide; agencies licensed '
+                     'under 28 Pa. Code Chapter 1027',
+         'vintage': f'pa.gov/agencies/health as retrieved {ACC}',
+         'locator': 'PA DOH newsroom / EMS Registry',
+         'supplies': 'The Pennsylvania licensed-EMS-agency count (1,205) on '
+                     'Fleet_Size_Evidence and IFT_License_Tracker',
+         'url': 'https://www.pa.gov/agencies/health/programs/ems.html',
+         'tier': 'A', 'accessed': accessed,
+         'powers': ['Fleet_Size_Evidence', 'IFT_License_Tracker']},
+        {'key': 'ca_emsa_report',
+         'publisher': 'California EMS Authority (EMSA)',
+         'document': 'California EMSA 2022-2023 Annual EMS Data Report: more than '
+                     '700 total public and private EMS ambulance services across '
+                     'the 34 Local EMS Agencies (LEMSAs) covering all 58 counties',
+         'vintage': 'EMSA Annual EMS Data Report, 2022-2023 (published 2024)',
+         'locator': 'emsa.ca.gov Annual EMS Data Report PDF',
+         'supplies': 'The California ambulance-services count (700+) on '
+                     'Fleet_Size_Evidence and IFT_License_Tracker',
+         'url': 'https://emsa.ca.gov/wp-content/uploads/sites/71/2024/06/'
+                '2022-2023_Annual_EMS_Data_Report.pdf', 'tier': 'A',
+         'accessed': accessed,
+         'powers': ['Fleet_Size_Evidence', 'IFT_License_Tracker']},
+        {'key': 'fl_ems_report', 'publisher': 'Florida DOH, Bureau of EMS',
+         'document': 'Florida DOH EMS Provider Licensure Report: 346 licensed EMS '
+                     'service providers statewide (302 ALS, 37 AIR, 7 BLS), each '
+                     'permitting its vehicles/aircraft under the service license',
+         'vintage': f'floridahealth.gov EMS provider report as retrieved {ACC}',
+         'locator': 'FL DOH EMS Provider Licensure Report',
+         'supplies': 'The Florida licensed-service count (346) on '
+                     'Fleet_Size_Evidence and IFT_License_Tracker',
+         'url': 'https://www.floridahealth.gov/licensing-and-regulation/'
+                'ems-service-provider-regulation-and-compliance/ems-providers.html',
+         'tier': 'A', 'accessed': accessed,
+         'powers': ['Fleet_Size_Evidence', 'IFT_License_Tracker']},
         {'key': 'bls_oews_ems_state', 'publisher': 'US BLS (OEWS)',
          'document': 'Occupational Employment and Wage Statistics, May 2024, '
                      'state grain - Emergency Medical Technicians (SOC 29-2042) '
@@ -968,7 +1033,7 @@ def build(wb, ctx):
              'LICENSING ROUTE (the state EMS authority + the specific public '
              'lookup/roster/portal), cited per row. That is a separate axis from '
              'the "Fleet count public?" column: a per-operator VEHICLE count is '
-             'genuinely public in only a few states (NJ and MI publish a '
+             'genuinely public in only a few states (TX, NJ and MI publish a '
              'statewide total; WA offers a public per-vehicle verification '
              'lookup); a dozen more publish a downloadable SERVICE roster (KY, '
              'MA, AR, AZ, MO, ME, RI, SD, CT, IN, TN, OK) which lists operators '
@@ -1027,7 +1092,7 @@ def build(wb, ctx):
         '51 jurisdictions now carry a confirmed public licensing route, and the '
         'matrix records, per state, exactly which artifact a human pulls - a '
         'downloadable roster where one exists (KY, MA, AR, AZ, MO, ME, RI, SD, '
-        'CT, IN, TN, OK), a statewide vehicle total (NJ, MI), a per-vehicle '
+        'CT, IN, TN, OK), a statewide vehicle total (TX, NJ, MI), a per-vehicle '
         'verification lookup (WA), or the portal/FOIA path otherwise. This '
         'matrix is the routing table for that retrieval.')
 
@@ -1042,10 +1107,12 @@ def build(wb, ctx):
                  'operator-identity floor per jurisdiction (Type-2 NPIs under '
                  'taxonomy 3416*, computed live from the manifested NPPES '
                  'roster). Panel B is the national taxonomy split. Panel C lands '
-                 'the confirmed vehicle-license anchors (Missouri open-data '
-                 'service counts; New Jersey statewide ~4,500 licensed '
-                 'vehicles). Sources: NPPES; data.mo.gov (Socrata); nj.gov '
-                 'Office of EMS. Join key: state + organization NPI.')
+                 'the confirmed vehicle-license anchors (Texas statewide over '
+                 '5,000 licensed ambulances; New Jersey ~4,500 and Michigan '
+                 '3,847; plus published service counts for PA, CA, FL, MO). '
+                 'Sources: NPPES; Texas DSHS; nj.gov Office of EMS; MDHHS; PA '
+                 'DOH; CA EMSA; FL DOH; data.mo.gov (Socrata). Join key: state + '
+                 'organization NPI.')
     sb3.note('DATA QUALITY: Panel A counts NPI ORGANIZATIONS, not vehicles - it '
              'is a floor on operator identity. One operator may hold many '
              'vehicle permits under one NPI, and enumerations lag reality; the '
@@ -1095,6 +1162,14 @@ def build(wb, ctx):
     sb3.banner('Panel C. Confirmed vehicle-license anchors (public state '
                'records)')
     sb3.headers(['Anchor', 'State', 'Object', 'Value', 'Unit', 'Source'])
+    sb3.row([('Statewide licensed ambulances', 'label'), ('TX', 'src'),
+             ('vehicle licenses', 'text'), (5000, 'src', lib.FMT_INT),
+             ('vehicles (over 5,000; DSHS)', 'note'),
+             ('Texas DSHS EMS Careers', 'note')], wrap=True, height=30)
+    sb3.row([('Licensed EMS provider services', 'label'), ('TX', 'src'),
+             ('service licenses', 'text'), (800, 'src', lib.FMT_INT),
+             ('providers (almost 800; DSHS)', 'note'),
+             ('Texas DSHS EMS Careers', 'note')], wrap=True, height=30)
     sb3.row([('Statewide licensed EMS vehicles', 'label'), ('NJ', 'src'),
              ('vehicle licenses', 'text'), (4500, 'src', lib.FMT_INT),
              ('vehicles (approx, all classes)', 'note'),
@@ -1123,10 +1198,26 @@ def build(wb, ctx):
              ('org identities', 'text'), (tot['MO'], 'src', lib.FMT_INT),
              ('NPIs (identity floor)', 'note'),
              ('NPPES 3416*', 'note')], wrap=True, height=30)
+    sb3.row([('Licensed EMS service providers', 'label'), ('FL', 'src'),
+             ('service licenses', 'text'), (346, 'src', lib.FMT_INT),
+             ('302 ALS + 37 AIR + 7 BLS', 'note'),
+             ('FL DOH Licensure Report', 'note')], wrap=True, height=30)
+    sb3.row([('Public + private ambulance services', 'label'), ('CA', 'src'),
+             ('service licenses', 'text'), (700, 'src', lib.FMT_INT),
+             ('700+ (2022-2023 report)', 'note'),
+             ('CA EMSA Annual Data Report', 'note')], wrap=True, height=30)
+    sb3.row([('Licensed EMS agencies', 'label'), ('PA', 'src'),
+             ('service licenses', 'text'), (1205, 'src', lib.FMT_INT),
+             ('agencies (46,057 personnel)', 'note'),
+             ('PA DOH Bureau of EMS', 'note')], wrap=True, height=30)
     sb3.row([('Vehicles per agency (MI, statewide avg)', 'label'), ('MI', 'src'),
              ('ratio', 'text'), (3847 / 819, 'src', lib.FMT_DEC1),
              ('avg only, not a distribution', 'note'),
              ('3,847 vehicles / 819 agencies', 'note')], wrap=True, height=30)
+    sb3.row([('Vehicles per provider (TX, statewide avg)', 'label'), ('TX', 'src'),
+             ('ratio', 'text'), (5000 / 800, 'src', lib.FMT_DEC1),
+             ('avg only, not a distribution', 'note'),
+             ('5,000+ vehicles / ~800 providers', 'note')], wrap=True, height=30)
     sb3.blank()
 
     # bar chart: top-12 jurisdictions by operator floor
@@ -1150,17 +1241,21 @@ def build(wb, ctx):
     sb3.blank()
     sb3.banner('Read panel')
     sb3.prose(
-        'Today, the public record supports a firm FLOOR and a few clean vehicle '
-        'anchors, not a national fleet census. The NPPES floor puts roughly '
-        f'{us_total:,} ambulance-organization identities across the 51 '
+        'Today, the public record supports a firm FLOOR and a growing set of clean '
+        'vehicle anchors, not yet a national fleet census. The NPPES floor puts '
+        f'roughly {us_total:,} ambulance-organization identities across the 51 '
         'jurisdictions, concentrated in the large states (Texas, Pennsylvania, '
-        'Ohio, New York lead), but that counts legal entities, not trucks. The '
-        'only clean statewide VEHICLE total located is New Jersey\'s ~4,500 '
-        'licensed vehicles; Missouri\'s open data gives a licensed-SERVICE count '
-        f'({mo_ground:,} ground services) but no vehicle level. The gap between '
-        'the operator floor and an actual fleet census is exactly the per-'
-        'vehicle-permit count that State_Matrix routes to state by state - the '
-        'work this workbook now extends run over run.')
+        'Ohio, New York lead), but that counts legal entities, not trucks. Three '
+        'states now publish a clean statewide VEHICLE total - Texas (over 5,000 '
+        'licensed ambulances across almost 800 provider services), New Jersey '
+        '(~4,500 vehicles) and Michigan (3,847) - and four more publish a '
+        'statewide licensed-SERVICE count without the vehicle level (Pennsylvania '
+        f'1,205 agencies, California 700+ services, Florida 346, Missouri '
+        f'{mo_ground:,} ground services). The gap between the operator floor and '
+        'an actual fleet census is exactly the per-vehicle-permit count that '
+        'State_Matrix routes to state by state - the work this workbook extends '
+        'run over run, and Texas at ~6.3 vehicles per provider confirms the NPPES '
+        'operator floor systematically understates fleet size.')
 
     # ==================================================== TAB 4: License Tracker
     oews = _oews_by_state(lib, cache)
@@ -1245,10 +1340,10 @@ def build(wb, ctx):
          'identity floor. One operator may hold many vehicle permits under one '
          'NPI; one NPI is not one ambulance.'),
         ('Licensed services', 'State EMS service/agency licenses where the state '
-         'publishes a count (MO, IA, MI here). Elsewhere PENDING via the '
-         'State_Matrix roster/portal route.'),
+         'publishes a count (TX, PA, CA, FL, MO, IA, MI here). Elsewhere PENDING '
+         'via the State_Matrix roster/portal route.'),
         ('Licensed vehicles', 'State per-vehicle permits/licenses where a '
-         'statewide total is published (NJ, MI). This is the true fleet-size '
+         'statewide total is published (TX, NJ, MI). This is the true fleet-size '
          'unit; elsewhere portal-/FOIA-only.'),
         ('EMT / paramedic jobs', 'BLS OEWS employment (SOC 29-2042 EMT, 29-2043 '
          'paramedic), May 2024. JOBS, not licenses or headcount; excludes '
@@ -1427,8 +1522,11 @@ def build(wb, ctx):
     sb6.banner('Panel C. Fastest wins')
     sb6.prose(
         'Start where the data is already public. Statewide licensed-VEHICLE '
-        'totals are published for New Jersey (~4,500) and Michigan (3,847), and '
-        'Washington has a public per-vehicle license-verification lookup. A '
+        'totals are published for Texas (over 5,000), New Jersey (~4,500) and '
+        'Michigan (3,847), and Washington has a public per-vehicle license-'
+        'verification lookup. Statewide licensed-SERVICE counts are published '
+        'for Texas (~800), Pennsylvania (1,205), California (700+), Florida '
+        '(346), Iowa (724), Missouri (486) and Michigan (819). A '
         'downloadable licensed-SERVICE roster exists for Kentucky (XLSX+PDF), '
         'Maine (XLSX), Massachusetts, Arkansas and Arizona (PDF), Missouri '
         '(Socrata open data), and Rhode Island, South Dakota, Connecticut, '
@@ -1484,6 +1582,46 @@ def build(wb, ctx):
          'cross_check': 'Michigan MDHHS own statewide count (819 agencies, 3,847 '
                         'vehicles as of 2019-08-28); a second clean state vehicle '
                         'anchor alongside New Jersey, not per-operator'},
+        {'metric': 'Texas statewide licensed ambulances',
+         'year': 2026, 'value': 5000, 'unit': 'ambulances (over 5,000)',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['tx_ems_stats'],
+         'locator': 'Fleet_Size_Evidence Panel C, TX vehicles row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'Texas DSHS own statewide figure (over 5,000 ambulances '
+                        'across almost 800 provider services); the largest clean '
+                        'state vehicle anchor, a state total not per-operator'},
+        {'metric': 'Texas licensed EMS provider services',
+         'year': 2026, 'value': 800, 'unit': 'provider services (almost 800)',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['tx_ems_stats'],
+         'locator': 'Fleet_Size_Evidence Panel C, TX services row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'Texas DSHS EMS Careers; pairs with over 5,000 ambulances '
+                        'for ~6.3 vehicles per provider, showing the NPPES floor '
+                        'understates fleet size'},
+        {'metric': 'Pennsylvania licensed EMS agencies',
+         'year': 2026, 'value': 1205, 'unit': 'licensed EMS agencies',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['pa_doh_ems'],
+         'locator': 'Fleet_Size_Evidence Panel C, PA agencies row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'PA DOH Bureau of EMS statewide count (1,205 agencies, '
+                        '46,057 certified personnel); a service count, not a '
+                        'vehicle census'},
+        {'metric': 'California public + private ambulance services',
+         'year': 2023, 'value': 700, 'unit': 'ambulance services (700+)',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['ca_emsa_report'],
+         'locator': 'Fleet_Size_Evidence Panel C, CA services row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'CA EMSA 2022-2023 Annual EMS Data Report (more than 700 '
+                        'services across 34 LEMSAs / 58 counties); a service '
+                        'count, not a vehicle census'},
+        {'metric': 'Florida licensed EMS service providers',
+         'year': 2026, 'value': 346, 'unit': 'licensed service providers',
+         'basis': 'GOV', 'tier': 'A', 'source_keys': ['fl_ems_report'],
+         'locator': 'Fleet_Size_Evidence Panel C, FL services row',
+         'lives_on': 'Fleet_Size_Evidence',
+         'cross_check': 'FL DOH EMS Provider Licensure Report (302 ALS + 37 AIR + '
+                        '7 BLS = 346); a service count, vehicles permitted under '
+                        'each service license'},
         {'metric': 'US jurisdictions with a CONFIRMED public licensing route '
                    'located', 'year': 2026,
          'value': sum(1 for s in JURIS if _meta(s)['status'] == 'CONFIRMED'),
@@ -1499,12 +1637,13 @@ def build(wb, ctx):
                    'publicly retrievable', 'year': 2026,
          'value': len(VEHICLE_PUBLIC),
          'unit': 'jurisdictions (of 51)', 'basis': 'SOURCED', 'tier': 'A',
-         'source_keys': ['nj_oems_vehicles', 'mi_ems_vehicles'],
+         'source_keys': ['tx_ems_stats', 'nj_oems_vehicles', 'mi_ems_vehicles'],
          'locator': 'Fleet_License_State_Matrix col F "YES" rows',
          'lives_on': 'Fleet_License_State_Matrix',
-         'cross_check': 'NJ and MI publish a statewide vehicle total; WA offers '
-                        'a public per-vehicle verification lookup - elsewhere the '
-                        'vehicle count is portal-/FOIA-only (bordered PENDING)'},
+         'cross_check': 'TX, NJ and MI publish a statewide vehicle total; WA '
+                        'offers a public per-vehicle verification lookup - '
+                        'elsewhere the vehicle count is portal-/FOIA-only '
+                        '(bordered PENDING)'},
         {'metric': 'US jurisdictions publishing a downloadable licensed-SERVICE '
                    'roster', 'year': 2026, 'value': len(DOWNLOADABLE_ROSTER),
          'unit': 'jurisdictions (of 51)', 'basis': 'SOURCED', 'tier': 'A',
@@ -1634,8 +1773,8 @@ def build(wb, ctx):
                     'one grid across four universes that must never be summed '
                     f'together: the NPPES operator floor (~{us_total:,} '
                     'organizations), the licensed-service and licensed-vehicle '
-                    'counts states publish (MO, IA, MI services; NJ, MI '
-                    'vehicles), and the BLS EMS workforce (about '
+                    'counts states publish (TX, PA, CA, FL, MO, IA, MI services; '
+                    'TX, NJ, MI vehicles), and the BLS EMS workforce (about '
                     f'{us_emt:,} EMT and {us_para:,} paramedic jobs across the 51, '
                     'with a per-state mean wage to back into). Every unpublished '
                     'service or vehicle count is bordered PENDING with the '
