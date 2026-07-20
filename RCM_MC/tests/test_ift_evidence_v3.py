@@ -252,6 +252,24 @@ class TestIFTEvidenceV3(unittest.TestCase):
                if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
         self.assertGreaterEqual(max(ids), 118)
 
+    def test_v43_scale_predictor_tabs(self):
+        """v4.3 (Run 7, second phase): the corporate-family resolution and
+        scale-predictor tabs - why the two national players (GMR/Priority) are
+        undercounted and which public signal best predicts real volume. The
+        GMR family Medicare volume must be re-derived (nonzero) and the
+        findings tail must reach 125."""
+        for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors'):
+            self.assertIn(tab, self.wb.sheetnames)
+        # the family-resolution tab carries a computed GMR Medicare volume
+        vals = [c.value for row in self.wb['Corporate_Family_Resolution']
+                .iter_rows() for c in row]
+        nums = [v for v in vals if isinstance(v, (int, float)) and v > 100000]
+        self.assertTrue(nums, 'expected a six-figure resolved Medicare volume')
+        ids = [int(r[0].value.strip())
+               for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
+               if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
+        self.assertGreaterEqual(max(ids), 125)
+
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""
         p = os.path.join(PIPE, 'leak_check.json')

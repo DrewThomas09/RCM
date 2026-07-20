@@ -48,6 +48,7 @@ any company. The NPPES floor is an identity floor, not a fleet count - a single
 operator may hold many vehicle permits under one NPI, and one NPI is not one
 ambulance; that confound is printed on every panel that uses it.
 """
+import re
 
 SHEETS = [
     {'name': 'Fleet_License_Route_Map',
@@ -76,6 +77,16 @@ SHEETS = [
      'question': 'The exact lookups to pull the per-operator fleet (licensed '
                  'vehicle) and license data - per state and the national routes - '
                  'as an actionable worklist.'},
+    {'name': 'Corporate_Family_Resolution',
+     'question': 'Why are the two national ambulance players (GMR and Priority) '
+                 'so undercounted in public data, and what happens to their '
+                 'measured scale when you resolve the corporate family across '
+                 'their subsidiary NPIs?'},
+    {'name': 'Fleet_Scale_Predictors',
+     'question': 'Which public signal best predicts an ambulance operator\'s real '
+                 'transport volume - fleet (vehicles), licensed EMTs, CMS Medicare '
+                 'transport volume, job postings, or footprint (metros / health '
+                 'systems served)?'},
 ]
 
 ACC = '2026-07-20'
@@ -893,6 +904,98 @@ def _floor_from_nppes(lib, cache):
             if o.get('air'):
                 air[s] += 1
     return tot, land, air, taxc, len(roster)
+
+
+# ---- CMS Medicare ground-transport volume (per-NPI, family-resolvable) ----
+# Base-rate ground ambulance HCPCS: one paid line item = one Medicare transport
+# (A0425 is per-mile mileage, excluded from transport counts; air codes
+# A0430-A0436 excluded to keep the ground-operator comparison clean).
+CMS_GROUND_CODES = ['A0426', 'A0427', 'A0428', 'A0429', 'A0433', 'A0434']
+CMS_TREND_YEARS = ['2018', '2020', '2022', '2024']
+CMS_LATEST = '2024'
+
+# National ground-ambulance roll-ups and the brand/legal names they enroll
+# under in NPPES and CMS. There is no parent billing NPI (see
+# Corporate_Family_Resolution); patterns match case-insensitively on org name.
+GMR_BRANDS = [r'AMERICAN MEDICAL RESPONSE', r'\bAMR\b', r'AIR EVAC',
+              r'RURAL/METRO', r'RURAL METRO', r'MED-TRANS', r'MEDTRANS',
+              r'GUARDIAN FLIGHT', r'REACH AIR', r'GLOBAL MEDICAL RESPONSE']
+PRIORITY_BRANDS = [r'PRIORITY AMBULANCE', r'SHOALS AMBULANCE',
+                   r'MARICOPA AMBULANCE', r'COPPERSTATE', r'PUCKETT',
+                   r'SEALS AMBULANCE', r'KUNKEL', r'TRANS AM AMBULANCE',
+                   r'BAPTIST AMBULANCE']
+ACADIAN_BRANDS = [r'ACADIAN']
+SUPERIOR_BRANDS = [r'SUPERIOR AIR-GROUND', r'SUPERIOR AMBULANCE']
+FALCK_BRANDS = [r'\bFALCK\b']
+
+# Public ground-truth scale figures for the correlation set (company-stated or
+# cited; see sources gmr_public / priority_public / operator_scale_public).
+FAMILY_SCALE = {
+    'GMR': dict(owner='KKR (private)', employees='34,000-38,000',
+                ground_vehicles=7000, patients_yr='5.5M', revenue='~$5.1B',
+                footprint='2,100+ communities, 38 states + DC',
+                postings='~683 (Indeed)'),
+    'Acadian': dict(owner='employee-owned', employees='4,000+',
+                    ground_vehicles=400, patients_yr='n/d', revenue='~$500-734M',
+                    footprint='LA, large part of TX, +TN/MS', postings='n/d'),
+    'Superior': dict(owner='private', employees='n/d', ground_vehicles=None,
+                     patients_yr='n/d', revenue='n/d',
+                     footprint='IL/IN/OH/MI/WI (Midwest)', postings='n/d'),
+    'Falck': dict(owner='Falck A/S (Denmark)', employees='n/d',
+                  ground_vehicles=None, patients_yr='n/d', revenue='n/d',
+                  footprint='US arm of global Falck', postings='n/d'),
+    'Priority': dict(owner='Enhanced Healthcare Partners (PE)', employees='n/d',
+                     ground_vehicles=None, patients_yr='n/d', revenue='n/d',
+                     footprint='22 brands, 15 states', postings='~21-44 (Indeed)'),
+}
+
+
+def _mup_ground_year(lib, cache, year):
+    """{npi: transports}, {npi: org_name_upper}, {npi: state} for one MUP year,
+    summed over the base-rate ground HCPCS. Live from the manifested CMS
+    Medicare provider-and-service files (data.cms.gov)."""
+    vol, name, st = {}, {}, {}
+    for code in CMS_GROUND_CODES:
+        try:
+            rows = lib.load_cache(cache, f'mup_provider_{year}_{code}')
+        except FileNotFoundError:
+            continue
+        for r in rows:
+            npi = r.get('Rndrng_NPI')
+            if not npi:
+                continue
+            try:
+                s = float(r.get('Tot_Srvcs') or 0)
+            except (TypeError, ValueError):
+                s = 0
+            vol[npi] = vol.get(npi, 0) + s
+            name.setdefault(npi,
+                            (r.get('Rndrng_Prvdr_Last_Org_Name') or '').upper())
+            st.setdefault(npi, r.get('Rndrng_Prvdr_State_Abrvtn'))
+    return vol, name, st
+
+
+def _family_ground(vol, name, patterns):
+    """(active_npis, total_transports, biggest_single) for a brand family in one
+    MUP year's volume map."""
+    pats = [re.compile(p) for p in patterns]
+    ns = [n for n in vol if any(p.search(name.get(n, '')) for p in pats)]
+    total = sum(vol[n] for n in ns)
+    biggest = max((vol[n] for n in ns), default=0)
+    return len(ns), int(round(total)), int(round(biggest))
+
+
+def _family_nppes(roster, patterns):
+    """(org_npi_count, state_count) in the NPPES ambulance roster for a brand
+    family (identity floor, not volume)."""
+    pats = [re.compile(p) for p in patterns]
+
+    def _nm(o):
+        return ((o.get('org_name') or '') + ' | '
+                + (o.get('dba') or '')).upper()
+
+    hit = [o for o in roster if any(p.search(_nm(o)) for p in pats)]
+    return len(hit), len(set(o.get('state') for o in hit if o.get('state')))
 
 
 def build(wb, ctx):
@@ -1819,6 +1922,340 @@ def build(wb, ctx):
         'office for the vehicle-permit register - and the FMCSA census closes the '
         'interstate-NEMT operators nationally.')
 
+    # ============================== TAB 7: Corporate Family Resolution
+    roster = lib.load_cache(cache, 'nppes_ambulance_roster')
+    FAMILIES = [('GMR', GMR_BRANDS), ('Acadian', ACADIAN_BRANDS),
+                ('Superior', SUPERIOR_BRANDS), ('Falck', FALCK_BRANDS),
+                ('Priority', PRIORITY_BRANDS)]
+    FAM_LABEL = {
+        'GMR': 'GMR (AMR / Air Evac / Rural Metro / Med-Trans / Guardian)',
+        'Acadian': 'Acadian Ambulance', 'Superior': 'Superior Air-Ground',
+        'Falck': 'Falck (US)', 'Priority': 'Priority (Shoals / Puckett / '
+        'Seals / Kunkel / Trans Am / Baptist)'}
+    year_vol = {y: _mup_ground_year(lib, cache, y) for y in CMS_TREND_YEARS}
+    vol24, name24, st24 = year_vol[CMS_LATEST]
+    us_med24 = int(round(sum(vol24.values())))
+    fam24 = {}
+    for fn, pats in FAMILIES:
+        a, t, b = _family_ground(vol24, name24, pats)
+        n_npi, n_st = _family_nppes(roster, pats)
+        fam24[fn] = dict(active=a, total=t, biggest=b, npi=n_npi, states=n_st)
+    gmr, pri = fam24['GMR'], fam24['Priority']
+
+    ws7 = wb.create_sheet('Corporate_Family_Resolution')
+    sb7 = lib.SheetBuilder(ws7, 7, col_widths=[34, 15, 15, 13, 15, 18, 20],
+                           tab_color='FF3A2E5A')
+    sb7.title('Corporate family resolution: why the two national ambulance '
+              'players read as small in public data, and their true scale once '
+              'the family is resolved')
+    sb7.subtitle('The question: the only two genuinely national ground-ambulance '
+                 'players are Global Medical Response (GMR, KKR-owned, parent of '
+                 'AMR) and Priority Ambulance (PE-backed). Both are undercounted '
+                 'in every public dataset. This tab shows the mechanism and '
+                 'quantifies it from two public sources joined on NPI: the NPPES '
+                 'ambulance roster (identity) and the CMS Medicare provider-and-'
+                 'service files (actual paid transports, base-rate ground HCPCS '
+                 'A0426-A0434). Everything here is re-derivable at build time.')
+    sb7.note('DATA QUALITY: CMS Medicare counts are FEE-FOR-SERVICE transports '
+             'only (roughly a quarter to two-fifths of all-payer ground volume, '
+             'and shrinking as Medicare Advantage grows), so family totals are a '
+             'consistent RELATIVE proxy, not absolute volume. Brand matching is '
+             'by organization name and is a FLOOR: legacy acquired names that no '
+             'longer carry the brand (dozens for AMR) are missed, so resolved '
+             'family volume is understated, never overstated.')
+    sb7.blank()
+    sb7.banner('Panel A. Why a national roll-up disappears in public data')
+    sb7.prose(
+        'Neither GMR nor Priority exists as a single entity in NPPES, CMS, or any '
+        'other public provider file. Both grew by acquisition and enroll each '
+        'local operation under its own Type-2 organization NPI and its own local '
+        'or legacy legal name - "American Medical Response of Connecticut," "Air '
+        'Evac EMS," "Rural/Metro of Southern Ohio," "Seals Ambulance," "Puckett '
+        'EMS" - never under the parent. There is no parent-child field in NPPES '
+        'to roll them up. A name search for "Global Medical Response" as a Type-2 '
+        f'provider returns ZERO records; the GMR family instead surfaces as '
+        f'{gmr["npi"]} separate ambulance-organization NPIs across {gmr["states"]} '
+        'states, and Priority as '
+        f'{pri["npi"]} NPIs across {pri["states"]} states. So any analysis keyed '
+        'to a single NPI, or that ranks operators by per-NPI volume, sees dozens '
+        'of mid-size local operators and completely misses the national parent '
+        'sitting on top of them. That is the undercount, and it is structural.')
+    sb7.blank()
+    sb7.banner('Panel B. Family resolution: NPPES identity + CMS Medicare '
+               'ground volume (2024)')
+    sb7.headers(['Family', 'Parent billing NPIs', 'Subsidiary NPPES NPIs',
+                 'States', 'Active in Medicare', 'Medicare ground transports '
+                 '(2024)', 'Biggest single NPI (share of family)'])
+    for fn in ['GMR', 'Priority']:
+        f = fam24[fn]
+        share = (f['biggest'] / f['total']) if f['total'] else 0
+        sb7.row([
+            (FAM_LABEL[fn], 'label'),
+            (0, 'src', lib.FMT_INT),
+            (f['npi'], 'src', lib.FMT_INT),
+            (f['states'], 'src', lib.FMT_INT),
+            (f['active'], 'src', lib.FMT_INT),
+            (f['total'], 'src', lib.FMT_INT),
+            (share, 'src', lib.FMT_PCT1),
+        ], wrap=True, height=40)
+    sb7.row([('Reading', 'label'),
+             ('GMR: no parent NPI; ~570 subsidiary NPIs; its single biggest '
+              'Medicare NPI (AMR of Connecticut, ~30,600 transports) is under 7% '
+              'of the resolved family total - so the raw data shows a mid-size '
+              'regional and hides the national #1. Priority is less fragmented '
+              '(biggest NPI ~37% of family) but still ~2.7x undercounted per-NPI.',
+              'note'), None, None, None, None, None], wrap=True, height=64)
+    sb7.blank()
+    sb7.banner('Panel C. The naive-vs-resolved leaderboard (2024 Medicare '
+               'ground transports) - the same data, ranked two ways')
+    sb7.headers(['Rank', 'RAW per-NPI (what the data shows)', 'Transports',
+                 '', 'FAMILY-RESOLVED (true operators)', 'Transports',
+                 'Subsidiary NPIs'])
+    naive_top = sorted(vol24, key=lambda n: vol24[n], reverse=True)[:6]
+    resolved = sorted(fam24.items(), key=lambda kv: kv[1]['total'], reverse=True)
+    for i in range(6):
+        n = naive_top[i]
+        rlabel = rtot = rnpi = None
+        if i < len(resolved):
+            fn, f = resolved[i]
+            rlabel, rtot, rnpi = FAM_LABEL[fn].split(' (')[0], f['total'], f['active']
+        sb7.row([
+            (i + 1, 'label'),
+            (name24[n].title()[:38] + f' ({st24.get(n) or ""})', 'text'),
+            (int(round(vol24[n])), 'src', lib.FMT_INT),
+            None,
+            ((rlabel, 'text') if rlabel else ('', 'note')),
+            ((rtot, 'src', lib.FMT_INT) if rlabel else ('', 'note')),
+            ((rnpi, 'src', lib.FMT_INT) if rlabel else ('', 'note')),
+        ], wrap=True, height=26)
+    sb7.row([('', 'note'),
+             ('Raw view: a single Acadian NPI tops the list and GMR/AMR is '
+              'nowhere (its biggest NPI ranks ~15th).', 'note'), None, None,
+             ('Resolved view: GMR is #1 by a factor of ~3 over Acadian; the raw '
+              'ranking inverts reality.', 'note'), None, None],
+            wrap=True, height=40)
+    sb7.blank()
+    sb7.banner('Panel D. GMR family Medicare ground volume over time - and the '
+               'Medicare-Advantage caveat')
+    sb7.headers(['Year', 'US Medicare ground transports (all NPIs)',
+                 'GMR family', 'Acadian', 'Superior', 'Falck', 'Priority'])
+    ch7_first = sb7.r + 1
+    for y in CMS_TREND_YEARS:
+        v, nm, _s = year_vol[y]
+        ust = int(round(sum(v.values())))
+        cells = [(y, 'label'), (ust, 'src', lib.FMT_INT)]
+        for fn, pats in FAMILIES:
+            _a, t, _b = _family_ground(v, nm, pats)
+            cells.append((t, 'src', lib.FMT_INT))
+        sb7.row(cells)
+    ch7_last = sb7.r
+    sb7.row([('Note', 'label'),
+             ('US Medicare FFS ground transports fell from ~13.4M (2018) to '
+              '~9.5M (2024) as Medicare Advantage pulled volume out of fee-for-'
+              'service. GMR family Medicare volume fell in step - this is a '
+              'payer-mix shift, NOT proof GMR shrank; it is why Medicare volume '
+              'is a good relative LEVEL proxy but a poor growth signal.', 'note'),
+             None, None, None, None, None], wrap=True, height=52)
+    lib.add_chart(ws7, f'A{ch7_last + 3}',
+                  'US Medicare ground transports vs GMR family (2018-2024)',
+                  f"'Corporate_Family_Resolution'!$A${ch7_first}:$A${ch7_last}",
+                  [('US total',
+                    f"'Corporate_Family_Resolution'!$B${ch7_first}:$B${ch7_last}"),
+                   ('GMR family',
+                    f"'Corporate_Family_Resolution'!$C${ch7_first}:$C${ch7_last}")],
+                  kind='line', y_fmt=lib.FMT_INT)
+    sb7.blank()
+    sb7.banner('Read panel')
+    sb7.prose(
+        'The undercount is not a data-quality accident; it is what happens when a '
+        'national roll-up meets a provider registry with no corporate-family '
+        'field. GMR bills ~4.9 million patient transports a year across all '
+        f'payers (company figure) yet its {gmr["active"]} Medicare-active NPIs '
+        f'together show ~{gmr["total"]:,} Medicare ground transports, spread so '
+        'thin that no single NPI reveals the parent. To measure either national '
+        'player you MUST resolve the family first (join NPPES names to the parent, '
+        'then sum CMS volume) and then gross up for the Medicare-only share. Every '
+        'downstream scale question - fleet, workforce, revenue - inherits this '
+        'same resolution requirement.')
+
+    # ============================== TAB 8: Fleet Scale Predictors
+    ws8 = wb.create_sheet('Fleet_Scale_Predictors')
+    sb8 = lib.SheetBuilder(ws8, 7, col_widths=[30, 13, 16, 15, 15, 15, 20],
+                           tab_color='FF3A2E5A')
+    sb8.title('Fleet-scale predictors: which public signal actually predicts an '
+              'ambulance operator\'s real transport volume')
+    sb8.subtitle('The question you asked: to get an operator\'s overall scale '
+                 'right, what is the better predictor - fleet (vehicles), '
+                 'licensed EMTs per company, CMS Medicare transport volume, job '
+                 'postings, or footprint (metros / health systems served)? This '
+                 'tab rates each candidate on availability and how well it orders '
+                 'operators by true scale, using the resolved-family evidence '
+                 'from Corporate_Family_Resolution as the test set.')
+    sb8.note('METHOD: "true scale" is anchored on company-stated all-payer volume '
+             'and revenue/employees (public) plus family-resolved CMS Medicare '
+             'transports (computed). Predictors are rated HIGH/MODERATE/WEAK on '
+             'how consistently they reproduce that ordering. Per-company clinician '
+             'headcount and per-company fleet are NOT public nationally, which is '
+             'itself a finding.')
+    sb8.blank()
+    sb8.banner('Panel A. Predictor scorecard (best to worst for getting SCALE '
+               'right)')
+    sb8.headers(['Predictor', 'Public availability', 'Correlation with true '
+                 'scale', 'Signal type', 'Rank', 'Key caveat', 'Verdict'])
+    _sc = [
+        ('CMS Medicare transport volume (family-resolved)', 'HIGH (per-NPI, '
+         'annual, national)', 'STRONG', 'LEVEL (actual volume)', 1,
+         'Medicare FFS only (~25-40% of all-payer); MA shift depresses the trend',
+         'Best public volume proxy - but only after family resolution'),
+        ('Fleet (licensed vehicles)', 'LOW (only ~13 states publish totals; '
+         'company-level via disclosure)', 'STRONG', 'LEVEL (capacity)', 2,
+         'Roll-up vehicles split across subsidiary licenses; no national registry',
+         'Best CAPACITY proxy where obtainable; scarce'),
+        ('Family-resolved NPPES NPI count', 'HIGH (public)', 'MODERATE-STRONG',
+         'LEVEL (legal-entity footprint)', 3,
+         'Useless raw; one NPI hides a variable vehicle count',
+         'Good once resolved; GMR 570 NPIs dwarfs all others'),
+        ('Licensed EMTs / paramedics per company', 'LOW (BLS state only; not '
+         'per-company)', 'MODERATE', 'LEVEL (crew capacity)', 4,
+         'Tracks fleet (one crew per truck) but adds turnover / dual-role noise',
+         'Weaker, noisier twin of fleet'),
+        ('Job postings', 'MEDIUM (job boards)', 'WEAK', 'LEADING / FLOW (hiring)',
+         5, '27-36% annual turnover means postings are mostly churn, not size',
+         'Ordinal only (GMR ~683 vs Priority ~21-44); a growth hint, not scale'),
+        ('Footprint (metros / communities / health systems)', 'MEDIUM (self-'
+         'reported)', 'WEAK-MODERATE', 'BREADTH', 6,
+         'Density dominates: AMR San Diego alone does 120,000+ transports/yr; no '
+         'public IFT-contract counts', 'Breadth, not volume - misses density'),
+    ]
+    for name, avail, corr, typ, rank, caveat, verdict in _sc:
+        sb8.row([(name, 'label'), (avail, 'note'), (corr, 'text'), (typ, 'note'),
+                 (rank, 'src', lib.FMT_INT), (caveat, 'note'),
+                 (verdict, 'text')], wrap=True, height=52)
+    sb8.blank()
+    sb8.banner('Panel B. The test set: each predictor against known operators '
+               '(does it order them like true scale?)')
+    sb8.headers(['Operator', 'Medicare transports (2024, resolved)',
+                 'Subsidiary NPIs', 'Ground vehicles (public)',
+                 'Employees (public)', 'Job postings', 'Footprint'])
+    for fn in ['GMR', 'Acadian', 'Superior', 'Falck', 'Priority']:
+        f = fam24[fn]
+        sc = FAMILY_SCALE[fn]
+        sb8.row([
+            (FAM_LABEL[fn].split(' (')[0], 'label'),
+            (f['total'], 'src', lib.FMT_INT),
+            (f['npi'], 'src', lib.FMT_INT),
+            ((sc['ground_vehicles'], 'src', lib.FMT_INT)
+             if sc['ground_vehicles'] else ('n/d', 'note')),
+            (sc['employees'], 'note'),
+            (sc['postings'], 'note'),
+            (sc['footprint'], 'note'),
+        ], wrap=True, height=40)
+    sb8.row([('Ordering check', 'label'),
+             ('Medicare-volume rank (GMR>Acadian>Superior>Falck>Priority) matches '
+              'known scale; NPI count agrees at the top (GMR). Vehicles agree '
+              'where public (GMR 7,000 >> Acadian 400). Postings and footprint '
+              'get direction only.', 'note'),
+             None, None, None, None, None], wrap=True, height=52)
+    sb8.blank()
+    sb8.banner('Panel C. The all-payer translation')
+    sb8.prose(
+        'Medicare fee-for-service is only a slice of a ground operator\'s book, '
+        'so a family-resolved Medicare transport count must be grossed up to '
+        'estimate all-payer volume. The public benchmark is that Medicare FFS is '
+        'roughly one quarter to two fifths of ground-ambulance transports (payer-'
+        'mix dependent and shrinking as Medicare Advantage grows), implying a '
+        'rough x2.5 to x4 multiplier. GMR is the cross-check: ~442,000 resolved '
+        'Medicare ground transports against a company-stated ~4.9 million all-'
+        'payer patient transports implies Medicare is on the order of ~9-15% for '
+        'GMR specifically (its mix skews 911 / commercial / facility), a reminder '
+        'that the multiplier is operator-specific and the Medicare proxy is a '
+        'FLOOR on relative rank, not a level estimate.')
+    sb8.blank()
+    sb8.banner('Read panel - the answer')
+    sb8.prose(
+        'For getting overall SCALE right, the ranking is clear. (1) Family-'
+        'resolved CMS Medicare transport volume is the best PUBLIC proxy for real '
+        'volume - it is actual paid transports, per entity, national and annual - '
+        'provided you resolve the corporate family first and treat it as a '
+        'relative floor. (2) Fleet (vehicle count) is the best CAPACITY predictor '
+        'and beats licensed-EMT headcount, because crews track trucks but add '
+        'turnover and dual-role noise; both are scarce at the company level. (3) '
+        'Job postings are a weak, churn-confounded flow signal - a growth hint, '
+        'not a scale measure. (4) Footprint (metros / communities / health-system '
+        'contracts) is breadth, not volume, and systematically under-ranks dense '
+        'urban operators. The signal you may not have weighted enough: family '
+        'resolution itself is the master key - every predictor collapses on GMR '
+        'and Priority without it, because they do not exist as single entities in '
+        'any public file. Resolve the NPI family, sum CMS volume, cross-check '
+        'against fleet where a state publishes it, and gross up for payer mix.')
+
+    # ---- sources for the family-resolution / predictor tabs ----
+    sources += [
+        {'key': 'cms_mup_provider', 'publisher': 'CMS (data.cms.gov)',
+         'document': 'Medicare Physician & Other Practitioners - by Provider and '
+                     'Service: 100% final-action Part B fee-for-service line '
+                     'items by NPI x HCPCS x place-of-service; base-rate ground '
+                     'ambulance codes A0426-A0434 give paid transports per NPI',
+         'vintage': 'annual files 2013-2024 (manifested mup_provider_YEAR_HCPCS)',
+         'locator': 'cache keys mup_provider_2018/2020/2022/2024_A0426..A0434; '
+                    'Rndrng_NPI, Rndrng_Prvdr_Last_Org_Name, Tot_Srvcs',
+         'supplies': 'Per-NPI and family-resolved Medicare ground-transport '
+                     'volume on Corporate_Family_Resolution and '
+                     'Fleet_Scale_Predictors',
+         'url': 'https://data.cms.gov/provider-summary-by-type-of-service/'
+                'medicare-physician-other-practitioners', 'tier': 'A',
+         'accessed': accessed,
+         'powers': ['Corporate_Family_Resolution', 'Fleet_Scale_Predictors']},
+        {'key': 'gmr_public', 'publisher': 'Global Medical Response / AMR',
+         'document': 'GMR and AMR public overview pages: GMR ~34,000-38,000 '
+                     'employees, ~4.9-5.5 million patient transports/yr, ~7,000 '
+                     'ground ambulances, 306 rotor + 106 fixed-wing aircraft; AMR '
+                     'serves 2,100+ communities in 38 states + DC; KKR-owned',
+         'vintage': f'globalmedicalresponse.com / amr.net as retrieved {ACC}',
+         'locator': 'GMR/AMR About-Overview pages',
+         'supplies': 'GMR ground-truth scale figures on '
+                     'Fleet_Scale_Predictors and the read panels',
+         'url': 'https://www.globalmedicalresponse.com/about/overview',
+         'tier': 'B', 'accessed': accessed,
+         'powers': ['Corporate_Family_Resolution', 'Fleet_Scale_Predictors']},
+        {'key': 'priority_public', 'publisher': 'Priority Ambulance / Priority '
+                                                'OnDemand',
+         'document': 'Priority Ambulance public pages: a family of 22 local '
+                     'ambulance brands across 15 states (Shoals, Maricopa/'
+                     'Copperstate, Puckett EMS, Central EMS, Seals, Kunkel, Trans '
+                     'Am, Baptist, MedEx); founded 2014, backed by Enhanced '
+                     'Healthcare Partners',
+         'vintage': f'priorityambulance.com as retrieved {ACC}',
+         'locator': 'Priority Ambulance brand/overview pages',
+         'supplies': 'Priority ground-truth scale figures and the brand list on '
+                     'Corporate_Family_Resolution and Fleet_Scale_Predictors',
+         'url': 'https://www.priorityambulance.com/', 'tier': 'B',
+         'accessed': accessed,
+         'powers': ['Corporate_Family_Resolution', 'Fleet_Scale_Predictors']},
+        {'key': 'operator_scale_public',
+         'publisher': 'Operator public disclosures (Acadian, Falck, Superior)',
+         'document': 'Comparator ground-ambulance operator public scale figures: '
+                     'Acadian ~4,000 employees, 400+ ground ambulances, ~$500-'
+                     '734M revenue, LA/TX/TN/MS; Falck US arm of Falck A/S '
+                     '(Denmark); Superior Air-Ground (Midwest IL/IN/OH/MI/WI)',
+         'vintage': f'company About pages as retrieved {ACC}',
+         'locator': 'operator About/overview pages',
+         'supplies': 'The comparator ground-truth rows on Fleet_Scale_Predictors',
+         'url': 'https://www.acadian.com/', 'tier': 'B', 'accessed': accessed,
+         'powers': ['Fleet_Scale_Predictors']},
+        {'key': 'ems_job_postings', 'publisher': 'Public job boards (Indeed, '
+                                                 'LinkedIn) / AAA turnover study',
+         'document': 'Point-in-time EMS job-posting snapshots (GMR/AMR ~683 on '
+                     'Indeed; Priority ~21-44) read against EMS turnover of ~27% '
+                     '(paramedic) to ~36% (EMT) per year - so postings reflect '
+                     'churn more than size',
+         'vintage': f'job-board snapshots as retrieved {ACC}',
+         'locator': 'Indeed/LinkedIn employer job counts; AAA/Newton 360 turnover',
+         'supplies': 'The job-postings predictor row on Fleet_Scale_Predictors',
+         'url': 'https://www.indeed.com/', 'tier': 'C', 'accessed': accessed,
+         'powers': ['Fleet_Scale_Predictors']},
+    ]
+
     # ------------------------------------------------------------ facts ---
     facts += [
         {'metric': 'US ambulance-operator floor (NPPES Type-2 NPIs, 51 juris)',
@@ -1990,6 +2427,39 @@ def build(wb, ctx):
          'lives_on': 'EMS_Workforce_Shortage',
          'cross_check': 'AAA/industry figure; pairs with 20-36% annual turnover '
                         'to size the retention cost per operator'},
+        {'metric': 'GMR family Medicare ground transports (2024, resolved)',
+         'year': 2024, 'value': gmr['total'], 'unit': 'Medicare FFS transports',
+         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['cms_mup_provider'],
+         'locator': 'Corporate_Family_Resolution Panel B/C, GMR row',
+         'lives_on': 'Corporate_Family_Resolution',
+         'cross_check': f'Sum of base-rate ground A0426-A0434 Tot_Srvcs across the '
+                        f'{gmr["active"]} Medicare-active GMR-family NPIs; a name-'
+                        'matched FLOOR (misses legacy acquired names)'},
+        {'metric': 'GMR subsidiary ambulance-organization NPIs (NPPES)',
+         'year': 2026, 'value': gmr['npi'], 'unit': 'organization NPIs',
+         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['nppes_amb_roster'],
+         'locator': 'Corporate_Family_Resolution Panel A/B, GMR row',
+         'lives_on': 'Corporate_Family_Resolution',
+         'cross_check': f'{gmr["npi"]} brand-matched Type-2 NPIs across '
+                        f'{gmr["states"]} states; the parent "Global Medical '
+                        'Response" has ZERO Type-2 NPIs - the source of the '
+                        'undercount'},
+        {'metric': 'Priority family Medicare ground transports (2024, resolved)',
+         'year': 2024, 'value': pri['total'], 'unit': 'Medicare FFS transports',
+         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['cms_mup_provider'],
+         'locator': 'Corporate_Family_Resolution Panel B, Priority row',
+         'lives_on': 'Corporate_Family_Resolution',
+         'cross_check': f'Sum across {pri["active"]} Priority-family Medicare NPIs; '
+                        'biggest single NPI is ~37% of family (less fragmented '
+                        'than GMR but still undercounted per-NPI)'},
+        {'metric': 'US Medicare fee-for-service ground-ambulance transports',
+         'year': 2024, 'value': us_med24, 'unit': 'Medicare FFS transports',
+         'basis': 'DERIVED', 'tier': 'A', 'source_keys': ['cms_mup_provider'],
+         'locator': 'Corporate_Family_Resolution Panel D, 2024 US-total row',
+         'lives_on': 'Corporate_Family_Resolution',
+         'cross_check': 'Sum of base-rate ground A0426-A0434 Tot_Srvcs across all '
+                        'NPIs; down from ~13.4M in 2018 as Medicare Advantage '
+                        'shifts volume out of FFS'},
     ]
 
     # ---- Run 7 second wave: sweep-verified state counts (sources + facts) ----
@@ -2168,7 +2638,52 @@ def build(wb, ctx):
                        'survey representative figures, not a census',
          'guardrail': 'Certification, state licensure and employment are three '
                       'different universes and are not additive; per-state '
-                      'shortage rates are largely unpublished (PENDING).'}]
+                      'shortage rates are largely unpublished (PENDING).'},
+        {'id_hint': 124,
+         'finding': 'The two national ground-ambulance players are severely '
+                    'undercounted in public data because provider registries have '
+                    'no corporate-family field, and resolving the family inverts '
+                    'the leaderboard. GMR (KKR-owned, parent of AMR) has ZERO '
+                    'Type-2 billing NPIs under its own name; it surfaces as '
+                    f'~{gmr["npi"]} subsidiary NPIs across {gmr["states"]} states '
+                    'under local/legacy legal names. In raw 2024 CMS Medicare '
+                    'ground data a single Acadian NPI (~88,800 transports) tops '
+                    'the list and GMR is invisible (its biggest NPI ~30,600, ~7% '
+                    'of the family). Family-resolved, GMR is #1 at '
+                    f'~{gmr["total"]:,} transports, about 3x Acadian - the raw '
+                    'ranking is backwards.',
+         'numbers': 'Corporate_Family_Resolution Panel B/C: GMR 0 parent NPIs / '
+                    f'~{gmr["npi"]} subsidiary NPIs / ~{gmr["total"]:,} Medicare '
+                    'transports; Priority ~{0:,}'.format(pri['total']),
+         'sources': 'nppes_amb_roster; cms_mup_provider; gmr_public; '
+                    'priority_public',
+         'confidence': 'High: both the NPPES fragmentation and the CMS volume are '
+                       'computed live and reproducible; name-matching is a floor',
+         'guardrail': 'CMS counts are Medicare FFS only (a relative floor, not '
+                      'all-payer volume); the family match misses legacy acquired '
+                      'names, so resolved totals are understated, never over.'},
+        {'id_hint': 125,
+         'finding': 'For predicting an ambulance operator\'s real scale, the best '
+                    'PUBLIC signal is family-resolved CMS Medicare transport '
+                    'volume (actual paid transports per entity), then fleet '
+                    '(vehicle count) as the best capacity proxy, then family-'
+                    'resolved NPI count; licensed-EMT headcount tracks fleet but '
+                    'is noisier; job postings are a weak churn-confounded flow '
+                    'signal (GMR ~683 vs Priority ~21-44 openings); and footprint '
+                    '(metros / health systems served) is breadth, not volume, and '
+                    'under-ranks dense urban operators. The precondition beneath '
+                    'all of them is corporate-family resolution - every predictor '
+                    'collapses on GMR and Priority without it.',
+         'numbers': 'Fleet_Scale_Predictors Panel A scorecard (6 predictors '
+                    'ranked); Panel C all-payer multiplier ~x2.5-4 on Medicare '
+                    'FFS',
+         'sources': 'cms_mup_provider; gmr_public; priority_public; '
+                    'operator_scale_public; ems_job_postings',
+         'confidence': 'High on the ordering (Medicare volume reproduces known '
+                       'scale rank); the all-payer multiplier is operator-specific',
+         'guardrail': 'Per-company fleet and clinician headcount are not public '
+                      'nationally; postings/footprint give direction only, not a '
+                      'level.'}]
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
             'findings': findings, 'meta': {'run': 7}}

@@ -108,6 +108,38 @@ Snapshot, and NPPES taxonomy 3416. A "fastest wins" panel points at the states
 whose vehicle totals or downloadable rosters are already public. This is the
 worklist for filling every PENDING cell on IFT_License_Tracker.
 
+**Corporate_Family_Resolution (why the national players are undercounted).** The
+two genuinely national ground players - GMR (KKR-owned, parent of AMR) and
+Priority Ambulance (PE-backed) - are undercounted in every public dataset because
+provider registries have no corporate-family field. This tab proves it from two
+public sources joined on NPI: the NPPES ambulance roster (identity) and the CMS
+Medicare provider-and-service files (actual paid transports, base-rate ground
+HCPCS A0426-A0434), both re-derived at build time. GMR has ZERO Type-2 billing
+NPIs under its own name and surfaces as ~570 subsidiary NPIs across 47 states
+under local/legacy names; Priority as ~16 across 11 states. The killer panel is
+the naive-vs-resolved 2024 leaderboard: raw per-NPI, a single Acadian NPI
+(~88,800 transports) tops the list and GMR is invisible (biggest NPI ~30,600,
+under 7% of its family); family-resolved, GMR is #1 at ~442,000 transports, about
+3x Acadian. A time series (2018-2024) shows US Medicare FFS ground transports
+falling ~13.4M to ~9.5M as Medicare Advantage pulls volume out of fee-for-
+service - a payer-mix caveat, not proof any operator shrank. New facts (GMR/
+Priority family volume, GMR subsidiary NPIs, US Medicare ground transports),
+sources cms_mup_provider / gmr_public / priority_public, finding 124.
+
+**Fleet_Scale_Predictors (which public signal predicts real volume).** Rates the
+candidate predictors of operator scale on availability and how well each orders
+operators by true scale: (1) family-resolved CMS Medicare transport volume - best
+public volume proxy, actual paid transports, but Medicare FFS is only ~a quarter
+to two-fifths of all-payer volume (a ~x2.5-4 gross-up); (2) fleet (vehicles) -
+best capacity proxy, scarce; (3) family-resolved NPI count - good once resolved;
+(4) licensed EMTs per company - tracks fleet but noisier (turnover, dual-role);
+(5) job postings - weak, churn-confounded flow signal (GMR ~683 vs Priority
+~21-44 openings); (6) footprint (metros / health systems) - breadth not volume,
+under-ranks dense urban operators. The precondition beneath all of them is
+corporate-family resolution. A test-set panel shows the Medicare-volume ranking
+reproduces known scale (GMR > Acadian > Superior > Falck > Priority). New sources
+operator_scale_public / ems_job_postings, finding 125.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

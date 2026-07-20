@@ -1586,7 +1586,8 @@ def main(verify_results_path=None):
         ('State_EMS_Licensure',
          [n for n in ('Fleet_License_Route_Map', 'Fleet_License_State_Matrix',
                       'Fleet_Size_Evidence', 'IFT_License_Tracker',
-                      'EMS_Workforce_Shortage', 'Fleet_Data_Pull_Worklist')
+                      'EMS_Workforce_Shortage', 'Fleet_Data_Pull_Worklist',
+                      'Corporate_Family_Resolution', 'Fleet_Scale_Predictors')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)
