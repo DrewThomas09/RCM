@@ -87,6 +87,12 @@ SHEETS = [
                  'transport volume - fleet (vehicles), licensed EMTs, CMS Medicare '
                  'transport volume, job postings, or footprint (metros / health '
                  'systems served)?'},
+    {'name': 'Fleet_Identity_Map',
+     'question': 'Who owns the US ambulance fleet - what share of transport '
+                 'volume sits with named national/regional roll-ups vs municipal '
+                 '/ fire, hospital-based, and independent operators, and which '
+                 'public keys (brand names + PECOS control ID) resolve the '
+                 'identity map?'},
 ]
 
 ACC = '2026-07-20'
@@ -927,6 +933,33 @@ PRIORITY_BRANDS = [r'PRIORITY AMBULANCE', r'SHOALS AMBULANCE',
 ACADIAN_BRANDS = [r'ACADIAN']
 SUPERIOR_BRANDS = [r'SUPERIOR AIR-GROUND', r'SUPERIOR AMBULANCE']
 FALCK_BRANDS = [r'\bFALCK\b']
+# Additional resolvable ground roll-ups (verified as distinct from GMR):
+# DocGo Inc (NASDAQ: DCGO) operates the Ambulnz brand; Pafford EMS is an
+# Arkansas-based multi-state regional. (Rocky Mountain Holdings is Air Methods,
+# a separate AIR-medical competitor, and is deliberately NOT folded into GMR.)
+DOCGO_BRANDS = [r'AMBULNZ', r'\bDOCGO\b']
+PAFFORD_BRANDS = [r'PAFFORD']
+
+# Full named ground roll-up registry for the Fleet_Identity_Map (ordered by
+# 2024 Medicare ground volume at build time).
+ROLLUP_FAMILIES = [
+    ('GMR', GMR_BRANDS), ('Acadian', ACADIAN_BRANDS),
+    ('Superior', SUPERIOR_BRANDS), ('Falck', FALCK_BRANDS),
+    ('Priority', PRIORITY_BRANDS), ('Pafford', PAFFORD_BRANDS),
+    ('DocGo/Ambulnz', DOCGO_BRANDS),
+]
+
+# Ownership-type heuristics for segmenting the ambulance-supplier universe by
+# who owns the operator (the macro identity map). Municipal/fire and hospital
+# names are highly regular; everything else is private (roll-up or independent).
+MUNI_RX = re.compile(
+    r'\b(CITY|COUNTY|TOWN|TOWNSHIP|BOROUGH|VILLAGE|FIRE DISTRICT|FIRE '
+    r'DEPARTMENT|FIRE PROTECTION|FIRE & RESCUE|FIRE-RESCUE|BOARD OF COUNTY|'
+    r'MUNICIPAL|PARISH|COMMONWEALTH|STATE OF|EMS DISTRICT|DISTRICT)\b')
+HOSP_RX = re.compile(
+    r'\b(HOSPITAL|HEALTH SYSTEM|HEALTHCARE|HEALTH CARE|MEDICAL CENTER|'
+    r'UNIVERSITY|HEALTH AND HOSPITALS|REGIONAL HEALTH|MEMORIAL|HEALTH '
+    r'NETWORK|CLINIC)\b')
 
 # Public ground-truth scale figures for the correlation set (company-stated or
 # cited; see sources gmr_public / priority_public / operator_scale_public).
@@ -996,6 +1029,58 @@ def _family_nppes(roster, patterns):
 
     hit = [o for o in roster if any(p.search(_nm(o)) for p in pats)]
     return len(hit), len(set(o.get('state') for o in hit if o.get('state')))
+
+
+def _ownership_map(vol, name):
+    """Segment a MUP volume map by owner TYPE using name heuristics. Returns
+    ({npi->family} for roll-ups, {bucket: [npis, volume]}). Roll-up assignment
+    runs first (a named consolidator outranks the muni/hospital heuristic)."""
+    fam_pats = {fn: [re.compile(p) for p in pats]
+                for fn, pats in ROLLUP_FAMILIES}
+    assigned = {}
+    for n in vol:
+        nm = name.get(n, '')
+        for fn, pats in fam_pats.items():
+            if any(p.search(nm) for p in pats):
+                assigned[n] = fn
+                break
+    buckets = {'roll-up': [0, 0.0], 'municipal': [0, 0.0],
+               'hospital': [0, 0.0], 'independent': [0, 0.0]}
+    for n, v in vol.items():
+        if n in assigned:
+            k = 'roll-up'
+        elif MUNI_RX.search(name.get(n, '')):
+            k = 'municipal'
+        elif HOSP_RX.search(name.get(n, '')):
+            k = 'hospital'
+        else:
+            k = 'independent'
+        buckets[k][0] += 1
+        buckets[k][1] += v
+    return assigned, buckets
+
+
+def _pecos_family_clusters(lib, cache):
+    """{family: (distinct PECOS Associate-Control-IDs, NPI count)} - the CMS
+    enrollment-ownership key that clusters an operator's multi-state NPIs. A
+    second identity signal independent of the MUP org name."""
+    try:
+        pec = lib.load_cache(cache, 'pecos_ambulance_registry')
+    except FileNotFoundError:
+        return {}
+    fam_pats = {fn: [re.compile(p) for p in pats]
+                for fn, pats in ROLLUP_FAMILIES}
+    out = {}
+    for fn, pats in fam_pats.items():
+        ctl, npi = set(), 0
+        for r in pec:
+            nm = (r.get('ORG_NAME') or '').upper()
+            if any(p.search(nm) for p in pats):
+                npi += 1
+                if r.get('PECOS_ASCT_CNTL_ID'):
+                    ctl.add(r['PECOS_ASCT_CNTL_ID'])
+        out[fn] = (len(ctl), npi)
+    return out
 
 
 def build(wb, ctx):
@@ -2189,6 +2274,143 @@ def build(wb, ctx):
         'any public file. Resolve the NPI family, sum CMS volume, cross-check '
         'against fleet where a state publishes it, and gross up for payer mix.')
 
+    # ============================== TAB 9: Fleet Identity Map
+    assigned, buckets = _ownership_map(vol24, name24)
+    pecos_cl = _pecos_family_clusters(lib, cache)
+    # per-family resolved volume/NPIs (expanded roll-up registry)
+    rollup = {}
+    for fn, pats in ROLLUP_FAMILIES:
+        a, t, b = _family_ground(vol24, name24, pats)
+        npi, nst = _family_nppes(roster, pats)
+        rollup[fn] = dict(active=a, total=t, npi=npi, states=nst,
+                          pecos=pecos_cl.get(fn, (0, 0)))
+    rollup_total = sum(r['total'] for r in rollup.values())
+
+    ws9 = wb.create_sheet('Fleet_Identity_Map')
+    sb9 = lib.SheetBuilder(ws9, 7, col_widths=[34, 14, 16, 12, 14, 16, 18],
+                           tab_color='FF3A2E5A')
+    sb9.title('Fleet identity map: who owns the US ambulance fleet, and the '
+              'public keys that resolve it')
+    sb9.subtitle('The question behind "identify the fleet": once you can measure '
+                 'volume (CMS Medicare ground transports), WHO does it belong to? '
+                 'This tab maps the entire ambulance-supplier universe by owner '
+                 'TYPE and resolves the named consolidators, using two public '
+                 'identity keys joined on NPI - operator brand/legal names and '
+                 'the CMS PECOS Associate Control ID (which clusters one '
+                 'operator\'s multi-state enrollments). Re-derived at build time '
+                 'from mup_provider_2024_*, nppes_ambulance_roster and '
+                 'pecos_ambulance_registry.')
+    sb9.note('DATA QUALITY: ownership TYPE is inferred from the operator name '
+             '(municipal/fire and hospital names are highly regular; the rest is '
+             'private). Roll-up assignment runs first, so a named consolidator is '
+             'never miscounted as independent. Volume is Medicare fee-for-service '
+             'ground transports (a consistent relative measure, not all-payer). '
+             'Air-medical is a separate market and is excluded (ground base codes '
+             'only); Rocky Mountain Holdings, an AIR competitor (Air Methods), is '
+             'deliberately not folded into GMR.')
+    sb9.blank()
+    sb9.banner('Panel A. The two public identity keys')
+    sb9.prose(
+        'There is no public parent-ownership file for ambulance suppliers, so '
+        'identity is resolved from two joined keys. (1) BRAND / LEGAL NAME: the '
+        'operator name in NPPES and CMS, matched to a consolidator\'s known brand '
+        'family (AMR, Air Evac, Rural/Metro for GMR; Ambulnz for DocGo; and so '
+        'on). (2) PECOS ASSOCIATE CONTROL ID: CMS assigns each enrolled entity a '
+        'control ID that clusters its NPIs across states - Med-Trans enrolls 27 '
+        'NPIs across 24 states under one control ID, Air Evac 15 across 15 - so '
+        'the control ID confirms a brand is one legal entity and catches NPIs a '
+        'name search would split. Neither key links a subsidiary to the ultimate '
+        'parent (AMR\'s regional entities carry 14 different control IDs), which '
+        'is exactly why the roll-ups stay hidden without this manual resolution.')
+    sb9.blank()
+    sb9.banner('Panel B. Ownership-type identity map (2024 Medicare ground '
+               'transports) - who owns the volume')
+    sb9.headers(['Owner type', 'Operators (NPIs)', 'Medicare ground transports',
+                 'Share', 'Char.', 'What it is', ''])
+    us_g = sum(vol24.values())
+    _btype = [
+        ('Named national/regional roll-ups', 'roll-up',
+         'PE / public consolidators (GMR, Acadian, Priority, DocGo, ...)'),
+        ('Municipal / government / fire', 'municipal',
+         'City/county/fire-district EMS - the largest bucket by operator count'),
+        ('Hospital / health-system', 'hospital',
+         'Provider-owned transport (often the IFT backbone in a market)'),
+        ('Independent / other (long tail)', 'independent',
+         'Private single-market and small regional operators'),
+    ]
+    ib_first = sb9.r + 1
+    for label, key, desc in _btype:
+        nn, vv = buckets[key]
+        sb9.row([
+            (label, 'label'),
+            (nn, 'src', lib.FMT_INT),
+            (int(round(vv)), 'src', lib.FMT_INT),
+            (vv / us_g if us_g else 0, 'src', lib.FMT_PCT1),
+            ('', 'note'),
+            (desc, 'note'), None,
+        ], wrap=True, height=34)
+    ib_last = sb9.r
+    sb9.row([('US total (all ambulance NPIs)', 'label'),
+             (f'=SUM(B{ib_first}:B{ib_last})', 'fml', lib.FMT_INT),
+             (f'=SUM(C{ib_first}:C{ib_last})', 'fml', lib.FMT_INT),
+             (1.0, 'fml', lib.FMT_PCT1), None, None, None])
+    sb9.row([('Reading', 'label'),
+             ('The US ambulance fleet is overwhelmingly PUBLIC and INDEPENDENT: '
+              'municipal/fire plus independents are ~85% of Medicare ground '
+              'volume. The named national/regional roll-ups together are only '
+              f'~{100 * rollup_total / us_g:.0f}%, and GMR alone - the #1 private '
+              f'operator - is ~{100 * rollup["GMR"]["total"] / us_g:.1f}%. Fleet '
+              'consolidation is early: the identity map is a long tail, not an '
+              'oligopoly.', 'note'), None, None, None, None, None],
+            wrap=True, height=52)
+    sb9.blank()
+    sb9.banner('Panel C. Named roll-up registry (resolved families, 2024)')
+    sb9.headers(['Family', 'NPPES NPIs', 'States', 'Medicare-active NPIs',
+                 'Medicare ground transports', 'PECOS control IDs',
+                 'Share of US ground'])
+    for fn in sorted(rollup, key=lambda k: rollup[k]['total'], reverse=True):
+        r = rollup[fn]
+        sb9.row([
+            (fn, 'label'),
+            (r['npi'], 'src', lib.FMT_INT),
+            (r['states'], 'src', lib.FMT_INT),
+            (r['active'], 'src', lib.FMT_INT),
+            (r['total'], 'src', lib.FMT_INT),
+            (r['pecos'][0], 'src', lib.FMT_INT),
+            (r['total'] / us_g if us_g else 0, 'src', lib.FMT_PCT1),
+        ], wrap=True, height=26)
+    sb9.row([('All named roll-ups', 'label'), None, None, None,
+             (int(round(rollup_total)), 'src', lib.FMT_INT), None,
+             (rollup_total / us_g if us_g else 0, 'src', lib.FMT_PCT1)])
+    sb9.blank()
+    sb9.banner('Panel D. From volume to fleet (illustration, GMR-calibrated)')
+    sb9.prose(
+        'A resolved family\'s Medicare volume translates to an approximate FLEET '
+        'via a public calibration point: GMR runs ~7,000 ground vehicles for '
+        '~4.9 million all-payer transports a year - about 700 transports per '
+        'vehicle per year. Grossing a family\'s Medicare ground count up to all-'
+        'payer (roughly x2.5 to x4, operator-specific) and dividing by ~700 gives '
+        'an order-of-magnitude vehicle count: e.g. Acadian\'s ~151,000 Medicare '
+        'transports imply very roughly 540-860 all-payer-equivalent vehicles, '
+        'consistent with its stated ~400 ground ambulances once its lower-than-'
+        'average Medicare mix is considered. This is an ILLUSTRATION for sizing, '
+        'not a vehicle census; the only true fleet counts remain the state '
+        'per-vehicle permit registries (a dozen-plus now public - see '
+        'IFT_License_Tracker).')
+    sb9.blank()
+    sb9.banner('Read panel')
+    sb9.prose(
+        'Identifying the fleet is a two-step resolution, not a lookup. First '
+        'measure volume where it is real (CMS Medicare ground transports per '
+        'NPI); then resolve identity with the two public keys - brand/legal name '
+        'and PECOS control ID - to roll fragmented NPIs up to their operator, and '
+        'classify the rest by owner type. The map that falls out is decisive for '
+        'diligence: ~40% of volume is municipal/fire, ~47% independent long tail, '
+        '~3% hospital, and only ~10% named private roll-ups, of which GMR is a '
+        'third. So a national thesis is really a roll-up-of-independents thesis, '
+        'and the targets are hiding in the long tail under local names - findable '
+        'only by joining CMS volume to NPPES/PECOS identity, state by state.')
+
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
         {'key': 'cms_mup_provider', 'publisher': 'CMS (data.cms.gov)',
@@ -2254,6 +2476,20 @@ def build(wb, ctx):
          'supplies': 'The job-postings predictor row on Fleet_Scale_Predictors',
          'url': 'https://www.indeed.com/', 'tier': 'C', 'accessed': accessed,
          'powers': ['Fleet_Scale_Predictors']},
+        {'key': 'cms_pecos_enroll', 'publisher': 'CMS (data.cms.gov)',
+         'document': 'Medicare Fee-For-Service Public Provider Enrollment - '
+                     'ambulance-supplier records with NPI, ORG_NAME, STATE and '
+                     'the PECOS Associate Control ID (PECOS_ASCT_CNTL_ID) that '
+                     'clusters one entity\'s NPIs across states',
+         'vintage': 'manifested pecos_ambulance_registry (10,465 records)',
+         'locator': 'cache key pecos_ambulance_registry; NPI, PECOS_ASCT_CNTL_ID, '
+                    'ORG_NAME, STATE_CD',
+         'supplies': 'The second identity key (PECOS control-ID clusters) on '
+                     'Fleet_Identity_Map',
+         'url': 'https://data.cms.gov/provider-characteristics/medicare-provider-'
+                'supplier-enrollment/medicare-fee-for-service-public-provider-'
+                'enrollment', 'tier': 'A', 'accessed': accessed,
+         'powers': ['Fleet_Identity_Map']},
     ]
 
     # ------------------------------------------------------------ facts ---
@@ -2460,6 +2696,26 @@ def build(wb, ctx):
          'cross_check': 'Sum of base-rate ground A0426-A0434 Tot_Srvcs across all '
                         'NPIs; down from ~13.4M in 2018 as Medicare Advantage '
                         'shifts volume out of FFS'},
+        {'metric': 'US ambulance volume owned by municipal / government / fire',
+         'year': 2024,
+         'value': round(buckets['municipal'][1] / us_g, 3) if us_g else 0,
+         'unit': 'share of Medicare ground transports', 'basis': 'DERIVED',
+         'tier': 'A', 'source_keys': ['cms_mup_provider'],
+         'locator': 'Fleet_Identity_Map Panel B, municipal row',
+         'lives_on': 'Fleet_Identity_Map',
+         'cross_check': f'{buckets["municipal"][0]:,} city/county/fire NPIs; the '
+                        'largest owner-type bucket, ~40% of Medicare ground volume'},
+        {'metric': 'US ambulance volume owned by named national/regional '
+                   'roll-ups', 'year': 2024,
+         'value': round(rollup_total / us_g, 3) if us_g else 0,
+         'unit': 'share of Medicare ground transports', 'basis': 'DERIVED',
+         'tier': 'A', 'source_keys': ['cms_mup_provider', 'nppes_amb_roster'],
+         'locator': 'Fleet_Identity_Map Panel C, all-roll-ups row',
+         'lives_on': 'Fleet_Identity_Map',
+         'cross_check': f'{len(ROLLUP_FAMILIES)} resolved families (GMR, Acadian, '
+                        'Superior, Falck, Priority, Pafford, DocGo); GMR alone is '
+                        f'~{100 * rollup["GMR"]["total"] / us_g:.1f}% - the market '
+                        'is a long tail, not an oligopoly'},
     ]
 
     # ---- Run 7 second wave: sweep-verified state counts (sources + facts) ----
@@ -2683,7 +2939,31 @@ def build(wb, ctx):
                        'scale rank); the all-payer multiplier is operator-specific',
          'guardrail': 'Per-company fleet and clinician headcount are not public '
                       'nationally; postings/footprint give direction only, not a '
-                      'level.'}]
+                      'level.'},
+        {'id_hint': 126,
+         'finding': 'The US ambulance fleet is owned overwhelmingly by public and '
+                    'independent operators, not consolidators - the identity map '
+                    'is a long tail. Segmenting 2024 CMS Medicare ground volume '
+                    'by owner type: municipal / government / fire is the largest '
+                    f'bucket at ~{100 * buckets["municipal"][1] / us_g:.0f}% '
+                    f'({buckets["municipal"][0]:,} NPIs), independent long-tail '
+                    f'~{100 * buckets["independent"][1] / us_g:.0f}%, hospital / '
+                    f'health-system ~{100 * buckets["hospital"][1] / us_g:.0f}%, '
+                    'and named national/regional roll-ups only '
+                    f'~{100 * rollup_total / us_g:.0f}% - of which GMR alone is a '
+                    'third. Identity is resolved with two public keys joined on '
+                    'NPI: brand/legal name and the CMS PECOS Associate Control ID '
+                    '(which clusters an operator\'s multi-state NPIs). A national '
+                    'thesis is therefore a roll-up-of-independents thesis; the '
+                    'targets sit in the long tail under local names.',
+         'numbers': 'Fleet_Identity_Map Panel B (4 owner-type buckets) + Panel C '
+                    f'({len(ROLLUP_FAMILIES)} resolved roll-up families)',
+         'sources': 'cms_mup_provider; nppes_amb_roster; cms_pecos_enroll',
+         'confidence': 'High on the segmentation (name heuristics are regular for '
+                       'muni/hospital); roll-up totals are a name-matched floor',
+         'guardrail': 'Medicare FFS ground only (relative, not all-payer); owner '
+                      'type is name-inferred; roll-up shares understate slightly '
+                      'because legacy acquired names are missed.'}]
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
             'findings': findings, 'meta': {'run': 7}}

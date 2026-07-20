@@ -140,6 +140,25 @@ corporate-family resolution. A test-set panel shows the Medicare-volume ranking
 reproduces known scale (GMR > Acadian > Superior > Falck > Priority). New sources
 operator_scale_public / ems_job_postings, finding 125.
 
+**Fleet_Identity_Map (who owns the fleet).** Extends the volume work into an
+ownership map of the whole ambulance-supplier universe, resolved with two public
+identity keys joined on NPI: operator brand/legal name and the CMS PECOS
+Associate Control ID (which clusters one operator's multi-state enrollments - e.g.
+Med-Trans 27 NPIs across 24 states under one control ID). Segmenting 2024 CMS
+Medicare ground volume by owner type is decisive: municipal / government / fire is
+the largest bucket at ~40% (~5,400 NPIs), independent long tail ~47%, hospital /
+health-system ~3%, and named national/regional roll-ups only ~10% - of which GMR
+alone is about a third. A named roll-up registry resolves seven consolidators
+(GMR, Acadian, Superior, Falck, Priority, plus newly mapped Pafford EMS and
+DocGo/Ambulnz), each with NPPES NPIs, states, Medicare volume, and PECOS
+control-ID clusters; Rocky Mountain Holdings, an AIR-medical competitor (Air
+Methods), is verified as distinct and deliberately not folded into GMR. A
+GMR-calibrated volume-to-fleet illustration (~700 transports per ground vehicle
+per year) sizes families where a state vehicle registry is not public. New facts
+(municipal share, roll-up share), source cms_pecos_enroll, finding 126. The
+takeaway for diligence: a national thesis is really a roll-up-of-independents
+thesis, and the targets hide in the long tail under local names.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

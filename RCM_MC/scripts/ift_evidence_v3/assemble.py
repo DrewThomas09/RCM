@@ -1587,7 +1587,8 @@ def main(verify_results_path=None):
          [n for n in ('Fleet_License_Route_Map', 'Fleet_License_State_Matrix',
                       'Fleet_Size_Evidence', 'IFT_License_Tracker',
                       'EMS_Workforce_Shortage', 'Fleet_Data_Pull_Worklist',
-                      'Corporate_Family_Resolution', 'Fleet_Scale_Predictors')
+                      'Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
+                      'Fleet_Identity_Map')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)

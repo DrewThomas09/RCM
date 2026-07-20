@@ -258,7 +258,8 @@ class TestIFTEvidenceV3(unittest.TestCase):
         undercounted and which public signal best predicts real volume. The
         GMR family Medicare volume must be re-derived (nonzero) and the
         findings tail must reach 125."""
-        for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors'):
+        for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
+                    'Fleet_Identity_Map'):
             self.assertIn(tab, self.wb.sheetnames)
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
@@ -268,7 +269,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
         ids = [int(r[0].value.strip())
                for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
                if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
-        self.assertGreaterEqual(max(ids), 125)
+        self.assertGreaterEqual(max(ids), 126)
 
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""
