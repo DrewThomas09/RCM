@@ -345,6 +345,21 @@ class TestNationalDataCatalog(unittest.TestCase):
         # NEDS is honestly marked restricted (DUA + purchase), not auto-ingest.
         self.assertEqual(ndr.get("hcup_neds")["access"], "restricted")
 
+    def test_cdi_is_wired_to_a_real_estate_dataset(self):
+        # The chronic-disease indicators (CDI) source was newly ingested into
+        # the cdc_data connector; the catalog must reflect that as wired AND
+        # the estate must actually expose the dataset.
+        from rcm_mc.data_public import national_data_registry as ndr
+        from rcm_mc.data_public import connector_estate as ce
+        cdi = ndr.get("cdi")
+        self.assertEqual(cdi.get("access"), "estate")
+        self.assertEqual(cdi.get("wired"), "cdc_data")
+        if not _estate_available():
+            self.skipTest("estate not available on this deployment")
+        ds = {d["dataset_id"] for d in ce.all_datasets()
+              if d["connector"] == "cdc_data"}
+        self.assertIn("cdc_data_chronic_disease_indicators", ds)
+
     def test_wired_entries_match_real_estate_connectors(self):
         from rcm_mc.data_public import national_data_registry as ndr
         from rcm_mc.data_public import connector_estate as ce

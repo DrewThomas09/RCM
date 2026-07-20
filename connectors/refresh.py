@@ -115,6 +115,7 @@ _QUICK_PLAN: Dict[str, List[List[str]]] = {
         ["fetch", "--dataset", "flu_vaccination_coverage", "--max-pages", "1"],
         ["fetch", "--dataset", "stroke_mortality_county", "--max-pages", "2"],
         ["fetch", "--dataset", "infant_mortality_state", "--max-pages", "1"],
+        ["fetch", "--dataset", "chronic_disease_indicators", "--max-pages", "2"],
     ],
     "hrsa_data": [
         ["fetch", "--dataset", "hpsa_primary_care", "--max-rows", "5000"],
