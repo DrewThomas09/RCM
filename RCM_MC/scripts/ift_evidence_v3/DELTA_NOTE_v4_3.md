@@ -72,6 +72,19 @@ vehicle count is bordered PENDING with the State_Matrix route that fills it, so
 the grid is both the evidence and the worklist. New facts F633-F634 (US EMT and
 paramedic job sums), source S457 (BLS OEWS state), finding 122.
 
+**EMS_Workforce_Shortage (the supply behind the fleet).** A fleet is only as
+deployable as its crews. This tab pairs the national clinician supply - NREMT
+598,843 nationally certified (EMT 400,911; paramedic 149,841) and BLS ~288,580
+EMT+paramedic jobs at a $45,260 combined mean wage - with the shortage signals:
+20-36% annual turnover (AAA/Newton 360 2024 study), 73% burnout, 37% planning to
+leave within five years, replacement cost $5,786 per EMT and $8,620 per
+paramedic, plus the states that publish a trend (NY active responders -17.5%
+2019-2022; rural MI 500+ vacancies). It cross-references the per-state EMT and
+paramedic jobs and wages on IFT_License_Tracker. New facts F635-F636, sources
+S458-S461 (NREMT, BLS OOH, AAA, NY Senate), finding 123. The point: a permitted
+ambulance with no crew does not roll, so fleet-license counts must be read
+against this supply.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

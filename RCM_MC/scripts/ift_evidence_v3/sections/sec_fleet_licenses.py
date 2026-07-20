@@ -65,6 +65,10 @@ SHEETS = [
                  'public and sourced today - operator identities (NPPES), '
                  'licensed services and vehicles where published, and the EMT / '
                  'paramedic workforce with mean wage (BLS) to back into?'},
+    {'name': 'EMS_Workforce_Shortage',
+     'question': 'How big is the EMS clinician workforce, how fast is it turning '
+                 'over, and what public shortage signals exist - nationally and '
+                 'in the states that publish data?'},
 ]
 
 ACC = '2026-07-20'
@@ -817,6 +821,46 @@ def build(wb, ctx):
                      'state on IFT_License_Tracker',
          'url': 'https://www.bls.gov/oes/current/oes292040.htm', 'tier': 'A',
          'accessed': accessed, 'powers': ['IFT_License_Tracker']},
+        {'key': 'nremt_cert', 'publisher': 'NREMT',
+         'document': 'National Registry of EMTs - nationally certified EMS '
+                     'clinician counts by level (EMR/EMT/AEMT/Paramedic) at the '
+                     'reported all-time high',
+         'vintage': '2025', 'locator': 'NREMT news release / Maps and Data',
+         'supplies': 'National certified-clinician counts on '
+                     'EMS_Workforce_Shortage Panel A',
+         'url': 'https://nremt.org/News/national-registry-reaches-all-time-high',
+         'tier': 'A', 'accessed': accessed, 'powers': ['EMS_Workforce_Shortage']},
+        {'key': 'bls_ooh_ems', 'publisher': 'US BLS',
+         'document': 'Occupational Outlook Handbook - EMTs and Paramedics: '
+                     'national employment, median/mean wage, and projected '
+                     'openings 2024-2034',
+         'vintage': 'May 2024 / 2024-2034 projections',
+         'locator': 'bls.gov/ooh/healthcare/emts-and-paramedics.htm',
+         'supplies': 'National employment, wage and openings on '
+                     'EMS_Workforce_Shortage Panel A',
+         'url': 'https://www.bls.gov/ooh/healthcare/emts-and-paramedics.htm',
+         'tier': 'A', 'accessed': accessed, 'powers': ['EMS_Workforce_Shortage']},
+        {'key': 'aaa_turnover', 'publisher': 'American Ambulance Association / '
+                                             'Newton 360',
+         'document': 'Ambulance Employee Workforce Turnover Study - EMT and '
+                     'paramedic turnover, replacement cost, burnout indicators '
+                     '(258 EMS organizations, ~20,000 employees)',
+         'vintage': '2024 (with 2022 baselines)',
+         'locator': 'AAA workforce turnover study / one-pager',
+         'supplies': 'The turnover, replacement-cost and burnout indicators on '
+                     'EMS_Workforce_Shortage Panel B',
+         'url': 'https://ambulance.org/', 'tier': 'B', 'accessed': accessed,
+         'powers': ['EMS_Workforce_Shortage']},
+        {'key': 'ny_senate_ems', 'publisher': 'New York State Senate',
+         'document': 'New York EMS workforce data - active EMS responders '
+                     'declined 17.5% between 2019 and 2022',
+         'vintage': '2019-2022', 'locator': 'NY Senate newsroom',
+         'supplies': 'The NY workforce-trend row on EMS_Workforce_Shortage '
+                     'Panel B',
+         'url': 'https://www.nysenate.gov/newsroom/in-the-news/2025/'
+                'shelley-b-mayer/new-york-data-supports-sounding-alarm-ems-'
+                'workforce', 'tier': 'B', 'accessed': accessed,
+         'powers': ['EMS_Workforce_Shortage']},
         {'key': 'fmcsa_safer', 'publisher': 'US DOT FMCSA',
          'document': 'FMCSA SAFER Company Snapshot - MCS-150 self-reported '
                      'power-unit (vehicle) counts for interstate motor carriers, '
@@ -1213,6 +1257,89 @@ def build(wb, ctx):
         'retrieves it, so the grid doubles as the worklist for filling every '
         'remaining cell.')
 
+    # ================================================ TAB 5: Workforce/Shortage
+    ws5 = wb.create_sheet('EMS_Workforce_Shortage')
+    sb5 = lib.SheetBuilder(ws5, 6, col_widths=[34, 18, 18, 40, 4, 4],
+                           tab_color='FF2E5A3A')
+    sb5.title('EMS workforce and shortage: the clinician supply behind every '
+              'ambulance fleet')
+    sb5.subtitle('The question: how large is the EMS clinician workforce, how '
+                 'fast does it turn over, and what public shortage signals exist? '
+                 'A fleet is only as deployable as the crews that staff it, so '
+                 'this tab pairs the national certified-clinician and employment '
+                 'counts with the turnover and burnout indicators, and the few '
+                 'states that publish a workforce trend. Sources: NREMT (national '
+                 'certification); BLS OOH/OEWS 2024; American Ambulance '
+                 'Association / Newton 360 2024 turnover study; NY State Senate. '
+                 'Cross-reference: per-state EMT/paramedic jobs and wages live on '
+                 'IFT_License_Tracker.')
+    sb5.note('DATA QUALITY: national certification (NREMT) and employment (BLS) '
+             'are DIFFERENT universes - a nationally certified clinician may hold '
+             'a state license without a job, and BLS jobs exclude self-employed '
+             'and understate dual-role fire/EMS. Turnover and burnout figures are '
+             'from a voluntary industry survey (AAA/Newton 360), representative '
+             'not census. Per-state shortage RATES are not uniformly published; '
+             'the state rows here are the ones with a public figure - everything '
+             'else is PENDING a state workforce report.')
+    sb5.blank()
+    sb5.banner('Panel A. National EMS clinician supply (NREMT certification + '
+               'BLS employment)')
+    sb5.headers(['Metric', 'Value', 'Vintage', 'Source / note', '', ''])
+    for metric, val, vint, note, fmt in [
+        ('Nationally certified EMS clinicians (all levels)', 598843, '2025',
+         'NREMT all-time high', lib.FMT_INT),
+        ('  of which EMT', 400911, '2025', 'NREMT (66.9%)', lib.FMT_INT),
+        ('  of which Paramedic', 149841, '2025', 'NREMT (25.0%)', lib.FMT_INT),
+        ('  of which AEMT', 30783, '2025', 'NREMT (5.1%)', lib.FMT_INT),
+        ('  of which EMR', 17308, '2025', 'NREMT (2.9%)', lib.FMT_INT),
+        ('EMT + paramedic JOBS (BLS employment)', 288580, 'May 2024',
+         'BLS OOH; jobs not people', lib.FMT_INT),
+        ('EMT + paramedic combined mean annual wage', 45260, 'May 2024',
+         'BLS OEWS national', lib.FMT_USD),
+        ('Projected annual openings, 2024-2034', 19000, '2024-2034',
+         'BLS OOH (growth + replacement)', lib.FMT_INT),
+    ]:
+        sb5.row([(metric, 'label'), (val, 'src', fmt), (vint, 'src'),
+                 (note, 'note'), None, None], wrap=True, height=22)
+    sb5.blank()
+    sb5.banner('Panel B. Shortage and turnover indicators (industry survey + '
+               'state reports)')
+    sb5.headers(['Indicator', 'Value', 'Vintage', 'Source / note', '', ''])
+    for ind, val, vint, note, fmt in [
+        ('Annual EMT/paramedic turnover (range)', '20-36%', '2022-2024',
+         'AAA/Newton 360 turnover study (258 orgs, ~20,000 employees)', None),
+        ('Paramedic turnover-intention', '28%', '2024',
+         'peer-reviewed meta-analysis', None),
+        ('Cost to replace one EMT', 5786, '2024', 'AAA/industry', lib.FMT_USD),
+        ('Cost to replace one Paramedic', 8620, '2024', 'AAA/industry',
+         lib.FMT_USD),
+        ('EMS providers reporting burnout / compassion fatigue', '73%', '2024',
+         'industry survey', None),
+        ('Share planning to leave the field within 5 years', '37%', '2024',
+         'industry survey', None),
+        ('NY State active EMS responders, change 2019-2022', '-17.5%',
+         '2019-2022', 'NY State Senate (workforce crisis)', None),
+        ('Rural Michigan open EMT/paramedic vacancies', '500+', '2024',
+         'CBS Detroit (rural MI)', None),
+    ]:
+        cell = ((val, 'src', fmt) if fmt else (val, 'src'))
+        sb5.row([(ind, 'label'), cell, (vint, 'src'), (note, 'note'),
+                 None, None], wrap=True, height=22)
+    sb5.blank()
+    sb5.banner('Panel C. Reading the supply against the fleet')
+    sb5.prose(
+        'The workforce is the binding constraint on fleet deployability, and it '
+        'is under strain. Roughly 599,000 clinicians are nationally certified but '
+        'only about 289,000 EMT and paramedic JOBS exist (BLS), and those jobs '
+        'turn over 20-36% a year - full crew replacement every three to four '
+        'years - against a backdrop of 73% reporting burnout and 37% planning to '
+        'leave within five years. That is why a licensed vehicle is not a '
+        'deployable unit: a permitted ambulance with no crew does not roll. The '
+        'per-state EMT and paramedic job counts and wages on IFT_License_Tracker '
+        'are the local read on this supply; where a state publishes a workforce '
+        'trend (NY, MI here) it confirms the national direction. Per-state '
+        'shortage rates are largely unpublished and are the next data to pull.')
+
     # ------------------------------------------------------------ facts ---
     facts += [
         {'metric': 'US ambulance-operator floor (NPPES Type-2 NPIs, 51 juris)',
@@ -1302,6 +1429,20 @@ def build(wb, ctx):
          'lives_on': 'IFT_License_Tracker',
          'cross_check': 'Sum of per-state OEWS paramedic employment; jobs not '
                         'licenses; a floor excluding nondisclosed states'},
+        {'metric': 'Nationally certified EMS clinicians (all levels)',
+         'year': 2025, 'value': 598843, 'unit': 'certified clinicians',
+         'basis': 'SOURCED', 'tier': 'A', 'source_keys': ['nremt_cert'],
+         'locator': 'EMS_Workforce_Shortage Panel A, certified-clinicians row',
+         'lives_on': 'EMS_Workforce_Shortage',
+         'cross_check': 'NREMT reported all-time high (EMT 400,911; paramedic '
+                        '149,841); certification, not state license or jobs'},
+        {'metric': 'Cost to replace one paramedic',
+         'year': 2024, 'value': 8620, 'unit': 'USD per separation',
+         'basis': 'SOURCED', 'tier': 'B', 'source_keys': ['aaa_turnover'],
+         'locator': 'EMS_Workforce_Shortage Panel B, paramedic replacement row',
+         'lives_on': 'EMS_Workforce_Shortage',
+         'cross_check': 'AAA/industry figure; pairs with 20-36% annual turnover '
+                        'to size the retention cost per operator'},
     ]
 
     # --------------------------------------------------------- findings ---
@@ -1410,7 +1551,26 @@ def build(wb, ctx):
          'guardrail': 'Do not sum across columns: NPPES counts entities, state '
                       'counts count credentials, BLS counts jobs. Workforce sums '
                       'are floors (nondisclosed states excluded) and understate '
-                      'dual-role fire/EMS staffing.'}]
+                      'dual-role fire/EMS staffing.'},
+        {'id_hint': 123,
+         'finding': 'The workforce, not the vehicle, is the binding constraint on '
+                    'fleet deployability - and it is under strain. About 599,000 '
+                    'clinicians are nationally certified (NREMT) but only ~289,000 '
+                    'EMT and paramedic JOBS exist (BLS), and those jobs turn over '
+                    '20-36% a year (AAA/Newton 360), with 73% reporting burnout '
+                    'and 37% planning to leave within five years. A permitted '
+                    'ambulance with no crew does not roll, so fleet-license counts '
+                    'must be read against this supply; the per-state EMT/paramedic '
+                    'jobs and wages sit on IFT_License_Tracker.',
+         'numbers': 'EMS_Workforce_Shortage Panel A/B: 598,843 certified vs '
+                    '288,580 jobs; 20-36% turnover; replacement $5,786 EMT / '
+                    '$8,620 paramedic',
+         'sources': 'nremt_cert; bls_ooh_ems; aaa_turnover',
+         'confidence': 'High on NREMT/BLS counts; turnover/burnout are voluntary-'
+                       'survey representative figures, not a census',
+         'guardrail': 'Certification, state licensure and employment are three '
+                      'different universes and are not additive; per-state '
+                      'shortage rates are largely unpublished (PENDING).'}]
 
     return {'facts': facts, 'sources': sources, 'excluded': excluded,
             'findings': findings, 'meta': {'run': 7}}
