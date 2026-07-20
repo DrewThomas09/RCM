@@ -54,31 +54,37 @@ operator floor per jurisdiction (Type-2 NPIs under taxonomy 3416*, computed live
 from the manifested NPPES roster - about 19,400 organizations across the 51
 jurisdictions), the national taxonomy split (land/unspecified/air/water), the
 Missouri open-data service counts (from the manifested data.mo.gov Socrata
-pull), and SIX confirmed statewide vehicle-license anchors: Texas (over 5,000
-licensed ambulances across almost 800 provider services - DSHS), New Jersey
-(~4,500 licensed EMS vehicles and ~1,700 MICPs), Michigan (3,847 licensed
-life-support vehicles across 819 agencies, 2019), Indiana (nearly 2,000
-ambulances across 800+ agencies - DHS), Tennessee (1,300 ambulances across 210
-services - EMS Board) and Minnesota (838 = 804 ground + 34 air across 266
-services - EMSRB). A dozen states now carry a published statewide licensed-
-SERVICE count: TX ~800, PA 1,205, WI 822, IA 724, CA 700+, MI 819, MO 486, FL
-346, MN 266, TN 210, CO 205, IN 800+. A native bar chart ranks the top-12
-jurisdictions by operator floor. Texas at ~6.3 vehicles per provider (with
-Tennessee ~6.2) confirms the NPPES operator floor systematically understates
-fleet size.
+pull), and THIRTEEN confirmed statewide vehicle-license anchors ranked largest
+first: Texas (over 5,000), New Jersey (~4,500), Michigan (3,847), North Carolina
+(2,500 licensed ALS/BLS vehicles), Indiana (~2,000), Georgia (~1,800, tier-B
+legislative), Tennessee (1,300), Arizona (980 registered ground ambulances),
+Connecticut (over 900), Minnesota (838 = 804 ground + 34 air), West Virginia
+(~523), Idaho (357) and Delaware (169 emergency/911 units). About THIRTY states
+now carry a published statewide licensed-SERVICE count, located by a per-state
+public sweep and each independently verified against the state EMS authority
+(PA 1,205, NY 982, WI 822, TX ~800, IN 800+, IA 724, CA 700+, WA 456, NE 427,
+FL 346, MA 318, MT 270, MN 266, WV 269, SC 263, ME 276, ND 255, KY 221, TN 210,
+CO 205, KS 162, UT 130+, SD 121, AZ 97, DE 88, RI 83, VT 65, WY 62, plus MO 486
+and MI 819). A native bar chart ranks the top-12 jurisdictions by operator floor.
+Texas at ~6.3 vehicles per provider (Tennessee ~6.2) confirms the NPPES operator
+floor systematically understates fleet size.
 
 **IFT_License_Tracker (the one-grid tracker).** Per US jurisdiction, every public
 ambulance/IFT license count in a single grid across four universes that must
 never be summed together: the NPPES operator-identity floor (all 51), the
-licensed-SERVICE count where a state publishes one (a dozen: TX ~800, PA 1,205, WI 822,
-IA 724, CA 700+, MI 819, MO 486, FL 346, MN 266, TN 210, CO 205, IN 800+), the
-licensed-VEHICLE total where published (six: TX over 5,000, NJ ~4,500, MI 3,847,
-IN ~2,000, TN 1,300, MN 838), and the EMT and paramedic WORKFORCE with mean wage
-from BLS OEWS May 2024 (SOC 29-2042 / 29-2043, all states) so wages per state can
-be backed into. Every unpublished service or vehicle count is bordered PENDING
-with the State_Matrix route that fills it, so the grid is both the evidence and
-the worklist. Landing the TX/PA/CA/FL then MN/CO/WI/TN/IN published counts fills
-a dozen service cells and six vehicle cells that were PENDING.
+licensed-SERVICE count where a state publishes one (~30 states, PA 1,205 / NY 982 / WI 822 / TX ~800
+lead), the licensed-VEHICLE total where published (13 states: TX over 5,000 down
+to DE 169), and the EMT and paramedic WORKFORCE with mean wage from BLS OEWS May
+2024 (SOC 29-2042 / 29-2043, all states) so wages per state can be backed into.
+Every unpublished service or vehicle count is bordered PENDING with the
+State_Matrix route that fills it, so the grid is both the evidence and the
+worklist. Three landing waves (TX/PA/CA/FL, then MN/CO/WI/TN/IN, then an 18-state
+verified sweep) took the grid from 3 to ~30 published service cells and from 2 to
+13 published vehicle cells. Every landed number was located by a parallel
+per-state sweep and independently re-verified against the state EMS authority in
+a separate find-then-refute pass; two candidates that did not survive
+(Hawaii, New Hampshire) were dropped, and Georgia was kept only at tier-B with an
+"approximate" flag.
 
 **EMS_Workforce_Shortage (the supply behind the fleet).** A fleet is only as
 deployable as its crews. This tab pairs the national clinician supply - NREMT
