@@ -212,6 +212,26 @@ owner-type breakdown; Panel C is state concentration (heaviest in TX 2,247, PA
 linked) ships as the companion fleet_npi_group_assignment.csv (20,401 rows). New
 fact (GMR ground NPI count) and finding 129.
 
+**Fleet_NPI_Master (the full per-NPI register).** One row for EVERY ambulance
+NPI in NPPES (all ~20,401) - the exhaustive master. Each row carries: legal
+name, doing-business-as name(s), state/city, the resolved parent OR owner-type
+class, how the link was made (brand name / shared signing official / name-type),
+a confidence tier (HIGH = own name carries the parent brand; MEDIUM = resolved
+by a shared NPPES signing official or classified into an owner-type bucket by
+name; LOW = independent with no affiliation resolved), the NPPES-registered
+license identifiers (Medicaid / state / other, placeholder tokens removed), the
+authorized signing official and title, taxonomy, status, and a WORKING per-NPI
+public source link to that provider's own NPPES provider-view page
+(npiregistry.cms.hhs.gov/provider-view/<NPI>). Identity and license columns are
+the per-NPI NPPES record; the parent mapping reuses the exact `assign` map from
+Fleet_NPI_Groups so the register can never disagree with the grouping. DBAs and
+licenses populate wherever the per-NPI NPPES pull has landed (enriched=yes); the
+mapping, confidence and source are present for every NPI regardless. The full
+table also ships as fleet_npi_master_register.csv. Built from the whole-universe
+attribute pull (npi_full_enrichment) kept SEPARATE from the operating-fleet
+enrichment so the GMR ~180 grouping calibration is untouched. New fact
+(register NPI count) and finding 130.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

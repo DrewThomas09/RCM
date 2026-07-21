@@ -260,8 +260,23 @@ class TestIFTEvidenceV3(unittest.TestCase):
         findings tail must reach 125."""
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
-                    'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups'):
+                    'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
+                    'Fleet_NPI_Master'):
             self.assertIn(tab, self.wb.sheetnames)
+        # the master register lands one row per NPI for the whole 3416* roster
+        # (>20,000), each with a working per-NPI NPPES provider-view hyperlink
+        mw = self.wb['Fleet_NPI_Master']
+        npi_cells = [r[0].value for r in mw.iter_rows(min_col=1, max_col=1)
+                     if isinstance(r[0].value, str) and r[0].value.isdigit()
+                     and len(r[0].value) == 10]
+        self.assertGreater(len(npi_cells), 20000,
+                           'expected a row for every ambulance NPI (>20,000)')
+        self.assertEqual(len(npi_cells), len(set(npi_cells)),
+                         'master register NPIs must be unique')
+        mlinks = [c.hyperlink.target for row in mw.iter_rows() for c in row
+                  if c.hyperlink is not None]
+        self.assertTrue(any('provider-view' in (u or '') for u in mlinks),
+                        'expected per-NPI NPPES provider-view hyperlinks')
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
                 .iter_rows() for c in row]
