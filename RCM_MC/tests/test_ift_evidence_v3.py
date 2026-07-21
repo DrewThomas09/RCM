@@ -259,7 +259,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
         GMR family Medicare volume must be re-derived (nonzero) and the
         findings tail must reach 125."""
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
-                    'Fleet_Identity_Map'):
+                    'Fleet_Identity_Map', 'Fleet_Ownership_Resolved'):
             self.assertIn(tab, self.wb.sheetnames)
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
@@ -269,7 +269,12 @@ class TestIFTEvidenceV3(unittest.TestCase):
         ids = [int(r[0].value.strip())
                for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
                if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
-        self.assertGreaterEqual(max(ids), 126)
+        self.assertGreaterEqual(max(ids), 127)
+        # ownership resolution absorbs legacy names -> resolved GMR volume is a
+        # six-figure number well above the brand-only floor
+        ov = [c.value for row in self.wb['Fleet_Ownership_Resolved'].iter_rows()
+              for c in row if isinstance(c.value, (int, float)) and c.value > 500000]
+        self.assertTrue(ov, 'expected the resolved GMR volume (>500k) on the tab')
 
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""

@@ -93,6 +93,12 @@ SHEETS = [
                  '/ fire, hospital-based, and independent operators, and which '
                  'public keys (brand names + PECOS control ID) resolve the '
                  'identity map?'},
+    {'name': 'Fleet_Ownership_Resolved',
+     'question': 'After enriching every operating (Medicare-billing) ambulance '
+                 'NPI with its authorized official from NPPES, how much larger '
+                 'are the national roll-ups once you resolve the corporate family '
+                 'by shared signing official - i.e. absorb the legacy acquired '
+                 'names that brand-matching misses?'},
 ]
 
 ACC = '2026-07-20'
@@ -1080,6 +1086,82 @@ def _pecos_family_clusters(lib, cache):
                 if r.get('PECOS_ASCT_CNTL_ID'):
                     ctl.add(r['PECOS_ASCT_CNTL_ID'])
         out[fn] = (len(ctl), npi)
+    return out
+
+
+# Core brand seeds for the shared-official family resolution (Fleet_Ownership_
+# Resolved). One brand-matched NPI seeds the family; the authorized-official
+# expansion then absorbs the legacy-named subsidiaries under the same corporate
+# officers. Air-medical competitor names are deliberately excluded.
+RESOLVE_SEEDS = {
+    'GMR': GMR_BRANDS + [r'SOUTHWEST AMBULANCE'],
+    'Priority': PRIORITY_BRANDS, 'DocGo/Ambulnz': DOCGO_BRANDS,
+    'Pafford': PAFFORD_BRANDS, 'AmeriPro': [r'AMERIPRO'],
+    'Acadian': ACADIAN_BRANDS, 'Superior': SUPERIOR_BRANDS,
+    'Falck': FALCK_BRANDS,
+    'Coastal': [r'COASTAL EMS', r'COASTAL AMBULANCE', r'COASTAL MEDICAL TRANS'],
+}
+_MUNI_OFF = re.compile(
+    r'\b(CITY|COUNTY|TOWN|TOWNSHIP|BOROUGH|VILLAGE|FIRE|VOLUNTEER|MUNICIPAL|'
+    r'DISTRICT|PARISH|RESCUE SQUAD|COMMONWEALTH|STATE OF)\b')
+
+
+def _norm_off(s):
+    return re.sub(r'[^A-Z ]', '', (s or '').upper()).strip()
+
+
+def _enriched_rows(lib, cache):
+    """The manifested per-NPI NPPES enrichment (operating fleet) as {npi: row}.
+    Returns {} if the pull artifact is absent."""
+    try:
+        lst = lib.load_cache(cache, 'npi_operating_fleet_enriched')
+    except FileNotFoundError:
+        return {}
+    return {r['npi']: r for r in lst if r.get('npi')}
+
+
+def _resolve_families(enriched, vol):
+    """Shared-authorized-official family resolution. Seeds each roll-up by brand,
+    then absorbs every NPI signed by the same corporate officials (excluding
+    third-party BILLING officials, identified by a majority-municipal client
+    book). Returns {family: {brand_npis, brand_med, exp_npis, exp_med, added}}.
+    This is what catches the legacy acquired names (Abbott, Broward, MedShore)
+    that plain brand-matching misses."""
+    def nm(n):
+        return (enriched.get(n, {}).get('legal_name') or '').upper()
+
+    byoff = {}
+    for n, r in enriched.items():
+        k = _norm_off(r.get('auth_official'))
+        if k and len(k) > 3:
+            byoff.setdefault(k, []).append(n)
+
+    def is_biller(off):
+        ns = byoff.get(off, [])
+        if len(ns) < 2:
+            return False
+        muni = sum(1 for n in ns if _MUNI_OFF.search(nm(n)))
+        return muni / len(ns) >= 0.5
+
+    out = {}
+    for fam, pats in RESOLVE_SEEDS.items():
+        rx = [re.compile(p) for p in pats]
+        seed = set(n for n in enriched if any(p.search(nm(n)) for p in rx))
+        offs = set()
+        for n in seed:
+            k = _norm_off(enriched[n].get('auth_official'))
+            if k and not is_biller(k):
+                offs.add(k)
+        exp = set(seed)
+        for k in offs:
+            exp.update(byoff.get(k, []))
+        added = sorted(set(enriched[n]['legal_name'] for n in (exp - seed)))
+        out[fam] = dict(
+            brand_npis=len(seed),
+            brand_med=int(round(sum(vol.get(n, 0) for n in seed))),
+            exp_npis=len(exp),
+            exp_med=int(round(sum(vol.get(n, 0) for n in exp))),
+            added=added)
     return out
 
 
@@ -2411,6 +2493,143 @@ def build(wb, ctx):
         'and the targets are hiding in the long tail under local names - findable '
         'only by joining CMS volume to NPPES/PECOS identity, state by state.')
 
+    # ============================== TAB 10: Fleet Ownership Resolved
+    enriched = _enriched_rows(lib, cache)
+    if enriched:
+        resolved = _resolve_families(enriched, vol24)
+        ws10 = wb.create_sheet('Fleet_Ownership_Resolved')
+        sb10 = lib.SheetBuilder(ws10, 7, col_widths=[26, 12, 14, 12, 14, 8, 34],
+                                tab_color='FF3A2E5A')
+        sb10.title('Fleet ownership resolved: the national roll-ups are 40-90% '
+                   'bigger once you resolve the corporate family')
+        sb10.subtitle('Method: every Medicare-billing ambulance operator (the '
+                      f'operating fleet, {len(enriched):,} NPIs) was enriched '
+                      'one-by-one from NPPES (npi_lookup) with its AUTHORIZED '
+                      'OFFICIAL - the corporate officer who signs for the license. '
+                      'Roll-ups are then resolved by SHARED OFFICIAL: seed each '
+                      'family by brand, then absorb every NPI signed by the same '
+                      'officers (excluding third-party billing officials, flagged '
+                      'by a majority-municipal client book). This absorbs the '
+                      'legacy acquired names that carry no parent brand. Volume is '
+                      '2024 CMS Medicare ground transports. Re-derived at build '
+                      'time from npi_operating_fleet_enriched + mup_provider_2024.')
+        sb10.note('DATA QUALITY: the enrichment covers the OPERATING FLEET '
+                  '(Medicare-active operators, value-ordered); dormant / air-only '
+                  '/ non-billing NPIs are out of scope by design (no transport '
+                  'volume). Shared-official resolution is a FLOOR - it only '
+                  'absorbs subsidiaries whose signer also signs a brand-matched '
+                  'entity in the enriched set. A very-high-NPI official with a '
+                  'majority-municipal book is treated as a billing agent, not an '
+                  'owner (e.g. one signer covers 42 unrelated volunteer squads).')
+        sb10.blank()
+        sb10.banner('Panel A. Roll-up resolution: brand-match vs shared-official '
+                    '(2024 Medicare ground transports)')
+        sb10.headers(['Family', 'Brand NPIs', 'Brand volume', 'Resolved NPIs',
+                      'Resolved volume', 'Lift', 'Legacy names absorbed (examples)'])
+        for fam in sorted(resolved, key=lambda f: -resolved[f]['exp_med']):
+            r = resolved[fam]
+            lift = (r['exp_med'] / r['brand_med']) if r['brand_med'] else 1.0
+            ex = '; '.join(n[:28] for n in r['added'][:3]) or '(none new)'
+            sb10.row([
+                (fam, 'label'),
+                (r['brand_npis'], 'src', lib.FMT_INT),
+                (r['brand_med'], 'src', lib.FMT_INT),
+                (r['exp_npis'], 'src', lib.FMT_INT),
+                (r['exp_med'], 'src', lib.FMT_INT),
+                (lift, 'src', lib.FMT_DEC2),
+                (ex, 'note'),
+            ], wrap=True, height=30)
+        g = resolved.get('GMR', {})
+        p = resolved.get('Priority', {})
+        sb10.blank()
+        sb10.banner('Panel B. What resolution changes')
+        sb10.prose(
+            'Brand-matching sees only the operators whose NAME carries the parent '
+            'brand. Resolving by the shared authorized official absorbs the '
+            'legacy acquired names that do not. The effect is concentrated in the '
+            'two acquirers who kept local names: GMR goes from '
+            f'{g.get("brand_med", 0):,} to {g.get("exp_med", 0):,} Medicare '
+            f'ground transports ({(g.get("exp_med",1)/max(g.get("brand_med",1),1)):.2f}x, '
+            f'{g.get("brand_npis",0)} to {g.get("exp_npis",0)} NPIs) - pulling in '
+            'Abbott Ambulance (St. Louis), the Florida Broward / Palm Beach / '
+            'Atlantic entities, City Ambulance of Eureka and more, all signed by '
+            'GMR corporate officers. Priority goes from '
+            f'{p.get("brand_med",0):,} to {p.get("exp_med",0):,} '
+            f'({(p.get("exp_med",1)/max(p.get("brand_med",1),1)):.2f}x) - absorbing '
+            'Central EMS, MedShore, LifeCare Medical Transports and Utica '
+            'Ambulance. Operators that never renamed (Acadian, Superior, Falck, '
+            'Pafford, AmeriPro) do not move. The lesson for diligence: a '
+            'name-only census understates the consolidators by 40-90%, so any '
+            'market-share or roll-up-target analysis must resolve identity by '
+            'signing official (and, where available, PECOS control ID) first.')
+        sb10.blank()
+        sb10.banner('Read panel')
+        sb10.prose(
+            'This is the exhaustive identity layer under the fleet: the operating '
+            'fleet enriched NPI-by-NPI, then rolled up to the corporate officer '
+            'who actually controls each license. It confirms - from public data '
+            'joined on NPI - that GMR is the clear #1 at roughly three-quarters of '
+            'a million Medicare ground transports once resolved, Priority is a '
+            'genuine national number-two tier at ~130,000, and the rest of the '
+            'market remains a deep long tail of independents and municipals. The '
+            'signing official is the single most powerful public key for '
+            'resolving ambulance ownership, because it survives the local-brand '
+            'camouflage that hides roll-ups in every name-based view.')
+
+        _gm = resolved.get('GMR', {})
+        _pr = resolved.get('Priority', {})
+        facts.append({
+            'metric': 'GMR family Medicare ground transports, official-resolved',
+            'year': 2024, 'value': _gm.get('exp_med', 0),
+            'unit': 'Medicare FFS transports', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['nppes_npi_enrichment', 'cms_mup_provider'],
+            'locator': 'Fleet_Ownership_Resolved Panel A, GMR row',
+            'lives_on': 'Fleet_Ownership_Resolved',
+            'cross_check': f'Shared-authorized-official expansion of the brand '
+                           f'seed ({_gm.get("brand_med",0):,}) absorbing legacy '
+                           f'AMR/Rural-Metro names; {_gm.get("exp_npis",0)} NPIs, '
+                           f'{(_gm.get("exp_med",1)/max(_gm.get("brand_med",1),1)):.2f}x '
+                           'the name-only figure'})
+        facts.append({
+            'metric': 'Priority family Medicare ground transports, '
+                      'official-resolved', 'year': 2024,
+            'value': _pr.get('exp_med', 0), 'unit': 'Medicare FFS transports',
+            'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['nppes_npi_enrichment', 'cms_mup_provider'],
+            'locator': 'Fleet_Ownership_Resolved Panel A, Priority row',
+            'lives_on': 'Fleet_Ownership_Resolved',
+            'cross_check': f'Official-resolved from {_pr.get("brand_med",0):,} '
+                           f'brand-matched, absorbing Central EMS / MedShore / '
+                           f'LifeCare; {(_pr.get("exp_med",1)/max(_pr.get("brand_med",1),1)):.2f}x'})
+        findings.append({
+            'id_hint': 127,
+            'finding': 'Enriching every Medicare-billing ambulance NPI with its '
+                       'NPPES authorized official, then resolving corporate '
+                       'families by SHARED signing official, shows the two '
+                       'national roll-ups are far larger than any name-based '
+                       'census: GMR resolves from '
+                       f'{_gm.get("brand_med",0):,} to {_gm.get("exp_med",0):,} '
+                       '2024 Medicare ground transports '
+                       f'({(_gm.get("exp_med",1)/max(_gm.get("brand_med",1),1)):.2f}x), '
+                       'absorbing legacy acquired names (Abbott, Broward, Palm '
+                       'Beach, City Ambulance of Eureka), and Priority from '
+                       f'{_pr.get("brand_med",0):,} to {_pr.get("exp_med",0):,} '
+                       f'({(_pr.get("exp_med",1)/max(_pr.get("brand_med",1),1)):.2f}x, '
+                       'Central EMS / MedShore / LifeCare). The authorized '
+                       'official is the strongest public key for ambulance '
+                       'ownership because it defeats local-brand camouflage.',
+            'numbers': 'Fleet_Ownership_Resolved Panel A (brand-match vs '
+                       'shared-official, per family); operating fleet '
+                       f'{len(enriched):,} NPIs enriched',
+            'sources': 'nppes_npi_enrichment; cms_mup_provider; nppes_amb_roster',
+            'confidence': 'High: authorized official is a structured NPPES field; '
+                          'billing officials excluded by a majority-municipal test',
+            'guardrail': 'Covers the Medicare-active operating fleet (dormant/air '
+                         'NPIs out of scope); resolution is a FLOOR (absorbs only '
+                         'subsidiaries sharing an officer with a brand-matched '
+                         'entity); a few high-count officials are third-party '
+                         'billers, not owners, and are filtered out.'})
+
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
         {'key': 'cms_mup_provider', 'publisher': 'CMS (data.cms.gov)',
@@ -2490,6 +2709,22 @@ def build(wb, ctx):
                 'supplier-enrollment/medicare-fee-for-service-public-provider-'
                 'enrollment', 'tier': 'A', 'accessed': accessed,
          'powers': ['Fleet_Identity_Map']},
+        {'key': 'nppes_npi_enrichment', 'publisher': 'CMS NPPES (NPI Registry API)',
+         'document': 'Per-NPI NPPES enrichment of the operating fleet: every '
+                     'Medicare-billing ambulance organization NPI looked up '
+                     'individually (npi_lookup) for its legal name, DBAs, '
+                     'authorized official (the corporate officer who signs for '
+                     'the license) and title, organizational-subpart flag, '
+                     'mailing vs practice address, and state Medicaid/license '
+                     'identifiers',
+         'vintage': f'NPPES live pull as retrieved {ACC}',
+         'locator': 'cache key npi_operating_fleet_enriched; per-record npi, '
+                    'legal_name, auth_official, mailing_state, license_ids',
+         'supplies': 'The authorized-official key that resolves corporate '
+                     'families on Fleet_Ownership_Resolved',
+         'url': 'https://npiregistry.cms.hhs.gov/api/', 'tier': 'A',
+         'accessed': accessed,
+         'powers': ['Fleet_Ownership_Resolved']},
     ]
 
     # ------------------------------------------------------------ facts ---

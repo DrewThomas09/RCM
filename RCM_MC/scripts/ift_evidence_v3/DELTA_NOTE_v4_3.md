@@ -159,6 +159,28 @@ per year) sizes families where a state vehicle registry is not public. New facts
 takeaway for diligence: a national thesis is really a roll-up-of-independents
 thesis, and the targets hide in the long tail under local names.
 
+**Fleet_Ownership_Resolved (the exhaustive per-NPI identity layer).** Every
+Medicare-billing ambulance operator (the operating fleet, ~6,880 NPIs) was
+enriched one-by-one from NPPES (live npi_lookup) with its AUTHORIZED OFFICIAL -
+the corporate officer who signs for the license - plus DBAs, subpart flag,
+mailing vs practice address, and state Medicaid/license IDs. Corporate families
+are then resolved by SHARED OFFICIAL: seed each roll-up by brand, then absorb
+every NPI signed by the same officers (excluding third-party billing officials,
+flagged by a majority-municipal client book). This absorbs the legacy acquired
+names that carry no parent brand, and the effect is large: GMR resolves from
+455,696 to 744,574 2024 Medicare ground transports (1.63x, 75 to 149 NPIs -
+pulling in Abbott Ambulance, Broward / Palm Beach / Atlantic, City Ambulance of
+Eureka), and Priority from 69,311 to 132,935 (1.92x - Central EMS, MedShore,
+LifeCare, Utica). Operators that never renamed (Acadian, Superior, Falck,
+Pafford, AmeriPro) do not move. The lesson: a name-only census understates the
+consolidators by 40-90%, so any market-share or roll-up-target work must resolve
+identity by signing official first. New facts (GMR and Priority official-resolved
+volume), source nppes_npi_enrichment (the exhaustive per-NPI pull), finding 127.
+The enriched dataset ships as npi_operating_fleet_enriched in the pull cache so
+the tab is re-derivable. Scope note: the pull covers the Medicare-active operating
+fleet; dormant / air-only / non-billing NPIs were deprioritized (no transport
+volume).
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
