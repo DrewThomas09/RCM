@@ -181,6 +181,21 @@ the tab is re-derivable. Scope note: the pull covers the Medicare-active operati
 fleet; dormant / air-only / non-billing NPIs were deprioritized (no transport
 volume).
 
+**Fleet_Consolidation_Targets (the actionable pipeline).** The capstone: the
+identity work reduced to a roll-up acquisition worklist. After removing the
+national roll-ups (already owned), municipal / fire and hospital operators (not
+for sale) and third-party billing agents, ~1,700 INDEPENDENT operating groups
+remain - the acquisition universe - each grouped by its signing official (the
+owner) and ranked by 2024 Medicare ground volume. Multi-NPI independents (Brewster
+FL/MA, AM-VAN multi-state, Vital Medical) are mini-platforms - small local
+roll-ups that make natural platform acquisitions. Panel B shows where the
+independent pipeline is deepest (California, Texas, New Jersey, Pennsylvania,
+Georgia, New York - large and fragmented). Each target is reachable only because
+the per-NPI enrichment resolved its owner and state from behind the local brand
+name. New fact (independent operator count), finding 128. This turns the whole
+fleet-identity arc into a diligence worklist: sort by volume, filter by state,
+start with the multi-NPI independents.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

@@ -1588,7 +1588,8 @@ def main(verify_results_path=None):
                       'Fleet_Size_Evidence', 'IFT_License_Tracker',
                       'EMS_Workforce_Shortage', 'Fleet_Data_Pull_Worklist',
                       'Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
-                      'Fleet_Identity_Map', 'Fleet_Ownership_Resolved')
+                      'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
+                      'Fleet_Consolidation_Targets')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)

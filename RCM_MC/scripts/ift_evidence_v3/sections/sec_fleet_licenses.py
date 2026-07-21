@@ -99,6 +99,11 @@ SHEETS = [
                  'are the national roll-ups once you resolve the corporate family '
                  'by shared signing official - i.e. absorb the legacy acquired '
                  'names that brand-matching misses?'},
+    {'name': 'Fleet_Consolidation_Targets',
+     'question': 'Where is the roll-up acquisition pipeline - which independent '
+                 'ambulance operators (not already in a national roll-up, not '
+                 'municipal or hospital) carry the most transport volume, and in '
+                 'which states is the independent pipeline deepest?'},
 ]
 
 ACC = '2026-07-20'
@@ -1163,6 +1168,63 @@ def _resolve_families(enriched, vol):
             exp_med=int(round(sum(vol.get(n, 0) for n in exp))),
             added=added)
     return out
+
+
+def _consolidation_targets(enriched, vol):
+    """The roll-up acquisition pipeline: independent operators (NOT already in a
+    national roll-up, NOT municipal/fire, NOT hospital-based, NOT a third-party
+    biller), grouped by their signing official (the owner), ranked by 2024
+    Medicare ground volume. Multi-NPI independents are mini-platforms. Returns
+    (target_groups sorted desc, per_state_depth)."""
+    def _nm(n):
+        return (enriched.get(n, {}).get('legal_name') or '').upper()
+
+    byoff = {}
+    for n, r in enriched.items():
+        k = _norm_off(r.get('auth_official'))
+        if k and len(k) > 3:
+            byoff.setdefault(k, []).append(n)
+
+    def is_biller(off):
+        ns = byoff.get(off, [])
+        return len(ns) >= 2 and sum(
+            1 for n in ns if _MUNI_OFF.search(_nm(n))) / len(ns) >= 0.5
+
+    # roll-up NPI set via the same shared-official expansion as the resolver
+    rollup = set()
+    for fam, pats in RESOLVE_SEEDS.items():
+        rx = [re.compile(p) for p in pats]
+        seed = set(n for n in enriched if any(p.search(_nm(n)) for p in rx))
+        offs = set(_norm_off(enriched[n].get('auth_official')) for n in seed)
+        offs = {o for o in offs if o and not is_biller(o)}
+        rollup |= seed
+        for o in offs:
+            rollup.update(byoff.get(o, []))
+
+    groups = {}
+    depth = {}
+    for n, r in enriched.items():
+        s = _nm(n)
+        if n in rollup or _MUNI_OFF.search(s) or HOSP_RX.search(s):
+            continue
+        off = _norm_off(r.get('auth_official'))
+        if off and is_biller(off):
+            continue
+        st = r.get('location_state') or r.get('mailing_state') or '?'
+        d = depth.setdefault(st, [0, 0.0])
+        d[0] += 1
+        d[1] += vol.get(n, 0)
+        key = off or ('NPI:' + n)
+        g = groups.setdefault(key, {'npis': [], 'vol': 0.0, 'states': set(),
+                                    'name': '', '_top': -1})
+        g['npis'].append(n)
+        g['vol'] += vol.get(n, 0)
+        g['states'].add(st)
+        if vol.get(n, 0) >= g['_top']:
+            g['_top'] = vol.get(n, 0)
+            g['name'] = enriched[n]['legal_name']
+    ordered = sorted(groups.items(), key=lambda kv: -kv[1]['vol'])
+    return ordered, depth
 
 
 def build(wb, ctx):
@@ -2629,6 +2691,117 @@ def build(wb, ctx):
                          'subsidiaries sharing an officer with a brand-matched '
                          'entity); a few high-count officials are third-party '
                          'billers, not owners, and are filtered out.'})
+
+    # ============================== TAB 11: Fleet Consolidation Targets
+    if enriched:
+        targets, depth = _consolidation_targets(enriched, vol24)
+        tgt_vol = sum(g['vol'] for _k, g in targets)
+        ws11 = wb.create_sheet('Fleet_Consolidation_Targets')
+        sb11 = lib.SheetBuilder(ws11, 6, col_widths=[34, 14, 8, 14, 16, 22],
+                                tab_color='FF3A2E5A')
+        sb11.title('Fleet consolidation targets: the independent operators that '
+                   'are the roll-up acquisition pipeline')
+        sb11.subtitle('The actionable output of the identity work: after removing '
+                      'the national roll-ups (already owned), municipal / fire and '
+                      'hospital operators (not for sale), and third-party billing '
+                      'agents, what remains is the INDEPENDENT operating fleet - '
+                      'the acquisition universe. Each independent is grouped by '
+                      'its signing official (the owner) and ranked by 2024 CMS '
+                      'Medicare ground transports. Multi-NPI independents are '
+                      'mini-platforms (already a small local roll-up). Re-derived '
+                      'at build time from npi_operating_fleet_enriched + '
+                      'mup_provider_2024.')
+        sb11.note('DATA QUALITY: "independent" means not resolved into a named '
+                  'national roll-up and not name-matched to municipal/fire or '
+                  'hospital ownership; a few public authorities (e.g. an EMS '
+                  'Authority) and non-emergency-van operators sit in this bucket '
+                  'and would be screened out in real diligence. Volume is '
+                  'Medicare fee-for-service ground only (a relative rank, not '
+                  'all-payer). Owner = the NPPES authorized official; multi-state '
+                  'groups share one official across NPIs.')
+        sb11.blank()
+        sb11.banner(f'Panel A. Top-30 independent consolidation targets '
+                    f'(of {len(targets):,} independent owners; by 2024 Medicare '
+                    'ground volume)')
+        sb11.headers(['Operator (largest brand in group)', 'Medicare transports',
+                      'NPIs', 'States', 'Owner (signing official)', 'Note'])
+        for _k, g in targets[:30]:
+            multi = 'mini-platform' if len(g['npis']) > 1 else 'single-site'
+            sts = ','.join(sorted(x for x in g['states'] if x and x != '?'))
+            sb11.row([
+                (_clean(g['name'], 40), 'label'),
+                (int(round(g['vol'])), 'src', lib.FMT_INT),
+                (len(g['npis']), 'src', lib.FMT_INT),
+                (sts[:16], 'note'),
+                (_clean(_k.title(), 26), 'note'),
+                (multi, 'note'),
+            ], wrap=True, height=24)
+        sb11.blank()
+        sb11.banner('Panel B. Where the independent pipeline is deepest (by state)')
+        sb11.headers(['State', 'Independent operators', 'Medicare transports',
+                      'Share of state indie volume', '', ''])
+        st_sorted = sorted(depth.items(), key=lambda kv: -kv[1][1])[:15]
+        tot_ind = sum(v for _c, v in depth.values())
+        for st, (cnt, v) in st_sorted:
+            sb11.row([
+                (st, 'label'),
+                (cnt, 'src', lib.FMT_INT),
+                (int(round(v)), 'src', lib.FMT_INT),
+                (v / tot_ind if tot_ind else 0, 'src', lib.FMT_PCT1),
+                None, None])
+        sb11.blank()
+        sb11.banner('Read panel')
+        n_multi = sum(1 for _k, g in targets if len(g['npis']) > 1)
+        sb11.prose(
+            'This is the pipeline a national consolidator actually shops. After '
+            'stripping the operators that are already owned (roll-ups), public '
+            f'(municipal/fire), or provider-owned (hospital), {len(targets):,} '
+            'independent operating groups remain, together carrying '
+            f'{int(round(tgt_vol)):,} Medicare ground transports - and about '
+            f'{n_multi:,} of them already run more than one NPI, i.e. they are '
+            'small local roll-ups that make natural platform acquisitions. The '
+            'depth is concentrated where the market is both large and fragmented '
+            '(California, Texas, New Jersey, Pennsylvania, Georgia, New York), '
+            'which is exactly where a buy-and-build thesis has the most room. '
+            'Each name here is reachable in public data because the enrichment '
+            'resolved its owner (the signing official) and state; the raw NPPES '
+            'roster hides all of this behind local brand names. This tab turns '
+            'the whole fleet-identity effort into a diligence worklist: sort by '
+            'volume, filter by state, and start with the multi-NPI independents.')
+
+        facts.append({
+            'metric': 'Independent (acquirable) ambulance operating groups',
+            'year': 2024, 'value': len(targets), 'unit': 'independent operators',
+            'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['nppes_npi_enrichment', 'cms_mup_provider'],
+            'locator': 'Fleet_Consolidation_Targets Panel A count',
+            'lives_on': 'Fleet_Consolidation_Targets',
+            'cross_check': f'Enriched operating fleet minus resolved roll-ups, '
+                           f'municipal/fire, hospital and billing agents; '
+                           f'{n_multi:,} already run multiple NPIs (mini-platforms)'})
+        findings.append({
+            'id_hint': 128,
+            'finding': 'The identity work reduces to an actionable roll-up '
+                       'pipeline: after removing the national roll-ups (owned), '
+                       'municipal/fire and hospital operators (not for sale) and '
+                       'third-party billers, '
+                       f'{len(targets):,} INDEPENDENT operating groups remain '
+                       f'(~{int(round(tgt_vol)):,} Medicare ground transports), of '
+                       f'which ~{n_multi:,} already run multiple NPIs and read as '
+                       'platform-ready mini-roll-ups. The pipeline is deepest in '
+                       'the large fragmented states (CA, TX, NJ, PA, GA, NY). Each '
+                       'target is reachable only because the per-NPI enrichment '
+                       'resolved its owner (signing official) and state from '
+                       'behind the local brand name.',
+            'numbers': 'Fleet_Consolidation_Targets Panel A (top-30 targets) + '
+                       'Panel B (state depth)',
+            'sources': 'nppes_npi_enrichment; cms_mup_provider; nppes_amb_roster',
+            'confidence': 'High on the ranking (Medicare volume + resolved owner); '
+                          'the independent bucket still contains a few public '
+                          'authorities to screen out in real diligence',
+            'guardrail': 'Medicare FFS ground only (relative rank); operating '
+                         'fleet scope; owner = authorized official, which a small '
+                         'number of third-party billers can still blur.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
