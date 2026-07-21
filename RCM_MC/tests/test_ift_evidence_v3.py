@@ -10,7 +10,7 @@ import re
 import unittest
 
 RCM_MC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v4_2.xlsx')
+DELIV = os.path.join(RCM_MC, 'deliverables', 'IFT_Sourced_Evidence_Master_v4_3.xlsx')
 PIPE = os.path.join(RCM_MC, 'scripts', 'ift_evidence_v3')
 CACHE = os.path.join(RCM_MC, 'rcm_mc', 'market_reports', 'reference', 'ift_v3_cache')
 
@@ -230,6 +230,51 @@ class TestIFTEvidenceV3(unittest.TestCase):
                for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
                if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
         self.assertGreaterEqual(max(ids), 103)
+
+    def test_v43_fleet_license_tabs(self):
+        """v4.3 (Run 7): the fleet-license identification pass - the license-
+        object route map, the 51-jurisdiction route matrix, and the public
+        fleet/operator counts (NPPES operator floor, MO open-data services, NJ
+        statewide vehicle anchor)."""
+        for tab in ('Fleet_License_Route_Map', 'Fleet_License_State_Matrix',
+                    'Fleet_Size_Evidence'):
+            self.assertIn(tab, self.wb.sheetnames)
+        # the state matrix carries all 51 jurisdictions
+        col_a = [r[0].value for r in
+                 self.wb['Fleet_License_State_Matrix'].iter_rows(min_col=1,
+                                                                 max_col=1)]
+        juris = [v for v in col_a if isinstance(v, str)
+                 and re.search(r'\(([A-Z]{2})\)$', v)]
+        self.assertGreaterEqual(len(juris), 51)
+        # findings continue past the v3.6 tail
+        ids = [int(r[0].value.strip())
+               for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
+               if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
+        self.assertGreaterEqual(max(ids), 118)
+
+    def test_v43_scale_predictor_tabs(self):
+        """v4.3 (Run 7, second phase): the corporate-family resolution and
+        scale-predictor tabs - why the two national players (GMR/Priority) are
+        undercounted and which public signal best predicts real volume. The
+        GMR family Medicare volume must be re-derived (nonzero) and the
+        findings tail must reach 125."""
+        for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
+                    'Fleet_Identity_Map', 'Fleet_Ownership_Resolved'):
+            self.assertIn(tab, self.wb.sheetnames)
+        # the family-resolution tab carries a computed GMR Medicare volume
+        vals = [c.value for row in self.wb['Corporate_Family_Resolution']
+                .iter_rows() for c in row]
+        nums = [v for v in vals if isinstance(v, (int, float)) and v > 100000]
+        self.assertTrue(nums, 'expected a six-figure resolved Medicare volume')
+        ids = [int(r[0].value.strip())
+               for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
+               if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
+        self.assertGreaterEqual(max(ids), 127)
+        # ownership resolution absorbs legacy names -> resolved GMR volume is a
+        # six-figure number well above the brand-only floor
+        ov = [c.value for row in self.wb['Fleet_Ownership_Resolved'].iter_rows()
+              for c in row if isinstance(c.value, (int, float)) and c.value > 500000]
+        self.assertTrue(ov, 'expected the resolved GMR volume (>500k) on the tab')
 
     def test_leak_check_clean(self):
         """The v3.4 firewall leak check ran and found no violations."""

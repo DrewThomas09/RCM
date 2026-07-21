@@ -37,7 +37,7 @@ V27 = _default('IFT_V27_XLSX',
 CACHE = _default('IFT_V3_CACHE', os.path.join(SCRATCH, 'ift_v3_cache'),
                  os.path.join(_REPO_REF, 'ift_v3_cache'))
 OUT = os.environ.get('IFT_V3_OUT',
-                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_2.xlsx'))
+                     os.path.join(SCRATCH, 'IFT_Sourced_Evidence_Master_v4_3.xlsx'))
 BUILT = '10 July 2026'
 
 # v3.4 modules append AFTER state_profiles so their facts/sources take the
@@ -88,7 +88,13 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
                  # one licensed all-payer dataset that would close the commercial
                  # rate, all-payer volume, the wedge, payer mix and transfer flows.
                  # Outputs bordered PENDING; no Komodo-derived figure is asserted.
-                 '62_komodo']
+                 '62_komodo',
+                 # Run 7 (v4.3): fleet-license identification for IFT and all
+                 # ambulance transport - the license-object route map, the
+                 # 51-jurisdiction route matrix, and the public fleet/operator
+                 # counts (NPPES operator floor, MO open-data services, NJ
+                 # statewide vehicle anchor). Appends after all prior layers.
+                 'fleet_licenses']
 
 # Sections whose facts/sources/findings must be numbered LAST regardless of
 # where they build. b11_inputs/xb_registries build early (before c48, so the
@@ -97,7 +103,8 @@ SECTION_ORDER = ['medicare', 'supply_pulls', 'granular', 'granular2',
 # Run 5 sections append after them, so v3.12 IDs (through F609/S435/#107) are
 # untouched and Run 5 facts/sources/findings start at F610/S436/#108.
 _ID_TAIL = ('b11_inputs', 'xb_registries', '51_modifier', '52_snfcb',
-            '53_software', '54_prevalence', '55_mrf', '61_wedge', '62_komodo')
+            '53_software', '54_prevalence', '55_mrf', '61_wedge', '62_komodo',
+            'fleet_licenses')
 
 
 def id_order():
@@ -1575,6 +1582,13 @@ def main(verify_results_path=None):
           if n in wb.sheetnames]),
         ('Regulatory_Register',
          [n for n in ('State_EMS_Licensure', 'Press_Footprint_Registry')
+          if n in wb.sheetnames]),
+        ('State_EMS_Licensure',
+         [n for n in ('Fleet_License_Route_Map', 'Fleet_License_State_Matrix',
+                      'Fleet_Size_Evidence', 'IFT_License_Tracker',
+                      'EMS_Workforce_Shortage', 'Fleet_Data_Pull_Worklist',
+                      'Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
+                      'Fleet_Identity_Map', 'Fleet_Ownership_Resolved')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)
