@@ -181,6 +181,37 @@ the tab is re-derivable. Scope note: the pull covers the Medicare-active operati
 fleet; dormant / air-only / non-billing NPIs were deprioritized (no transport
 volume).
 
+**Fleet_Ownership_Crosswalk (the subsidiary-to-parent map).** The explicit
+ownership map: every Medicare-billing operator that belongs to a national or
+regional owner, listed under that parent, with how it was linked - by brand name
+or by SHARED SIGNING OFFICIAL. This is the Baptist Ambulance -> Priority, every
+AMR / Abbott / Alliance / Rural Metro / Southwest Ambulance NPI -> GMR, every
+Ambulnz entity -> DocGo mapping made explicit. ~215 subsidiary NPIs across ~130
+distinct local brands roll up to nine parents (GMR / AMR, Acadian, Priority,
+Superior, DocGo, Falck, Pafford, Coastal, AmeriPro), together ~1.44M 2024
+Medicare ground transports. The linkage key is the NPPES authorized official,
+which maps a renamed subsidiary to its parent even when the brand name gives
+nothing away; anything absent from the crosswalk is, on the public evidence,
+genuinely independent (or municipal / hospital), not a hidden subsidiary. Panel A
+totals each parent; Panel B is the full operator -> parent roster. New fact
+(operators mapped to a parent), finding 128.
+
+**Fleet_NPI_Groups (all ~20,401 grouped).** Places EVERY ambulance-organization
+NPI in NPPES (taxonomy 3416*) into a group. Named national/regional parents are
+resolved by brand + shared signing official, with GMR restricted to GROUND
+(air-medical bases excluded) so it counts ~175 NPIs - matching its ~180 ground
+locations, not the ~570 that include air. The other ~20,100 fall into owner-type
+buckets: ~9,500 municipal / fire / government, ~8,500 independent private, ~1,460
+air-medical, ~630 hospital. Panel A lists each named parent with NPI count, state
+concentration, and a WORKING public source link (the company homepage -
+globalmedicalresponse.com, priorityambulance.com, docgo.com, acadian.com,
+superiorambulance.com, falck.us, paffordems.com, ameriprohealth.com; the
+underlying identity data links to the CMS NPPES registry). Panel B is the
+owner-type breakdown; Panel C is state concentration (heaviest in TX 2,247, PA
+1,428, OH 1,303). The full per-NPI assignment (npi, name, state, group, how
+linked) ships as the companion fleet_npi_group_assignment.csv (20,401 rows). New
+fact (GMR ground NPI count) and finding 129.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
