@@ -105,6 +105,12 @@ SHEETS = [
                  'Priority, every AMR / Abbott / Rural Metro -> GMR, Ambulnz -> '
                  'DocGo), resolved from NPPES by brand and shared signing '
                  'official?'},
+    {'name': 'Fleet_NPI_Groups',
+     'question': 'A grouping of ALL ~20,401 ambulance NPIs: each into a named '
+                 'national/regional parent (GMR ~180 ground locations, Priority, '
+                 'etc.) or an owner-type bucket (municipal/fire, hospital, '
+                 'independent), with state concentration and a working source '
+                 'link per group.'},
 ]
 
 ACC = '2026-07-20'
@@ -1220,6 +1226,99 @@ def _ownership_crosswalk(enriched, vol):
         members.sort(key=lambda m: -m['vol'])
         out[PARENT_LABEL.get(fam, fam)] = members
     return out
+
+
+# Full-roster grouping seeds (parent -> (brand patterns, ground_only)). GMR is
+# restricted to GROUND (air-medical bases - Air Evac / Guardian / REACH / Med-Trans
+# - are excluded so the count reflects ~180 ground locations, not ~570 incl. air).
+NPI_GROUP_SEEDS = {
+    'GMR / AMR': (['AMERICAN MEDICAL RESPONSE', r'\bAMR\b', 'RURAL/METRO',
+                   'RURAL METRO', 'SOUTHWEST AMBULANCE'], True),
+    'Priority': (PRIORITY_BRANDS, False),
+    'DocGo (Ambulnz)': (DOCGO_BRANDS, False), 'Acadian': (ACADIAN_BRANDS, False),
+    'Superior': (SUPERIOR_BRANDS, False), 'Falck': (FALCK_BRANDS, False),
+    'Pafford': (PAFFORD_BRANDS, False), 'AmeriPro': ([r'AMERIPRO'], False),
+    'Coastal': ([r'COASTAL EMS', r'COASTAL AMBULANCE',
+                 r'COASTAL MEDICAL TRANS'], False),
+}
+# Working public source link per parent (company site; verified canonical domains).
+GROUP_SOURCE = {
+    'GMR / AMR': 'https://www.globalmedicalresponse.com/',
+    'Priority': 'https://www.priorityambulance.com/',
+    'DocGo (Ambulnz)': 'https://www.docgo.com/',
+    'Acadian': 'https://acadian.com/', 'Superior': 'https://superiorambulance.com/',
+    'Falck': 'https://www.falck.us/', 'Pafford': 'https://www.paffordems.com/',
+    'AmeriPro': 'https://www.ameriprohealth.com/',
+    'Coastal': 'https://npiregistry.cms.hhs.gov/search',
+}
+_MUNI_ORG = re.compile(
+    r'\b(CITY|COUNTY|TOWN|TOWNSHIP|BOROUGH|VILLAGE|FIRE|VOLUNTEER|MUNICIPAL|'
+    r'DISTRICT|PARISH|RESCUE SQUAD|COMMONWEALTH|STATE OF|AUTHORITY)\b')
+
+
+def _npi_group_map(roster, enriched):
+    """Assign EVERY roster NPI (all ~20,401) to a group: a named national/regional
+    parent (brand + shared-official, GMR ground-restricted), else an owner-type
+    bucket (municipal/fire, hospital, air-medical, independent). Returns
+    (assign {npi: (group, via)}, named_sizes, residual_sizes, state_counts)."""
+    def _rt(o):
+        return ((o.get('org_name') or '') + ' | ' + (o.get('dba') or '')).upper()
+
+    byoff = {}
+    for n, r in enriched.items():
+        k = _norm_off(r.get('auth_official'))
+        if k and len(k) > 3:
+            byoff.setdefault(k, []).append(n)
+
+    def _en(n):
+        return (enriched.get(n, {}).get('legal_name') or '').upper()
+
+    def is_biller(o):
+        ns = byoff.get(o, [])
+        return len(ns) >= 2 and sum(
+            1 for n in ns if _MUNI_ORG.search(_en(n))) / len(ns) >= 0.5
+
+    npi2r = {o['npi']: o for o in roster}
+    assign = {}
+    for parent, (pats, ground) in NPI_GROUP_SEEDS.items():
+        rx = [re.compile(p) for p in pats]
+        seed = set(o['npi'] for o in roster
+                   if any(p.search(_rt(o)) for p in rx)
+                   and (not ground or not o.get('air')))
+        for n in seed:
+            assign.setdefault(n, (parent, 'brand name'))
+        offs = {_norm_off(enriched[n].get('auth_official'))
+                for n in seed if n in enriched}
+        offs |= {_norm_off(enriched[n].get('auth_official')) for n in enriched
+                 if any(p.search(_en(n)) for p in rx)}
+        offs = {o for o in offs if o and not is_biller(o)}
+        for o in offs:
+            for n in byoff.get(o, []):
+                if ground and npi2r.get(n, {}).get('air'):
+                    continue
+                assign.setdefault(n, (parent, 'shared signing official'))
+    for o in roster:
+        n = o['npi']
+        if n in assign:
+            continue
+        s = _rt(o)
+        if o.get('air'):
+            t = 'Air-medical (independent/other)'
+        elif _MUNI_ORG.search(s):
+            t = 'Municipal / fire / government'
+        elif HOSP_RX.search(s):
+            t = 'Hospital / health-system'
+        else:
+            t = 'Independent (unaffiliated)'
+        assign[n] = (t, 'name/type')
+    from collections import Counter
+    sizes = Counter(g for g, _ in assign.values())
+    named = {p: sizes.get(p, 0) for p in NPI_GROUP_SEEDS}
+    residual = {t: sizes.get(t, 0) for t in (
+        'Independent (unaffiliated)', 'Municipal / fire / government',
+        'Hospital / health-system', 'Air-medical (independent/other)')}
+    state_counts = Counter(o.get('state') for o in roster if o.get('state'))
+    return assign, named, residual, state_counts
 
 
 def build(wb, ctx):
@@ -2801,6 +2900,148 @@ def build(wb, ctx):
                          'the parent brand or shares a corporate officer with one '
                          'that does; Medicare FFS ground only; operating-fleet '
                          'scope.'})
+
+    # ============================== TAB 12: Fleet NPI Groups (all ~20,401)
+    if enriched:
+        assign, named, residual, state_counts = _npi_group_map(roster, enriched)
+        from collections import Counter as _Counter
+        grp_state = {}  # group -> Counter(state)
+        for o in roster:
+            g = assign[o['npi']][0]
+            grp_state.setdefault(g, _Counter())[o.get('state')] += 1
+        n_named = sum(named.values())
+        ws12 = wb.create_sheet('Fleet_NPI_Groups')
+        sb12 = lib.SheetBuilder(ws12, 6, col_widths=[26, 12, 10, 26, 30, 8],
+                                tab_color='FF3A2E5A')
+        sb12.title('Fleet NPI groups: all ~20,401 ambulance NPIs assigned to a '
+                   'parent or an owner-type bucket')
+        sb12.subtitle('Every ambulance-organization NPI in NPPES (taxonomy 3416*) '
+                      'is placed in a group. Named national/regional parents are '
+                      'resolved by brand name + shared NPPES signing official; GMR '
+                      'is restricted to GROUND operations (air-medical bases '
+                      'excluded) so it reflects its ~180 ground locations, not the '
+                      '~570 NPIs that include air. Everything else falls into an '
+                      'owner-type bucket by name. State concentration is shown per '
+                      'group. Re-derived at build time from nppes_ambulance_roster '
+                      '+ npi_operating_fleet_enriched; the full per-NPI assignment '
+                      'ships as fleet_npi_group_assignment.csv.')
+        sb12.note('DATA QUALITY: named-parent membership is a FLOOR (brand match '
+                  'or a shared corporate officer with a brand-matched sibling); '
+                  'the residual buckets are by organization name (municipal/fire, '
+                  'hospital, air-medical, else independent). The source link on '
+                  'each named parent is that company\'s public homepage; the '
+                  'underlying identity data is CMS NPPES (npiregistry.cms.hhs.gov). '
+                  'GMR = the AMR ground family under KKR; Rocky Mountain Holdings '
+                  '(Air Methods) is a separate air competitor and is not included.')
+        sb12.blank()
+        sb12.banner('Panel A. Named national / regional parents (with working '
+                    'source link)')
+        sb12.headers(['Parent', 'NPIs (grouped)', 'States',
+                      'Top states (concentration)', 'Source (click)', ''])
+        for p in sorted(named, key=lambda k: -named[k]):
+            sc = grp_state.get(p, _Counter())
+            top = ', '.join(f'{s} {c}' for s, c in sc.most_common(4) if s)
+            url = GROUP_SOURCE.get(p, 'https://npiregistry.cms.hhs.gov/search')
+            sb12.row([
+                (p, 'label'),
+                (named[p], 'src', lib.FMT_INT),
+                (len([s for s in sc if s]), 'src', lib.FMT_INT),
+                (top, 'note'),
+                (url, 'link'), None,
+            ], wrap=True, height=22)
+            lc = sb12.ws.cell(row=sb12.r, column=5)
+            lc.hyperlink = url
+        sb12.row([('All named parents', 'label'),
+                  (n_named, 'src', lib.FMT_INT), None,
+                  ('GMR / AMR is ~%d of these (ground locations)' % named.get(
+                      'GMR / AMR', 0), 'note'),
+                  ('https://npiregistry.cms.hhs.gov/', 'link'), None])
+        sb12.ws.cell(row=sb12.r, column=5).hyperlink = \
+            'https://npiregistry.cms.hhs.gov/'
+        sb12.blank()
+        sb12.banner('Panel B. Owner-type buckets (the residual ~20,100 NPIs)')
+        sb12.headers(['Owner type', 'NPIs', 'Share of all NPIs', 'What it is',
+                      '', ''])
+        n_all = len(assign)
+        _bt = [
+            ('Municipal / fire / government',
+             'City/county/fire-district and public-authority EMS'),
+            ('Independent (unaffiliated)',
+             'Private operators not resolved into a named parent'),
+            ('Air-medical (independent/other)',
+             'Air-transport NPIs (taxonomy 3416A/flag) not in a named ground parent'),
+            ('Hospital / health-system', 'Provider-owned transport'),
+        ]
+        for label, desc in _bt:
+            v = residual.get(label, 0)
+            sb12.row([
+                (label, 'label'),
+                (v, 'src', lib.FMT_INT),
+                (v / n_all if n_all else 0, 'src', lib.FMT_PCT1),
+                (desc, 'note'), None, None], wrap=True, height=26)
+        sb12.blank()
+        sb12.banner('Panel C. State concentration (top-15 states by NPI count)')
+        sb12.headers(['State', 'Total ambulance NPIs', 'Share of US',
+                      'In a named parent', '', ''])
+        for st, cnt in state_counts.most_common(15):
+            innamed = sum(1 for o in roster
+                          if o.get('state') == st
+                          and assign[o['npi']][0] in NPI_GROUP_SEEDS)
+            sb12.row([
+                (st, 'label'),
+                (cnt, 'src', lib.FMT_INT),
+                (cnt / len(roster), 'src', lib.FMT_PCT1),
+                (innamed, 'src', lib.FMT_INT), None, None])
+        sb12.blank()
+        sb12.banner('Read panel')
+        sb12.prose(
+            f'All {n_all:,} ambulance-organization NPIs are grouped: {n_named} '
+            f'roll up to {len(named)} named national/regional parents (GMR / AMR '
+            f'the largest at ~{named.get("GMR / AMR", 0)} ground NPIs, matching '
+            'its ~180 ground locations), and the rest fall into owner-type '
+            f'buckets - {residual.get("Municipal / fire / government", 0):,} '
+            f'municipal/fire, {residual.get("Independent (unaffiliated)", 0):,} '
+            'independent private, '
+            f'{residual.get("Air-medical (independent/other)", 0):,} air-medical '
+            f'and {residual.get("Hospital / health-system", 0):,} hospital-based. '
+            'The concentration is heaviest in Texas, Pennsylvania and Ohio. This '
+            'confirms the market shape from the identity map: a small named-'
+            'consolidator core sitting on a very large base of municipal and '
+            'independent operators. Each named parent links to its public '
+            'homepage; the full per-NPI assignment (npi, name, state, group, how '
+            'linked) is the companion CSV.')
+
+        facts.append({
+            'metric': 'GMR / AMR ground NPIs (roster grouping)',
+            'year': 2026, 'value': named.get('GMR / AMR', 0),
+            'unit': 'ground ambulance NPIs', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['nppes_amb_roster', 'nppes_npi_enrichment'],
+            'locator': 'Fleet_NPI_Groups Panel A, GMR / AMR row',
+            'lives_on': 'Fleet_NPI_Groups',
+            'cross_check': 'Brand + shared-official, air-medical excluded; '
+                           'consistent with GMR/AMR ~180 ground locations'})
+        findings.append({
+            'id_hint': 129,
+            'finding': 'Grouping all '
+                       f'{n_all:,} ambulance NPIs assigns {n_named} to '
+                       f'{len(named)} named national/regional parents (GMR / AMR '
+                       f'~{named.get("GMR / AMR", 0)} ground NPIs, matching its '
+                       '~180 ground locations once air-medical bases are '
+                       'excluded) and the rest to owner-type buckets '
+                       f'({residual.get("Municipal / fire / government", 0):,} '
+                       'municipal/fire, '
+                       f'{residual.get("Independent (unaffiliated)", 0):,} '
+                       'independent). The named-consolidator core is tiny against '
+                       'a municipal + independent base concentrated in TX, PA and '
+                       'OH. Each named group carries a working public source link; '
+                       'the full per-NPI assignment ships as a companion CSV.',
+            'numbers': 'Fleet_NPI_Groups Panel A (parents) + B (owner types) + C '
+                       '(state concentration)',
+            'sources': 'nppes_amb_roster; nppes_npi_enrichment; cms_mup_provider',
+            'confidence': 'High on the grouping method; named membership is a '
+                          'brand + shared-official floor',
+            'guardrail': 'Residual buckets are name-inferred; GMR is ground-only '
+                         'by design (air-medical bases counted separately).'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [

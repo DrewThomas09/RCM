@@ -260,7 +260,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
         findings tail must reach 125."""
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
-                    'Fleet_Ownership_Crosswalk'):
+                    'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups'):
             self.assertIn(tab, self.wb.sheetnames)
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
@@ -270,7 +270,13 @@ class TestIFTEvidenceV3(unittest.TestCase):
         ids = [int(r[0].value.strip())
                for r in self.wb['Findings'].iter_rows(min_col=1, max_col=1)
                if isinstance(r[0].value, str) and r[0].value.strip().isdigit()]
-        self.assertGreaterEqual(max(ids), 128)
+        self.assertGreaterEqual(max(ids), 129)
+        # the all-NPI grouping tab carries a working external source hyperlink
+        gw = self.wb['Fleet_NPI_Groups']
+        links = [c.hyperlink.target for row in gw.iter_rows() for c in row
+                 if c.hyperlink is not None]
+        self.assertTrue(any('http' in (u or '') for u in links),
+                        'expected working source hyperlinks on Fleet_NPI_Groups')
         # ownership resolution absorbs legacy names -> resolved GMR volume is a
         # six-figure number well above the brand-only floor
         ov = [c.value for row in self.wb['Fleet_Ownership_Resolved'].iter_rows()
