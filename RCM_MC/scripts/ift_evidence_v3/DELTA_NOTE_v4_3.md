@@ -181,20 +181,20 @@ the tab is re-derivable. Scope note: the pull covers the Medicare-active operati
 fleet; dormant / air-only / non-billing NPIs were deprioritized (no transport
 volume).
 
-**Fleet_Consolidation_Targets (the actionable pipeline).** The capstone: the
-identity work reduced to a roll-up acquisition worklist. After removing the
-national roll-ups (already owned), municipal / fire and hospital operators (not
-for sale) and third-party billing agents, ~1,700 INDEPENDENT operating groups
-remain - the acquisition universe - each grouped by its signing official (the
-owner) and ranked by 2024 Medicare ground volume. Multi-NPI independents (Brewster
-FL/MA, AM-VAN multi-state, Vital Medical) are mini-platforms - small local
-roll-ups that make natural platform acquisitions. Panel B shows where the
-independent pipeline is deepest (California, Texas, New Jersey, Pennsylvania,
-Georgia, New York - large and fragmented). Each target is reachable only because
-the per-NPI enrichment resolved its owner and state from behind the local brand
-name. New fact (independent operator count), finding 128. This turns the whole
-fleet-identity arc into a diligence worklist: sort by volume, filter by state,
-start with the multi-NPI independents.
+**Fleet_Ownership_Crosswalk (the subsidiary-to-parent map).** The explicit
+ownership map: every Medicare-billing operator that belongs to a national or
+regional owner, listed under that parent, with how it was linked - by brand name
+or by SHARED SIGNING OFFICIAL. This is the Baptist Ambulance -> Priority, every
+AMR / Abbott / Alliance / Rural Metro / Southwest Ambulance NPI -> GMR, every
+Ambulnz entity -> DocGo mapping made explicit. ~215 subsidiary NPIs across ~130
+distinct local brands roll up to nine parents (GMR / AMR, Acadian, Priority,
+Superior, DocGo, Falck, Pafford, Coastal, AmeriPro), together ~1.44M 2024
+Medicare ground transports. The linkage key is the NPPES authorized official,
+which maps a renamed subsidiary to its parent even when the brand name gives
+nothing away; anything absent from the crosswalk is, on the public evidence,
+genuinely independent (or municipal / hospital), not a hidden subsidiary. Panel A
+totals each parent; Panel B is the full operator -> parent roster. New fact
+(operators mapped to a parent), finding 128.
 
 ## The guardrail, held throughout
 

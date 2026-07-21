@@ -260,7 +260,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
         findings tail must reach 125."""
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
-                    'Fleet_Consolidation_Targets'):
+                    'Fleet_Ownership_Crosswalk'):
             self.assertIn(tab, self.wb.sheetnames)
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']

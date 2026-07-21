@@ -99,11 +99,12 @@ SHEETS = [
                  'are the national roll-ups once you resolve the corporate family '
                  'by shared signing official - i.e. absorb the legacy acquired '
                  'names that brand-matching misses?'},
-    {'name': 'Fleet_Consolidation_Targets',
-     'question': 'Where is the roll-up acquisition pipeline - which independent '
-                 'ambulance operators (not already in a national roll-up, not '
-                 'municipal or hospital) carry the most transport volume, and in '
-                 'which states is the independent pipeline deepest?'},
+    {'name': 'Fleet_Ownership_Crosswalk',
+     'question': 'The explicit subsidiary-to-parent map: which local ambulance '
+                 'brands roll up to which national/regional owner (Baptist -> '
+                 'Priority, every AMR / Abbott / Rural Metro -> GMR, Ambulnz -> '
+                 'DocGo), resolved from NPPES by brand and shared signing '
+                 'official?'},
 ]
 
 ACC = '2026-07-20'
@@ -1170,12 +1171,20 @@ def _resolve_families(enriched, vol):
     return out
 
 
-def _consolidation_targets(enriched, vol):
-    """The roll-up acquisition pipeline: independent operators (NOT already in a
-    national roll-up, NOT municipal/fire, NOT hospital-based, NOT a third-party
-    biller), grouped by their signing official (the owner), ranked by 2024
-    Medicare ground volume. Multi-NPI independents are mini-platforms. Returns
-    (target_groups sorted desc, per_state_depth)."""
+# Display labels for the resolved parent owners (GMR = the AMR ground family).
+PARENT_LABEL = {
+    'GMR': 'GMR / AMR', 'Priority': 'Priority', 'DocGo/Ambulnz': 'DocGo (Ambulnz)',
+    'Acadian': 'Acadian', 'Superior': 'Superior', 'Falck': 'Falck',
+    'Pafford': 'Pafford', 'AmeriPro': 'AmeriPro', 'Coastal': 'Coastal',
+}
+
+
+def _ownership_crosswalk(enriched, vol):
+    """The explicit subsidiary-to-parent map. For each national/regional parent,
+    the member operators (each NPI's legal name, state, Medicare volume, and how
+    it was linked - by brand name or by shared signing official). This is the
+    Baptist -> Priority, AMR of X -> GMR mapping made explicit. Returns
+    {parent: [member dicts sorted by volume]}."""
     def _nm(n):
         return (enriched.get(n, {}).get('legal_name') or '').upper()
 
@@ -1190,41 +1199,27 @@ def _consolidation_targets(enriched, vol):
         return len(ns) >= 2 and sum(
             1 for n in ns if _MUNI_OFF.search(_nm(n))) / len(ns) >= 0.5
 
-    # roll-up NPI set via the same shared-official expansion as the resolver
-    rollup = set()
+    out = {}
     for fam, pats in RESOLVE_SEEDS.items():
         rx = [re.compile(p) for p in pats]
         seed = set(n for n in enriched if any(p.search(_nm(n)) for p in rx))
+        via = {n: 'brand name' for n in seed}
         offs = set(_norm_off(enriched[n].get('auth_official')) for n in seed)
         offs = {o for o in offs if o and not is_biller(o)}
-        rollup |= seed
         for o in offs:
-            rollup.update(byoff.get(o, []))
-
-    groups = {}
-    depth = {}
-    for n, r in enriched.items():
-        s = _nm(n)
-        if n in rollup or _MUNI_OFF.search(s) or HOSP_RX.search(s):
-            continue
-        off = _norm_off(r.get('auth_official'))
-        if off and is_biller(off):
-            continue
-        st = r.get('location_state') or r.get('mailing_state') or '?'
-        d = depth.setdefault(st, [0, 0.0])
-        d[0] += 1
-        d[1] += vol.get(n, 0)
-        key = off or ('NPI:' + n)
-        g = groups.setdefault(key, {'npis': [], 'vol': 0.0, 'states': set(),
-                                    'name': '', '_top': -1})
-        g['npis'].append(n)
-        g['vol'] += vol.get(n, 0)
-        g['states'].add(st)
-        if vol.get(n, 0) >= g['_top']:
-            g['_top'] = vol.get(n, 0)
-            g['name'] = enriched[n]['legal_name']
-    ordered = sorted(groups.items(), key=lambda kv: -kv[1]['vol'])
-    return ordered, depth
+            for n in byoff.get(o, []):
+                via.setdefault(n, 'shared signing official')
+        members = []
+        for n in via:
+            r = enriched[n]
+            members.append({
+                'npi': n, 'name': r.get('legal_name') or '',
+                'state': r.get('location_state') or r.get('mailing_state') or '',
+                'official': (r.get('auth_official') or '').title(),
+                'vol': int(round(vol.get(n, 0))), 'via': via[n]})
+        members.sort(key=lambda m: -m['vol'])
+        out[PARENT_LABEL.get(fam, fam)] = members
+    return out
 
 
 def build(wb, ctx):
@@ -2692,116 +2687,120 @@ def build(wb, ctx):
                          'entity); a few high-count officials are third-party '
                          'billers, not owners, and are filtered out.'})
 
-    # ============================== TAB 11: Fleet Consolidation Targets
+    # ============================== TAB 11: Fleet Ownership Crosswalk
     if enriched:
-        targets, depth = _consolidation_targets(enriched, vol24)
-        tgt_vol = sum(g['vol'] for _k, g in targets)
-        ws11 = wb.create_sheet('Fleet_Consolidation_Targets')
-        sb11 = lib.SheetBuilder(ws11, 6, col_widths=[34, 14, 8, 14, 16, 22],
+        xwalk = _ownership_crosswalk(enriched, vol24)
+        parents = sorted(xwalk, key=lambda p: -sum(m['vol'] for m in xwalk[p]))
+        xw_vol = sum(m['vol'] for p in xwalk for m in xwalk[p])
+        xw_npi = sum(len(xwalk[p]) for p in xwalk)
+        ws11 = wb.create_sheet('Fleet_Ownership_Crosswalk')
+        sb11 = lib.SheetBuilder(ws11, 5, col_widths=[40, 8, 14, 22, 20],
                                 tab_color='FF3A2E5A')
-        sb11.title('Fleet consolidation targets: the independent operators that '
-                   'are the roll-up acquisition pipeline')
-        sb11.subtitle('The actionable output of the identity work: after removing '
-                      'the national roll-ups (already owned), municipal / fire and '
-                      'hospital operators (not for sale), and third-party billing '
-                      'agents, what remains is the INDEPENDENT operating fleet - '
-                      'the acquisition universe. Each independent is grouped by '
-                      'its signing official (the owner) and ranked by 2024 CMS '
-                      'Medicare ground transports. Multi-NPI independents are '
-                      'mini-platforms (already a small local roll-up). Re-derived '
-                      'at build time from npi_operating_fleet_enriched + '
-                      'mup_provider_2024.')
-        sb11.note('DATA QUALITY: "independent" means not resolved into a named '
-                  'national roll-up and not name-matched to municipal/fire or '
-                  'hospital ownership; a few public authorities (e.g. an EMS '
-                  'Authority) and non-emergency-van operators sit in this bucket '
-                  'and would be screened out in real diligence. Volume is '
-                  'Medicare fee-for-service ground only (a relative rank, not '
-                  'all-payer). Owner = the NPPES authorized official; multi-state '
-                  'groups share one official across NPIs.')
+        sb11.title('Fleet ownership crosswalk: which local brand rolls up to '
+                   'which national/regional parent')
+        sb11.subtitle('The explicit subsidiary-to-parent map. Every '
+                      'Medicare-billing operator that belongs to a national or '
+                      'regional owner is listed under that parent, with how it was '
+                      'linked - by brand name or by SHARED SIGNING OFFICIAL (the '
+                      'NPPES authorized official, which catches the legacy names '
+                      'that carry no parent brand). This is the Baptist Ambulance '
+                      '-> Priority, AMR / Abbott / Rural Metro -> GMR, Ambulnz -> '
+                      'DocGo mapping made explicit. Re-derived at build time from '
+                      'npi_operating_fleet_enriched + mup_provider_2024.')
+        sb11.note('DATA QUALITY: linkage is by brand match plus shared authorized '
+                  'official (third-party billing officials excluded via a '
+                  'majority-municipal test). It is a FLOOR - it maps a subsidiary '
+                  'only when its name matches the parent brand or it shares a '
+                  'corporate officer with one that does. Volume is 2024 Medicare '
+                  'fee-for-service ground transports. GMR is labeled GMR / AMR '
+                  '(the AMR ground family under KKR); Rocky Mountain Holdings is '
+                  'Air Methods, a separate AIR competitor, and is not mapped to GMR.')
         sb11.blank()
-        sb11.banner(f'Panel A. Top-30 independent consolidation targets '
-                    f'(of {len(targets):,} independent owners; by 2024 Medicare '
-                    'ground volume)')
-        sb11.headers(['Operator (largest brand in group)', 'Medicare transports',
-                      'NPIs', 'States', 'Owner (signing official)', 'Note'])
-        for _k, g in targets[:30]:
-            multi = 'mini-platform' if len(g['npis']) > 1 else 'single-site'
-            sts = ','.join(sorted(x for x in g['states'] if x and x != '?'))
+        sb11.banner('Panel A. Parents, by attributed Medicare ground volume')
+        sb11.headers(['Parent owner', 'Member NPIs', 'Medicare transports',
+                      'States', 'Linked by'])
+        for p in parents:
+            mem = xwalk[p]
+            sts = sorted(set(m['state'] for m in mem if m['state']))
+            n_off = sum(1 for m in mem if m['via'] != 'brand name')
+            link = ('brand + %d via shared officer' % n_off) if n_off else 'brand name'
             sb11.row([
-                (_clean(g['name'], 40), 'label'),
-                (int(round(g['vol'])), 'src', lib.FMT_INT),
-                (len(g['npis']), 'src', lib.FMT_INT),
-                (sts[:16], 'note'),
-                (_clean(_k.title(), 26), 'note'),
-                (multi, 'note'),
-            ], wrap=True, height=24)
+                (p, 'label'),
+                (len(mem), 'src', lib.FMT_INT),
+                (sum(m['vol'] for m in mem), 'src', lib.FMT_INT),
+                (len(sts), 'src', lib.FMT_INT),
+                (link, 'note'),
+            ], wrap=True, height=22)
+        sb11.row([('All mapped parents', 'label'),
+                  (xw_npi, 'src', lib.FMT_INT),
+                  (xw_vol, 'src', lib.FMT_INT), None,
+                  ('subsidiaries attributed to a national/regional owner', 'note')])
         sb11.blank()
-        sb11.banner('Panel B. Where the independent pipeline is deepest (by state)')
-        sb11.headers(['State', 'Independent operators', 'Medicare transports',
-                      'Share of state indie volume', '', ''])
-        st_sorted = sorted(depth.items(), key=lambda kv: -kv[1][1])[:15]
-        tot_ind = sum(v for _c, v in depth.values())
-        for st, (cnt, v) in st_sorted:
-            sb11.row([
-                (st, 'label'),
-                (cnt, 'src', lib.FMT_INT),
-                (int(round(v)), 'src', lib.FMT_INT),
-                (v / tot_ind if tot_ind else 0, 'src', lib.FMT_PCT1),
-                None, None])
+        sb11.banner('Panel B. The crosswalk: every mapped operator -> its parent')
+        sb11.headers(['Operator (NPPES legal name)', 'State',
+                      'Medicare transports', 'Rolls up to', 'Linked by'])
+        for p in parents:
+            for m in xwalk[p]:
+                sb11.row([
+                    (_clean(m['name'], 46), 'label'),
+                    (m['state'], 'note'),
+                    (m['vol'], 'src', lib.FMT_INT),
+                    (p, 'src'),
+                    (m['via'], 'note'),
+                ], wrap=True, height=18)
         sb11.blank()
         sb11.banner('Read panel')
-        n_multi = sum(1 for _k, g in targets if len(g['npis']) > 1)
+        _n_brands = len(set(m['name'] for p in xwalk for m in xwalk[p]))
         sb11.prose(
-            'This is the pipeline a national consolidator actually shops. After '
-            'stripping the operators that are already owned (roll-ups), public '
-            f'(municipal/fire), or provider-owned (hospital), {len(targets):,} '
-            'independent operating groups remain, together carrying '
-            f'{int(round(tgt_vol)):,} Medicare ground transports - and about '
-            f'{n_multi:,} of them already run more than one NPI, i.e. they are '
-            'small local roll-ups that make natural platform acquisitions. The '
-            'depth is concentrated where the market is both large and fragmented '
-            '(California, Texas, New Jersey, Pennsylvania, Georgia, New York), '
-            'which is exactly where a buy-and-build thesis has the most room. '
-            'Each name here is reachable in public data because the enrichment '
-            'resolved its owner (the signing official) and state; the raw NPPES '
-            'roster hides all of this behind local brand names. This tab turns '
-            'the whole fleet-identity effort into a diligence worklist: sort by '
-            'volume, filter by state, and start with the multi-NPI independents.')
+            'This is the ownership map the raw data hides. '
+            f'{xw_npi} operating NPIs - about {_n_brands} distinct local brands - '
+            f'roll up to {len(parents)} national or regional parents, together '
+            f'{xw_vol:,} 2024 Medicare ground transports. GMR / AMR is by far the '
+            'largest, absorbing dozens of legacy names (Abbott, Alliance, Rural '
+            'Metro, Southwest Ambulance) that never carried the AMR brand; '
+            'Priority pulls in Baptist, Central EMS, Maricopa, LifeCare and more; '
+            'DocGo is every Ambulnz entity. The linkage key that makes this '
+            'possible is the NPPES authorized official: a subsidiary that renamed '
+            'still shares a corporate officer with a brand-carrying sibling, so '
+            'the shared-official join maps it to the parent even when the name '
+            'gives nothing away. Anything NOT on this crosswalk is, on the public '
+            'evidence, genuinely independent (or municipal / hospital) - not a '
+            'hidden subsidiary of a national.')
 
         facts.append({
-            'metric': 'Independent (acquirable) ambulance operating groups',
-            'year': 2024, 'value': len(targets), 'unit': 'independent operators',
+            'metric': 'Ambulance operators mapped to a national/regional parent',
+            'year': 2024, 'value': xw_npi, 'unit': 'subsidiary NPIs',
             'basis': 'DERIVED', 'tier': 'A',
             'source_keys': ['nppes_npi_enrichment', 'cms_mup_provider'],
-            'locator': 'Fleet_Consolidation_Targets Panel A count',
-            'lives_on': 'Fleet_Consolidation_Targets',
-            'cross_check': f'Enriched operating fleet minus resolved roll-ups, '
-                           f'municipal/fire, hospital and billing agents; '
-                           f'{n_multi:,} already run multiple NPIs (mini-platforms)'})
+            'locator': 'Fleet_Ownership_Crosswalk Panel A total row',
+            'lives_on': 'Fleet_Ownership_Crosswalk',
+            'cross_check': f'{len(parents)} parents; {xw_vol:,} Medicare ground '
+                           'transports attributed; linkage by brand + shared '
+                           'authorized official'})
         findings.append({
             'id_hint': 128,
-            'finding': 'The identity work reduces to an actionable roll-up '
-                       'pipeline: after removing the national roll-ups (owned), '
-                       'municipal/fire and hospital operators (not for sale) and '
-                       'third-party billers, '
-                       f'{len(targets):,} INDEPENDENT operating groups remain '
-                       f'(~{int(round(tgt_vol)):,} Medicare ground transports), of '
-                       f'which ~{n_multi:,} already run multiple NPIs and read as '
-                       'platform-ready mini-roll-ups. The pipeline is deepest in '
-                       'the large fragmented states (CA, TX, NJ, PA, GA, NY). Each '
-                       'target is reachable only because the per-NPI enrichment '
-                       'resolved its owner (signing official) and state from '
-                       'behind the local brand name.',
-            'numbers': 'Fleet_Consolidation_Targets Panel A (top-30 targets) + '
-                       'Panel B (state depth)',
+            'finding': 'The subsidiary-to-parent crosswalk maps '
+                       f'{xw_npi} Medicare-billing operators to '
+                       f'{len(parents)} national/regional owners '
+                       f'({xw_vol:,} 2024 Medicare ground transports), made '
+                       'explicit brand by brand: every AMR / Abbott / Alliance / '
+                       'Rural Metro / Southwest Ambulance NPI maps to GMR; '
+                       'Baptist, Central EMS, Maricopa and LifeCare map to '
+                       'Priority; every Ambulnz entity to DocGo; and so on. The '
+                       'linkage key is the NPPES authorized official, which maps '
+                       'a renamed subsidiary to its parent even when the brand '
+                       'name gives nothing away. Operators absent from the '
+                       'crosswalk are genuinely independent (or municipal / '
+                       'hospital), not hidden subsidiaries.',
+            'numbers': 'Fleet_Ownership_Crosswalk Panel A (parents) + Panel B '
+                       '(every mapped operator)',
             'sources': 'nppes_npi_enrichment; cms_mup_provider; nppes_amb_roster',
-            'confidence': 'High on the ranking (Medicare volume + resolved owner); '
-                          'the independent bucket still contains a few public '
-                          'authorities to screen out in real diligence',
-            'guardrail': 'Medicare FFS ground only (relative rank); operating '
-                         'fleet scope; owner = authorized official, which a small '
-                         'number of third-party billers can still blur.'})
+            'confidence': 'High: brand + structured authorized-official linkage; '
+                          'billing officials excluded by a majority-municipal test',
+            'guardrail': 'A FLOOR - maps a subsidiary only when it name-matches '
+                         'the parent brand or shares a corporate officer with one '
+                         'that does; Medicare FFS ground only; operating-fleet '
+                         'scope.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
