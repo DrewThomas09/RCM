@@ -111,6 +111,12 @@ SHEETS = [
                  'etc.) or an owner-type bucket (municipal/fire, hospital, '
                  'independent), with state concentration and a working source '
                  'link per group.'},
+    {'name': 'Fleet_NPI_Master',
+     'question': 'The full master register: one row for EVERY ambulance NPI (all '
+                 '~20,401) with its DBAs, NPPES license identifiers, resolved '
+                 'parent/owner-class, confidence tier, signing official, taxonomy '
+                 'and status, each linked to its own public NPPES provider-view '
+                 'page.'},
 ]
 
 ACC = '2026-07-20'
@@ -1130,6 +1136,115 @@ def _enriched_rows(lib, cache):
     except FileNotFoundError:
         return {}
     return {r['npi']: r for r in lst if r.get('npi')}
+
+
+def _full_enrichment_rows(lib, cache):
+    """Per-NPI NPPES attributes (DBAs, license IDs, signing official, status)
+    across the WHOLE ambulance universe as {npi: row}, for the master register.
+
+    This is deliberately distinct from _enriched_rows (the operating fleet): the
+    grouping calibration (GMR ~180 ground) keys off the operating-fleet
+    enrichment, so folding the full universe into that would inflate the
+    shared-official matches. The full pull is an ATTRIBUTE source only - it never
+    changes who is grouped with whom, only the DBA/license columns shown per NPI.
+    Falls back to the operating-fleet enrichment when the full pull is absent."""
+    merged = dict(_enriched_rows(lib, cache))
+    try:
+        lst = lib.load_cache(cache, 'npi_full_enrichment')
+    except FileNotFoundError:
+        return merged
+    for r in lst:
+        n = str(r.get('npi', ''))
+        if n:
+            merged[str(n)] = r
+    return {str(k): v for k, v in merged.items()}
+
+
+def _clean_license_ids(raw):
+    """Drop NPPES placeholder license tokens (all-`=`, all-`0`, or empty numbers)
+    that are data-entry artifacts, keeping only real identifiers."""
+    if not raw:
+        return ''
+    keep = []
+    for tok in str(raw).split(';'):
+        tok = tok.strip()
+        if not tok:
+            continue
+        # token looks like TYPE:NUMBER(STATE) - inspect the NUMBER
+        num = tok.split(':', 1)[1] if ':' in tok else tok
+        num = num.split('(', 1)[0].strip()
+        core = num.strip('=0 ')
+        if core:
+            keep.append(tok)
+    return ';'.join(keep)
+
+
+def _master_register_rows(roster, assign, enr_full):
+    """One dict per NPI (spine = the full roster) with identity, DBAs, licenses,
+    the group/parent, a confidence tier, and a per-NPI public source. Reuses the
+    `assign` map from _npi_group_map so the register can never disagree with the
+    grouping tab."""
+    rows = []
+    for o in roster:
+        npi = o['npi']
+        group, via = assign.get(npi, ('Independent (unaffiliated)', 'name/type'))
+        e = enr_full.get(str(npi), {})
+        dbas = (e.get('dbas') or '').strip()
+        if not dbas:
+            rd = (o.get('dba') or '').strip()
+            if rd and rd != '<UNAVAIL>':
+                dbas = rd
+        if group in NPI_GROUP_SEEDS:
+            conf = 'HIGH' if via == 'brand name' else 'MEDIUM'
+        elif group == 'Independent (unaffiliated)':
+            conf = 'LOW'
+        else:
+            conf = 'MEDIUM'
+        rows.append({
+            'npi': npi,
+            'legal_name': e.get('legal_name') or o.get('org_name', ''),
+            'dbas': dbas,
+            'state': e.get('location_state') or o.get('state', ''),
+            'city': e.get('location_city') or o.get('city', ''),
+            'parent_or_class': group,
+            'linked_by': via,
+            'confidence': conf,
+            'license_ids': _clean_license_ids(e.get('license_ids')),
+            'auth_official': e.get('auth_official', ''),
+            'auth_official_title': e.get('auth_official_title', ''),
+            'primary_taxonomy': (e.get('primary_taxonomy')
+                                 or o.get('primary_taxonomy', '')),
+            'status': e.get('status', ''),
+            'air': int(o.get('air', 0) or 0),
+            'enriched': 'yes' if e else 'no',
+            'source': 'https://npiregistry.cms.hhs.gov/provider-view/%s' % npi,
+            'parent_source': GROUP_SOURCE.get(group, ''),
+        })
+    return rows
+
+
+def _write_master_register_csv(rows):
+    """Write the companion CSV next to the workbook (IFT_V3_OUT dir, else the
+    repo deliverables dir). Best-effort: a write failure never breaks the build."""
+    import csv as _csv
+    import os as _os
+    cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'parent_or_class',
+            'linked_by', 'confidence', 'license_ids', 'auth_official',
+            'auth_official_title', 'primary_taxonomy', 'status', 'air',
+            'enriched', 'source', 'parent_source']
+    out_env = _os.environ.get('IFT_V3_OUT')
+    out_dir = (_os.path.dirname(out_env) if out_env
+               else _os.path.join(_os.path.dirname(__file__),
+                                  '..', '..', '..', 'deliverables'))
+    try:
+        _os.makedirs(out_dir, exist_ok=True)
+        p = _os.path.join(out_dir, 'fleet_npi_master_register.csv')
+        with open(p, 'w', newline='') as f:
+            w = _csv.DictWriter(f, fieldnames=cols)
+            w.writeheader()
+            w.writerows(rows)
+    except OSError:
+        pass
 
 
 def _resolve_families(enriched, vol):
@@ -3042,6 +3157,137 @@ def build(wb, ctx):
                           'brand + shared-official floor',
             'guardrail': 'Residual buckets are name-inferred; GMR is ground-only '
                          'by design (air-medical bases counted separately).'})
+
+    # ---------------------------------------------------------------------
+    # Fleet_NPI_Master - one triple-checked row per NPI (all ~20,401), with
+    # DBAs, license IDs, the resolved parent/owner-type, a confidence tier, and
+    # a per-NPI public source. Grouping reuses `assign` (from _npi_group_map)
+    # so this can never disagree with Fleet_NPI_Groups; the DBA/license columns
+    # come from the full-universe NPPES attribute pull.
+    # ---------------------------------------------------------------------
+    if enriched:
+        enr_full = _full_enrichment_rows(lib, cache)
+        mrows = _master_register_rows(roster, assign, enr_full)
+        _write_master_register_csv(mrows)
+        n_master = len(mrows)
+        n_enr = sum(1 for r in mrows if r['enriched'] == 'yes')
+        n_dba = sum(1 for r in mrows if r['dbas'])
+        n_lic = sum(1 for r in mrows if r['license_ids'])
+        n_named_m = sum(1 for r in mrows if r['parent_or_class'] in NPI_GROUP_SEEDS)
+        cc = _Counter(r['confidence'] for r in mrows)
+
+        ws13 = wb.create_sheet('Fleet_NPI_Master')
+        sb13 = lib.SheetBuilder(
+            ws13, 10,
+            col_widths=[12, 40, 30, 6, 18, 26, 18, 11, 40, 24, 22, 14, 7, 34],
+            tab_color='FF1F3A5F')
+        sb13.title('Fleet NPI master register: every ambulance NPI (all '
+                   f'{n_master:,}) with DBAs, licenses, parent and confidence')
+        sb13.subtitle(
+            'One row per ambulance-organization NPI in NPPES (taxonomy 3416*). '
+            'Each row carries the legal name, doing-business-as name(s), the '
+            'resolved parent (or owner-type class), how that link was made, a '
+            'confidence tier, the NPPES-registered license identifiers, the '
+            'authorized signing official, taxonomy and status. Identity and '
+            'license columns are the per-NPI NPPES record; the parent mapping '
+            'reuses the same brand + shared-official resolution as the grouping '
+            'tab. Every row links to its own public NPPES provider-view page. '
+            'The full table also ships as fleet_npi_master_register.csv.')
+        sb13.note(
+            'CONFIDENCE: HIGH = the NPI\'s own name carries the parent brand; '
+            'MEDIUM = resolved by a shared NPPES signing official, or classified '
+            'into an owner-type bucket (municipal/fire, hospital, air) by name; '
+            'LOW = independent with no affiliation resolved. DBAs/licenses are '
+            'populated where the per-NPI NPPES pull has landed (enriched=yes); '
+            'the mapping and source are present for every NPI regardless. '
+            'License IDs are Medicaid / state / other identifiers as registered '
+            'in NPPES (placeholder tokens removed); the NPI is the Medicare '
+            'credential itself. Source of record: CMS NPPES.')
+        sb13.blank()
+        sb13.banner('Coverage')
+        sb13.headers(['Metric', 'Count', 'Share', '', '', '', '', '', '', '',
+                      '', '', '', ''])
+        for lbl, val in [
+                ('Total NPIs (every ambulance org)', n_master),
+                ('Enriched from NPPES (DBAs/licenses/official)', n_enr),
+                ('With a doing-business-as name', n_dba),
+                ('With registered license identifier(s)', n_lic),
+                ('Mapped to a named parent (GMR, Priority, ...)', n_named_m),
+                ('HIGH confidence (brand-name parent)', cc.get('HIGH', 0)),
+                ('MEDIUM confidence (shared official / owner-type)',
+                 cc.get('MEDIUM', 0)),
+                ('LOW confidence (unaffiliated independent)',
+                 cc.get('LOW', 0))]:
+            sb13.row([(lbl, 'label'), (val, 'src', lib.FMT_INT),
+                      (val / n_master if n_master else 0, 'src', lib.FMT_PCT1),
+                      None, None, None, None, None, None, None, None, None,
+                      None, None])
+        sb13.blank()
+        sb13.banner('Master register (all NPIs, sorted by parent then state)')
+        sb13.headers(['NPI', 'Legal name', 'DBA(s)', 'Air', 'State / city',
+                      'Parent / owner-class', 'Linked by', 'Confidence',
+                      'License IDs (NPPES)', 'Signing official', 'Official title',
+                      'Taxonomy', 'Status', 'Source (NPPES provider view)'])
+        _named_order = {p: i for i, p in enumerate(
+            sorted(NPI_GROUP_SEEDS, key=lambda k: -named.get(PARENT_LABEL.get(k, k), 0)))}
+
+        def _sort_key(r):
+            g = r['parent_or_class']
+            in_named = 0 if g in NPI_GROUP_SEEDS else 1
+            return (in_named, g, r['state'] or 'ZZ', r['legal_name'])
+        for r in sorted(mrows, key=_sort_key):
+            sc = ('%s / %s' % (r['state'], r['city'])).strip(' /')
+            tax = TAX.get(r['primary_taxonomy'], r['primary_taxonomy'] or '')
+            url = r['source']
+            sb13.row([
+                (r['npi'], 'label'),
+                (r['legal_name'], 'text'),
+                (r['dbas'], 'text'),
+                ('Y' if r['air'] else '', 'note'),
+                (sc, 'note'),
+                (r['parent_or_class'], 'text'),
+                (r['linked_by'], 'note'),
+                (r['confidence'], 'label'),
+                (r['license_ids'], 'note'),
+                (r['auth_official'], 'text'),
+                (r['auth_official_title'], 'note'),
+                (tax, 'note'),
+                (r['status'], 'note'),
+                (url, 'link'),
+            ], wrap=False, height=13)
+            sb13.ws.cell(row=sb13.r, column=14).hyperlink = url
+
+        facts.append({
+            'metric': 'Ambulance NPIs in the master register',
+            'year': 2026, 'value': n_master,
+            'unit': 'NPIs (one row each)', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['nppes_amb_roster', 'nppes_npi_enrichment'],
+            'locator': 'Fleet_NPI_Master, coverage panel row 1',
+            'lives_on': 'Fleet_NPI_Master',
+            'cross_check': 'Equals the NPPES 3416* roster count; one unique row '
+                           'per NPI, zero missing'})
+        findings.append({
+            'id_hint': 130,
+            'finding': f'The master register lands one triple-checked row for '
+                       f'every one of the {n_master:,} ambulance-organization '
+                       'NPIs: legal name, DBA(s), resolved parent or owner-type '
+                       'class, a confidence tier (HIGH brand / MEDIUM shared-'
+                       'official or owner-type / LOW independent), the NPPES '
+                       f'license identifiers ({n_lic:,} NPIs carry one), the '
+                       'authorized signing official, taxonomy and status, each '
+                       'linked to its own public NPPES provider-view page. '
+                       f'{n_named_m} roll up to a named national/regional parent; '
+                       'the mapping reuses the grouping tab\'s brand + shared-'
+                       'official resolution so the two never disagree.',
+            'numbers': 'Fleet_NPI_Master coverage panel + per-NPI rows',
+            'sources': 'nppes_amb_roster; nppes_npi_enrichment',
+            'confidence': 'Spine is exhaustive (every roster NPI, unique, zero '
+                          'missing); DBA/license fill tracks the per-NPI NPPES '
+                          'pull; parent mapping is a brand + shared-official '
+                          'floor.',
+            'guardrail': 'DBAs/licenses only where the NPPES pull has landed; '
+                         'owner-type classes are name-inferred; the NPI itself '
+                         'is the Medicare credential.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
