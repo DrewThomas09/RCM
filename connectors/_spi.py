@@ -30,7 +30,7 @@ CONNECTOR_NAMES: Tuple[str, ...] = (
     "openfda", "cms_coverage", "npi_registry", "icd10",
     "cms_open_data", "provider_data", "open_payments", "medicaid_data",
     "healthcare_gov", "cdc_data", "hrsa_data", "nih_reporter", "census_acs",
-    "oig_leie", "bls_qcew", "healthdata_gov",
+    "oig_leie", "bls_qcew", "healthdata_gov", "hcpcs", "qpp",
 )
 
 # Human labels for the estate view. Descriptive only.
@@ -51,6 +51,8 @@ CONNECTOR_LABELS: Dict[str, str] = {
     "oig_leie": "HHS OIG LEIE (exclusion list)",
     "bls_qcew": "BLS QCEW (healthcare employment + wages)",
     "healthdata_gov": "healthdata.gov (HHS-wide meta-catalog)",
+    "hcpcs": "HCPCS Level II (NLM Clinical Tables)",
+    "qpp": "CMS Quality Payment Program (MIPS/APM)",
 }
 
 # Query-string key aliases: a lookup handler parameter name that is exposed
@@ -67,7 +69,8 @@ _QS_ALIASES: Dict[str, str] = {"code_type": "type"}
 # driver, the RCM-MC estate page's copy-ready hints, and tests all agree
 # on the same mapping instead of re-deriving it.
 ROOT_STYLE_CLIS: Tuple[str, ...] = (
-    "openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data")
+    "openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data", "hcpcs",
+    "qpp")
 SUBCMD_DB_STYLE_CLIS: Tuple[str, ...] = ("cms_open_data", "open_payments")
 
 # Connectors the estate-level ``refresh`` sweep cannot ingest unattended:
