@@ -1,8 +1,8 @@
 # IFT Fleet vs. Labor — the better predictor of real transport volume, and why GMR & Priority are undercounted
 
 **Date:** 2026-07-20 · **Workstream:** IFT Sourced Evidence Master
-**Registry lineage:** facts **F624–F632**, sources **S448–S454**, **Finding 118**
-(registered in `scripts/ift_evidence_v3/DELTA_NOTE_v4_3.md`). Extends **Finding #46**
+**Registry lineage:** facts **F637–F645**, sources **S991–S997**, **Finding 131**
+(registered in `scripts/ift_evidence_v3/DELTA_NOTE_v4_4.md`). Extends **Finding #46**
 (the supplier-universe rule) and the AMR-Omaha / MMT NPI-to-vehicle exhibits in
 `rcm_mc/market_reports/ift_npi_landscape.py`.
 
@@ -125,20 +125,20 @@ parent_rollup  = map local NPPES entities → parent via an OWNERSHIP CROSSWALK
 ## Sources (paper trail)
 
 - **NPPES / NPI Registry API v2.1** (npiregistry.cms.hhs.gov/api), queried 2026-07-20
-  — the four brand-name searches above [OBSERVED, tier A]. **S448**.
+  — the four brand-name searches above [OBSERVED, tier A]. **S991**.
 - **GMR** fleet-expansion release — >7,000 ground vehicles, 382 air bases, ~6M
-  encounters [CLAIMED]. `globalmedicalresponse.com/news/gmr-launches-major-fleet-expansion…` **S449**.
-- **AMR** overview (fleet >7,000) `amr.net/about/overview` **S450**; AMR profile
+  encounters [CLAIMED]. `globalmedicalresponse.com/news/gmr-launches-major-fleet-expansion…` **S992**.
+- **AMR** overview (fleet >7,000) `amr.net/about/overview` **S993**; AMR profile
   (~34k employees, >27k clinicians, 4.4M transports, 40 states+DC)
-  `en.wikipedia.org/wiki/American_Medical_Response`, `amr.net` **S451**.
+  `en.wikipedia.org/wiki/American_Medical_Response`, `amr.net` **S994**.
 - **Priority Ambulance** about/press — ~400 vehicles, 4,300 employees, >1,600
   licensed EMTs+medics, 610k transports, 22 brands / 15 states
-  `priorityambulance.com/about` **S452**.
+  `priorityambulance.com/about` **S995**.
 - **NEMSIS** public reports — 34.2M all-EMS events (2019), all-events context only,
-  not mixed with the 11.3M Medicare IFT book `nemsis.org/view-reports/public-reports` **S453**.
+  not mixed with the 11.3M Medicare IFT book `nemsis.org/view-reports/public-reports` **S996**.
 - **IFT scale + UHU** — NHAMCS IFT estimate; ambulance KPI/unit-hour utilization
   `sciencedirect.com/science/article/abs/pii/S0735675720303946`,
-  `financialmodelslab.com/blogs/kpi-metrics/ambulance-service` **S454**.
+  `financialmodelslab.com/blogs/kpi-metrics/ambulance-service` **S997**.
 
 ## Disambiguation
 

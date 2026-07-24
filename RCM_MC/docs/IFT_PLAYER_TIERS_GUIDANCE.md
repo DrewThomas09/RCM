@@ -1,9 +1,9 @@
 # IFT player tiers — public-data guidance for sizing operators
 
 **Date:** 2026-07-20 · **Workstream:** IFT Sourced Evidence Master
-**Registry lineage:** facts **F633–F639**, sources **S455–S457**, **Finding 119**
-(`scripts/ift_evidence_v3/DELTA_NOTE_v4_4.md`). Queryable in PE Desk via
-`rcm_mc/market_reports/ift_player_tiers.py`. Builds on Run 7
+**Registry lineage:** facts **F646–F652**, sources **S998–S1000**, **Finding 132**
+(`scripts/ift_evidence_v3/DELTA_NOTE_v4_5.md`). Queryable in PE Desk via
+`rcm_mc/market_reports/ift_player_tiers.py`. Builds on Run 8
 (`IFT_FLEET_VS_LABOR_MEMO.md` — fleet beats licensed-EMTs; nationals invisible in
 NPPES) and Finding #46 (the supplier universes must never be mixed).
 
@@ -92,12 +92,12 @@ lens across all four.
 ---
 
 ## Sources
-- **NPPES / NPI Registry API v2.1**, brand probes 2026-07-20 [OBSERVED, tier A] — **S455**.
+- **NPPES / NPI Registry API v2.1**, brand probes 2026-07-20 [OBSERVED, tier A] — **S998**.
 - **Acadian Ambulance** — 750 ambulances, ~800K transports, 4 states, ~$500–734M
-  `en.wikipedia.org/wiki/Acadian_Ambulance`, `acadian.com/our-company/divisions` [CLAIMED] — **S456**.
+  `en.wikipedia.org/wiki/Acadian_Ambulance`, `acadian.com/our-company/divisions` [CLAIMED] — **S999**.
 - **DocGo (NASDAQ: DCGO)** FY2024 10-K/8-K — $616.6M revenue, ~$190M Transportation
-  segment `sec.gov/.../dcgo-20241231.htm` [tier B] — **S457**.
-- Prior: Run 7 (`IFT_FLEET_VS_LABOR_MEMO.md`, F624–F632); Finding #46 (supplier
+  segment `sec.gov/.../dcgo-20241231.htm` [tier B] — **S1000**.
+- Prior: Run 8 (`IFT_FLEET_VS_LABOR_MEMO.md`, F637–F645); Finding #46 (supplier
   universes); `ift_competitive` archetypes.
 
 ## Limitations

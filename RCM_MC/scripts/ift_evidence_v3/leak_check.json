@@ -1,8 +1,11 @@
 {
- "tabs_scanned": 50,
- "cells_scanned": 12537,
+ "tabs_scanned": 308,
+ "cells_scanned": 2595052,
  "customer_account_violations": [],
- "customer_allowlisted_public_quotes": [],
+ "customer_allowlisted_public_quotes": [
+  "InDepth_Q09!B31: No MMT account-level before/after performance data, case study with ba",
+  "InDepth_Q09!C94: None at the MMT account level in public; what is proven is the problem"
+ ],
  "survey_statistic_violations": [],
  "em_dash_violations": [],
  "clean": true

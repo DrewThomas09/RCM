@@ -11,7 +11,7 @@ size it with, and the *systematic bias* the public record introduces.
 
 It refines the ``ift_competitive`` archetypes (which split National / Scaled-
 regional / mom-and-pop) by adding the **subscaled-regional** tier between them,
-and it operationalises Run 7 (DELTA_NOTE_v4_3: fleet beats licensed-EMTs; the
+and it operationalises Run 8 (DELTA_NOTE_v4_4: fleet beats licensed-EMTs; the
 national brands are invisible in NPPES) and Finding #46 (the supplier universes
 must never be mixed) into an explicit sizing recipe per tier.
 
@@ -100,7 +100,7 @@ _TIERS: List[Tier] = [
                       "rolled to the parent via an ownership map (NPPES has no "
                       "owner field). Never name-match in NPPES.",
         systematic_bias="Name-keyed counting undercounts consolidated scale "
-                        "~10–50× and misses the parent entirely (Run 7).",
+                        "~10–50× and misses the parent entirely (Run 8).",
     ),
     Tier(
         key="scaled_regional", rank=2, name="Scaled regional private",
@@ -172,8 +172,8 @@ _SRC = ("FRAMEWORK · IFT player tiers + public-data guidance. NPPES brand "
         "probes OBSERVED (NPI Registry API v2.1, 2026-07-20); operator scale "
         "anchors CLAIMED (company self-reports/SEC); tier bands DERIVED "
         "(indicative, quarantined until a measured panel replaces them). "
-        "Refines ift_competitive archetypes; operationalises DELTA_NOTE_v4_3 "
-        "(Run 7) + Finding #46.")
+        "Refines ift_competitive archetypes; operationalises DELTA_NOTE_v4_4 "
+        "(Run 8) + Finding #46.")
 
 
 def player_tiers() -> PlayerTierSet:

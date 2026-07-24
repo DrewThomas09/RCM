@@ -1,146 +1,264 @@
 # IFT Sourced Evidence Master v4.3 - delta note
 
-## Run 7: the national brand-name invisibility test - why GMR and Priority read as near-zero in NPPES, and why fleet (not licensed EMTs) is the scale unit
+## Run 7: fleet-license identification for IFT and all ambulance transport
 
-Finding #46 established that the ambulance supplier universes must never be mixed
-(PECOS-enrolled 10,465 / billing NPIs 8,721 / QCEW establishments 5,820 / state-
-licensed), and the NE/IA sweep already carried the local demonstration that one
-NPI is not one truck (the AMR-Omaha NPI 1336315225 masking a historical
-~35 vehicles / ~90 employees; the MMT estate of 24 active org NPIs against a
-claimed 500+ vehicles; 21 base NPIs for the single GMR air entity Rocky Mountain
-Holdings). Run 7 takes that same undercount and tests it at the **national brand
-level** against the live NPPES API, then answers the sizing question it forces:
-if you cannot count the operator, what do you count? Appended F624-F632,
-sources S448-S454, finding 118; no shipped ID renumbered.
+The workbook could size the Medicare book, the institutional wedge and the
+transfer network, but it never answered the operational question a diligence
+desk hits first on any ambulance target: how do you identify an operator's
+FLEET - the number of ambulances it is licensed to run - and its license
+footprint, from public records only? v4.3 ships that method and the public
+evidence that supports it, as three appended tabs. No shipped ID is renumbered:
+new facts start at F624, sources at S448, findings at 118.
 
-## Named_Operator_Undercount (the new tab, Panel A - OBSERVED, tier A)
+## The three new tabs
 
-Live NPPES NPI Registry API (v2.1) organization searches, `enumeration_type=NPI-2`,
-run 2026-07-20 (NPPES name search covers Legal Business Name + DBA + former + other
-names). The two real national private ground platforms are **Global Medical
-Response (GMR)** and **Priority Ambulance** (Knoxville, TN - see the disambiguation
-note below):
+**Fleet_License_Route_Map (the method).** "Fleet license" is not one object. It
+decomposes into four, and the map prints each one's public route, what it
+yields, and whether it yields a per-operator VEHICLE count:
 
-| Fact | `organization_name` query | NPIs returned | Reading |
-|---|---|---:|---|
-| F624 | `Global Medical Response` | **0** | The parent has no operating NPI - it is a holding company and bills only through subsidiaries. |
-| F625 | `Rural/Metro` and `Rural Metro` | **0** | A major GMR ground brand - nothing under its own name. |
-| F626 | `American Medical Response` | **65** | Fragmented across ~15 distinct legal names (AMR *of Connecticut / Massachusetts / Texas / Southern California / West / Mid-Atlantic / Northwest / Tennessee* …) **plus** local-brand DBAs that only matched because "American Medical Response" is a *former/other* name on those records (Randle Eastern, LifeFleet Southeast, Mercy Inc, Metro Ambulance, ParaMed, Hank's Acquisition Corp). |
-| F627 | `Priority Ambulance` | **3** | All three are **"Shoals Ambulance LLC"** - one Priority regional brand. The other 21 brands do not carry the Priority name. |
+1. The state SERVICE/agency license - operator identity and authorized levels
+   (BLS/ALS/specialty care/air). Identity, not vehicles.
+2. The per-VEHICLE permit issued under that service license at a level
+   (ALS/BLS/dual). This is the only object that equals fleet SIZE. Public in a
+   few states (verification lookups, statewide totals); portal-/FOIA-only in
+   most.
+3. PERSONNEL licensure (EMT/paramedic/MICP) - a crew-capacity proxy, not trucks.
+4. The federal routes, none of which counts trucks: NPPES ambulance-organization
+   taxonomy (3416 root) for identity, PECOS/Medicare Part B enrollment and MUP
+   A0425-A0436 for billing, and FMCSA USDOT/MCS-150 for the self-reported
+   power-unit count of INTERSTATE non-emergency carriers only.
 
-This is the AMR-Omaha exhibit at national scale: the operator you would name in a
-deal memo returns single digits to a few dozen NPIs, none of them tied to the
-parent, because **NPPES enumerates the local legal operating entity and carries no
-parent / ultimate-owner field.**
+Panel B is the ordered identification recipe (resolve NPPES identity -> confirm
+the service license -> count the vehicle permits -> cross-check Medicare volume
+-> catch interstate NEMT in FMCSA). Panel C explains why no national fleet
+registry exists: vehicle permitting is a state function run 51 different ways.
 
-## Operator_Scale_Reference (Panel B - CLAIMED, tier C - company self-reports)
+**Fleet_License_State_Matrix (the coverage).** All 51 jurisdictions (50 states +
+DC): the state EMS licensing authority, the service-roster public route, the
+per-vehicle permit regime, the VERIFIED NPPES operator floor, whether a
+per-operator fleet count is publicly retrievable, the public source, and the
+honest access status. All 51 jurisdictions (50 states + DC) now carry a CONFIRMED, individually
+located public route: the state EMS licensing authority and the specific public
+lookup, portal, or downloadable roster where an operator's service license (and,
+where published, its vehicle permits) can be pulled. The NPPES operator floor
+remains the verified public anchor on every row. Several confirmed states publish
+a DOWNLOADABLE licensed-service roster (KY as XLSX+PDF; MA, AR and AZ as PDF; MO
+as Socrata open data; RI, SD, CT via public lookups). Confirmed per-VEHICLE
+permit regimes span FL, MT, NJ, WA, IL, CO, MI, UT, MS and VT (each licenses or
+permits individual ambulances); AZ authorizes by Certificate of Necessity. The
+matrix records, per state, exactly which artifact a human pulls to get the full
+per-operator vehicle list.
 
-Carried only to size what the name search misses; never study evidence, labeled
-CLAIMED throughout (same discipline as the vendor scale claims on the Komodo tab):
+**Fleet_Size_Evidence (the landed numbers).** The NPPES ambulance-organization
+operator floor per jurisdiction (Type-2 NPIs under taxonomy 3416*, computed live
+from the manifested NPPES roster - about 19,400 organizations across the 51
+jurisdictions), the national taxonomy split (land/unspecified/air/water), the
+Missouri open-data service counts (from the manifested data.mo.gov Socrata
+pull), and THIRTEEN confirmed statewide vehicle-license anchors ranked largest
+first: Texas (over 5,000), New Jersey (~4,500), Michigan (3,847), North Carolina
+(2,500 licensed ALS/BLS vehicles), Indiana (~2,000), Georgia (~1,800, tier-B
+legislative), Tennessee (1,300), Arizona (980 registered ground ambulances),
+Connecticut (over 900), Minnesota (838 = 804 ground + 34 air), West Virginia
+(~523), Idaho (357) and Delaware (169 emergency/911 units). About THIRTY states
+now carry a published statewide licensed-SERVICE count, located by a per-state
+public sweep and each independently verified against the state EMS authority
+(PA 1,205, NY 982, WI 822, TX ~800, IN 800+, IA 724, CA 700+, WA 456, NE 427,
+FL 346, MA 318, MT 270, MN 266, WV 269, SC 263, ME 276, ND 255, KY 221, TN 210,
+CO 205, KS 162, UT 130+, SD 121, AZ 97, DE 88, RI 83, VT 65, WY 62, plus MO 486
+and MI 819). A native bar chart ranks the top-12 jurisdictions by operator floor.
+Texas at ~6.3 vehicles per provider (Tennessee ~6.2) confirms the NPPES operator
+floor systematically understates fleet size.
 
-- **F628 - GMR (parent, incl. AMR):** "more than 7,000 ground ambulances and
-  support vehicles," 382 air bases, "nearly six million patient encounters" last
-  year (GMR fleet-expansion release, S449).
-- **F629 - AMR (GMR's 911/IFT ground arm):** ~34,000 employees, "more than 27,000"
-  paramedics/EMTs/RNs and other professionals, "more than 4.4 million" transports/yr,
-  40 states + DC (amr.net / AMR profile, S450-S451).
-- **F630 - Priority Ambulance:** ~400 emergency and non-emergency vehicles, 4,300
-  employees, "more than 1,600 licensed paramedics and EMTs," 610,000 transports/yr,
-  **22 brands across 15 states** - and Priority states it *deliberately preserves*
-  each acquired company's name (priorityambulance.com/about, S452).
+**IFT_License_Tracker (the one-grid tracker).** Per US jurisdiction, every public
+ambulance/IFT license count in a single grid across four universes that must
+never be summed together: the NPPES operator-identity floor (all 51), the
+licensed-SERVICE count where a state publishes one (~30 states, PA 1,205 / NY 982 / WI 822 / TX ~800
+lead), the licensed-VEHICLE total where published (13 states: TX over 5,000 down
+to DE 169), and the EMT and paramedic WORKFORCE with mean wage from BLS OEWS May
+2024 (SOC 29-2042 / 29-2043, all states) so wages per state can be backed into.
+Every unpublished service or vehicle count is bordered PENDING with the
+State_Matrix route that fills it, so the grid is both the evidence and the
+worklist. Three landing waves (TX/PA/CA/FL, then MN/CO/WI/TN/IN, then an 18-state
+verified sweep) took the grid from 3 to ~30 published service cells and from 2 to
+13 published vehicle cells. Every landed number was located by a parallel
+per-state sweep and independently re-verified against the state EMS authority in
+a separate find-then-refute pass; two candidates that did not survive
+(Hawaii, New Hampshire) were dropped, and Georgia was kept only at tier-B with an
+"approximate" flag.
 
-The gap is the finding: GMR runs 7,000+ vehicles / ~6M transports and its name
-returns **0** NPIs; Priority runs ~400 vehicles / 610K transports across 22 brands
-and its name returns **3**. A name-keyed roll-up in NPPES undercounts consolidated
-scale by ~10-50x and misses the parent entirely.
+**EMS_Workforce_Shortage (the supply behind the fleet).** A fleet is only as
+deployable as its crews. This tab pairs the national clinician supply - NREMT
+598,843 nationally certified (EMT 400,911; paramedic 149,841) and BLS ~288,580
+EMT+paramedic jobs at a $45,260 combined mean wage - with the shortage signals:
+20-36% annual turnover (AAA/Newton 360 2024 study), 73% burnout, 37% planning to
+leave within five years, replacement cost $5,786 per EMT and $8,620 per
+paramedic, plus the states that publish a trend (NY active responders -17.5%
+2019-2022; rural MI 500+ vacancies). It cross-references the per-state EMT and
+paramedic jobs and wages on IFT_License_Tracker. New facts F635-F636, sources
+S458-S461 (NREMT, BLS OOH, AAA, NY Senate), finding 123. The point: a permitted
+ambulance with no crew does not roll, so fleet-license counts must be read
+against this supply.
 
-## Fleet_vs_Labor_Predictor (Panel C - the sizing answer)
+**Fleet_Data_Pull_Worklist (the action checklist).** The retrieval instructions
+behind the matrix: per jurisdiction, the exact roster pull and per-operator
+vehicle-count pull with the public URL, plus the three national routes worked
+first - FMCSA Motor Carrier Census (data.transportation.gov Company Census File
+az4n-8mr2; POWER_UNITS per USDOT number for interstate NEMT), FMCSA SAFER Company
+Snapshot, and NPPES taxonomy 3416. A "fastest wins" panel points at the states
+whose vehicle totals or downloadable rosters are already public. This is the
+worklist for filling every PENDING cell on IFT_License_Tracker.
 
-The whitespace the workstream had left open (the MMT 200,000+ missions / 500+
-vehicles was carried but **deliberately never divided**). Run 7 answers *which
-denominator recovers scale* using the two national anchors, and quarantines the
-ratios themselves as MODELED:
+**Corporate_Family_Resolution (why the national players are undercounted).** The
+two genuinely national ground players - GMR (KKR-owned, parent of AMR) and
+Priority Ambulance (PE-backed) - are undercounted in every public dataset because
+provider registries have no corporate-family field. This tab proves it from two
+public sources joined on NPI: the NPPES ambulance roster (identity) and the CMS
+Medicare provider-and-service files (actual paid transports, base-rate ground
+HCPCS A0426-A0434), both re-derived at build time. GMR has ZERO Type-2 billing
+NPIs under its own name and surfaces as ~570 subsidiary NPIs across 47 states
+under local/legacy names; Priority as ~16 across 11 states. The killer panel is
+the naive-vs-resolved 2024 leaderboard: raw per-NPI, a single Acadian NPI
+(~88,800 transports) tops the list and GMR is invisible (biggest NPI ~30,600,
+under 7% of its family); family-resolved, GMR is #1 at ~442,000 transports, about
+3x Acadian. A time series (2018-2024) shows US Medicare FFS ground transports
+falling ~13.4M to ~9.5M as Medicare Advantage pulls volume out of fee-for-
+service - a payer-mix caveat, not proof any operator shrank. New facts (GMR/
+Priority family volume, GMR subsidiary NPIs, US Medicare ground transports),
+sources cms_mup_provider / gmr_public / priority_public, finding 124.
 
-- **F631 (DERIVED / MODELED -> Excluded_Not_Sourced):** transports per **vehicle**/yr
-  = Priority 610,000 / 400 ≈ **1,525**; GMR 6.0M / 7,000 ≈ **857** (GMR's 7,000
-  includes support vehicles and the 6.0M includes air encounters, so the true
-  ground-ambulance ratio is higher and closer to Priority's). What would make it
-  citable: company-actual ground-only unit counts x ground-only transports, or a
-  Komodo/ResDAC per-unit pull.
-- **F632 (DERIVED / MODELED -> Excluded_Not_Sourced):** transports per **licensed
-  EMT/medic**/yr = Priority 610,000 / 1,600 ≈ **381**; AMR 4.4M / 27,000 ≈ **163**
-  - and the denominators are **not comparable** (Priority reports "licensed
-  paramedics and EMTs"; AMR reports "paramedics, EMTs, RNs *and other
-  professionals*"). What would make it citable: a consistent field-EMT definition
-  per operator, which no public dataset supplies.
+**Fleet_Scale_Predictors (which public signal predicts real volume).** Rates the
+candidate predictors of operator scale on availability and how well each orders
+operators by true scale: (1) family-resolved CMS Medicare transport volume - best
+public volume proxy, actual paid transports, but Medicare FFS is only ~a quarter
+to two-fifths of all-payer volume (a ~x2.5-4 gross-up); (2) fleet (vehicles) -
+best capacity proxy, scarce; (3) family-resolved NPI count - good once resolved;
+(4) licensed EMTs per company - tracks fleet but noisier (turnover, dual-role);
+(5) job postings - weak, churn-confounded flow signal (GMR ~683 vs Priority
+~21-44 openings); (6) footprint (metros / health systems) - breadth not volume,
+under-ranks dense urban operators. The precondition beneath all of them is
+corporate-family resolution. A test-set panel shows the Medicare-volume ranking
+reproduces known scale (GMR > Acadian > Superior > Falck > Priority). New sources
+operator_scale_public / ems_job_postings, finding 125.
 
-**The answer: fleet is the better predictor of real transport volume.**
-1. **Physical constraint -> stable ratio.** A unit can only run so many trips/day
-   (unit-hour utilization targets ~0.30-0.50 for 911, higher for IFT - the study's
-   own UHU lever, `ift_unit_economics.py`). Volume = capacity x utilization, and
-   vehicles are the capacity unit, so `fleet x transports-per-vehicle` recovers
-   scale in a bounded band.
-2. **Availability and consistency.** Vehicle counts are independently observable -
-   state EMS vehicle **permits**, DOT registrations, disclosed fleet - and counted
-   the same way everywhere. "Licensed EMTs per company" is **not** consistently
-   reported and is **not derivable from NPPES**: individual EMTs/medics rarely hold
-   NPIs (they bill under the org), and those who do are not employer-linked. The
-   labor pool exists nationally (399,868 NREMT EMTs vs 149,643 paramedics,
-   `ift_service_levels.py`) but cannot be attributed to a company from the registry.
-3. **Staffing ratios are noisy.** Single- vs dual-medic, 911 vs IFT mix, urban vs
-   rural, and heavy part-time/per-diem staffing swing EMT-per-transport widely (the
-   163 vs 381 spread, on non-comparable denominators). Vehicles do not carry that
-   definitional slop.
+**Fleet_Identity_Map (who owns the fleet).** Extends the volume work into an
+ownership map of the whole ambulance-supplier universe, resolved with two public
+identity keys joined on NPI: operator brand/legal name and the CMS PECOS
+Associate Control ID (which clusters one operator's multi-state enrollments - e.g.
+Med-Trans 27 NPIs across 24 states under one control ID). Segmenting 2024 CMS
+Medicare ground volume by owner type is decisive: municipal / government / fire is
+the largest bucket at ~40% (~5,400 NPIs), independent long tail ~47%, hospital /
+health-system ~3%, and named national/regional roll-ups only ~10% - of which GMR
+alone is about a third. A named roll-up registry resolves seven consolidators
+(GMR, Acadian, Superior, Falck, Priority, plus newly mapped Pafford EMS and
+DocGo/Ambulnz), each with NPPES NPIs, states, Medicare volume, and PECOS
+control-ID clusters; Rocky Mountain Holdings, an AIR-medical competitor (Air
+Methods), is verified as distinct and deliberately not folded into GMR. A
+GMR-calibrated volume-to-fleet illustration (~700 transports per ground vehicle
+per year) sizes families where a state vehicle registry is not public. New facts
+(municipal share, roll-up share), source cms_pecos_enroll, finding 126. The
+takeaway for diligence: a national thesis is really a roll-up-of-independents
+thesis, and the targets hide in the long tail under local names.
 
-**Honesty on strength:** with only two true national players this is a *structural*
-argument (physical constraint + data availability), corroborated by two anchors -
-not a fitted correlation. To *measure* it, assemble a panel of ~20-50 services with
-(permitted vehicles, licensed-EMT count, transport volume) from state EMS vehicle
-permits x CMS Medicare ambulance utilization (A0425-A0434) x disclosures, and
-regress volume on each. Prediction: fleet R^2 materially > EMT R^2, EMT adding
-signal only after conditioning on fleet (as a utilization proxy). This regression
-is a next step, not a shipped result.
+**Fleet_Ownership_Resolved (the exhaustive per-NPI identity layer).** Every
+Medicare-billing ambulance operator (the operating fleet, ~6,880 NPIs) was
+enriched one-by-one from NPPES (live npi_lookup) with its AUTHORIZED OFFICIAL -
+the corporate officer who signs for the license - plus DBAs, subpart flag,
+mailing vs practice address, and state Medicaid/license IDs. Corporate families
+are then resolved by SHARED OFFICIAL: seed each roll-up by brand, then absorb
+every NPI signed by the same officers (excluding third-party billing officials,
+flagged by a majority-municipal client book). This absorbs the legacy acquired
+names that carry no parent brand, and the effect is large: GMR resolves from
+455,696 to 744,574 2024 Medicare ground transports (1.63x, 75 to 149 NPIs -
+pulling in Abbott Ambulance, Broward / Palm Beach / Atlantic, City Ambulance of
+Eureka), and Priority from 69,311 to 132,935 (1.92x - Central EMS, MedShore,
+LifeCare, Utica). Operators that never renamed (Acadian, Superior, Falck,
+Pafford, AmeriPro) do not move. The lesson: a name-only census understates the
+consolidators by 40-90%, so any market-share or roll-up-target work must resolve
+identity by signing official first. New facts (GMR and Priority official-resolved
+volume), source nppes_npi_enrichment (the exhaustive per-NPI pull), finding 127.
+The enriched dataset ships as npi_operating_fleet_enriched in the pull cache so
+the tab is re-derivable. Scope note: the pull covers the Medicare-active operating
+fleet; dormant / air-only / non-billing NPIs were deprioritized (no transport
+volume).
 
-## Disambiguation note (paper-trail hygiene)
+**Fleet_Ownership_Crosswalk (the subsidiary-to-parent map).** The explicit
+ownership map: every Medicare-billing operator that belongs to a national or
+regional owner, listed under that parent, with how it was linked - by brand name
+or by SHARED SIGNING OFFICIAL. This is the Baptist Ambulance -> Priority, every
+AMR / Abbott / Alliance / Rural Metro / Southwest Ambulance NPI -> GMR, every
+Ambulnz entity -> DocGo mapping made explicit. ~215 subsidiary NPIs across ~130
+distinct local brands roll up to nine parents (GMR / AMR, Acadian, Priority,
+Superior, DocGo, Falck, Pafford, Coastal, AmeriPro), together ~1.44M 2024
+Medicare ground transports. The linkage key is the NPPES authorized official,
+which maps a renamed subsidiary to its parent even when the brand name gives
+nothing away; anything absent from the crosswalk is, on the public evidence,
+genuinely independent (or municipal / hospital), not a hidden subsidiary. Panel A
+totals each parent; Panel B is the full operator -> parent roster. New fact
+(operators mapped to a parent), finding 128.
 
-The national "Priority" here is **Priority Ambulance** (Knoxville, TN; Enhanced
-Equity / Kohlberg-backed; 22 brands; 610K transports). It is **not** the repo's
-existing "Priority Medical Transport" (North Platte, NE; acquired by AmeriPro /
-Whistler Capital, Feb 2025) in `ift_npi_landscape.py`. Two different companies
-sharing the word "Priority"; Run 7's F627/F630 are the Knoxville national roll-up.
+**Fleet_NPI_Groups (all ~20,401 grouped).** Places EVERY ambulance-organization
+NPI in NPPES (taxonomy 3416*) into a group. Named national/regional parents are
+resolved by brand + shared signing official, with GMR restricted to GROUND
+(air-medical bases excluded) so it counts ~175 NPIs - matching its ~180 ground
+locations, not the ~570 that include air. The other ~20,100 fall into owner-type
+buckets: ~9,500 municipal / fire / government, ~8,500 independent private, ~1,460
+air-medical, ~630 hospital. Panel A lists each named parent with NPI count, state
+concentration, and a WORKING public source link (the company homepage -
+globalmedicalresponse.com, priorityambulance.com, docgo.com, acadian.com,
+superiorambulance.com, falck.us, paffordems.com, ameriprohealth.com; the
+underlying identity data links to the CMS NPPES registry). Panel B is the
+owner-type breakdown; Panel C is state concentration (heaviest in TX 2,247, PA
+1,428, OH 1,303). The full per-NPI assignment (npi, name, state, group, how
+linked) ships as the companion fleet_npi_group_assignment.csv (20,401 rows). New
+fact (GMR ground NPI count) and finding 129.
 
-## The firewall, held exactly
+**Fleet_NPI_Master (the full per-NPI register).** One row for EVERY ambulance
+NPI in NPPES (all ~20,401) - the exhaustive master. Each row carries: legal
+name, doing-business-as name(s), state/city, the resolved parent OR owner-type
+class, how the link was made (brand name / shared signing official / name-type),
+a confidence tier (HIGH = own name carries the parent brand; MEDIUM = resolved
+by a shared NPPES signing official or classified into an owner-type bucket by
+name; LOW = independent with no affiliation resolved), the NPPES-registered
+license identifiers (Medicaid / state / other, placeholder tokens removed), the
+authorized signing official and title, taxonomy, status, and a WORKING per-NPI
+public source link to that provider's own NPPES provider-view page
+(npiregistry.cms.hhs.gov/provider-view/<NPI>). Identity and license columns are
+the per-NPI NPPES record; the parent mapping reuses the exact `assign` map from
+Fleet_NPI_Groups so the register can never disagree with the grouping. DBAs and
+licenses populate wherever the per-NPI NPPES pull has landed (enriched=yes); the
+mapping, confidence and source are present for every NPI regardless. The full
+table also ships as fleet_npi_master_register.csv. Built from the whole-universe
+attribute pull (npi_full_enrichment) kept SEPARATE from the operating-fleet
+enrichment so the GMR ~180 grouping calibration is untouched. New fact
+(register NPI count) and finding 130.
 
-The NPPES counts (F624-F627) are a **primary pull we ran ourselves** - tier A,
-OBSERVED, reproducible by re-running the four name queries against the public NPPES
-API. The operator scale figures (F628-F630) are **company self-reports** - PUBLIC-
-WEB / CLAIMED (tier C), carried to size the gap, never quoted as market
-measurement. The two ratios (F631-F632) are **MODELED** and sit on
-Excluded_Not_Sourced with "what would make it citable," exactly as the study
-quarantines every derived-but-uncited number. No fleet self-report is used as a
-measurement; the 11.3M Medicare IFT book and the ~10,600-organization anchor stand
-unchanged. NEMSIS's 34.2M all-EMS-events figure (S453) is carried only as
-all-events context and is **not** mixed with the Medicare IFT book (universe rule).
+## The guardrail, held throughout
+
+The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
+many vehicle permits under one NPI, and one NPI is never one ambulance. Every
+panel that uses it prints that confound in place, and the New Jersey anchor
+(~4,500 statewide vehicles against 724 NPPES operators) is framed as an
+illustration of the gap, not a per-operator fleet estimate. Where a per-operator
+vehicle count is not public, the cell is bordered PENDING and names the state
+vehicle-permit registry that would fill it.
+
+## Firewall
+
+Public sources only. NPPES, state EMS offices (FL, MT, NJ, WA, TX, MO and the
+NREMT/NASEMSO state-office index), and FMCSA SAFER. No operator is described as a
+customer or prospect of any company; the NPPES floor and the state rosters are
+public identity/licensure records.
 
 ## Verification
-- The four NPPES brand queries re-run deterministically against the live API and
-  return the same counts (0 / 0 / 65 / 3); the AMR fragmentation and the Priority
-  "Shoals Ambulance LLC" mapping are inspectable in the returned items.
-- ID ledgers contiguous: F624-F632 appended after F623; S448-S454 after S447;
-  finding 118 after 117. No shipped ID renumbered.
-- Universe firewall held: fleet/EMT self-reports labeled CLAIMED; ratios
-  quarantined MODELED; all-EMS-events kept separate from the Medicare IFT book.
+- Two-pass LibreOffice recalc: zero error cells; carried v2.7 cells reproduce;
+  charts pass the V9 gate; ledgers contiguous through the new tail.
+- The new counts are re-derivable at build time from the manifested caches
+  (nppes_ambulance_roster, state_ems_rosters), not hardcoded.
 
-## Human action items
-1. Assemble the fleet-vs-labor regression panel (state vehicle permits x CMS
-   A0425-A0434 utilization x disclosures) to convert the structural argument into a
-   measured R^2.
-2. Build the parent -> local-entity ownership crosswalk (SEC/PE deal history, CMS
-   PECOS ownership, state licensing, press) so GMR/Priority roll up correctly - the
-   step NPPES cannot do.
-
-## Not in this pass
-No `sec_*.py` workbook tab was added this pass; the delta note registers the facts,
-sources, and finding for the next workbook build to absorb (Named_Operator_Undercount
-+ Fleet_vs_Labor_Predictor tabs). The readable standalone version of this analysis is
-`RCM_MC/docs/IFT_FLEET_VS_LABOR_MEMO.md`.
+## Human action items / open items (next runs)
+1. Promote PORTAL/FOIA jurisdictions to CONFIRMED as each state's specific public
+   vehicle-permit route is located and verified.
+2. Land per-operator vehicle-permit counts where a state publishes a verification
+   lookup or a downloadable registry (WA, FL vehicle permits, TX vehicle data).
+3. Add the FMCSA MCS-150 power-unit pull for the resolved interstate-NEMT
+   operators as a second, independent fleet figure.
