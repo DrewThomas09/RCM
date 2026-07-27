@@ -1222,6 +1222,32 @@ def _clean_license_ids(raw):
     return ';'.join(keep)
 
 
+def _parse_licenses(clean):
+    """Split a cleaned license_ids string ('TYPE:NUMBER(ST);...') into structured
+    fields so the licenses are legible and comparable across operators. Returns
+    (n_licenses, sorted distinct STATE list, medicaid-only 'ID(ST)' list). The
+    distinct-state list is the multi-state footprint signal: an operator holding
+    Medicaid/state IDs in several states operates in several states."""
+    if not clean:
+        return 0, [], []
+    n = 0
+    states = set()
+    medicaid = []
+    for tok in clean.split(';'):
+        tok = tok.strip()
+        if not tok:
+            continue
+        n += 1
+        m = re.search(r'\(([A-Z]{2})\)\s*$', tok)
+        if m:
+            states.add(m.group(1))
+        typ = tok.split(':', 1)[0].upper() if ':' in tok else ''
+        if 'MEDICAID' in typ:
+            body = tok.split(':', 1)[1].strip() if ':' in tok else tok
+            medicaid.append(body)
+    return n, sorted(states), medicaid
+
+
 def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
     """One dict per NPI (spine = the full roster) with identity, DBAs, licenses,
     the resolved operator_group + parent/class, a confidence tier, 2024 Medicare
@@ -1254,6 +1280,8 @@ def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
         else:
             conf, linked_by = 'MEDIUM', via
         legal = e.get('legal_name') or o.get('org_name', '')
+        clean_lic = _clean_license_ids(e.get('license_ids'))
+        n_lic, lic_states, medicaid = _parse_licenses(clean_lic)
         rows.append({
             'npi': npi,
             'legal_name': legal,
@@ -1265,7 +1293,11 @@ def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
             'linked_by': linked_by,
             'confidence': conf,
             'medicare_2024_transports': int(round(vol.get(npi, 0))),
-            'license_ids': _clean_license_ids(e.get('license_ids')),
+            'n_licenses': n_lic,
+            'license_states': ';'.join(lic_states),
+            'multi_state': 'yes' if len(lic_states) > 1 else '',
+            'medicaid_ids': ';'.join(medicaid),
+            'license_ids': clean_lic,
             'auth_official': e.get('auth_official', ''),
             'auth_official_title': e.get('auth_official_title', ''),
             'primary_taxonomy': (e.get('primary_taxonomy')
@@ -1286,7 +1318,8 @@ def _write_master_register_csv(rows):
     import os as _os
     cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'operator_group',
             'parent_or_class', 'linked_by', 'confidence',
-            'medicare_2024_transports', 'license_ids', 'auth_official',
+            'medicare_2024_transports', 'n_licenses', 'license_states',
+            'multi_state', 'medicaid_ids', 'license_ids', 'auth_official',
             'auth_official_title', 'primary_taxonomy', 'status', 'air',
             'enriched', 'source', 'parent_source']
     out_env = _os.environ.get('IFT_V3_OUT')
@@ -3331,8 +3364,8 @@ def build(wb, ctx):
         ws13 = wb.create_sheet('Fleet_NPI_Master')
         sb13 = lib.SheetBuilder(
             ws13, 10,
-            col_widths=[12, 36, 24, 5, 16, 30, 20, 16, 11, 13, 32, 22, 18, 13,
-                        6, 32],
+            col_widths=[12, 36, 24, 5, 16, 30, 20, 16, 11, 13, 16, 32, 22, 18,
+                        13, 6, 32],
             tab_color='FF1F3A5F')
         sb13.title('Fleet NPI master register: every ambulance NPI (all '
                    f'{n_master:,}) with DBAs, licenses, operator group, IFT '
@@ -3373,6 +3406,8 @@ def build(wb, ctx):
                 ('Enriched from NPPES (DBAs/licenses/official)', n_enr),
                 ('With a doing-business-as name', n_dba),
                 ('With registered license identifier(s)', n_lic),
+                ('Multi-state operators (licensed in >1 state)',
+                 sum(1 for r in mrows if r['multi_state'])),
                 ('With 2024 Medicare ground volume', n_vol),
                 ('Resolved to a named parent (GMR, Priority, ...)', n_named_m),
                 ('Shared-official operator groups resolved', op_stats['n_groups']),
@@ -3394,8 +3429,9 @@ def build(wb, ctx):
         sb13.headers(['NPI', 'Legal name', 'DBA(s)', 'Air', 'State / city',
                       'Operator group (resolved)', 'Owner-type class', 'Linked by',
                       'Confidence', '2024 Medicare transports',
-                      'License IDs (NPPES)', 'Signing official', 'Official title',
-                      'Taxonomy', 'Status', 'Source (NPPES provider view)'])
+                      'License states (footprint)', 'License IDs (NPPES)',
+                      'Signing official', 'Official title', 'Taxonomy', 'Status',
+                      'Source (NPPES provider view)'])
 
         def _sort_key(r):
             # highest IFT volume first; then named-parent members, then name
@@ -3417,6 +3453,7 @@ def build(wb, ctx):
                 (r['linked_by'], 'note'),
                 (r['confidence'], 'label'),
                 (r['medicare_2024_transports'], 'src', lib.FMT_INT),
+                (r['license_states'] + (' *' if r['multi_state'] else ''), 'note'),
                 (r['license_ids'], 'note'),
                 (r['auth_official'], 'text'),
                 (r['auth_official_title'], 'note'),
@@ -3424,7 +3461,7 @@ def build(wb, ctx):
                 (r['status'], 'note'),
                 (url, 'link'),
             ], wrap=False, height=13)
-            sb13.ws.cell(row=sb13.r, column=16).hyperlink = url
+            sb13.ws.cell(row=sb13.r, column=17).hyperlink = url
 
         facts.append({
             'metric': 'Ambulance NPIs in the master register',

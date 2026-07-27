@@ -290,6 +290,8 @@ class TestIFTEvidenceV3(unittest.TestCase):
                         'expected an Operator group column')
         self.assertTrue(any('Medicare transports' in h for h in headers),
                         'expected a 2024 Medicare transports column')
+        self.assertTrue(any('License states' in h for h in headers),
+                        'expected a split License states column')
         # highest-volume row should carry a five-figure transport count (sorted
         # by IFT volume), proving the volume join landed
         big = [c.value for row in mw.iter_rows() for c in row

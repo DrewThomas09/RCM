@@ -272,6 +272,15 @@ the roster (now tagged with a Broker / NEMT network archetype). Key structural
 fact: GMR SOLD Access2Care to MTM in 2024, exiting brokerage to stay a pure-play
 provider. New finding 132 + source (broker_public, company/trade-press, tier C).
 
+**License data split (update).** The register's NPPES license identifiers are now
+parsed into structured fields so they are legible and comparable: n_licenses, a
+distinct license_states list (the multi-state FOOTPRINT signal - an operator
+holding Medicaid/state IDs in several states operates in several states),
+multi_state flag, and a Medicaid-only id list, alongside the full license_ids
+string. Fleet_NPI_Master gains a "License states (footprint)" column (multi-state
+operators marked with *) and a coverage-panel count of multi-state operators; the
+companion CSV carries all split fields.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
