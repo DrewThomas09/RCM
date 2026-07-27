@@ -135,6 +135,11 @@ SHEETS = [
                  'Individuals/Entities (LEIE) - the federal Medicare/Medicaid '
                  'exclusion list - with the exclusion basis, date and current '
                  'NPPES status.'},
+    {'name': 'Fleet_Acquisition_Targets',
+     'question': 'Which independent operators should a ground-ambulance '
+                 'consolidator buy? Independents outside the named parents ranked '
+                 'by scale (2024 Medicare transports), growth (2019->2024) and '
+                 'multi-state footprint, OIG-screened.'},
 ]
 
 # OIG LEIE exclusion-type legend (42 CFR 1001). Kept short; full text on oig.hhs.gov.
@@ -3902,6 +3907,119 @@ def build(wb, ctx):
                         'Fleet_Compliance_Flags',
             'url': 'https://oig.hhs.gov/exclusions/', 'accessed': accessed,
             'powers': ['Fleet_Compliance_Flags']})
+
+        # -------------------------------------------------------------
+        # Fleet_Acquisition_Targets - the capstone: which independents a
+        # consolidator should buy. Synthesizes every signal (scale, growth,
+        # multi-state footprint, clean compliance) into one ranked screen.
+        # -------------------------------------------------------------
+        _v19t = _mup_ground_year(lib, cache, 2019)[0]
+        # roll independents up to operator_group
+        cand = {}
+        for r in mrows:
+            if r['parent_or_class'] != 'Independent (unaffiliated)':
+                continue
+            og = r['operator_group']
+            c = cand.setdefault(og, {'og': og, 'npis': 0, 'v24': 0, 'v19': 0,
+                                     'states': set(), 'lead_state': _Counter(),
+                                     'oig': False, 'official': ''})
+            c['npis'] += 1
+            c['v24'] += r['medicare_2024_transports']
+            c['v19'] += _v19t.get(r['npi'], 0)
+            for s in (r['license_states'].split(';') if r['license_states']
+                      else []):
+                if s:
+                    c['states'].add(s)
+            if r['state']:
+                c['lead_state'][r['state']] += r['medicare_2024_transports']
+            if r['oig_excluded'] == 'yes':
+                c['oig'] = True
+            if r['auth_official'] and not c['official']:
+                c['official'] = r['auth_official']
+        # score: scale (log volume) + growth + multi-state, clean compliance only
+        import math
+        targets = []
+        for c in cand.values():
+            if c['v24'] < 200 or c['oig']:
+                continue
+            growth = ((c['v24'] - c['v19']) / c['v19']) if c['v19'] > 200 else None
+            nst = len(c['states'])
+            score = (math.log10(c['v24'] + 1) * 10
+                     + (min(growth, 3) * 15 if growth else 0)
+                     + (nst - 1) * 5)
+            ls = c['lead_state'].most_common(1)
+            targets.append({**c, 'growth': growth, 'nst': nst, 'score': score,
+                            'lead': ls[0][0] if ls else ''})
+        targets.sort(key=lambda t: -t['score'])
+
+        ws17 = wb.create_sheet('Fleet_Acquisition_Targets')
+        sb17 = lib.SheetBuilder(ws17, 7,
+                                col_widths=[34, 8, 16, 13, 9, 20, 30],
+                                tab_color='FF0B2341')
+        sb17.title('Acquisition-target screen: independent operators ranked for a '
+                   'consolidator')
+        sb17.subtitle(
+            'The capstone view - independent (unaffiliated) operators that are '
+            'NOT already inside a named national/regional parent, ranked by an '
+            'attractiveness score that synthesizes the signals built across the '
+            'fleet tabs: SCALE (2024 CMS Medicare ground transports), GROWTH '
+            '(2019->2024), and MULTI-STATE footprint (distinct license states). '
+            'OIG-excluded operators are removed. Only operators above 200 annual '
+            'transports. This is the "who should we buy" shortlist for a ground-'
+            'ambulance roll-up; it is a screen from public CMS/NPPES signals, not '
+            'investment advice, and each name should be confirmed and diligenced.')
+        sb17.note('SCORE = 10*log10(2024 transports) + 15*min(growth,300%) + '
+                  '5*(license-states-1). Scale is the dominant term (a buyer '
+                  'wants volume), growth and multi-state footprint break ties. '
+                  'Shared-official operator groups (e.g. an owner running several '
+                  'NPIs) are rolled into one target. GROWTH blank = no 2019 '
+                  'baseline (a newer entrant). Compliance-screened against OIG '
+                  'LEIE (Fleet_Compliance_Flags). Volume is Medicare ground only '
+                  '- Medicaid/MA/private upside is on top.')
+        sb17.blank()
+        sb17.banner(f'Top independent acquisition targets ({len(targets)} '
+                    'screened, >200 transports, OIG-clean)')
+        sb17.headers(['Operator (independent)', 'NPIs', '2024 transports',
+                      'Growth 19-24', 'States', 'Lead state', 'Signing official'])
+        for t in targets[:60]:
+            sb17.row([
+                (t['og'], 'label'),
+                (t['npis'], 'src', lib.FMT_INT),
+                (int(t['v24']), 'src', lib.FMT_INT),
+                (t['growth'] if t['growth'] is not None else 0, 'src',
+                 lib.FMT_PCT1),
+                (t['nst'], 'src', lib.FMT_INT),
+                (STATE_NAME.get(t['lead'], t['lead']), 'note'),
+                (t['official'], 'note')], wrap=True, height=18)
+        facts.append({
+            'metric': 'Independent acquisition targets screened (>200 transports, '
+                      'OIG-clean)',
+            'year': 2024, 'value': len(targets),
+            'unit': 'independent operators', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['cms_mup_provider', 'nppes_npi_enrichment',
+                            'oig_leie'],
+            'locator': 'Fleet_Acquisition_Targets',
+            'lives_on': 'Fleet_Acquisition_Targets',
+            'cross_check': 'Independents not in a named parent, ranked by '
+                           'scale+growth+footprint, OIG-excluded removed'})
+        findings.append({
+            'id_hint': 134,
+            'finding': f'Synthesizing scale, growth, multi-state footprint and a '
+                       f'clean OIG screen yields {len(targets)} independent '
+                       'ambulance operators as a consolidator shortlist - private '
+                       'operators outside the named national/regional parents, '
+                       'ranked so a buyer sees the largest, fastest-growing, '
+                       'multi-state independents first. This turns the register '
+                       'from a census into an actionable roll-up pipeline while '
+                       'staying entirely on public CMS/NPPES signals.',
+            'numbers': 'Fleet_Acquisition_Targets ranked table',
+            'sources': 'cms_mup_provider (2019+2024); nppes_npi_enrichment; '
+                       'oig_leie',
+            'confidence': 'Scale/growth exact on CMS volume; the score is a '
+                          'transparent heuristic, not a valuation.',
+            'guardrail': 'A public-signal screen, not investment advice; Medicare '
+                         'ground only; confirm ownership, contracts and '
+                         'compliance before any approach.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [

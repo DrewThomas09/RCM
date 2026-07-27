@@ -291,6 +291,17 @@ name-only candidates - a diligence red-flag screen (not an adjudication). Adds a
 oig_excluded column to the register/CSV. New fact + finding 133 + source
 (oig_leie, tier A).
 
+**Fleet_Acquisition_Targets (capstone).** Synthesizes every fleet signal into the
+"who should we buy" shortlist: independent (unaffiliated) operators NOT already
+inside a named national/regional parent, rolled up by operator group and ranked
+by an attractiveness score = 10*log10(2024 Medicare transports) + 15*min(growth,
+300%) + 5*(license-states - 1). Scale dominates; growth and multi-state footprint
+break ties. OIG-excluded operators removed; only >200 transports. Turns the
+register from a census into an actionable roll-up pipeline (top targets: Viking
+Enterprises, AllMed, LifeCare EMS of Georgia and other high-scale, fast-growing,
+multi-state independents) - all on public CMS/NPPES signals, screened not
+adjudicated. New fact + finding 134.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
