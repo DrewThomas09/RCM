@@ -261,8 +261,14 @@ class TestIFTEvidenceV3(unittest.TestCase):
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
                     'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
-                    'Fleet_NPI_Master'):
+                    'Fleet_NPI_Master', 'Fleet_Market_Dynamics',
+                    'Fleet_Broker_Layer'):
             self.assertIn(tab, self.wb.sheetnames)
+        # the broker-layer tab names the major NEMT brokers
+        bl = ' '.join(str(c.value) for row in self.wb['Fleet_Broker_Layer']
+                      .iter_rows() for c in row if c.value)
+        for broker in ('ModivCare', 'MTM', 'Access2Care'):
+            self.assertIn(broker, bl, f'expected {broker} on Fleet_Broker_Layer')
         # the master register lands one row per NPI for the whole 3416* roster
         # (>20,000), each with a working per-NPI NPPES provider-view hyperlink
         mw = self.wb['Fleet_NPI_Master']

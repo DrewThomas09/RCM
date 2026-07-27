@@ -250,6 +250,28 @@ Baylor Scott, Ochsner, Cleveland Clinic, Henry Ford, Banner) is rescued from the
 independent residual into Hospital/health-system. The finding shows how much
 Medicare IFT volume now sits on a resolved operator vs a standalone independent.
 
+**Fleet_Market_Dynamics (new analytical cut).** Rolls the register's operator
+groups up by 2024 CMS Medicare ground REVENUE (base-rate transports x average
+Medicare payment; a comparative proxy, mileage excluded), 2019->2024 volume
+GROWTH (the roll-up / exit signal), and per-state CONCENTRATION (HHI on
+operator-group ground-volume shares). Only operators above 200 annual transports
+(the sub-200 tail is immaterial). Panel A = revenue leaderboard; Panel B =
+fastest growers; Panel C = most-concentrated and most-fragmented states. Shows
+the shrinking national core (GMR/AMR, Priority, Acadian all down double digits in
+Medicare ground 2019->2024) against fast-growing consolidators (DocGo, Coastal,
+AmeriPro and regional roll-ups up triple digits), and the split between municipal
+monopolies (HHI>7,000 in DC/IA/MO) and fragmented roll-up runways (HHI<1,100 in
+NJ/GA/PA). New fact + finding 131.
+
+**Fleet_Broker_Layer (new).** Documents the NEMT broker / demand-aggregator layer
+sitting ABOVE the fleet - ModivCare (public, ~25% broker share, ~64M rides/yr,
+$2.3B rev), MTM (largest private, all 50 states after buying Access2Care and Veyo
+in 2024), Verida (formerly Southeastrans). Brokers enumerate under the NEMT
+taxonomy (3439), not ambulance (3416), so only a few broker-named NPIs surface in
+the roster (now tagged with a Broker / NEMT network archetype). Key structural
+fact: GMR SOLD Access2Care to MTM in 2024, exiting brokerage to stay a pure-play
+provider. New finding 132 + source (broker_public, company/trade-press, tier C).
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

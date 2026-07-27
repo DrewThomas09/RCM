@@ -1590,7 +1590,8 @@ def main(verify_results_path=None):
                       'Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                       'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
                       'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
-                      'Fleet_NPI_Master')
+                      'Fleet_NPI_Master', 'Fleet_Market_Dynamics',
+                      'Fleet_Broker_Layer')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)

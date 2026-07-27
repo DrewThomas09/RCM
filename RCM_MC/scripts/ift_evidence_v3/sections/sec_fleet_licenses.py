@@ -117,6 +117,18 @@ SHEETS = [
                  'parent/owner-class, confidence tier, signing official, taxonomy '
                  'and status, each linked to its own public NPPES provider-view '
                  'page.'},
+    {'name': 'Fleet_Market_Dynamics',
+     'question': 'Where is the money and the growth? Operator groups ranked by '
+                 '2024 Medicare ground REVENUE, the fastest-growing and '
+                 'fastest-shrinking operators 2019->2024 (the roll-up / exit '
+                 'signal), and per-state market concentration (HHI) - who is '
+                 'consolidated and where is the fragmentation runway.'},
+    {'name': 'Fleet_Broker_Layer',
+     'question': 'The NEMT broker layer sitting ABOVE the fleet: the demand '
+                 'aggregators (ModivCare, MTM, Verida) that route Medicaid / '
+                 'Medicare-Advantage non-emergency trips to operators - who owns '
+                 'whom, their scale, and why they barely appear in the ambulance '
+                 'roster (different taxonomy) yet control operator demand.'},
 ]
 
 ACC = '2026-07-20'
@@ -1038,6 +1050,31 @@ def _mup_ground_year(lib, cache, year):
     return vol, name, st
 
 
+def _ground_vol_rev_year(lib, cache, year):
+    """{npi: transports}, {npi: medicare_revenue_proxy} for one MUP year, summed
+    over the base-rate ground HCPCS. Revenue proxy = Tot_Srvcs * Avg_Mdcr_Pymt_Amt
+    (base-rate only, mileage A0425 excluded) - a comparative revenue signal, not
+    exact billed revenue. Live from the manifested CMS provider files."""
+    vol, rev = {}, {}
+    for code in CMS_GROUND_CODES:
+        try:
+            rows = lib.load_cache(cache, f'mup_provider_{year}_{code}')
+        except FileNotFoundError:
+            continue
+        for r in rows:
+            npi = r.get('Rndrng_NPI')
+            if not npi:
+                continue
+            try:
+                s = float(r.get('Tot_Srvcs') or 0)
+                pay = float(r.get('Avg_Mdcr_Pymt_Amt') or 0)
+            except (TypeError, ValueError):
+                s, pay = 0, 0
+            vol[npi] = vol.get(npi, 0) + s
+            rev[npi] = rev.get(npi, 0) + s * pay
+    return vol, rev
+
+
 def _family_ground(vol, name, patterns):
     """(active_npis, total_transports, biggest_single) for a brand family in one
     MUP year's volume map."""
@@ -1389,6 +1426,14 @@ GROUP_SOURCE = {
 _MUNI_ORG = re.compile(
     r'\b(CITY|COUNTY|TOWN|TOWNSHIP|BOROUGH|VILLAGE|FIRE|VOLUNTEER|MUNICIPAL|'
     r'DISTRICT|PARISH|RESCUE SQUAD|COMMONWEALTH|STATE OF|AUTHORITY)\b')
+# NEMT broker / demand-aggregator names. Brokers mostly enumerate under the
+# non-emergency-transport taxonomy (3439), not ambulance (3416), so few appear in
+# this roster - but the ones that register an ambulance NPI are tagged here, and
+# the Fleet_Broker_Layer tab documents the layer in full.
+_BROKER_RX = re.compile(
+    r'\b(MODIVCARE|MODIV CARE|LOGISTICARE|VERIDA|SOUTHEASTRANS|ACCESS2CARE|'
+    r'ACCESS TO CARE|AMERICAN LOGISTICS|\bVEYO\b|MEDICAL TRANSPORTATION '
+    r'MANAGEMENT|CALL THE CAR|MEDITRANS|SAFERIDE|BROKERAGE|NEMT BROKER)\b')
 
 
 def _npi_group_map(roster, enriched):
@@ -1437,7 +1482,9 @@ def _npi_group_map(roster, enriched):
         if n in assign:
             continue
         s = _rt(o)
-        if o.get('air'):
+        if _BROKER_RX.search(s):
+            t = 'Broker / NEMT network'
+        elif o.get('air'):
             t = 'Air-medical (independent/other)'
         elif _MUNI_ORG.search(s):
             t = 'Municipal / fire / government'
@@ -1451,7 +1498,8 @@ def _npi_group_map(roster, enriched):
     named = {p: sizes.get(p, 0) for p in NPI_GROUP_SEEDS}
     residual = {t: sizes.get(t, 0) for t in (
         'Independent (unaffiliated)', 'Municipal / fire / government',
-        'Hospital / health-system', 'Air-medical (independent/other)')}
+        'Hospital / health-system', 'Air-medical (independent/other)',
+        'Broker / NEMT network')}
     state_counts = Counter(o.get('state') for o in roster if o.get('state'))
     return assign, named, residual, state_counts
 
@@ -1520,8 +1568,14 @@ def _operator_groups(roster, assign, enriched, vol=None):
                               'standalone operator')
                 stats['n_standalone'] += 1
         else:
-            # owner-type class (municipal / hospital / air) is itself the group
-            opgroup[n] = (grp, 'MEDIUM', 'name/type')
+            # owner-type class (municipal / hospital / air / broker): the operator
+            # is its own entity - show its legal name, keep the class in
+            # parent_or_class. Broker-tagged NPIs are called out explicitly.
+            nm_own = _legal(n)
+            if grp == 'Broker / NEMT network':
+                opgroup[n] = (nm_own or grp, 'MEDIUM', 'broker name')
+            else:
+                opgroup[n] = (nm_own or grp, 'MEDIUM', 'name/type')
     return opgroup, stats
 
 
@@ -3406,6 +3460,244 @@ def build(wb, ctx):
             'guardrail': 'DBAs/licenses only where the NPPES pull has landed; '
                          'owner-type classes are name-inferred; standalone = a '
                          'single-NPI independent, not an error.'})
+
+    # ---------------------------------------------------------------------
+    # Fleet_Market_Dynamics - where the money and the growth are. Rolls the
+    # register's operator_groups up by 2024 Medicare ground REVENUE, the
+    # 2019->2024 growth (roll-up / exit signal) and per-state concentration
+    # (HHI). New analytical cut over data already on disk.
+    # ---------------------------------------------------------------------
+    if enriched:
+        _rev24 = _ground_vol_rev_year(lib, cache, 2024)[1]
+        _v19 = _mup_ground_year(lib, cache, 2019)[0]
+        gv24 = _Counter(); gr24 = _Counter(); gv19 = _Counter(); gn = _Counter()
+        st_grp = {}
+        for r in mrows:
+            og = r['operator_group']
+            npi = r['npi']
+            gv24[og] += r['medicare_2024_transports']
+            gr24[og] += _rev24.get(npi, 0)
+            gv19[og] += _v19.get(npi, 0)
+            gn[og] += 1
+            st_grp.setdefault(r['state'], _Counter())[og] += \
+                r['medicare_2024_transports']
+        MINV = 200  # per directive: ignore the sub-200-transport tail
+        ws14 = wb.create_sheet('Fleet_Market_Dynamics')
+        sb14 = lib.SheetBuilder(ws14, 6,
+                                col_widths=[40, 10, 16, 16, 14, 30],
+                                tab_color='FF14532D')
+        sb14.title('Fleet market dynamics: revenue, growth and concentration by '
+                   'operator group')
+        sb14.subtitle(
+            'Operator groups (from the master register) rolled up by 2024 CMS '
+            'Medicare ground-transport REVENUE, with 2019->2024 volume growth '
+            'and per-state market concentration. Revenue is a comparative proxy '
+            '(base-rate transports x average Medicare payment; mileage excluded) '
+            '- a signal of relative scale, not exact billed revenue. Only '
+            f'operators above {MINV} annual transports are shown (the long tail '
+            'below that is immaterial). This is the roll-up / exit / whitespace '
+            'lens: who is growing, who is shrinking, and which states are '
+            'consolidated vs fragmented.')
+        sb14.note('GROWTH is 2019->2024 base-rate ground transports for the same '
+                  'operator group. A large positive number is organic expansion '
+                  'or acquisition (a consolidator); a large negative number is a '
+                  'shrinking book (an exit / share-loss candidate). CONCENTRATION '
+                  'is the Herfindahl-Hirschman Index (HHI) on operator-group '
+                  'shares of a state\'s ground volume: >2,500 concentrated, '
+                  '<1,500 competitive/fragmented. Source: CMS Medicare '
+                  'provider-and-service files 2019 + 2024.')
+        sb14.blank()
+        sb14.banner('Panel A. Top operator groups by 2024 Medicare ground revenue')
+        sb14.headers(['Operator group', 'NPIs', '2024 transports',
+                      '2024 revenue (proxy)', 'Growth 19-24', 'Note'])
+        big = sorted(((g, gr24[g], gv24[g], gv19[g], gn[g]) for g in gv24
+                      if gv24[g] > MINV), key=lambda x: -x[1])
+        for g, rev, v, v0, n in big[:30]:
+            gr = ((v - v0) / v0) if v0 > 0 else None
+            note = ('shrinking book' if gr is not None and gr < -0.15
+                    else 'fast growth' if gr is not None and gr > 0.5
+                    else '')
+            sb14.row([
+                (g, 'label'), (n, 'src', lib.FMT_INT),
+                (int(v), 'src', lib.FMT_INT),
+                (rev, 'src', lib.FMT_USD),
+                (gr if gr is not None else 0, 'src', lib.FMT_PCT1),
+                (note, 'note')], wrap=True, height=20)
+        sb14.blank()
+        sb14.banner('Panel B. Fastest-growing operator groups (>1,000 transports '
+                    '2024, >200 in 2019)')
+        sb14.headers(['Operator group', 'NPIs', '2019 transports',
+                      '2024 transports', 'Growth 19-24', 'Note'])
+        grow = sorted(((g, gn[g], gv19[g], gv24[g],
+                        (gv24[g] - gv19[g]) / gv19[g]) for g in gv24
+                       if gv24[g] > 1000 and gv19[g] > 200),
+                      key=lambda x: -x[4])
+        for g, n, v0, v, pct in grow[:20]:
+            sb14.row([
+                (g, 'label'), (n, 'src', lib.FMT_INT),
+                (int(v0), 'src', lib.FMT_INT), (int(v), 'src', lib.FMT_INT),
+                (pct, 'src', lib.FMT_PCT1),
+                ('consolidator / expander', 'note')], wrap=True, height=18)
+        sb14.blank()
+        sb14.banner('Panel C. State market concentration (HHI on operator-group '
+                    'ground volume)')
+        sb14.headers(['State', 'HHI', '2024 transports', 'Top operator',
+                      'Top share', 'Structure'])
+        hhirows = []
+        for st, gv in st_grp.items():
+            st_tot = sum(gv.values())
+            if st_tot < 5000 or not st:
+                continue
+            hhi = sum((v / st_tot * 100) ** 2 for v in gv.values())
+            top = gv.most_common(1)[0]
+            hhirows.append((st, hhi, st_tot, top[0], top[1] / st_tot))
+        hhirows.sort(key=lambda x: -x[1])
+        for st, hhi, st_tot, topn, tops in hhirows[:12]:
+            sb14.row([
+                (STATE_NAME.get(st, st), 'label'), (int(hhi), 'src', lib.FMT_INT),
+                (int(st_tot), 'src', lib.FMT_INT), (topn, 'note'),
+                (tops, 'src', lib.FMT_PCT1),
+                ('concentrated', 'note')], wrap=True, height=18)
+        for st, hhi, st_tot, topn, tops in hhirows[-8:]:
+            sb14.row([
+                (STATE_NAME.get(st, st), 'label'), (int(hhi), 'src', lib.FMT_INT),
+                (int(st_tot), 'src', lib.FMT_INT), (topn, 'note'),
+                (tops, 'src', lib.FMT_PCT1),
+                ('fragmented (roll-up runway)', 'note')], wrap=True, height=18)
+        _big1 = big[0] if big else ('', 0, 0, 0, 0)
+        facts.append({
+            'metric': 'Operator groups above 200 Medicare transports (2024)',
+            'year': 2024, 'value': len(big),
+            'unit': 'operator groups', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['cms_mup_provider', 'nppes_npi_enrichment'],
+            'locator': 'Fleet_Market_Dynamics Panel A',
+            'lives_on': 'Fleet_Market_Dynamics',
+            'cross_check': 'Register operator_group rolled up on 2024 CMS ground '
+                           'volume; revenue proxy = transports x avg payment'})
+        findings.append({
+            'id_hint': 131,
+            'finding': 'Rolling the register up by operator group and 2024 '
+                       'Medicare ground revenue shows a market where the '
+                       'municipal/fire base and a shrinking national core '
+                       '(GMR/AMR, Priority and Acadian all down double digits '
+                       '2019->2024 in Medicare ground) sit against a set of fast-'
+                       'growing consolidators (DocGo, Coastal, AmeriPro and a '
+                       'tail of regional operators up triple digits). '
+                       'Concentration splits sharply by state: municipal '
+                       'monopolies (HHI>7,000 in DC, IA, MO) versus fragmented '
+                       'roll-up runways (HHI<1,100 in NJ, GA, PA).',
+            'numbers': 'Fleet_Market_Dynamics Panels A (revenue), B (growth), '
+                       'C (state HHI)',
+            'sources': 'cms_mup_provider (2019 + 2024); nppes_npi_enrichment',
+            'confidence': 'Revenue is a base-rate proxy (mileage excluded); '
+                          'growth and HHI are exact on the CMS volume.',
+            'guardrail': 'Medicare ground only - Medicaid/MA/private and mileage '
+                         'are out of scope; a shrinking Medicare book can reflect '
+                         'payer-mix shift, not just lost share.'})
+
+        # -------------------------------------------------------------
+        # Fleet_Broker_Layer - the NEMT demand aggregators above the fleet
+        # -------------------------------------------------------------
+        brk_npis = [r for r in mrows
+                    if r['parent_or_class'] == 'Broker / NEMT network']
+        ws15 = wb.create_sheet('Fleet_Broker_Layer')
+        sb15 = lib.SheetBuilder(ws15, 6,
+                                col_widths=[26, 16, 20, 16, 16, 40],
+                                tab_color='FF7C2D12')
+        sb15.title('The NEMT broker layer: demand aggregators above the ambulance '
+                   'fleet')
+        sb15.subtitle(
+            'Non-emergency medical transportation (NEMT) brokers contract with '
+            'state Medicaid programs and Medicare-Advantage plans and then route '
+            'trips down to transport operators. They sit ABOVE the fleet in the '
+            'value chain and control a large share of scheduled/non-emergent '
+            'demand, but they mostly enumerate under the NEMT taxonomy (3439), '
+            'not ambulance (3416), so only a handful appear in the ambulance '
+            f'roster ({len(brk_npis)} broker-named NPIs found here). This tab '
+            'documents the layer so the operator analysis is not read in '
+            'isolation from who controls the referrals.')
+        sb15.note('Why this matters for the fleet: a broker consolidation (MTM '
+                  'buying Access2Care and Veyo; ModivCare\'s national book) '
+                  'concentrates who decides which operators get scheduled '
+                  'non-emergent volume - a demand-side counterpart to the '
+                  'supply-side roll-up on Fleet_Market_Dynamics. Notably GMR '
+                  '(the largest ground operator) SOLD its Access2Care brokerage '
+                  'to MTM in 2024, exiting brokerage to stay a pure-play '
+                  'provider. Figures are company-stated / trade-press; see the '
+                  'source rows.')
+        sb15.blank()
+        sb15.banner('Major NEMT brokers (demand aggregators)')
+        sb15.headers(['Broker', 'Ownership', 'Scale (stated)', 'Members',
+                      'States', 'Notes'])
+        brokers = [
+            ('ModivCare (was LogistiCare)', 'Public (NASDAQ: MODV)',
+             '~64M rides/yr; $2.3B rev (2025)', '~24M', '30+',
+             'Largest broker, ~25% broker share; 6,500+ transport providers'),
+            ('MTM (Medical Transp. Mgmt)', 'Private',
+             '~25M+ trips/yr', '~13M', 'all 50',
+             'Largest privately held; acquired Access2Care (2024) + Veyo, now '
+             'national'),
+            ('Access2Care', 'MTM (ex-Global Medical Response)',
+             'National', '-', 'expanding',
+             'Sold by GMR to MTM in 2024 - GMR exited brokerage to stay a '
+             'pure-play provider'),
+            ('Veyo', 'MTM', 'Regional -> national', '-', 'multi',
+             'Tech-forward broker; acquired by MTM'),
+            ('Verida (was Southeastrans)', 'Private (minority-owned)',
+             'Regional', '-', '5 + DC',
+             'Atlanta-based; Southeast / Midwest Medicaid books'),
+        ]
+        for nm, own, scale, mem, states, notes in brokers:
+            sb15.row([(nm, 'label'), (own, 'text'), (scale, 'note'),
+                      (mem, 'note'), (states, 'note'), (notes, 'note')],
+                     wrap=True, height=30)
+        if brk_npis:
+            sb15.blank()
+            sb15.banner('Broker-named NPIs found in the ambulance roster')
+            sb15.headers(['NPI', 'Legal name', 'State', '2024 transports',
+                          'Confidence', 'Source'])
+            for r in sorted(brk_npis,
+                            key=lambda r: -r['medicare_2024_transports']):
+                sb15.row([(r['npi'], 'label'), (r['legal_name'], 'text'),
+                          (r['state'], 'note'),
+                          (r['medicare_2024_transports'], 'src', lib.FMT_INT),
+                          (r['confidence'], 'note'), (r['source'], 'link')])
+                sb15.ws.cell(row=sb15.r, column=6).hyperlink = r['source']
+        findings.append({
+            'id_hint': 132,
+            'finding': 'Above the ambulance fleet sits a concentrated NEMT broker '
+                       'layer - ModivCare (public, ~25% broker share, ~64M '
+                       'rides/yr) and MTM (largest private, all 50 states after '
+                       'buying Access2Care and Veyo) aggregate Medicaid and '
+                       'Medicare-Advantage non-emergent demand and route it to '
+                       'operators. Notably GMR sold its Access2Care brokerage to '
+                       'MTM in 2024, choosing to stay a pure-play provider. '
+                       'Brokers enumerate under the NEMT taxonomy (3439), so only '
+                       f'{len(brk_npis)} broker-named NPIs surface in the '
+                       'ambulance roster; the layer is documented on '
+                       'Fleet_Broker_Layer so operator demand is understood in '
+                       'context.',
+            'numbers': 'Fleet_Broker_Layer broker table + roster-matched NPIs',
+            'sources': 'broker_public (company statements / trade press); '
+                       'nppes_amb_roster',
+            'confidence': 'Broker scale figures are company-stated / trade-press; '
+                          'the roster match is exact.',
+            'guardrail': 'Broker figures span Medicaid + MA + Medicare and all '
+                         'transport modes, not just ambulance; not comparable '
+                         'one-to-one with the Medicare ground volumes elsewhere.'})
+        sources.append({
+            'key': 'broker_public',
+            'publisher': 'Company statements + trade press',
+            'document': 'NEMT broker scale and ownership: ModivCare investor '
+                        'materials; MTM acquisitions of Access2Care (from Global '
+                        'Medical Response, 2024) and Veyo; Verida (formerly '
+                        'Southeastrans) profile',
+            'vintage': '2024-2025', 'tier': 'C',
+            'locator': 'Fleet_Broker_Layer broker table',
+            'supplies': 'The NEMT broker (demand-aggregator) layer above the '
+                        'ambulance fleet on Fleet_Broker_Layer',
+            'url': 'https://www.modivcare.com/', 'accessed': accessed,
+            'powers': ['Fleet_Broker_Layer']})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [
