@@ -277,6 +277,18 @@ class TestIFTEvidenceV3(unittest.TestCase):
                   if c.hyperlink is not None]
         self.assertTrue(any('provider-view' in (u or '') for u in mlinks),
                         'expected per-NPI NPPES provider-view hyperlinks')
+        # the register resolves an operator group + 2024 IFT volume per NPI
+        headers = [c.value for row in mw.iter_rows(min_row=1, max_row=40)
+                   for c in row if isinstance(c.value, str)]
+        self.assertTrue(any('Operator group' in h for h in headers),
+                        'expected an Operator group column')
+        self.assertTrue(any('Medicare transports' in h for h in headers),
+                        'expected a 2024 Medicare transports column')
+        # highest-volume row should carry a five-figure transport count (sorted
+        # by IFT volume), proving the volume join landed
+        big = [c.value for row in mw.iter_rows() for c in row
+               if isinstance(c.value, int) and c.value > 20000]
+        self.assertTrue(big, 'expected five-figure IFT volumes in the register')
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
                 .iter_rows() for c in row]

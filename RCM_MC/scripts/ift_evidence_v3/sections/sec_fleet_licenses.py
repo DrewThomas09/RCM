@@ -983,7 +983,13 @@ MUNI_RX = re.compile(
 HOSP_RX = re.compile(
     r'\b(HOSPITAL|HEALTH SYSTEM|HEALTHCARE|HEALTH CARE|MEDICAL CENTER|'
     r'UNIVERSITY|HEALTH AND HOSPITALS|REGIONAL HEALTH|MEMORIAL|HEALTH '
-    r'NETWORK|CLINIC)\b')
+    r'NETWORK|CLINIC|'
+    # unambiguous US health-system brands that operate their own transport but
+    # do not read as "hospital" by the generic tokens above (name-verified, not
+    # generic words like MERCY/HEALTH SERVICES which also name independents):
+    r'PRISMA HEALTH|FAIRVIEW HEALTH|PENN STATE HEALTH|GEISINGER|SENTARA|'
+    r'NOVANT|ATRIUM HEALTH|INTERMOUNTAIN|BAYLOR SCOTT|OCHSNER|'
+    r'CLEVELAND CLINIC|HENRY FORD HEALTH|BANNER HEALTH)\b')
 
 # Public ground-truth scale figures for the correlation set (company-stated or
 # cited; see sources gmr_public / priority_public / operator_scale_public).
@@ -1179,36 +1185,49 @@ def _clean_license_ids(raw):
     return ';'.join(keep)
 
 
-def _master_register_rows(roster, assign, enr_full):
+def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
     """One dict per NPI (spine = the full roster) with identity, DBAs, licenses,
-    the group/parent, a confidence tier, and a per-NPI public source. Reuses the
-    `assign` map from _npi_group_map so the register can never disagree with the
-    grouping tab."""
+    the resolved operator_group + parent/class, a confidence tier, 2024 Medicare
+    ground-transport volume, and a per-NPI public source. Reuses the `assign` map
+    from _npi_group_map (so it can never disagree with the grouping tab) plus the
+    _operator_groups resolution (so no NPI is left as a bare 'unaffiliated' row)."""
+    opgroup = opgroup or {}
+    vol = vol or {}
     rows = []
     for o in roster:
         npi = o['npi']
         group, via = assign.get(npi, ('Independent (unaffiliated)', 'name/type'))
+        og_label, og_conf, og_via = opgroup.get(
+            npi, (None, None, None))
         e = enr_full.get(str(npi), {})
         dbas = (e.get('dbas') or '').strip()
         if not dbas:
             rd = (o.get('dba') or '').strip()
             if rd and rd != '<UNAVAIL>':
                 dbas = rd
-        if group in NPI_GROUP_SEEDS:
+        # confidence + operator_group come from the resolution layer when present,
+        # falling back to the plain class-based tier
+        if og_conf:
+            conf, linked_by = og_conf, og_via
+        elif group in NPI_GROUP_SEEDS:
             conf = 'HIGH' if via == 'brand name' else 'MEDIUM'
+            linked_by = via
         elif group == 'Independent (unaffiliated)':
-            conf = 'LOW'
+            conf, linked_by = 'LOW', via
         else:
-            conf = 'MEDIUM'
+            conf, linked_by = 'MEDIUM', via
+        legal = e.get('legal_name') or o.get('org_name', '')
         rows.append({
             'npi': npi,
-            'legal_name': e.get('legal_name') or o.get('org_name', ''),
+            'legal_name': legal,
             'dbas': dbas,
             'state': e.get('location_state') or o.get('state', ''),
             'city': e.get('location_city') or o.get('city', ''),
+            'operator_group': og_label or legal or group,
             'parent_or_class': group,
-            'linked_by': via,
+            'linked_by': linked_by,
             'confidence': conf,
+            'medicare_2024_transports': int(round(vol.get(npi, 0))),
             'license_ids': _clean_license_ids(e.get('license_ids')),
             'auth_official': e.get('auth_official', ''),
             'auth_official_title': e.get('auth_official_title', ''),
@@ -1228,8 +1247,9 @@ def _write_master_register_csv(rows):
     repo deliverables dir). Best-effort: a write failure never breaks the build."""
     import csv as _csv
     import os as _os
-    cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'parent_or_class',
-            'linked_by', 'confidence', 'license_ids', 'auth_official',
+    cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'operator_group',
+            'parent_or_class', 'linked_by', 'confidence',
+            'medicare_2024_transports', 'license_ids', 'auth_official',
             'auth_official_title', 'primary_taxonomy', 'status', 'air',
             'enriched', 'source', 'parent_source']
     out_env = _os.environ.get('IFT_V3_OUT')
@@ -1434,6 +1454,75 @@ def _npi_group_map(roster, enriched):
         'Hospital / health-system', 'Air-medical (independent/other)')}
     state_counts = Counter(o.get('state') for o in roster if o.get('state'))
     return assign, named, residual, state_counts
+
+
+def _operator_groups(roster, assign, enriched, vol=None):
+    """Resolve EVERY NPI to an operator_group - the entity that actually runs it -
+    so nothing is left as a bare 'unaffiliated' row. Three tiers:
+
+      * a NAMED national/regional parent (from _npi_group_map) -> that parent;
+      * an INDEPENDENT operator that signs for >=2 NPIs under one NPPES authorized
+        official -> a resolved multi-entity operator group (the hard signal: the
+        same corporate officer legally signs for each sibling NPI, which catches
+        renamed/acquired entities like Brewster -> EASCARE);
+      * everything else -> its own standalone operator (a single-NPI independent
+        IS its own operator) or its owner-type class (municipal/hospital/air).
+
+    Returns (opgroup {npi: (label, confidence, via)}, stats). Confidence:
+    HIGH = own name carries the parent brand; MEDIUM = shared signing official
+    (national parent or independent group) or owner-type class; LOW = standalone
+    single-NPI independent. Purely additive - does not change `assign`."""
+    vol = vol or {}
+    npi2r = {o['npi']: o for o in roster}
+
+    def _legal(n):
+        return (enriched.get(n, {}).get('legal_name')
+                or npi2r.get(n, {}).get('org_name') or '').strip()
+
+    # cluster the independents by normalized signing official (skip billers)
+    byoff = {}
+    for n, r in enriched.items():
+        if assign.get(n, ('', ''))[0] != 'Independent (unaffiliated)':
+            continue
+        k = _norm_off(r.get('auth_official'))
+        if k and len(k) > 4:
+            byoff.setdefault(k, []).append(n)
+
+    def _muni_share(ns):
+        return sum(1 for n in ns
+                   if _MUNI_ORG.search(_legal(n).upper())) / len(ns)
+
+    # official -> the group's display name (highest-volume member's legal name)
+    off_group = {}
+    for off, ns in byoff.items():
+        if len(ns) < 2 or _muni_share(ns) >= 0.5:
+            continue
+        lead = max(ns, key=lambda n: (vol.get(n, 0), _legal(n)))
+        off_group[off] = _legal(lead)
+
+    opgroup = {}
+    stats = {'n_groups': len(off_group), 'n_grouped': 0, 'vol_grouped': 0,
+             'n_standalone': 0}
+    for o in roster:
+        n = o['npi']
+        grp, via = assign.get(n, ('Independent (unaffiliated)', 'name/type'))
+        if grp in NPI_GROUP_SEEDS:
+            conf = 'HIGH' if via == 'brand name' else 'MEDIUM'
+            opgroup[n] = (grp, conf, via)
+        elif grp == 'Independent (unaffiliated)':
+            off = _norm_off(enriched.get(n, {}).get('auth_official'))
+            if off in off_group:
+                opgroup[n] = (off_group[off], 'MEDIUM', 'shared signing official')
+                stats['n_grouped'] += 1
+                stats['vol_grouped'] += vol.get(n, 0)
+            else:
+                opgroup[n] = (_legal(n) or '(unnamed operator)', 'LOW',
+                              'standalone operator')
+                stats['n_standalone'] += 1
+        else:
+            # owner-type class (municipal / hospital / air) is itself the group
+            opgroup[n] = (grp, 'MEDIUM', 'name/type')
+    return opgroup, stats
 
 
 def build(wb, ctx):
@@ -3167,74 +3256,98 @@ def build(wb, ctx):
     # ---------------------------------------------------------------------
     if enriched:
         enr_full = _full_enrichment_rows(lib, cache)
-        mrows = _master_register_rows(roster, assign, enr_full)
+        mvol, _mn, _ms = _mup_ground_year(lib, cache, 2024)
+        opgroup, op_stats = _operator_groups(roster, assign, enr_full, mvol)
+        mrows = _master_register_rows(roster, assign, enr_full, opgroup, mvol)
         _write_master_register_csv(mrows)
         n_master = len(mrows)
         n_enr = sum(1 for r in mrows if r['enriched'] == 'yes')
         n_dba = sum(1 for r in mrows if r['dbas'])
         n_lic = sum(1 for r in mrows if r['license_ids'])
         n_named_m = sum(1 for r in mrows if r['parent_or_class'] in NPI_GROUP_SEEDS)
+        n_vol = sum(1 for r in mrows if r['medicare_2024_transports'] > 0)
+        tot_vol = sum(r['medicare_2024_transports'] for r in mrows)
         cc = _Counter(r['confidence'] for r in mrows)
+        # volume that is now attached to a resolved operator (named parent OR a
+        # shared-official operator group) rather than left standalone/unmapped
+        resolved_vol = sum(r['medicare_2024_transports'] for r in mrows
+                           if r['linked_by'] in ('brand name',
+                                                 'shared signing official'))
 
         ws13 = wb.create_sheet('Fleet_NPI_Master')
         sb13 = lib.SheetBuilder(
             ws13, 10,
-            col_widths=[12, 40, 30, 6, 18, 26, 18, 11, 40, 24, 22, 14, 7, 34],
+            col_widths=[12, 36, 24, 5, 16, 30, 20, 16, 11, 13, 32, 22, 18, 13,
+                        6, 32],
             tab_color='FF1F3A5F')
         sb13.title('Fleet NPI master register: every ambulance NPI (all '
-                   f'{n_master:,}) with DBAs, licenses, parent and confidence')
+                   f'{n_master:,}) with DBAs, licenses, operator group, IFT '
+                   'volume and confidence')
         sb13.subtitle(
-            'One row per ambulance-organization NPI in NPPES (taxonomy 3416*). '
-            'Each row carries the legal name, doing-business-as name(s), the '
-            'resolved parent (or owner-type class), how that link was made, a '
-            'confidence tier, the NPPES-registered license identifiers, the '
-            'authorized signing official, taxonomy and status. Identity and '
-            'license columns are the per-NPI NPPES record; the parent mapping '
-            'reuses the same brand + shared-official resolution as the grouping '
-            'tab. Every row links to its own public NPPES provider-view page. '
-            'The full table also ships as fleet_npi_master_register.csv.')
+            'One row per ambulance-organization NPI in NPPES (taxonomy 3416*), '
+            'sorted by 2024 CMS Medicare ground-transport volume (highest IFT '
+            'first). Each row carries the legal name, doing-business-as name(s), '
+            'the resolved OPERATOR GROUP (the entity that actually runs it - a '
+            'named national/regional parent, a shared-official operator group, or '
+            'the standalone operator itself), the owner-type class, how the link '
+            'was made, a confidence tier, the 2024 Medicare transports, the '
+            'NPPES-registered license identifiers, the authorized signing '
+            'official, taxonomy and status. Every row links to its own public '
+            'NPPES provider-view page. Also ships as '
+            'fleet_npi_master_register.csv.')
         sb13.note(
-            'CONFIDENCE: HIGH = the NPI\'s own name carries the parent brand; '
-            'MEDIUM = resolved by a shared NPPES signing official, or classified '
-            'into an owner-type bucket (municipal/fire, hospital, air) by name; '
-            'LOW = independent with no affiliation resolved. DBAs/licenses are '
-            'populated where the per-NPI NPPES pull has landed (enriched=yes); '
-            'the mapping and source are present for every NPI regardless. '
-            'License IDs are Medicaid / state / other identifiers as registered '
-            'in NPPES (placeholder tokens removed); the NPI is the Medicare '
-            'credential itself. Source of record: CMS NPPES.')
+            'OPERATOR GROUP resolution - every NPI is resolved to the entity that '
+            'runs it, so none is left as a bare unaffiliated row: (1) a named '
+            'national/regional parent (brand or shared signing official); (2) an '
+            'independent that signs for >=2 NPIs under one NPPES authorized '
+            'official is resolved into a multi-entity operator group (the hard '
+            'signal - the same corporate officer legally signs for each sibling, '
+            'which catches renamed/acquired entities); (3) otherwise the operator '
+            'itself (a single-NPI independent IS its own operator) or its '
+            'owner-type class. CONFIDENCE: HIGH = own name carries the parent '
+            'brand; MEDIUM = shared signing official or owner-type class; LOW = '
+            'standalone single-NPI independent. DBAs/licenses populate where the '
+            'per-NPI NPPES pull has landed (enriched=yes); mapping, volume and '
+            'source are present for every NPI. Source of record: CMS NPPES + '
+            'CMS Medicare provider-and-service (2024).')
         sb13.blank()
         sb13.banner('Coverage')
         sb13.headers(['Metric', 'Count', 'Share', '', '', '', '', '', '', '',
-                      '', '', '', ''])
+                      '', '', '', '', '', ''])
         for lbl, val in [
                 ('Total NPIs (every ambulance org)', n_master),
                 ('Enriched from NPPES (DBAs/licenses/official)', n_enr),
                 ('With a doing-business-as name', n_dba),
                 ('With registered license identifier(s)', n_lic),
-                ('Mapped to a named parent (GMR, Priority, ...)', n_named_m),
+                ('With 2024 Medicare ground volume', n_vol),
+                ('Resolved to a named parent (GMR, Priority, ...)', n_named_m),
+                ('Shared-official operator groups resolved', op_stats['n_groups']),
+                ('  ...independent NPIs pulled into an operator group',
+                 op_stats['n_grouped']),
                 ('HIGH confidence (brand-name parent)', cc.get('HIGH', 0)),
                 ('MEDIUM confidence (shared official / owner-type)',
                  cc.get('MEDIUM', 0)),
-                ('LOW confidence (unaffiliated independent)',
-                 cc.get('LOW', 0))]:
+                ('LOW confidence (standalone independent)', cc.get('LOW', 0))]:
             sb13.row([(lbl, 'label'), (val, 'src', lib.FMT_INT),
-                      (val / n_master if n_master else 0, 'src', lib.FMT_PCT1),
-                      None, None, None, None, None, None, None, None, None,
-                      None, None])
+                      (val / n_master if n_master else 0, 'src', lib.FMT_PCT1)]
+                     + [None] * 13)
+        sb13.row([('2024 Medicare transports on resolved operators', 'label'),
+                  (resolved_vol, 'src', lib.FMT_INT),
+                  (resolved_vol / tot_vol if tot_vol else 0, 'src', lib.FMT_PCT1)]
+                 + [None] * 13)
         sb13.blank()
-        sb13.banner('Master register (all NPIs, sorted by parent then state)')
+        sb13.banner('Master register (all NPIs, highest 2024 IFT volume first)')
         sb13.headers(['NPI', 'Legal name', 'DBA(s)', 'Air', 'State / city',
-                      'Parent / owner-class', 'Linked by', 'Confidence',
+                      'Operator group (resolved)', 'Owner-type class', 'Linked by',
+                      'Confidence', '2024 Medicare transports',
                       'License IDs (NPPES)', 'Signing official', 'Official title',
                       'Taxonomy', 'Status', 'Source (NPPES provider view)'])
-        _named_order = {p: i for i, p in enumerate(
-            sorted(NPI_GROUP_SEEDS, key=lambda k: -named.get(PARENT_LABEL.get(k, k), 0)))}
 
         def _sort_key(r):
-            g = r['parent_or_class']
-            in_named = 0 if g in NPI_GROUP_SEEDS else 1
-            return (in_named, g, r['state'] or 'ZZ', r['legal_name'])
+            # highest IFT volume first; then named-parent members, then name
+            return (-r['medicare_2024_transports'],
+                    0 if r['parent_or_class'] in NPI_GROUP_SEEDS else 1,
+                    r['legal_name'])
         for r in sorted(mrows, key=_sort_key):
             sc = ('%s / %s' % (r['state'], r['city'])).strip(' /')
             tax = TAX.get(r['primary_taxonomy'], r['primary_taxonomy'] or '')
@@ -3245,9 +3358,11 @@ def build(wb, ctx):
                 (r['dbas'], 'text'),
                 ('Y' if r['air'] else '', 'note'),
                 (sc, 'note'),
-                (r['parent_or_class'], 'text'),
+                (r['operator_group'], 'text'),
+                (r['parent_or_class'], 'note'),
                 (r['linked_by'], 'note'),
                 (r['confidence'], 'label'),
+                (r['medicare_2024_transports'], 'src', lib.FMT_INT),
                 (r['license_ids'], 'note'),
                 (r['auth_official'], 'text'),
                 (r['auth_official_title'], 'note'),
@@ -3255,7 +3370,7 @@ def build(wb, ctx):
                 (r['status'], 'note'),
                 (url, 'link'),
             ], wrap=False, height=13)
-            sb13.ws.cell(row=sb13.r, column=14).hyperlink = url
+            sb13.ws.cell(row=sb13.r, column=16).hyperlink = url
 
         facts.append({
             'metric': 'Ambulance NPIs in the master register',
@@ -3270,24 +3385,27 @@ def build(wb, ctx):
             'id_hint': 130,
             'finding': f'The master register lands one triple-checked row for '
                        f'every one of the {n_master:,} ambulance-organization '
-                       'NPIs: legal name, DBA(s), resolved parent or owner-type '
-                       'class, a confidence tier (HIGH brand / MEDIUM shared-'
-                       'official or owner-type / LOW independent), the NPPES '
-                       f'license identifiers ({n_lic:,} NPIs carry one), the '
-                       'authorized signing official, taxonomy and status, each '
-                       'linked to its own public NPPES provider-view page. '
+                       'NPIs, sorted by 2024 Medicare IFT volume: legal name, '
+                       'DBA(s), the resolved OPERATOR GROUP (named parent, a '
+                       f'shared-official operator group - {op_stats["n_groups"]} '
+                       f'groups pulling in {op_stats["n_grouped"]:,} otherwise-'
+                       'unaffiliated NPIs - or the standalone operator), '
+                       'owner-type class, a confidence tier, the 2024 Medicare '
+                       f'transports, the NPPES license identifiers ({n_lic:,} '
+                       'NPIs carry one), the signing official, taxonomy and '
+                       'status, each linked to its own NPPES provider-view page. '
                        f'{n_named_m} roll up to a named national/regional parent; '
-                       'the mapping reuses the grouping tab\'s brand + shared-'
-                       'official resolution so the two never disagree.',
+                       'the mapping reuses the grouping tab resolution so the two '
+                       'never disagree.',
             'numbers': 'Fleet_NPI_Master coverage panel + per-NPI rows',
-            'sources': 'nppes_amb_roster; nppes_npi_enrichment',
+            'sources': 'nppes_amb_roster; nppes_npi_enrichment; cms_mup_provider',
             'confidence': 'Spine is exhaustive (every roster NPI, unique, zero '
-                          'missing); DBA/license fill tracks the per-NPI NPPES '
-                          'pull; parent mapping is a brand + shared-official '
-                          'floor.',
+                          'missing); operator groups rest on the hard NPPES '
+                          'signing-official signal; DBA/license fill tracks the '
+                          'per-NPI NPPES pull.',
             'guardrail': 'DBAs/licenses only where the NPPES pull has landed; '
-                         'owner-type classes are name-inferred; the NPI itself '
-                         'is the Medicare credential.'})
+                         'owner-type classes are name-inferred; standalone = a '
+                         'single-NPI independent, not an error.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [

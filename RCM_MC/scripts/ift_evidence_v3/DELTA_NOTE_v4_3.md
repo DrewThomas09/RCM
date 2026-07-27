@@ -232,6 +232,24 @@ attribute pull (npi_full_enrichment) kept SEPARATE from the operating-fleet
 enrichment so the GMR ~180 grouping calibration is untouched. New fact
 (register NPI count) and finding 130.
 
+**Fleet_NPI_Master, volume-ranked + operator-group resolution (update).** The
+register is now sorted by 2024 CMS Medicare ground-transport volume (highest IFT
+first) and every NPI carries two added columns: `medicare_2024_transports` (the
+per-NPI paid ground transports from mup_provider_2024) and `operator_group` -
+the entity that actually runs the NPI. The operator_group resolution closes the
+"unaffiliated" gap: (1) named national/regional parents as before; (2) an
+independent that signs for >=2 NPIs under one NPPES authorized official is pulled
+into a resolved multi-entity operator group (the hard signal - the same
+corporate officer legally signs for each sibling, catching renamed/acquired
+entities such as Brewster -> EASCARE), ~240 groups absorbing ~640
+otherwise-unaffiliated NPIs (~0.8M transports); (3) everything else resolves to
+the standalone operator itself (a single-NPI independent IS its own operator) or
+its owner-type class. A small set of name-verified health-system brands (Prisma,
+Fairview, Penn State Health, Geisinger, Sentara, Novant, Atrium, Intermountain,
+Baylor Scott, Ochsner, Cleveland Clinic, Henry Ford, Banner) is rescued from the
+independent residual into Hospital/health-system. The finding shows how much
+Medicare IFT volume now sits on a resolved operator vs a standalone independent.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
