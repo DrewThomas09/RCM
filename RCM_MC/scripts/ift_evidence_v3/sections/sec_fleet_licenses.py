@@ -129,7 +129,27 @@ SHEETS = [
                  'Medicare-Advantage non-emergency trips to operators - who owns '
                  'whom, their scale, and why they barely appear in the ambulance '
                  'roster (different taxonomy) yet control operator demand.'},
+    {'name': 'Fleet_Compliance_Flags',
+     'question': 'Compliance red flags: ambulance operators in the register whose '
+                 'NPI or business name appears on the OIG List of Excluded '
+                 'Individuals/Entities (LEIE) - the federal Medicare/Medicaid '
+                 'exclusion list - with the exclusion basis, date and current '
+                 'NPPES status.'},
 ]
+
+# OIG LEIE exclusion-type legend (42 CFR 1001). Kept short; full text on oig.hhs.gov.
+LEIE_LEGEND = {
+    '1128a1': 'Conviction of program-related crimes (mandatory, min 5 yr)',
+    '1128a2': 'Conviction relating to patient abuse or neglect',
+    '1128a3': 'Felony conviction - health-care fraud',
+    '1128a4': 'Felony conviction - controlled-substance offense',
+    '1128b1': 'Misdemeanor conviction - health-care fraud',
+    '1128b4': 'License revocation, suspension or surrender',
+    '1128b5': 'Exclusion/suspension under a federal/state health program',
+    '1128b7': 'Fraud, kickbacks and other prohibited activities',
+    '1128b8': 'Default on health-education loan or scholarship',
+    'BRCH SA': 'Breach of a settlement / integrity agreement',
+}
 
 ACC = '2026-07-20'
 
@@ -1248,7 +1268,8 @@ def _parse_licenses(clean):
     return n, sorted(states), medicaid
 
 
-def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
+def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None,
+                          excluded_npis=None):
     """One dict per NPI (spine = the full roster) with identity, DBAs, licenses,
     the resolved operator_group + parent/class, a confidence tier, 2024 Medicare
     ground-transport volume, and a per-NPI public source. Reuses the `assign` map
@@ -1256,6 +1277,7 @@ def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
     _operator_groups resolution (so no NPI is left as a bare 'unaffiliated' row)."""
     opgroup = opgroup or {}
     vol = vol or {}
+    excluded_npis = excluded_npis or set()
     rows = []
     for o in roster:
         npi = o['npi']
@@ -1304,6 +1326,7 @@ def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None):
                                  or o.get('primary_taxonomy', '')),
             'status': e.get('status', ''),
             'air': int(o.get('air', 0) or 0),
+            'oig_excluded': 'yes' if npi in excluded_npis else '',
             'enriched': 'yes' if e else 'no',
             'source': 'https://npiregistry.cms.hhs.gov/provider-view/%s' % npi,
             'parent_source': GROUP_SOURCE.get(group, ''),
@@ -1321,7 +1344,7 @@ def _write_master_register_csv(rows):
             'medicare_2024_transports', 'n_licenses', 'license_states',
             'multi_state', 'medicaid_ids', 'license_ids', 'auth_official',
             'auth_official_title', 'primary_taxonomy', 'status', 'air',
-            'enriched', 'source', 'parent_source']
+            'oig_excluded', 'enriched', 'source', 'parent_source']
     out_env = _os.environ.get('IFT_V3_OUT')
     out_dir = (_os.path.dirname(out_env) if out_env
                else _os.path.join(_os.path.dirname(__file__),
@@ -1535,6 +1558,59 @@ def _npi_group_map(roster, enriched):
         'Broker / NEMT network')}
     state_counts = Counter(o.get('state') for o in roster if o.get('state'))
     return assign, named, residual, state_counts
+
+
+def _leie_matches(lib, cache, roster, enriched):
+    """Cross-reference the roster against the OIG LEIE (List of Excluded
+    Individuals/Entities) ambulance pull. Returns (matches, excluded_npis).
+    A match is an exact NPI join (highest confidence) or a normalized
+    business-name join (flagged as name-only). Each match dict carries the
+    operator identity, the exclusion basis/date, and the join method so a
+    reviewer can see why it fired."""
+    try:
+        leie = lib.load_cache(cache, 'leie_ambulance')
+    except FileNotFoundError:
+        return [], set()
+
+    def _n(s):
+        return re.sub(r'[^A-Z0-9 ]', '', (s or '').upper()).strip()
+
+    npi2r = {o['npi']: o for o in roster}
+    name2npi = {}
+    for o in roster:
+        key = _n(o.get('org_name'))[:18]
+        if key and len(key) > 6:
+            name2npi.setdefault(key, o['npi'])
+
+    matches = {}
+    for e in leie:
+        npi = (e.get('NPI') or '').strip()
+        via = None
+        hit = None
+        if npi and npi != '0000000000' and npi in npi2r:
+            hit, via = npi, 'NPI match'
+        else:
+            key = _n(e.get('BUSNAME'))[:18]
+            if key and len(key) > 6 and key in name2npi:
+                hit, via = name2npi[key], 'business-name match'
+        if not hit:
+            continue
+        o = npi2r[hit]
+        prior = matches.get(hit)
+        # prefer an NPI-match over a name-match if both fire for one NPI
+        if prior and prior['via'] == 'NPI match' and via != 'NPI match':
+            continue
+        matches[hit] = {
+            'npi': hit,
+            'legal_name': (enriched.get(hit, {}).get('legal_name')
+                           or o.get('org_name', '')),
+            'state': o.get('state', ''),
+            'leie_busname': e.get('BUSNAME', ''),
+            'excl_type': e.get('EXCLTYPE', ''),
+            'excl_date': e.get('EXCLDATE', ''),
+            'via': via,
+        }
+    return list(matches.values()), set(matches)
 
 
 def _operator_groups(roster, assign, enriched, vol=None):
@@ -3345,7 +3421,9 @@ def build(wb, ctx):
         enr_full = _full_enrichment_rows(lib, cache)
         mvol, _mn, _ms = _mup_ground_year(lib, cache, 2024)
         opgroup, op_stats = _operator_groups(roster, assign, enr_full, mvol)
-        mrows = _master_register_rows(roster, assign, enr_full, opgroup, mvol)
+        leie_matches, excluded_npis = _leie_matches(lib, cache, roster, enr_full)
+        mrows = _master_register_rows(roster, assign, enr_full, opgroup, mvol,
+                                      excluded_npis)
         _write_master_register_csv(mrows)
         n_master = len(mrows)
         n_enr = sum(1 for r in mrows if r['enriched'] == 'yes')
@@ -3735,6 +3813,95 @@ def build(wb, ctx):
                         'ambulance fleet on Fleet_Broker_Layer',
             'url': 'https://www.modivcare.com/', 'accessed': accessed,
             'powers': ['Fleet_Broker_Layer']})
+
+        # -------------------------------------------------------------
+        # Fleet_Compliance_Flags - OIG LEIE exclusion cross-reference
+        # -------------------------------------------------------------
+        ws16 = wb.create_sheet('Fleet_Compliance_Flags')
+        sb16 = lib.SheetBuilder(ws16, 6,
+                                col_widths=[12, 34, 6, 14, 13, 44],
+                                tab_color='FF7F1D1D')
+        sb16.title('Compliance flags: ambulance operators on the OIG exclusion '
+                   'list (LEIE)')
+        sb16.subtitle(
+            'Cross-references the register against the HHS Office of Inspector '
+            'General List of Excluded Individuals/Entities (LEIE) - parties '
+            'barred from billing Medicare, Medicaid and all federal health '
+            'programs. A match means an operator NPI (or its business name) '
+            'appears on the exclusion list. NPI matches are exact; business-name '
+            'matches are flagged as such and warrant manual confirmation. This is '
+            'a diligence red-flag screen, not an adjudication - an exclusion may '
+            'be historical or tied to a prior owner; confirm current status on '
+            'oig.hhs.gov and in NPPES before relying on it.')
+        _legend = '; '.join(f'{k} = {v}' for k, v in list(LEIE_LEGEND.items())[:6])
+        sb16.note('Exclusion-type legend (42 CFR 1001): ' + _legend +
+                  '. Full legend and reinstatement status: oig.hhs.gov/exclusions.')
+        sb16.blank()
+        byreg = {r['npi']: r for r in mrows}
+        if leie_matches:
+            n_active = sum(1 for m in leie_matches
+                           if byreg.get(m['npi'], {}).get('status') == 'A')
+            sb16.banner(f'{len(leie_matches)} register operators matched the OIG '
+                        f'exclusion list ({n_active} still NPPES-active)')
+            sb16.headers(['NPI', 'Operator (register legal name)', 'St',
+                          'Exclusion basis', 'Excluded', 'LEIE name / join'])
+            for m in sorted(leie_matches,
+                            key=lambda m: (m['via'] != 'NPI match',
+                                           m['excl_date']), reverse=False):
+                d = m['excl_date']
+                dfmt = f'{d[:4]}-{d[4:6]}-{d[6:]}' if len(d) == 8 else d
+                basis = LEIE_LEGEND.get(m['excl_type'], m['excl_type'])
+                st = byreg.get(m['npi'], {}).get('status', '')
+                note = '%s [%s%s]' % (m['leie_busname'], m['via'],
+                                      '; NPPES active' if st == 'A' else '')
+                sb16.row([
+                    (m['npi'], 'label'),
+                    (m['legal_name'], 'text'),
+                    (m['state'], 'note'),
+                    (basis, 'note'),
+                    (dfmt, 'note'),
+                    (note, 'note')], wrap=True, height=26)
+        else:
+            sb16.banner('No register operators matched the OIG exclusion list')
+        facts.append({
+            'metric': 'Register operators on the OIG LEIE exclusion list',
+            'year': 2026, 'value': len(leie_matches),
+            'unit': 'operators', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['oig_leie', 'nppes_amb_roster'],
+            'locator': 'Fleet_Compliance_Flags',
+            'lives_on': 'Fleet_Compliance_Flags',
+            'cross_check': 'NPI (exact) or business-name join between the roster '
+                           'and the OIG LEIE ambulance pull'})
+        findings.append({
+            'id_hint': 133,
+            'finding': f'Screening the register against the OIG exclusion list '
+                       f'(LEIE) flags {len(leie_matches)} ambulance operators '
+                       'whose NPI or business name is on the federal '
+                       'Medicare/Medicaid exclusion list - a compliance red flag '
+                       'for any operator or roll-up that would acquire them. '
+                       'Several still carry an active NPPES status despite the '
+                       'exclusion. NPI matches are exact; name-only matches are '
+                       'flagged for manual confirmation.',
+            'numbers': 'Fleet_Compliance_Flags matched-operator table',
+            'sources': 'oig_leie; nppes_amb_roster',
+            'confidence': 'NPI matches exact; business-name matches approximate '
+                          '(flagged).',
+            'guardrail': 'An exclusion screen is not an adjudication - it may be '
+                         'historical or tied to a prior owner; confirm on '
+                         'oig.hhs.gov and NPPES before acting.'})
+        sources.append({
+            'key': 'oig_leie',
+            'publisher': 'HHS Office of Inspector General',
+            'document': 'List of Excluded Individuals/Entities (LEIE) - ambulance '
+                        'pull: parties excluded from federal health-care program '
+                        'billing, with exclusion type (42 CFR 1001) and date',
+            'vintage': 'LEIE snapshot as manifested in the v3 pull cache',
+            'tier': 'A', 'locator': 'cache key leie_ambulance; NPI, BUSNAME, '
+                                    'EXCLTYPE, EXCLDATE, STATE',
+            'supplies': 'The OIG-exclusion compliance flags on '
+                        'Fleet_Compliance_Flags',
+            'url': 'https://oig.hhs.gov/exclusions/', 'accessed': accessed,
+            'powers': ['Fleet_Compliance_Flags']})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [

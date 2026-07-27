@@ -262,7 +262,7 @@ class TestIFTEvidenceV3(unittest.TestCase):
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
                     'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
                     'Fleet_NPI_Master', 'Fleet_Market_Dynamics',
-                    'Fleet_Broker_Layer'):
+                    'Fleet_Broker_Layer', 'Fleet_Compliance_Flags'):
             self.assertIn(tab, self.wb.sheetnames)
         # the broker-layer tab names the major NEMT brokers
         bl = ' '.join(str(c.value) for row in self.wb['Fleet_Broker_Layer']

@@ -1591,7 +1591,7 @@ def main(verify_results_path=None):
                       'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
                       'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
                       'Fleet_NPI_Master', 'Fleet_Market_Dynamics',
-                      'Fleet_Broker_Layer')
+                      'Fleet_Broker_Layer', 'Fleet_Compliance_Flags')
           if n in wb.sheetnames]),
     ]
     full_order = list(TAB_ORDER)

@@ -281,6 +281,16 @@ string. Fleet_NPI_Master gains a "License states (footprint)" column (multi-stat
 operators marked with *) and a coverage-panel count of multi-state operators; the
 companion CSV carries all split fields.
 
+**Fleet_Compliance_Flags (new).** Cross-references the register against the HHS
+OIG List of Excluded Individuals/Entities (LEIE) - parties barred from billing
+federal health programs. Matches on exact NPI (high confidence) or normalized
+business name (flagged for manual confirmation), showing the operator, exclusion
+basis (42 CFR 1001 type with a legend), exclusion date and current NPPES status.
+~20 operators match by NPI (several still NPPES-active despite exclusion) plus
+name-only candidates - a diligence red-flag screen (not an adjudication). Adds an
+oig_excluded column to the register/CSV. New fact + finding 133 + source
+(oig_leie, tier A).
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold
