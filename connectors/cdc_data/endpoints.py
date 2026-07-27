@@ -740,6 +740,34 @@ _CURATED: List[EndpointSpec] = [
         refresh_cadence="annual",
         page_size=500,
     ),
+    # U.S. Chronic Disease Indicators (CDI) — the standardized cross-state
+    # chronic-disease measure set (diabetes, CVD, cancer, obesity, COPD,
+    # mental health, tobacco, …) the estate lacked. Columns verified live
+    # 2026-07-20 (hn4x-zwk7, /resource/…?$limit=1). ~1M+ rows → small page.
+    EndpointSpec(
+        key="chronic_disease_indicators",
+        resource_id="hn4x-zwk7",
+        kind="curated",
+        target_table="cdc_chronic_disease_indicators",
+        title="U.S. Chronic Disease Indicators (CDI)",
+        columns=(
+            "yearstart", "yearend", "locationabbr", "locationdesc",
+            "datasource", "class", "topic", "question", "data_value_type",
+            "data_value", "data_value_alt", "low_confidence_limit",
+            "high_confidence_limit", "sample_size", "income", "geolocation",
+            "classid", "topicid", "questionid", "datavaluetypeid",
+            "locationid", "stratificationcategory1", "stratification1",
+            "stratificationcategoryid1", "stratificationid1",
+        ),
+        # A CDI row is (period, location, measure, value-type, stratum);
+        # include both year bounds so multi-year measures key distinctly.
+        pk_fields=("yearstart", "yearend", "locationabbr", "questionid",
+                   "datavaluetypeid", "stratificationid1"),
+        date_field="yearend",
+        join_keys=("locationabbr",),
+        refresh_cadence="annual",
+        page_size=500,
+    ),
 ]
 
 # ── the generic on-demand escape hatch ────────────────────────────────

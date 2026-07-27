@@ -37,16 +37,34 @@ INTERNAL_ROUTES = frozenset({
     "/cli-runs",    # CLI run log, debug surface
 })
 
+# Pages whose *content* is still synthetic/placeholder — real data deferred.
+# Different reason from INTERNAL_ROUTES (which is plumbing), same ruling: a
+# half-finished surface must not read as "a tool we're proud of", so it
+# never renders as a partner-facing destination card. It stays reachable by
+# direct URL (and via any activation index) — this only removes it from
+# /tools, the section catalogs, the ranked /best fallback, and the nav bars.
+# Kept a SEPARATE set so the plumbing semantics of INTERNAL_ROUTES stay
+# clean and each entry carries its own justification.
+NOT_READY_ROUTES = frozenset({
+    # CMS MA Star Ratings — fully synthetic, real-data deferred to a future
+    # zip-portal ingest (docs/reports/RED_PAGE_ACTIVATION_PLAN.md). The only
+    # page still classified RED in diligence/surface_status.
+    "/ma-star",
+})
+
 
 def is_internal(route: str) -> bool:
     """True when a route must not render as a partner-facing card.
 
-    ``.xlsx`` routes are workbook downloads the route scanner picks up as
-    pages — clicking a "tool" that downloads a file is a broken browse, so
-    the whole class is internal rather than enumerating each artifact.
+    Covers three classes: auth/admin/debug plumbing (``INTERNAL_ROUTES``),
+    still-synthetic surfaces (``NOT_READY_ROUTES``), and workbook-download
+    ``.xlsx`` routes the scanner mis-reads as pages (clicking a "tool" that
+    downloads a file is a broken browse, so the whole class is hidden
+    rather than enumerating each artifact).
     """
     route = (route or "").strip()
-    return route in INTERNAL_ROUTES or route.endswith(".xlsx")
+    return (route in INTERNAL_ROUTES or route in NOT_READY_ROUTES
+            or route.endswith(".xlsx"))
 
 
 def curate_rows(rows: Iterable[dict]) -> list[dict]:
