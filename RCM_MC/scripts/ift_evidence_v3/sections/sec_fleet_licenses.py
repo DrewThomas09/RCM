@@ -117,7 +117,44 @@ SHEETS = [
                  'parent/owner-class, confidence tier, signing official, taxonomy '
                  'and status, each linked to its own public NPPES provider-view '
                  'page.'},
+    {'name': 'Fleet_Market_Dynamics',
+     'question': 'Where is the money and the growth? Operator groups ranked by '
+                 '2024 Medicare ground REVENUE, the fastest-growing and '
+                 'fastest-shrinking operators 2019->2024 (the roll-up / exit '
+                 'signal), and per-state market concentration (HHI) - who is '
+                 'consolidated and where is the fragmentation runway.'},
+    {'name': 'Fleet_Broker_Layer',
+     'question': 'The NEMT broker layer sitting ABOVE the fleet: the demand '
+                 'aggregators (ModivCare, MTM, Verida) that route Medicaid / '
+                 'Medicare-Advantage non-emergency trips to operators - who owns '
+                 'whom, their scale, and why they barely appear in the ambulance '
+                 'roster (different taxonomy) yet control operator demand.'},
+    {'name': 'Fleet_Compliance_Flags',
+     'question': 'Compliance red flags: ambulance operators in the register whose '
+                 'NPI or business name appears on the OIG List of Excluded '
+                 'Individuals/Entities (LEIE) - the federal Medicare/Medicaid '
+                 'exclusion list - with the exclusion basis, date and current '
+                 'NPPES status.'},
+    {'name': 'Fleet_Acquisition_Targets',
+     'question': 'Which independent operators should a ground-ambulance '
+                 'consolidator buy? Independents outside the named parents ranked '
+                 'by scale (2024 Medicare transports), growth (2019->2024) and '
+                 'multi-state footprint, OIG-screened.'},
 ]
+
+# OIG LEIE exclusion-type legend (42 CFR 1001). Kept short; full text on oig.hhs.gov.
+LEIE_LEGEND = {
+    '1128a1': 'Conviction of program-related crimes (mandatory, min 5 yr)',
+    '1128a2': 'Conviction relating to patient abuse or neglect',
+    '1128a3': 'Felony conviction - health-care fraud',
+    '1128a4': 'Felony conviction - controlled-substance offense',
+    '1128b1': 'Misdemeanor conviction - health-care fraud',
+    '1128b4': 'License revocation, suspension or surrender',
+    '1128b5': 'Exclusion/suspension under a federal/state health program',
+    '1128b7': 'Fraud, kickbacks and other prohibited activities',
+    '1128b8': 'Default on health-education loan or scholarship',
+    'BRCH SA': 'Breach of a settlement / integrity agreement',
+}
 
 ACC = '2026-07-20'
 
@@ -983,7 +1020,13 @@ MUNI_RX = re.compile(
 HOSP_RX = re.compile(
     r'\b(HOSPITAL|HEALTH SYSTEM|HEALTHCARE|HEALTH CARE|MEDICAL CENTER|'
     r'UNIVERSITY|HEALTH AND HOSPITALS|REGIONAL HEALTH|MEMORIAL|HEALTH '
-    r'NETWORK|CLINIC)\b')
+    r'NETWORK|CLINIC|'
+    # unambiguous US health-system brands that operate their own transport but
+    # do not read as "hospital" by the generic tokens above (name-verified, not
+    # generic words like MERCY/HEALTH SERVICES which also name independents):
+    r'PRISMA HEALTH|FAIRVIEW HEALTH|PENN STATE HEALTH|GEISINGER|SENTARA|'
+    r'NOVANT|ATRIUM HEALTH|INTERMOUNTAIN|BAYLOR SCOTT|OCHSNER|'
+    r'CLEVELAND CLINIC|HENRY FORD HEALTH|BANNER HEALTH)\b')
 
 # Public ground-truth scale figures for the correlation set (company-stated or
 # cited; see sources gmr_public / priority_public / operator_scale_public).
@@ -1030,6 +1073,31 @@ def _mup_ground_year(lib, cache, year):
                             (r.get('Rndrng_Prvdr_Last_Org_Name') or '').upper())
             st.setdefault(npi, r.get('Rndrng_Prvdr_State_Abrvtn'))
     return vol, name, st
+
+
+def _ground_vol_rev_year(lib, cache, year):
+    """{npi: transports}, {npi: medicare_revenue_proxy} for one MUP year, summed
+    over the base-rate ground HCPCS. Revenue proxy = Tot_Srvcs * Avg_Mdcr_Pymt_Amt
+    (base-rate only, mileage A0425 excluded) - a comparative revenue signal, not
+    exact billed revenue. Live from the manifested CMS provider files."""
+    vol, rev = {}, {}
+    for code in CMS_GROUND_CODES:
+        try:
+            rows = lib.load_cache(cache, f'mup_provider_{year}_{code}')
+        except FileNotFoundError:
+            continue
+        for r in rows:
+            npi = r.get('Rndrng_NPI')
+            if not npi:
+                continue
+            try:
+                s = float(r.get('Tot_Srvcs') or 0)
+                pay = float(r.get('Avg_Mdcr_Pymt_Amt') or 0)
+            except (TypeError, ValueError):
+                s, pay = 0, 0
+            vol[npi] = vol.get(npi, 0) + s
+            rev[npi] = rev.get(npi, 0) + s * pay
+    return vol, rev
 
 
 def _family_ground(vol, name, patterns):
@@ -1179,43 +1247,91 @@ def _clean_license_ids(raw):
     return ';'.join(keep)
 
 
-def _master_register_rows(roster, assign, enr_full):
+def _parse_licenses(clean):
+    """Split a cleaned license_ids string ('TYPE:NUMBER(ST);...') into structured
+    fields so the licenses are legible and comparable across operators. Returns
+    (n_licenses, sorted distinct STATE list, medicaid-only 'ID(ST)' list). The
+    distinct-state list is the multi-state footprint signal: an operator holding
+    Medicaid/state IDs in several states operates in several states."""
+    if not clean:
+        return 0, [], []
+    n = 0
+    states = set()
+    medicaid = []
+    for tok in clean.split(';'):
+        tok = tok.strip()
+        if not tok:
+            continue
+        n += 1
+        m = re.search(r'\(([A-Z]{2})\)\s*$', tok)
+        if m:
+            states.add(m.group(1))
+        typ = tok.split(':', 1)[0].upper() if ':' in tok else ''
+        if 'MEDICAID' in typ:
+            body = tok.split(':', 1)[1].strip() if ':' in tok else tok
+            medicaid.append(body)
+    return n, sorted(states), medicaid
+
+
+def _master_register_rows(roster, assign, enr_full, opgroup=None, vol=None,
+                          excluded_npis=None):
     """One dict per NPI (spine = the full roster) with identity, DBAs, licenses,
-    the group/parent, a confidence tier, and a per-NPI public source. Reuses the
-    `assign` map from _npi_group_map so the register can never disagree with the
-    grouping tab."""
+    the resolved operator_group + parent/class, a confidence tier, 2024 Medicare
+    ground-transport volume, and a per-NPI public source. Reuses the `assign` map
+    from _npi_group_map (so it can never disagree with the grouping tab) plus the
+    _operator_groups resolution (so no NPI is left as a bare 'unaffiliated' row)."""
+    opgroup = opgroup or {}
+    vol = vol or {}
+    excluded_npis = excluded_npis or set()
     rows = []
     for o in roster:
         npi = o['npi']
         group, via = assign.get(npi, ('Independent (unaffiliated)', 'name/type'))
+        og_label, og_conf, og_via = opgroup.get(
+            npi, (None, None, None))
         e = enr_full.get(str(npi), {})
         dbas = (e.get('dbas') or '').strip()
         if not dbas:
             rd = (o.get('dba') or '').strip()
             if rd and rd != '<UNAVAIL>':
                 dbas = rd
-        if group in NPI_GROUP_SEEDS:
+        # confidence + operator_group come from the resolution layer when present,
+        # falling back to the plain class-based tier
+        if og_conf:
+            conf, linked_by = og_conf, og_via
+        elif group in NPI_GROUP_SEEDS:
             conf = 'HIGH' if via == 'brand name' else 'MEDIUM'
+            linked_by = via
         elif group == 'Independent (unaffiliated)':
-            conf = 'LOW'
+            conf, linked_by = 'LOW', via
         else:
-            conf = 'MEDIUM'
+            conf, linked_by = 'MEDIUM', via
+        legal = e.get('legal_name') or o.get('org_name', '')
+        clean_lic = _clean_license_ids(e.get('license_ids'))
+        n_lic, lic_states, medicaid = _parse_licenses(clean_lic)
         rows.append({
             'npi': npi,
-            'legal_name': e.get('legal_name') or o.get('org_name', ''),
+            'legal_name': legal,
             'dbas': dbas,
             'state': e.get('location_state') or o.get('state', ''),
             'city': e.get('location_city') or o.get('city', ''),
+            'operator_group': og_label or legal or group,
             'parent_or_class': group,
-            'linked_by': via,
+            'linked_by': linked_by,
             'confidence': conf,
-            'license_ids': _clean_license_ids(e.get('license_ids')),
+            'medicare_2024_transports': int(round(vol.get(npi, 0))),
+            'n_licenses': n_lic,
+            'license_states': ';'.join(lic_states),
+            'multi_state': 'yes' if len(lic_states) > 1 else '',
+            'medicaid_ids': ';'.join(medicaid),
+            'license_ids': clean_lic,
             'auth_official': e.get('auth_official', ''),
             'auth_official_title': e.get('auth_official_title', ''),
             'primary_taxonomy': (e.get('primary_taxonomy')
                                  or o.get('primary_taxonomy', '')),
             'status': e.get('status', ''),
             'air': int(o.get('air', 0) or 0),
+            'oig_excluded': 'yes' if npi in excluded_npis else '',
             'enriched': 'yes' if e else 'no',
             'source': 'https://npiregistry.cms.hhs.gov/provider-view/%s' % npi,
             'parent_source': GROUP_SOURCE.get(group, ''),
@@ -1228,10 +1344,12 @@ def _write_master_register_csv(rows):
     repo deliverables dir). Best-effort: a write failure never breaks the build."""
     import csv as _csv
     import os as _os
-    cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'parent_or_class',
-            'linked_by', 'confidence', 'license_ids', 'auth_official',
+    cols = ['npi', 'legal_name', 'dbas', 'state', 'city', 'operator_group',
+            'parent_or_class', 'linked_by', 'confidence',
+            'medicare_2024_transports', 'n_licenses', 'license_states',
+            'multi_state', 'medicaid_ids', 'license_ids', 'auth_official',
             'auth_official_title', 'primary_taxonomy', 'status', 'air',
-            'enriched', 'source', 'parent_source']
+            'oig_excluded', 'enriched', 'source', 'parent_source']
     out_env = _os.environ.get('IFT_V3_OUT')
     out_dir = (_os.path.dirname(out_env) if out_env
                else _os.path.join(_os.path.dirname(__file__),
@@ -1369,6 +1487,14 @@ GROUP_SOURCE = {
 _MUNI_ORG = re.compile(
     r'\b(CITY|COUNTY|TOWN|TOWNSHIP|BOROUGH|VILLAGE|FIRE|VOLUNTEER|MUNICIPAL|'
     r'DISTRICT|PARISH|RESCUE SQUAD|COMMONWEALTH|STATE OF|AUTHORITY)\b')
+# NEMT broker / demand-aggregator names. Brokers mostly enumerate under the
+# non-emergency-transport taxonomy (3439), not ambulance (3416), so few appear in
+# this roster - but the ones that register an ambulance NPI are tagged here, and
+# the Fleet_Broker_Layer tab documents the layer in full.
+_BROKER_RX = re.compile(
+    r'\b(MODIVCARE|MODIV CARE|LOGISTICARE|VERIDA|SOUTHEASTRANS|ACCESS2CARE|'
+    r'ACCESS TO CARE|AMERICAN LOGISTICS|\bVEYO\b|MEDICAL TRANSPORTATION '
+    r'MANAGEMENT|CALL THE CAR|MEDITRANS|SAFERIDE|BROKERAGE|NEMT BROKER)\b')
 
 
 def _npi_group_map(roster, enriched):
@@ -1417,7 +1543,9 @@ def _npi_group_map(roster, enriched):
         if n in assign:
             continue
         s = _rt(o)
-        if o.get('air'):
+        if _BROKER_RX.search(s):
+            t = 'Broker / NEMT network'
+        elif o.get('air'):
             t = 'Air-medical (independent/other)'
         elif _MUNI_ORG.search(s):
             t = 'Municipal / fire / government'
@@ -1431,9 +1559,138 @@ def _npi_group_map(roster, enriched):
     named = {p: sizes.get(p, 0) for p in NPI_GROUP_SEEDS}
     residual = {t: sizes.get(t, 0) for t in (
         'Independent (unaffiliated)', 'Municipal / fire / government',
-        'Hospital / health-system', 'Air-medical (independent/other)')}
+        'Hospital / health-system', 'Air-medical (independent/other)',
+        'Broker / NEMT network')}
     state_counts = Counter(o.get('state') for o in roster if o.get('state'))
     return assign, named, residual, state_counts
+
+
+def _leie_matches(lib, cache, roster, enriched):
+    """Cross-reference the roster against the OIG LEIE (List of Excluded
+    Individuals/Entities) ambulance pull. Returns (matches, excluded_npis).
+    A match is an exact NPI join (highest confidence) or a normalized
+    business-name join (flagged as name-only). Each match dict carries the
+    operator identity, the exclusion basis/date, and the join method so a
+    reviewer can see why it fired."""
+    try:
+        leie = lib.load_cache(cache, 'leie_ambulance')
+    except FileNotFoundError:
+        return [], set()
+
+    def _n(s):
+        return re.sub(r'[^A-Z0-9 ]', '', (s or '').upper()).strip()
+
+    npi2r = {o['npi']: o for o in roster}
+    name2npi = {}
+    for o in roster:
+        key = _n(o.get('org_name'))[:18]
+        if key and len(key) > 6:
+            name2npi.setdefault(key, o['npi'])
+
+    matches = {}
+    for e in leie:
+        npi = (e.get('NPI') or '').strip()
+        via = None
+        hit = None
+        if npi and npi != '0000000000' and npi in npi2r:
+            hit, via = npi, 'NPI match'
+        else:
+            key = _n(e.get('BUSNAME'))[:18]
+            if key and len(key) > 6 and key in name2npi:
+                hit, via = name2npi[key], 'business-name match'
+        if not hit:
+            continue
+        o = npi2r[hit]
+        prior = matches.get(hit)
+        # prefer an NPI-match over a name-match if both fire for one NPI
+        if prior and prior['via'] == 'NPI match' and via != 'NPI match':
+            continue
+        matches[hit] = {
+            'npi': hit,
+            'legal_name': (enriched.get(hit, {}).get('legal_name')
+                           or o.get('org_name', '')),
+            'state': o.get('state', ''),
+            'leie_busname': e.get('BUSNAME', ''),
+            'excl_type': e.get('EXCLTYPE', ''),
+            'excl_date': e.get('EXCLDATE', ''),
+            'via': via,
+        }
+    return list(matches.values()), set(matches)
+
+
+def _operator_groups(roster, assign, enriched, vol=None):
+    """Resolve EVERY NPI to an operator_group - the entity that actually runs it -
+    so nothing is left as a bare 'unaffiliated' row. Three tiers:
+
+      * a NAMED national/regional parent (from _npi_group_map) -> that parent;
+      * an INDEPENDENT operator that signs for >=2 NPIs under one NPPES authorized
+        official -> a resolved multi-entity operator group (the hard signal: the
+        same corporate officer legally signs for each sibling NPI, which catches
+        renamed/acquired entities like Brewster -> EASCARE);
+      * everything else -> its own standalone operator (a single-NPI independent
+        IS its own operator) or its owner-type class (municipal/hospital/air).
+
+    Returns (opgroup {npi: (label, confidence, via)}, stats). Confidence:
+    HIGH = own name carries the parent brand; MEDIUM = shared signing official
+    (national parent or independent group) or owner-type class; LOW = standalone
+    single-NPI independent. Purely additive - does not change `assign`."""
+    vol = vol or {}
+    npi2r = {o['npi']: o for o in roster}
+
+    def _legal(n):
+        return (enriched.get(n, {}).get('legal_name')
+                or npi2r.get(n, {}).get('org_name') or '').strip()
+
+    # cluster the independents by normalized signing official (skip billers)
+    byoff = {}
+    for n, r in enriched.items():
+        if assign.get(n, ('', ''))[0] != 'Independent (unaffiliated)':
+            continue
+        k = _norm_off(r.get('auth_official'))
+        if k and len(k) > 4:
+            byoff.setdefault(k, []).append(n)
+
+    def _muni_share(ns):
+        return sum(1 for n in ns
+                   if _MUNI_ORG.search(_legal(n).upper())) / len(ns)
+
+    # official -> the group's display name (highest-volume member's legal name)
+    off_group = {}
+    for off, ns in byoff.items():
+        if len(ns) < 2 or _muni_share(ns) >= 0.5:
+            continue
+        lead = max(ns, key=lambda n: (vol.get(n, 0), _legal(n)))
+        off_group[off] = _legal(lead)
+
+    opgroup = {}
+    stats = {'n_groups': len(off_group), 'n_grouped': 0, 'vol_grouped': 0,
+             'n_standalone': 0}
+    for o in roster:
+        n = o['npi']
+        grp, via = assign.get(n, ('Independent (unaffiliated)', 'name/type'))
+        if grp in NPI_GROUP_SEEDS:
+            conf = 'HIGH' if via == 'brand name' else 'MEDIUM'
+            opgroup[n] = (grp, conf, via)
+        elif grp == 'Independent (unaffiliated)':
+            off = _norm_off(enriched.get(n, {}).get('auth_official'))
+            if off in off_group:
+                opgroup[n] = (off_group[off], 'MEDIUM', 'shared signing official')
+                stats['n_grouped'] += 1
+                stats['vol_grouped'] += vol.get(n, 0)
+            else:
+                opgroup[n] = (_legal(n) or '(unnamed operator)', 'LOW',
+                              'standalone operator')
+                stats['n_standalone'] += 1
+        else:
+            # owner-type class (municipal / hospital / air / broker): the operator
+            # is its own entity - show its legal name, keep the class in
+            # parent_or_class. Broker-tagged NPIs are called out explicitly.
+            nm_own = _legal(n)
+            if grp == 'Broker / NEMT network':
+                opgroup[n] = (nm_own or grp, 'MEDIUM', 'broker name')
+            else:
+                opgroup[n] = (nm_own or grp, 'MEDIUM', 'name/type')
+    return opgroup, stats
 
 
 def build(wb, ctx):
@@ -3167,74 +3424,103 @@ def build(wb, ctx):
     # ---------------------------------------------------------------------
     if enriched:
         enr_full = _full_enrichment_rows(lib, cache)
-        mrows = _master_register_rows(roster, assign, enr_full)
+        mvol, _mn, _ms = _mup_ground_year(lib, cache, 2024)
+        opgroup, op_stats = _operator_groups(roster, assign, enr_full, mvol)
+        leie_matches, excluded_npis = _leie_matches(lib, cache, roster, enr_full)
+        mrows = _master_register_rows(roster, assign, enr_full, opgroup, mvol,
+                                      excluded_npis)
         _write_master_register_csv(mrows)
         n_master = len(mrows)
         n_enr = sum(1 for r in mrows if r['enriched'] == 'yes')
         n_dba = sum(1 for r in mrows if r['dbas'])
         n_lic = sum(1 for r in mrows if r['license_ids'])
         n_named_m = sum(1 for r in mrows if r['parent_or_class'] in NPI_GROUP_SEEDS)
+        n_vol = sum(1 for r in mrows if r['medicare_2024_transports'] > 0)
+        tot_vol = sum(r['medicare_2024_transports'] for r in mrows)
         cc = _Counter(r['confidence'] for r in mrows)
+        # volume that is now attached to a resolved operator (named parent OR a
+        # shared-official operator group) rather than left standalone/unmapped
+        resolved_vol = sum(r['medicare_2024_transports'] for r in mrows
+                           if r['linked_by'] in ('brand name',
+                                                 'shared signing official'))
 
         ws13 = wb.create_sheet('Fleet_NPI_Master')
         sb13 = lib.SheetBuilder(
             ws13, 10,
-            col_widths=[12, 40, 30, 6, 18, 26, 18, 11, 40, 24, 22, 14, 7, 34],
+            col_widths=[12, 36, 24, 5, 16, 30, 20, 16, 11, 13, 16, 32, 22, 18,
+                        13, 6, 32],
             tab_color='FF1F3A5F')
         sb13.title('Fleet NPI master register: every ambulance NPI (all '
-                   f'{n_master:,}) with DBAs, licenses, parent and confidence')
+                   f'{n_master:,}) with DBAs, licenses, operator group, IFT '
+                   'volume and confidence')
         sb13.subtitle(
-            'One row per ambulance-organization NPI in NPPES (taxonomy 3416*). '
-            'Each row carries the legal name, doing-business-as name(s), the '
-            'resolved parent (or owner-type class), how that link was made, a '
-            'confidence tier, the NPPES-registered license identifiers, the '
-            'authorized signing official, taxonomy and status. Identity and '
-            'license columns are the per-NPI NPPES record; the parent mapping '
-            'reuses the same brand + shared-official resolution as the grouping '
-            'tab. Every row links to its own public NPPES provider-view page. '
-            'The full table also ships as fleet_npi_master_register.csv.')
+            'One row per ambulance-organization NPI in NPPES (taxonomy 3416*), '
+            'sorted by 2024 CMS Medicare ground-transport volume (highest IFT '
+            'first). Each row carries the legal name, doing-business-as name(s), '
+            'the resolved OPERATOR GROUP (the entity that actually runs it - a '
+            'named national/regional parent, a shared-official operator group, or '
+            'the standalone operator itself), the owner-type class, how the link '
+            'was made, a confidence tier, the 2024 Medicare transports, the '
+            'NPPES-registered license identifiers, the authorized signing '
+            'official, taxonomy and status. Every row links to its own public '
+            'NPPES provider-view page. Also ships as '
+            'fleet_npi_master_register.csv.')
         sb13.note(
-            'CONFIDENCE: HIGH = the NPI\'s own name carries the parent brand; '
-            'MEDIUM = resolved by a shared NPPES signing official, or classified '
-            'into an owner-type bucket (municipal/fire, hospital, air) by name; '
-            'LOW = independent with no affiliation resolved. DBAs/licenses are '
-            'populated where the per-NPI NPPES pull has landed (enriched=yes); '
-            'the mapping and source are present for every NPI regardless. '
-            'License IDs are Medicaid / state / other identifiers as registered '
-            'in NPPES (placeholder tokens removed); the NPI is the Medicare '
-            'credential itself. Source of record: CMS NPPES.')
+            'OPERATOR GROUP resolution - every NPI is resolved to the entity that '
+            'runs it, so none is left as a bare unaffiliated row: (1) a named '
+            'national/regional parent (brand or shared signing official); (2) an '
+            'independent that signs for >=2 NPIs under one NPPES authorized '
+            'official is resolved into a multi-entity operator group (the hard '
+            'signal - the same corporate officer legally signs for each sibling, '
+            'which catches renamed/acquired entities); (3) otherwise the operator '
+            'itself (a single-NPI independent IS its own operator) or its '
+            'owner-type class. CONFIDENCE: HIGH = own name carries the parent '
+            'brand; MEDIUM = shared signing official or owner-type class; LOW = '
+            'standalone single-NPI independent. DBAs/licenses populate where the '
+            'per-NPI NPPES pull has landed (enriched=yes); mapping, volume and '
+            'source are present for every NPI. Source of record: CMS NPPES + '
+            'CMS Medicare provider-and-service (2024).')
         sb13.blank()
         sb13.banner('Coverage')
         sb13.headers(['Metric', 'Count', 'Share', '', '', '', '', '', '', '',
-                      '', '', '', ''])
+                      '', '', '', '', '', ''])
         for lbl, val in [
                 ('Total NPIs (every ambulance org)', n_master),
                 ('Enriched from NPPES (DBAs/licenses/official)', n_enr),
                 ('With a doing-business-as name', n_dba),
                 ('With registered license identifier(s)', n_lic),
-                ('Mapped to a named parent (GMR, Priority, ...)', n_named_m),
+                ('Multi-state operators (licensed in >1 state)',
+                 sum(1 for r in mrows if r['multi_state'])),
+                ('With 2024 Medicare ground volume', n_vol),
+                ('Resolved to a named parent (GMR, Priority, ...)', n_named_m),
+                ('Shared-official operator groups resolved', op_stats['n_groups']),
+                ('  ...independent NPIs pulled into an operator group',
+                 op_stats['n_grouped']),
                 ('HIGH confidence (brand-name parent)', cc.get('HIGH', 0)),
                 ('MEDIUM confidence (shared official / owner-type)',
                  cc.get('MEDIUM', 0)),
-                ('LOW confidence (unaffiliated independent)',
-                 cc.get('LOW', 0))]:
+                ('LOW confidence (standalone independent)', cc.get('LOW', 0))]:
             sb13.row([(lbl, 'label'), (val, 'src', lib.FMT_INT),
-                      (val / n_master if n_master else 0, 'src', lib.FMT_PCT1),
-                      None, None, None, None, None, None, None, None, None,
-                      None, None])
+                      (val / n_master if n_master else 0, 'src', lib.FMT_PCT1)]
+                     + [None] * 13)
+        sb13.row([('2024 Medicare transports on resolved operators', 'label'),
+                  (resolved_vol, 'src', lib.FMT_INT),
+                  (resolved_vol / tot_vol if tot_vol else 0, 'src', lib.FMT_PCT1)]
+                 + [None] * 13)
         sb13.blank()
-        sb13.banner('Master register (all NPIs, sorted by parent then state)')
+        sb13.banner('Master register (all NPIs, highest 2024 IFT volume first)')
         sb13.headers(['NPI', 'Legal name', 'DBA(s)', 'Air', 'State / city',
-                      'Parent / owner-class', 'Linked by', 'Confidence',
-                      'License IDs (NPPES)', 'Signing official', 'Official title',
-                      'Taxonomy', 'Status', 'Source (NPPES provider view)'])
-        _named_order = {p: i for i, p in enumerate(
-            sorted(NPI_GROUP_SEEDS, key=lambda k: -named.get(PARENT_LABEL.get(k, k), 0)))}
+                      'Operator group (resolved)', 'Owner-type class', 'Linked by',
+                      'Confidence', '2024 Medicare transports',
+                      'License states (footprint)', 'License IDs (NPPES)',
+                      'Signing official', 'Official title', 'Taxonomy', 'Status',
+                      'Source (NPPES provider view)'])
 
         def _sort_key(r):
-            g = r['parent_or_class']
-            in_named = 0 if g in NPI_GROUP_SEEDS else 1
-            return (in_named, g, r['state'] or 'ZZ', r['legal_name'])
+            # highest IFT volume first; then named-parent members, then name
+            return (-r['medicare_2024_transports'],
+                    0 if r['parent_or_class'] in NPI_GROUP_SEEDS else 1,
+                    r['legal_name'])
         for r in sorted(mrows, key=_sort_key):
             sc = ('%s / %s' % (r['state'], r['city'])).strip(' /')
             tax = TAX.get(r['primary_taxonomy'], r['primary_taxonomy'] or '')
@@ -3245,9 +3531,12 @@ def build(wb, ctx):
                 (r['dbas'], 'text'),
                 ('Y' if r['air'] else '', 'note'),
                 (sc, 'note'),
-                (r['parent_or_class'], 'text'),
+                (r['operator_group'], 'text'),
+                (r['parent_or_class'], 'note'),
                 (r['linked_by'], 'note'),
                 (r['confidence'], 'label'),
+                (r['medicare_2024_transports'], 'src', lib.FMT_INT),
+                (r['license_states'] + (' *' if r['multi_state'] else ''), 'note'),
                 (r['license_ids'], 'note'),
                 (r['auth_official'], 'text'),
                 (r['auth_official_title'], 'note'),
@@ -3255,7 +3544,7 @@ def build(wb, ctx):
                 (r['status'], 'note'),
                 (url, 'link'),
             ], wrap=False, height=13)
-            sb13.ws.cell(row=sb13.r, column=14).hyperlink = url
+            sb13.ws.cell(row=sb13.r, column=17).hyperlink = url
 
         facts.append({
             'metric': 'Ambulance NPIs in the master register',
@@ -3270,24 +3559,467 @@ def build(wb, ctx):
             'id_hint': 130,
             'finding': f'The master register lands one triple-checked row for '
                        f'every one of the {n_master:,} ambulance-organization '
-                       'NPIs: legal name, DBA(s), resolved parent or owner-type '
-                       'class, a confidence tier (HIGH brand / MEDIUM shared-'
-                       'official or owner-type / LOW independent), the NPPES '
-                       f'license identifiers ({n_lic:,} NPIs carry one), the '
-                       'authorized signing official, taxonomy and status, each '
-                       'linked to its own public NPPES provider-view page. '
+                       'NPIs, sorted by 2024 Medicare IFT volume: legal name, '
+                       'DBA(s), the resolved OPERATOR GROUP (named parent, a '
+                       f'shared-official operator group - {op_stats["n_groups"]} '
+                       f'groups pulling in {op_stats["n_grouped"]:,} otherwise-'
+                       'unaffiliated NPIs - or the standalone operator), '
+                       'owner-type class, a confidence tier, the 2024 Medicare '
+                       f'transports, the NPPES license identifiers ({n_lic:,} '
+                       'NPIs carry one), the signing official, taxonomy and '
+                       'status, each linked to its own NPPES provider-view page. '
                        f'{n_named_m} roll up to a named national/regional parent; '
-                       'the mapping reuses the grouping tab\'s brand + shared-'
-                       'official resolution so the two never disagree.',
+                       'the mapping reuses the grouping tab resolution so the two '
+                       'never disagree.',
             'numbers': 'Fleet_NPI_Master coverage panel + per-NPI rows',
-            'sources': 'nppes_amb_roster; nppes_npi_enrichment',
+            'sources': 'nppes_amb_roster; nppes_npi_enrichment; cms_mup_provider',
             'confidence': 'Spine is exhaustive (every roster NPI, unique, zero '
-                          'missing); DBA/license fill tracks the per-NPI NPPES '
-                          'pull; parent mapping is a brand + shared-official '
-                          'floor.',
+                          'missing); operator groups rest on the hard NPPES '
+                          'signing-official signal; DBA/license fill tracks the '
+                          'per-NPI NPPES pull.',
             'guardrail': 'DBAs/licenses only where the NPPES pull has landed; '
-                         'owner-type classes are name-inferred; the NPI itself '
-                         'is the Medicare credential.'})
+                         'owner-type classes are name-inferred; standalone = a '
+                         'single-NPI independent, not an error.'})
+
+    # ---------------------------------------------------------------------
+    # Fleet_Market_Dynamics - where the money and the growth are. Rolls the
+    # register's operator_groups up by 2024 Medicare ground REVENUE, the
+    # 2019->2024 growth (roll-up / exit signal) and per-state concentration
+    # (HHI). New analytical cut over data already on disk.
+    # ---------------------------------------------------------------------
+    if enriched:
+        _rev24 = _ground_vol_rev_year(lib, cache, 2024)[1]
+        _v19 = _mup_ground_year(lib, cache, 2019)[0]
+        gv24 = _Counter(); gr24 = _Counter(); gv19 = _Counter(); gn = _Counter()
+        st_grp = {}
+        for r in mrows:
+            og = r['operator_group']
+            npi = r['npi']
+            gv24[og] += r['medicare_2024_transports']
+            gr24[og] += _rev24.get(npi, 0)
+            gv19[og] += _v19.get(npi, 0)
+            gn[og] += 1
+            st_grp.setdefault(r['state'], _Counter())[og] += \
+                r['medicare_2024_transports']
+        MINV = 200  # per directive: ignore the sub-200-transport tail
+        ws14 = wb.create_sheet('Fleet_Market_Dynamics')
+        sb14 = lib.SheetBuilder(ws14, 6,
+                                col_widths=[40, 10, 16, 16, 14, 30],
+                                tab_color='FF14532D')
+        sb14.title('Fleet market dynamics: revenue, growth and concentration by '
+                   'operator group')
+        sb14.subtitle(
+            'Operator groups (from the master register) rolled up by 2024 CMS '
+            'Medicare ground-transport REVENUE, with 2019->2024 volume growth '
+            'and per-state market concentration. Revenue is a comparative proxy '
+            '(base-rate transports x average Medicare payment; mileage excluded) '
+            '- a signal of relative scale, not exact billed revenue. Only '
+            f'operators above {MINV} annual transports are shown (the long tail '
+            'below that is immaterial). This is the roll-up / exit / whitespace '
+            'lens: who is growing, who is shrinking, and which states are '
+            'consolidated vs fragmented.')
+        sb14.note('GROWTH is 2019->2024 base-rate ground transports for the same '
+                  'operator group. A large positive number is organic expansion '
+                  'or acquisition (a consolidator); a large negative number is a '
+                  'shrinking book (an exit / share-loss candidate). CONCENTRATION '
+                  'is the Herfindahl-Hirschman Index (HHI) on operator-group '
+                  'shares of a state\'s ground volume: >2,500 concentrated, '
+                  '<1,500 competitive/fragmented. Source: CMS Medicare '
+                  'provider-and-service files 2019 + 2024.')
+        sb14.blank()
+        sb14.banner('Panel A. Top operator groups by 2024 Medicare ground revenue')
+        sb14.headers(['Operator group', 'NPIs', '2024 transports',
+                      '2024 revenue (proxy)', 'Growth 19-24', 'Note'])
+        big = sorted(((g, gr24[g], gv24[g], gv19[g], gn[g]) for g in gv24
+                      if gv24[g] > MINV), key=lambda x: -x[1])
+        for g, rev, v, v0, n in big[:30]:
+            gr = ((v - v0) / v0) if v0 > 0 else None
+            note = ('shrinking book' if gr is not None and gr < -0.15
+                    else 'fast growth' if gr is not None and gr > 0.5
+                    else '')
+            sb14.row([
+                (g, 'label'), (n, 'src', lib.FMT_INT),
+                (int(v), 'src', lib.FMT_INT),
+                (rev, 'src', lib.FMT_USD),
+                (gr if gr is not None else 0, 'src', lib.FMT_PCT1),
+                (note, 'note')], wrap=True, height=20)
+        sb14.blank()
+        sb14.banner('Panel B. Fastest-growing operator groups (>1,000 transports '
+                    '2024, >200 in 2019)')
+        sb14.headers(['Operator group', 'NPIs', '2019 transports',
+                      '2024 transports', 'Growth 19-24', 'Note'])
+        grow = sorted(((g, gn[g], gv19[g], gv24[g],
+                        (gv24[g] - gv19[g]) / gv19[g]) for g in gv24
+                       if gv24[g] > 1000 and gv19[g] > 200),
+                      key=lambda x: -x[4])
+        for g, n, v0, v, pct in grow[:20]:
+            sb14.row([
+                (g, 'label'), (n, 'src', lib.FMT_INT),
+                (int(v0), 'src', lib.FMT_INT), (int(v), 'src', lib.FMT_INT),
+                (pct, 'src', lib.FMT_PCT1),
+                ('consolidator / expander', 'note')], wrap=True, height=18)
+        sb14.blank()
+        sb14.banner('Panel C. State market concentration (HHI on operator-group '
+                    'ground volume)')
+        sb14.headers(['State', 'HHI', '2024 transports', 'Top operator',
+                      'Top share', 'Structure'])
+        hhirows = []
+        for st, gv in st_grp.items():
+            st_tot = sum(gv.values())
+            if st_tot < 5000 or not st:
+                continue
+            hhi = sum((v / st_tot * 100) ** 2 for v in gv.values())
+            top = gv.most_common(1)[0]
+            hhirows.append((st, hhi, st_tot, top[0], top[1] / st_tot))
+        hhirows.sort(key=lambda x: -x[1])
+        for st, hhi, st_tot, topn, tops in hhirows[:12]:
+            sb14.row([
+                (STATE_NAME.get(st, st), 'label'), (int(hhi), 'src', lib.FMT_INT),
+                (int(st_tot), 'src', lib.FMT_INT), (topn, 'note'),
+                (tops, 'src', lib.FMT_PCT1),
+                ('concentrated', 'note')], wrap=True, height=18)
+        for st, hhi, st_tot, topn, tops in hhirows[-8:]:
+            sb14.row([
+                (STATE_NAME.get(st, st), 'label'), (int(hhi), 'src', lib.FMT_INT),
+                (int(st_tot), 'src', lib.FMT_INT), (topn, 'note'),
+                (tops, 'src', lib.FMT_PCT1),
+                ('fragmented (roll-up runway)', 'note')], wrap=True, height=18)
+        _big1 = big[0] if big else ('', 0, 0, 0, 0)
+        facts.append({
+            'metric': 'Operator groups above 200 Medicare transports (2024)',
+            'year': 2024, 'value': len(big),
+            'unit': 'operator groups', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['cms_mup_provider', 'nppes_npi_enrichment'],
+            'locator': 'Fleet_Market_Dynamics Panel A',
+            'lives_on': 'Fleet_Market_Dynamics',
+            'cross_check': 'Register operator_group rolled up on 2024 CMS ground '
+                           'volume; revenue proxy = transports x avg payment'})
+        findings.append({
+            'id_hint': 131,
+            'finding': 'Rolling the register up by operator group and 2024 '
+                       'Medicare ground revenue shows a market where the '
+                       'municipal/fire base and a shrinking national core '
+                       '(GMR/AMR, Priority and Acadian all down double digits '
+                       '2019->2024 in Medicare ground) sit against a set of fast-'
+                       'growing consolidators (DocGo, Coastal, AmeriPro and a '
+                       'tail of regional operators up triple digits). '
+                       'Concentration splits sharply by state: municipal '
+                       'monopolies (HHI>7,000 in DC, IA, MO) versus fragmented '
+                       'roll-up runways (HHI<1,100 in NJ, GA, PA).',
+            'numbers': 'Fleet_Market_Dynamics Panels A (revenue), B (growth), '
+                       'C (state HHI)',
+            'sources': 'cms_mup_provider (2019 + 2024); nppes_npi_enrichment',
+            'confidence': 'Revenue is a base-rate proxy (mileage excluded); '
+                          'growth and HHI are exact on the CMS volume.',
+            'guardrail': 'Medicare ground only - Medicaid/MA/private and mileage '
+                         'are out of scope; a shrinking Medicare book can reflect '
+                         'payer-mix shift, not just lost share.'})
+
+        # -------------------------------------------------------------
+        # Fleet_Broker_Layer - the NEMT demand aggregators above the fleet
+        # -------------------------------------------------------------
+        brk_npis = [r for r in mrows
+                    if r['parent_or_class'] == 'Broker / NEMT network']
+        ws15 = wb.create_sheet('Fleet_Broker_Layer')
+        sb15 = lib.SheetBuilder(ws15, 6,
+                                col_widths=[26, 16, 20, 16, 16, 40],
+                                tab_color='FF7C2D12')
+        sb15.title('The NEMT broker layer: demand aggregators above the ambulance '
+                   'fleet')
+        sb15.subtitle(
+            'Non-emergency medical transportation (NEMT) brokers contract with '
+            'state Medicaid programs and Medicare-Advantage plans and then route '
+            'trips down to transport operators. They sit ABOVE the fleet in the '
+            'value chain and control a large share of scheduled/non-emergent '
+            'demand, but they mostly enumerate under the NEMT taxonomy (3439), '
+            'not ambulance (3416), so only a handful appear in the ambulance '
+            f'roster ({len(brk_npis)} broker-named NPIs found here). This tab '
+            'documents the layer so the operator analysis is not read in '
+            'isolation from who controls the referrals.')
+        sb15.note('Why this matters for the fleet: a broker consolidation (MTM '
+                  'buying Access2Care and Veyo; ModivCare\'s national book) '
+                  'concentrates who decides which operators get scheduled '
+                  'non-emergent volume - a demand-side counterpart to the '
+                  'supply-side roll-up on Fleet_Market_Dynamics. Notably GMR '
+                  '(the largest ground operator) SOLD its Access2Care brokerage '
+                  'to MTM in 2024, exiting brokerage to stay a pure-play '
+                  'provider. Figures are company-stated / trade-press; see the '
+                  'source rows.')
+        sb15.blank()
+        sb15.banner('Major NEMT brokers (demand aggregators)')
+        sb15.headers(['Broker', 'Ownership', 'Scale (stated)', 'Members',
+                      'States', 'Notes'])
+        brokers = [
+            ('ModivCare (was LogistiCare)', 'Public (NASDAQ: MODV)',
+             '~64M rides/yr; $2.3B rev (2025)', '~24M', '30+',
+             'Largest broker, ~25% broker share; 6,500+ transport providers'),
+            ('MTM (Medical Transp. Mgmt)', 'Private',
+             '~25M+ trips/yr', '~13M', 'all 50',
+             'Largest privately held; acquired Access2Care (2024) + Veyo, now '
+             'national'),
+            ('Access2Care', 'MTM (ex-Global Medical Response)',
+             'National', '-', 'expanding',
+             'Sold by GMR to MTM in 2024 - GMR exited brokerage to stay a '
+             'pure-play provider'),
+            ('Veyo', 'MTM', 'Regional -> national', '-', 'multi',
+             'Tech-forward broker; acquired by MTM'),
+            ('Verida (was Southeastrans)', 'Private (minority-owned)',
+             'Regional', '-', '5 + DC',
+             'Atlanta-based; Southeast / Midwest Medicaid books'),
+        ]
+        for nm, own, scale, mem, states, notes in brokers:
+            sb15.row([(nm, 'label'), (own, 'text'), (scale, 'note'),
+                      (mem, 'note'), (states, 'note'), (notes, 'note')],
+                     wrap=True, height=30)
+        if brk_npis:
+            sb15.blank()
+            sb15.banner('Broker-named NPIs found in the ambulance roster')
+            sb15.headers(['NPI', 'Legal name', 'State', '2024 transports',
+                          'Confidence', 'Source'])
+            for r in sorted(brk_npis,
+                            key=lambda r: -r['medicare_2024_transports']):
+                sb15.row([(r['npi'], 'label'), (r['legal_name'], 'text'),
+                          (r['state'], 'note'),
+                          (r['medicare_2024_transports'], 'src', lib.FMT_INT),
+                          (r['confidence'], 'note'), (r['source'], 'link')])
+                sb15.ws.cell(row=sb15.r, column=6).hyperlink = r['source']
+        findings.append({
+            'id_hint': 132,
+            'finding': 'Above the ambulance fleet sits a concentrated NEMT broker '
+                       'layer - ModivCare (public, ~25% broker share, ~64M '
+                       'rides/yr) and MTM (largest private, all 50 states after '
+                       'buying Access2Care and Veyo) aggregate Medicaid and '
+                       'Medicare-Advantage non-emergent demand and route it to '
+                       'operators. Notably GMR sold its Access2Care brokerage to '
+                       'MTM in 2024, choosing to stay a pure-play provider. '
+                       'Brokers enumerate under the NEMT taxonomy (3439), so only '
+                       f'{len(brk_npis)} broker-named NPIs surface in the '
+                       'ambulance roster; the layer is documented on '
+                       'Fleet_Broker_Layer so operator demand is understood in '
+                       'context.',
+            'numbers': 'Fleet_Broker_Layer broker table + roster-matched NPIs',
+            'sources': 'broker_public (company statements / trade press); '
+                       'nppes_amb_roster',
+            'confidence': 'Broker scale figures are company-stated / trade-press; '
+                          'the roster match is exact.',
+            'guardrail': 'Broker figures span Medicaid + MA + Medicare and all '
+                         'transport modes, not just ambulance; not comparable '
+                         'one-to-one with the Medicare ground volumes elsewhere.'})
+        sources.append({
+            'key': 'broker_public',
+            'publisher': 'Company statements + trade press',
+            'document': 'NEMT broker scale and ownership: ModivCare investor '
+                        'materials; MTM acquisitions of Access2Care (from Global '
+                        'Medical Response, 2024) and Veyo; Verida (formerly '
+                        'Southeastrans) profile',
+            'vintage': '2024-2025', 'tier': 'C',
+            'locator': 'Fleet_Broker_Layer broker table',
+            'supplies': 'The NEMT broker (demand-aggregator) layer above the '
+                        'ambulance fleet on Fleet_Broker_Layer',
+            'url': 'https://www.modivcare.com/', 'accessed': accessed,
+            'powers': ['Fleet_Broker_Layer']})
+
+        # -------------------------------------------------------------
+        # Fleet_Compliance_Flags - OIG LEIE exclusion cross-reference
+        # -------------------------------------------------------------
+        ws16 = wb.create_sheet('Fleet_Compliance_Flags')
+        sb16 = lib.SheetBuilder(ws16, 6,
+                                col_widths=[12, 34, 6, 14, 13, 44],
+                                tab_color='FF7F1D1D')
+        sb16.title('Compliance flags: ambulance operators on the OIG exclusion '
+                   'list (LEIE)')
+        sb16.subtitle(
+            'Cross-references the register against the HHS Office of Inspector '
+            'General List of Excluded Individuals/Entities (LEIE) - parties '
+            'barred from billing Medicare, Medicaid and all federal health '
+            'programs. A match means an operator NPI (or its business name) '
+            'appears on the exclusion list. NPI matches are exact; business-name '
+            'matches are flagged as such and warrant manual confirmation. This is '
+            'a diligence red-flag screen, not an adjudication - an exclusion may '
+            'be historical or tied to a prior owner; confirm current status on '
+            'oig.hhs.gov and in NPPES before relying on it.')
+        _legend = '; '.join(f'{k} = {v}' for k, v in list(LEIE_LEGEND.items())[:6])
+        sb16.note('Exclusion-type legend (42 CFR 1001): ' + _legend +
+                  '. Full legend and reinstatement status: oig.hhs.gov/exclusions.')
+        sb16.blank()
+        byreg = {r['npi']: r for r in mrows}
+        if leie_matches:
+            n_active = sum(1 for m in leie_matches
+                           if byreg.get(m['npi'], {}).get('status') == 'A')
+            sb16.banner(f'{len(leie_matches)} register operators matched the OIG '
+                        f'exclusion list ({n_active} still NPPES-active)')
+            sb16.headers(['NPI', 'Operator (register legal name)', 'St',
+                          'Exclusion basis', 'Excluded', 'LEIE name / join'])
+            for m in sorted(leie_matches,
+                            key=lambda m: (m['via'] != 'NPI match',
+                                           m['excl_date']), reverse=False):
+                d = m['excl_date']
+                dfmt = f'{d[:4]}-{d[4:6]}-{d[6:]}' if len(d) == 8 else d
+                basis = LEIE_LEGEND.get(m['excl_type'], m['excl_type'])
+                st = byreg.get(m['npi'], {}).get('status', '')
+                note = '%s [%s%s]' % (m['leie_busname'], m['via'],
+                                      '; NPPES active' if st == 'A' else '')
+                sb16.row([
+                    (m['npi'], 'label'),
+                    (m['legal_name'], 'text'),
+                    (m['state'], 'note'),
+                    (basis, 'note'),
+                    (dfmt, 'note'),
+                    (note, 'note')], wrap=True, height=26)
+        else:
+            sb16.banner('No register operators matched the OIG exclusion list')
+        facts.append({
+            'metric': 'Register operators on the OIG LEIE exclusion list',
+            'year': 2026, 'value': len(leie_matches),
+            'unit': 'operators', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['oig_leie', 'nppes_amb_roster'],
+            'locator': 'Fleet_Compliance_Flags',
+            'lives_on': 'Fleet_Compliance_Flags',
+            'cross_check': 'NPI (exact) or business-name join between the roster '
+                           'and the OIG LEIE ambulance pull'})
+        findings.append({
+            'id_hint': 133,
+            'finding': f'Screening the register against the OIG exclusion list '
+                       f'(LEIE) flags {len(leie_matches)} ambulance operators '
+                       'whose NPI or business name is on the federal '
+                       'Medicare/Medicaid exclusion list - a compliance red flag '
+                       'for any operator or roll-up that would acquire them. '
+                       'Several still carry an active NPPES status despite the '
+                       'exclusion. NPI matches are exact; name-only matches are '
+                       'flagged for manual confirmation.',
+            'numbers': 'Fleet_Compliance_Flags matched-operator table',
+            'sources': 'oig_leie; nppes_amb_roster',
+            'confidence': 'NPI matches exact; business-name matches approximate '
+                          '(flagged).',
+            'guardrail': 'An exclusion screen is not an adjudication - it may be '
+                         'historical or tied to a prior owner; confirm on '
+                         'oig.hhs.gov and NPPES before acting.'})
+        sources.append({
+            'key': 'oig_leie',
+            'publisher': 'HHS Office of Inspector General',
+            'document': 'List of Excluded Individuals/Entities (LEIE) - ambulance '
+                        'pull: parties excluded from federal health-care program '
+                        'billing, with exclusion type (42 CFR 1001) and date',
+            'vintage': 'LEIE snapshot as manifested in the v3 pull cache',
+            'tier': 'A', 'locator': 'cache key leie_ambulance; NPI, BUSNAME, '
+                                    'EXCLTYPE, EXCLDATE, STATE',
+            'supplies': 'The OIG-exclusion compliance flags on '
+                        'Fleet_Compliance_Flags',
+            'url': 'https://oig.hhs.gov/exclusions/', 'accessed': accessed,
+            'powers': ['Fleet_Compliance_Flags']})
+
+        # -------------------------------------------------------------
+        # Fleet_Acquisition_Targets - the capstone: which independents a
+        # consolidator should buy. Synthesizes every signal (scale, growth,
+        # multi-state footprint, clean compliance) into one ranked screen.
+        # -------------------------------------------------------------
+        _v19t = _mup_ground_year(lib, cache, 2019)[0]
+        # roll independents up to operator_group
+        cand = {}
+        for r in mrows:
+            if r['parent_or_class'] != 'Independent (unaffiliated)':
+                continue
+            og = r['operator_group']
+            c = cand.setdefault(og, {'og': og, 'npis': 0, 'v24': 0, 'v19': 0,
+                                     'states': set(), 'lead_state': _Counter(),
+                                     'oig': False, 'official': ''})
+            c['npis'] += 1
+            c['v24'] += r['medicare_2024_transports']
+            c['v19'] += _v19t.get(r['npi'], 0)
+            for s in (r['license_states'].split(';') if r['license_states']
+                      else []):
+                if s:
+                    c['states'].add(s)
+            if r['state']:
+                c['lead_state'][r['state']] += r['medicare_2024_transports']
+            if r['oig_excluded'] == 'yes':
+                c['oig'] = True
+            if r['auth_official'] and not c['official']:
+                c['official'] = r['auth_official']
+        # score: scale (log volume) + growth + multi-state, clean compliance only
+        import math
+        targets = []
+        for c in cand.values():
+            if c['v24'] < 200 or c['oig']:
+                continue
+            growth = ((c['v24'] - c['v19']) / c['v19']) if c['v19'] > 200 else None
+            nst = len(c['states'])
+            score = (math.log10(c['v24'] + 1) * 10
+                     + (min(growth, 3) * 15 if growth else 0)
+                     + (nst - 1) * 5)
+            ls = c['lead_state'].most_common(1)
+            targets.append({**c, 'growth': growth, 'nst': nst, 'score': score,
+                            'lead': ls[0][0] if ls else ''})
+        targets.sort(key=lambda t: -t['score'])
+
+        ws17 = wb.create_sheet('Fleet_Acquisition_Targets')
+        sb17 = lib.SheetBuilder(ws17, 7,
+                                col_widths=[34, 8, 16, 13, 9, 20, 30],
+                                tab_color='FF0B2341')
+        sb17.title('Acquisition-target screen: independent operators ranked for a '
+                   'consolidator')
+        sb17.subtitle(
+            'The capstone view - independent (unaffiliated) operators that are '
+            'NOT already inside a named national/regional parent, ranked by an '
+            'attractiveness score that synthesizes the signals built across the '
+            'fleet tabs: SCALE (2024 CMS Medicare ground transports), GROWTH '
+            '(2019->2024), and MULTI-STATE footprint (distinct license states). '
+            'OIG-excluded operators are removed. Only operators above 200 annual '
+            'transports. This is the "who should we buy" shortlist for a ground-'
+            'ambulance roll-up; it is a screen from public CMS/NPPES signals, not '
+            'investment advice, and each name should be confirmed and diligenced.')
+        sb17.note('SCORE = 10*log10(2024 transports) + 15*min(growth,300%) + '
+                  '5*(license-states-1). Scale is the dominant term (a buyer '
+                  'wants volume), growth and multi-state footprint break ties. '
+                  'Shared-official operator groups (e.g. an owner running several '
+                  'NPIs) are rolled into one target. GROWTH blank = no 2019 '
+                  'baseline (a newer entrant). Compliance-screened against OIG '
+                  'LEIE (Fleet_Compliance_Flags). Volume is Medicare ground only '
+                  '- Medicaid/MA/private upside is on top.')
+        sb17.blank()
+        sb17.banner(f'Top independent acquisition targets ({len(targets)} '
+                    'screened, >200 transports, OIG-clean)')
+        sb17.headers(['Operator (independent)', 'NPIs', '2024 transports',
+                      'Growth 19-24', 'States', 'Lead state', 'Signing official'])
+        for t in targets[:60]:
+            sb17.row([
+                (t['og'], 'label'),
+                (t['npis'], 'src', lib.FMT_INT),
+                (int(t['v24']), 'src', lib.FMT_INT),
+                (t['growth'] if t['growth'] is not None else 0, 'src',
+                 lib.FMT_PCT1),
+                (t['nst'], 'src', lib.FMT_INT),
+                (STATE_NAME.get(t['lead'], t['lead']), 'note'),
+                (t['official'], 'note')], wrap=True, height=18)
+        facts.append({
+            'metric': 'Independent acquisition targets screened (>200 transports, '
+                      'OIG-clean)',
+            'year': 2024, 'value': len(targets),
+            'unit': 'independent operators', 'basis': 'DERIVED', 'tier': 'A',
+            'source_keys': ['cms_mup_provider', 'nppes_npi_enrichment',
+                            'oig_leie'],
+            'locator': 'Fleet_Acquisition_Targets',
+            'lives_on': 'Fleet_Acquisition_Targets',
+            'cross_check': 'Independents not in a named parent, ranked by '
+                           'scale+growth+footprint, OIG-excluded removed'})
+        findings.append({
+            'id_hint': 134,
+            'finding': f'Synthesizing scale, growth, multi-state footprint and a '
+                       f'clean OIG screen yields {len(targets)} independent '
+                       'ambulance operators as a consolidator shortlist - private '
+                       'operators outside the named national/regional parents, '
+                       'ranked so a buyer sees the largest, fastest-growing, '
+                       'multi-state independents first. This turns the register '
+                       'from a census into an actionable roll-up pipeline while '
+                       'staying entirely on public CMS/NPPES signals.',
+            'numbers': 'Fleet_Acquisition_Targets ranked table',
+            'sources': 'cms_mup_provider (2019+2024); nppes_npi_enrichment; '
+                       'oig_leie',
+            'confidence': 'Scale/growth exact on CMS volume; the score is a '
+                          'transparent heuristic, not a valuation.',
+            'guardrail': 'A public-signal screen, not investment advice; Medicare '
+                         'ground only; confirm ownership, contracts and '
+                         'compliance before any approach.'})
 
     # ---- sources for the family-resolution / predictor tabs ----
     sources += [

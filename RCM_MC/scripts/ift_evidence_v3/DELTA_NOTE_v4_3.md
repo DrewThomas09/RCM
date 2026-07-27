@@ -232,6 +232,76 @@ attribute pull (npi_full_enrichment) kept SEPARATE from the operating-fleet
 enrichment so the GMR ~180 grouping calibration is untouched. New fact
 (register NPI count) and finding 130.
 
+**Fleet_NPI_Master, volume-ranked + operator-group resolution (update).** The
+register is now sorted by 2024 CMS Medicare ground-transport volume (highest IFT
+first) and every NPI carries two added columns: `medicare_2024_transports` (the
+per-NPI paid ground transports from mup_provider_2024) and `operator_group` -
+the entity that actually runs the NPI. The operator_group resolution closes the
+"unaffiliated" gap: (1) named national/regional parents as before; (2) an
+independent that signs for >=2 NPIs under one NPPES authorized official is pulled
+into a resolved multi-entity operator group (the hard signal - the same
+corporate officer legally signs for each sibling, catching renamed/acquired
+entities such as Brewster -> EASCARE), ~240 groups absorbing ~640
+otherwise-unaffiliated NPIs (~0.8M transports); (3) everything else resolves to
+the standalone operator itself (a single-NPI independent IS its own operator) or
+its owner-type class. A small set of name-verified health-system brands (Prisma,
+Fairview, Penn State Health, Geisinger, Sentara, Novant, Atrium, Intermountain,
+Baylor Scott, Ochsner, Cleveland Clinic, Henry Ford, Banner) is rescued from the
+independent residual into Hospital/health-system. The finding shows how much
+Medicare IFT volume now sits on a resolved operator vs a standalone independent.
+
+**Fleet_Market_Dynamics (new analytical cut).** Rolls the register's operator
+groups up by 2024 CMS Medicare ground REVENUE (base-rate transports x average
+Medicare payment; a comparative proxy, mileage excluded), 2019->2024 volume
+GROWTH (the roll-up / exit signal), and per-state CONCENTRATION (HHI on
+operator-group ground-volume shares). Only operators above 200 annual transports
+(the sub-200 tail is immaterial). Panel A = revenue leaderboard; Panel B =
+fastest growers; Panel C = most-concentrated and most-fragmented states. Shows
+the shrinking national core (GMR/AMR, Priority, Acadian all down double digits in
+Medicare ground 2019->2024) against fast-growing consolidators (DocGo, Coastal,
+AmeriPro and regional roll-ups up triple digits), and the split between municipal
+monopolies (HHI>7,000 in DC/IA/MO) and fragmented roll-up runways (HHI<1,100 in
+NJ/GA/PA). New fact + finding 131.
+
+**Fleet_Broker_Layer (new).** Documents the NEMT broker / demand-aggregator layer
+sitting ABOVE the fleet - ModivCare (public, ~25% broker share, ~64M rides/yr,
+$2.3B rev), MTM (largest private, all 50 states after buying Access2Care and Veyo
+in 2024), Verida (formerly Southeastrans). Brokers enumerate under the NEMT
+taxonomy (3439), not ambulance (3416), so only a few broker-named NPIs surface in
+the roster (now tagged with a Broker / NEMT network archetype). Key structural
+fact: GMR SOLD Access2Care to MTM in 2024, exiting brokerage to stay a pure-play
+provider. New finding 132 + source (broker_public, company/trade-press, tier C).
+
+**License data split (update).** The register's NPPES license identifiers are now
+parsed into structured fields so they are legible and comparable: n_licenses, a
+distinct license_states list (the multi-state FOOTPRINT signal - an operator
+holding Medicaid/state IDs in several states operates in several states),
+multi_state flag, and a Medicaid-only id list, alongside the full license_ids
+string. Fleet_NPI_Master gains a "License states (footprint)" column (multi-state
+operators marked with *) and a coverage-panel count of multi-state operators; the
+companion CSV carries all split fields.
+
+**Fleet_Compliance_Flags (new).** Cross-references the register against the HHS
+OIG List of Excluded Individuals/Entities (LEIE) - parties barred from billing
+federal health programs. Matches on exact NPI (high confidence) or normalized
+business name (flagged for manual confirmation), showing the operator, exclusion
+basis (42 CFR 1001 type with a legend), exclusion date and current NPPES status.
+~20 operators match by NPI (several still NPPES-active despite exclusion) plus
+name-only candidates - a diligence red-flag screen (not an adjudication). Adds an
+oig_excluded column to the register/CSV. New fact + finding 133 + source
+(oig_leie, tier A).
+
+**Fleet_Acquisition_Targets (capstone).** Synthesizes every fleet signal into the
+"who should we buy" shortlist: independent (unaffiliated) operators NOT already
+inside a named national/regional parent, rolled up by operator group and ranked
+by an attractiveness score = 10*log10(2024 Medicare transports) + 15*min(growth,
+300%) + 5*(license-states - 1). Scale dominates; growth and multi-state footprint
+break ties. OIG-excluded operators removed; only >200 transports. Turns the
+register from a census into an actionable roll-up pipeline (top targets: Viking
+Enterprises, AllMed, LifeCare EMS of Georgia and other high-scale, fast-growing,
+multi-state independents) - all on public CMS/NPPES signals, screened not
+adjudicated. New fact + finding 134.
+
 ## The guardrail, held throughout
 
 The NPPES floor is an IDENTITY floor, not a fleet count: one operator may hold

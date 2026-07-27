@@ -261,8 +261,15 @@ class TestIFTEvidenceV3(unittest.TestCase):
         for tab in ('Corporate_Family_Resolution', 'Fleet_Scale_Predictors',
                     'Fleet_Identity_Map', 'Fleet_Ownership_Resolved',
                     'Fleet_Ownership_Crosswalk', 'Fleet_NPI_Groups',
-                    'Fleet_NPI_Master'):
+                    'Fleet_NPI_Master', 'Fleet_Market_Dynamics',
+                    'Fleet_Broker_Layer', 'Fleet_Compliance_Flags',
+                    'Fleet_Acquisition_Targets'):
             self.assertIn(tab, self.wb.sheetnames)
+        # the broker-layer tab names the major NEMT brokers
+        bl = ' '.join(str(c.value) for row in self.wb['Fleet_Broker_Layer']
+                      .iter_rows() for c in row if c.value)
+        for broker in ('ModivCare', 'MTM', 'Access2Care'):
+            self.assertIn(broker, bl, f'expected {broker} on Fleet_Broker_Layer')
         # the master register lands one row per NPI for the whole 3416* roster
         # (>20,000), each with a working per-NPI NPPES provider-view hyperlink
         mw = self.wb['Fleet_NPI_Master']
@@ -277,6 +284,20 @@ class TestIFTEvidenceV3(unittest.TestCase):
                   if c.hyperlink is not None]
         self.assertTrue(any('provider-view' in (u or '') for u in mlinks),
                         'expected per-NPI NPPES provider-view hyperlinks')
+        # the register resolves an operator group + 2024 IFT volume per NPI
+        headers = [c.value for row in mw.iter_rows(min_row=1, max_row=40)
+                   for c in row if isinstance(c.value, str)]
+        self.assertTrue(any('Operator group' in h for h in headers),
+                        'expected an Operator group column')
+        self.assertTrue(any('Medicare transports' in h for h in headers),
+                        'expected a 2024 Medicare transports column')
+        self.assertTrue(any('License states' in h for h in headers),
+                        'expected a split License states column')
+        # highest-volume row should carry a five-figure transport count (sorted
+        # by IFT volume), proving the volume join landed
+        big = [c.value for row in mw.iter_rows() for c in row
+               if isinstance(c.value, int) and c.value > 20000]
+        self.assertTrue(big, 'expected five-figure IFT volumes in the register')
         # the family-resolution tab carries a computed GMR Medicare volume
         vals = [c.value for row in self.wb['Corporate_Family_Resolution']
                 .iter_rows() for c in row]
