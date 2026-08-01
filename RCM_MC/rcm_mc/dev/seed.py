@@ -44,6 +44,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+import random
+import sqlite3
 import sys
 import tempfile
 from dataclasses import dataclass, field
@@ -132,6 +134,10 @@ class SeederRefuseError(RuntimeError):
       - db_path looks like a production location (`/data/...` or
         `seekingchartis.db`) and force=False
       - db_path exists with non-empty deals table and overwrite=False
+      - overwrite=True but the DB holds deals that do not trace to
+        seeder provenance (deal_stage_history.changed_by='seed') and
+        force=False — MR1061: the path heuristic alone lets a
+        partner's real portfolio.db through
     """
 
 
@@ -209,6 +215,7 @@ def _seed_deals_and_snapshots(
     snapshot_quarters: int,
     overwrite: bool,
     result: SeedResult,
+    force: bool = False,
 ) -> None:
     """Insert curated deals + lifecycle stage history + per-quarter
     snapshots. Updates ``result`` in place.
@@ -234,16 +241,55 @@ def _seed_deals_and_snapshots(
     # tables; user data in other tables (auth, audit_log, etc.) survives.
     if overwrite:
         with store.connect() as con:
-            for table in (
-                "deal_snapshots", "deal_stage_history",
-                "initiative_actuals", "generated_exports",
-                "analysis_runs", "deals",
-            ):
+            # MR1061: --overwrite may only clobber data this seeder
+            # created. A partner's real ~/portfolio.db sails past the
+            # path heuristic, so provenance is the real gate: every
+            # existing deal must trace to a seed-stamped stage-history
+            # row (changed_by='seed'), else refuse unless force=True.
+            if not force:
                 try:
-                    con.execute(f"DELETE FROM {table}")
-                except Exception:  # noqa: BLE001 — table may not exist yet
-                    pass
-            con.commit()
+                    non_seed = con.execute(
+                        "SELECT COUNT(*) AS n FROM deals "
+                        "WHERE deal_id NOT IN "
+                        "(SELECT deal_id FROM deal_stage_history "
+                        " WHERE changed_by = 'seed')"
+                    ).fetchone()["n"]
+                except sqlite3.OperationalError:
+                    non_seed = 0  # no deals/stage table yet = nothing at risk
+                if non_seed:
+                    raise SeederRefuseError(
+                        f"overwrite=True but {non_seed} deal(s) in this DB "
+                        f"do not trace to seeder provenance "
+                        f"(deal_stage_history.changed_by='seed'). Refusing "
+                        f"to clobber non-demo data; pass force=True (or "
+                        f"--force-prod-path) to override."
+                    )
+            # MR1063: one transaction, no half-cleared end states. Only
+            # "no such table" is tolerated; a genuine IntegrityError
+            # aborts the whole cleanup loudly instead of leaving the
+            # child tables wiped but deals intact. note_tags/deal_notes
+            # go first (NO-ACTION FKs); covenant_metrics and
+            # quarterly_actuals were previously missing from this list,
+            # duplicating covenant rows on every re-seed and blocking
+            # the deals delete on held-deal DBs.
+            con.execute("BEGIN IMMEDIATE")
+            try:
+                for table in (
+                    "note_tags", "deal_notes",
+                    "deal_snapshots", "deal_stage_history",
+                    "initiative_actuals", "generated_exports",
+                    "analysis_runs", "covenant_metrics",
+                    "quarterly_actuals", "deals",
+                ):
+                    try:
+                        con.execute(f"DELETE FROM {table}")
+                    except sqlite3.OperationalError as exc:
+                        if "no such table" not in str(exc):
+                            raise
+                con.commit()
+            except Exception:
+                con.rollback()
+                raise
 
     deals_to_seed = _CURATED_DEALS[:deal_count]
     # Extension beyond the 7 curated entries: auto-named tail at sourced.
@@ -928,6 +974,17 @@ def seed_demo_db(
     db_path_obj = Path(db_path)
     _guard_against_production(db_path_obj, force=force)
 
+    # MR1062: seed_random was accepted and documented but never
+    # consumed — the packet-builder stage draws from the global RNGs,
+    # so reproducibility silently depended on nothing else having
+    # touched them. Pin both stdlib and numpy RNGs here.
+    random.seed(seed_random)
+    try:
+        import numpy as _np
+        _np.random.seed(seed_random)
+    except ImportError:  # numpy is a runtime dep, but stay importable
+        pass
+
     if base_dir is None:
         base_dir = Path(tempfile.gettempdir()) / "rcm_mc_demo_exports"
     base_dir = Path(base_dir)
@@ -962,6 +1019,7 @@ def seed_demo_db(
         snapshot_quarters=snapshot_quarters,
         overwrite=overwrite,
         result=result,
+        force=force,
     )
 
     # Seed step 2: initiative_actuals (block 7 — playbook gap)
