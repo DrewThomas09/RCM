@@ -7,6 +7,15 @@ Source: 262 audit reports (Report-0001.md through Report-0262.md), ~1056 unique 
 
 Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partially mitigated · `[!]` reopened · `[?]` needs-repro.
 
+## Post-TRIAGE fresh-sweep findings (all fixed)
+
+These did not come from the original 262-report triage — they were found by fresh audit sweeps after the queue emptied, and fixed in the same iteration they were found. Recorded here for the RESOLVED trail.
+
+- [x] HIGH | Report-0268 | Stored XSS: dashboard "Your templates" onclick reflected a partner saved-analysis route into a JS-string via html.escape (wrong codec). | rcm_mc/ui/dashboard_page.py:1818 | MR-S1 | a8b5279 | 2026-08-01 (route moved to a data-target attribute read via this.dataset)
+- [x] HIGH | Report-0268 | Stored XSS: analysis-workbench Delete button interpolated partner deal_id into an onclick fetch() JS-string via html.escape. | rcm_mc/ui/analysis_workbench.py:1428 | MR-S2 | a8b5279 | 2026-08-01 (deal_id path segments percent-encoded via new _seg helper)
+- [x] HIGH | Report-0268 | Reflected XSS: IC-memo + diligence-synthesis routes reflected raw exception text (embeds partner deal_id) unescaped into 500 pages; also fixed a latent UnboundLocalError from the Report-0267 screening fix (html is a function-local in _do_get_inner). | rcm_mc/server.py:7178,7313 | MR-S3 | a8b5279 | 2026-08-01 (all three reflected-exc sites use local `import html as _html`)
+- [x] MEDIUM | Report-0268 | /api/jobs/run wrote a partner outdir unvalidated (comment promised a traversal guard never implemented). | rcm_mc/server.py:20950 | MR-S4 | a8b5279 | 2026-08-01 (reject ../null bytes + confine under server output root)
+
 ## CRITICAL
 
 - [x] CRITICAL | Report-0131 | `configs/playbook.yaml` unparseable YAML (6 of 8 keys have leading space → `ParserError`); silent production bug since 2026-04-17. All action-plan sections in HTML reports degrade to empty. | configs/playbook.yaml | MR744 | 33fda80 | 2026-04-26
@@ -76,6 +85,7 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 
 - [ ] LOW | Report-0267 | `infra/exports.py` still undocumented in `infra/README.md` (28 of 29 modules covered after MR1053). | rcm_mc/infra/README.md | MR1069
 - [ ] LOW | Report-0267 | Same-second export collisions: two exports of the same deal_id+filename within one wall-clock second resolve to the same path and canonical_facade's shutil.move silently overwrites the first (dev/seed staggers by hours to avoid it; partner exports don't). Needs a uniqueness-suffix design decision. | rcm_mc/infra/exports.py:96,138 | MR1070
+- [ ] LOW | Report-0268 | `deals/deal_sim_inputs.py` `set_inputs` stores actual_path/benchmark_path unvalidated and `next_outdir` permits an absolute outdir_base (reachable via `/api/deals/<id>/rerun`). Needs an allowlist-inputs-dir design decision. | rcm_mc/deals/deal_sim_inputs.py:60 | MR1071
 - [x] LOW | Report-0253 | `MANDATORY_PAYERS` constant unused per comment ("Step 31: Kept for backward compatibility but no longer enforced"). Deletion candidate. | rcm_mc/infra/config.py:16 | MR1051 | 0e93f13 | 2026-08-01 (deleted + server.py:8850 coverage import swapped to CURRENT_SCHEMA_VERSION; absence pinned by test)
 - [x] LOW | Report-0253 | `canonical_payer_name` undocumented + non-obvious aliases (Self-Pay→SelfPay, Private/PHI→Commercial). | rcm_mc/infra/config.py:80 | MR1049 | 0e93f13 | 2026-08-01 (why-focused docstring added; alias contract already pinned by 4 tests since 8d355d2)
 - [x] LOW | Report-0253 | Two contracts for same op: `load_and_validate` (raises) vs `validate_config_from_path` (returns tuple). | rcm_mc/infra/config.py:436+469 | MR1050 | 0e93f13 | 2026-08-01 (canonical hard-fail vs Step-37 soft wrapper documented in both docstrings + tie test)
