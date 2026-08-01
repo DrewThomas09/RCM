@@ -67,16 +67,14 @@ def to_csv(
 ) -> str:
     """Export deals to CSV string (writes to path if given).
 
-    Defangs Excel formula injection by prepending ' to values starting with
-    =, +, -, @, |.
+    Report-0270: defangs Excel formula injection via the shared helper
+    (leading =, +, -, @, tab, CR) — this local copy previously missed tab
+    and CR. Values are stringified first so DictWriter gets text cells.
     """
-    _FORMULA_CHARS = {"=", "+", "-", "@", "|"}
+    from ..infra.csv_safety import defang_cell
 
     def _safe(v: Any) -> str:
-        s = "" if v is None else str(v)
-        if s and s[0] in _FORMULA_CHARS:
-            s = "'" + s
-        return s
+        return defang_cell("" if v is None else str(v))
 
     cols = _CORE_COLS + (_PAYER_COLS if include_payer_mix else []) + ["notes"]
     buf = io.StringIO()

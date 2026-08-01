@@ -443,8 +443,14 @@ def _topic_matrix(coverage: List[Dict[str, Any]],
 
 
 def _csv_defang(cell: str) -> str:
-    """Excel formula-injection guard (house CSV convention)."""
-    return "'" + cell if cell[:1] in ("=", "+", "-", "@") else cell
+    """Excel formula-injection guard (house CSV convention).
+
+    Report-0270: delegates to the shared helper so the character set
+    (which now includes tab + CR — this local copy missed them) can't
+    drift from the canonical one again.
+    """
+    from ..infra.csv_safety import defang_cell
+    return defang_cell(cell)
 
 
 def expert_calls_csv(qs: "Dict[str, Any] | None" = None) -> str:

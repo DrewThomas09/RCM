@@ -14460,9 +14460,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         it as literal text. Numbers and non-strings pass through.
         """
         import pandas as _pd
+        from .infra.csv_safety import FORMULA_LEAD as dangerous
         if df is None or df.empty:
             return df
-        dangerous = ("=", "+", "@", "-", "\t", "\r")
         out = df.copy()
         for col in out.columns:
             # Modern pandas uses StringDtype(), older uses object.

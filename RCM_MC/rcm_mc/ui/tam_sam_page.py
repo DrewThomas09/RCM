@@ -1197,10 +1197,29 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
 def tam_sam_csv(qs: Dict[str, List[str]]) -> str:
     import csv
     import io
+    from ..infra.csv_safety import defang_row
     model = model_from_qs(qs)
     out = compute(model)
     buf = io.StringIO()
-    w = csv.writer(buf)
+    _raw = csv.writer(buf)
+
+    class _DefangWriter:
+        # Report-0270: defense-in-depth. Today model_from_qs only accepts
+        # numeric overrides + a fixed template key, so out's string cells
+        # (name/note/source) are trusted catalog content — but this export
+        # previously defanged nothing, so if a future template ever carries
+        # a partner-supplied field it would inject. Route every row through
+        # the shared formula-injection guard to hold the house convention.
+        @staticmethod
+        def writerow(row):
+            _raw.writerow(defang_row(row))
+
+        @staticmethod
+        def writerows(rows):
+            for r in rows:
+                _raw.writerow(defang_row(r))
+
+    w = _DefangWriter()
     w.writerow(["TAM/SAM build", out["name"]])
     w.writerow(["Basis", out["basis_note"]])
     w.writerow([])
