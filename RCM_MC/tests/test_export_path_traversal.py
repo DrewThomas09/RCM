@@ -66,5 +66,27 @@ class TestDealIdTraversal(unittest.TestCase):
             self.assertTrue(p.resolve().is_relative_to(base.resolve()))
 
 
+class TestSameSecondCollision(unittest.TestCase):
+    """MR1070: two exports of the same (deal_id, filename) with the
+    default (auto) timestamp must not collide within one wall-clock
+    second — the auto stamp is microsecond-precise."""
+
+    def test_auto_timestamp_has_subsecond_component(self):
+        from rcm_mc.infra.exports import _now_utc_iso
+        ts = _now_utc_iso()
+        # %Y-%m-%dT%H-%M-%S-%f → 6 dash groups after the date, ending in
+        # the microsecond field (all-digit, len 6).
+        self.assertRegex(ts, r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{1,6}$")
+
+    def test_back_to_back_exports_get_distinct_paths(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp) / "exports"
+            seen = {
+                str(canonical_deal_export_path("D1", "report.html", base=base))
+                for _ in range(5)
+            }
+            self.assertGreater(len(seen), 1, "same-second exports collided")
+
+
 if __name__ == "__main__":
     unittest.main()

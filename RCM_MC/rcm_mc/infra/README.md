@@ -184,6 +184,18 @@ Platform infrastructure: configuration, logging, job queuing, migrations, notifi
 
 ---
 
+## `exports.py` — Canonical Export Path Policy
+
+**What it does:** The single home for the export filesystem-layout decision. `canonical_deal_export_path(deal_id, filename)` and `canonical_portfolio_export_path(filename)` are the two functions every export writer routes through, so cleanup/retention/sharding policy changes happen in one place.
+
+**How it works:** Resolves `<base>/<deal_id-or-_portfolio>/<timestamp>_<filename>`. Base precedence: explicit `base=` arg > `EXPORTS_BASE` env (test override) > `/data/exports`. Two named functions (rather than one with `deal_id=None`) make the deal-scoped vs cross-portfolio choice explicit at every call site. **Security (Report-0267/0268):** `_reject_path_chars` validates `deal_id`, `filename`, and `timestamp` (no separators, `.`/`..`, or absolute paths) and an `is_relative_to(base)` backstop guarantees the resolved path never escapes the exports root — `deal_id` is partner-supplied, so this is the traversal chokepoint. The auto-generated timestamp is microsecond-precise so two same-second exports of the same artifact don't silently overwrite (MR1070). Colons are swapped for `-` for cross-filesystem safety.
+
+**Data in:** A deal_id (or none), a bare filename, an optional timestamp/base.
+
+**Data out:** An absolute `Path` with parent dirs created; the caller writes the artifact and records it via `exports/canonical_facade.py`.
+
+---
+
 ## `cache.py` — TTL Function Cache Decorator
 
 **What it does:** Decorator-style TTL cache (`@ttl_cache(seconds=300)`) for repeated-expensive deterministic operations — the dashboard model panels that rebuild identically on every page load.

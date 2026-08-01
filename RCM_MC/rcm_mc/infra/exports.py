@@ -94,11 +94,20 @@ _DEFAULT_BASE = "/data/exports"
 # Filename character that's legal everywhere (Linux + macOS + Windows).
 # ISO 8601 uses ``:`` in the time portion; substitute with ``-``.
 _TIMESTAMP_FMT = "%Y-%m-%dT%H-%M-%S"
+# MR1070: the auto-generated stamp carries microseconds so two exports of
+# the same (deal_id, filename) within one wall-clock second resolve to
+# distinct paths instead of the second silently overwriting the first via
+# canonical_facade's shutil.move. Still colon-free / filesystem-safe, and
+# nothing parses the stamp back out of a filename (grep-verified).
+_TIMESTAMP_FMT_MICRO = "%Y-%m-%dT%H-%M-%S-%f"
 
 
 def _now_utc_iso() -> str:
-    """Filesystem-safe UTC timestamp (no colons, no microseconds)."""
-    return datetime.now(timezone.utc).strftime(_TIMESTAMP_FMT)
+    """Filesystem-safe UTC timestamp (no colons; microsecond-precise).
+
+    Microseconds make same-second exports collision-resistant (MR1070).
+    """
+    return datetime.now(timezone.utc).strftime(_TIMESTAMP_FMT_MICRO)
 
 
 def _reject_path_chars(label: str, value: str) -> None:
@@ -191,7 +200,8 @@ def canonical_deal_export_path(
             Must not contain path separators. Encode hierarchy in the
             filename itself (``"lp_q1.html"``), not via subdirectories.
         timestamp: Filesystem-safe UTC timestamp string (default: now).
-            Format ``YYYY-MM-DDTHH-MM-SS``.
+            Format ``YYYY-MM-DDTHH-MM-SS`` (the auto-generated
+            default also appends ``-<microseconds>`` for uniqueness).
         base: Override the ``/data/exports/`` root. Precedence:
             explicit ``base=`` arg > ``EXPORTS_BASE`` env var >
             ``/data/exports`` default.
@@ -238,7 +248,8 @@ def canonical_portfolio_export_path(
         filename: Bare filename (e.g. ``"corpus_summary.xlsx"``).
             Must not contain path separators.
         timestamp: Filesystem-safe UTC timestamp string (default: now).
-            Format ``YYYY-MM-DDTHH-MM-SS``.
+            Format ``YYYY-MM-DDTHH-MM-SS`` (the auto-generated
+            default also appends ``-<microseconds>`` for uniqueness).
         base: Override the ``/data/exports/`` root. Precedence:
             explicit ``base=`` arg > ``EXPORTS_BASE`` env var >
             ``/data/exports`` default.
