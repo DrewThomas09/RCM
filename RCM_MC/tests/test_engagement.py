@@ -388,5 +388,131 @@ class CommentAuthorisationTests(unittest.TestCase):
                 )
 
 
+class EngagementAuditTrailTests(unittest.TestCase):
+    """MR1024 (Report-0266): ``_audit`` is best-effort by design — it
+    never fails the caller — so a broken audit path would be invisible
+    to every other test. These pin that each mutator actually lands a
+    chained row, and that the best-effort contract holds when the
+    chain writer is down."""
+
+    _EXPECTED_ACTIONS = (
+        "engagement.create",
+        "engagement.member.add",
+        "engagement.member.remove",
+        "engagement.comment.post",
+        "engagement.deliverable.create",
+        "engagement.deliverable.publish",
+    )
+
+    def test_every_mutator_writes_a_chained_audit_row(self):
+        import dataclasses  # noqa: F401  (parallel import kept minimal)
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _store(tmp)
+            create_engagement(
+                store, engagement_id="E1", name="p",
+                client_name="c", created_by="admin",
+            )
+            add_member(
+                store, engagement_id="E1", username="admin",
+                role=EngagementRole.PARTNER, added_by="admin",
+            )
+            add_member(
+                store, engagement_id="E1", username="u1",
+                role=EngagementRole.ANALYST, added_by="admin",
+            )
+            remove_member(
+                store, engagement_id="E1", username="u1",
+                removed_by="admin",
+            )
+            post_comment(
+                store, engagement_id="E1", target="deal:D1",
+                author="admin", body="kickoff",
+            )
+            d = create_deliverable(
+                store, engagement_id="E1", kind="ADVISORY",
+                title="ops advisory", created_by="admin",
+            )
+            publish_deliverable(
+                store, engagement_id="E1",
+                deliverable_id=d.deliverable_id, published_by="admin",
+            )
+            with store.connect() as con:
+                rows = con.execute(
+                    "SELECT action, actor, row_hash FROM audit_events "
+                    "ORDER BY id"
+                ).fetchall()
+            actions = [r["action"] for r in rows]
+            for expected in self._EXPECTED_ACTIONS:
+                self.assertIn(
+                    expected, actions,
+                    f"no audit row for {expected}; got {actions}",
+                )
+            for r in rows:
+                if str(r["action"]).startswith("engagement."):
+                    self.assertTrue(
+                        r["row_hash"],
+                        f"audit row for {r['action']} missing row_hash — "
+                        "the chained writer did not run",
+                    )
+
+    def test_audit_outage_never_fails_the_mutator(self):
+        # Simulating a failing chain writer is the documented
+        # external-stub exception (CLAUDE.md testing rules).
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _store(tmp)
+            with patch(
+                "rcm_mc.compliance.audit_chain.append_chained_event",
+                side_effect=RuntimeError("audit chain down"),
+            ):
+                e = create_engagement(
+                    store, engagement_id="E1", name="p",
+                    client_name="c", created_by="admin",
+                )
+            self.assertEqual(e.engagement_id, "E1")
+            self.assertIsNotNone(get_engagement(store, "E1"))
+
+
+class EngagementSchemaGuardTests(unittest.TestCase):
+    """MR988 (Report-0266): the four dataclasses and their CREATE
+    TABLE statements are maintained by hand in the same file. This
+    guard turns silent drift (column added to only one side) into a
+    red test. All four map 1:1 at time of writing — no exclusion set."""
+
+    def test_dataclass_fields_match_table_columns(self):
+        import dataclasses
+
+        from rcm_mc.engagement.store import (
+            Comment, Deliverable as _Deliverable, Engagement,
+            EngagementMember,
+        )
+        pairs = [
+            (Engagement, "engagements"),
+            (EngagementMember, "engagement_members"),
+            (Comment, "engagement_comments"),
+            (_Deliverable, "engagement_deliverables"),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            store = _store(tmp)
+            create_engagement(
+                store, engagement_id="E1", name="p",
+                client_name="c", created_by="admin",
+            )
+            with store.connect() as con:
+                for dc, table in pairs:
+                    dc_fields = {f.name for f in dataclasses.fields(dc)}
+                    cols = {
+                        r["name"] for r in con.execute(
+                            f"PRAGMA table_info({table})"
+                        ).fetchall()
+                    }
+                    self.assertEqual(
+                        dc_fields, cols,
+                        f"{dc.__name__} vs {table}: dataclass-only "
+                        f"{sorted(dc_fields - cols)}, table-only "
+                        f"{sorted(cols - dc_fields)}",
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()
