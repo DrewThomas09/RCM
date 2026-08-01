@@ -184,6 +184,30 @@ Platform infrastructure: configuration, logging, job queuing, migrations, notifi
 
 ---
 
+## `cache.py` — TTL Function Cache Decorator
+
+**What it does:** Decorator-style TTL cache (`@ttl_cache(seconds=300)`) for repeated-expensive deterministic operations — the dashboard model panels that rebuild identically on every page load.
+
+**How it works:** Wraps the function with a thread-safe dict of `{args-key: (value, expires_at)}`. Unlike `functools.lru_cache` it expires, so DB-backed results can't go permanently stale; unlike `response_cache.py` (endpoint payloads keyed by request) it caches at the *function* level with the decorated signature as the key. Exposes `cache_clear()` for explicit invalidation and `cache_info()` mirroring the `lru_cache` shape so monitoring scripts keep working. Cache hits return identical-by-reference values — callers must not mutate results in place (documented in the module docstring).
+
+**Data in:** Hashable call arguments of the decorated function.
+
+**Data out:** Cached return values within the TTL window; hit/miss stats via `cache_info()`.
+
+---
+
+## `morning_digest.py` — Daily Portfolio Digest Email
+
+**What it does:** Builds and sends the 8 AM "comes to you" partner email: sharpest insight, top-3 deals needing attention, top-3 predicted watchlist exits, and overnight activity (alerts, refreshes, packets built).
+
+**How it works:** `build_morning_digest(db_path)` reuses the same compute as the `/dashboard` sections (so email and web never disagree) and returns a `DigestPayload`; `digest_to_html` / `digest_to_text` render it (all partner strings `html.escape`d); `send_morning_digest(db_path, recipient)` delivers via `notifications.send_email`. Wired to `GET /api/digest/morning` (JSON preview, no send), `POST /api/digest/morning/send`, and a CLI command for cron scheduling.
+
+**Data in:** Portfolio DB (deals, alerts, watchlist, predictions) via the dashboard compute paths.
+
+**Data out:** `DigestPayload`; HTML/text email via `notifications.py`.
+
+---
+
 ## `run_history.py` — CLI Run History
 
 **What it does:** Appends a row to the `run_history` SQLite table after each `rcm-mc run` CLI invocation, tracking when simulations were run and what the key outputs were.

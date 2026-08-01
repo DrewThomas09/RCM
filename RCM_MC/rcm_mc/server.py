@@ -7249,9 +7249,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     filtered, flt=flt)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
+                # MR1021: the size_min/size_max/confidence_floor query
+                # params are parsed with float(), whose ValueError message
+                # embeds the raw input verbatim — reflecting {exc}
+                # unescaped is a reflected-XSS vector. Escape it.
                 return self._send_html(
                     f"<h1>500</h1><p>Screening failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{html.escape(type(exc).__name__)}: "
+                    f"{html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         # ── Synthesis runner — IC binder over 13 packets ──

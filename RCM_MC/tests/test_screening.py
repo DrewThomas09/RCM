@@ -150,6 +150,42 @@ class TestDashboardRender(unittest.TestCase):
         html = render_screening_dashboard([])
         self.assertIn("No deals match", html)
 
+    def test_malicious_deal_id_cannot_break_out_of_onclick(self):
+        # MR1021 (Report-0267): deal_id is partner-supplied and was
+        # rendered into an onclick JS-string via html.escape — the wrong
+        # codec for that context (the browser HTML-decodes the attribute
+        # before the JS parser runs). The click URL is now percent-
+        # encoded, so a quote/angle-bracket payload cannot escape.
+        from rcm_mc.screening import (
+            DealCandidate, render_screening_dashboard, score_universe,
+        )
+        payload = "x' onerror='alert(1)"
+        cands = [
+            DealCandidate(
+                deal_id=payload, name="p", sector="hospital",
+                revenue_mm=200, ebitda_mm=30, ebitda_margin=0.15),
+        ]
+        html = render_screening_dashboard(score_universe(cands))
+        # The click URL must carry only the percent-encoded form — no
+        # raw quote that could terminate the window.location='...' string.
+        self.assertIn("/diligence/synthesis/x%27", html)
+        self.assertNotIn("window.location='/diligence/synthesis/x'", html)
+
+    def test_median_uplift_even_universe(self):
+        # LOW (Report-0267): median of an even universe averages the two
+        # central uplifts rather than returning the upper-middle one.
+        from rcm_mc.screening import (
+            DealCandidate, render_screening_dashboard, score_universe,
+        )
+        cands = [
+            DealCandidate(deal_id=f"D{i}", name=f"H{i}", sector="hospital",
+                          revenue_mm=200, ebitda_mm=30, ebitda_margin=0.15)
+            for i in range(4)
+        ]
+        # Should render without error and show a Median uplift KPI.
+        html = render_screening_dashboard(score_universe(cands))
+        self.assertIn("Median uplift", html)
+
 
 # ── HTTP route ────────────────────────────────────────────────
 
