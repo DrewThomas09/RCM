@@ -26,3 +26,8 @@ f0f4fc2 | 2026-04-26 | HIGH     | Report-0247 | exports/canonical_facade.py audi
 2b9b69e | 2026-04-26 | HIGH     | Report-0119 | deploy.yml auto-trigger MR917 — verified main is already gated to manual-only; real risk is feat/ui-rework-v3 overwriting the gate; closure + merge recipe in Report-0260 and MERGE-CONFLICTS.md entry 4
 8a6bdf8 | 2026-04-26 | HIGH     | Report-0124 | server.py:5189 /data-room save_entry bypassed PortfolioStore — routed through `PortfolioStore.connect()` for FK + busy_timeout + row_factory; 33 sqlite3.connect sites re-classified in Report-0261 (1 real hit, 28 read-only, 4 standalone)
 7979702 | 2026-04-26 | HIGH     | (security) | server.py 6 unvalidated int(form.get(...)) sites clamped via _clamp_int (n_sims×2, seed×2, snooze_days, bed_count); closes the n_sims=999999999 DoS path on Monte Carlo worker
+0e93f13 | 2026-08-01 | MEDIUM   | Report-0253 | infra/config.py __all__ (MR1046) + _extends cycle detection (MR1047) + env-var contract tests (MR1048) — test_config_hardening.py, 9 tests
+0e93f13 | 2026-08-01 | LOW×3    | Report-0253 | MANDATORY_PAYERS deleted (MR1051), canonical_payer_name docstring (MR1049), canonical-vs-soft entry contracts documented + tie test (MR1050)
+0e93f13 | 2026-08-01 | MEDIUM×2 | Report-0252 | run_intake atomic YAML write via temp+os.replace (MR1042) + empty-template ValueError at load site (MR1045) — test_intake_hardening.py, 8 tests
+0e93f13 | 2026-08-01 | LOW      | Report-0252 | DEFAULT_TEMPLATE single-source constant (MR1044)
+(none)  | 2026-08-01 | 10 items | Report-0262 | verification-only closures: MR1041, MR1001, MR1012, MR1013, MR486, MR1029, MR1005, MR1016, Q2/RCM_MM, MR504/MR510 — all verified already-fixed, stale-moot, or accepted-by-design against HEAD a46a928

@@ -1,9 +1,9 @@
 # TRIAGE — Bug Fix & Push Loop
 
-Built: 2026-04-26 (iter 1) | Refreshed: 2026-04-26 (iter 21, after 19 fix-loop iterations).
-Source: 255 audit reports (Report-0001.md through Report-0255.md), ~1056 unique MR-tagged risks. This list captures the highest-leverage actionable items; the rest stay catalogued in source reports as inventory/discovery.
+Built: 2026-04-26 (iter 1) | Refreshed: 2026-08-01 (iter 22 = Report-0262, first iteration after the July merge wave; full re-verification sweep of every open item against HEAD a46a928).
+Source: 262 audit reports (Report-0001.md through Report-0262.md), ~1056 unique MR-tagged risks. This list captures the highest-leverage actionable items; the rest stay catalogued in source reports as inventory/discovery.
 
-**Status counters (verified via awk over the file):** 4/4 CRITICAL closed; 16/22 HIGH closed (6 open); 0/21 MEDIUM closed (1 partial = MR1046, 20 open); 0/13 LOW closed (1 partial = MR1049, 12 open — added MR1056 + RCM_MM/-Q2 follow-up from Report-0255 in this refresh). See Report/RESOLVED.md for the chronological commit list (20 entries) and Report/PROGRESS-19.md for the rollup.
+**Status counters (verified via awk over the file, 2026-08-01):** CRITICAL 4/4 closed; HIGH 23 closed + 1 partial (MR1057) + 1 open (new MR1068); MEDIUM 11 closed, 15 open; LOW 8 closed, 9 open. 19 items closed in the 0262 sweep (9 code-fixed in 0e93f13, 10 verified already-fixed/stale). See Report/RESOLVED.md for the chronological commit list and Report/PROGRESS-19.md for the iter-19 rollup.
 
 Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partially mitigated · `[!]` reopened · `[?]` needs-repro.
 
@@ -41,7 +41,8 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 - [x] HIGH | Report-0001 | `[all]` does not include `[diligence]` deps (duckdb/dbt-core/dbt-duckdb/pyarrow). | pyproject.toml | MR18 | 110f2cf | 2026-04-26 (folded [diligence] deps into [all]; verified diligence ⊂ all and stats ⊂ all programmatically)
 - [x] HIGH | Report-0119/0120 | First merge from `feat/ui-rework-v3` → main triggers auto-deploy via deploy.yml; AZURE_VM secrets must be set. | .github/workflows/deploy.yml | MR917 | 2b9b69e | 2026-04-26 (verified main already gates push-trigger; real risk is feat-branch overwriting that gate; merge recipe captured in Report-0260 + MERGE-CONFLICTS.md entry 4)
 - [x] HIGH | Report-0124/0157 | INTEGRATION_AUDIT.md (commit c6ab593) flagged 9 UI pages bypass dispatcher; 5+ modules bypass PortfolioStore. | rcm_mc/ui/* | MR855/MR708 | 8a6bdf8 | 2026-04-26 (MR708: fixed real write-path bypass at server.py:5189 + re-classified 28 read-only renderers as bounded; surfaced MR1067 LOW for refactor; MR855 lives on feat-branch — covered by MERGE-CONFLICTS.md handoff)
-- [ ] LOW | Report-0261 | ~28 UI renderers still call `sqlite3.connect()` directly for read-only queries on portfolio DB — bounded risk but miss `busy_timeout`. Refactor to take `store: PortfolioStore`. | rcm_mc/ui/* | MR1067
+- [ ] LOW | Report-0261 | ~28 UI renderers still call `sqlite3.connect()` directly for read-only queries on portfolio DB — bounded risk but miss `busy_timeout`. Refactor to take `store: PortfolioStore`. | rcm_mc/ui/* | MR1067 | (2026-08-01 re-verify: largely fixed upstream — ui/ now routes through the canonical seam; single residual = ml/fund_learning.py:46 missing busy_timeout — Report-0262)
+- [ ] HIGH | Report-0262 | `PortfolioStore.delete_deal` lists wrong child-table names (`deal_owners`/`health_scores`/`watchlist` vs real `deal_owner_history`/`deal_health_history`/`deal_stars`) with per-table `except: pass` → silent orphans on pre-FK live DBs; plus bare NO-ACTION `note_tags` FK makes deals with tagged notes undeletable. | rcm_mc/portfolio/store.py:174-189 | MR1068
 
 ## MEDIUM
 
@@ -50,45 +51,45 @@ Marker legend: `[ ]` open · `[x]` resolved (commit hash inline) · `[~]` partia
 - [ ] MEDIUM | Report-0258 | Seeder production-guard heuristic at `dev/seed.py:134` only matches `/data/` + `seekingchartis.db` — partner's `~/portfolio.db` slips through. Tighten before users run `--overwrite`. | rcm_mc/dev/seed.py:134 (feat/ui-rework-v3) | MR1061
 - [ ] MEDIUM | Report-0258 | `dev/seed.py --overwrite` is safe on fresh DBs post-iter-23 FK CASCADE, but leaks orphans on live DBs until MR1059 ALTER migration ships. | rcm_mc/dev/seed.py (feat/ui-rework-v3) | MR1063
 - [ ] MEDIUM | Report-0259 | `canonical_facade._record` swallows all exceptions (try/except Exception: pass) — manifest failures silently skip rows. Promote to logged warning. | rcm_mc/exports/canonical_facade.py:102 (feat/ui-rework-v3) | MR1066
-- [~] MEDIUM | Report-0253 | `rcm_mc/infra/config.py` has no `__all__` — every non-underscore name is implicit public surface; renames silently break callers. | rcm_mc/infra/config.py | MR1046 | 8d355d2 | 2026-04-26 (partially mitigated by test_config_public_helpers.py covering 6 helpers; __all__ declaration still pending)
-- [ ] MEDIUM | Report-0253 | `_extends` recursion in `infra/config.py:66` has no cycle detection → self-extending YAML → RecursionError. | rcm_mc/infra/config.py:66 | MR1047
-- [ ] MEDIUM | Report-0253 | `_resolve_env_vars` silently passes unset env vars (literal `${UNSET}` in cfg). | rcm_mc/infra/config.py:48 | MR1048
+- [x] MEDIUM | Report-0253 | `rcm_mc/infra/config.py` has no `__all__` — every non-underscore name is implicit public surface; renames silently break callers. | rcm_mc/infra/config.py | MR1046 | 0e93f13 | 2026-08-01 (explicit 14-name __all__ + resolvability/no-private-names tests in test_config_hardening.py)
+- [x] MEDIUM | Report-0253 | `_extends` recursion in `infra/config.py:66` has no cycle detection → self-extending YAML → RecursionError. | rcm_mc/infra/config.py:66 | MR1047 | 0e93f13 | 2026-08-01 (realpath visited-set threaded through load_yaml; circular chains raise ConfigError; 3 tests)
+- [x] MEDIUM | Report-0253 | `_resolve_env_vars` silently passes unset env vars (literal `${UNSET}` in cfg). | rcm_mc/infra/config.py:48 | MR1048 | 0e93f13 | 2026-08-01 (warning landed upstream in 2e3548e + ${VAR:default} syntax; closure = 3 contract-locking tests)
 - [ ] MEDIUM | Report-0249 | `_audit` private writer in `engagement/store.py:221` untested; audit trails could break silently. | rcm_mc/engagement/store.py:221 | MR1024
 - [ ] MEDIUM | Report-0251 | mypy version drift — `pyproject.toml` `>=1.5` vs pre-commit pin `v1.8.0`. | pyproject.toml + .pre-commit-config.yaml | MR1037
 - [ ] MEDIUM | Report-0247 | NEW `rcm_mc/infra/exports.py` (225L) on feat/ui-rework-v3 — `infra/` had no prior Report mention before this. | rcm_mc/infra/exports.py | MR1019
 - [ ] MEDIUM | Report-0247 | server.py +217 LOC on feat/ui-rework-v3 — route-collision risk if main also adds routes. | rcm_mc/server.py | MR1020
 - [ ] MEDIUM | Report-0247 | screening/dashboard.py modified +69 LOC + bankruptcy_survivor commit. | rcm_mc/screening/dashboard.py | MR1021
-- [ ] MEDIUM | Report-0246/0216 | Origin/main frozen at `3ef3aa3` for 9+ days; pre-merge state likely. | (git state) | MR1005
-- [ ] MEDIUM | Report-0252 | `run_intake` writes YAML without atomic temp+rename → mid-process kill leaves corrupt YAML. | rcm_mc/data/intake.py:222 | MR1042
-- [ ] MEDIUM | Report-0252 | `yaml.safe_load(f) or {}` at intake.py:52 silently turns malformed-empty into `{}`. | rcm_mc/data/intake.py:52 | MR1045
+- [x] MEDIUM | Report-0246/0216 | Origin/main frozen at `3ef3aa3` for 9+ days; pre-merge state likely. | (git state) | MR1005 | (none) | 2026-08-01 (stale-moot: origin/main current at a46a928, 75 commits landed since April — Report-0262)
+- [x] MEDIUM | Report-0252 | `run_intake` writes YAML without atomic temp+rename → mid-process kill leaves corrupt YAML. | rcm_mc/data/intake.py:222 | MR1042 | 0e93f13 | 2026-08-01 (temp + os.replace, try/finally cleanup; survives-failed-dump test)
+- [x] MEDIUM | Report-0252 | `yaml.safe_load(f) or {}` at intake.py:52 silently turns malformed-empty into `{}`. | rcm_mc/data/intake.py:52 | MR1045 | 0e93f13 | 2026-08-01 (load_template raises ValueError naming the file for empty/null/non-mapping)
 - [ ] MEDIUM | Report-0099/0119/0179 | 60% of deps have loose pins (12 of 20). | pyproject.toml | MR978
 - [ ] MEDIUM | Report-0207 | `Engagement` dataclass + DDL high coupling — adding/removing column requires both DDL update AND dataclass update. | rcm_mc/engagement/store.py | MR988
-- [ ] MEDIUM | Report-0212 | `ai/llm_client.py` reads `ANTHROPIC_API_KEY` env var with empty default → API calls fail at runtime with 401 if unset. | rcm_mc/ai/llm_client.py:147 | MR1001
-- [ ] MEDIUM | Report-0212 | Single-vendor lock to Anthropic API — no abstraction layer for swapping provider. | rcm_mc/ai/* | MR1012
+- [x] MEDIUM | Report-0212 | `ai/llm_client.py` reads `ANTHROPIC_API_KEY` env var with empty default → API calls fail at runtime with 401 if unset. | rcm_mc/ai/llm_client.py:147 | MR1001 | (none) | 2026-08-01 (already-fixed by design: complete() no-key guard returns "[LLM not configured]", is_configured checked by all 4 callers, tested in test_phase_p.py — Report-0262)
+- [x] MEDIUM | Report-0212 | Single-vendor lock to Anthropic API — no abstraction layer for swapping provider. | rcm_mc/ai/* | MR1012 | (none) | 2026-08-01 (resolved upstream: LLMClient dispatches local Ollama primary vs Anthropic legacy fallback; LLM surface confined to ai/+assistant/ — Report-0262)
 - [ ] MEDIUM | Report-0250 | 5 root `.md` files (ARCHITECTURE_MAP, FILE_INDEX, FILE_MAP, DEPLOYMENT_PLAN, WALKTHROUGH) — possible duplication / drift. | repo root | MR1033
-- [ ] MEDIUM | Report-0247 | +13.7K LOC in single PR (feat/ui-rework-v3) — review burden very high; bisect-unfriendly. | (git state) | MR1016
-- [ ] MEDIUM | Report-0094 | Three `*_predictor.py` variants (rcm_predictor / trained_rcm_predictor / rcm_performance_predictor) — overlapping behavior. | rcm_mc/ml/* | MR504/MR510
-- [ ] MEDIUM | Report-0017 | No migration framework — field-add requires manual schema-aware migration. | rcm_mc/portfolio/store.py | MR486
+- [x] MEDIUM | Report-0247 | +13.7K LOC in single PR (feat/ui-rework-v3) — review burden very high; bisect-unfriendly. | (git state) | MR1016 | (none) | 2026-08-01 (stale-moot: branch landed via normal PR flow months ago — Report-0262)
+- [x] MEDIUM | Report-0094 | Three `*_predictor.py` variants (rcm_predictor / trained_rcm_predictor / rcm_performance_predictor) — overlapping behavior. | rcm_mc/ml/* | MR504/MR510 | (none) | 2026-08-01 (closed-as-accepted: documented distinct roles — comparables filler / trained Ridge+CV engine / public-data screener — each with own tests + README coverage; Report-0262)
+- [x] MEDIUM | Report-0017 | No migration framework — field-add requires manual schema-aware migration. | rcm_mc/portfolio/store.py | MR486 | (none) | 2026-08-01 (already-fixed upstream: infra/migrations.py registry + _migrations table, startup-wired, test_migration_idempotency.py — Report-0262)
 - [ ] MEDIUM | Report-0251 | `openpyxl` listed in both `[dependencies]` and `[exports]` extras — redundant. | pyproject.toml | MR1039
 
 ## LOW
 
-- [ ] LOW | Report-0253 | `MANDATORY_PAYERS` constant unused per comment ("Step 31: Kept for backward compatibility but no longer enforced"). Deletion candidate. | rcm_mc/infra/config.py:16 | MR1051
-- [~] LOW | Report-0253 | `canonical_payer_name` undocumented + non-obvious aliases (Self-Pay→SelfPay, Private/PHI→Commercial). | rcm_mc/infra/config.py:80 | MR1049 | 8d355d2 | 2026-04-26 (alias contract pinned by 4 tests in test_config_public_helpers.py; docstring still pending)
-- [ ] LOW | Report-0253 | Two contracts for same op: `load_and_validate` (raises) vs `validate_config_from_path` (returns tuple). | rcm_mc/infra/config.py:436+469 | MR1050
-- [ ] LOW | Report-0249 | `remove_member` only 2 external refs — not dead, but worth verifying coverage. | rcm_mc/engagement/store.py:369 | MR1029
+- [x] LOW | Report-0253 | `MANDATORY_PAYERS` constant unused per comment ("Step 31: Kept for backward compatibility but no longer enforced"). Deletion candidate. | rcm_mc/infra/config.py:16 | MR1051 | 0e93f13 | 2026-08-01 (deleted + server.py:8850 coverage import swapped to CURRENT_SCHEMA_VERSION; absence pinned by test)
+- [x] LOW | Report-0253 | `canonical_payer_name` undocumented + non-obvious aliases (Self-Pay→SelfPay, Private/PHI→Commercial). | rcm_mc/infra/config.py:80 | MR1049 | 0e93f13 | 2026-08-01 (why-focused docstring added; alias contract already pinned by 4 tests since 8d355d2)
+- [x] LOW | Report-0253 | Two contracts for same op: `load_and_validate` (raises) vs `validate_config_from_path` (returns tuple). | rcm_mc/infra/config.py:436+469 | MR1050 | 0e93f13 | 2026-08-01 (canonical hard-fail vs Step-37 soft wrapper documented in both docstrings + tie test)
+- [x] LOW | Report-0249 | `remove_member` only 2 external refs — not dead, but worth verifying coverage. | rcm_mc/engagement/store.py:369 | MR1029 | (none) | 2026-08-01 (already covered: MemberManagementTests.test_add_list_remove at test_engagement.py:135-140 — Report-0262)
 - [ ] LOW | Report-0250 | `scripts/run_all.sh` + `run_everything.sh` — no test, no CI ref. | scripts/run_*.sh | MR1034
 - [ ] LOW | Report-0250 | `legacy/handoff/CHARTIS_KIT_REWORK.py` (21KB) zero refs — accidental re-import would conflict with `_chartis_kit_editorial.py`. | legacy/handoff/CHARTIS_KIT_REWORK.py | MR1032
-- [ ] LOW | Report-0252 | Default template `community_hospital_500m` hard-coded at `intake.py:200`. | rcm_mc/data/intake.py:200 | MR1044
+- [x] LOW | Report-0252 | Default template `community_hospital_500m` hard-coded at `intake.py:200`. | rcm_mc/data/intake.py:200 | MR1044 | 0e93f13 | 2026-08-01 (DEFAULT_TEMPLATE single-source constant; signature-default test)
 - [ ] LOW | Report-0251 | `exports` and `pptx` extras overlap on `python-pptx`. | pyproject.toml | MR1040
-- [ ] LOW | Report-0251 | `profiles.example.yml` shipped via package-data — real `profiles.yml` glob-match risk. | pyproject.toml:80-85 | MR1041
+- [x] LOW | Report-0251 | `profiles.example.yml` shipped via package-data — real `profiles.yml` glob-match risk. | pyproject.toml:80-85 | MR1041 | (none) | 2026-08-01 (already-fixed: package-data is an explicit file list at pyproject.toml:113-121; **/profiles.yml gitignored with example whitelisted — Report-0262)
 - [ ] LOW | Report-0244 | `llm_client` likely instantiated 4× by sibling ai/ modules — 4× env-var reads. | rcm_mc/ai/* | MR1010
-- [ ] LOW | Report-0245 | Possible `ai/memo_writer` → `pe_intelligence/ic_memo` cross-package call. | rcm_mc/ai/memo_writer.py | MR1013
+- [x] LOW | Report-0245 | Possible `ai/memo_writer` → `pe_intelligence/ic_memo` cross-package call. | rcm_mc/ai/memo_writer.py | MR1013 | (none) | 2026-08-01 (stale-moot: no import in either direction; two memo systems deliberately separate — Report-0262)
 - [ ] LOW | Report-0257 | `cms_ma_enrollment.py` is 712 LOC — possibly bundling enrollment + Star ratings + benchmarks; consider split or confirm single-dataset shape. | rcm_mc/data/cms_ma_enrollment.py | MR1060
 - [ ] LOW | Report-0258 | Seeder couples to production `get_or_build_packet` pipeline — packet_builder semantics changes will alter seed output non-determinism unless seed_random is re-pinned. | rcm_mc/dev/seed.py (feat/ui-rework-v3) | MR1062
 - [ ] LOW | Report-0259 | `_move_to_canonical:64` unlink-then-move has brief crash window where both target and source are absent; shutil.move alone is sufficient. | rcm_mc/exports/canonical_facade.py:64 (feat/ui-rework-v3) | MR1065
 - [ ] LOW | Report-0255 | Tuva Project (Apache 2.0) vendor copy — verify NOTICE file presence + license attribution in repo LICENSE/README. | vendor/ChartisDrewIntel/ | MR1056
-- [ ] LOW | Report-0255 | `RCM_MM/` empty 0-byte scratch dir at repo root — decide: delete vs. gitignore vs. leave (carried follow-up Q2). | RCM_MM/ | (no MR — Q2)
+- [x] LOW | Report-0255 | `RCM_MM/` empty 0-byte scratch dir at repo root — decide: delete vs. gitignore vs. leave (carried follow-up Q2). | RCM_MM/ | (no MR — Q2) | (none) | 2026-08-01 (stale-moot: directory no longer exists; was never git-tracked — Report-0262)
 
 ## Backlog (not yet triaged)
 
