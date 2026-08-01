@@ -8847,7 +8847,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .infra._bundle import _TOP_LEVEL_KEEP as _bnd_keep  # noqa: F401
         from .infra._terminal import _RESET as _term_reset  # noqa: F401
         from .infra.capacity import compute_queue_metrics  # noqa: F401
-        from .infra.config import MANDATORY_PAYERS  # noqa: F401
+        from .infra.config import CURRENT_SCHEMA_VERSION  # noqa: F401
         from .infra.logger import logger as _infra_logger  # noqa: F401
         from .infra.output_formats import write_summary_json  # noqa: F401
         from .infra.output_index import _FILE_DESCRIPTIONS as _oi_desc  # noqa: F401

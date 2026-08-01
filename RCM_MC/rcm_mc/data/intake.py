@@ -38,18 +38,31 @@ TEMPLATES: Dict[str, Path] = {
     "actual": _PACKAGE_ROOT / "configs" / "actual.yaml",
 }
 
+# MR1044: single source for the default template so run_intake and the
+# interactive chooser can never drift apart.
+DEFAULT_TEMPLATE = "community_hospital_500m"
+
 
 # ── Pure logic ────────────────────────────────────────────────────────────────
 
 def load_template(name: str) -> Dict[str, Any]:
-    """Load a named template YAML as a fresh dict."""
+    """Load a named template YAML as a fresh dict.
+
+    An empty or null template raises here with the file path (MR1045):
+    letting it flow through as ``{}`` used to surface much later as a
+    misleading "Missing 'hospital' section" validation error, or as
+    silently blank defaults in the interactive wizard.
+    """
     if name not in TEMPLATES:
         raise ValueError(f"Unknown template '{name}'; choose from {sorted(TEMPLATES)}")
     path = TEMPLATES[name]
     if not path.is_file():
         raise FileNotFoundError(f"Template file missing: {path}")
     with open(path) as f:
-        return yaml.safe_load(f) or {}
+        data = yaml.safe_load(f)
+    if not isinstance(data, dict) or not data:
+        raise ValueError(f"Template file {path} is empty or not a YAML mapping")
+    return data
 
 
 def _blended_mean(cfg: Dict[str, Any], metric_path: Tuple[str, ...]) -> Optional[float]:
@@ -197,7 +210,7 @@ def apply_intake_answers(cfg: Dict[str, Any], answers: Dict[str, Any]) -> List[s
 
 def run_intake(
     answers: Dict[str, Any],
-    template_name: str = "community_hospital_500m",
+    template_name: str = DEFAULT_TEMPLATE,
     out_path: str = "actual.yaml",
     extra_observations: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
@@ -219,8 +232,17 @@ def run_intake(
     validate_config(cfg)  # raises on malformed output
     out_abs = os.path.abspath(out_path)
     os.makedirs(os.path.dirname(out_abs) or ".", exist_ok=True)
-    with open(out_abs, "w") as f:
-        yaml.safe_dump(cfg, f, sort_keys=False)
+    # MR1042: write to a sibling temp file then os.replace so a kill
+    # mid-dump can never truncate an existing actual.yaml (same directory
+    # guarantees same filesystem, so the swap is atomic on POSIX).
+    tmp_path = out_abs + ".tmp"
+    try:
+        with open(tmp_path, "w") as f:
+            yaml.safe_dump(cfg, f, sort_keys=False)
+        os.replace(tmp_path, out_abs)
+    finally:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
     return cfg
 
 
@@ -286,7 +308,7 @@ def _choose_template(
         raise ValueError("not one of the options")
     return _ask(
         "Template choice",
-        default="community_hospital_500m",
+        default=DEFAULT_TEMPLATE,
         parser=_parse,
         input_fn=input_fn,
         output_fn=output_fn,
