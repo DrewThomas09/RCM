@@ -15,6 +15,7 @@ These did not come from the original 262-report triage — they were found by fr
 - [x] HIGH | Report-0268 | Stored XSS: analysis-workbench Delete button interpolated partner deal_id into an onclick fetch() JS-string via html.escape. | rcm_mc/ui/analysis_workbench.py:1428 | MR-S2 | a8b5279 | 2026-08-01 (deal_id path segments percent-encoded via new _seg helper)
 - [x] HIGH | Report-0268 | Reflected XSS: IC-memo + diligence-synthesis routes reflected raw exception text (embeds partner deal_id) unescaped into 500 pages; also fixed a latent UnboundLocalError from the Report-0267 screening fix (html is a function-local in _do_get_inner). | rcm_mc/server.py:7178,7313 | MR-S3 | a8b5279 | 2026-08-01 (all three reflected-exc sites use local `import html as _html`)
 - [x] MEDIUM | Report-0268 | /api/jobs/run wrote a partner outdir unvalidated (comment promised a traversal guard never implemented). | rcm_mc/server.py:20950 | MR-S4 | a8b5279 | 2026-08-01 (reject ../null bytes + confine under server output root)
+- [x] HIGH | Report-0269 | deal_id class root fix — validate deal_id to a safe slug at the creation chokepoint (upsert_deal INSERT path + clone_deal); existing rows grandfathered; untrusted create routes skip/400 gracefully. Closes the class at the source so a future sink can't reintroduce it. | rcm_mc/portfolio/store.py | MR-S5 | d09e865 | 2026-08-01 (is_valid_deal_id + 6 tests; 855 regression tests green)
 
 ## CRITICAL
 
