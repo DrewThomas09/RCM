@@ -31,3 +31,6 @@ f0f4fc2 | 2026-04-26 | HIGH     | Report-0247 | exports/canonical_facade.py audi
 0e93f13 | 2026-08-01 | MEDIUM×2 | Report-0252 | run_intake atomic YAML write via temp+os.replace (MR1042) + empty-template ValueError at load site (MR1045) — test_intake_hardening.py, 8 tests
 0e93f13 | 2026-08-01 | LOW      | Report-0252 | DEFAULT_TEMPLATE single-source constant (MR1044)
 (none)  | 2026-08-01 | 10 items | Report-0262 | verification-only closures: MR1041, MR1001, MR1012, MR1013, MR486, MR1029, MR1005, MR1016, Q2/RCM_MM, MR504/MR510 — all verified already-fixed, stale-moot, or accepted-by-design against HEAD a46a928
+0ab26f6 | 2026-08-01 | HIGH     | Report-0262 | MR1068 delete_deal wrong child-table names — 9 of 27 listed names wrong/phantom, all failures swallowed; list re-derived from live registry, note_tags note_id subquery, no-such-table-only tolerance (Report-0263)
+0ab26f6 | 2026-08-01 | HIGH+MED | Report-0256 | MR1057 live-DB half + MR1059 — deal_children_fk_cascade_rebuild migration: orphan purge + 12-step rebuild + index recreation over 8 tables, self-guarding, startup-wired, DDL-drift guard test
+0ab26f6 | 2026-08-01 | MEDIUM   | Report-0256 | MR1058 — deal_tags / note_tags / deal_snapshots FKs upgraded to ON DELETE CASCADE; deal_notes NO-ACTION soft-delete preserved by test
