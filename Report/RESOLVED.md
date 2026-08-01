@@ -34,3 +34,5 @@ f0f4fc2 | 2026-04-26 | HIGH     | Report-0247 | exports/canonical_facade.py audi
 0ab26f6 | 2026-08-01 | HIGH     | Report-0262 | MR1068 delete_deal wrong child-table names — 9 of 27 listed names wrong/phantom, all failures swallowed; list re-derived from live registry, note_tags note_id subquery, no-such-table-only tolerance (Report-0263)
 0ab26f6 | 2026-08-01 | HIGH+MED | Report-0256 | MR1057 live-DB half + MR1059 — deal_children_fk_cascade_rebuild migration: orphan purge + 12-step rebuild + index recreation over 8 tables, self-guarding, startup-wired, DDL-drift guard test
 0ab26f6 | 2026-08-01 | MEDIUM   | Report-0256 | MR1058 — deal_tags / note_tags / deal_snapshots FKs upgraded to ON DELETE CASCADE; deal_notes NO-ACTION soft-delete preserved by test
+186b06a | 2026-08-01 | MEDIUM×3 | Report-0258/0259 | seeder overwrite provenance guard (MR1061) + transactional cleanup with covenant_metrics/quarterly_actuals coverage (MR1063) + canonical_facade manifest-failure logging (MR1066)
+186b06a | 2026-08-01 | LOW×2    | Report-0258/0259 | seed_random actually consumed, random+numpy pinned (MR1062) + _move_to_canonical pre-unlink crash window removed (MR1065)
