@@ -171,20 +171,30 @@ class PortfolioStore:
         Returns True if the deal existed and was deleted.
         """
         self.init_db()
+        # Report-0262 MR1068: this list previously named four tables that do
+        # not exist (deal_owners / deal_stages / health_scores / watchlist —
+        # the real tables are deal_owner_history / deal_stage_history /
+        # deal_health_history / deal_stars) plus five phantoms, and the
+        # blanket except swallowed the "no such table" errors, silently
+        # orphaning rows on any DB whose FKs predate the CASCADE DDL. Names
+        # below are verified against the live CREATE TABLE registry; only
+        # "no such table" is tolerated (lazily-created tables may be absent),
+        # so a genuine IntegrityError now surfaces instead of half-deleting.
         child_tables = [
             "runs", "deal_overrides", "analysis_runs", "mc_simulation_runs",
-            "generated_exports", "deal_notes", "deal_tags", "deal_owners",
-            "deal_deadlines", "deal_sim_inputs", "comments",
-            "approval_requests", "alert_acks", "alert_history",
-            "deal_stages", "health_scores", "watchlist",
-            "value_creation_plans", "value_tracker_plans", "hold_period_tracking",
-            "initiative_tracking", "provenance_registry",
-            "refresh_schedule", "portfolio_snapshots",
-            # These three FK deals(deal_id) without ON DELETE CASCADE, so they
-            # must be cleared here or the final DELETE FROM deals raises
-            # IntegrityError. Their omission silently broke deletion of any
-            # deal that had a snapshot, quarterly actuals, or initiative
-            # actuals — i.e. essentially every real (or demo) deal.
+            "generated_exports", "deal_notes", "deal_tags",
+            "deal_owner_history", "deal_deadlines", "deal_sim_inputs",
+            "comments", "approval_requests", "alert_acks", "alert_history",
+            "deal_stage_history", "deal_health_history", "deal_stars",
+            "value_creation_plans", "value_tracker_plans",
+            # covenant_metrics before deal_snapshots: its snapshot_id FK is
+            # SET NULL, so deleting snapshots first would pointlessly null
+            # rows we are about to remove anyway.
+            "covenant_metrics",
+            # These three FK deals(deal_id) without ON DELETE CASCADE by
+            # design (NO ACTION per the CLAUDE.md delete-policy matrix), so
+            # they must be cleared here or the final DELETE FROM deals
+            # raises IntegrityError.
             "deal_snapshots", "quarterly_actuals", "initiative_actuals",
         ]
         with self.connect() as con:
@@ -197,14 +207,27 @@ class PortfolioStore:
                 if not existing:
                     con.rollback()
                     return False
+                # note_tags keys on note_id, not deal_id — clear it before
+                # deal_notes or the note FK blocks the notes delete on DBs
+                # whose note_tags FK predates ON DELETE CASCADE.
+                try:
+                    con.execute(
+                        "DELETE FROM note_tags WHERE note_id IN "
+                        "(SELECT note_id FROM deal_notes WHERE deal_id = ?)",
+                        (deal_id,),
+                    )
+                except sqlite3.OperationalError as exc:
+                    if "no such table" not in str(exc):
+                        raise
                 for tbl in child_tables:
                     try:
                         con.execute(
                             f"DELETE FROM {tbl} WHERE deal_id = ?",
                             (deal_id,),
                         )
-                    except Exception:
-                        pass
+                    except sqlite3.OperationalError as exc:
+                        if "no such table" not in str(exc):
+                            raise
                 con.execute(
                     "DELETE FROM deals WHERE deal_id = ?", (deal_id,),
                 )

@@ -112,6 +112,7 @@ def _ensure_snapshot_table(store: PortfolioStore) -> None:
                 favorable_signals INTEGER,
                 notes TEXT,
                 FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.execute(

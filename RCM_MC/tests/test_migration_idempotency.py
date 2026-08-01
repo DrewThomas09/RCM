@@ -221,16 +221,21 @@ class MigrationsRegistryShapeTests(unittest.TestCase):
         # The registry holds delta migrations (column adds, indexes).
         # Full CREATE TABLE belongs in the per-feature module's
         # _ensure_table helper — which is naturally idempotent via
-        # IF NOT EXISTS. New migration shapes should land here so the
-        # idempotency review catches them.
-        for name, sql in _MIGRATIONS:
-            up = sql.upper().strip()
+        # IF NOT EXISTS. The one other allowed shape is a callable
+        # (rebuild-style migrations SQLite's ALTER cannot express, e.g.
+        # the MR1059 FK CASCADE rebuild) — those must be self-guarding
+        # and carry their own test file
+        # (tests/test_deal_children_fk_migration.py).
+        for name, action in _MIGRATIONS:
+            if callable(action):
+                continue
+            up = action.upper().strip()
             self.assertTrue(
                 up.startswith("ALTER TABLE")
                 or up.startswith("CREATE INDEX")
                 or up.startswith("CREATE UNIQUE INDEX"),
                 f"Migration {name!r} uses an unexpected statement "
-                f"shape: {sql[:80]}",
+                f"shape: {action[:80]}",
             )
 
 
