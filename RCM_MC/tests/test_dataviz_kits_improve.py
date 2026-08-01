@@ -75,6 +75,28 @@ def _point_rects(html: str):
 
 # ── power_chart: bar geometry ───────────────────────────────────────
 
+class ChartExportToolbarSafetyTests(unittest.TestCase):
+    """Report-0272: the export toolbar must carry target_id/filename in
+    data-* attributes (html.escape correct there) and read them via
+    this.dataset — never inline them into the onclick JS-string, which is
+    the wrong-codec class."""
+
+    def test_values_ride_in_data_attrs_not_the_js_string(self):
+        out = chart_export_toolbar("chartOut", "my-chart")
+        self.assertIn('data-ckt="chartOut"', out)
+        self.assertIn('data-ckf="my-chart"', out)
+        self.assertIn("ckDlSvg(this.dataset.ckt,this.dataset.ckf)", out)
+        # The literal value must not be interpolated into the JS call.
+        self.assertNotIn("ckDlSvg('chartOut'", out)
+
+    def test_quote_payload_cannot_break_out_of_onclick(self):
+        out = chart_export_toolbar("x')+alert(1)+('", "f")
+        # No inlined value → the payload can only appear (escaped) inside
+        # the data attribute, never inside the onclick JS-string.
+        self.assertNotIn("ckDlSvg('x", out)
+        self.assertIn("this.dataset.ckt", out)
+
+
 class PowerChartBarGeometryTests(unittest.TestCase):
     def test_negative_bar_is_visible_and_hangs_from_zero(self):
         html = render_power_chart(
