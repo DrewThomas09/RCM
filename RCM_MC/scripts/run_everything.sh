@@ -16,7 +16,9 @@
 
 set -e
 
-REPO="/Users/andrewthomas/Desktop/Coding Projects/RCM_MC"
+# MR1034: resolve the repo root from this script's own location
+# (scripts/ -> RCM_MC) instead of one developer's hardcoded path.
+REPO="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 PORT=8090                             # 8080 is often stale
 PY="$REPO/.venv/bin/python"
 PYTEST="$REPO/.venv/bin/pytest"

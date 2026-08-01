@@ -32,15 +32,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-interactive = ["plotly>=5.0"]
-pptx = ["python-pptx>=0.6"]
+# MR978: every spec carries an upper bound at the next major (house
+# style set by the diligence/edi groups) so an upstream major release
+# can't break an install that worked yesterday. Bump caps deliberately.
+interactive = ["plotly>=5.0,<7.0"]
+pptx = ["python-pptx>=0.6,<2.0"]
 # Prompt 22: ``pip install rcm-mc[exports]`` adds the formatted-
 # export optional deps. ``openpyxl`` is also in base deps (the xlsx
 # export is a core partner workflow); ``python-pptx`` is the nice-
 # to-have that upgrades the PPTX output over the stdlib-zip
-# fallback.
-exports = ["python-pptx>=0.6", "openpyxl>=3.1"]
-api = ["fastapi>=0.100", "uvicorn>=0.23"]
+# fallback. Pins here must match the base/[pptx] entries (MR1039/MR1040).
+exports = ["python-pptx>=0.6,<2.0", "openpyxl>=3.1,<4.0"]
+api = ["fastapi>=0.100,<1.0", "uvicorn>=0.23,<1.0"]
 # Phase 0.A diligence-ingestion layer. Isolated from core rcm_mc —
 # the new code lives in ``rcm_mc_diligence/`` and wraps Tuva via
 # ``dbt-duckdb``. Core ``rcm_mc`` imports nothing from here.
@@ -63,42 +66,46 @@ edi = ["x12-python>=0.1,<1.0"]
 # try/except ImportError with histogram / unbounded-normal fallbacks,
 # so the package runs on default install. Listed here to make
 # ``pip install seekingchartis[stats]`` opt-in for nicer charts.
-stats = ["scipy>=1.11"]
+stats = ["scipy>=1.11,<2.0"]
 # CDD analytics expansion (rcm_mc/cdd/). Statistical estimators only:
 # scikit-learn (Ridge, IsolationForest), lifelines (Kaplan-Meier survival),
 # ruptures (changepoint), scipy. Opt-in so the base install and the light
 # ``[dev]`` CI matrix stay unaffected; the golden suite under
 # ``tests/golden/`` needs this extra: ``pip install -e ".[cdd]"``.
 cdd = [
-    "scikit-learn>=1.3",
-    "scipy>=1.11",
-    "lifelines>=0.27",
-    "ruptures>=1.1",
+    "scikit-learn>=1.3,<2.0",
+    "scipy>=1.11,<2.0",
+    "lifelines>=0.27,<1.0",
+    "ruptures>=1.1,<2.0",
 ]
 # ``[all]`` should mean genuinely everything — including
 # ``[diligence]`` and ``[stats]`` — so a single ``pip install -e ".[all]"``
 # yields a fully-featured dev environment. (Report 0001 MR18.)
 all = [
-    "openpyxl>=3.1",
-    "plotly>=5.0",
-    "python-pptx>=0.6",
-    "fastapi>=0.100",
-    "uvicorn>=0.23",
-    "scipy>=1.11",
+    "openpyxl>=3.1,<4.0",
+    "plotly>=5.0,<7.0",
+    "python-pptx>=0.6,<2.0",
+    "fastapi>=0.100,<1.0",
+    "uvicorn>=0.23,<1.0",
+    "scipy>=1.11,<2.0",
     "duckdb>=1.0,<2.0",
     "dbt-core>=1.10,<2.0",
     "dbt-duckdb>=1.10,<2.0",
     "pyarrow>=18.1,<19.0",
     "x12-python>=0.1,<1.0",
-    "scikit-learn>=1.3",
-    "lifelines>=0.27",
-    "ruptures>=1.1",
+    "scikit-learn>=1.3,<2.0",
+    "lifelines>=0.27,<1.0",
+    "ruptures>=1.1,<2.0",
 ]
+# MR1037: the ruff/mypy floors track the .pre-commit-config.yaml hook
+# revs (ruff v0.3.0, mypy v1.8.0) so a fresh ``pip install -e .[dev]``
+# and the pre-commit hooks can't disagree on a version-gated rule.
+# Bump both together.
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.1",
-    "mypy>=1.5",
+    "pytest>=7.0,<10.0",
+    "pytest-cov>=4.0,<8.0",
+    "ruff>=0.3,<1.0",
+    "mypy>=1.8,<2.0",
 ]
 
 [project.scripts]
