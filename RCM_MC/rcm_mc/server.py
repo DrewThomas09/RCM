@@ -7173,9 +7173,16 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
                 return self._send_html(render_memo_html(memo))
             except Exception as exc:  # noqa: BLE001
+                # Report-0268: escape the reflected exception — the
+                # deal_id path segment (partner-supplied) can surface in
+                # the message, so an unescaped reflection is XSS (twin of
+                # the MR1021 screening-route fix). `html` is a local
+                # further down this method, so alias the module here.
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>IC memo failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         # ── Deal Screening dashboard ──
@@ -7253,10 +7260,15 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # params are parsed with float(), whose ValueError message
                 # embeds the raw input verbatim — reflecting {exc}
                 # unescaped is a reflected-XSS vector. Escape it.
+                # NB: `html` is a function-local further down this method
+                # (html = render_*(...)), so the module must be re-imported
+                # under an alias here or the reference is UnboundLocalError
+                # (see the note near the workspace badge above).
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>Screening failed: "
-                    f"{html.escape(type(exc).__name__)}: "
-                    f"{html.escape(str(exc))}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         # ── Synthesis runner — IC binder over 13 packets ──
@@ -7308,9 +7320,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 html = render_html_binder(result)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
+                # Report-0268: escape the reflected exception (partner
+                # deal_id can surface in the message). `html` is a local
+                # further down this method, so alias the module here.
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>Synthesis failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         if path.startswith("/api/diligence/synthesis/"):
@@ -20941,6 +20958,29 @@ class RCMHandler(BaseHTTPRequestHandler):
                     raise ValueError(
                         "actual, benchmark, and outdir are required"
                     )
+                # Report-0268: the "protect against path-traversal" the old
+                # comment promised for outdir was never implemented — outdir
+                # flowed straight into run_main(['--outdir', outdir]) which
+                # mkdir's it and writes files, so a partner could write
+                # anywhere. Reject traversal / null bytes always, and when
+                # the server has an output root (--outdir) confine outdir
+                # under it (same base+os.sep idiom as _route_output / the
+                # jobs progress page).
+                if "\x00" in outdir or ".." in Path(outdir).parts:
+                    raise ValueError(f"invalid outdir: {outdir!r}")
+                _out_base = (
+                    os.path.abspath(self.config.outdir)
+                    if self.config.outdir else ""
+                )
+                if _out_base:
+                    _abs_out = os.path.abspath(outdir)
+                    if not (_abs_out == _out_base
+                            or _abs_out.startswith(_out_base + os.sep)):
+                        raise ValueError(
+                            f"outdir must be under the server output root "
+                            f"{_out_base}: {outdir!r}"
+                        )
+                    outdir = _abs_out
                 # Protect against obvious path-traversal — require absolute
                 # paths or paths under the server's --outdir.
                 for label, p in [("actual", actual), ("benchmark", benchmark)]:

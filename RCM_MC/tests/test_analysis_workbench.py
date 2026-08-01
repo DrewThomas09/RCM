@@ -268,6 +268,19 @@ class TestRenderRegimes(unittest.TestCase):
             self.assertGreaterEqual(html.count(token), at_least,
                                     f"missing {token!r}")
 
+    def test_malicious_deal_id_cannot_break_out_of_delete_onclick(self):
+        # Report-0268: partner-supplied deal_id was interpolated into the
+        # Delete button's onclick fetch() JS-string via html.escape (wrong
+        # codec for a JS context). It is now percent-encoded, so a quote
+        # payload cannot terminate the JS string literal.
+        p = _full_packet()
+        p.deal_id = "x');alert(document.cookie);//"
+        html = render_workbench(p)
+        # No raw quote from the payload survives inside the fetch() URL.
+        self.assertNotIn("fetch('/api/deals/x');", html)
+        # The encoded form is present instead.
+        self.assertIn("/api/deals/x%27", html)
+
 
 # ── Slider JS behavior ──────────────────────────────────────────────
 

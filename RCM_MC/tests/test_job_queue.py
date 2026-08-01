@@ -240,6 +240,39 @@ class TestHttpIntegration(unittest.TestCase):
             finally:
                 self._stop(server)
 
+    def test_post_jobs_run_traversal_outdir_returns_400(self):
+        # Report-0268: outdir was written unvalidated (the code's own
+        # comment promised a traversal guard that was never implemented).
+        # A '..' segment must now be rejected with 400 before submit_run.
+        import os
+        import tempfile
+        import urllib.parse as _p
+        import urllib.request as _u
+        from urllib.error import HTTPError
+        with tempfile.TemporaryDirectory() as tmp:
+            actual = os.path.join(tmp, "actual.yaml")
+            benchmark = os.path.join(tmp, "benchmark.yaml")
+            for path in (actual, benchmark):
+                open(path, "w").close()
+            server, port = self._start_server(tmp)
+            try:
+                body = _p.urlencode({
+                    "actual": actual, "benchmark": benchmark,
+                    "outdir": os.path.join(tmp, "..", "evil"),
+                }).encode()
+                req = _u.Request(
+                    f"http://127.0.0.1:{port}/api/jobs/run",
+                    data=body, method="POST",
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                )
+                with self.assertRaises(HTTPError) as ctx:
+                    _u.urlopen(req)
+                self.assertEqual(ctx.exception.code, 400)
+            finally:
+                self._stop(server)
+
     def test_jobs_index_page_renders(self):
         import tempfile
         import urllib.request as _u

@@ -90,6 +90,33 @@ class TestRenderDashboardDirect(unittest.TestCase):
             self.assertIn("PHI mode", html)
             self.assertIn("disallowed", html)
 
+    def test_saved_template_route_cannot_break_out_of_onclick(self):
+        # Report-0268: a partner-supplied template route was interpolated
+        # into the "Your templates" onclick JS-string via html.escape (the
+        # wrong codec for a JS context — the browser HTML-decodes the
+        # attribute before JS parses it). The route now rides in a
+        # data-target attribute (html.escape correct there) read via
+        # this.dataset. This payload passes save_template's local-path
+        # validation (starts with '/', no '//', no '://') yet carries a
+        # quote that used to break out.
+        from rcm_mc.analysis.saved_analyses import save_template
+        from rcm_mc.portfolio.store import PortfolioStore
+        store = PortfolioStore(self.db_path)
+        save_template(
+            store,
+            name="pwn",
+            route="/x');alert(document.cookie);//",
+            params={},
+            created_by="attacker",
+        )
+        from rcm_mc.ui.dashboard_page import render_dashboard
+        html = render_dashboard(self.db_path)
+        # The raw quote must not appear inside a window.location=' JS
+        # string — it is carried as an escaped data-target instead.
+        self.assertNotIn("window.location='/x');alert", html)
+        self.assertIn("window.location=this.dataset.target", html)
+        self.assertIn("data-target=", html)
+
 
 class TestDashboardHttpRoute(unittest.TestCase):
     """Boot a real HTTPServer and hit /dashboard."""
