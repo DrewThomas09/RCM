@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -17,6 +18,32 @@ from ..core.distributions import sample_dist
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Report-0268: deal_id is partner-supplied at the import routes and flows
+# into URL path segments, filesystem export paths, and (historically)
+# HTML/JS sinks. Every one of those sinks is now individually neutralized,
+# but validating the id to a safe slug at the ONE creation chokepoint
+# (upsert_deal / clone_deal, INSERT path only) is the durable defense — a
+# future sink can't reintroduce the class. Observed real ids are slugs
+# ("DEAL_001", "acme_health_2026", CCN "010001"), so this charset is not
+# a functional restriction. Existing rows are grandfathered (validation
+# runs only when a NEW row is about to be inserted), so odd legacy ids
+# keep working for owner/tag/note updates.
+_DEAL_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+
+
+def is_valid_deal_id(deal_id: str) -> bool:
+    """True if ``deal_id`` is a safe slug (see ``_DEAL_ID_RE``)."""
+    return bool(_DEAL_ID_RE.match(deal_id or ""))
+
+
+def _require_valid_new_deal_id(deal_id: str) -> None:
+    if not is_valid_deal_id(deal_id):
+        raise ValueError(
+            "deal_id must be 1-128 chars of letters, digits, '.', '_' or "
+            f"'-' (got {deal_id!r})"
+        )
 
 
 def _beta_params_from_mean_sd(mean: float, sd: float) -> Tuple[float, float]:
@@ -144,6 +171,14 @@ class PortfolioStore:
             # "missing" and race into a UNIQUE violation.
             con.execute("BEGIN IMMEDIATE")
             try:
+                # Validate only when creating a NEW deal — existing rows
+                # (possibly with legacy ids) are grandfathered so their
+                # owner/tag/note refreshes still work (Report-0268).
+                already = con.execute(
+                    "SELECT 1 FROM deals WHERE deal_id=?", (deal_id,),
+                ).fetchone()
+                if not already:
+                    _require_valid_new_deal_id(deal_id)
                 con.execute(
                     "INSERT OR IGNORE INTO deals (deal_id, name, created_at, profile_json) "
                     "VALUES (?, ?, ?, ?)",
@@ -250,6 +285,8 @@ class PortfolioStore:
             if not src:
                 return False
             name = new_name or f"{src['name']} (copy)"
+            # new_id is always a fresh row here — validate it (Report-0268).
+            _require_valid_new_deal_id(new_id)
             con.execute("BEGIN IMMEDIATE")
             try:
                 con.execute(

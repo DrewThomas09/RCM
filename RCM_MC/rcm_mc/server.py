@@ -15819,15 +15819,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             deals = [deals]
         store = PortfolioStore(self.config.db_path)
         imported = 0
+        skipped = 0
         for d in deals:
             did = d.get("deal_id", "").strip()
             nm = d.get("name", did)
             prof = d.get("profile", {})
             if did:
-                store.upsert_deal(did, name=nm, profile=prof)
+                try:
+                    # Report-0268: skip unsafe deal_ids instead of 500ing.
+                    store.upsert_deal(did, name=nm, profile=prof)
+                except ValueError:
+                    skipped += 1
+                    continue
                 imported += 1
+        _tail = f" ({skipped} skipped: invalid deal_id)" if skipped else ""
         return self._send_html(render_quick_import(
-            success_msg=f"Successfully imported {imported} deal(s). "
+            success_msg=f"Successfully imported {imported} deal(s).{_tail} "
                         f"View them in the portfolio."))
 
     def _route_screen_post(self) -> None:
@@ -20498,6 +20505,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.BAD_REQUEST,
                 )
             imported = []
+            skipped = []
             for d in deals:
                 did = str(d.get("deal_id") or "").strip()
                 if not did:
@@ -20506,12 +20514,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                 profile = d.get("profile") or {}
                 if not isinstance(profile, dict):
                     profile = {}
-                store.upsert_deal(did, name=name, profile=profile)
+                try:
+                    # Report-0268: upsert_deal rejects an unsafe new
+                    # deal_id — skip and report rather than 500 the batch.
+                    store.upsert_deal(did, name=name, profile=profile)
+                except ValueError as exc:
+                    skipped.append({"deal_id": did, "error": str(exc)})
+                    continue
                 imported.append(did)
             self._log_audit("deal.import", f"{len(imported)} deals")
             return self._send_json({
                 "imported": len(imported),
                 "deal_ids": imported,
+                "skipped": skipped,
             })
 
         # POST /api/deals/<deal_id>/pin — pin/unpin a deal
@@ -20555,7 +20570,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                         profile[pk] = float(profile[pk])
                     except (ValueError, TypeError):
                         pass
-                store.upsert_deal(did, name=name, profile=profile)
+                try:
+                    # Report-0268: reject an unsafe new deal_id (report it
+                    # in the row-error list rather than 500 the import).
+                    store.upsert_deal(did, name=name, profile=profile)
+                except ValueError as exc:
+                    errors.append(f"row {i+1}: {exc}")
+                    continue
                 imported.append(did)
             self._log_audit("deal.import_csv", f"{len(imported)} deals")
             return self._send_json({
@@ -20657,7 +20678,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 payload = {}
             new_id = str(payload.get("new_deal_id") or f"{deal_id}_copy")
             new_name = payload.get("new_name") or None
-            cloned = store.clone_deal(deal_id, new_id, new_name)
+            try:
+                # Report-0268: clone_deal validates the new (partner-chosen)
+                # deal_id; surface a 400 rather than a 500 on a bad slug.
+                cloned = store.clone_deal(deal_id, new_id, new_name)
+            except ValueError as exc:
+                return self._send_json(
+                    {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
+                )
             if not cloned:
                 return self._send_json(
                     {"error": f"deal {deal_id!r} not found"},
