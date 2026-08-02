@@ -896,6 +896,11 @@ SOURCE_URLS: dict = {
     # dozens, so most provenance labels rendered as dead plain text. Every
     # URL below was fetched and confirmed live before being added — do the
     # same for any future entry rather than guessing a plausible link.
+    # Bare "HCRIS" is cited far more often than the decorated
+    # "CMS HCRIS" form, and substring matching runs key-in-label, so the
+    # short form needs its own entry (Report-0277).
+    "HCRIS": "https://www.cms.gov/research-statistics-data-and-systems/"
+             "downloadable-public-use-files/cost-reports",
     "NPPES": "https://download.cms.gov/nppes/NPI_Files.html",
     "NPI Registry": "https://npiregistry.cms.hhs.gov/",
     "MedPAC": "https://www.medpac.gov/",
@@ -910,6 +915,8 @@ SOURCE_URLS: dict = {
     "BLS": "https://www.bls.gov/oes/",
     "HRSA OPA": "https://www.hrsa.gov/opa",
     "340B": "https://www.hrsa.gov/opa",
+    "MGMA": "https://www.mgma.com/",
+    "AHA": "https://www.aha.org/",
 }
 
 

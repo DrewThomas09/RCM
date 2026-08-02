@@ -34,6 +34,11 @@ class TestLabelResolution(unittest.TestCase):
     CASES = {
         "CMS HCRIS": "cost-reports",
         "CMS HCRIS · FY2023": "cost-reports",   # decorated label
+        "HCRIS": "cost-reports",                # bare form, most-cited
+        "HCRIS X-Ray": "cost-reports",
+        "MGMA": "mgma.com",
+        "MGMA DataDive 2025": "mgma.com",
+        "AHA": "aha.org",
         "NPPES": "nppes",
         "NPPES ambulance taxonomy 3416": "nppes",
         "MedPAC assessment of GADCS data, Dec 2025": "medpac.gov",
