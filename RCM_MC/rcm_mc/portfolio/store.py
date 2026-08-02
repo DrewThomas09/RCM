@@ -295,23 +295,33 @@ class PortfolioStore:
                     (new_id, name, _utcnow(), src["profile_json"]),
                 )
                 for tbl in ("deal_tags", "deal_sim_inputs"):
-                    try:
-                        cols_rows = con.execute(
-                            f"PRAGMA table_info({tbl})"
-                        ).fetchall()
-                        cols = [c["name"] for c in cols_rows if c["name"] != "id"]
-                        col_list = ", ".join(cols)
-                        select_cols = ", ".join(
-                            f"'{new_id}'" if c == "deal_id" else c
-                            for c in cols
-                        )
-                        con.execute(
-                            f"INSERT INTO {tbl} ({col_list}) "
-                            f"SELECT {select_cols} FROM {tbl} WHERE deal_id = ?",
-                            (source_id,),
-                        )
-                    except Exception:
-                        pass
+                    # Report-0273: a lazily-created child table may not exist
+                    # yet — tolerate ONLY that. The old blanket
+                    # `except Exception: pass` (sibling of the delete_deal
+                    # bug fixed in Report-0263) also ate genuine copy
+                    # failures — a locked DB, disk I/O error, or constraint
+                    # violation — then fell through to commit()+return True,
+                    # committing a partial clone (e.g. missing the
+                    # deal_sim_inputs actual/benchmark paths that power the
+                    # "rerun simulation" shortcut) while telling the caller
+                    # it fully succeeded. Skip absent tables up front; let
+                    # any real error propagate to the outer rollback.
+                    cols_rows = con.execute(
+                        f"PRAGMA table_info({tbl})"
+                    ).fetchall()
+                    if not cols_rows:
+                        continue  # table not created yet — nothing to copy
+                    cols = [c["name"] for c in cols_rows if c["name"] != "id"]
+                    col_list = ", ".join(cols)
+                    select_cols = ", ".join(
+                        f"'{new_id}'" if c == "deal_id" else c
+                        for c in cols
+                    )
+                    con.execute(
+                        f"INSERT INTO {tbl} ({col_list}) "
+                        f"SELECT {select_cols} FROM {tbl} WHERE deal_id = ?",
+                        (source_id,),
+                    )
                 con.commit()
                 return True
             except Exception:

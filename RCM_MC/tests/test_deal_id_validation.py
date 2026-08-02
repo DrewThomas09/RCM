@@ -75,5 +75,58 @@ class TestUpsertValidation(unittest.TestCase):
         self.assertTrue(self.store.clone_deal("src_deal", "src_deal_copy"))
 
 
+class TestCloneIntegrity(unittest.TestCase):
+    """Report-0273: clone_deal must not swallow a genuine child-copy
+    failure and commit a partial clone while returning True (sibling of
+    the delete_deal bug fixed in Report-0263)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = PortfolioStore(os.path.join(self.tmp.name, "p.db"))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_clone_succeeds_when_lazy_child_tables_absent(self):
+        # deal_tags / deal_sim_inputs may not be created yet — clone
+        # must still succeed (the sole tolerated case).
+        self.store.upsert_deal("src", name="Source")
+        self.assertTrue(self.store.clone_deal("src", "src_copy"))
+        df = self.store.list_deals()
+        self.assertIn("src_copy", set(df.get("deal_id", [])))
+
+    def test_clone_copies_sim_inputs(self):
+        from rcm_mc.deals.deal_sim_inputs import set_inputs, get_inputs
+        self.store.upsert_deal("src", name="Source")
+        set_inputs(self.store, deal_id="src",
+                   actual_path="/a.yaml", benchmark_path="/b.yaml")
+        self.assertTrue(self.store.clone_deal("src", "src_copy"))
+        got = get_inputs(self.store, "src_copy")
+        self.assertIsNotNone(got)
+        self.assertEqual(got["actual_path"], "/a.yaml")
+
+    def test_genuine_child_copy_failure_rolls_back_whole_clone(self):
+        # A real failure during the child-table copy (not "no such
+        # table") must abort the clone — no partial 'deals' row left,
+        # and the error propagates rather than returning a True lie.
+        # A BEFORE INSERT trigger that ABORTs is a genuine, unmocked
+        # DB-level failure on the deal_tags copy.
+        import sqlite3
+        self.store.upsert_deal("src", name="Source")
+        from rcm_mc.deals.deal_tags import add_tag
+        add_tag(self.store, "src", "rcm")  # ensure deal_tags exists
+        with self.store.connect() as con:
+            con.execute(
+                "CREATE TRIGGER _boom BEFORE INSERT ON deal_tags "
+                "BEGIN SELECT RAISE(ABORT, 'boom'); END"
+            )
+            con.commit()
+        with self.assertRaises(sqlite3.Error):
+            self.store.clone_deal("src", "src_copy")
+        # The whole clone rolled back — no partial 'deals' row.
+        df = self.store.list_deals()
+        self.assertNotIn("src_copy", set(df.get("deal_id", [])))
+
+
 if __name__ == "__main__":
     unittest.main()
