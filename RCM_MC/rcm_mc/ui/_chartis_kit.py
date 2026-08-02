@@ -892,6 +892,24 @@ SOURCE_URLS: dict = {
         "inpatient-rehabilitation-facilities",
     "CMS LTCH Compare":
         "https://data.cms.gov/provider-data/topics/long-term-care-hospitals",
+    # Report-0277: the registry covered 7 labels while the platform cites
+    # dozens, so most provenance labels rendered as dead plain text. Every
+    # URL below was fetched and confirmed live before being added — do the
+    # same for any future entry rather than guessing a plausible link.
+    "NPPES": "https://download.cms.gov/nppes/NPI_Files.html",
+    "NPI Registry": "https://npiregistry.cms.hhs.gov/",
+    "MedPAC": "https://www.medpac.gov/",
+    "IRS990": "https://www.irs.gov/charities-non-profits/form-990-series-downloads",
+    "IRS 990": "https://www.irs.gov/charities-non-profits/form-990-series-downloads",
+    "CMS Physician & Other Practitioners":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-physician-other-practitioners",
+    "Medicare Physician Fee Schedule":
+        "https://www.cms.gov/medicare/payment/fee-schedules/physician",
+    "OEWS": "https://www.bls.gov/oes/",
+    "BLS": "https://www.bls.gov/oes/",
+    "HRSA OPA": "https://www.hrsa.gov/opa",
+    "340B": "https://www.hrsa.gov/opa",
 }
 
 
@@ -900,16 +918,26 @@ def source_url(label: Optional[str]) -> Optional[str]:
 
     Tries an exact match first, then a substring match so a decorated label
     (e.g. ``"CMS HCRIS · FY2023"``) still resolves to the base dataset. Never
-    raises — partner UI; an unknown label simply renders as plain text."""
+    raises — partner UI; an unknown label simply renders as plain text.
+
+    Report-0277: the substring pass takes the LONGEST matching key, not the
+    first one in dict order. Insertion-order matching made the registry
+    unsafe to extend — a short generic key ("BLS", "340B") added anywhere
+    above a specific one could silently hijack every label containing it,
+    and the bug would depend on literal source-line order. Longest-match
+    is deterministic: "CMS HCRIS · FY2023" resolves to the HCRIS dataset
+    even though "CMS Hospice Compare" is also a candidate substring."""
     if not label:
         return None
     s = str(label).strip()
     if s in SOURCE_URLS:
         return SOURCE_URLS[s]
+    best_key = ""
+    best_url = None
     for key, url in SOURCE_URLS.items():
-        if key in s:
-            return url
-    return None
+        if key in s and len(key) > len(best_key):
+            best_key, best_url = key, url
+    return best_url
 
 
 def ck_source_link(label: Optional[str], *, style: str = "") -> str:
