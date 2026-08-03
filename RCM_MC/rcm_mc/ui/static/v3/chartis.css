@@ -1797,9 +1797,28 @@ table.ck-table tr:hover td { background: var(--bg-tint); }
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
-.cad-table tr:nth-child(even) td { background: var(--bg-tint); }
-.cad-table tr:hover td { background: var(--bg-tint); }
-.cad-table-sticky th { position: sticky; top: 0; z-index: 5; }
+/* Zebra one step off white — matches the kit's ck-data-table stripe.
+   The old var(--bg-tint) #E8E0D0 stripe was as loud as the thead band
+   AND identical to the hover color, making hover invisible on even
+   rows. Hover is now a translucent teal wash (same as .ck-table /
+   .ck-bar-row) so it reads on both white and striped rows. */
+.cad-table tr:nth-child(even) td { background: #faf6ec; }
+.cad-table tbody tr:hover td { background: rgba(21, 87, 82, 0.07); }
+/* Pinned theads must clear the sticky topbar (~60px, z-index:50) —
+   top:0 parked them invisibly underneath it. --ck-sticky-top is set
+   on :root by the kit shell; 58px is the no-shell fallback. An opaque
+   paper fill stops rows bleeding through the pinned header. */
+.cad-table-sticky th {
+  position: sticky;
+  top: var(--ck-sticky-top, 58px);
+  z-index: 5;
+  background: var(--paper);
+}
+/* .cad-card clips overflow (border-radius chrome), which also makes a
+   card wrapping a sticky table the scroll container that never
+   scrolls — position:sticky never engages. Cards opting into sticky
+   tables trade the corner clip for a working pinned header. */
+.cad-card.cad-table-sticky { overflow: visible; }
 
 /* Badges */
 .cad-badge {

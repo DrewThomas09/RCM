@@ -2088,6 +2088,81 @@ class RCMHandler(BaseHTTPRequestHandler):
     server_version = "RCM-MC"
     sys_version = ""
 
+    # Branded fallback for every stdlib ``send_error`` path (static-file
+    # misses, stale /outputs/ export links, 405s). The BaseHTTPRequestHandler
+    # default is a white Times "Error response" page that breaks the
+    # parchment/navy identity. This must stay self-contained (no shell, no
+    # external CSS/fonts) because send_error can fire pre-auth or before
+    # request parsing finishes. Keep '%' out of the CSS — the template goes
+    # through %-formatting.
+    _MINI_PAGE_CSS = (
+        "body{background:#f5f1ea;color:#1a2332;"
+        "font-family:'Source Serif 4',Georgia,serif;display:flex;"
+        "min-height:100vh;align-items:center;justify-content:center;"
+        "margin:0}main{max-width:520px;padding:32px}"
+        ".eb{font-family:'JetBrains Mono',ui-monospace,monospace;"
+        "font-size:11px;font-weight:700;letter-spacing:.12em;"
+        "color:#155752;text-transform:uppercase}"
+        "h1{font-family:inherit;font-size:28px;font-weight:500;"
+        "color:#0b2341;margin:10px 0 8px;letter-spacing:-0.01em}"
+        "p{font-size:14px;line-height:1.6;color:#37495e}"
+        "a{color:#155752}"
+    )
+    error_content_type = "text/html; charset=utf-8"
+    error_message_format = (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        "<title>%(code)d · PE Desk</title>"
+        f"<style>{_MINI_PAGE_CSS}</style></head><body><main>"
+        '<div class="eb">Error · %(code)d</div>'
+        "<h1>%(message)s.</h1><p>%(explain)s</p>"
+        '<p><a href="/app">&larr; Back to the Command Center</a></p>'
+        "</main></body></html>"
+    )
+
+    def send_error(self, code, message=None, explain=None):
+        """stdlib override: same status/logging semantics as
+        ``BaseHTTPRequestHandler.send_error`` (which has no hook for extra
+        headers), but the response carries the standard hardening header
+        set like every other response. The branded body comes from
+        ``error_message_format`` above; message/explain are escaped here
+        exactly as the stdlib does."""
+        try:
+            code = int(code)
+        except (TypeError, ValueError):
+            code = int(HTTPStatus.INTERNAL_SERVER_ERROR)
+        try:
+            shortmsg, longmsg = self.responses[code]
+        except KeyError:
+            shortmsg, longmsg = "???", "???"
+        if message is None:
+            message = shortmsg
+        if explain is None:
+            explain = longmsg
+        self.log_error("code %d, message %s", code, message)
+        self.send_response(code, message)
+        self.send_header("Connection", "close")
+        body = None
+        if (code >= 200
+                and code not in (HTTPStatus.NO_CONTENT,
+                                 HTTPStatus.RESET_CONTENT,
+                                 HTTPStatus.NOT_MODIFIED)):
+            content = self.error_message_format % {
+                "code": code,
+                "message": html.escape(message, quote=False),
+                "explain": html.escape(explain, quote=False),
+            }
+            body = content.encode("utf-8", "replace")
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header("Content-Length", str(len(body)))
+        try:
+            self._send_security_headers()
+        except Exception:  # noqa: BLE001 — pre-parse failures lack headers
+            pass
+        self.end_headers()
+        if getattr(self, "command", None) != "HEAD" and body:
+            self.wfile.write(body)
+
     # Silence default noisy access-log output; users can tail server output
     # if they need it. The CLI banner already tells them the server is up.
     # B162: concise access log to stderr. Default BaseHTTPRequestHandler
@@ -2449,19 +2524,49 @@ class RCMHandler(BaseHTTPRequestHandler):
         cu = self._current_user()
         return bool(cu and cu.get("role") == "auditor")
 
+    def _referer_path(self, default: str = "/app") -> str:
+        """Same-origin path (+query) of the Referer header, or ``default``.
+
+        Used when bouncing a browser form post back to the page it came
+        from. Only the path/query are kept — never the scheme/host — so a
+        cross-site Referer can't turn the redirect into an open redirect.
+        """
+        ref = urllib.parse.urlparse(self.headers.get("Referer") or "")
+        back = ref.path or default
+        if ref.query:
+            back += "?" + ref.query
+        if not back.startswith("/") or back.startswith("//"):
+            return default
+        return back
+
     def _audit_readonly_blocked(self) -> bool:
-        """A read-only audit session may never mutate. Returns True (and sends
-        403) for any write method, so audit access stays GET-only even though
-        it can see every page."""
-        if self._is_audit_session():
-            self.send_response(HTTPStatus.FORBIDDEN)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self._send_security_headers()
-            self.end_headers()
-            self.wfile.write(
-                b"Read-only audit session: write actions are disabled.")
+        """A read-only audit session may never mutate. Returns True (and
+        refuses the write) for any write method, so audit access stays
+        GET-only even though it can see every page.
+
+        A browser form post (urlencoded + Accept: text/html) bounces back
+        to the referring page with the standard warning toast — the
+        auditor stays on the page instead of dead-ending on plain text.
+        Non-HTML callers (scripts, fetch) keep the plain 403 body."""
+        if not self._is_audit_session():
+            return False
+        ctype = self.headers.get("Content-Type", "") or ""
+        accept = self.headers.get("Accept") or ""
+        if ("application/x-www-form-urlencoded" in ctype
+                and "text/html" in accept):
+            self._redirect(self._with_flash(
+                self._referer_path(),
+                "Read-only audit session — write actions are disabled.",
+                "warning",
+            ))
             return True
-        return False
+        self.send_response(HTTPStatus.FORBIDDEN)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self._send_security_headers()
+        self.end_headers()
+        self.wfile.write(
+            b"Read-only audit session: write actions are disabled.")
+        return True
 
     def _route_audit_enter(self) -> None:
         """GET /audit/enter?token=<signed> — open a read-only audit window.
@@ -2475,14 +2580,34 @@ class RCMHandler(BaseHTTPRequestHandler):
         token = (qs.get("token") or [""])[0].strip()
         exp = _verify(token) if token else None
         if exp is None:
+            # Pre-auth surface, so no chartis_shell (the nav would leak
+            # the app's structure to an unauthenticated visitor). A
+            # self-contained page in the /login visual family instead of
+            # the old bare text/plain dead-end — the person holding a
+            # stale link is exactly the external reviewer we most want
+            # to land softly.
+            msg = ("Audit access is not enabled on this instance."
+                   if not audit_enabled() else
+                   "The link may have expired, or a newer one was issued.")
+            page = (
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" '
+                'content="width=device-width,initial-scale=1">'
+                "<title>Audit access · PE Desk</title>"
+                f"<style>{self._MINI_PAGE_CSS}</style></head><body><main>"
+                '<div class="eb">Audit access</div>'
+                "<h1>This audit link isn&rsquo;t valid.</h1>"
+                f"<p>{msg} Ask the deal team to issue a fresh link.</p>"
+                '<p><a href="/login">Go to sign in &rarr;</a></p>'
+                "</main></body></html>"
+            )
+            body = page.encode("utf-8")
             self.send_response(HTTPStatus.FORBIDDEN)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
             self._send_security_headers()
             self.end_headers()
-            msg = ("Audit access is not available."
-                   if not audit_enabled() else
-                   "Invalid or expired audit link.")
-            self.wfile.write(msg.encode("utf-8"))
+            self.wfile.write(body)
             return
         try:
             from .auth.audit_log import log_event
@@ -2636,6 +2761,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                     r"<h1[^>]*>([^<]+)</h1>", body[:500],
                 )
                 title = m.group(1) if m else "PE Desk"
+                if title.strip().isdigit():
+                    # An <h1>404</h1>-style fragment would otherwise yield
+                    # a "404 · 404 · PE Desk" tab title once the status
+                    # prefix lands below.
+                    title = "PE Desk"
                 if status >= 400:
                     title = f"{status} · {title}" if title != "PE Desk" else f"{status} · PE Desk"
                 body = chartis_shell(body, title=title)
@@ -3948,7 +4078,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
             import traceback
-            logger.error("unhandled GET %s: %s", self.path, exc)
+            logger.error("unhandled GET %s: %s\n%s", self.path, exc,
+                         traceback.format_exc())
+            # Browser navigations get the branded editorial 500 (a bare
+            # JSON dump gives a partner no way back); API callers and
+            # non-HTML clients keep the JSON contract. The traceback
+            # stays server-side — the page shows only the exception
+            # class + trimmed message.
+            wants_page = (
+                not urllib.parse.urlparse(self.path).path.startswith("/api/")
+                and "text/html" in (self.headers.get("Accept") or "")
+            )
+            if wants_page:
+                try:
+                    return self._error_page(
+                        "Something broke.",
+                        f"{type(exc).__name__}: {str(exc)[:200]}",
+                        code="500",
+                    )
+                except Exception:  # noqa: BLE001 — fall through to JSON
+                    pass
             try:
                 self._send_json(
                     {"error": "internal server error",
@@ -7121,9 +7270,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             deal_id = path[
                 len("/diligence/ic-memo/"):].strip("/")
             if not deal_id:
-                return self._send_html(
-                    "<h1>404</h1><p>Missing deal_id</p>",
-                    status=HTTPStatus.NOT_FOUND)
+                return self._error_page(
+                    "Deal not found",
+                    "Missing deal_id in the URL.", code="404")
             try:
                 from .ic_memo import (
                     build_ic_memo, render_memo_html,
@@ -7138,10 +7287,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                         "WHERE deal_id = ?", (deal_id,),
                     ).fetchone()
                 if not row:
-                    return self._send_html(
-                        f"<h1>404</h1><p>Deal {deal_id} not "
-                        f"found</p>",
-                        status=HTTPStatus.NOT_FOUND)
+                    return self._error_page(
+                        "Deal not found",
+                        f"No deal found for ID '{deal_id}'. "
+                        "Try searching from the home page.",
+                        code="404")
                 import json as _json
                 try:
                     prof = _json.loads(
@@ -7173,10 +7323,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
                 return self._send_html(render_memo_html(memo))
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>IC memo failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "IC memo failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         # ── Deal Screening dashboard ──
         if path == "/screening/dashboard":
@@ -7249,10 +7399,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     filtered, flt=flt)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>Screening failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "Screening failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         # ── Synthesis runner — IC binder over 13 packets ──
         if path.startswith("/diligence/synthesis/"):
@@ -7263,9 +7413,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             # via the IC binder HTML renderer.
             deal_id = path[len("/diligence/synthesis/"):].strip("/")
             if not deal_id:
-                return self._send_html(
-                    "<h1>404</h1><p>Missing deal_id</p>",
-                    status=HTTPStatus.NOT_FOUND)
+                return self._error_page(
+                    "Deal not found",
+                    "Missing deal_id in the URL.", code="404")
             try:
                 from .diligence_synthesis import (
                     DiligenceDossier, run_full_diligence,
@@ -7283,9 +7433,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                         "WHERE deal_id = ?", (deal_id,),
                     ).fetchone()
                 if not row:
-                    return self._send_html(
-                        f"<h1>404</h1><p>Deal {deal_id} not found</p>",
-                        status=HTTPStatus.NOT_FOUND)
+                    return self._error_page(
+                        "Deal not found",
+                        f"No deal found for ID '{deal_id}'. "
+                        "Try searching from the home page.",
+                        code="404")
                 import json as _json
                 profile = {}
                 try:
@@ -7303,10 +7455,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 html = render_html_binder(result)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>Synthesis failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "Synthesis failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         if path.startswith("/api/diligence/synthesis/"):
             # JSON variant — same dossier construction, machine
@@ -14570,7 +14722,24 @@ class RCMHandler(BaseHTTPRequestHandler):
         try:
             self._do_post_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
-            logger.error("unhandled POST %s: %s", self.path, exc)
+            import traceback
+            logger.error("unhandled POST %s: %s\n%s", self.path, exc,
+                         traceback.format_exc())
+            # Same page-vs-API branch as the GET boundary: a browser form
+            # navigation gets the branded 500, API/XHR callers keep JSON.
+            wants_page = (
+                not urllib.parse.urlparse(self.path).path.startswith("/api/")
+                and "text/html" in (self.headers.get("Accept") or "")
+            )
+            if wants_page:
+                try:
+                    return self._error_page(
+                        "Something broke.",
+                        f"{type(exc).__name__}: {str(exc)[:200]}",
+                        code="500",
+                    )
+                except Exception:  # noqa: BLE001 — fall through to JSON
+                    pass
             try:
                 self._send_json(
                     {"error": "internal server error",
@@ -14612,6 +14781,27 @@ class RCMHandler(BaseHTTPRequestHandler):
             if "application/x-www-form-urlencoded" in ctype:
                 form_dict = self._read_form_body()
             if not self._csrf_ok(form_dict):
+                # A stale token on a browser form is routine, not
+                # exceptional — the CSRF secret is per-process, so every
+                # restart invalidates all open tabs. Bounce the partner
+                # back to the page they came from with a toast (the fresh
+                # page load self-heals the rcm_csrf cookie, so the retry
+                # succeeds). XHR/API callers — anything that sets
+                # X-Requested-With or doesn't accept text/html — keep the
+                # JSON contract.
+                is_browser_form = (
+                    "application/x-www-form-urlencoded" in ctype
+                    and "text/html" in (self.headers.get("Accept") or "")
+                    and not self.headers.get("X-Requested-With")
+                )
+                if is_browser_form:
+                    return self._redirect(self._with_flash(
+                        self._referer_path(),
+                        "That didn't go through — your security token "
+                        "was reset (usually a server restart). The page "
+                        "has been refreshed; please retry the action.",
+                        "warning",
+                    ))
                 return self._send_json(
                     {"error": "CSRF check failed",
                      "code": "CSRF_FAILED"},
@@ -19172,14 +19362,33 @@ class RCMHandler(BaseHTTPRequestHandler):
         if tab not in ("signin", "request"):
             tab = "signin"
         err = (qs.get("err") or [""])[0]
+        if err == "1":
+            # Compact form of the failure redirect (?err=1&u=<username>);
+            # expand to the partner-facing message here so the URL stays
+            # short.
+            err = "Invalid credentials"
         nxt = (qs.get("next") or ["/"])[0]
         request_success = (qs.get("request_success") or [""])[0] == "1"
-        self._send_html(render_login_page(
+        kwargs = dict(
             tab=tab,
             error=err or None,
             request_success=request_success,
             next_url=nxt,
-        ))
+        )
+        # ``u`` = username to prefill after a failed attempt (set by the
+        # /api/login failure redirect). Passed through only when the
+        # renderer supports it, so server.py and login_page.py can land
+        # the contract independently.
+        prefill = (qs.get("u") or [""])[0][:80]
+        if prefill:
+            import inspect as _inspect
+            try:
+                params = _inspect.signature(render_login_page).parameters
+            except (TypeError, ValueError):  # pragma: no cover
+                params = {}
+            if "username_prefill" in params:
+                kwargs["username_prefill"] = prefill
+        self._send_html(render_login_page(**kwargs))
 
     def _route_login_request_submit(self) -> None:
         """POST /login?tab=request — Request Access form submission.
@@ -20085,9 +20294,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.UNAUTHORIZED,
                 )
             self.send_response(HTTPStatus.SEE_OTHER)
+            # ``u`` carries the typed username back to the login form so a
+            # password typo doesn't force retyping the email. Contract
+            # shared with ui/chartis/login_page.py: /login?u=<urlencoded>
+            # → prefill #login-email. Never carry the password.
             self.send_header(
                 "Location",
                 f"/login?err={urllib.parse.quote('Invalid credentials')}"
+                f"&u={urllib.parse.quote(username[:80])}"
                 f"&next={urllib.parse.quote(nxt)}",
             )
             self.end_headers()

@@ -171,19 +171,27 @@ def _r2_bar_chart(results: List["ModelBacktestResult"]) -> str:
     def sx(v: float) -> float:
         return pad_l + max(0.0, min(v, 1.0)) / max_r2 * inner_w
 
+    # Regular 0.2-step ticks anchored at the 0 and 1.0 endpoints the
+    # axis caption references — the previous hand-picked 0.25/0.50/
+    # 0.70/0.90 ticks read as a distorted scale (uneven intervals)
+    # and labeled neither anchor. 0.0 gets a label but no gridline:
+    # the bar baseline already draws that axis.
     grid = []
-    for v in (0.25, 0.5, 0.7, 0.9):
+    for v in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0):
         if v > max_r2:
             continue
         x = sx(v)
+        if v > 0.0:
+            grid.append(
+                f'<line x1="{x:.1f}" x2="{x:.1f}" '
+                f'y1="{pad_t}" y2="{pad_t + len(plotted) * row_h}" '
+                f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
+            )
         grid.append(
-            f'<line x1="{x:.1f}" x2="{x:.1f}" '
-            f'y1="{pad_t}" y2="{pad_t + len(plotted) * row_h}" '
-            f'stroke="#d6cfc0" stroke-dasharray="2,4" />'
             f'<text x="{x:.1f}" y="{pad_t + len(plotted) * row_h + 14}" '
             f'fill="#7a8699" text-anchor="middle" font-size="10" '
             f'font-family="JetBrains Mono, monospace">'
-            f'{v:.2f}</text>'
+            f'{v:.1f}</text>'
         )
 
     grade_colors = {

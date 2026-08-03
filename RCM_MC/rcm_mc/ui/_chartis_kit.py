@@ -58,7 +58,7 @@ P = {
     # Text on light
     "text":        "#1a2332",
     "text_dim":    "#465366",
-    "text_faint":  "#7a8699",
+    "text_faint":  "#5d6675",
 
     # Text on navy
     "on_navy":       "#e9eef5",
@@ -1757,18 +1757,18 @@ def ck_scatter(
     if x_ref is not None:
         try:
             xr = sx(float(x_ref))
-            parts.append(f'<line x1="{xr:.1f}" y1="{T}" x2="{xr:.1f}" y2="{H-B}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+            parts.append(f'<line x1="{xr:.1f}" y1="{T}" x2="{xr:.1f}" y2="{H-B}" stroke="var(--sc-text-faint,#5d6675)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
         except (TypeError, ValueError): pass
     if y_ref is not None:
         try:
             yr = sy(float(y_ref))
-            parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+            parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#5d6675)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
         except (TypeError, ValueError): pass
     # axis min/max ticks
-    parts.append(f'<text x="{L}" y="{H-B+14}" font-size="8" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmin))}</text>')
-    parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmax))}</text>')
-    parts.append(f'<text x="{L-4}" y="{H-B}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymin))}</text>')
-    parts.append(f'<text x="{L-4}" y="{T+8}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymax))}</text>')
+    parts.append(f'<text x="{L}" y="{H-B+14}" font-size="8" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(xmin))}</text>')
+    parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(xmax))}</text>')
+    parts.append(f'<text x="{L-4}" y="{H-B}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(ymin))}</text>')
+    parts.append(f'<text x="{L-4}" y="{T+8}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(ymax))}</text>')
     # axis labels
     if x_label:
         parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
@@ -4815,7 +4815,7 @@ _NARRATIVE_CSS = (
     "max-width:74ch;}"
     # Empty state is the same paragraph in a quieter ink so an
     # un-populated section still reads as intentional, not broken.
-    ".ck-narrative.is-empty{color:var(--sc-text-faint,#7a8699);}"
+    ".ck-narrative.is-empty{color:var(--sc-text-faint,#5d6675);}"
     "</style>"
 )
 
@@ -7703,6 +7703,36 @@ _CSS_INLINE_FALLBACK = """
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink,#0f3d39); }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-teal,#155752); }
   .ck-panel-body { padding:var(--sc-s-6); }
+  /* Wide tables scroll INSIDE their panel instead of clipping at the
+   * page edge (predictive-screener's sort-key column and +PIPE action
+   * were unreadable at 1440px). Scoped via :has to table-bearing panel
+   * bodies only, because overflow-x:auto forces overflow-y to auto as
+   * well and would clip the absolutely-positioned help/provenance
+   * popovers in non-table panels. */
+  .ck-panel-body:has(table) { overflow-x:auto; }
+  /* Shared baseline for bare form controls inside the editorial column.
+   * Previously there was no `.ck-main select` (or input) rule at all —
+   * only page-local one-offs — so any control outside those wrappers
+   * rendered full native chrome, off the parchment register. :where()
+   * keeps specificity at (0,1,0) so every existing page-local class
+   * rule (.cad-field select, .ck-severity-actions select, …) and any
+   * inline style still wins; only unstyled controls are lifted. */
+  .ck-main :where(select) {
+    font-family:var(--sc-sans); font-size:13px; color:var(--sc-text);
+    background-color:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; padding:6px 26px 6px 10px;
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23465366' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 8px center; }
+  .ck-main :where(input[type="text"], input[type="search"],
+    input[type="number"], input[type="email"], input[type="password"],
+    input[type="url"], input[type="tel"], input:not([type]), textarea) {
+    font-family:var(--sc-sans); font-size:13px; color:var(--sc-text);
+    background-color:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; padding:6px 10px; }
+  /* Checkboxes/radios/progress pick up the teal accent everywhere
+   * (previously only .ck-filter-list set accent-color). */
+  :root { accent-color:var(--sc-teal, #155752); }
   /* Default link affordance inside editorial chrome — every <a> nested
    * in a panel body or section-intro body picks up teal-ink + hover
    * underline so dozens of inline-styled anchors still feel clickable
@@ -7884,6 +7914,7 @@ _CSS_INLINE_FALLBACK = """
   }
   .ck-help-trigger {
     display: inline-flex; align-items: center; justify-content: center;
+    position: relative;
     width: 16px; height: 16px;
     background: transparent;
     border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 50%;
@@ -7893,6 +7924,13 @@ _CSS_INLINE_FALLBACK = """
     cursor: pointer; padding: 0;
     transition: border-color 120ms ease, color 120ms ease,
                 background 120ms ease;
+  }
+  /* The 16px visual circle is well under the WCAG 2.5.8 24px minimum
+   * tap target (and it is the only path to metric definitions). An
+   * invisible inset:-8px overlay grows the hit area to 32px without
+   * moving a pixel of layout. */
+  .ck-help-trigger::after {
+    content: ""; position: absolute; inset: -8px; border-radius: 50%;
   }
   .ck-help-trigger:hover,
   .ck-help-trigger:focus,
@@ -7999,8 +8037,34 @@ _CSS_INLINE_FALLBACK = """
    * border-bottom + opaque --sc-bone background. No box-shadow
    * (Tier-4 don'ts forbid shadows; the hairline carries the
    * visual separation). */
-  .ck-table.ck-table-sticky-head thead th { position:sticky; top:0; z-index:5; background:var(--sc-bone); }
+  /* --ck-sticky-top: the offset sticky in-page elements (pinned theads)
+   * must clear. The topbar is sticky at top:0 and ~60px tall (58px inner
+   * + 2px ink rule); pinning a thead at top:0 parks it UNDERNEATH the
+   * opaque bar (z-index:50), invisible. 58px tucks the thead ~2px under
+   * the bar so no scroll-through gap opens. Pages that render their own
+   * sticky rail below the topbar can override this var locally. */
+  :root { --ck-sticky-top:58px; }
+  .ck-table.ck-table-sticky-head thead th { position:sticky; top:var(--ck-sticky-top,58px); z-index:5; background:var(--sc-bone); }
+  /* Inside an inner scroll region (its own overflow container) sticky
+   * offsets resolve against the SCROLLPORT, not the viewport, so the
+   * topbar offset above would float the header 58px below the region's
+   * top edge. Reset to 0 there. .nh-scroll is npi-history's existing
+   * max-height scroll region (the one working sticky instance before
+   * the offset fix); .ck-scroll-region is the kit-blessed hook for
+   * future inner-scroll tables. */
+  .ck-scroll-region .ck-table.ck-table-sticky-head thead th,
+  .nh-scroll .ck-table.ck-table-sticky-head thead th { top:0; }
+  /* Fragment navigation (contents rails, ck_next_section anchors, the
+   * #ck-main skip link) must not scroll the target under the sticky
+   * topbar — every [id] clears the bar plus 16px of breathing room.
+   * Inert for non-anchor navigation. */
+  [id] { scroll-margin-top:calc(var(--ck-sticky-top,58px) + 16px); }
   .ck-table tbody td { padding:10px 14px; border-bottom:1px solid var(--sc-rule); }
+  /* Row-hover reading guide — the same translucent teal wash the
+   * ck-bar-row primitive already uses, so wide multi-column tables get
+   * a horizontal tracking affordance. rgba (not a solid) so it reads
+   * on white panels and on zebra-striped rows alike. */
+  .ck-table tbody tr:hover { background:rgba(21,87,82,0.06); }
   .ck-table.ck-dense tbody td { padding:5px 10px; font-size:12px; }
   .ck-table .sc-num { font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
   .ck-table .align-right { text-align:right; }
@@ -8028,6 +8092,21 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-strip .ck-kpi { padding:16px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
   .ck-kpi-grid .ck-kpi:last-child,
   .ck-kpi-strip .ck-kpi:last-child { border-right:0; }
+  /* Row-align KPI internals across the strip. With display:block, a
+   * 2-line label pushes its value ~14px lower than single-line
+   * neighbours, so the serif value row reads as a ragged baseline on
+   * every dense strip (auto-fit minmax(160px,1fr) makes label wrap
+   * routine at 7-9 blocks). Subgrid shares four row tracks —
+   * label / value / sub / chart (ck_kpi_block's in-flow children;
+   * .ck-kpi-code is position:absolute so it takes no track) — so
+   * values sit on one line strip-wide. Non-supporting engines keep
+   * today's block behaviour via the @supports guard. */
+  @supports (grid-template-rows: subgrid) {
+    .ck-kpi-grid, .ck-kpi-strip, .ck-pulse-grid { grid-auto-rows:auto; }
+    .ck-kpi-grid > .ck-kpi, .ck-kpi-strip > .ck-kpi, .ck-pulse-grid > .ck-kpi {
+      display:grid; grid-template-rows:subgrid; grid-row:span 4;
+      align-content:start; }
+  }
   .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:6px; }
   .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:600; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
@@ -8135,7 +8214,10 @@ _CSS_INLINE_FALLBACK = """
      legacy second-line `.ck-subnav` rail is no longer rendered, so there is no
      competing sticky element below this one. */
   .ck-topbar { --tb-paper:#faf6ec; --tb-paper2:#f3eddb; --tb-ink:#15202b;
-    --tb-ink2:#2a3a4a; --tb-muted:#6a7480; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
+    /* --tb-muted carries 10-10.5px mono type (mode chip, Ctrl-K hint);
+       the old #6a7480 measured 4.22:1 on the paper bar — under AA.
+       #5d6675 (same as --sc-text-faint) measures 5.37:1 on #faf6ec. */
+    --tb-ink2:#2a3a4a; --tb-muted:#5d6675; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
     --tb-green-deep:#18573f; --tb-green-soft:#d6e8df; --tb-amber:#b8842e;
     position:sticky; top:0; z-index:50; background:var(--tb-paper);
     border-bottom:2px solid var(--tb-ink); }
@@ -8208,12 +8290,37 @@ _CSS_INLINE_FALLBACK = """
   /* Topbar/nav wrapping is phone-only — kept at ≤640 so the 7-link nav
      does not wrap prematurely through the tablet range. */
   @media (max-width:640px){
-    .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:2px; }
+    .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:4px; }
     .ck-wordmark{ padding-right:16px; margin-right:12px; }
     /* let the 7 nav links wrap to multiple rows rather than forcing the
        bar (and the page) ~480px wide; each link keeps its own no-wrap. */
     .ck-nav{ flex-wrap:wrap; }
-    .ck-nav a{ height:auto; padding:6px 10px; }
+    /* 11px vertical padding on 13px type → ~37px tap targets. The old
+       6px gave ~26px rows packed at 2px gap — easy to mis-tap two rows
+       of primary navigation (WCAG 2.5.8 / platform 44px guidance). The
+       taller wrapped bar is fine: the mega-panel offset is measured
+       from the real bar height by the nav JS, not hardcoded. */
+    .ck-nav a{ height:auto; padding:11px 12px; }
+    /* iOS Safari auto-zooms (and stays zoomed) when a focused control's
+       font-size is under 16px. The kit search is 14px and page inputs
+       are mostly 12-13px mono — bump every text-entry control to 16px
+       on phones only; desktop typography is untouched. */
+    .ck-topbar input, .ck-main input[type="text"], .ck-main input[type="search"],
+    .ck-main input:not([type]), .ck-main input[type="number"],
+    .ck-main input[type="email"], .ck-main input[type="password"],
+    .ck-main input[type="url"], .ck-main input[type="tel"],
+    .ck-main select, .ck-main textarea { font-size:16px; }
+    /* The wrapped bar is taller than the desktop 58px the mega-panel's
+       CSS top assumes; the nav JS re-anchors an opening panel to the
+       real bar bottom. What CSS must still guarantee: a panel taller
+       than the phone viewport scrolls internally instead of hiding its
+       bottom items. The 160px fallback approximates the wrapped bar for
+       no-JS renders; the JS sets the exact max-height on open.
+       .ck-topbar prefix: this block sits ABOVE the base .ck-nav-mega
+       rule (overflow:visible), so equal specificity would lose the
+       cascade — the extra class makes the phone scroll rule win. */
+    .ck-topbar .ck-nav-mega{ max-height:calc(100dvh - 160px); overflow-y:auto;
+      -webkit-overflow-scrolling:touch; }
   }
   /* Overflow-prevention safety-net — raised from ≤640 to ≤960 so the
      641–960px tablet range is covered, not just phones. The Phase-0 crawl
@@ -8252,14 +8359,28 @@ _CSS_INLINE_FALLBACK = """
     /* tables with an inline min-width (e.g. min-width:700px) must drop it
        on mobile so .ck-main table's max-width/scroll can take effect. */
     .ck-main table{ min-width:0 !important; }
+    /* display:block on <table> strips the implicit table/row/cell roles
+       from the accessibility tree (Chrome/Safari), losing row-column
+       navigation for screen-reader users. Tables already inside the
+       kit's .ck-data-table-scroll wrapper don't need the block
+       override — the WRAPPER provides the horizontal scroll — so they
+       keep display:table and their semantics. width:max-content +
+       min-width:100% !important (must outrank the min-width:0 guard
+       above) keeps them filling the panel and scrolling inside the
+       wrapper. The blanket display:block above remains the fallback
+       for bare, unwrapped tables only. */
+    .ck-main .ck-data-table-scroll > table{
+      display:table; width:max-content; min-width:100% !important; }
     /* charts scale to the column instead of forcing it wide (viewBox SVGs
        scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio).
        <img> covers matplotlib PNG charts so they shrink with the column. */
     .ck-main svg{ max-width:100%; height:auto; }
     .ck-main img{ max-width:100%; height:auto; }
-    /* any inline multi-column grid (repeat(), "1fr 300px" sidebar
-       layouts, etc.) stacks to one column on phones. */
-    [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
+    /* NOTE: the inline-grid overflow guard ([style*="grid-template-
+       columns"]) is deliberately NOT in this ≤960 block — it lives in
+       its own two media blocks right below, because collapsing every
+       KPI/stat grid to ONE column across the whole tablet range turned
+       768px dashboards into ~8,000px single-number scrolls. */
     /* provenance tooltip cards are visibility:hidden (so they still occupy
        layout) with a 240px min-width — on a phone a card on a right-edge
        KPI/cell pushed the whole page wide. Drop them from flow until
@@ -8271,6 +8392,20 @@ _CSS_INLINE_FALLBACK = """
     .ck-prov-tt:focus-within .ck-prov-tt-card,
     .ck-help:hover .ck-help-popover,
     .ck-help:focus-within .ck-help-popover{ display:block; }
+  }
+  /* Inline-styled multi-column grids (repeat(), "1fr 300px" sidebars,
+     KPI strips) — overflow guard split by breakpoint. On tablets
+     (641-960px) 2-3 columns fit comfortably, so auto-fit tracks keep
+     the dashboard density; min(100%,220px) still lets a track shrink
+     inside narrow containers, so nothing overflows horizontally. Only
+     phones (≤640px) stack to a single column. !important is required
+     to beat the inline style; desktop (≥961px) is untouched. */
+  @media (min-width:641px) and (max-width:960px){
+    [style*="grid-template-columns"]{
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important; }
+  }
+  @media (max-width:640px){
+    [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
   }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
@@ -8914,7 +9049,14 @@ _CSS_INLINE_FALLBACK = """
   .ck-data-table-scroll { overflow-x:auto; margin-top:12px; }
   .ck-data-table { width:100%; border-collapse:collapse; font-size:11px; }
   .ck-data-table thead tr { background:var(--sc-bone); }
-  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece5d6); }
+  /* Zebra one step off white (#faf6ec — the tone the target-screener
+   * table already uses), not bone: bone == the thead band, so bone
+   * stripes read as heavy bars competing with the header. The thead
+   * keeps var(--sc-bone) as the strongest tone in the table. */
+  .ck-data-table tbody tr:nth-child(even) { background:#faf6ec; }
+  /* Hover wash placed AFTER the zebra rule — equal specificity, so
+   * source order lets hover win on even (striped) rows too. */
+  .ck-data-table tbody tr:hover { background:rgba(21,87,82,0.06); }
   .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
@@ -10480,7 +10622,7 @@ _TABLE_FILTER_JS = """
   color:var(--sc-ink,#1a2332);border-radius:2px;width:190px;}
 .ck-tfilter input:focus{outline:none;border-color:var(--sc-teal,#155752);}
 .ck-tfilter-count{font:10px var(--sc-mono,'JetBrains Mono',monospace);
-  color:var(--sc-text-faint,#7a8699);}
+  color:var(--sc-text-faint,#5d6675);}
 </style>
 <script>
 /* Live row-filter for long editorial tables (>=8 body rows). Inserts a
@@ -11020,6 +11162,21 @@ _NAV_MENU_JS = """
   function openOnly(g){            // one panel open at a time
     if (current === g) return;
     groups.forEach(function(x){ if (x !== g){ x.classList.remove('is-open'); setExpanded(x, false); } });
+    // The fixed-position mega panel's CSS top:58px assumes the desktop
+    // one-row bar. When the bar wraps taller (phones, narrow windows)
+    // that offset parks the panel OVER the bar's lower nav rows, so
+    // re-anchor to the real bar height on every open. offsetHeight is
+    // layout px — immune to the global html zoom that skews
+    // getBoundingClientRect. The bar is sticky at top:0, so its bottom
+    // edge equals its height in viewport terms. max-height keeps a
+    // panel taller than the viewport scrollable (CSS gives it
+    // overflow-y:auto on small screens).
+    var mega = g.querySelector('.ck-nav-mega');
+    if (mega){
+      var barH = bar.offsetHeight;
+      mega.style.top = barH + 'px';
+      mega.style.maxHeight = 'calc(100dvh - ' + barH + 'px)';
+    }
     g.classList.add('is-open');
     setExpanded(g, true);
     current = g;

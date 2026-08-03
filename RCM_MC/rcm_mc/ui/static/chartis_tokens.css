@@ -29,7 +29,12 @@
   /* Text on light */
   --sc-text:       #1a2332;
   --sc-text-dim:   #465366;
-  --sc-text-faint: #7a8699;
+  /* Faint slate is used for the SMALLEST type in the system (9-11px mono
+   * eyebrows, table-header labels, axis labels), so it must clear WCAG AA
+   * 4.5:1 on every light surface it sits on. The old #7a8699 measured
+   * 3.27:1 on parchment #f5f1ea; #5d6675 measures 5.15:1 on parchment,
+   * 5.8:1 on white and 4.62:1 on bone while keeping the faint feel. */
+  --sc-text-faint: #5d6675;
 
   /* Text on navy */
   --sc-on-navy:         #e9eef5;

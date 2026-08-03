@@ -437,6 +437,26 @@ def provenance(
     )
 
 
+# Pinned header for sortable tables: the topbar is sticky at ~58px
+# (z-index:50), so top:0 would park the header invisibly beneath it.
+# --ck-sticky-top is set on :root by the kit shell; 58px is the
+# no-shell fallback. Shipped inline with every sortable_table because
+# the editorial shell no longer links power_ui.css (where the same
+# rule lives for legacy-shell pages) and this module has no
+# per-request hook to emit page-level assets once. Duplicate <style>
+# blocks are valid HTML and ~0.2 KB each.
+# Inside a page-owned scroll box (.dc-flat-scroll, .ck-data-table-scroll,
+# …) the wrapper — not the viewport — is the sticky containing scroller,
+# so the topbar offset would pin the header 58px below the box top;
+# those headers pin at 0 instead.
+_STICKY_HEAD_CSS = (
+    '<style>table[data-sortable] thead th{position:sticky;'
+    'top:var(--ck-sticky-top,58px);z-index:5;'
+    'background:var(--paper,#f2ede3);}'
+    '[class*="scroll"] table[data-sortable] thead th{top:0;}</style>'
+)
+
+
 def sortable_table(
     headers: Sequence[str],
     rows: Sequence[Sequence[Any]],
@@ -500,8 +520,10 @@ def sortable_table(
     def _num_attr(i: int) -> str:
         return ' class="num"' if i < ncol and numeric_col[i] else ''
 
+    # scope="col" matches the kit's other table builders — without it
+    # screen readers can't reliably associate header labels with cells.
     head_cells = "".join(
-        f'<th{_num_attr(i)}>{html.escape(str(h))}</th>'
+        f'<th scope="col"{_num_attr(i)}>{html.escape(str(h))}</th>'
         for i, h in enumerate(headers)
     )
     body_rows = []
@@ -527,7 +549,9 @@ def sortable_table(
     caption_html = (
         f'<caption>{html.escape(caption)}</caption>' if caption else ""
     )
+    sticky_css = _STICKY_HEAD_CSS if sortable else ""
     return (
+        f'{sticky_css}'
         f'<table {" ".join(attrs)}>'
         f'{caption_html}'
         f'<thead><tr>{head_cells}</tr></thead>'
