@@ -421,10 +421,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "U.S. Dermatology Partners", "sponsor": "ABRY Partners",
-        "year": 2017, "ev_usd_mm": None, "sector": "dermatology",
+        "year": 2016, "ev_usd_mm": None, "sector": "dermatology",
         "subsector_note": "Physician-led dermatology group practice (South/Midwest)",
         "outcome": "active", "outcome_note": "Active platform.",
-        "source_url": "https://www.abry.com/",
+        "source_url": "https://abry.com/news-article/abry-partners-secures-majority-stake-in-dermatology-associates/",
         "source_note": "ABRY Partners (portfolio); U.S. Dermatology Partners investment",
     },
 
@@ -559,10 +559,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Net Health", "sponsor": "The Carlyle Group",
-        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Specialty EHR for post-acute / rehab / wound care (with Level Equity)",
         "outcome": "active", "outcome_note": "Active platform.",
-        "source_url": "https://www.carlyle.com/",
+        "source_url": "https://www.carlyle.com/media-room/news-release-archive/carlyle-group-and-level-equity-together-net-health-management",
         "source_note": "The Carlyle Group (portfolio); 2018 Net Health acquisition",
     },
     {
@@ -686,18 +686,18 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Smile Brands", "sponsor": "Gryphon Investors",
-        "year": 2019, "ev_usd_mm": None, "sector": "dental",
+        "year": 2016, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "Dental support organization (DSO)",
         "outcome": "active", "outcome_note": "Active; Gryphon recapitalized the platform.",
-        "source_url": "https://www.gryphoninvestors.com/",
+        "source_url": "https://www.gryphon-inv.com/news/gryphon-investors-acquires-smile-brands/",
         "source_note": "Gryphon Investors (portfolio); 2019 Smile Brands recapitalization",
     },
     {
         "target": "Gastro Health", "sponsor": "Audax Group",
-        "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Gastroenterology physician practice management platform",
         "outcome": "active", "outcome_note": "Active platform.",
-        "source_url": "https://www.audaxprivateequity.com/",
+        "source_url": "https://gastrohealth.com/news/press-release/audax-private-equity-announces-a-definitive-agreement-for-the-recapitalization-of-gastro-health",
         "source_note": "Audax Private Equity (portfolio); Gastro Health platform",
     },
 
@@ -1126,10 +1126,10 @@ VERIFIED_DEALS: List[Dict] = [
     # ── ABA / autism (behavioral health) ──
     {
         "target": "BlueSprig Pediatrics", "sponsor": "KKR",
-        "year": 2017, "ev_usd_mm": None, "sector": "behavioral_health",
+        "year": 2018, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy; KKR-formed platform (2017)",
         "outcome": "active", "outcome_note": "Active; grew to 160+ centers.",
-        "source_url": "https://www.bluesprigautism.com/blog/bluesprig-and-fac-partner-to-build-a-national-leader-in-aba-therapy-services/",
+        "source_url": "https://media.kkr.com/news-details/?news_id=927bff92-74f9-4cc8-991d-e7c42a045f5a",
         "source_note": "KKR (portfolio); 2017 BlueSprig Pediatrics formation",
     },
     {
@@ -1176,10 +1176,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Adare Pharma Solutions", "sponsor": "Thomas H. Lee Partners + Frazier Healthcare Partners",
-        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Oral-dosage CDMO; THL + Frazier acquired from TPG",
         "outcome": "active", "outcome_note": "Active CDMO platform.",
-        "source_url": "https://www.thl.com/portfolio/",
+        "source_url": "https://adarepharmasolutions.com/press-release/2020/09/thomas-h-lee-partners-and-frazier-healthcare-partners-acquire-adare/",
         "source_note": "Thomas H. Lee Partners (portfolio); 2021 Adare from TPG",
     },
 
@@ -1893,10 +1893,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Aqua Dermatology (Riverchase/Water's Edge)", "sponsor": "GTCR",
-        "year": 2019, "ev_usd_mm": None, "sector": "dermatology",
+        "year": 2016, "ev_usd_mm": None, "sector": "dermatology",
         "subsector_note": "Southeast derm MSO (Riverchase + Water's Edge merger)",
         "outcome": "active", "outcome_note": "Active derm platform.",
-        "source_url": "https://www.gtcr.com/",
+        "source_url": "https://insurancenewsnet.com/oarticle/gtcr-completes-acquisition-of-riverchase-dermatology",
         "source_note": "GTCR (Riverchase/Aqua Dermatology); via Practical Dermatology coverage",
     },
 
@@ -1911,10 +1911,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Thrive Skilled Pediatric Care", "sponsor": "Summit Partners",
-        "year": 2019, "ev_usd_mm": None, "sector": "home_health_hospice",
+        "year": 2016, "ev_usd_mm": None, "sector": "home_health_hospice",
         "subsector_note": "Pediatric private-duty home nursing; Summit-backed",
         "outcome": "exited", "outcome_note": "Acquired by Aveanna Healthcare in 2025.",
-        "source_url": "https://www.summitpartners.com/",
+        "source_url": "https://www.summitpartners.com/companies/thrive-skilled-pediatric-care",
         "source_note": "Summit Partners (Thrive Skilled Pediatric Care); Aveanna 2025 acquisition",
     },
 
@@ -2131,10 +2131,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "AmeriVet Veterinary Partners", "sponsor": "AEA Investors",
-        "year": 2020, "ev_usd_mm": None, "sector": "veterinary",
+        "year": 2022, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "Veterinary practice partnership model; AEA-backed",
         "outcome": "active", "outcome_note": "Active veterinary platform.",
-        "source_url": "https://amerivet.com/blog/veterinary-private-equity",
+        "source_url": "https://www.aeainvestors.com/aea-acquires-amerivet-partners-management-inc/",
         "source_note": "AEA Investors (AmeriVet Veterinary Partners, 2020)",
     },
 
@@ -2190,10 +2190,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Headlands Research", "sponsor": "KKR",
-        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Clinical-trial site network; KKR-launched (2018)",
         "outcome": "active", "outcome_note": "Active; THL Partners agreed to buy from KKR in 2025.",
-        "source_url": "https://www.businesswire.com/news/home/20250814383571/en/THL-Announces-Agreement-to-Acquire-Headlands-Research-from-KKR",
+        "source_url": "https://www.nasdaq.com/press-release/headlands-research-acquires-six-clinical-research-sites-as-it-seeks-to-transform-the",
         "source_note": "KKR (Headlands Research, 2018); THL 2025",
     },
     {
@@ -2216,18 +2216,18 @@ VERIFIED_DEALS: List[Dict] = [
     # ── Behavioral residential ──
     {
         "target": "Embark Behavioral Health", "sponsor": "Consonance Capital Partners",
-        "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
+        "year": 2023, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Youth/teen mental-health treatment; Consonance majority (Housatonic prior)",
         "outcome": "active", "outcome_note": "Active behavioral-health platform (~12-15x EBITDA).",
-        "source_url": "https://healthcareservicesinvestmentnews.com/2023/02/10/consonance-capital-partners-acquires-majority-stake-in-youth-focused-embark-behavioral-health/",
+        "source_url": "https://healthcaredealflow.com/consonance-capital-partners-acquires-majority-stake-in-youth-focused-embark-behavioral-health/",
         "source_note": "Consonance Capital Partners (Embark Behavioral Health, 2022)",
     },
     {
         "target": "Sandstone Care", "sponsor": "The Vistria Group",
-        "year": 2023, "ev_usd_mm": None, "sector": "behavioral_health",
+        "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Teen/young-adult mental-health + SUD treatment; Vistria ~$200M",
         "outcome": "active", "outcome_note": "Active behavioral-health platform.",
-        "source_url": "https://vistria.com/",
+        "source_url": "https://vistria.com/the-vistria-group-announces-investment-in-sandstone-care/",
         "source_note": "The Vistria Group (Sandstone Care, ~$200M, 2023)",
     },
 
@@ -2263,10 +2263,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Sterling Pharma Solutions", "sponsor": "GHO Capital + Partners Group",
-        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2023, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "API / ADC CDMO; GHO majority, Partners Group minority",
         "outcome": "active", "outcome_note": "Active CDMO platform.",
-        "source_url": "https://ghocapital.com/",
+        "source_url": "https://ghocapital.com/updates/gho-capital-and-partners-group-invest-in-sterling-pharma-solutions-a-leading-pharmaceutical-development-and-manufacturing-organisation/",
         "source_note": "GHO Capital + Partners Group (Sterling Pharma, 2022)",
     },
     {
@@ -2444,10 +2444,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "TekniPlex", "sponsor": "Genstar Capital",
-        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Materials-science / medical packaging + device components",
         "outcome": "active", "outcome_note": "Active healthcare-materials platform.",
-        "source_url": "https://www.gencap.com/",
+        "source_url": "https://www.gencap.com/genstar-capital-announces-acquisition-tekni-plex/",
         "source_note": "Genstar Capital (TekniPlex, 2020)",
     },
     {
@@ -2542,10 +2542,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "WellSky", "sponsor": "TPG Capital + Leonard Green & Partners",
-        "year": 2017, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Post-acute / care-coordination software (fka Mediware); TPG, Leonard Green joined 2021",
         "outcome": "active", "outcome_note": "Active care-software platform.",
-        "source_url": "https://www.tpg.com/",
+        "source_url": "https://www.tpg.com/news-and-insights/wellsky-gains-new-investment-tpg-and-leonard-green-partners",
         "source_note": "TPG (Mediware/WellSky, 2017); Leonard Green 2021",
     },
     {
@@ -2563,10 +2563,10 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "Autism Learning Partners", "sponsor": "FFL Partners",
-        "year": 2018, "ev_usd_mm": 270, "sector": "behavioral_health",
+        "year": 2017, "ev_usd_mm": 270, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy; FFL platform (~$270M+)",
         "outcome": "active", "outcome_note": "Active ABA platform.",
-        "source_url": "https://www.fflpartners.com/ffl-partners-completes-investment-in-autism-learning-partners",
+        "source_url": "https://berkerynoyes.com/pr_ffl-alp/",
         "source_note": "FFL Partners (Autism Learning Partners, 2018, ~$270M)",
     },
     {
@@ -2677,10 +2677,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Drive DeVilbiss Healthcare", "sponsor": "Clayton, Dubilier & Rice",
-        "year": 2013, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Durable medical equipment manufacturer; CD&R-backed",
         "outcome": "active", "outcome_note": "Active DME manufacturer.",
-        "source_url": "https://www.cdr.com/",
+        "source_url": "https://www.cdr.com/news/clayton-dubilier-rice-to-make-significant-investment-in-drive-devilbiss-healthcare-in-partnership-with-existing-management",
         "source_note": "Clayton, Dubilier & Rice (Drive DeVilbiss, 2013)",
     },
     {
@@ -2698,10 +2698,10 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "Genoa Healthcare", "sponsor": "Advent International",
-        "year": 2016, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2015, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Behavioral-health pharmacy (co-located in CMHCs); Advent platform",
         "outcome": "exited", "outcome_note": "Acquired by UnitedHealth's Optum in 2018.",
-        "source_url": "https://www.adventinternational.com/portfolio-stories/beyond-the-prescription-genoa-healthcare-pioneering-pharmacy-services-in-the-us/",
+        "source_url": "https://nautic.com/news/advent-international-to-join-nautic-as-new-investor-in-genoa-a-qol-healthcare-company/",
         "source_note": "Advent International (Genoa Healthcare, 2016); Optum 2018",
     },
     {
@@ -2722,10 +2722,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "HST Pathways", "sponsor": "Bain Capital",
-        "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Ambulatory-surgery-center (ASC) management + scheduling software",
         "outcome": "active", "outcome_note": "Active ASC-software platform.",
-        "source_url": "https://www.baincapital.com/",
+        "source_url": "https://www.baincapital.com/news/hst-pathways-and-casetabs-merge-and-secure-majority-investment-led-bain-capital-tech",
         "source_note": "Bain Capital (HST Pathways, 2021)",
     },
 
@@ -3533,10 +3533,10 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Clarest Health", "sponsor": "Sverica Capital",
-        "year": 2020, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Long-term-care pharmacy + medication-management services; Sverica majority (acquired Remedi SeniorCare 2024)",
         "outcome": "active", "outcome_note": "Active; Sverica Capital acquired majority 2020.",
-        "source_url": "https://sverica.com/portfolio-2/clarest-health/",
+        "source_url": "https://sverica.com/sverica-capital-management-announces-investment-in-procare-ltc/",
         "source_note": "Sverica Capital (Clarest Health, 2020)",
     },
     {
