@@ -368,7 +368,7 @@ _READINESS = Block(
            "booking unsynchronized with any of them."),
         _S("Is paperwork incomplete?",
            "Often: the PCS/medical-necessity packet is the top ambulance "
-           "documentation failure (insufficient documentation is 63.5% of "
+           "documentation failure (insufficient documentation is 46.7% of "
            "improper payments)."),
         _S("Are medications unfinished?",
            "A named non-clinical delay cause in discharge audits (final "
@@ -404,14 +404,14 @@ _MODALITY = Block(
     "q7-modality", "Modality errors",
     conclusion=(
         "No clean national rate exists for wrong-level IFT requests; the "
-        "measurable shadows are payment-integrity data (27.5% of improper "
+        "measurable shadows are payment-integrity data (24.9% of improper "
         "ambulance payments fail medical necessity) and secondary-"
         "overtriage studies — enough to prove both over- and "
         "under-selection happen, not enough to size them."),
     why_true=(
         "The payment record shows selection failure at scale: ambulance "
-        "improper payments run 13.2% ($595.1M projected), of which 63.5% "
-        "is insufficient documentation and 27.5% medical necessity — the "
+        "improper payments run 10.4% ($452.6M projected), of which 46.7% "
+        "is insufficient documentation and 24.9% medical necessity — the "
         "necessity share is substantially level-of-service mis-selection.",
         "Over-triage is measured in adjacent transfer literature: facial-"
         "fracture transfers saw a 151% rise in patients discharged "
@@ -431,10 +431,12 @@ _MODALITY = Block(
         "structured request tools with embedded modality rules are the "
         "cheapest control available."),
     evidence=(
-        _E("Ambulance improper payment rate 13.2%, $595.1M projected; "
-           "insufficient documentation 63.5%, medical necessity 27.5%",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+        _E("Ambulance improper payment rate 10.4% (95% CI 5.6-15.3%), "
+           "$452.6M projected; insufficient documentation 46.7%, medical "
+           "necessity 24.9%",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("Facial-fracture transfers: 151% increase in the share "
            "discharged from the receiving ED on arrival — measured "
            "secondary overtriage",
@@ -452,7 +454,7 @@ _MODALITY = Block(
     ),
     subqs=(
         _S("How often is the wrong transport level requested?",
-           "No IFT-specific published rate — flagged; the 27.5% medical-"
+           "No IFT-specific published rate — flagged; the 24.9% medical-"
            "necessity share of improper payments is the payment-side "
            "shadow."),
         _S("How often is a trip upgraded?",
@@ -916,7 +918,7 @@ _FINANCIAL = Block(
     conclusion=(
         "The costs of IFT failure are real but scattered across ledgers "
         "that never meet — bed-days (~$3,297 adjusted expense per "
-        "inpatient day), denied and never-paid claims (13.2% improper; "
+        "inpatient day), denied and never-paid claims (10.4% improper; "
         "19.7% collect nothing), unpaid crew wait, and uncounted "
         "coordination labor — so no single owner sees the total, and no "
         "single owner funds the fix."),
@@ -925,8 +927,8 @@ _FINANCIAL = Block(
         "inpatient day (2024; an expense proxy, not marginal cost — "
         "labeled), against delayed-discharge costs measured from $142 to "
         "$31,935 per case.",
-        "The claims lines are measured: 13.2% ambulance improper payment "
-        "($595.1M projected) and 19.7% of transports collecting nothing — "
+        "The claims lines are measured: 10.4% ambulance improper payment "
+        "($452.6M projected) and 19.7% of transports collecting nothing — "
         "denial and non-payment costs that reprice into everyone's rates.",
         "The hidden lines are structurally hidden: crew wait (unpaid by "
         "Medicare), coordination labor (no time-motion study exists), and "
@@ -954,9 +956,11 @@ _FINANCIAL = Block(
            "across the systematic review",
            "ACADEMIC", "Landeiro et al., The Gerontologist 2019",
            "https://doi.org/10.1093/geront/gnx028"),
-        _E("Ambulance improper payments 13.2% / $595.1M projected "
-           "(insufficient documentation 63.5%)",
-           "GOV", "CMS CERT 2024 supplemental data (re-verify)", ""),
+        _E("Ambulance improper payments 10.4% / $452.6M projected "
+           "(insufficient documentation 46.7%)",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("19.7% of transports collect nothing — the provider-side "
            "non-payment tax",
            "SOURCED", "CMS/RAND GADCS Year 1-4 appendix, via AAA coverage",
@@ -987,7 +991,7 @@ _FINANCIAL = Block(
            "Crew hours Medicare does not pay — absorbed by providers, "
            "then repriced into rates or withdrawn availability."),
         _S("What cost is created by denied claims?",
-           "The 13.2%/$595.1M improper-payment exposure plus the 19.7% "
+           "The 10.4%/$452.6M improper-payment exposure plus the 19.7% "
            "never-paid share — both ultimately reprice into the market."),
         _S("What cost is created by missed appointments or placements?",
            "Priced only in the NEMT analog: RSNAT's 19% rise in emergency "
@@ -1795,7 +1799,7 @@ _ECONOMICS = Block(
         _S("How much risk does MMT bear for denials?", "",
            skip="Company data — diligence request: denial rate, "
            "clean-claim rate, and contract allocation of denied trips; "
-           "industry exposure is 13.2% improper (63.5% documentation)."),
+           "industry exposure is 10.4% improper (46.7% documentation)."),
         _S("How long does a new market take to mature?", "",
            skip="Company data — diligence request: ramp curves by market "
            "cohort (the 2023-24 NPI vintage is the natural test set)."),
