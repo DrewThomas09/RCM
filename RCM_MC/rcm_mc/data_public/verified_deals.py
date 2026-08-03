@@ -67,7 +67,7 @@ VERIFIED_DEALS: List[Dict] = [
         "subsector_note": "Take-private of non-urban hospital system at $65.00/share; merged with Apollo's RCCH",
         "outcome": "active",
         "outcome_note": "Remains an Apollo portfolio company; later expanded into behavioral health (Springstone).",
-        "source_url": "https://pitchbook.com/news/articles/apollo-to-pay-56b-in-pes-latest-healthcare-deal",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/0001301611/000110465918046550/a18-17580_1ex99d1.htm",
         "source_note": "PitchBook; SEC 8-K",
     },
     {
@@ -76,7 +76,7 @@ VERIFIED_DEALS: List[Dict] = [
         "subsector_note": "Two Philadelphia hospitals; real estate split from the OpCo at deal time",
         "outcome": "bankrupt",
         "outcome_note": "OpCo filed Ch.11 on 2019-07-01; Hahnemann closed mid-2019 (~2,572 laid off) — cited 'real-estate play' failure.",
-        "source_url": "https://www.cnn.com/2019/07/29/economy/hahnemann-hospital-closing-philadelphia/index.html",
+        "source_url": "https://theintercept.com/2020/04/01/philadelphia-hahnemann-hospital-joel-freedman/",
         "source_note": "CNN Business; The American Prospect",
     },
     # ── Physician practice management ──
@@ -86,7 +86,7 @@ VERIFIED_DEALS: List[Dict] = [
         "subsector_note": "Take-private of physician staffing + ASC giant at $46.00/share",
         "outcome": "bankrupt",
         "outcome_note": "Filed Ch.11 on 2023-05-15 (~$7.7B debt) — a marquee No Surprises Act failure; among KKR's steepest losses.",
-        "source_url": "https://www.modernhealthcare.com/finance/envision-healthcare-bankruptcy-chapter-11-amsurg",
+        "source_url": "https://pestakeholder.org/news/it-should-come-as-no-surprise-that-kkr-owned-envision-healthcare-has-finally-declared-bankruptcy/",
         "source_note": "Modern Healthcare; $9.9B EV via Bass Berry & Sims",
     },
     {
@@ -164,7 +164,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": 1300, "sector": "home_health_hospice",
         "subsector_note": "Home/community care + LTC pharmacy (merged with PharMerica); ~$4.5B combined revenue",
         "outcome": "exited", "outcome_note": "KKR IPO'd BrightSpring on Nasdaq in 2024.",
-        "source_url": "https://www.businesswire.com/news/home/20190305005975/en/KKR-Completes-Acquisition-BrightSpring-Health-Services",
+        "source_url": "https://www.biospace.com/kkr-completes-acquisition-of-brightspring-health-services",
         "source_note": "Business Wire; PharMerica merger via Home Health Care News",
     },
     # ── Dental / DSO ──
@@ -181,7 +181,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2024, "ev_usd_mm": 3500, "sector": "dental",
         "subsector_note": "Dentist-owned DSO partnership model (~600 partnerships); $525M equity check",
         "outcome": "active", "outcome_note": "PE-to-PE recap; Charlesbank retained a stake.",
-        "source_url": "https://www.beckersdental.com/dso-dpms/mb2-dental-undergoes-recapitalization-event-6-things-to-know/",
+        "source_url": "https://warburgpincus.com/2024/11/13/mb2-dental-announces-recapitalization-event-with-new-investor-warburg-pincus-solidifying-company-growth-milestone/",
         "source_note": "Becker's Dental; Charlesbank portfolio page",
     },
     # ── Dermatology / ophthalmology ──
@@ -554,7 +554,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Core administrative / claims software for health plans",
         "outcome": "active", "outcome_note": "Active platform.",
-        "source_url": "https://www.blackstone.com/",
+        "source_url": "https://healthedge.com/resources/press-releases/blackstone-completes-acquisition-of-healthedge-software-a-leading-healthcare-technology-solutions-provider",
         "source_note": "Blackstone (portfolio); 2020 HealthEdge acquisition",
     },
     {
@@ -580,7 +580,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 34000, "sector": "other_services",
         "subsector_note": "Medical-supply manufacturing & distribution; one of the largest-ever healthcare LBOs (GIC/ADIA also invested)",
         "outcome": "active", "outcome_note": "Founding family retained control; consortium minority-to-majority capital.",
-        "source_url": "https://www.blackstone.com/",
+        "source_url": "https://newsroom.medline.com/company-news/blackstone-carlyle-and-hellman-friedman-to-invest-in-medline/",
         "source_note": "Blackstone (press); ~$34B EV widely reported (WSJ/Reuters)",
     },
     {
@@ -862,7 +862,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Largest single-specialty anesthesia group; No Surprises Act exposure",
         "outcome": "active", "outcome_note": "Active; out-of-network billing pressure post-2022.",
-        "source_url": "https://www.american-securities.com/en/our-companies",
+        "source_url": "https://www.american-securities.com/companies/napa/",
         "source_note": "American Securities (portfolio); NAPA",
     },
     {
@@ -870,7 +870,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Radiology physician group + imaging centers; WCAS-backed",
         "outcome": "active", "outcome_note": "Active; large radiology consolidator.",
-        "source_url": "https://www.welshcarson.com/portfolio/",
+        "source_url": "https://wcas.com/news/charlotte-radiology-and-welsh-carson-anderson-stowe-announce-the-formation-of-us-radiology-specialists-appoint-new-ceo/",
         "source_note": "Welsh Carson (portfolio); US Radiology Specialists",
     },
     {
@@ -878,7 +878,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2015, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Physician-owned + WCAS emergency-medicine/hospitalist group",
         "outcome": "active", "outcome_note": "Active; staffing-model exposure to No Surprises Act.",
-        "source_url": "https://www.welshcarson.com/portfolio/",
+        "source_url": "https://www.wcas.com/healthcare/companies/us-acute-care-solutions",
         "source_note": "Welsh Carson (portfolio); 2015 USACS formation",
     },
     {
@@ -920,7 +920,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Eating-disorder + mental-health + addiction treatment (Center for Discovery + Cliffside Malibu)",
         "outcome": "distressed", "outcome_note": "Capital One seized control in early 2026 after a debt default — a documented behavioral-health downside.",
-        "source_url": "https://bhbusiness.com/2026/02/09/capital-one-seizes-control-of-discovery-behavioral-health-after-defaulting-on-debt/",
+        "source_url": "https://healthcaredealflow.com/capital-one-seizes-control-of-discovery-behavioral-health-after-defaulting-on-debt/",
         "source_note": "Behavioral Health Business (2026 lender takeover); Mergr (2018 Webster/GarMark formation)",
     },
     {
@@ -1007,7 +1007,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "GI MSO (NJ-anchored, 200+ providers); formed by 5-practice merger",
         "outcome": "active", "outcome_note": "Active GI platform.",
-        "source_url": "https://www.assuredhp.com/portfolio/",
+        "source_url": "https://www.prnewswire.com/news-releases/assured-healthcare-partners-ahp-announces-partnership-with-allied-digestive-health-adh-301207029.html",
         "source_note": "Assured Healthcare Partners (portfolio); Allied Digestive Health",
     },
     {
@@ -1059,7 +1059,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Largest US urology MSO; Lee Equity formed it June 2020",
         "outcome": "active", "outcome_note": "Active; ~$1B revenue urology platform.",
-        "source_url": "https://www.leeequity.com/news-article/urology-associates-joins-solaris-health-nations-largest-urological-services-provider",
+        "source_url": "https://www.leeequity.com/news-article/lee_equity_forms_solaris_heath",
         "source_note": "Lee Equity Partners (Solaris Health); formed June 2020",
     },
     {
@@ -1129,7 +1129,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2017, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy; KKR-formed platform (2017)",
         "outcome": "active", "outcome_note": "Active; grew to 160+ centers.",
-        "source_url": "https://www.kkr.com/invest/portfolio",
+        "source_url": "https://www.bluesprigautism.com/blog/bluesprig-and-fac-partner-to-build-a-national-leader-in-aba-therapy-services/",
         "source_note": "KKR (portfolio); 2017 BlueSprig Pediatrics formation",
     },
     {
@@ -1155,7 +1155,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "home_health_hospice",
         "subsector_note": "Hospice consolidator; backed by Granite Growth, Health Velocity, Petra Capital",
         "outcome": "active", "outcome_note": "Active; began operating May 2019.",
-        "source_url": "https://hospicenews.com/2019/09/24/three-oaks-hospice-opens-its-doors-completes-three-acquisitions/",
+        "source_url": "https://granitegrowthhealthpartners.com/2019/09/24/three-oaks-hospice-launches-with-key-acquisitions-21-million-in-private-equity/",
         "source_note": "Hospice News (Three Oaks launch + backers, 2019)",
     },
 
@@ -1171,7 +1171,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Biopharma CDMO / supply-chain; Bain Capital co-led a 2025 round valuing it ~$10B",
         "outcome": "active", "outcome_note": "Active; 2025 Bain Capital + Kohlberg + Mubadala recap (~$10B).",
-        "source_url": "https://pci.com/strategic-investment-bain-capital-kohlberg-and-mubadala/",
+        "source_url": "https://www.businesswire.com/news/home/20250714606219/en/PCI-Pharma-Services-Enters-Next-Phase-of-Growth-With-Strategic-Investment-from-Bain-Capital-Kohlberg-and-Mubadala",
         "source_note": "PCI (2025 Bain/Kohlberg/Mubadala); Kohlberg+Mubadala since 2020",
     },
     {
@@ -1345,7 +1345,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 1400, "sector": "behavioral_health",
         "subsector_note": "Eating-disorder + behavioral treatment; Apax bought from CCMP (~$1.4B)",
         "outcome": "active", "outcome_note": "Active; CCMP owned it 2017-2021, Apax/Oak bought for ~$1.4B.",
-        "source_url": "https://bhbusiness.com/2021/10/05/apax-partners-and-oak-hc-ft-purchase-eating-recovery-center-for-1-4b/",
+        "source_url": "https://www.apax.com/news-views/apax-funds-to-acquire-eating-recovery-center/",
         "source_note": "Behavioral Health Business (Apax/Oak buy ERC, 2021, ~$1.4B)",
     },
     {
@@ -1383,7 +1383,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2015, "ev_usd_mm": 1055, "sector": "urgent_care",
         "subsector_note": "Occupational-health + urgent-care clinics; WCAS/Select JV bought from Humana",
         "outcome": "exited", "outcome_note": "IPO'd / spun off from Select Medical in 2024 (~$3.1B market value).",
-        "source_url": "https://www.concentra.com/resource-center/press-releases/concentra-sale-to-select-medical-and-welsh-carson-is-complete/",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/0001320414/000110465915039491/a15-12329_1ex99d1.htm",
         "source_note": "Concentra (Humana sale to Select/WCAS, 2015); 2024 IPO",
     },
     {
@@ -1423,7 +1423,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 600, "sector": "other_services",
         "subsector_note": "Outpatient diagnostic-imaging centers; American Securities (~$600M)",
         "outcome": "active", "outcome_note": "Active imaging platform.",
-        "source_url": "https://www.american-securities.com/en/our-companies",
+        "source_url": "https://www.prnewswire.com/news-releases/simonmed-partners-with-american-securities-301273346.html",
         "source_note": "American Securities (SimonMed, 2021, ~$600M)",
     },
     {
@@ -1460,7 +1460,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": 840, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy; Charlesbank bought from NexPhase (~$840M)",
         "outcome": "active", "outcome_note": "Active ABA platform.",
-        "source_url": "https://bhbusiness.com/2022/08/17/charlesbank-capital-partners-wins-auction-to-acquire-action-behavior-centers/",
+        "source_url": "https://healthcareservicesinvestmentnews.com/2022/08/18/charlesbank-capital-partners-to-acquire-action-behavior-centers-at-840m-valuation/",
         "source_note": "Behavioral Health Business (Charlesbank/ABC, 2022, ~$840M)",
     },
     {
@@ -1492,7 +1492,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "IDD/disability + behavioral home-and-community services (fka The MENTOR Network)",
         "outcome": "active", "outcome_note": "Active; Madison Dearborn bought 25% in 2022 (~$3B valuation).",
-        "source_url": "https://bhbusiness.com/2022/01/20/madison-dearborn-to-buy-25-of-sevita-at-roughly-3b-valuation/",
+        "source_url": "https://healthcareservicesinvestmentnews.com/2022/01/21/madison-dearborn-to-buy-25-of-sevita-at-roughly-3b-valuation/",
         "source_note": "Behavioral Health Business (Centerbridge/Vistria 2019; Madison Dearborn 2022 ~$3B)",
     },
 
@@ -1530,7 +1530,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Post-acute-care management software; CD&R bought 55% from Cardinal Health (~$650M)",
         "outcome": "exited", "outcome_note": "Acquired by UnitedHealth's Optum in 2020.",
-        "source_url": "https://www.massdevice.com/cardinal-health-deals-majority-stake-in-navihealth-to-pe-shop-cdr/",
+        "source_url": "https://newsroom.cardinalhealth.com/naviHealth_partnership",
         "source_note": "MassDevice (CD&R buys 55% of naviHealth, 2018, ~$650M); Optum 2020",
     },
     {
@@ -1538,7 +1538,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2023, "ev_usd_mm": 570, "sector": "rcm_healthtech",
         "subsector_note": "PBM + medication-risk-management software; take-private (~$570M)",
         "outcome": "exited", "outcome_note": "Public→private; later merged with ExactCare (2025).",
-        "source_url": "https://www.modernhealthcare.com/mergers-acquisitions/nautic-partners-tabula-rasa-pbm/",
+        "source_url": "https://njbiz.com/tabula-rasa-to-go-private-after-570m-acquisition/",
         "source_note": "Modern Healthcare (Nautic take-private of Tabula Rasa, 2023, ~$570M)",
     },
     {
@@ -1546,7 +1546,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Outpatient mental-health + addiction MSO; Thurston-formed platform",
         "outcome": "active", "outcome_note": "Active behavioral-health platform.",
-        "source_url": "https://bhbusiness.com/2023/01/26/thurston-group-backed-arc-health-doubles-down-on-ma-strategy/",
+        "source_url": "https://www.prnewswire.com/news-releases/thurston-group-creates-new-mental-health-platform-arc-health-301351185.html",
         "source_note": "Behavioral Health Business (Thurston Group-backed ARC Health, formed 2021)",
     },
 
@@ -1569,7 +1569,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "DSO; Blackstone Tactical Opportunities bought from Blue Sea Capital",
         "outcome": "active", "outcome_note": "Active DSO.",
-        "source_url": "https://www.blackstone.com/news/press/deca-dental-group-announces-strategic-investment-from-blackstone-tactical-opportunities/",
+        "source_url": "https://www.businesswire.com/news/home/20210826005538/en/Deca-Dental-Group-Announces-Strategic-Investment-From-Blackstone-Tactical-Opportunities",
         "source_note": "Blackstone (DECA Dental, Aug 2021)",
     },
     {
@@ -1621,7 +1621,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Hospital + physician RCM; A&M Capital investment",
         "outcome": "active", "outcome_note": "Active RCM platform.",
-        "source_url": "https://www.amcapital.com/",
+        "source_url": "https://www.a-mcapital.com/portfolio/med-metrix/",
         "source_note": "A&M Capital Partners (Med-Metrix, Sept 2021)",
     },
 
@@ -1688,7 +1688,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Home medical equipment / DME; Deerfield SPAC (DFB Healthcare) de-SPAC",
         "outcome": "exited", "outcome_note": "Went public via SPAC Nov 2019 (Nasdaq: AHCO).",
-        "source_url": "https://www.businesswire.com/news/home/20191108005600/en/DFB-Healthcare-Acquisitions-Corp.-Announces-Closing-Business",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1725255/000110465919063569/a19-22526_2ex99d5.htm",
         "source_note": "BusinessWire (DFB/Deerfield de-SPAC of AdaptHealth, Nov 2019)",
     },
     {
@@ -1704,7 +1704,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Complex rehab technology / mobility; Cinven bought from Court Square",
         "outcome": "active", "outcome_note": "Active complex-rehab platform.",
-        "source_url": "https://www.nsm-seating.com/press-release/national-seating-mobility-owner-enters-purchase-agreement-with-international-private-equity-firm/",
+        "source_url": "https://www.cinven.com/news-insights/cinven-to-invest-in-national-seating-mobility/",
         "source_note": "NSM (Cinven acquisition from Court Square, 2019)",
     },
 
@@ -1870,7 +1870,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2023, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "DSO (Colorado-anchored); Rallyday-backed with Ironwood debt",
         "outcome": "active", "outcome_note": "Active DSO.",
-        "source_url": "https://www.rallyday.com/",
+        "source_url": "https://rallydaypartners.com/portfolio/espire-dental/",
         "source_note": "Rallyday Partners + Ironwood Capital (Espire Dental, 2023)",
     },
 
@@ -1967,7 +1967,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Diagnostic-imaging equipment + service solutions for providers",
         "outcome": "active", "outcome_note": "Active imaging-equipment/services platform.",
-        "source_url": "https://www.sentinelpartners.com/company/catalyst-medtech/",
+        "source_url": "https://www.prnewswire.com/news-releases/sentinel-capital-partners-acquires-ttg-imaging-solutions-301450877.html",
         "source_note": "Sentinel Capital Partners (TTG/Catalyst MedTech, Dec 2021)",
     },
     {
@@ -2004,7 +2004,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Payer/provider interoperability + data-exchange software",
         "outcome": "exited", "outcome_note": "Acquired by Cotiviti in 2025.",
-        "source_url": "https://www.edifecs.com/newsroom/ta-associates-and-francisco-partners-announce-significant-growth-investment-in-edifecs/",
+        "source_url": "https://www.ta.com/news/ta-associates-and-francisco-partners-announce-significant-growth-investment-in-edifecs/",
         "source_note": "TA Associates + Francisco Partners (Edifecs, 2020); Cotiviti 2025",
     },
     {
@@ -2012,7 +2012,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2012, "ev_usd_mm": 1100, "sector": "rcm_healthtech",
         "subsector_note": "Clinical documentation / medical transcription + NLP; take-private (~$1.1B)",
         "outcome": "exited", "outcome_note": "Ch.11 2014 (over-leveraged); tech sold to 3M in 2019 — a health-IT downside.",
-        "source_url": "https://www.businesswire.com/news/home/20120702006524/en/M*Modal-to-Be-Acquired-for-Approximately-1.1-Billion-by-One-Equity-Partners",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/0001441567/000119312512293940/d376248dex991.htm",
         "source_note": "One Equity Partners (M*Modal, 2012, ~$1.1B); 2014 Ch.11; 3M 2019",
     },
     {
@@ -2051,7 +2051,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 1200, "sector": "other_services",
         "subsector_note": "Outpatient physical therapy; GA majority (~$1.2B), TowerBrook/Ascension minority",
         "outcome": "active", "outcome_note": "Active PT platform (prior Lindsay Goldberg, New Harbor).",
-        "source_url": "https://www.axios.com/2022/01/07/ga-buys-pt-solutions-1-billion-valuation",
+        "source_url": "https://ptproductsonline.com/industry-news/scoop-general-atlantic-snaps-up-pt-solutions-at-1-2-billion-valuation/",
         "source_note": "Axios (General Atlantic buys PT Solutions, ~$1.2B, 2021)",
     },
     {
@@ -2144,7 +2144,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "DSO (100+ practices); Thurston-launched (2021)",
         "outcome": "active", "outcome_note": "Active DSO.",
-        "source_url": "https://www.beckersdental.com/dso-dpms/the-pe-firms-behind-15-dsos/",
+        "source_url": "https://www.prnewswire.com/news-releases/thurston-group-announces-formation-of-the-newest-generation-of-dso-gen4-dental-partners-301346123.html",
         "source_note": "Thurston Group (Gen4 Dental Partners, 2021)",
     },
     {
@@ -2193,7 +2193,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Clinical-trial site network; KKR-launched (2018)",
         "outcome": "active", "outcome_note": "Active; THL Partners agreed to buy from KKR in 2025.",
-        "source_url": "https://www.fiercebiotech.com/cro/private-equity-firm-acquires-clinical-trial-site-network-headlands-research",
+        "source_url": "https://www.businesswire.com/news/home/20250814383571/en/THL-Announces-Agreement-to-Acquire-Headlands-Research-from-KKR",
         "source_note": "KKR (Headlands Research, 2018); THL 2025",
     },
     {
@@ -2219,7 +2219,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Youth/teen mental-health treatment; Consonance majority (Housatonic prior)",
         "outcome": "active", "outcome_note": "Active behavioral-health platform (~12-15x EBITDA).",
-        "source_url": "https://bhbusiness.com/2023/02/09/consonance-capital-partners-acquires-majority-stake-in-youth-focused-embark-behavioral-health/",
+        "source_url": "https://healthcareservicesinvestmentnews.com/2023/02/10/consonance-capital-partners-acquires-majority-stake-in-youth-focused-embark-behavioral-health/",
         "source_note": "Consonance Capital Partners (Embark Behavioral Health, 2022)",
     },
     {
@@ -2250,7 +2250,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": 2400, "sector": "other_services",
         "subsector_note": "Small-molecule CDMO; Permira take-private (~$2.4B)",
         "outcome": "exited", "outcome_note": "Public→private; Permira (~$2.4B).",
-        "source_url": "https://cen.acs.org/business/outsourcing/Private-equity-ramps-pharmaceutical-services/101/i34",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/820081/000119312519215628/d771483dex991.htm",
         "source_note": "C&EN (Permira/Cambrex take-private, 2019, ~$2.4B)",
     },
     {
@@ -2521,7 +2521,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Acute-care telemedicine (teleneurology/ICU); take-private at $3.00/share",
         "outcome": "exited", "outcome_note": "Public→private; Patient Square Capital.",
-        "source_url": "https://patientsquarecapital.com/soc-telemed-completes-acquisition-by-patient-square-capital/",
+        "source_url": "https://www.prnewswire.com/news-releases/soc-telemed-completes-acquisition-by-patient-square-capital-301518842.html",
         "source_note": "Patient Square Capital (SOC Telemed take-private, 2022)",
     },
     {
@@ -2529,7 +2529,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Revenue-cycle-management software; Clearlake carved out nThrive's tech division",
         "outcome": "active", "outcome_note": "Active; acquired TransUnion Healthcare 2022 (~$1.7B).",
-        "source_url": "https://clearlake.com/clearlake-capital-to-acquire-nthrives-technology-division/",
+        "source_url": "https://www.prnewswire.com/news-releases/clearlake-capital-to-acquire-nthrives-technology-division-301176847.html",
         "source_note": "Clearlake Capital (nThrive Technology, 2020)",
     },
     {
@@ -2553,7 +2553,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Healthcare-IT consulting + engineering services; Bain majority",
         "outcome": "active", "outcome_note": "Active health-IT services platform.",
-        "source_url": "https://www.baincapital.com/news/citiustech-receives-strategic-investment-bain-capital",
+        "source_url": "https://www.baincapital.com/news/citiustech-announces-investment-and-strategic-partnership-bain-capital-private-equity",
         "source_note": "Bain Capital (CitiusTech, 2022)",
     },
 
@@ -2566,7 +2566,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": 270, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy; FFL platform (~$270M+)",
         "outcome": "active", "outcome_note": "Active ABA platform.",
-        "source_url": "https://www.fflpartners.com/portfolio/autism-learning-partners",
+        "source_url": "https://www.fflpartners.com/ffl-partners-completes-investment-in-autism-learning-partners",
         "source_note": "FFL Partners (Autism Learning Partners, 2018, ~$270M)",
     },
     {
@@ -2582,7 +2582,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 1200, "sector": "rcm_healthtech",
         "subsector_note": "Behavioral-health + rehab practice-management / EHR software (~$1.2B)",
         "outcome": "active", "outcome_note": "Active care-software platform (from Lightyear/Providence).",
-        "source_url": "https://www.kkr.com/invest/portfolio",
+        "source_url": "https://www.prnewswire.com/news-releases/kkr-to-acquire-therapy-brands-301264526.html",
         "source_note": "KKR (Therapy Brands, 2021, ~$1.2B)",
     },
     {
@@ -2590,7 +2590,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2018, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Correctional + behavioral healthcare (CCS + Correctional Medical Group merger)",
         "outcome": "bankrupt", "outcome_note": "Filed Chapter 11 in Nov 2024 under heavy debt — a documented correctional-healthcare PE failure.",
-        "source_url": "https://www.healthcaredive.com/news/wellpath-chapter-11-bankruptcy-prison-healthcare/733401/",
+        "source_url": "https://kffhealthnews.org/morning-breakout/prison-health-care-provider-wellpath-files-for-chapter-11-bankruptcy/",
         "source_note": "Healthcare Dive (Wellpath Ch.11, 2024); H.I.G. Capital (CCS, 2018)",
     },
     {
@@ -2619,7 +2619,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 1000, "sector": "other_services",
         "subsector_note": "Cardiovascular + endovascular medical devices; H&F carve-out from Cardinal Health (~$1B)",
         "outcome": "active", "outcome_note": "Active medical-device platform.",
-        "source_url": "https://www.hf.com/news/cardinal-health-completes-sale-of-cordis-to-hellman-friedman",
+        "source_url": "https://newsroom.cardinalhealth.com/2021-08-02-Cardinal-Health-completes-sale-of-Cordis-business-to-Hellman-Friedman",
         "source_note": "Hellman & Friedman (Cordis from Cardinal Health, 2021, ~$1B)",
     },
     {
@@ -2627,7 +2627,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2014, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "Large veterinary hospital network; Ares (OMERS 2018, JAB 2019 later)",
         "outcome": "exited", "outcome_note": "Ares-owned 2014-2018; sold to OMERS (2018), then JAB Holding (2019).",
-        "source_url": "https://www.aresmgmt.com/",
+        "source_url": "https://www.privateequitywire.co.uk/ares-management-pe-fund-acquire-national-veterinary-associates/",
         "source_note": "Ares Management (National Veterinary Associates, 2014); OMERS 2018; JAB 2019",
     },
     {
@@ -2643,7 +2643,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2017, "ev_usd_mm": 1450, "sector": "physician_practices",
         "subsector_note": "Largest independent Illinois multispecialty group; Ares (~$1.45B)",
         "outcome": "active", "outcome_note": "Active; rebranded Duly Health and Care.",
-        "source_url": "https://www.aresmgmt.com/",
+        "source_url": "https://www.dulyhealthandcare.com/news/dupage-medical-group-announces-investment-from-ares-management-private-equity-group",
         "source_note": "Ares Management (DuPage Medical Group, 2017, ~$1.45B)",
     },
 
@@ -2664,7 +2664,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2024, "ev_usd_mm": 3800, "sector": "dialysis",
         "subsector_note": "Dialysis + renal-care products carve-out from Baxter (~$3.8B)",
         "outcome": "active", "outcome_note": "Active; Carlyle + Atmas Health carve-out (Vantive).",
-        "source_url": "https://www.baxter.com/baxter-newsroom/baxter-announces-definitive-agreement-divest-its-vantive-kidney-care-segment",
+        "source_url": "https://www.carlyle.com/media-room/news-release-archive/baxter-announces-definitive-agreement-divest-its-vantive-kidney",
         "source_note": "The Carlyle Group (Baxter Vantive Kidney Care, 2024, ~$3.8B)",
     },
     {
@@ -2672,7 +2672,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2025, "ev_usd_mm": 627, "sector": "other_services",
         "subsector_note": "Medical-device coatings + components; take-private at $43.00/share (~$627M)",
         "outcome": "exited", "outcome_note": "Public→private; GTCR.",
-        "source_url": "https://surmodics.gcs-web.com/news-releases/news-release-details/surmodics-enters-definitive-agreement-be-acquired-gtcr-4300",
+        "source_url": "https://www.gtcr.com/surmodics-enters-into-definitive-agreement-to-be-acquired-by-gtcr-for-43-00-per-share-in-cash-representing-an-approximate-equity-value-of-627-million/",
         "source_note": "GTCR (Surmodics take-private, 2025, ~$627M)",
     },
     {
@@ -2701,7 +2701,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2016, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Behavioral-health pharmacy (co-located in CMHCs); Advent platform",
         "outcome": "exited", "outcome_note": "Acquired by UnitedHealth's Optum in 2018.",
-        "source_url": "https://www.adventinternational.com/advent-international-to-acquire-genoa-a-qol-healthcare-company/",
+        "source_url": "https://www.adventinternational.com/portfolio-stories/beyond-the-prescription-genoa-healthcare-pioneering-pharmacy-services-in-the-us/",
         "source_note": "Advent International (Genoa Healthcare, 2016); Optum 2018",
     },
     {
@@ -2717,7 +2717,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Physical-therapy practice-management / EMR + RCM software",
         "outcome": "active", "outcome_note": "Active rehab-therapy software platform.",
-        "source_url": "https://www.warburgpincus.com/portfolio/",
+        "source_url": "https://warburgpincus.com/2019/08/27/webpt-announces-significant-investment-from-warburg-pincus/",
         "source_note": "Warburg Pincus (WebPT, 2019)",
     },
     {
@@ -2762,7 +2762,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "home_health_hospice",
         "subsector_note": "Home health + hospice + rehab (Texas-anchored); Coltala + Trive",
         "outcome": "active", "outcome_note": "Active home-care platform.",
-        "source_url": "https://homehealthcarenews.com/2021/06/coltala-acquires-choice-health-at-home-we-recognized-an-opportunity-and-paid-a-good-price-for-it/",
+        "source_url": "https://www.prnewswire.com/news-releases/coltala-announces-partnership-with-texas-based-choice-health-at-home-and-subsequent-acquisitions-in-texas-and-oklahoma-301322010.html",
         "source_note": "Coltala Holdings + Trive Capital (Choice Health at Home, 2021)",
     },
     {
@@ -2902,7 +2902,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2016, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Respiratory / ventilation devices; Apax JV with BD (full control 2018)",
         "outcome": "bankrupt", "outcome_note": "Filed Chapter 11 in 2024 (post-COVID demand collapse) — a device-PE downside.",
-        "source_url": "https://www.fiercebiotech.com/medtech/ventilator-maker-vyaire-medical-files-bankruptcy",
+        "source_url": "https://www.financierworldwide.com/vyaire-medical-files-for-chapter-11",
         "source_note": "Apax Partners (Vyaire Medical, 2016 JV with BD); Ch.11 2024",
     },
     {
@@ -2910,7 +2910,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Pharma CDMO (peptides, lipids, small molecules); Astorg from ICIG",
         "outcome": "active", "outcome_note": "Active CDMO platform.",
-        "source_url": "https://www.astorg.com/portfolio/",
+        "source_url": "https://www.astorg.com/news/corden-news",
         "source_note": "Astorg (CordenPharma, 2022)",
     },
     {
@@ -3024,7 +3024,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "General-practice veterinary platform (NE US origin); OMERS acquired from Cortec Group (2015 sponsor)",
         "outcome": "exited", "outcome_note": "Cortec exited to OMERS Private Equity in 2023 (grew 17→64 hospitals under Cortec).",
-        "source_url": "https://cortecgroup.com/cortec-group-announces-sale-of-community-veterinary-partners/",
+        "source_url": "https://mergr.com/omers-private-equity-acquires-community-veterinary-partners",
         "source_note": "OMERS Private Equity (Community Veterinary Partners from Cortec, 2023)",
     },
     {
@@ -3088,7 +3088,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2014, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "New England DSO (formerly Gentle Dental / Gentle Communications); Audax platform",
         "outcome": "active", "outcome_note": "Active; Audax acquired Gentle Communications (now 42 North Dental) June 2014, recap 2016.",
-        "source_url": "https://www.beckersdental.com/dso-dpms/42-north-dental-makes-21st-acquisition-since-being-backed-by-private-equity-firm/",
+        "source_url": "https://mergr.com/transaction/audax-private-equity-invests-in-42-north-dental",
         "source_note": "Audax Private Equity (42 North Dental, 2014)",
     },
     {
@@ -3360,7 +3360,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2015, "ev_usd_mm": None, "sector": "dermatology",
         "subsector_note": "Non-surgical medspa / aesthetics chain (laser hair removal, CoolSculpting, injectables); L Catterton via Steiner Leisure (TPG Growth minority 2021)",
         "outcome": "active", "outcome_note": "Active; L Catterton acquired via Steiner Leisure buyout 2015; TPG Growth took minority 2021.",
-        "source_url": "https://www.idealimage.com/about-us/newsroom/media-coverage/l-catterton-owned-medspa-ideal-image-ramps-up-expansion",
+        "source_url": "https://www.glossy.co/beauty/l-catterton-owned-medspa-ideal-image-ramps-up-expansion/",
         "source_note": "L Catterton (Ideal Image via Steiner Leisure, 2015)",
     },
     {
@@ -3376,7 +3376,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": 400, "sector": "other_services",
         "subsector_note": "Hospital-JV outpatient imaging-center operator (~60 centers); Cranemere acquired from ICV Partners (~$400M)",
         "outcome": "active", "outcome_note": "Active; Cranemere acquired from ICV Partners 2021 (~$400M); ICV held 2018–2021.",
-        "source_url": "https://www.icvpartners.com/icv-partners-announces-acquisition-of-outpatient-imaging-affiliates/",
+        "source_url": "https://www.prnewswire.com/news-releases/icv-partners-announces-sale-of-outpatient-imaging-affiliates-301404514.html",
         "source_note": "Cranemere (Outpatient Imaging Affiliates from ICV Partners, 2021, ~$400M)",
     },
     {
@@ -3448,7 +3448,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Inpatient + outpatient behavioral health (geriatric focus, rural Southern US); Webster Equity Partners platform",
         "outcome": "active", "outcome_note": "Active; Webster Equity Partners acquired Feb 2022 (acquired Haven Behavioral 2025).",
-        "source_url": "https://bhbusiness.com/2022/02/02/oceans-healthcare-gets-new-investment-from-webster-equity-partners-as-it-plans-to-ramp-up-expansion/",
+        "source_url": "https://www.prnewswire.com/news-releases/oceans-healthcare-secures-new-capital-partner-eyes-accelerated-growth-301472929.html",
         "source_note": "Webster Equity Partners (Oceans Healthcare, Feb 2022)",
     },
     {
@@ -3456,7 +3456,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2016, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Multi-specialty primary-care group (Dallas-Fort Worth); Webster Equity Partners Fund III (realized)",
         "outcome": "exited", "outcome_note": "Webster Equity Partners acquired May 2016; subsequently realized.",
-        "source_url": "https://mergr.com/transaction/webster-equity-partners-acquires-healthcare-associates-of-texas",
+        "source_url": "https://websterequitypartners.com/portfolio/healthcare-associates-of-texas/",
         "source_note": "Webster Equity Partners (Healthcare Associates of Texas, May 2016)",
     },
     {
@@ -3480,7 +3480,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Global clinical research organization (CRO) for biotech / pharma; WindRose equity recapitalization",
         "outcome": "active", "outcome_note": "Active; WindRose Health Investors recapitalized Veristat April 2021.",
-        "source_url": "https://windrose.com/news/windrose-health-investors-completes-recapitalization-of-veristat-group-inc/",
+        "source_url": "https://www.prnewswire.com/news-releases/windrose-health-investors-completes-recapitalization-of-veristat-group-inc-301263740.html",
         "source_note": "WindRose Health Investors (Veristat, April 2021)",
     },
     {
@@ -3584,7 +3584,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2017, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Managed medical-scribe / clinical-documentation services (parent HealthChannels; 1,700+ hospital partners); Vesey Street recap",
         "outcome": "active", "outcome_note": "Active; Vesey Street Capital Partners recapitalized Jan 2017.",
-        "source_url": "https://www.businesswire.com/news/home/20170109005375/en/Vesey-Street-Capital-Partners-Completes-Recapitalization-of-HealthChannels-Parent-Company-of-ScribeAmerica",
+        "source_url": "https://www.lowenstein.com/people/attorneys/steven-siesser",
         "source_note": "Vesey Street Capital Partners (ScribeAmerica / HealthChannels, Jan 2017)",
     },
     {
@@ -3760,7 +3760,7 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2020, "ev_usd_mm": 2350, "sector": "other_services",
         "subsector_note": "Life-sciences services — CRO (Precision for Medicine) + pharma commercialization; Blackstone recap from Berkshire/TPG (~$2.3-2.4bn)",
         "outcome": "active", "outcome_note": "Active; Blackstone-led recap Nov 2020 (~$2.35bn); Berkshire/TPG since 2017.",
-        "source_url": "https://www.blackstone.com/news/press/precision-medicine-group-secures-major-investment-from-blackstone/",
+        "source_url": "https://www.precisionmedicinegrp.com/2020/11/precision-medicine-group-secures-major-investment-from-blackstone/",
         "source_note": "Blackstone (Precision Medicine Group recap from Berkshire/TPG, Nov 2020, ~$2.35bn)",
     },
     {
