@@ -67,6 +67,26 @@ thead th[data-sort-dir="desc"] {
   color: var(--ck-accent, #3b82f6);
 }
 
+/* ── Sortable tables: pinned header ──────────────────────────── */
+/* power_ui.sortable_table() emits <table data-sortable>. Pin its
+   header row below the sticky topbar (~58px, z-index:50) — top:0
+   would park it invisibly underneath. --ck-sticky-top is set on
+   :root by the kit shell; 58px is the no-shell fallback. The opaque
+   paper fill stops rows bleeding through while scrolled (same
+   treatment as .cad-table-sticky in v3/chartis.css). */
+table[data-sortable] thead th {
+  position: sticky;
+  top: var(--ck-sticky-top, 58px);
+  z-index: 5;
+  background: var(--paper, #f2ede3);
+}
+/* Inside a page-owned scroll box the wrapper — not the viewport — is
+   the sticky containing scroller, so the topbar offset would pin the
+   header 58px below the box top; pin at 0 there instead. */
+[class*="scroll"] table[data-sortable] thead th {
+  top: 0;
+}
+
 /* ── Provenance tooltip ──────────────────────────────────────── */
 .rcm-provenance-tip {
   position: absolute;

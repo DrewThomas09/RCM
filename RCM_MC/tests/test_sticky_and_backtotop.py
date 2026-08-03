@@ -103,12 +103,14 @@ class StickyTheadKitContractTests(unittest.TestCase):
         import pandas as pd
         from rcm_mc.ui.portfolio_overview import render_portfolio_overview
         html = render_portfolio_overview(pd.DataFrame())
-        # The rule body uses `position:sticky` + `top:0` on the
-        # sticky-head thead th element.
+        # The rule body uses `position:sticky` + a topbar-clearing
+        # offset on the sticky-head thead th element. top:0 would park
+        # the pinned header underneath the opaque sticky topbar
+        # (z-index:50), so the offset comes from --ck-sticky-top.
         self.assertRegex(
             html,
             r"\.ck-table\.ck-table-sticky-head\s+thead\s+th\s*\{[^}]*"
-            r"position:sticky[^}]*top:0",
+            r"position:sticky[^}]*top:var\(--ck-sticky-top",
         )
 
 

@@ -150,35 +150,23 @@ def _scenarios_table(scenarios) -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
-def _role_spend_svg(roles) -> str:
+def _role_spend_chart(roles) -> str:
+    """Horizontal ck_bar_row list — the /nsa-tracker and /tracker-340b chart
+    idiom. Replaces a vertical SVG whose 3-line 9px per-bar captions collided
+    into illegible overlap once the chart scaled down beside the role table."""
     if not roles: return ""
-    w, h = 560, 220
-    pad_l, pad_r, pad_t, pad_b = 50, 20, 30, 70
-    inner_w = w - pad_l - pad_r
-    inner_h = h - pad_t - pad_b
-    # Sort by annual spend desc
     sorted_r = sorted(roles, key=lambda r: r.annual_spend_mm, reverse=True)
     max_v = max(r.annual_spend_mm for r in sorted_r) or 1
-    bg = P["panel"]; acc = P["accent"]; neg = P["negative"]
-    text_dim = P["text_dim"]; text_faint = P["text_faint"]
-    n = len(sorted_r)
-    bar_w = (inner_w - (n - 1) * 6) / n
-    bars = []
-    for i, r in enumerate(sorted_r):
-        x = pad_l + i * (bar_w + 6)
-        bh = r.annual_spend_mm / max_v * inner_h
-        y = (h - pad_b) - bh
-        color = neg if r.rate_premium_pct > 0.70 else acc
-        bars.append(
-            f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" fill="{color}" opacity="0.85"/>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" fill="{text_dim}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">${r.annual_spend_mm:.1f}M</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 14}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{_html.escape(r.role if len(r.role) <= 14 else r.role[:13] + "…")}</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 26}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">{r.headcount_fte:.1f} FTE</text>'
-            f'<text x="{x + bar_w / 2:.1f}" y="{h - pad_b + 38}" fill="{text_faint}" font-size="9" text-anchor="middle" font-family="JetBrains Mono,monospace">+{r.rate_premium_pct * 100:.0f}%</text>'
-        )
-    return (f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
-            f'<rect width="{w}" height="{h}" fill="{bg}"/>{"".join(bars)}'
-            f'<text x="10" y="15" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Annual Locum Spend by Role (red = rate premium &gt;70%)</text></svg>')
+    rows = "".join(
+        ck_bar_row(f"{r.role} · {r.headcount_fte:.1f} FTE",
+                   f"${r.annual_spend_mm:,.2f}M",
+                   r.annual_spend_mm / max_v * 100.0,
+                   tone="negative" if r.rate_premium_pct > 0.70 else "navy")
+        for r in sorted_r)
+    return (rows +
+            '<div style="font-size:10px;color:var(--sc-text-faint);margin-top:6px;'
+            'font-family:JetBrains Mono,monospace">Bar = annual locum spend by role '
+            '· red = rate premium &gt;70% vs permanent</div>')
 
 
 def _hpsa_panel() -> str:
@@ -267,10 +255,10 @@ def render_locum_tracker(params: dict = None) -> str:
         ck_kpi_block("Corpus Deals", f"{r.corpus_deal_count:,}", "", "")
     )
 
-    svg = _role_spend_svg(r.roles)
+    chart = _role_spend_chart(r.roles)
     role_headers, role_rows, role_hot = _roles_paired_rows(r.roles)
     roles_paired = ck_paired_block(
-        svg,
+        chart,
         data_label="Locum Spend by Role · Rate, FTE, Spend, Agency Fee",
         headers=role_headers,
         rows=role_rows,

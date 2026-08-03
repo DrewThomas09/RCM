@@ -145,7 +145,12 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
             f'<td class="num">{s["total_beds"]:,}</td>'
             f'<td class="num">${s["total_revenue"]/1e9:.1f}B</td>'
             f'<td class="num" style="color:{m_color};font-weight:600;">{s["avg_margin"]:.1%}</td>'
-            f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
+            # HHI value inside the badge so the column still ranks states
+            # when every state lands in one tier (all-"Competitive" rows
+            # carried zero information without the number).
+            f'<td><span class="cad-badge {conc_cls}" '
+            f'title="Herfindahl-Hirschman index">'
+            f'{int(s["hhi"]):,} · {conc_label}</span></td>'
             f'<td class="num">{s["medicare_pct"]:.0%}</td>'
             f'<td class="num">{s["medicaid_pct"]:.0%}</td>'
             f'</tr>'
@@ -155,9 +160,12 @@ def _state_heatmap_table(stats: List[Dict[str, Any]], metric: str) -> str:
         f'{selector}'
         f'<table class="cad-table">'
         f'<thead><tr>'
-        f'<th>State</th><th>Hospitals</th><th>Total Beds</th><th>Total NPR</th>'
-        f'<th style="background:{PALETTE["brand_primary"]}14;">Avg Margin</th>'
-        f'<th>Concentration</th><th>Medicare</th><th>Medicaid</th>'
+        f'<th>State</th><th class="num">Hospitals</th>'
+        f'<th class="num">Total Beds</th><th class="num">Total NPR</th>'
+        f'<th class="num" '
+        f'style="background:{PALETTE["brand_primary"]}14;">Avg Margin</th>'
+        f'<th>Concentration</th><th class="num">Medicare</th>'
+        f'<th class="num">Medicaid</th>'
         f'</tr></thead>'
         f'<tbody>{rows}</tbody></table>'
     )
@@ -320,7 +328,7 @@ def _kpi_summary(stats: List[Dict[str, Any]]) -> str:
 def _top_markets_bar_chart(top_rev: List[Dict[str, Any]],
                            total_national_rev: float,
                            width: int = 720,
-                           height: int = 280) -> str:
+                           height: int = 300) -> str:
     """Horizontal bars per state showing revenue share + cumulative line.
 
     HHI concentration colors the bar:
@@ -365,7 +373,7 @@ def _top_markets_bar_chart(top_rev: List[Dict[str, Any]],
             f'${s["total_revenue"] / 1e9:.1f}B'
             f'</text>'
             f'<text x="{pad_l + bw + 6:.1f}" y="{cy + 16:.1f}" '
-            f'font-family="JetBrains Mono,monospace" font-size="9" '
+            f'font-family="JetBrains Mono,monospace" font-size="10" '
             f'fill="#5C6878">'
             f'{share_pct:.1f}% · {cum_pct:.0f}% cum</text>'
         )
@@ -377,23 +385,25 @@ def _top_markets_bar_chart(top_rev: List[Dict[str, Any]],
     # the per-bar "N% cum" text already states the cumulative share.
     line_svg = ""
 
-    # Legend / tone key (bottom row)
+    # Legend / tone key (bottom row). 10.5px minimum — the SVG scales
+    # down responsively, and this legend is the only decode key for
+    # bar color (HHI tier), so it must stay legible at rendered size.
     legend_y = height - 6
     legend_svg = (
         f'<rect x="{pad_l}" y="{legend_y - 9}" width="10" height="8" '
         f'fill="#155752" opacity="0.9" rx="1"/>'
         f'<text x="{pad_l + 14}" y="{legend_y - 1}" '
-        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'font-family="Inter Tight,sans-serif" font-size="10.5" '
         f'fill="#5C6878">Competitive</text>'
-        f'<rect x="{pad_l + 100}" y="{legend_y - 9}" width="10" height="8" '
+        f'<rect x="{pad_l + 108}" y="{legend_y - 9}" width="10" height="8" '
         f'fill="#b8732a" opacity="0.9" rx="1"/>'
-        f'<text x="{pad_l + 114}" y="{legend_y - 1}" '
-        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'<text x="{pad_l + 122}" y="{legend_y - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10.5" '
         f'fill="#5C6878">Moderate</text>'
-        f'<rect x="{pad_l + 192}" y="{legend_y - 9}" width="10" height="8" '
+        f'<rect x="{pad_l + 204}" y="{legend_y - 9}" width="10" height="8" '
         f'fill="#A53A2D" opacity="0.9" rx="1"/>'
-        f'<text x="{pad_l + 206}" y="{legend_y - 1}" '
-        f'font-family="Inter Tight,sans-serif" font-size="9.5" '
+        f'<text x="{pad_l + 218}" y="{legend_y - 1}" '
+        f'font-family="Inter Tight,sans-serif" font-size="10.5" '
         f'fill="#5C6878">Concentrated (HHI&gt;2500)</text>'
     )
 
@@ -518,7 +528,9 @@ def render_market_data(
             f'<td class="num">{cumulative_pct:.0f}%</td>'
             f'<td class="num">{s["hospitals"]}</td>'
             f'<td class="num">{s["avg_margin"]:.1%}</td>'
-            f'<td><span class="cad-badge {conc_cls}">{conc_label}</span></td>'
+            f'<td><span class="cad-badge {conc_cls}" '
+            f'title="Herfindahl-Hirschman index">'
+            f'{int(s["hhi"]):,} · {conc_label}</span></td>'
             f'</tr>'
         )
     top_markets_chart = _top_markets_bar_chart(top_rev, total_national_rev)

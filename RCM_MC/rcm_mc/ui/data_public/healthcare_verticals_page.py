@@ -119,6 +119,13 @@ def render_verticals_intel_index(params: dict = None) -> str:
     for v in verticals:
         by_group.setdefault(v.get("group", "?"), []).append(v)
 
+    # One shared colgroup + table-layout:fixed so all five stacked group
+    # tables align to identical column rails — auto layout resized each
+    # group's columns to its own content, so the same headers jittered
+    # left/right between groups.
+    colgroup = ('<colgroup><col style="width:34%"><col style="width:26%">'
+                '<col style="width:14%"><col style="width:13%">'
+                '<col style="width:13%"></colgroup>')
     sections = ""
     for g in sorted(by_group):
         rows = ""
@@ -135,8 +142,8 @@ def render_verticals_intel_index(params: dict = None) -> str:
                 f'<td style="padding:9px 12px;font-size:11px;color:{P["text_dim"]}">{_html.escape(v.get("consolidation",""))}</td>'
                 f'</tr>')
         table = (
-            f'<table style="width:100%;border-collapse:collapse;background:{P["panel"]};'
-            f'border:1px solid {P["border"]};margin-bottom:6px"><thead>'
+            f'<table style="width:100%;table-layout:fixed;border-collapse:collapse;background:{P["panel"]};'
+            f'border:1px solid {P["border"]};margin-bottom:6px">{colgroup}<thead>'
             f'<tr style="border-bottom:2px solid {P["border"]};text-align:left;color:{P["text_dim"]};font-size:10px;text-transform:uppercase">'
             f'<th style="padding:8px 12px">Vertical</th><th style="padding:8px 12px">Payment system</th>'
             f'<th style="padding:8px 12px">Market size</th><th style="padding:8px 12px">Primary payer</th>'

@@ -194,22 +194,26 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
         + '</div>'
     )
 
-    # Cycle 54 — KPI strip with provenance.
+    # Cycle 54 — KPI strip with provenance. The value under "Optional
+    # Fields" must be the optional count itself ("12"), not the required-
+    # vs-total ratio ("2 / 14") — that ratio read as "2 of 14 optional
+    # fields provided" and contradicted the label. The ratio framing
+    # lives in the tooltip explainer instead.
     fields_value = ck_provenance_tooltip(
-        "Required vs. optional fields",
-        "2 / 14",
+        "Required vs. total fields",
+        "12",
         explainer=(
-            "Only Deal ID and Hospital Name are required - the "
-            "platform fills missing RCM and financial fields with "
-            "Bayesian priors. Provide more fields to tighten "
-            "the predictions and avoid imputation flags on the "
-            "first run."
+            "2 of the 14 import fields are required - Deal ID and "
+            "Hospital Name. The other 12 are optional; the platform "
+            "fills missing RCM and financial fields with Bayesian "
+            "priors. Provide more fields to tighten the predictions "
+            "and avoid imputation flags on the first run."
         ),
     )
     kpi_strip = (
         '<div class="ck-kpi-grid" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
         + ck_kpi_block("Required Fields", "2", "Deal ID + Name")
-        + ck_kpi_block("Optional Fields", fields_value, "richer analysis")
+        + ck_kpi_block("Optional Fields", fields_value, "of 14 total · richer analysis")
         + ck_kpi_block("Bayesian Priors", "12+", "for missing data")
         + '</div>'
     )

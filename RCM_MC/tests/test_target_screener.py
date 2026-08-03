@@ -1356,7 +1356,9 @@ class WorkbenchSortTests(unittest.TestCase):
 
     def _names(self, html):
         import re
-        return re.findall(r'font-weight:600;">(.*?)<span style="font-family:var\(--sc-mono\)', html)
+        # Row names are links to the row's X-Ray (same destination as the
+        # primary action chip) — capture the anchor text.
+        return re.findall(r'class="ts-name" href="[^"]*">(.*?)</a>', html)
 
     def test_headers_are_sortable_links(self):
         h = self._render(view="main", vertical="snf")

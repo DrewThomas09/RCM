@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import html as _html
 
-from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_source_purpose, ck_illustrative_note
+from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_source_purpose
+from rcm_mc.ui.colors import STATUS
 from rcm_mc.ui.data_public._benchmark_panels import community_health_panel
 
 
@@ -35,11 +36,12 @@ def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> st
 
     overall_color = P["positive"] if overall >= 70 else (P["accent"] if overall >= 50 else P["warning"])
 
-    # 3 concentric rings
+    # 3 concentric rings — G uses the semantic info navy (rcm_mc.ui.colors)
+    # rather than an off-palette violet, keeping the gauge editorial.
     rings = (
-        _ring(85, e, "#1F7A75", "E", 0) +      # Environmental (teal)
-        _ring(68, s, P["accent"], "S", 0) +    # Social (blue)
-        _ring(51, g, "#a78bfa", "G", 0)        # Governance (purple)
+        _ring(85, e, "#1F7A75", "E", 0) +          # Environmental (teal)
+        _ring(68, s, P["accent"], "S", 0) +        # Social (accent)
+        _ring(51, g, STATUS["info"], "G", 0)       # Governance (navy)
     )
 
     return (
@@ -55,7 +57,7 @@ def _esg_ring_svg(overall: float, e: float, s: float, g: float, tier: str) -> st
         f'<text x="22" y="{h - 10}" fill="{P["text_dim"]}" font-size="9" font-family="JetBrains Mono,monospace">E {e:.0f}</text>'
         f'<rect x="70" y="{h - 18}" width="8" height="8" fill="{P["accent"]}"/>'
         f'<text x="82" y="{h - 10}" fill="{P["text_dim"]}" font-size="9" font-family="JetBrains Mono,monospace">S {s:.0f}</text>'
-        f'<rect x="130" y="{h - 18}" width="8" height="8" fill="#a78bfa"/>'
+        f'<rect x="130" y="{h - 18}" width="8" height="8" fill="{STATUS["info"]}"/>'
         f'<text x="142" y="{h - 10}" fill="{P["text_dim"]}" font-size="9" font-family="JetBrains Mono,monospace">G {g:.0f}</text>'
         f'</svg>'
     )
@@ -97,7 +99,7 @@ def _metrics_by_cat_svg(metrics, category: str, color: str) -> str:
 def _metric_table(metrics) -> str:
     bg = P["panel"]; panel_alt = P["panel_alt"]; border = P["border"]
     text = P["text"]; text_dim = P["text_dim"]
-    cat_colors = {"E": "#1F7A75", "S": P["accent"], "G": "#a78bfa"}
+    cat_colors = {"E": "#1F7A75", "S": P["accent"], "G": STATUS["info"]}
     cols = [("Cat","left"),("Metric","left"),("Value","right"),("Unit","left"),
             ("Benchmark","right"),("Score","right"),("Weight","right"),("Notes","left")]
     ths = "".join(
@@ -240,7 +242,7 @@ def render_esg_dashboard(params: dict = None) -> str:
     ring_svg = _esg_ring_svg(r.overall_score, r.e_score, r.s_score, r.g_score, r.tier)
     e_svg = _metrics_by_cat_svg(r.metrics, "E", "#1F7A75")
     s_svg = _metrics_by_cat_svg(r.metrics, "S", acc)
-    g_svg = _metrics_by_cat_svg(r.metrics, "G", "#a78bfa")
+    g_svg = _metrics_by_cat_svg(r.metrics, "G", STATUS["info"])
 
     metric_tbl = _metric_table(r.metrics)
     div_tbl = _diversity_table(r.diversity)
@@ -289,7 +291,6 @@ def render_esg_dashboard(params: dict = None) -> str:
 <div class="ck-page-wrap">
 
   {page_title}
-  {ck_illustrative_note("ESG figures")}
 
   {community_health_panel(P)}
 
@@ -353,7 +354,12 @@ def render_esg_dashboard(params: dict = None) -> str:
 
 </div>"""
 
-    body = ck_source_purpose(
+    # The ck_source_purpose ILLUSTRATIVE chip is this page's single
+    # disclosure. The marker comment carries the "ck-illus-note" token the
+    # shell's idempotence check looks for, so the route-level banner stays
+    # suppressed instead of stacking a second band under the title.
+    body = ("<!-- ck-illus-note suppressed: ck_source_purpose ILLUSTRATIVE "
+            "chip carries the disclosure -->") + ck_source_purpose(
         purpose="Summarize ESG / sustainability posture.",
         universe="illustrative", source="No ESG metric source",
         next_action="Define a real ESG metric source or defer") + body

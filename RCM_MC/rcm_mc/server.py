@@ -200,21 +200,29 @@ def _render_health_sparkline(
     store: PortfolioStore,
     deal_id: str,
     *,
-    width: int = 260,
-    height: int = 60,
+    width: int = 320,
+    height: int = 72,
 ) -> str:
     """B143: small SVG of health score over time for a deal.
 
     Fixed 0-100 y-scale so partners get visual calibration (a 60 is
     always in the same vertical band). Returns '' if < 2 history
     points so we don't waste space on a deal that has one sighting.
+
+    Legibility contract (2026-08 audit): the 80/50 band lines carry
+    right-gutter mono labels and the newest point carries its score in
+    the band color — without them the chart read as two faint dotted
+    lines with no scale, i.e. a rendering glitch.
     """
     from .deals.health_score import history_series
     series = history_series(store, deal_id)
     if len(series) < 2:
         return ""
     pad = 6
-    chart_w = width - 2 * pad
+    # Right gutter reserves room for the "80" / "50" threshold labels
+    # and the current-score label so they never overlay the line.
+    gutter = 30
+    chart_w = width - pad - gutter
     chart_h = height - 2 * pad
     n = len(series)
 
@@ -236,19 +244,34 @@ def _render_health_sparkline(
     )
     # 80 and 50 threshold lines for visual reference
     y80, y50 = _y(80), _y(50)
+    y_last = _y(last_score)
+    label_x = width - pad - gutter + 6
+    # Threshold labels yield to the score label when the current score
+    # sits on top of a band line (within one text height).
+    thresh_labels = "".join(
+        f'<text x="{label_x}" y="{y_t + 3:.1f}" fill="{c}" opacity="0.8" '
+        f'style="font-family:var(--sc-mono,monospace);" '
+        f'font-size="9">{t}</text>'
+        for y_t, c, t in ((y80, "#0a8a5f", "80"), (y50, "#b5321e", "50"))
+        if abs(y_t - y_last) > 12
+    )
     return (
         f'<svg width="{width}" height="{height}" '
-        f'style="display: block; margin-top: 0.3rem;">'
-        f'<line x1="{pad}" x2="{width - pad}" y1="{y80:.1f}" y2="{y80:.1f}" '
+        f'style="display: block; margin-top: 0.3rem; min-height: 40px;">'
+        f'<line x1="{pad}" x2="{pad + chart_w}" y1="{y80:.1f}" y2="{y80:.1f}" '
         f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="2,3" '
-        f'opacity="0.5"/>'
-        f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
+        f'opacity="0.75"/>'
+        f'<line x1="{pad}" x2="{pad + chart_w}" y1="{y50:.1f}" y2="{y50:.1f}" '
         f'stroke="#b5321e" stroke-width="1" stroke-dasharray="2,3" '
-        f'opacity="0.5"/>'
-        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="1.5" '
+        f'opacity="0.75"/>'
+        f'{thresh_labels}'
+        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="2" '
         f'stroke-linejoin="round" points="{pts}"/>'
-        f'<circle cx="{_x(n - 1):.1f}" cy="{_y(last_score):.1f}" r="3" '
+        f'<circle cx="{_x(n - 1):.1f}" cy="{y_last:.1f}" r="3" '
         f'fill="{last_color}"/>'
+        f'<text x="{label_x}" y="{y_last + 4:.1f}" fill="{last_color}" '
+        f'style="font-family:var(--sc-mono,monospace);" '
+        f'font-size="11" font-weight="700">{int(last_score)}</text>'
         f'<title>Health history ({n} days)</title>'
         f'</svg>'
     )
@@ -586,10 +609,11 @@ def _render_deal_alerts(store: PortfolioStore, deal_id: str) -> str:
             f'<input type="hidden" name="kind" value="{html.escape(a.kind)}">'
             f'<input type="hidden" name="deal_id" value="{html.escape(a.deal_id)}">'
             f'<input type="hidden" name="trigger_key" value="{html.escape(tk)}">'
-            f'<select name="snooze_days" class="ck-deal-alert-snooze">'
-            f'<option value="0">Ack</option>'
-            f'<option value="7">Snooze 7d</option>'
-            f'<option value="30">Snooze 30d</option>'
+            f'<select name="snooze_days" class="ck-deal-alert-snooze" '
+            f'aria-label="Alert action">'
+            f'<option value="0">Acknowledge</option>'
+            f'<option value="7">Ack + snooze 7d</option>'
+            f'<option value="30">Ack + snooze 30d</option>'
             f'</select>'
             f'<button type="submit" class="ck-deal-alert-go">Apply</button>'
             f'</form>'
@@ -986,18 +1010,25 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         # dashboard, which used to strand the partner with no path to the
         # analysis surfaces at all — link the workbench + the model hub
         # forward so the audit trail and the analytics stay one click apart.
-        f'<a href="/analysis/{qd}" class="ck-deal-action">'
+        # Visual hierarchy: the workbench is the one forward path, so it
+        # alone gets the navy fill; Models stays a bordered secondary;
+        # Download/Set-Active demote to quiet text links so six controls
+        # don't compete at equal weight. Only Pin keeps the star glyph.
+        f'<a href="/analysis/{qd}" '
+        'class="ck-deal-action ck-deal-action-primary">'
         'Open Workbench →</a>'
         f'<a href="/models/dcf/{qd}" class="ck-deal-action" '
         'title="DCF · LBO · bridge · the full model set runs off the same '
         'deal profile.">Models</a>'
-        f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
+        f'<a href="/deal/{qd}?download=1" '
+        'class="ck-deal-action ck-deal-action-quiet">'
         '↓ Download HTML</a>'
         # P1 — carry this deal as ambient context; the active-deal bar then
         # offers pre-scoped module links on every page.
         f'<a href="/deal-context?set={qd}&return=/deal/{qd}" '
-        'class="ck-deal-action" title="Module links in the bar open '
-        'pre-scoped to this deal on every page.">★ Set Active Deal</a>'
+        'class="ck-deal-action ck-deal-action-quiet" '
+        'title="Module links in the bar open '
+        'pre-scoped to this deal on every page.">Set Active Deal</a>'
         '</div>'
     )
     # Health KPI value: coloured number carrying the component
@@ -1018,35 +1049,57 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         moic_v = f"{moic_v:.2f}x"
     if isinstance(irr_v, float):
         irr_v = f"{irr_v*100:.1f}%"
-    kpi_strip = (
-        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
-        + ck_kpi_block(
-            "Health", health_value,
-            sub=html.escape(_HEALTH_BAND_LABELS.get(
-                str(health["band"]).lower(), str(health["band"]))),
-        )
-        + ck_kpi_block(
-            "Stage", html.escape(str(stage)).title(),
-            sub="lifecycle",
-        )
-        + ck_kpi_block("Covenant", cov_badge, sub="latest snapshot")
-        + ck_kpi_block("MOIC", str(moic_v), sub="latest snapshot")
-        + ck_kpi_block("IRR", str(irr_v), sub="latest snapshot")
-        + '</div>'
-    )
-
     # B143 — health-history sparkline. The editorial KPI-strip refactor
     # dropped the inline sparkline; restore it as a small labeled block
     # below the strip (renders only when ≥2 history points exist).
+    # Computed before the KPI strip so the Health KPI can link to it.
     _health_spark = _render_health_sparkline(store, deal_id)
     health_spark_block = (
-        '<div class="ck-deal-health-spark" '
+        '<div class="ck-deal-health-spark" id="health-history" '
         'style="margin:-8px 0 24px;">'
         '<div class="ck-eyebrow" style="margin-bottom:4px;">'
         'Health history</div>'
         f'{_health_spark}'
         '</div>'
     ) if _health_spark else ""
+    # Drill-throughs: the command-center hero KPIs all link to the
+    # surface where a partner acts on the number; the deal page — the
+    # highest-intent surface — left its KPIs inert, so a TRIPPED
+    # covenant forced a scroll-hunt. sub is trusted markup per
+    # ck_kpi_block's documented exemption.
+    _cov_drill = (
+        ' · <a class="ck-kpi-drill" href="#variance">variance →</a>'
+        if var_rows else
+        f' · <a class="ck-kpi-drill" href="/analysis/{qd}">workbench →</a>'
+    )
+    _health_drill = (
+        ' · <a class="ck-kpi-drill" href="#health-history">history →</a>'
+        if _health_spark else ""
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+        + ck_kpi_block(
+            "Health", health_value,
+            sub=html.escape(_HEALTH_BAND_LABELS.get(
+                str(health["band"]).lower(), str(health["band"])))
+            + _health_drill,
+        )
+        + ck_kpi_block(
+            "Stage", html.escape(str(stage)).title(),
+            sub="lifecycle",
+        )
+        + ck_kpi_block("Covenant", cov_badge,
+                       sub="latest snapshot" + _cov_drill)
+        + ck_kpi_block(
+            "MOIC", str(moic_v),
+            sub='latest snapshot · <a class="ck-kpi-drill" '
+                f'href="/analysis/{qd}">workbench →</a>')
+        + ck_kpi_block(
+            "IRR", str(irr_v),
+            sub='latest snapshot · <a class="ck-kpi-drill" '
+                f'href="/models/dcf/{qd}">models →</a>')
+        + '</div>'
+    )
 
     deal_header_css = (
         '<style>'
@@ -1069,10 +1122,27 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         'display:inline-flex;align-items:center;}'
         '.ck-deal-action:hover{background:var(--sc-bone,#ece5d6);'
         'border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}'
+        # One primary per row: navy fill marks "Open Workbench" as the
+        # forward path; quiet variant strips the pill chrome from the
+        # utility links so they read as tertiary text actions.
+        '.ck-deal-action-primary{background:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        '.ck-deal-action-primary:hover{background:var(--sc-teal,#155752);'
+        'border-color:var(--sc-teal,#155752);color:#fff;}'
+        '.ck-deal-action-quiet{background:transparent;'
+        'border-color:transparent;color:var(--sc-teal,#155752);'
+        'padding-left:4px;padding-right:4px;}'
+        '.ck-deal-action-quiet:hover{background:transparent;'
+        'border-color:transparent;text-decoration:underline;}'
         '.ck-deal-action-star.is-on{background:var(--sc-teal,#155752);'
         'color:#fff;border-color:var(--sc-teal,#155752);}'
         '.ck-deal-action-star.is-on:hover{background:var(--sc-navy,#0b2341);'
         'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        # KPI drill-through links (variance / workbench / models /
+        # health history) inside the trusted ck_kpi_block sub slot.
+        '.ck-kpi-drill{color:var(--sc-teal,#155752);text-decoration:none;'
+        'font-weight:700;}'
+        '.ck-kpi-drill:hover{text-decoration:underline;}'
         # Editorial section panels for the snapshot trail / variance /
         # initiative-attribution tables further down the page.
         '.ck-deal-section{padding:0;overflow:hidden;margin:0 0 20px;}'
@@ -1134,7 +1204,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     {_render_ebitda_sparkline(var_df)}
 
     {
-      '<section class="cad-card ck-deal-section">'
+      '<section class="cad-card ck-deal-section" id="variance">'
       '<header class="ck-deal-section-head">'
       '<h2>Quarterly variance</h2>'
       f'<span class="ck-deal-section-count">{_plural(len(var_df), "row")}</span>'
@@ -2088,6 +2158,81 @@ class RCMHandler(BaseHTTPRequestHandler):
     server_version = "RCM-MC"
     sys_version = ""
 
+    # Branded fallback for every stdlib ``send_error`` path (static-file
+    # misses, stale /outputs/ export links, 405s). The BaseHTTPRequestHandler
+    # default is a white Times "Error response" page that breaks the
+    # parchment/navy identity. This must stay self-contained (no shell, no
+    # external CSS/fonts) because send_error can fire pre-auth or before
+    # request parsing finishes. Keep '%' out of the CSS — the template goes
+    # through %-formatting.
+    _MINI_PAGE_CSS = (
+        "body{background:#f5f1ea;color:#1a2332;"
+        "font-family:'Source Serif 4',Georgia,serif;display:flex;"
+        "min-height:100vh;align-items:center;justify-content:center;"
+        "margin:0}main{max-width:520px;padding:32px}"
+        ".eb{font-family:'JetBrains Mono',ui-monospace,monospace;"
+        "font-size:11px;font-weight:700;letter-spacing:.12em;"
+        "color:#155752;text-transform:uppercase}"
+        "h1{font-family:inherit;font-size:28px;font-weight:500;"
+        "color:#0b2341;margin:10px 0 8px;letter-spacing:-0.01em}"
+        "p{font-size:14px;line-height:1.6;color:#37495e}"
+        "a{color:#155752}"
+    )
+    error_content_type = "text/html; charset=utf-8"
+    error_message_format = (
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        "<title>%(code)d · PE Desk</title>"
+        f"<style>{_MINI_PAGE_CSS}</style></head><body><main>"
+        '<div class="eb">Error · %(code)d</div>'
+        "<h1>%(message)s.</h1><p>%(explain)s</p>"
+        '<p><a href="/app">&larr; Back to the Command Center</a></p>'
+        "</main></body></html>"
+    )
+
+    def send_error(self, code, message=None, explain=None):
+        """stdlib override: same status/logging semantics as
+        ``BaseHTTPRequestHandler.send_error`` (which has no hook for extra
+        headers), but the response carries the standard hardening header
+        set like every other response. The branded body comes from
+        ``error_message_format`` above; message/explain are escaped here
+        exactly as the stdlib does."""
+        try:
+            code = int(code)
+        except (TypeError, ValueError):
+            code = int(HTTPStatus.INTERNAL_SERVER_ERROR)
+        try:
+            shortmsg, longmsg = self.responses[code]
+        except KeyError:
+            shortmsg, longmsg = "???", "???"
+        if message is None:
+            message = shortmsg
+        if explain is None:
+            explain = longmsg
+        self.log_error("code %d, message %s", code, message)
+        self.send_response(code, message)
+        self.send_header("Connection", "close")
+        body = None
+        if (code >= 200
+                and code not in (HTTPStatus.NO_CONTENT,
+                                 HTTPStatus.RESET_CONTENT,
+                                 HTTPStatus.NOT_MODIFIED)):
+            content = self.error_message_format % {
+                "code": code,
+                "message": html.escape(message, quote=False),
+                "explain": html.escape(explain, quote=False),
+            }
+            body = content.encode("utf-8", "replace")
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header("Content-Length", str(len(body)))
+        try:
+            self._send_security_headers()
+        except Exception:  # noqa: BLE001 — pre-parse failures lack headers
+            pass
+        self.end_headers()
+        if getattr(self, "command", None) != "HEAD" and body:
+            self.wfile.write(body)
+
     # Silence default noisy access-log output; users can tail server output
     # if they need it. The CLI banner already tells them the server is up.
     # B162: concise access log to stderr. Default BaseHTTPRequestHandler
@@ -2449,19 +2594,49 @@ class RCMHandler(BaseHTTPRequestHandler):
         cu = self._current_user()
         return bool(cu and cu.get("role") == "auditor")
 
+    def _referer_path(self, default: str = "/app") -> str:
+        """Same-origin path (+query) of the Referer header, or ``default``.
+
+        Used when bouncing a browser form post back to the page it came
+        from. Only the path/query are kept — never the scheme/host — so a
+        cross-site Referer can't turn the redirect into an open redirect.
+        """
+        ref = urllib.parse.urlparse(self.headers.get("Referer") or "")
+        back = ref.path or default
+        if ref.query:
+            back += "?" + ref.query
+        if not back.startswith("/") or back.startswith("//"):
+            return default
+        return back
+
     def _audit_readonly_blocked(self) -> bool:
-        """A read-only audit session may never mutate. Returns True (and sends
-        403) for any write method, so audit access stays GET-only even though
-        it can see every page."""
-        if self._is_audit_session():
-            self.send_response(HTTPStatus.FORBIDDEN)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self._send_security_headers()
-            self.end_headers()
-            self.wfile.write(
-                b"Read-only audit session: write actions are disabled.")
+        """A read-only audit session may never mutate. Returns True (and
+        refuses the write) for any write method, so audit access stays
+        GET-only even though it can see every page.
+
+        A browser form post (urlencoded + Accept: text/html) bounces back
+        to the referring page with the standard warning toast — the
+        auditor stays on the page instead of dead-ending on plain text.
+        Non-HTML callers (scripts, fetch) keep the plain 403 body."""
+        if not self._is_audit_session():
+            return False
+        ctype = self.headers.get("Content-Type", "") or ""
+        accept = self.headers.get("Accept") or ""
+        if ("application/x-www-form-urlencoded" in ctype
+                and "text/html" in accept):
+            self._redirect(self._with_flash(
+                self._referer_path(),
+                "Read-only audit session — write actions are disabled.",
+                "warning",
+            ))
             return True
-        return False
+        self.send_response(HTTPStatus.FORBIDDEN)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self._send_security_headers()
+        self.end_headers()
+        self.wfile.write(
+            b"Read-only audit session: write actions are disabled.")
+        return True
 
     def _route_audit_enter(self) -> None:
         """GET /audit/enter?token=<signed> — open a read-only audit window.
@@ -2475,14 +2650,34 @@ class RCMHandler(BaseHTTPRequestHandler):
         token = (qs.get("token") or [""])[0].strip()
         exp = _verify(token) if token else None
         if exp is None:
+            # Pre-auth surface, so no chartis_shell (the nav would leak
+            # the app's structure to an unauthenticated visitor). A
+            # self-contained page in the /login visual family instead of
+            # the old bare text/plain dead-end — the person holding a
+            # stale link is exactly the external reviewer we most want
+            # to land softly.
+            msg = ("Audit access is not enabled on this instance."
+                   if not audit_enabled() else
+                   "The link may have expired, or a newer one was issued.")
+            page = (
+                '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+                '<meta name="viewport" '
+                'content="width=device-width,initial-scale=1">'
+                "<title>Audit access · PE Desk</title>"
+                f"<style>{self._MINI_PAGE_CSS}</style></head><body><main>"
+                '<div class="eb">Audit access</div>'
+                "<h1>This audit link isn&rsquo;t valid.</h1>"
+                f"<p>{msg} Ask the deal team to issue a fresh link.</p>"
+                '<p><a href="/login">Go to sign in &rarr;</a></p>'
+                "</main></body></html>"
+            )
+            body = page.encode("utf-8")
             self.send_response(HTTPStatus.FORBIDDEN)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
             self._send_security_headers()
             self.end_headers()
-            msg = ("Audit access is not available."
-                   if not audit_enabled() else
-                   "Invalid or expired audit link.")
-            self.wfile.write(msg.encode("utf-8"))
+            self.wfile.write(body)
             return
         try:
             from .auth.audit_log import log_event
@@ -2636,6 +2831,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                     r"<h1[^>]*>([^<]+)</h1>", body[:500],
                 )
                 title = m.group(1) if m else "PE Desk"
+                if title.strip().isdigit():
+                    # An <h1>404</h1>-style fragment would otherwise yield
+                    # a "404 · 404 · PE Desk" tab title once the status
+                    # prefix lands below.
+                    title = "PE Desk"
                 if status >= 400:
                     title = f"{status} · {title}" if title != "PE Desk" else f"{status} · PE Desk"
                 body = chartis_shell(body, title=title)
@@ -2662,14 +2862,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # Cached cleaned path used by breadcrumbs + pill match
                 req_path_clean = req_path.rstrip("/") or "/"
                 # Topbar active-link mark based on the resolved section.
+                # Section anchors carry aria-expanded/aria-controls between
+                # href and class (the mega-menu disclosure pattern), so a
+                # literal '<a href=".." class="">' match only ever fired
+                # for the bare Home anchor — match attribute-order-
+                # insensitively, and only promote a still-empty class so a
+                # kit-marked anchor isn't double-classed.
                 if section:
+                    import re as _re_nav
                     for nav_item in _CORPUS_NAV:
                         if nav_item.get("key") == section:
                             href = _h.escape(nav_item["href"], quote=True)
-                            body = body.replace(
-                                f'<a href="{href}" class="">',
-                                f'<a href="{href}" class="active">',
-                                1,
+                            body = _re_nav.sub(
+                                r'(<a href="' + _re_nav.escape(href)
+                                + r'"[^>]*class=")(")',
+                                r'\1active\2',
+                                body, count=1,
                             )
                             break
                 # Auto-breadcrumbs: a FALLBACK for pages that don't
@@ -2701,6 +2909,30 @@ class RCMHandler(BaseHTTPRequestHandler):
                             if sub_href_clean == req_path_clean:
                                 page_label = sub.get("label", "")
                                 break
+                    if not page_label:
+                        # Routes outside _SUB_NAV (deal pages, one-off
+                        # surfaces) used to degenerate the chain to
+                        # "Home / <b>Section</b>" — presenting the section
+                        # as the current page. Fall back to the page's own
+                        # first <h1> (the visible identity), then to the
+                        # <title> with the shell's " · PE Desk"-style
+                        # suffixes trimmed, so the chain reads
+                        # Home / Section / <actual page>.
+                        import re as _re_title
+                        _hm = _re_title.search(
+                            r"<h1[^>]*>([^<]+)</h1>", body,
+                        )
+                        if _hm:
+                            page_label = _h.unescape(_hm.group(1)).strip()
+                        else:
+                            _tm = _re_title.search(
+                                r"<title>(.*?)</title>", body, _re_title.S,
+                            )
+                            if _tm:
+                                _t = _h.unescape(_tm.group(1))
+                                page_label = _re_title.split(
+                                    r"\s+[·—|–]\s+", _t,
+                                )[0].strip()
                     # Home -> [Section] -> Current, with adjacent duplicate
                     # labels collapsed (so Home-section pages read
                     # "Home / Page", not "Home / Home / Page").
@@ -2710,16 +2942,24 @@ class RCMHandler(BaseHTTPRequestHandler):
                     crumbs_parts = []
                     for _i, (_lbl, _hrf) in enumerate(deduped):
                         if _i:
-                            crumbs_parts.append('<span class="sep">/</span>')
+                            crumbs_parts.append(
+                                '<span class="sep" aria-hidden="true">'
+                                '/</span>'
+                            )
                         if _hrf and _i != len(deduped) - 1:
                             crumbs_parts.append(
                                 f'<a href="{_h.escape(_hrf, quote=True)}">'
                                 f'{_h.escape(_lbl)}</a>'
                             )
                         else:
+                            # Terminal crumb follows the kit _breadcrumbs()
+                            # convention: aria-current tells AT this is the
+                            # current page (a bare <strong> says nothing).
                             crumbs_parts.append(
-                                f'<strong style="color:var(--sc-navy);">'
-                                f'{_h.escape(_lbl)}</strong>'
+                                f'<span aria-current="page" '
+                                f'style="color:var(--sc-navy);'
+                                f'font-weight:600;">'
+                                f'{_h.escape(_lbl)}</span>'
                             )
                     crumbs_html = (
                         '<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
@@ -3948,7 +4188,26 @@ class RCMHandler(BaseHTTPRequestHandler):
             self._do_get_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
             import traceback
-            logger.error("unhandled GET %s: %s", self.path, exc)
+            logger.error("unhandled GET %s: %s\n%s", self.path, exc,
+                         traceback.format_exc())
+            # Browser navigations get the branded editorial 500 (a bare
+            # JSON dump gives a partner no way back); API callers and
+            # non-HTML clients keep the JSON contract. The traceback
+            # stays server-side — the page shows only the exception
+            # class + trimmed message.
+            wants_page = (
+                not urllib.parse.urlparse(self.path).path.startswith("/api/")
+                and "text/html" in (self.headers.get("Accept") or "")
+            )
+            if wants_page:
+                try:
+                    return self._error_page(
+                        "Something broke.",
+                        f"{type(exc).__name__}: {str(exc)[:200]}",
+                        code="500",
+                    )
+                except Exception:  # noqa: BLE001 — fall through to JSON
+                    pass
             try:
                 self._send_json(
                     {"error": "internal server error",
@@ -7121,9 +7380,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             deal_id = path[
                 len("/diligence/ic-memo/"):].strip("/")
             if not deal_id:
-                return self._send_html(
-                    "<h1>404</h1><p>Missing deal_id</p>",
-                    status=HTTPStatus.NOT_FOUND)
+                return self._error_page(
+                    "Deal not found",
+                    "Missing deal_id in the URL.", code="404")
             try:
                 from .ic_memo import (
                     build_ic_memo, render_memo_html,
@@ -7138,10 +7397,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                         "WHERE deal_id = ?", (deal_id,),
                     ).fetchone()
                 if not row:
-                    return self._send_html(
-                        f"<h1>404</h1><p>Deal {deal_id} not "
-                        f"found</p>",
-                        status=HTTPStatus.NOT_FOUND)
+                    return self._error_page(
+                        "Deal not found",
+                        f"No deal found for ID '{deal_id}'. "
+                        "Try searching from the home page.",
+                        code="404")
                 import json as _json
                 try:
                     prof = _json.loads(
@@ -7173,10 +7433,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
                 return self._send_html(render_memo_html(memo))
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>IC memo failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "IC memo failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         # ── Deal Screening dashboard ──
         if path == "/screening/dashboard":
@@ -7249,10 +7509,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                     filtered, flt=flt)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>Screening failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "Screening failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         # ── Synthesis runner — IC binder over 13 packets ──
         if path.startswith("/diligence/synthesis/"):
@@ -7263,9 +7523,9 @@ class RCMHandler(BaseHTTPRequestHandler):
             # via the IC binder HTML renderer.
             deal_id = path[len("/diligence/synthesis/"):].strip("/")
             if not deal_id:
-                return self._send_html(
-                    "<h1>404</h1><p>Missing deal_id</p>",
-                    status=HTTPStatus.NOT_FOUND)
+                return self._error_page(
+                    "Deal not found",
+                    "Missing deal_id in the URL.", code="404")
             try:
                 from .diligence_synthesis import (
                     DiligenceDossier, run_full_diligence,
@@ -7283,9 +7543,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                         "WHERE deal_id = ?", (deal_id,),
                     ).fetchone()
                 if not row:
-                    return self._send_html(
-                        f"<h1>404</h1><p>Deal {deal_id} not found</p>",
-                        status=HTTPStatus.NOT_FOUND)
+                    return self._error_page(
+                        "Deal not found",
+                        f"No deal found for ID '{deal_id}'. "
+                        "Try searching from the home page.",
+                        code="404")
                 import json as _json
                 profile = {}
                 try:
@@ -7303,10 +7565,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                 html = render_html_binder(result)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
-                return self._send_html(
-                    f"<h1>500</h1><p>Synthesis failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
-                    status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                return self._error_page(
+                    "Synthesis failed",
+                    f"{type(exc).__name__}: {str(exc)[:200]}",
+                    code="500")
 
         if path.startswith("/api/diligence/synthesis/"):
             # JSON variant — same dossier construction, machine
@@ -8211,7 +8473,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .analysis.analysis_store import get_or_build_packet as _cmp_build
             from .ui.deal_comparison import render_comparison as _cmp_render
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            raw = (qs.get("deals") or [""])[0]
+            # Join repeated ?deals= params so the empty-state picker's
+            # checkbox form works without its JS shim (a no-JS GET form
+            # submits deals=a&deals=b, not deals=a,b).
+            raw = ",".join(qs.get("deals") or [])
             deal_ids = [d.strip() for d in raw.split(",") if d.strip()]
             store = PortfolioStore(self.config.db_path)
             packets = []
@@ -8232,8 +8497,18 @@ class RCMHandler(BaseHTTPRequestHandler):
                             float(x) for x in _book[_m].dropna().tolist()]
             except Exception:  # noqa: BLE001 — chip is additive context
                 peer_dists = {}
+            # Empty state: hand the active deal book to the renderer so
+            # it can offer an in-place picker instead of a /portfolio
+            # round-trip dead end.
+            _cmp_options = None
+            if not packets:
+                try:
+                    _cmp_options = store.list_deals()
+                except Exception:  # noqa: BLE001 — picker is additive
+                    _cmp_options = None
             return self._send_html(_cmp_render(packets,
-                                               peer_dists=peer_dists))
+                                               peer_dists=peer_dists,
+                                               deal_options=_cmp_options))
         if path == "/api/deals/compare":
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             raw = (qs.get("ids") or [""])[0]
@@ -14570,7 +14845,24 @@ class RCMHandler(BaseHTTPRequestHandler):
         try:
             self._do_post_inner()
         except Exception as exc:  # noqa: BLE001 — global error boundary
-            logger.error("unhandled POST %s: %s", self.path, exc)
+            import traceback
+            logger.error("unhandled POST %s: %s\n%s", self.path, exc,
+                         traceback.format_exc())
+            # Same page-vs-API branch as the GET boundary: a browser form
+            # navigation gets the branded 500, API/XHR callers keep JSON.
+            wants_page = (
+                not urllib.parse.urlparse(self.path).path.startswith("/api/")
+                and "text/html" in (self.headers.get("Accept") or "")
+            )
+            if wants_page:
+                try:
+                    return self._error_page(
+                        "Something broke.",
+                        f"{type(exc).__name__}: {str(exc)[:200]}",
+                        code="500",
+                    )
+                except Exception:  # noqa: BLE001 — fall through to JSON
+                    pass
             try:
                 self._send_json(
                     {"error": "internal server error",
@@ -14612,6 +14904,27 @@ class RCMHandler(BaseHTTPRequestHandler):
             if "application/x-www-form-urlencoded" in ctype:
                 form_dict = self._read_form_body()
             if not self._csrf_ok(form_dict):
+                # A stale token on a browser form is routine, not
+                # exceptional — the CSRF secret is per-process, so every
+                # restart invalidates all open tabs. Bounce the partner
+                # back to the page they came from with a toast (the fresh
+                # page load self-heals the rcm_csrf cookie, so the retry
+                # succeeds). XHR/API callers — anything that sets
+                # X-Requested-With or doesn't accept text/html — keep the
+                # JSON contract.
+                is_browser_form = (
+                    "application/x-www-form-urlencoded" in ctype
+                    and "text/html" in (self.headers.get("Accept") or "")
+                    and not self.headers.get("X-Requested-With")
+                )
+                if is_browser_form:
+                    return self._redirect(self._with_flash(
+                        self._referer_path(),
+                        "That didn't go through — your security token "
+                        "was reset (usually a server restart). The page "
+                        "has been refreshed; please retry the action.",
+                        "warning",
+                    ))
                 return self._send_json(
                     {"error": "CSRF check failed",
                      "code": "CSRF_FAILED"},
@@ -19172,14 +19485,33 @@ class RCMHandler(BaseHTTPRequestHandler):
         if tab not in ("signin", "request"):
             tab = "signin"
         err = (qs.get("err") or [""])[0]
+        if err == "1":
+            # Compact form of the failure redirect (?err=1&u=<username>);
+            # expand to the partner-facing message here so the URL stays
+            # short.
+            err = "Invalid credentials"
         nxt = (qs.get("next") or ["/"])[0]
         request_success = (qs.get("request_success") or [""])[0] == "1"
-        self._send_html(render_login_page(
+        kwargs = dict(
             tab=tab,
             error=err or None,
             request_success=request_success,
             next_url=nxt,
-        ))
+        )
+        # ``u`` = username to prefill after a failed attempt (set by the
+        # /api/login failure redirect). Passed through only when the
+        # renderer supports it, so server.py and login_page.py can land
+        # the contract independently.
+        prefill = (qs.get("u") or [""])[0][:80]
+        if prefill:
+            import inspect as _inspect
+            try:
+                params = _inspect.signature(render_login_page).parameters
+            except (TypeError, ValueError):  # pragma: no cover
+                params = {}
+            if "username_prefill" in params:
+                kwargs["username_prefill"] = prefill
+        self._send_html(render_login_page(**kwargs))
 
     def _route_login_request_submit(self) -> None:
         """POST /login?tab=request — Request Access form submission.
@@ -20085,9 +20417,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.UNAUTHORIZED,
                 )
             self.send_response(HTTPStatus.SEE_OTHER)
+            # ``u`` carries the typed username back to the login form so a
+            # password typo doesn't force retyping the email. Contract
+            # shared with ui/chartis/login_page.py: /login?u=<urlencoded>
+            # → prefill #login-email. Never carry the password.
             self.send_header(
                 "Location",
                 f"/login?err={urllib.parse.quote('Invalid credentials')}"
+                f"&u={urllib.parse.quote(username[:80])}"
                 f"&next={urllib.parse.quote(nxt)}",
             )
             self.end_headers()

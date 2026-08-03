@@ -58,7 +58,7 @@ P = {
     # Text on light
     "text":        "#1a2332",
     "text_dim":    "#465366",
-    "text_faint":  "#7a8699",
+    "text_faint":  "#5d6675",
 
     # Text on navy
     "on_navy":       "#e9eef5",
@@ -543,6 +543,11 @@ _NAV_DESC = {
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
     "/conferences": "Industry conference tracker",
+    "/pipeline": "Every live deal by stage",
+    "/geo-intel": "State & county market screening",
+    "/state-compare": "Compare states on public metrics",
+    "/state-profile": "One state, metrics + national ranks",
+    "/county-explorer": "County drill-down (ACS data)",
     "/new-deal": "Create opportunity / import", "/deal-quality": "Score a target",
     "/deal-risk-scores": "What can go wrong", "/deal-flow-heatmap": "Flow by stage",
     "/pipeline/bridge": "Value-creation bridge",
@@ -780,12 +785,25 @@ def ck_table(
     and hints at cell formatting.
     """
     cls = "ck-table" + (" ck-dense" if dense else "")
+
+    # Numeric kinds default to right alignment (header AND cells) so
+    # decimals line up down the column — the renderer already knows the
+    # column is numeric (it applies sc-num from the same ``kind``), so
+    # alignment must not be left to each caller to remember. Explicit
+    # caller-passed ``align`` always wins (mirrors
+    # power_table.Column.__post_init__).
+    def _col_align(c: Mapping[str, str]) -> str:
+        return str(c.get("align") or (
+            "right" if c.get("kind", "") in ("currency", "percent", "number")
+            else "left"
+        ))
+
     # Header labels are developer-defined. Most are plain text (escape them),
     # but some callers pass ready-made markup — e.g. deal-library sort links
     # (<a href=…>Company ▲</a>). Render those raw instead of escaping the tag
     # into literal "<A HREF=…>" text in the header.
     header_cells = "".join(
-        f'<th scope="col" class="align-{_esc(c.get("align", "left"))}">'
+        f'<th scope="col" class="align-{_esc(_col_align(c))}">'
         f'{c.get("label", "") if "<" in str(c.get("label", "")) else _esc(c.get("label", ""))}'
         f'</th>'
         for c in columns
@@ -807,9 +825,19 @@ def ck_table(
                 val = _esc(raw if raw is not None else "—")
             num_cls = " sc-num" if kind in ("currency", "percent", "number") else ""
             cells.append(
-                f'<td class="align-{_esc(c.get("align", "left"))}{num_cls}">{val}</td>'
+                f'<td class="align-{_esc(_col_align(c))}{num_cls}">{val}</td>'
             )
         body_rows.append("<tr>" + "".join(cells) + "</tr>")
+    if not body_rows:
+        # Zero-row floor: a floating header band with an empty <tbody>
+        # under it explains nothing. Callers wanting a richer CTA render
+        # ck_empty_state instead of the table; this covers the forgotten
+        # cases (loader returned no rows, filtered-to-empty).
+        body_rows.append(
+            f'<tr><td class="ck-empty-row align-center" '
+            f'colspan="{max(1, len(columns))}" '
+            f'style="text-align:center;">No rows to display.</td></tr>'
+        )
     return (
         f'<table class="{cls}">'
         f"<thead><tr>{header_cells}</tr></thead>"
@@ -1743,6 +1771,7 @@ def ck_scatter(
 
     def fnum(v):
         a = abs(v)
+        if a == 0: return "0"
         if a >= 100: return f"{v:,.0f}"
         if a >= 1: return f"{v:,.1f}"
         return f"{v:,.2f}"
@@ -1753,28 +1782,47 @@ def ck_scatter(
     # frame axes
     parts.append(f'<line x1="{L}" y1="{T}" x2="{L}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
     parts.append(f'<line x1="{L}" y1="{H-B}" x2="{W-R}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
+    # Intermediate round-number ticks with faint solid gridlines so a
+    # point's approximate value reads off the plot instead of requiring
+    # mental interpolation between two corner labels. Imported lazily:
+    # _chart_kit imports P from this module at its top level.
+    from ._chart_kit import ck_nice_ticks as _nice_ticks
+    xticks = _nice_ticks(xmin, xmax, 5)
+    yticks = _nice_ticks(ymin, ymax, 5)
+    for t in xticks:
+        tx = sx(t)
+        parts.append(f'<line x1="{tx:.1f}" y1="{T}" x2="{tx:.1f}" y2="{H-B}" stroke="var(--sc-rule,#e4ddca)" stroke-width="0.75"/>')
+        parts.append(f'<text x="{tx:.1f}" y="{H-B+14}" font-size="9.5" text-anchor="middle" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(t))}</text>')
+    for t in yticks:
+        ty = sy(t)
+        parts.append(f'<line x1="{L}" y1="{ty:.1f}" x2="{W-R}" y2="{ty:.1f}" stroke="var(--sc-rule,#e4ddca)" stroke-width="0.75"/>')
+        parts.append(f'<text x="{L-4}" y="{ty + 3:.1f}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(t))}</text>')
     # quadrant reference lines
     if x_ref is not None:
         try:
             xr = sx(float(x_ref))
-            parts.append(f'<line x1="{xr:.1f}" y1="{T}" x2="{xr:.1f}" y2="{H-B}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+            parts.append(f'<line x1="{xr:.1f}" y1="{T}" x2="{xr:.1f}" y2="{H-B}" stroke="var(--sc-text-faint,#5d6675)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
         except (TypeError, ValueError): pass
     if y_ref is not None:
         try:
             yr = sy(float(y_ref))
-            parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#7a8699)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
+            parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#5d6675)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
         except (TypeError, ValueError): pass
-    # axis min/max ticks
-    parts.append(f'<text x="{L}" y="{H-B+14}" font-size="8" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmin))}</text>')
-    parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmax))}</text>')
-    parts.append(f'<text x="{L-4}" y="{H-B}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymin))}</text>')
-    parts.append(f'<text x="{L-4}" y="{T+8}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymax))}</text>')
+    # Axis min/max corner labels only when the nice-tick pass produced
+    # nothing for that axis (degenerate range) — the ticks otherwise
+    # replace them.
+    if not xticks:
+        parts.append(f'<text x="{L}" y="{H-B+14}" font-size="9.5" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmin))}</text>')
+        parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmax))}</text>')
+    if not yticks:
+        parts.append(f'<text x="{L-4}" y="{H-B}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymin))}</text>')
+        parts.append(f'<text x="{L-4}" y="{T+8}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymax))}</text>')
     # axis labels
     if x_label:
-        parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
+        parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="10" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
     if y_label:
         cy = (T + H - B) / 2
-        parts.append(f'<text x="11" y="{cy:.0f}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
+        parts.append(f'<text x="11" y="{cy:.0f}" font-size="10" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
     # dots
     for x, y, lab, tn, href in pts:
         cx = sx(x); cy = sy(y)
@@ -1801,6 +1849,7 @@ def ck_value_anchor(
     value: str,
     *,
     delta: str = "",
+    delta_label: Optional[str] = None,
     opportunity: str = "",
     target: str = "",
     tone: str = "teal",
@@ -1814,7 +1863,10 @@ def ck_value_anchor(
     headline metric (e.g. "72 / 100"). The three optional facts render
     as a labelled row — ``opportunity`` is emphasised in the tone color
     because it is the load-bearing number. ``tone`` ∈ {teal, positive,
-    warning, negative, navy}.
+    warning, negative, navy}. ``delta_label`` names the ``delta``
+    comparison (e.g. "vs peer median"); left unset it resolves to
+    "vs benchmark" for a single-figure delta and "context" for a
+    "·"-joined multi-fact string.
 
     DEFENSIBILITY: callers pass only computed figures. Pass ``opportunity``
     empty when no defensible dollar value exists — the band still anchors
@@ -1831,9 +1883,17 @@ def ck_value_anchor(
     }.get(tone, "var(--sc-teal)")
     facts = []
     if delta:
+        # ``delta_label`` names the comparison. Historically hardcoded to
+        # "vs benchmark", but most data_public callers pass a "·"-joined
+        # multi-fact context string as ``delta`` — labelling the page's
+        # own figures as a benchmark comparison is exactly the confusion
+        # the DEFENSIBILITY note warns against. When the caller doesn't
+        # name the label, a multi-fact delta defaults to "context".
+        if delta_label is None:
+            delta_label = "context" if "·" in delta else "vs benchmark"
         facts.append(
             '<div class="ck-va-fact">'
-            '<span class="ck-va-fact-label">vs benchmark</span>'
+            f'<span class="ck-va-fact-label">{_esc(delta_label)}</span>'
             f'<span class="ck-va-fact-value">{_esc(delta)}</span></div>'
         )
     if opportunity:
@@ -2222,10 +2282,28 @@ def ck_sparkline(
         f'<span class="ck-spark-val">{_esc(last_value)}</span>'
         if last_value else ""
     )
+    # Native <title> hover + matching aria-label: every sibling strip
+    # (ck_trajectory_strip, ck_distribution_strip, payer-mix microbar)
+    # ships a no-JS tooltip; the most-used inline trend must not be the
+    # one primitive where hovering tells the partner nothing. %-change
+    # is omitted when the first value is at-or-near zero (no defensible
+    # baseline — same guard as ck_trajectory_strip).
+    if abs(nums[0]) > 1e-12:
+        pct = (nums[-1] - nums[0]) / abs(nums[0]) * 100.0
+        pct_txt = f" ({pct:+.1f}%)"
+    else:
+        pct_txt = ""
+    summary = (
+        (f"{label}: " if label else "")
+        + f"{nums[0]:,.2f} → {nums[-1]:,.2f}{pct_txt}"
+        + f" · min {mn:,.2f} · max {mx:,.2f}"
+        + f" · {len(nums)} pts"
+    )
     svg = (
         f'<svg class="ck-spark-svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" role="img" '
-        f'aria-label="trend sparkline">'
+        f'aria-label="{_esc(summary)}">'
+        f'<title>{_esc(summary)}</title>'
         f'<polyline points="{poly}" fill="none" stroke="{stroke}" '
         f'stroke-width="1.5" stroke-linecap="round" '
         f'stroke-linejoin="round"/>'
@@ -4815,7 +4893,7 @@ _NARRATIVE_CSS = (
     "max-width:74ch;}"
     # Empty state is the same paragraph in a quieter ink so an
     # un-populated section still reads as intentional, not broken.
-    ".ck-narrative.is-empty{color:var(--sc-text-faint,#7a8699);}"
+    ".ck-narrative.is-empty{color:var(--sc-text-faint,#5d6675);}"
     "</style>"
 )
 
@@ -7247,14 +7325,34 @@ def ck_data_table(
             f'{_esc(h.get("label", ""))}</th>'
         )
     head_html = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
+    # Row count is derived before the zero-row placeholder so an empty
+    # table never claims "1 rows".
+    n_rows = rows_html.count("<tr")
+    if not rows_html.strip():
+        # Zero-row floor: without it the page shows a floating header
+        # band over an empty <tbody> with no explanation. Callers that
+        # want a richer CTA render ck_empty_state instead of the table.
+        rows_html = (
+            f'<tr><td class="ck-empty-row ck-cell-c" '
+            f'colspan="{max(1, len(list(headers)))}" '
+            f'style="text-align:center;">No rows to display.</td></tr>'
+        )
     body_html = f"<tbody>{rows_html}</tbody>"
     table = (
         '<table class="ck-data-table">'
         + head_html + body_html + "</table>"
     )
+    # Long tables state their scale — /target-screener and /portfolio
+    # set the "N rows" expectation; the shared renderer provides the
+    # same anchor once a table is long enough to need it. Threshold
+    # keeps small inline tables clean.
+    count_html = (
+        f'<div class="ck-data-table-count">{n_rows:,} rows</div>'
+        if n_rows >= 15 else ""
+    )
     if scrollable:
-        return f'<div class="ck-data-table-scroll">{table}</div>'
-    return table
+        return f'<div class="ck-data-table-scroll">{table}{count_html}</div>'
+    return table + count_html
 
 
 def ck_provenance_tooltip(
@@ -7644,7 +7742,10 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     return (
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
-        '<input class="ck-palette-input" type="text" '
+        # data-modkey lets _MODKEY_JS rewrite the ⌘ in the placeholder to
+        # Ctrl on non-Mac platforms — the topbar kbd chip already did this,
+        # so the two hints for the same shortcut disagreed on Windows/Linux.
+        '<input class="ck-palette-input" type="text" data-modkey '
         'placeholder="Jump to a page, or type a 6-digit CCN… (⌘K)" />'
         '<ul class="ck-palette-list">'
         # P12 entity jump — a synthetic result the JS reveals when the query
@@ -7703,6 +7804,36 @@ _CSS_INLINE_FALLBACK = """
   .ck-panel-title { font-family:var(--sc-sans); font-weight:600; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--sc-teal-ink,#0f3d39); }
   .ck-panel-code { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.1em; color:var(--sc-teal,#155752); }
   .ck-panel-body { padding:var(--sc-s-6); }
+  /* Wide tables scroll INSIDE their panel instead of clipping at the
+   * page edge (predictive-screener's sort-key column and +PIPE action
+   * were unreadable at 1440px). Scoped via :has to table-bearing panel
+   * bodies only, because overflow-x:auto forces overflow-y to auto as
+   * well and would clip the absolutely-positioned help/provenance
+   * popovers in non-table panels. */
+  .ck-panel-body:has(table) { overflow-x:auto; }
+  /* Shared baseline for bare form controls inside the editorial column.
+   * Previously there was no `.ck-main select` (or input) rule at all —
+   * only page-local one-offs — so any control outside those wrappers
+   * rendered full native chrome, off the parchment register. :where()
+   * keeps specificity at (0,1,0) so every existing page-local class
+   * rule (.cad-field select, .ck-severity-actions select, …) and any
+   * inline style still wins; only unstyled controls are lifted. */
+  .ck-main :where(select) {
+    font-family:var(--sc-sans); font-size:13px; color:var(--sc-text);
+    background-color:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; padding:6px 26px 6px 10px;
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23465366' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 8px center; }
+  .ck-main :where(input[type="text"], input[type="search"],
+    input[type="number"], input[type="email"], input[type="password"],
+    input[type="url"], input[type="tel"], input:not([type]), textarea) {
+    font-family:var(--sc-sans); font-size:13px; color:var(--sc-text);
+    background-color:#fff; border:1px solid var(--sc-rule);
+    border-radius:2px; padding:6px 10px; }
+  /* Checkboxes/radios/progress pick up the teal accent everywhere
+   * (previously only .ck-filter-list set accent-color). */
+  :root { accent-color:var(--sc-teal, #155752); }
   /* Default link affordance inside editorial chrome — every <a> nested
    * in a panel body or section-intro body picks up teal-ink + hover
    * underline so dozens of inline-styled anchors still feel clickable
@@ -7884,6 +8015,7 @@ _CSS_INLINE_FALLBACK = """
   }
   .ck-help-trigger {
     display: inline-flex; align-items: center; justify-content: center;
+    position: relative;
     width: 16px; height: 16px;
     background: transparent;
     border: 1px solid var(--sc-rule, #d8d3c8); border-radius: 50%;
@@ -7893,6 +8025,13 @@ _CSS_INLINE_FALLBACK = """
     cursor: pointer; padding: 0;
     transition: border-color 120ms ease, color 120ms ease,
                 background 120ms ease;
+  }
+  /* The 16px visual circle is well under the WCAG 2.5.8 24px minimum
+   * tap target (and it is the only path to metric definitions). An
+   * invisible inset:-8px overlay grows the hit area to 32px without
+   * moving a pixel of layout. */
+  .ck-help-trigger::after {
+    content: ""; position: absolute; inset: -8px; border-radius: 50%;
   }
   .ck-help-trigger:hover,
   .ck-help-trigger:focus,
@@ -7999,8 +8138,34 @@ _CSS_INLINE_FALLBACK = """
    * border-bottom + opaque --sc-bone background. No box-shadow
    * (Tier-4 don'ts forbid shadows; the hairline carries the
    * visual separation). */
-  .ck-table.ck-table-sticky-head thead th { position:sticky; top:0; z-index:5; background:var(--sc-bone); }
+  /* --ck-sticky-top: the offset sticky in-page elements (pinned theads)
+   * must clear. The topbar is sticky at top:0 and ~60px tall (58px inner
+   * + 2px ink rule); pinning a thead at top:0 parks it UNDERNEATH the
+   * opaque bar (z-index:50), invisible. 58px tucks the thead ~2px under
+   * the bar so no scroll-through gap opens. Pages that render their own
+   * sticky rail below the topbar can override this var locally. */
+  :root { --ck-sticky-top:58px; }
+  .ck-table.ck-table-sticky-head thead th { position:sticky; top:var(--ck-sticky-top,58px); z-index:5; background:var(--sc-bone); }
+  /* Inside an inner scroll region (its own overflow container) sticky
+   * offsets resolve against the SCROLLPORT, not the viewport, so the
+   * topbar offset above would float the header 58px below the region's
+   * top edge. Reset to 0 there. .nh-scroll is npi-history's existing
+   * max-height scroll region (the one working sticky instance before
+   * the offset fix); .ck-scroll-region is the kit-blessed hook for
+   * future inner-scroll tables. */
+  .ck-scroll-region .ck-table.ck-table-sticky-head thead th,
+  .nh-scroll .ck-table.ck-table-sticky-head thead th { top:0; }
+  /* Fragment navigation (contents rails, ck_next_section anchors, the
+   * #ck-main skip link) must not scroll the target under the sticky
+   * topbar — every [id] clears the bar plus 16px of breathing room.
+   * Inert for non-anchor navigation. */
+  [id] { scroll-margin-top:calc(var(--ck-sticky-top,58px) + 16px); }
   .ck-table tbody td { padding:10px 14px; border-bottom:1px solid var(--sc-rule); }
+  /* Row-hover reading guide — the same translucent teal wash the
+   * ck-bar-row primitive already uses, so wide multi-column tables get
+   * a horizontal tracking affordance. rgba (not a solid) so it reads
+   * on white panels and on zebra-striped rows alike. */
+  .ck-table tbody tr:hover { background:rgba(21,87,82,0.06); }
   .ck-table.ck-dense tbody td { padding:5px 10px; font-size:12px; }
   .ck-table .sc-num { font-family:var(--sc-mono); font-variant-numeric:tabular-nums; }
   .ck-table .align-right { text-align:right; }
@@ -8028,6 +8193,21 @@ _CSS_INLINE_FALLBACK = """
   .ck-kpi-strip .ck-kpi { padding:16px 18px; border-top:0; border-right:1px solid var(--sc-rule); }
   .ck-kpi-grid .ck-kpi:last-child,
   .ck-kpi-strip .ck-kpi:last-child { border-right:0; }
+  /* Row-align KPI internals across the strip. With display:block, a
+   * 2-line label pushes its value ~14px lower than single-line
+   * neighbours, so the serif value row reads as a ragged baseline on
+   * every dense strip (auto-fit minmax(160px,1fr) makes label wrap
+   * routine at 7-9 blocks). Subgrid shares four row tracks —
+   * label / value / sub / chart (ck_kpi_block's in-flow children;
+   * .ck-kpi-code is position:absolute so it takes no track) — so
+   * values sit on one line strip-wide. Non-supporting engines keep
+   * today's block behaviour via the @supports guard. */
+  @supports (grid-template-rows: subgrid) {
+    .ck-kpi-grid, .ck-kpi-strip, .ck-pulse-grid { grid-auto-rows:auto; }
+    .ck-kpi-grid > .ck-kpi, .ck-kpi-strip > .ck-kpi, .ck-pulse-grid > .ck-kpi {
+      display:grid; grid-template-rows:subgrid; grid-row:span 4;
+      align-content:start; }
+  }
   .ck-kpi-label { font-family:var(--sc-sans); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--sc-text-dim); margin-bottom:6px; }
   .ck-kpi-value { font-family:var(--sc-serif); font-size:22px; font-weight:600; color:var(--sc-navy); display:flex; align-items:baseline; gap:8px; }
   .ck-kpi-trend { font-family:var(--sc-mono); font-size:12px; }
@@ -8135,7 +8315,10 @@ _CSS_INLINE_FALLBACK = """
      legacy second-line `.ck-subnav` rail is no longer rendered, so there is no
      competing sticky element below this one. */
   .ck-topbar { --tb-paper:#faf6ec; --tb-paper2:#f3eddb; --tb-ink:#15202b;
-    --tb-ink2:#2a3a4a; --tb-muted:#6a7480; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
+    /* --tb-muted carries 10-10.5px mono type (mode chip, Ctrl-K hint);
+       the old #6a7480 measured 4.22:1 on the paper bar — under AA.
+       #5d6675 (same as --sc-text-faint) measures 5.37:1 on #faf6ec. */
+    --tb-ink2:#2a3a4a; --tb-muted:#5d6675; --tb-rule:#c9c1ac; --tb-green:#1f7a5a;
     --tb-green-deep:#18573f; --tb-green-soft:#d6e8df; --tb-amber:#b8842e;
     position:sticky; top:0; z-index:50; background:var(--tb-paper);
     border-bottom:2px solid var(--tb-ink); }
@@ -8208,12 +8391,37 @@ _CSS_INLINE_FALLBACK = """
   /* Topbar/nav wrapping is phone-only — kept at ≤640 so the 7-link nav
      does not wrap prematurely through the tablet range. */
   @media (max-width:640px){
-    .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:2px; }
+    .ck-topbar-inner{ flex-wrap:wrap; min-height:0; padding:8px 16px; row-gap:4px; }
     .ck-wordmark{ padding-right:16px; margin-right:12px; }
     /* let the 7 nav links wrap to multiple rows rather than forcing the
        bar (and the page) ~480px wide; each link keeps its own no-wrap. */
     .ck-nav{ flex-wrap:wrap; }
-    .ck-nav a{ height:auto; padding:6px 10px; }
+    /* 11px vertical padding on 13px type → ~37px tap targets. The old
+       6px gave ~26px rows packed at 2px gap — easy to mis-tap two rows
+       of primary navigation (WCAG 2.5.8 / platform 44px guidance). The
+       taller wrapped bar is fine: the mega-panel offset is measured
+       from the real bar height by the nav JS, not hardcoded. */
+    .ck-nav a{ height:auto; padding:11px 12px; }
+    /* iOS Safari auto-zooms (and stays zoomed) when a focused control's
+       font-size is under 16px. The kit search is 14px and page inputs
+       are mostly 12-13px mono — bump every text-entry control to 16px
+       on phones only; desktop typography is untouched. */
+    .ck-topbar input, .ck-main input[type="text"], .ck-main input[type="search"],
+    .ck-main input:not([type]), .ck-main input[type="number"],
+    .ck-main input[type="email"], .ck-main input[type="password"],
+    .ck-main input[type="url"], .ck-main input[type="tel"],
+    .ck-main select, .ck-main textarea { font-size:16px; }
+    /* The wrapped bar is taller than the desktop 58px the mega-panel's
+       CSS top assumes; the nav JS re-anchors an opening panel to the
+       real bar bottom. What CSS must still guarantee: a panel taller
+       than the phone viewport scrolls internally instead of hiding its
+       bottom items. The 160px fallback approximates the wrapped bar for
+       no-JS renders; the JS sets the exact max-height on open.
+       .ck-topbar prefix: this block sits ABOVE the base .ck-nav-mega
+       rule (overflow:visible), so equal specificity would lose the
+       cascade — the extra class makes the phone scroll rule win. */
+    .ck-topbar .ck-nav-mega{ max-height:calc(100dvh - 160px); overflow-y:auto;
+      -webkit-overflow-scrolling:touch; }
   }
   /* Overflow-prevention safety-net — raised from ≤640 to ≤960 so the
      641–960px tablet range is covered, not just phones. The Phase-0 crawl
@@ -8252,14 +8460,28 @@ _CSS_INLINE_FALLBACK = """
     /* tables with an inline min-width (e.g. min-width:700px) must drop it
        on mobile so .ck-main table's max-width/scroll can take effect. */
     .ck-main table{ min-width:0 !important; }
+    /* display:block on <table> strips the implicit table/row/cell roles
+       from the accessibility tree (Chrome/Safari), losing row-column
+       navigation for screen-reader users. Tables already inside the
+       kit's .ck-data-table-scroll wrapper don't need the block
+       override — the WRAPPER provides the horizontal scroll — so they
+       keep display:table and their semantics. width:max-content +
+       min-width:100% !important (must outrank the min-width:0 guard
+       above) keeps them filling the panel and scrolling inside the
+       wrapper. The blanket display:block above remains the fallback
+       for bare, unwrapped tables only. */
+    .ck-main .ck-data-table-scroll > table{
+      display:table; width:max-content; min-width:100% !important; }
     /* charts scale to the column instead of forcing it wide (viewBox SVGs
        scale cleanly; fixed-size SVGs keep their intrinsic aspect ratio).
        <img> covers matplotlib PNG charts so they shrink with the column. */
     .ck-main svg{ max-width:100%; height:auto; }
     .ck-main img{ max-width:100%; height:auto; }
-    /* any inline multi-column grid (repeat(), "1fr 300px" sidebar
-       layouts, etc.) stacks to one column on phones. */
-    [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
+    /* NOTE: the inline-grid overflow guard ([style*="grid-template-
+       columns"]) is deliberately NOT in this ≤960 block — it lives in
+       its own two media blocks right below, because collapsing every
+       KPI/stat grid to ONE column across the whole tablet range turned
+       768px dashboards into ~8,000px single-number scrolls. */
     /* provenance tooltip cards are visibility:hidden (so they still occupy
        layout) with a 240px min-width — on a phone a card on a right-edge
        KPI/cell pushed the whole page wide. Drop them from flow until
@@ -8271,6 +8493,20 @@ _CSS_INLINE_FALLBACK = """
     .ck-prov-tt:focus-within .ck-prov-tt-card,
     .ck-help:hover .ck-help-popover,
     .ck-help:focus-within .ck-help-popover{ display:block; }
+  }
+  /* Inline-styled multi-column grids (repeat(), "1fr 300px" sidebars,
+     KPI strips) — overflow guard split by breakpoint. On tablets
+     (641-960px) 2-3 columns fit comfortably, so auto-fit tracks keep
+     the dashboard density; min(100%,220px) still lets a track shrink
+     inside narrow containers, so nothing overflows horizontally. Only
+     phones (≤640px) stack to a single column. !important is required
+     to beat the inline style; desktop (≥961px) is untouched. */
+  @media (min-width:641px) and (max-width:960px){
+    [style*="grid-template-columns"]{
+      grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important; }
+  }
+  @media (max-width:640px){
+    [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
   }
   .ck-nav a:hover { color:var(--tb-green); }
   .ck-nav a.active { color:var(--tb-green); font-style:italic;
@@ -8914,8 +9150,19 @@ _CSS_INLINE_FALLBACK = """
   .ck-data-table-scroll { overflow-x:auto; margin-top:12px; }
   .ck-data-table { width:100%; border-collapse:collapse; font-size:11px; }
   .ck-data-table thead tr { background:var(--sc-bone); }
-  .ck-data-table tbody tr:nth-child(even) { background:var(--sc-panel-alt, #ece5d6); }
+  /* Zebra one step off white (#faf6ec — the tone the target-screener
+   * table already uses), not bone: bone == the thead band, so bone
+   * stripes read as heavy bars competing with the header. The thead
+   * keeps var(--sc-bone) as the strongest tone in the table. */
+  .ck-data-table tbody tr:nth-child(even) { background:#faf6ec; }
+  /* Hover wash placed AFTER the zebra rule — equal specificity, so
+   * source order lets hover win on even (striped) rows too. */
+  .ck-data-table tbody tr:hover { background:rgba(21,87,82,0.06); }
   .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
+  /* Row-count footer emitted by ck_data_table for long tables — quiet
+   * mono anchor so a partner reads the table's scale without scrolling
+   * to the end. */
+  .ck-data-table-count { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.06em; color:var(--sc-text-dim); text-align:right; padding:4px 2px; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
    * ck-kpi-grid; health-mix bar is the only bespoke chrome. */
@@ -9193,6 +9440,13 @@ _CSS_INLINE_FALLBACK = """
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
+  /* Pending-POST state applied by _FORM_BUSY_JS — dimmed, progress cursor,
+   * trailing ellipsis so the button itself says "working". Lives in the
+   * always-shipped fallback (not the chrome-gated block) because bare
+   * pages (/login) post forms too. */
+  button.is-busy, input.is-busy { opacity:.65; cursor:progress; }
+  button.is-busy::after { content:"…"; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: .001ms !important;
@@ -9233,6 +9487,51 @@ _CSRF_JS = """
     }
     return of(u,o);
   };}
+})();
+</script>
+"""
+
+
+# Submit feedback + double-submit guard for the full-page POST round-trip.
+# Every state-changing form on the platform posts and reloads; during that
+# round-trip the submit button stayed active — double-clicking "Apply" on an
+# alert fired two POSTs, and there was zero "working" signal until the
+# post-redirect toast. Shipped unconditionally next to _CSRF_JS (forms exist
+# on chrome-less pages too, e.g. /login).
+_FORM_BUSY_JS = """
+<script>
+(function(){
+  function reset(scope){
+    var root=scope||document;
+    Array.prototype.forEach.call(root.querySelectorAll('.is-busy'),
+      function(b){ b.disabled=false; b.classList.remove('is-busy'); });
+    if(root.tagName==='FORM'){ root.removeAttribute('aria-busy'); }
+    Array.prototype.forEach.call(root.querySelectorAll('form[aria-busy]'),
+      function(f){ f.removeAttribute('aria-busy'); });
+  }
+  document.addEventListener('submit',function(e){
+    var f=e.target;
+    if(!f||f.tagName!=='FORM')return;
+    if(!f.method||f.method.toLowerCase()!=='post')return;
+    if(f.hasAttribute('data-ck-no-busy'))return;  /* JS-intercepted forms opt out */
+    /* Defer past the submit dispatch: (1) the browser captures the clicked
+     * submit button's name/value into the form data set BEFORE timers run,
+     * so disabling here can't drop it from the POST; (2) by timer time
+     * e.defaultPrevented reflects any page-level interception — those forms
+     * never navigate, so their buttons must stay live. */
+    setTimeout(function(){
+      if(e.defaultPrevented)return;
+      Array.prototype.forEach.call(
+        f.querySelectorAll('button[type=submit],input[type=submit],button:not([type])'),
+        function(b){ b.disabled=true; b.classList.add('is-busy'); });
+      f.setAttribute('aria-busy','true');
+      /* Failsafe: a POST that never navigates (network failure, file
+       * download response) must not leave the form dead. */
+      setTimeout(function(){ reset(f); }, 3000);
+    },0);
+  },true);
+  /* bfcache: Back restores the page as-frozen (buttons still disabled). */
+  window.addEventListener('pageshow',function(){ reset(document); });
 })();
 </script>
 """
@@ -10114,19 +10413,27 @@ _GUIDE_JS = """
 
 _SORT_JS = """
 <style>
-table.ck-data-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
-table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
+table.ck-data-table th[data-sortable]:hover,
+table.ck-table th[data-sortable]:hover,
+table.cad-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
+table.ck-data-table th[data-sort-dir],
+table.ck-table th[data-sort-dir],
+table.cad-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 .ck-sort-ind{font-size:9px;opacity:0.75;}
 </style>
 <script>
 /* Click-to-sort for every editorial data table. Hooks all
- * table.ck-data-table that carry a <thead> + <tbody> with >=2 rows.
+ * table.ck-data-table / table.ck-table / table.cad-table that carry a
+ * <thead> + <tbody> with >=2 rows — identical-looking tables on
+ * adjacent routes must not differ in whether their headers sort.
  * Click (or Enter/Space) on a header sorts the body rows by that
  * column, toggling asc/desc. Numeric cells ($1,204.50 / 12.3% /
  * 2.50x / +4.1% / (1.2) negatives) sort numerically; everything else
  * lexically (locale, numeric-aware). Blank / "—" cells sink to the
  * bottom. Whole <tr> nodes are re-ordered so cell styling + color
- * spans survive. Purely additive: with JS off the table is unchanged.
+ * spans survive. Header cells that already carry a link (server-side
+ * sort / glossary anchors) keep their link behavior — no double
+ * affordance. Purely additive: with JS off the table is unchanged.
  * Opt out per table with data-no-sort. */
 (function(){
   function parseNum(t){
@@ -10171,15 +10478,38 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
     if(ind) ind.textContent=dir==='asc'?' \\u25B2':' \\u25BC';
   }
   function init(){
-    var tables=document.querySelectorAll('table.ck-data-table');
+    var tables=document.querySelectorAll('table.ck-data-table, table.ck-table, table.cad-table');
     Array.prototype.forEach.call(tables,function(table){
-      if(table.getAttribute('data-no-sort')!=null) return;
       var head=table.tHead, tbody=table.tBodies[0];
-      if(!head||!tbody||tbody.rows.length<2) return;
+      if(!head||!tbody||tbody.rows.length<1) return;
       var hrow=head.rows[head.rows.length-1];
       if(!hrow) return;
+      /* Header-alignment healer: a th over a right-aligned numeric
+       * column (td.num / .ck-cell-r / .align-right on the first body
+       * row) inherits that alignment so the header doesn't float
+       * detached from its values. Applies even to data-no-sort tables
+       * (the opt-out is about the sort affordance, not alignment). */
+      var probe=tbody.rows[0];
+      if(probe&&probe.cells.length===hrow.cells.length){
+        Array.prototype.forEach.call(hrow.cells,function(th,idx){
+          var td=probe.cells[idx];
+          if(!td) return;
+          var right=td.classList.contains('num')||td.classList.contains('ck-cell-r')||td.classList.contains('align-right');
+          var self=th.classList.contains('num')||th.classList.contains('ck-cell-r')||th.classList.contains('align-right')||th.classList.contains('align-center')||th.classList.contains('ck-cell-c');
+          if(right&&!self) th.style.textAlign='right';
+        });
+      }
+      if(table.getAttribute('data-no-sort')!=null) return;
+      if(tbody.rows.length<2) return;
+      /* Section-divider rows (full-width colspan cells) would be
+       * scrambled by a column re-order — leave those tables to their
+       * server-side ordering. */
+      if(tbody.querySelector('td[colspan],th[colspan]')) return;
       Array.prototype.forEach.call(hrow.cells,function(th,idx){
         if(th.getAttribute('data-sortable')!=null) return;
+        /* Linked headers (deal-library server-side sort, glossary
+         * anchors on /portfolio) keep their single affordance. */
+        if(th.querySelector('a')) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
         /* Keep the native columnheader role: aria-sort is only honored on a
@@ -10220,15 +10550,16 @@ _BARROW_HOVER_CSS = """
 
 _TABLE_TOTALS_JS = """
 <style>
-.ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0;transition:opacity .12s;
+/* Rest at reduced opacity (not 0) — an invisible control is an
+ * undiscoverable one; hover/focus raises it to full strength. */
+.ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
 .ck-data-table-scroll:hover .ck-ttotals,
 .ck-data-table-scroll:focus-within .ck-ttotals{opacity:0.9;}
 .ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-/* Same as the copy button: reveal + ring on keyboard focus so a Tab user
- * doesn't land on an invisible toggle. */
+/* Same as the copy button: full-strength + ring on keyboard focus. */
 .ck-ttotals:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
   background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
@@ -10311,7 +10642,7 @@ tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:
         btn.setAttribute('aria-pressed',on?'true':'false');
         render(table,on);
       });
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
       var fi=host.parentNode?host.parentNode.querySelector('.ck-tfilter input'):null;
       if(fi) fi.addEventListener('input',function(){
         if(btn.getAttribute('aria-pressed')==='true') render(table,true);
@@ -10327,7 +10658,9 @@ tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:
 
 _TABLE_BARS_JS = """
 <style>
-.ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0;transition:opacity .12s;
+/* Rests at 0.45 like its siblings (copy / totals) so the control
+ * cluster reads as one row, not two visible buttons flanking a gap. */
+.ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
@@ -10398,7 +10731,7 @@ td.ck-bar-cell{background-repeat:no-repeat;}
         btn.setAttribute('aria-pressed',on?'true':'false');
         paint(table,on);
       });
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
@@ -10411,15 +10744,22 @@ td.ck-bar-cell{background-repeat:no-repeat;}
 _TABLE_COPY_JS = """
 <style>
 .ck-data-table-scroll{position:relative;}
-.ck-tcopy{position:absolute;top:4px;right:4px;z-index:3;opacity:0;transition:opacity .12s;
+/* Once any table control (copy / totals / bars) is injected, reserve a
+ * strip above the thead for it — at rest the controls are visible
+ * (opacity 0.45), so they must not sit on top of the last column
+ * headers. */
+.ck-data-table-scroll.ck-has-tcontrols{padding-top:26px;}
+/* Rest at reduced opacity (not 0) — an invisible control is an
+ * undiscoverable one; hover/focus raises it to full strength. */
+.ck-tcopy{position:absolute;top:4px;right:4px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
 .ck-data-table-scroll:hover .ck-tcopy,
 .ck-data-table-scroll:focus-within .ck-tcopy{opacity:0.9;}
 .ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-/* Reveal + ring the copy button on keyboard focus — without this a Tab
- * user lands on an invisible (opacity:0) control with no focus cue. */
+/* Full-strength + ring on keyboard focus so a Tab user gets an
+ * unmistakable focus cue on the dimmed control. */
 .ck-tcopy:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 </style>
 <script>
@@ -10462,7 +10802,7 @@ _TABLE_COPY_JS = """
       btn.textContent='Copy'; btn.setAttribute('data-label','Copy');
       btn.setAttribute('aria-label','Copy table to clipboard');
       btn.addEventListener('click',function(e){e.preventDefault();copyTable(table,btn);});
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
@@ -10480,7 +10820,7 @@ _TABLE_FILTER_JS = """
   color:var(--sc-ink,#1a2332);border-radius:2px;width:190px;}
 .ck-tfilter input:focus{outline:none;border-color:var(--sc-teal,#155752);}
 .ck-tfilter-count{font:10px var(--sc-mono,'JetBrains Mono',monospace);
-  color:var(--sc-text-faint,#7a8699);}
+  color:var(--sc-text-faint,#5d6675);}
 </style>
 <script>
 /* Live row-filter for long editorial tables (>=8 body rows). Inserts a
@@ -10953,6 +11293,12 @@ _MODKEY_JS = """
     var ua = (navigator.platform || "") + " " + (navigator.userAgent || "");
     if (/Mac|iPhone|iPad|iPod/i.test(ua)) return;
     document.querySelectorAll("[data-modkey]").forEach(function(el) {
+      /* Inputs carry the hint in their placeholder attribute (the Cmd-K
+       * palette); rewriting textContent there would do nothing. */
+      if (el.placeholder) {
+        el.placeholder = el.placeholder.replace(/⌘/g, "Ctrl+");
+        return;
+      }
       el.textContent = el.textContent.replace(/⌘/g, "Ctrl ")
                                      .replace(/\\s+/g, " ").trim();
     });
@@ -11020,6 +11366,21 @@ _NAV_MENU_JS = """
   function openOnly(g){            // one panel open at a time
     if (current === g) return;
     groups.forEach(function(x){ if (x !== g){ x.classList.remove('is-open'); setExpanded(x, false); } });
+    // The fixed-position mega panel's CSS top:58px assumes the desktop
+    // one-row bar. When the bar wraps taller (phones, narrow windows)
+    // that offset parks the panel OVER the bar's lower nav rows, so
+    // re-anchor to the real bar height on every open. offsetHeight is
+    // layout px — immune to the global html zoom that skews
+    // getBoundingClientRect. The bar is sticky at top:0, so its bottom
+    // edge equals its height in viewport terms. max-height keeps a
+    // panel taller than the viewport scrollable (CSS gives it
+    // overflow-y:auto on small screens).
+    var mega = g.querySelector('.ck-nav-mega');
+    if (mega){
+      var barH = bar.offsetHeight;
+      mega.style.top = barH + 'px';
+      mega.style.maxHeight = 'calc(100dvh - ' + barH + 'px)';
+    }
     g.classList.add('is-open');
     setExpanded(g, true);
     current = g;
@@ -11027,6 +11388,12 @@ _NAV_MENU_JS = """
 
   groups.forEach(function(g){
     g.addEventListener('mouseenter', function(){
+      /* Coarse pointers: a tap synthesizes mouseenter BEFORE the
+       * compatibility click. If hover-intent runs, openOnly() fires within
+       * OPEN_DELAY and the click handler below sees current === g — so the
+       * first tap navigates instead of opening the panel. Opens on touch
+       * belong to the click handler alone. */
+      if (coarse) return;
       cancelClose();
       if (current === g) return;
       cancelOpen();
@@ -11036,7 +11403,15 @@ _NAV_MENU_JS = """
     // an already-open panel — that is the nav-region's job (below), so diagonal
     // travel into the panel survives.
     g.addEventListener('mouseleave', cancelOpen);
-    g.addEventListener('focusin', function(){ cancelClose(); cancelOpen(); openOnly(g); });
+    g.addEventListener('focusin', function(){
+      /* Coarse pointers: Chrome-on-Android focuses the anchor on tap, so a
+       * focusin-open recreates the same first-tap-navigates race the
+       * mouseenter guard above closes. On touch, opening belongs to the
+       * click handler (which also serves keyboard Enter: first activation
+       * opens, second follows the link). */
+      if (coarse) return;
+      cancelClose(); cancelOpen(); openOnly(g);
+    });
 
     if (coarse){
       var trigger = g.querySelector('a');
@@ -11054,6 +11429,9 @@ _NAV_MENU_JS = """
   // are DOM descendants of `.ck-nav`) — leaving it arms the grace close,
   // re-entering cancels it.
   nav.addEventListener('mouseleave', function(){
+    /* Touch browsers synthesize mouseleave when the tap lands elsewhere —
+     * the outside-pointerdown handler below owns closing there. */
+    if (coarse) return;
     cancelClose();
     closeTimer = setTimeout(closeAll, CLOSE_DELAY);
   });
@@ -11285,6 +11663,15 @@ _SUB_SECTION_MAP = {
     # leading-slash forms
     "/home": "home", "/app": "home", "/alerts": "home",
     "/escalations": "home", "/watchlist": "home", "/my": "home",
+    # Core daily-driver routes that previously resolved to no section at
+    # all — so they rendered with no active nav tab and no breadcrumb
+    # (2026-08 sweep). /deal prefix-matches every /deal/<id> page.
+    "/deal": "portfolio", "/compare": "portfolio",
+    "/market-data": "library",
+    "/import": "pipeline",
+    "/runs": "home", "/deadlines": "home", "/tools": "home",
+    "/settings": "home", "/search": "home", "/global-search": "home",
+    "/scenarios": "research",
     # Source = target discovery. Target Screener anchors it; Deal Sourcing +
     # Conferences live here now.
     # Source = target discovery (incl. the CMS screeners + thesis screening).
@@ -11565,6 +11952,18 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     from .brand import BRAND_MARK_SVG as _BRAND_MARK_SVG
     _NAV_TERM = {"Deals": "deals", "Portfolio": "portfolio"}
 
+    # Renderers pass ``active_nav`` in mixed conventions — bare section key
+    # ("portfolio"), section path ("/portfolio"), or a deep sub-path
+    # ("/diligence/hcris-xray"). The anchor comparison below matches against
+    # bare section keys, so path-shaped values never earned the active
+    # underline (2026-08 audit: zero .ck-nav a.active on /portfolio,
+    # /metric-glossary, /deal/ccf, …). Resolve once through the same
+    # section map the breadcrumbs use so every convention highlights.
+    _active_key = (
+        active_nav if active_nav in _NAV_SECTION_KEYS
+        else _resolve_sub_section(active_nav)
+    )
+
     def _nav_label(lbl: str) -> str:
         return _ws_term(_NAV_TERM[lbl]) if lbl in _NAV_TERM else lbl
 
@@ -11599,7 +11998,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         )
         anchor = (
             f'<a href="{_esc(item["href"])}"{pop_attr} '
-            f'class="{"active" if item["key"] == active_nav else ""}">'
+            f'class="{"active" if item["key"] == (_active_key or active_nav) else ""}">'
             f'{_esc(_nav_label(item["label"]))}{caret}</a>'
         )
         if not sect:
@@ -11760,6 +12159,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'aria-controls="ck-user-dropdown" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" id="ck-user-dropdown" hidden>'
+        # Identity header — standard account-menu anatomy leads with who is
+        # signed in, so the partner can confirm the account before acting on
+        # Admin / Audit Log / Sign out. Non-interactive by design.
+        f'<div class="ck-user-dropdown-id">Signed in &middot; '
+        f'<strong>{_esc(user_initials)}</strong> &middot; {_esc(_ws_mode_label)}</div>'
+        '<div class="ck-user-dropdown-divider"></div>'
         # Recently-viewed deals — populated client-side from
         # localStorage by _USER_MENU_JS. Hidden when empty.
         '<div class="ck-user-recent" data-ck-recent-deals hidden>'
@@ -11875,6 +12280,44 @@ _SKIP_LINK_CSS = (
     "</style>"
 )
 _SKIP_LINK_HTML = '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
+
+# Site-footer + account-dropdown-identity styles. Chrome-gated like
+# _SKIP_LINK_CSS — bare pages (login/forgot) render neither element, and the
+# lean-page budget (test_bug_fixes_b167) means chrome-less requests must not
+# pay for chrome-only CSS. Mirrored in static/v3/chartis.css.
+_SITE_FOOTER_CSS = (
+    "<style>"
+    ".ck-site-footer{margin-top:48px;border-top:2px solid "
+    "var(--sc-navy,#0b2341);background:var(--sc-parchment-2,#efe9dd);"
+    "padding:18px 32px;display:flex;flex-wrap:wrap;align-items:baseline;"
+    "gap:10px 18px;font-family:var(--sc-mono);font-size:10.5px;"
+    "letter-spacing:0.08em;text-transform:uppercase;"
+    "color:var(--sc-text-dim,#6a7480);}"
+    ".ck-footer-brand{font-family:var(--sc-serif,Georgia,serif);"
+    "font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;"
+    "color:var(--sc-text,#1a2332);}"
+    ".ck-footer-brand em{color:var(--sc-teal,#155752);}"
+    # padding-right clears the fixed back-to-top button (bottom-right,
+    # ~130px wide) — it is visible exactly when a long page's footer is,
+    # and otherwise sat over the last footer link.
+    ".ck-site-footer nav{margin-left:auto;display:flex;flex-wrap:wrap;"
+    "gap:10px 18px;padding-right:140px;}"
+    "@media (max-width:720px){.ck-site-footer nav{padding-right:0;}}"
+    ".ck-site-footer a{color:var(--sc-text-dim,#6a7480);"
+    "text-decoration:none;}"
+    ".ck-site-footer a:hover{color:var(--sc-teal-ink,#0f3d39);}"
+    ".ck-site-footer button{border:0;background:none;padding:0;"
+    "cursor:pointer;font:inherit;letter-spacing:inherit;"
+    "text-transform:inherit;color:var(--sc-text-dim,#6a7480);}"
+    ".ck-site-footer button:hover{color:var(--sc-teal-ink,#0f3d39);}"
+    "@media print{.ck-site-footer{display:none !important;}}"
+    ".ck-user-dropdown-id{padding:9px 16px 7px;font-family:var(--sc-mono);"
+    "font-size:10px;letter-spacing:0.1em;text-transform:uppercase;"
+    "color:var(--sc-text-dim,#6a7480);}"
+    ".ck-user-dropdown-id strong{color:var(--sc-text,#1a2332);"
+    "font-weight:700;}"
+    "</style>"
+)
 
 
 # ── Title-first contract (2026-06 clutter audit) ──────────────────────
@@ -12033,6 +12476,48 @@ def chartis_shell(
     # a debug affordance leaking into partner HTML. Callers keep
     # passing code= harmlessly; nothing is emitted.
     debug_tag = ""
+    # Auto-breadcrumbs (2026-08 audit). breadcrumbs= was a per-page opt-in
+    # kwarg and ~190 long-tail analyzer routes never passed it, leaving the
+    # tier-2 catalog with no wayfinding while sibling pages (/rxnorm) had it.
+    # When the caller supplies none, derive Home → Section → Page from
+    # active_nav + title. Renderers that pass breadcrumbs= are untouched, and
+    # pages with a bespoke editorial head (cc-crumb eyebrow, pg-head,
+    # dash-glyph heads) are skipped — stacking a crumb on those produced the
+    # "double header" partners flagged on /app (see server._page_has_own_head).
+    if (
+        breadcrumbs is None
+        and show_chrome
+        and title
+        and title != "PE Desk"
+        and 'class="cc-crumb"' not in body_html
+        and 'class="pg-head"' not in body_html
+        and '<span class="dash">' not in body_html
+    ):
+        _crumb_sect = _resolve_sub_section(active_nav)
+        if (_crumb_sect is None and isinstance(active_nav, str)
+                and active_nav.startswith("/")):
+            # Path-shaped active_nav outside _SUB_SECTION_MAP — the
+            # data_public analyzer catalog, which is filed under Research.
+            # Utility surfaces (settings/admin/search/…) belong to no
+            # section; claiming Research for them would be dishonest
+            # wayfinding, so they keep rendering crumb-free.
+            _seg = active_nav.lstrip("/").split("/", 1)[0].split("?", 1)[0]
+            if _seg not in (
+                "settings", "users", "audit", "admin", "search", "tools",
+                "login", "forgot", "api", "static", "onboarding",
+            ):
+                _crumb_sect = "research"
+        _sect_item = next(
+            (d for d in _CORPUS_NAV if d["key"] == _crumb_sect), None,
+        )
+        if _sect_item:
+            # _breadcrumbs collapses adjacent duplicate labels, so
+            # Home-section pages read "Home / Page", not "Home / Home / …".
+            breadcrumbs = [
+                ("Home", "/home"),
+                (_sect_item["label"], _sect_item["href"]),
+                (title, None),
+            ]
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
         f"{_topbar(active_nav, user_initials)}"
@@ -12122,7 +12607,11 @@ def chartis_shell(
     # for any registered route — idempotent: skip if the page already rendered
     # its own ck-illus-note (per-page labels) so we never double-disclose.
     if (_is_illustrative_route(active_nav)
-            and "ck-illus-note" not in body_html):
+            and "ck-illus-note" not in body_html
+            # A source-purpose band already discloses the data basis
+            # up top — stacking the route-level banner above it double-
+            # discloses on every ck_source_purpose page.
+            and 'class="ck-sp"' not in body_html):
         body_html = ck_illustrative_note(_ILLUSTRATIVE_ROUTE_NOTE) + body_html
 
     # 2026-05-29 audit follow-up — backstop One-H1 invariant.
@@ -12221,6 +12710,33 @@ def chartis_shell(
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
     quick_capture_html = ck_quick_capture() if show_chrome else ""
+    # Back-to-top ships globally with the chrome (its own JS keeps it hidden
+    # until scrollY > 600, so short pages never see it). The body_html guard
+    # keeps the two renderers that already call ck_back_to_top_button()
+    # per-page from rendering a second button.
+    back_to_top_html = (
+        ck_back_to_top_button()
+        if (show_chrome and "ck-back-to-top" not in body_html)
+        else ""
+    )
+    # Site footer — after </main> on every chromed page. Reference links
+    # only (all verified live routes); pages stop ending in raw parchment.
+    footer_html = (
+        '<footer class="ck-site-footer">'
+        '<span class="ck-footer-brand">PE<em>Desk</em></span>'
+        '<span class="ck-footer-note">Healthcare PE diligence &amp; '
+        'portfolio operations</span>'
+        '<nav aria-label="Footer">'
+        '<a href="/methodology">Methodology</a>'
+        '<a href="/metric-glossary">Metric glossary</a>'
+        '<a href="/data">Data catalog</a>'
+        '<a href="/regulatory-calendar">Reg calendar</a>'
+        # Handled by the delegated [data-ck-shortcuts-open] listener in
+        # _SHORTCUTS_JS (chrome-gated, same as this footer).
+        '<button type="button" data-ck-shortcuts-open>'
+        'Shortcuts &middot; ?</button>'
+        '</nav></footer>'
+    ) if show_chrome else ""
     # Exhibit print rules are chrome-coupled too: they exist to hide the
     # topbar/deal-bar/forms around exhibits, and chrome-less pages (login/
     # forgot) must not even mention those selectors — test_deal_context
@@ -12231,6 +12747,7 @@ def chartis_shell(
     # bypass, so they stay link-free — keeping their DOM minimal.
     skip_link_css = _SKIP_LINK_CSS if show_chrome else ""
     skip_link_html = _SKIP_LINK_HTML if show_chrome else ""
+    site_footer_css = _SITE_FOOTER_CSS if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -12249,18 +12766,22 @@ def chartis_shell(
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
         f"{skip_link_css}"
+        f"{site_footer_css}"
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
         f"{skip_link_html}"
         f"{chrome_html}"
         f'<main id="ck-main" tabindex="-1" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f"{footer_html}"
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"
         f"{tour_html}"
         f"{quick_capture_html}"
+        f"{back_to_top_html}"
         f"{_CSRF_JS}"
+        f"{_FORM_BUSY_JS}"
         f"{user_menu_js}"
         f"{nav_menu_js}"
         f"{qpill_js}"

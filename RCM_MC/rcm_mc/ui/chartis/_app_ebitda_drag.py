@@ -304,28 +304,15 @@ def render_ebitda_drag(packet: Optional[Any]) -> str:
                 'No bridge data yet. <a href="/diligence/thesis-pipeline">'
                 'Run the analysis pipeline</a> to populate.'
             )
-        viz_html = (
-            f'<div class="app-drag-empty">{empty_msg}</div>'
-        )
-        empty_table = (
-            '<table>'
-            '<thead><tr>'
-            '<th>Component</th>'
-            '<th class="r">% of drag</th>'
-            '<th class="r">$ impact</th>'
-            '</tr></thead>'
-            '<tbody>'
-            '<tr><td colspan="3" class="lbl" style="text-align:center;'
-            'padding:1rem 0;font-style:italic;color:var(--muted);">'
-            f'{empty_msg}</td></tr>'
-            '</tbody>'
-            '</table>'
-        )
-        return pair_block(
-            viz_html,
-            label="EBITDA DRAG · 5-COMPONENT DECOMP",
-            source="ebitda_bridge",
-            data_table=empty_table,
+        # Single-column empty state. The old pair_block rendered the SAME
+        # sentence twice side by side (viz column + a vestigial empty data
+        # table) — cluttered in a premium card slot. Keep the .pair outer
+        # rule so the section chrome matches its populated neighbours, but
+        # collapse to one column with one message.
+        return (
+            '<div class="pair" style="grid-template-columns:1fr">'
+            f'<div class="viz"><div class="app-drag-empty">{empty_msg}</div>'
+            '</div></div>'
         )
 
     viz_html = (

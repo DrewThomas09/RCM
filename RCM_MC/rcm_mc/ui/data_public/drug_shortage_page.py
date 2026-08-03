@@ -196,10 +196,15 @@ def _fda_shortage_section(params: dict) -> str:
         f'{P["border"]};border-radius:2px;min-width:240px;font-size:13px">'
         f'<button type="submit" style="padding:6px 14px;background:{P["accent"]};color:#fff;'
         f'border:none;border-radius:2px;font-size:12px;cursor:pointer">Search</button></form>')
+    # Full company/category strings with CSS ellipsis (div wrapper — max-width
+    # on a td is unreliable in auto table layout) instead of hard [:32]/[:28]
+    # slices that chopped names mid-word with no ellipsis.
     drug_rows = "".join(
         f'<tr><td style="padding:3px 10px">{_html.escape(str(t.generic_name))}</td>'
-        f'<td style="padding:3px 10px">{_html.escape(str(t.company_name)[:32])}</td>'
-        f'<td style="padding:3px 10px">{_html.escape(str(t.therapeutic_category)[:28])}</td>'
+        f'<td style="padding:3px 10px"><div style="max-width:220px;overflow:hidden;'
+        f'text-overflow:ellipsis;white-space:nowrap">{_html.escape(str(t.company_name))}</div></td>'
+        f'<td style="padding:3px 10px"><div style="max-width:200px;overflow:hidden;'
+        f'text-overflow:ellipsis;white-space:nowrap">{_html.escape(str(t.therapeutic_category))}</div></td>'
         f'<td style="padding:3px 10px">{_html.escape(str(t.availability) or "—")}</td></tr>'
         for t in tbl.itertuples())
     # 2026-05-28 batch 32 · Tier-4 trope removal — strip 3px accent.

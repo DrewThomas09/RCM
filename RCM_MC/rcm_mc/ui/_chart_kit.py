@@ -285,9 +285,13 @@ def ck_bar_chart(
         ref_ty = ry - 4
         if any(abs(ref_ty - vy) < 12 for vy in val_label_ys):
             ref_ty = ry + 10
+        # 10px floor on every SVG label: charts render inside grid cells
+        # that scale the SVG to ~70% of viewBox width, so anything
+        # smaller becomes unreadable — and the benchmark caption is the
+        # whole point of the reference line.
         parts.append(
             f'<text x="{W - R:.1f}" y="{ref_ty:.1f}" text-anchor="end" '
-            f'font-family="{_MONO}" font-size="8.5" fill="{_FAINT}">'
+            f'font-family="{_MONO}" font-size="10" fill="{_FAINT}">'
             f'{_html.escape(ref_label)} {_html.escape(fmt(ref_v))}</text>'
         )
     parts.append("</svg>")
@@ -319,7 +323,9 @@ def ck_hbar_chart(
     fmt = value_fmt or _compact
     rowh = 21.0
     W = 560.0
-    L, R, T, B = label_w, 56.0, 14.0, 14.0
+    # R=64 clears the 10.5px end-of-bar value labels (56 clipped the
+    # larger numerals introduced by the grid-scaling legibility fix).
+    L, R, T, B = label_w, 64.0, 14.0, 14.0
     H = T + B + rowh * len(pts)
     plotw = W - L - R
     vals = [v for _, v, _ in pts]
@@ -353,7 +359,7 @@ def ck_hbar_chart(
         )
         parts.append(
             f'<text x="{L + w + 5:.1f}" y="{cy + 3.5:.1f}" font-family="{_MONO}" '
-            f'font-size="9.5" font-weight="600" fill="{_INK}">'
+            f'font-size="10.5" font-weight="600" fill="{_INK}">'
             f'{_html.escape(fmt(val))}</text>'
         )
     if ref_v is not None and ref_v > 0:
@@ -363,9 +369,10 @@ def ck_hbar_chart(
             f'<line x1="{rx:.1f}" y1="{T - 2:.1f}" x2="{rx:.1f}" y2="{H - B + 2:.1f}" '
             f'stroke="{_FAINT}" stroke-width="1" stroke-dasharray="4 3"/>'
         )
+        # 10px floor — see the reference-caption note in ck_bar_chart.
         parts.append(
             f'<text x="{rx:.1f}" y="{T - 4:.1f}" text-anchor="middle" '
-            f'font-family="{_MONO}" font-size="8" fill="{_FAINT}">'
+            f'font-family="{_MONO}" font-size="10" fill="{_FAINT}">'
             f'{_html.escape(ref_label)}</text>'
         )
     parts.append("</svg>")
@@ -542,8 +549,9 @@ def ck_diverging_bar(
         # center line
         f'<line x1="{midx:.1f}" y1="{T:.1f}" x2="{midx:.1f}" y2="{H - B:.1f}" '
         f'stroke="{_RULE}" stroke-width="1"/>',
+        # 10px floor — see the reference-caption note in ck_bar_chart.
         f'<text x="{midx:.1f}" y="{H - 3:.1f}" text-anchor="middle" '
-        f'font-family="{_MONO}" font-size="8.5" fill="{_FAINT}">'
+        f'font-family="{_MONO}" font-size="10" fill="{_FAINT}">'
         f'{_html.escape(center_label)}</text>',
     ]
     for i, (label, val, tone) in enumerate(pts):
@@ -571,7 +579,7 @@ def ck_diverging_bar(
         anchor = "start" if val >= 0 else "end"
         parts.append(
             f'<text x="{vx:.1f}" y="{cy + 3.5:.1f}" text-anchor="{anchor}" '
-            f'font-family="{_MONO}" font-size="9.5" font-weight="600" '
+            f'font-family="{_MONO}" font-size="10.5" font-weight="600" '
             f'fill="{_INK}">{_html.escape(fmt(val))}</text>'
         )
     parts.append("</svg>")
@@ -653,7 +661,11 @@ def ck_chart_grid(*cards: str) -> str:
 
 
 _ASSETS = """<style>
-.ck-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+/* 380px floor: charts draw at viewBox width 520-560, so a 300px cell
+ * scaled every SVG label to ~55% of nominal — sub-6px text on 4-up
+ * rows. 380px caps the shrink at ~70% and lets wide viewports keep
+ * multi-up layouts (3-up on 1440px). */
+.ck-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
 gap:16px;margin:6px 0 20px;}
 .ck-chart-card{margin:0;padding:14px 16px 12px;background:""" + _PANEL + """;
 border:1px solid """ + _RULE + """;border-radius:4px;}
