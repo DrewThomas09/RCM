@@ -9,6 +9,11 @@ fields:
   • **Why it matters** — what decision it informs in PE diligence.
   • **How it's calculated** — the formula or data source.
 
+The card footer adds the typical band, a *clickable* source
+dataset (``ck_source_link``, so the partner can verify the number
+at its origin), and a deep link to the metric's canonical card on
+/metric-glossary.
+
 This module ships a central registry of metric definitions plus
 two helpers:
 
@@ -20,7 +25,8 @@ two helpers:
 
 All tooltip mechanics are pure HTML+CSS — no JS. Hover-on-icon
 shows the card, position absolute. Works on mobile via tap (CSS
-:hover triggers on touch).
+:hover triggers on touch) and on the keyboard via ``:focus-within``
+on the focusable icon (WCAG 2.1 SC 1.4.13).
 
 Public API::
 
@@ -39,10 +45,24 @@ import html as _html
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from ._chartis_kit import ck_source_link
+
 
 @dataclass
 class MetricDefinition:
-    """One canonical metric description."""
+    """One canonical metric description.
+
+    ``source`` is the dataset the number actually comes from. It is
+    rendered through ``ck_source_link`` so the partner can click
+    through to the origin (the "where does this number come from?"
+    question the glossary exists to answer). Use a label the
+    ``_chartis_kit.SOURCE_URLS`` registry resolves — decorated forms
+    like ``"CMS HCRIS Worksheet S-3 Part I"`` resolve by longest
+    substring match, so the worksheet detail survives *and* links.
+    An unrecognised label falls back to escaped plain text, so a
+    non-CMS source (HFMA, MGMA-style standards bodies) is safe to
+    name here too.
+    """
     key: str
     label: str
     definition: str
@@ -50,6 +70,7 @@ class MetricDefinition:
     how_calculated: str
     units: str = ""           # e.g. "%", "$", "days"
     typical_range: str = ""   # e.g. "5-15%" — partner shorthand
+    source: str = ""          # e.g. "CMS HCRIS Worksheet G-2"
 
 
 # ── Core glossary ────────────────────────────────────────────
@@ -73,7 +94,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Source: HFMA MAP Keys; partner-supplied or "
             "predicted from public-data features."),
         units="%",
-        typical_range="5-15% (best in class <5%)"),
+        typical_range="5-15% (best in class <5%)",
+        source="HFMA MAP Keys"),
     "days_in_ar": MetricDefinition(
         key="days_in_ar",
         label="Days in A/R",
@@ -167,7 +189,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "net patient revenue. Source: HCRIS Worksheet "
             "G-2."),
         units="%",
-        typical_range="-5% to +12%"),
+        typical_range="-5% to +12%",
+        source="CMS HCRIS Worksheet G-2"),
     "ebitda_margin": MetricDefinition(
         key="ebitda_margin",
         label="EBITDA Margin",
@@ -182,7 +205,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "EBITDA / NPSR. EBITDA reconstructed from HCRIS "
             "operating income + D&A + lease normalization."),
         units="%",
-        typical_range="8-18%"),
+        typical_range="8-18%",
+        source="CMS HCRIS Worksheet G-2"),
     "case_mix_index": MetricDefinition(
         key="case_mix_index",
         label="Case Mix Index",
@@ -190,14 +214,15 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Average DRG weight across discharges: a "
             "complexity proxy."),
         why_it_matters=(
-            "Each 0.05 CMI uplift ≈ 0.75% of Medicare "
+            "Each 0.05 CMI uplift ≈ 0.8% of Medicare "
             "revenue. CDI initiatives target this lever."),
         how_calculated=(
             "Σ (DRG weight × discharges) / total "
             "discharges. CMS DRG weights are the rate "
             "table."),
         units="ratio",
-        typical_range="1.20-2.50"),
+        typical_range="1.20-2.50",
+        source="CMS MS-DRG weight table"),
     # Liquidity / debt
     "days_cash_on_hand": MetricDefinition(
         key="days_cash_on_hand",
@@ -220,12 +245,13 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Long-term debt as a multiple of net patient "
             "service revenue."),
         why_it_matters=(
-            ">1.0x typically requires above-average margin "
+            ">1.00x typically requires above-average margin "
             "to service. Drives covenant attention."),
         how_calculated=(
             "Long-term debt / NPSR."),
-        units="ratio",
-        typical_range="0.2-1.5x"),
+        # A multiple, not a bare ratio — house rule is 2dp + "x".
+        units="x",
+        typical_range="0.20-1.50x"),
     "interest_coverage": MetricDefinition(
         key="interest_coverage",
         label="Interest Coverage",
@@ -233,13 +259,14 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "EBIT divided by interest expense: how many "
             "times over EBIT covers interest."),
         why_it_matters=(
-            "Below 2.0x is the credit-attention zone; <1.5x "
-            "raises restructuring discussion."),
+            "Below 2.00x is the credit-attention zone; "
+            "<1.50x raises restructuring discussion."),
         how_calculated=(
             "EBIT / interest expense. From HCRIS G-2 + "
             "footnotes."),
         units="x",
-        typical_range="2.0-8.0x"),
+        typical_range="2.00-8.00x",
+        source="CMS HCRIS Worksheet G-2"),
     # Volume / staffing
     "occupancy_rate": MetricDefinition(
         key="occupancy_rate",
@@ -255,7 +282,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Total patient days / bed-days available. "
             "Source: HCRIS Worksheet S-3 Part I."),
         units="%",
-        typical_range="55-80%"),
+        typical_range="55-80%",
+        source="CMS HCRIS Worksheet S-3 Part I"),
     "fte_per_aob": MetricDefinition(
         key="fte_per_aob",
         label="FTE per AOB",
@@ -270,7 +298,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Total FTEs / adjusted occupied beds. Source: "
             "HCRIS Worksheet S-3 Part II + S-3 Part I."),
         units="ratio",
-        typical_range="4.5-7.0"),
+        typical_range="4.5-7.0",
+        source="CMS HCRIS Worksheet S-3 Parts I-II"),
     "labor_pct_of_npsr": MetricDefinition(
         key="labor_pct_of_npsr",
         label="Labor % of NPSR",
@@ -285,7 +314,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Total labor cost (Worksheet A col 1+2 + "
             "benefits) / NPSR."),
         units="%",
-        typical_range="45-60%"),
+        typical_range="45-60%",
+        source="CMS HCRIS Worksheet A"),
     # Payer mix
     "medicare_day_pct": MetricDefinition(
         key="medicare_day_pct",
@@ -300,8 +330,9 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         how_calculated=(
             "Medicare patient days / total patient days. "
             "Source: HCRIS Worksheet S-3 Part I."),
-            units="%",
-        typical_range="30-55%"),
+        units="%",
+        typical_range="30-55%",
+        source="CMS HCRIS Worksheet S-3 Part I"),
     "medicaid_day_pct": MetricDefinition(
         key="medicaid_day_pct",
         label="Medicaid Day %",
@@ -314,7 +345,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         how_calculated=(
             "Medicaid patient days / total patient days."),
         units="%",
-        typical_range="10-30%"),
+        typical_range="10-30%",
+        source="CMS HCRIS Worksheet S-3 Part I"),
     # Volume + topline (added loop 114 to cover the
     # competitive_intel and portfolio_overview surfaces that
     # already use metric_label_link for these columns)
@@ -336,7 +368,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "G-3 Line 3 or partner-supplied audited "
             "financials."),
         units="$",
-        typical_range="varies by bed count and acuity"),
+        typical_range="varies by bed count and acuity",
+        source="CMS HCRIS Worksheet G-3 Line 3"),
     "revenue_per_bed": MetricDefinition(
         key="revenue_per_bed",
         label="Revenue per Bed",
@@ -352,7 +385,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
         how_calculated=(
             "Net patient revenue / licensed beds."),
         units="$/bed",
-        typical_range="$0.8M-$2.5M/bed"),
+        typical_range="$0.8M-$2.5M/bed",
+        source="CMS HCRIS Worksheets G-3 + S-3"),
     "expense_per_bed": MetricDefinition(
         key="expense_per_bed",
         label="Expense per Bed",
@@ -367,7 +401,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "Operating expenses / licensed beds. "
             "Source: HCRIS Worksheet G-3."),
         units="$/bed",
-        typical_range="$0.7M-$2.0M/bed"),
+        typical_range="$0.7M-$2.0M/bed",
+        source="CMS HCRIS Worksheet G-3"),
     "commercial_pct": MetricDefinition(
         key="commercial_pct",
         label="Commercial Payer %",
@@ -418,7 +453,8 @@ _GLOSSARY: Dict[str, MetricDefinition] = {
             "fiscal year. Source: HCRIS Worksheet S-3 "
             "Part I."),
         units="days",
-        typical_range="varies by bed count"),
+        typical_range="varies by bed count",
+        source="CMS HCRIS Worksheet S-3 Part I"),
     "net_to_gross_ratio": MetricDefinition(
         key="net_to_gross_ratio",
         label="Net-to-Gross Ratio",
@@ -458,12 +494,18 @@ def define_metric(
     how_calculated: str,
     units: str = "",
     typical_range: str = "",
+    source: str = "",
 ) -> None:
     """Register a metric at runtime.
 
     Used by feature modules that ship their own metrics not in
     the core glossary (e.g., a one-off MA penetration % defined
     by the MA enrollment ingest).
+
+    ``source`` is optional but strongly encouraged — it is what
+    makes the tooltip's provenance line clickable back to the
+    origin dataset. Keyword-only with a default so the ~existing
+    callers keep working unchanged.
     """
     _GLOSSARY[key] = MetricDefinition(
         key=key, label=label,
@@ -471,7 +513,8 @@ def define_metric(
         why_it_matters=why_it_matters,
         how_calculated=how_calculated,
         units=units,
-        typical_range=typical_range)
+        typical_range=typical_range,
+        source=source)
 
 
 def list_metrics() -> List[str]:
@@ -494,15 +537,21 @@ _TT_CSS = """
   font-size:10px;font-weight:600;line-height:14px;
   text-align:center;cursor:help;font-family:system-ui;
   user-select:none;}
-.metric-tt:hover .metric-tt-icon{background:var(--blue);
+.metric-tt:hover .metric-tt-icon,
+.metric-tt:focus-within .metric-tt-icon{background:var(--blue);
   color:var(--blue-soft);}
+.metric-tt-icon:focus-visible{outline:2px solid var(--blue);
+  outline-offset:2px;}
 .metric-tt-card{position:absolute;display:none;left:0;
   top:calc(100% + 6px);background:var(--bg);
   border:1px solid var(--border);border-radius:6px;padding:12px 14px;
   width:280px;font-size:12px;line-height:1.5;
   box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:1000;
   color:var(--ink);font-weight:normal;}
-.metric-tt:hover .metric-tt-card{display:block;}
+/* :focus-within keeps the card reachable without a mouse —
+   WCAG 2.1 SC 1.4.13 (content on hover or focus). */
+.metric-tt:hover .metric-tt-card,
+.metric-tt:focus-within .metric-tt-card{display:block;}
 .metric-tt-card h4{margin:0 0 6px 0;font-size:12px;
   color:var(--blue-soft);text-transform:uppercase;
   letter-spacing:0.06em;font-weight:600;}
@@ -511,32 +560,88 @@ _TT_CSS = """
 .metric-tt-card .tt-section-label{font-size:10px;
   text-transform:uppercase;letter-spacing:0.06em;
   color:var(--teal);font-weight:600;margin-bottom:2px;}
-.metric-tt-card .tt-range{display:block;margin-top:6px;
-  padding-top:6px;border-top:1px solid var(--border);
+.metric-tt-card .tt-foot{margin-top:8px;padding-top:6px;
+  border-top:1px solid var(--border);}
+.metric-tt-card .tt-range,
+.metric-tt-card .tt-source{display:block;
   color:var(--faint);font-size:11px;}
+.metric-tt-card .tt-source{margin-top:3px;}
+.metric-tt-card .tt-source a{color:var(--blue-soft);
+  text-decoration:none;}
+.metric-tt-card .tt-source a:hover,
+.metric-tt-card .tt-source a:focus-visible{
+  text-decoration:underline;}
+.metric-tt-card .tt-more{display:block;margin-top:6px;
+  font-size:11px;}
+.metric-tt-card .tt-more a{color:var(--blue-soft);
+  text-decoration:none;}
+.metric-tt-card .tt-more a:hover,
+.metric-tt-card .tt-more a:focus-visible{
+  text-decoration:underline;}
 </style>"""
 
 
 _TT_CSS_INJECTED = "metric_tt_css_injected"
 
 
+def _tt_section(label: str, text: str) -> str:
+    """One labelled paragraph in the hover card.
+
+    Returns "" for a blank field rather than an empty labelled
+    paragraph — a runtime-registered metric (``define_metric``) may
+    legitimately leave ``why_it_matters`` or ``how_calculated``
+    empty, and a heading with nothing under it reads as a bug to
+    the partner.
+    """
+    if not (text or "").strip():
+        return ""
+    return (
+        '<div class="tt-section">'
+        f'<div class="tt-section-label">{_html.escape(label)}</div>'
+        f'<p>{_html.escape(text)}</p></div>')
+
+
 def _tooltip_card(d: MetricDefinition) -> str:
-    """The hover card content."""
+    """The hover card content.
+
+    Footer carries the three things a partner asks next: the
+    typical band, the *clickable* source dataset (via
+    ``ck_source_link``, so provenance is one click from every
+    number on the platform), and a deep link into the canonical
+    /metric-glossary card.
+    """
     parts = [
         f'<h4>{_html.escape(d.label)}</h4>',
-        f'<p>{_html.escape(d.definition)}</p>',
-        '<div class="tt-section">'
-        '<div class="tt-section-label">Why it matters</div>'
-        f'<p>{_html.escape(d.why_it_matters)}</p></div>',
-        '<div class="tt-section">'
-        '<div class="tt-section-label">How it\'s calculated</div>'
-        f'<p>{_html.escape(d.how_calculated)}</p></div>',
+        # Empty-state: a registered-but-undocumented metric still
+        # renders a card that says so, rather than a blank panel.
+        f'<p>{_html.escape(d.definition)}</p>' if d.definition.strip()
+        else '<p>No definition recorded for this metric yet.</p>',
+        _tt_section("Why it matters", d.why_it_matters),
+        _tt_section("How it's calculated", d.how_calculated),
     ]
+
+    foot: List[str] = []
     if d.typical_range:
-        parts.append(
+        foot.append(
             f'<div class="tt-range">'
             f'Typical range: {_html.escape(d.typical_range)}'
             f'</div>')
+    if d.source:
+        foot.append(
+            f'<div class="tt-source">Source: '
+            f'{ck_source_link(d.source)}</div>')
+    # Deep link to the canonical card. Own anchor rather than
+    # _glossary_link.metric_label_link so the accessible name can
+    # name the metric — a page with a dozen tooltips otherwise
+    # exposes a dozen identical "Full definition" links.
+    foot.append(
+        f'<div class="tt-more">'
+        f'<a href="/metric-glossary#{_html.escape(d.key)}" '
+        f'aria-label="Open the full {_html.escape(d.label)} '
+        f'definition in the metric glossary">'
+        f'Full definition <span aria-hidden="true">&rarr;</span>'
+        f'</a></div>')
+    parts.append(f'<div class="tt-foot">{"".join(foot)}</div>')
     return "".join(parts)
 
 
@@ -578,17 +683,32 @@ def metric_tooltip(
     css = _TT_CSS if inject_css else ""
     value_html = ""
     if value is not None:
+        # title= so a column-clipped value is still readable, and
+        # the units the registry knows about travel with it.
+        value_title = f"{d.label}: {value}"
+        if d.units and d.units not in value:
+            value_title += f" ({d.units})"
         value_html = (
-            f'<span style="font-variant-numeric:tabular-nums;">'
+            f'<span style="font-variant-numeric:tabular-nums;" '
+            f'title="{_html.escape(value_title)}">'
             f'{_html.escape(value)}</span>')
+
+    # The card is display:none, so assistive tech never reads it.
+    # Carry the definition on the icon itself and make the icon
+    # focusable so keyboard users can open the card at all — the
+    # old generic "What does this mean?" label was identical on
+    # every icon on the page.
+    icon_label = _html.escape(
+        f"{d.label} — {d.definition}" if d.definition.strip()
+        else f"{d.label} — definition not recorded yet")
 
     return (
         f'{css}<span class="metric-tt">'
         f'<span>{display_label}</span>'
-        f'<span class="metric-tt-icon" '
-        f'aria-label="What does this mean?">i</span>'
+        f'<span class="metric-tt-icon" role="img" tabindex="0" '
+        f'aria-label="{icon_label}">i</span>'
         f'{value_html}'
-        f'<span class="metric-tt-card">'
+        f'<span class="metric-tt-card" role="tooltip">'
         f'{_tooltip_card(d)}</span></span>')
 
 
