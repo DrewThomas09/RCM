@@ -543,6 +543,11 @@ _NAV_DESC = {
     "/predictive-screener": "Model-ranked candidates", "/pe-intelligence": "Sponsor & deal intel",
     "/deal-screening": "Thesis-testing workspace", "/find-comps": "Comparable transactions",
     "/conferences": "Industry conference tracker",
+    "/pipeline": "Every live deal by stage",
+    "/geo-intel": "State & county market screening",
+    "/state-compare": "Compare states on public metrics",
+    "/state-profile": "One state, metrics + national ranks",
+    "/county-explorer": "County drill-down (ACS data)",
     "/new-deal": "Create opportunity / import", "/deal-quality": "Score a target",
     "/deal-risk-scores": "What can go wrong", "/deal-flow-heatmap": "Flow by stage",
     "/pipeline/bridge": "Value-creation bridge",
@@ -7644,7 +7649,10 @@ def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
     return (
         '<div class="ck-palette" id="ck-palette" hidden>'
         '<div class="ck-palette-box">'
-        '<input class="ck-palette-input" type="text" '
+        # data-modkey lets _MODKEY_JS rewrite the ⌘ in the placeholder to
+        # Ctrl on non-Mac platforms — the topbar kbd chip already did this,
+        # so the two hints for the same shortcut disagreed on Windows/Linux.
+        '<input class="ck-palette-input" type="text" data-modkey '
         'placeholder="Jump to a page, or type a 6-digit CCN… (⌘K)" />'
         '<ul class="ck-palette-list">'
         # P12 entity jump — a synthetic result the JS reveals when the query
@@ -9335,6 +9343,13 @@ _CSS_INLINE_FALLBACK = """
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
+  /* Pending-POST state applied by _FORM_BUSY_JS — dimmed, progress cursor,
+   * trailing ellipsis so the button itself says "working". Lives in the
+   * always-shipped fallback (not the chrome-gated block) because bare
+   * pages (/login) post forms too. */
+  button.is-busy, input.is-busy { opacity:.65; cursor:progress; }
+  button.is-busy::after { content:"…"; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: .001ms !important;
@@ -9375,6 +9390,51 @@ _CSRF_JS = """
     }
     return of(u,o);
   };}
+})();
+</script>
+"""
+
+
+# Submit feedback + double-submit guard for the full-page POST round-trip.
+# Every state-changing form on the platform posts and reloads; during that
+# round-trip the submit button stayed active — double-clicking "Apply" on an
+# alert fired two POSTs, and there was zero "working" signal until the
+# post-redirect toast. Shipped unconditionally next to _CSRF_JS (forms exist
+# on chrome-less pages too, e.g. /login).
+_FORM_BUSY_JS = """
+<script>
+(function(){
+  function reset(scope){
+    var root=scope||document;
+    Array.prototype.forEach.call(root.querySelectorAll('.is-busy'),
+      function(b){ b.disabled=false; b.classList.remove('is-busy'); });
+    if(root.tagName==='FORM'){ root.removeAttribute('aria-busy'); }
+    Array.prototype.forEach.call(root.querySelectorAll('form[aria-busy]'),
+      function(f){ f.removeAttribute('aria-busy'); });
+  }
+  document.addEventListener('submit',function(e){
+    var f=e.target;
+    if(!f||f.tagName!=='FORM')return;
+    if(!f.method||f.method.toLowerCase()!=='post')return;
+    if(f.hasAttribute('data-ck-no-busy'))return;  /* JS-intercepted forms opt out */
+    /* Defer past the submit dispatch: (1) the browser captures the clicked
+     * submit button's name/value into the form data set BEFORE timers run,
+     * so disabling here can't drop it from the POST; (2) by timer time
+     * e.defaultPrevented reflects any page-level interception — those forms
+     * never navigate, so their buttons must stay live. */
+    setTimeout(function(){
+      if(e.defaultPrevented)return;
+      Array.prototype.forEach.call(
+        f.querySelectorAll('button[type=submit],input[type=submit],button:not([type])'),
+        function(b){ b.disabled=true; b.classList.add('is-busy'); });
+      f.setAttribute('aria-busy','true');
+      /* Failsafe: a POST that never navigates (network failure, file
+       * download response) must not leave the form dead. */
+      setTimeout(function(){ reset(f); }, 3000);
+    },0);
+  },true);
+  /* bfcache: Back restores the page as-frozen (buttons still disabled). */
+  window.addEventListener('pageshow',function(){ reset(document); });
 })();
 </script>
 """
@@ -11095,6 +11155,12 @@ _MODKEY_JS = """
     var ua = (navigator.platform || "") + " " + (navigator.userAgent || "");
     if (/Mac|iPhone|iPad|iPod/i.test(ua)) return;
     document.querySelectorAll("[data-modkey]").forEach(function(el) {
+      /* Inputs carry the hint in their placeholder attribute (the Cmd-K
+       * palette); rewriting textContent there would do nothing. */
+      if (el.placeholder) {
+        el.placeholder = el.placeholder.replace(/⌘/g, "Ctrl+");
+        return;
+      }
       el.textContent = el.textContent.replace(/⌘/g, "Ctrl ")
                                      .replace(/\\s+/g, " ").trim();
     });
@@ -11184,6 +11250,12 @@ _NAV_MENU_JS = """
 
   groups.forEach(function(g){
     g.addEventListener('mouseenter', function(){
+      /* Coarse pointers: a tap synthesizes mouseenter BEFORE the
+       * compatibility click. If hover-intent runs, openOnly() fires within
+       * OPEN_DELAY and the click handler below sees current === g — so the
+       * first tap navigates instead of opening the panel. Opens on touch
+       * belong to the click handler alone. */
+      if (coarse) return;
       cancelClose();
       if (current === g) return;
       cancelOpen();
@@ -11193,7 +11265,15 @@ _NAV_MENU_JS = """
     // an already-open panel — that is the nav-region's job (below), so diagonal
     // travel into the panel survives.
     g.addEventListener('mouseleave', cancelOpen);
-    g.addEventListener('focusin', function(){ cancelClose(); cancelOpen(); openOnly(g); });
+    g.addEventListener('focusin', function(){
+      /* Coarse pointers: Chrome-on-Android focuses the anchor on tap, so a
+       * focusin-open recreates the same first-tap-navigates race the
+       * mouseenter guard above closes. On touch, opening belongs to the
+       * click handler (which also serves keyboard Enter: first activation
+       * opens, second follows the link). */
+      if (coarse) return;
+      cancelClose(); cancelOpen(); openOnly(g);
+    });
 
     if (coarse){
       var trigger = g.querySelector('a');
@@ -11211,6 +11291,9 @@ _NAV_MENU_JS = """
   // are DOM descendants of `.ck-nav`) — leaving it arms the grace close,
   // re-entering cancels it.
   nav.addEventListener('mouseleave', function(){
+    /* Touch browsers synthesize mouseleave when the tap lands elsewhere —
+     * the outside-pointerdown handler below owns closing there. */
+    if (coarse) return;
     cancelClose();
     closeTimer = setTimeout(closeAll, CLOSE_DELAY);
   });
@@ -11722,6 +11805,18 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
     from .brand import BRAND_MARK_SVG as _BRAND_MARK_SVG
     _NAV_TERM = {"Deals": "deals", "Portfolio": "portfolio"}
 
+    # Renderers pass ``active_nav`` in mixed conventions — bare section key
+    # ("portfolio"), section path ("/portfolio"), or a deep sub-path
+    # ("/diligence/hcris-xray"). The anchor comparison below matches against
+    # bare section keys, so path-shaped values never earned the active
+    # underline (2026-08 audit: zero .ck-nav a.active on /portfolio,
+    # /metric-glossary, /deal/ccf, …). Resolve once through the same
+    # section map the breadcrumbs use so every convention highlights.
+    _active_key = (
+        active_nav if active_nav in _NAV_SECTION_KEYS
+        else _resolve_sub_section(active_nav)
+    )
+
     def _nav_label(lbl: str) -> str:
         return _ws_term(_NAV_TERM[lbl]) if lbl in _NAV_TERM else lbl
 
@@ -11756,7 +11851,7 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         )
         anchor = (
             f'<a href="{_esc(item["href"])}"{pop_attr} '
-            f'class="{"active" if item["key"] == active_nav else ""}">'
+            f'class="{"active" if item["key"] == (_active_key or active_nav) else ""}">'
             f'{_esc(_nav_label(item["label"]))}{caret}</a>'
         )
         if not sect:
@@ -11917,6 +12012,12 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'aria-controls="ck-user-dropdown" title="Signed in" '
         f'data-ck-user-toggle>{_esc(user_initials)}</button>'
         '<div class="ck-user-dropdown" id="ck-user-dropdown" hidden>'
+        # Identity header — standard account-menu anatomy leads with who is
+        # signed in, so the partner can confirm the account before acting on
+        # Admin / Audit Log / Sign out. Non-interactive by design.
+        f'<div class="ck-user-dropdown-id">Signed in &middot; '
+        f'<strong>{_esc(user_initials)}</strong> &middot; {_esc(_ws_mode_label)}</div>'
+        '<div class="ck-user-dropdown-divider"></div>'
         # Recently-viewed deals — populated client-side from
         # localStorage by _USER_MENU_JS. Hidden when empty.
         '<div class="ck-user-recent" data-ck-recent-deals hidden>'
@@ -12032,6 +12133,44 @@ _SKIP_LINK_CSS = (
     "</style>"
 )
 _SKIP_LINK_HTML = '<a class="ck-skip-link" href="#ck-main">Skip to content</a>'
+
+# Site-footer + account-dropdown-identity styles. Chrome-gated like
+# _SKIP_LINK_CSS — bare pages (login/forgot) render neither element, and the
+# lean-page budget (test_bug_fixes_b167) means chrome-less requests must not
+# pay for chrome-only CSS. Mirrored in static/v3/chartis.css.
+_SITE_FOOTER_CSS = (
+    "<style>"
+    ".ck-site-footer{margin-top:48px;border-top:2px solid "
+    "var(--sc-navy,#0b2341);background:var(--sc-parchment-2,#efe9dd);"
+    "padding:18px 32px;display:flex;flex-wrap:wrap;align-items:baseline;"
+    "gap:10px 18px;font-family:var(--sc-mono);font-size:10.5px;"
+    "letter-spacing:0.08em;text-transform:uppercase;"
+    "color:var(--sc-text-dim,#6a7480);}"
+    ".ck-footer-brand{font-family:var(--sc-serif,Georgia,serif);"
+    "font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;"
+    "color:var(--sc-text,#1a2332);}"
+    ".ck-footer-brand em{color:var(--sc-teal,#155752);}"
+    # padding-right clears the fixed back-to-top button (bottom-right,
+    # ~130px wide) — it is visible exactly when a long page's footer is,
+    # and otherwise sat over the last footer link.
+    ".ck-site-footer nav{margin-left:auto;display:flex;flex-wrap:wrap;"
+    "gap:10px 18px;padding-right:140px;}"
+    "@media (max-width:720px){.ck-site-footer nav{padding-right:0;}}"
+    ".ck-site-footer a{color:var(--sc-text-dim,#6a7480);"
+    "text-decoration:none;}"
+    ".ck-site-footer a:hover{color:var(--sc-teal-ink,#0f3d39);}"
+    ".ck-site-footer button{border:0;background:none;padding:0;"
+    "cursor:pointer;font:inherit;letter-spacing:inherit;"
+    "text-transform:inherit;color:var(--sc-text-dim,#6a7480);}"
+    ".ck-site-footer button:hover{color:var(--sc-teal-ink,#0f3d39);}"
+    "@media print{.ck-site-footer{display:none !important;}}"
+    ".ck-user-dropdown-id{padding:9px 16px 7px;font-family:var(--sc-mono);"
+    "font-size:10px;letter-spacing:0.1em;text-transform:uppercase;"
+    "color:var(--sc-text-dim,#6a7480);}"
+    ".ck-user-dropdown-id strong{color:var(--sc-text,#1a2332);"
+    "font-weight:700;}"
+    "</style>"
+)
 
 
 # ── Title-first contract (2026-06 clutter audit) ──────────────────────
@@ -12190,6 +12329,48 @@ def chartis_shell(
     # a debug affordance leaking into partner HTML. Callers keep
     # passing code= harmlessly; nothing is emitted.
     debug_tag = ""
+    # Auto-breadcrumbs (2026-08 audit). breadcrumbs= was a per-page opt-in
+    # kwarg and ~190 long-tail analyzer routes never passed it, leaving the
+    # tier-2 catalog with no wayfinding while sibling pages (/rxnorm) had it.
+    # When the caller supplies none, derive Home → Section → Page from
+    # active_nav + title. Renderers that pass breadcrumbs= are untouched, and
+    # pages with a bespoke editorial head (cc-crumb eyebrow, pg-head,
+    # dash-glyph heads) are skipped — stacking a crumb on those produced the
+    # "double header" partners flagged on /app (see server._page_has_own_head).
+    if (
+        breadcrumbs is None
+        and show_chrome
+        and title
+        and title != "PE Desk"
+        and 'class="cc-crumb"' not in body_html
+        and 'class="pg-head"' not in body_html
+        and '<span class="dash">' not in body_html
+    ):
+        _crumb_sect = _resolve_sub_section(active_nav)
+        if (_crumb_sect is None and isinstance(active_nav, str)
+                and active_nav.startswith("/")):
+            # Path-shaped active_nav outside _SUB_SECTION_MAP — the
+            # data_public analyzer catalog, which is filed under Research.
+            # Utility surfaces (settings/admin/search/…) belong to no
+            # section; claiming Research for them would be dishonest
+            # wayfinding, so they keep rendering crumb-free.
+            _seg = active_nav.lstrip("/").split("/", 1)[0].split("?", 1)[0]
+            if _seg not in (
+                "settings", "users", "audit", "admin", "search", "tools",
+                "login", "forgot", "api", "static", "onboarding",
+            ):
+                _crumb_sect = "research"
+        _sect_item = next(
+            (d for d in _CORPUS_NAV if d["key"] == _crumb_sect), None,
+        )
+        if _sect_item:
+            # _breadcrumbs collapses adjacent duplicate labels, so
+            # Home-section pages read "Home / Page", not "Home / Home / …".
+            breadcrumbs = [
+                ("Home", "/home"),
+                (_sect_item["label"], _sect_item["href"]),
+                (title, None),
+            ]
     # show_chrome=False: bare pages (login / forgot) without topnav
     chrome_html = (
         f"{_topbar(active_nav, user_initials)}"
@@ -12378,6 +12559,33 @@ def chartis_shell(
     shortcuts_js = _SHORTCUTS_JS if show_chrome else ""
     tour_html = ck_default_tour() if show_chrome else ""
     quick_capture_html = ck_quick_capture() if show_chrome else ""
+    # Back-to-top ships globally with the chrome (its own JS keeps it hidden
+    # until scrollY > 600, so short pages never see it). The body_html guard
+    # keeps the two renderers that already call ck_back_to_top_button()
+    # per-page from rendering a second button.
+    back_to_top_html = (
+        ck_back_to_top_button()
+        if (show_chrome and "ck-back-to-top" not in body_html)
+        else ""
+    )
+    # Site footer — after </main> on every chromed page. Reference links
+    # only (all verified live routes); pages stop ending in raw parchment.
+    footer_html = (
+        '<footer class="ck-site-footer">'
+        '<span class="ck-footer-brand">PE<em>Desk</em></span>'
+        '<span class="ck-footer-note">Healthcare PE diligence &amp; '
+        'portfolio operations</span>'
+        '<nav aria-label="Footer">'
+        '<a href="/methodology">Methodology</a>'
+        '<a href="/metric-glossary">Metric glossary</a>'
+        '<a href="/data">Data catalog</a>'
+        '<a href="/regulatory-calendar">Reg calendar</a>'
+        # Handled by the delegated [data-ck-shortcuts-open] listener in
+        # _SHORTCUTS_JS (chrome-gated, same as this footer).
+        '<button type="button" data-ck-shortcuts-open>'
+        'Shortcuts &middot; ?</button>'
+        '</nav></footer>'
+    ) if show_chrome else ""
     # Exhibit print rules are chrome-coupled too: they exist to hide the
     # topbar/deal-bar/forms around exhibits, and chrome-less pages (login/
     # forgot) must not even mention those selectors — test_deal_context
@@ -12388,6 +12596,7 @@ def chartis_shell(
     # bypass, so they stay link-free — keeping their DOM minimal.
     skip_link_css = _SKIP_LINK_CSS if show_chrome else ""
     skip_link_html = _SKIP_LINK_HTML if show_chrome else ""
+    site_footer_css = _SITE_FOOTER_CSS if show_chrome else ""
     return (
         "<!doctype html>"
         '<html lang="en"><head>'
@@ -12406,18 +12615,22 @@ def chartis_shell(
         f"{_CSS_INLINE_FALLBACK}"
         f"{_GLOBAL_SCALE_CSS}"
         f"{skip_link_css}"
+        f"{site_footer_css}"
         f"{exhibit_print_css}"
         f"{extra_css_html}"
         "</head><body>"
         f"{skip_link_html}"
         f"{chrome_html}"
         f'<main id="ck-main" tabindex="-1" class="{main_class}"{_phi_attr}>{debug_tag}{subtitle_html}{body_html}</main>'
+        f"{footer_html}"
         f"{palette_html}"
         f"{shortcuts_html}"
         f"{_TOAST_HTML}"
         f"{tour_html}"
         f"{quick_capture_html}"
+        f"{back_to_top_html}"
         f"{_CSRF_JS}"
+        f"{_FORM_BUSY_JS}"
         f"{user_menu_js}"
         f"{nav_menu_js}"
         f"{qpill_js}"
