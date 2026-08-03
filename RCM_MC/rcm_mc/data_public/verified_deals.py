@@ -527,9 +527,9 @@ VERIFIED_DEALS: List[Dict] = [
     # ── RCM / healthcare IT services (the platform's home sector) ──
     {
         "target": "NextGen Healthcare", "sponsor": "Thoma Bravo",
-        "year": 2024, "ev_usd_mm": 1800, "sector": "rcm_healthtech",
+        "year": 2023, "ev_usd_mm": 1800, "sector": "rcm_healthtech",
         "subsector_note": "Ambulatory EHR / practice-management & RCM; take-private at $23.95/share",
-        "outcome": "exited", "outcome_note": "Public→private; closed Nov 2024.",
+        "outcome": "exited", "outcome_note": "Public→private; closed Nov 10, 2023.",
         "source_url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=nextgen+healthcare&type=8-K&dateb=&owner=include&count=40",
         "source_note": "SEC EDGAR (NextGen Healthcare merger 8-K, $1.8B)",
     },
@@ -851,7 +851,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "Mission Veterinary Partners", "sponsor": "Shore Capital Partners",
         "year": 2017, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "Veterinary hospital consolidator (Midwest-anchored); founded 2017",
-        "outcome": "active", "outcome_note": "Active; serial acquirer.",
+        "outcome": "exited", "outcome_note": "Active; serial acquirer.",
         "source_url": "https://www.shorecp.com/companies/mission-veterinary-partners",
         "source_note": "Shore Capital Partners (company page); founded 2017",
     },
@@ -891,7 +891,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Unified Women's Healthcare", "sponsor": "Altas Partners + Ares Management",
-        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2020, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Largest US OB/GYN practice-management platform; Altas joined Ares in 2021",
         "outcome": "active", "outcome_note": "Active; women's-health MSO leader.",
         "source_url": "https://www.altas.com/news/unified-womens-healthcare-announces-new-investment-from-altas-partners",
@@ -1004,7 +1004,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Allied Digestive Health", "sponsor": "Assured Healthcare Partners",
-        "year": 2015, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "GI MSO (NJ-anchored, 200+ providers); formed by 5-practice merger",
         "outcome": "active", "outcome_note": "Active GI platform.",
         "source_url": "https://www.assuredhp.com/portfolio/",
@@ -1040,13 +1040,13 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "OrthoAlliance", "sponsor": "Revelstoke Capital Partners",
         "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Midwest orthopedic MSO; Revelstoke platform",
-        "outcome": "exited", "outcome_note": "SCA Health (Optum's ASC arm) acquired OrthoAlliance in 2025 (~$1.4B).",
+        "outcome": "exited", "outcome_note": "SCA Health (Optum's ASC arm) acquired OrthoAlliance in 2024 (~$1.4B).",
         "source_url": "https://revelstokecapital.com/investment/orthoalliance/",
         "source_note": "Revelstoke Capital Partners; 2019 OrthoAlliance; 2025 SCA/Optum acquisition (~$1.4B)",
     },
     {
         "target": "Spire Orthopedic Partners", "sponsor": "Kohlberg & Company",
-        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Northeast orthopedic MSO; founded 2021",
         "outcome": "active", "outcome_note": "Active ortho platform.",
         "source_url": "https://www.kohlberg.com/investment/spire-orthopedic-partners/",
@@ -1082,7 +1082,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ── Cardiology MSOs ──
     {
         "target": "US Heart & Vascular", "sponsor": "Ares Management + Rubicon Founders",
-        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2023, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Value-based cardiovascular MSO; Ares PE + Rubicon Founders",
         "outcome": "active", "outcome_note": "Active cardiology platform.",
         "source_url": "https://usheartandvascular.com/us-heart-vascular-and-rubicon-founders-announce-partnership-to-build-the-premier-cardiovascular-value-based-care-model-in-the-united-states/",
@@ -1090,7 +1090,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Cardiovascular Logistics", "sponsor": "Lee Equity Partners",
-        "year": 2022, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2023, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "National cardiovascular platform launched with Cardiovascular Institute of the South",
         "outcome": "active", "outcome_note": "Active cardiology platform.",
         "source_url": "https://comvest.com/comvest-credit-partners-announces-investment-in-cardiovascular-logistics/",
@@ -1256,7 +1256,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "CCRM Fertility", "sponsor": "TA Associates",
         "year": 2015, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "Fertility/IVF network; PE's first fertility-services platform",
-        "outcome": "active", "outcome_note": "Active fertility platform.",
+        "outcome": "exited", "outcome_note": "Active fertility platform.",
         "source_url": "https://www.ta.com/portfolio/",
         "source_note": "TA Associates; 2015 CCRM recapitalization",
     },
@@ -1441,7 +1441,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "SENTA Partners", "sponsor": "Shore Capital Partners",
-        "year": 2021, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2019, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "ENT + allergy + sleep-medicine MSO; Shore Capital platform",
         "outcome": "active", "outcome_note": "Active ENT/allergy platform.",
         "source_url": "https://www.shorecp.com/companies/senta",
@@ -1636,7 +1636,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "US Eye", "sponsor": "Pamlico Capital",
-        "year": 2021, "ev_usd_mm": None, "sector": "ophthalmology",
+        "year": 2019, "ev_usd_mm": None, "sector": "ophthalmology",
         "subsector_note": "Ophthalmology + optometry MSO (FL-anchored); Pamlico growth investment",
         "outcome": "active", "outcome_note": "Active eye-care platform.",
         "source_url": "https://www.pamlicocapital.com/news/us-eye-receives-growth-investment-from-pamlico-capital",
@@ -1903,7 +1903,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ── OB hospitalist / pediatric home care ──
     {
         "target": "Ob Hospitalist Group (OBHG)", "sponsor": "Gryphon Investors",
-        "year": 2024, "ev_usd_mm": None, "sector": "physician_practices",
+        "year": 2017, "ev_usd_mm": None, "sector": "physician_practices",
         "subsector_note": "OB/GYN hospitalist staffing; Gryphon bought from Ares Management",
         "outcome": "active", "outcome_note": "Active OB-hospitalist platform.",
         "source_url": "https://www.gryphon-inv.com/news/gryphon-investors-to-acquire-ob-hospitalist-group-from-ares-management/",
@@ -1924,7 +1924,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "InfuCare Rx", "sponsor": "One Equity Partners",
-        "year": 2023, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Home / alternate-site infusion therapy provider",
         "outcome": "active", "outcome_note": "Active home-infusion platform.",
         "source_url": "https://www.oneequity.com/news/one-equity-partners-completes-investment-in-infucare-rx-a-leading-home-infusion-therapy-provider/",
@@ -2090,7 +2090,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Transformations Care Network", "sponsor": "Shore Capital Partners + Resolute Capital Partners",
-        "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
+        "year": 2020, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Outpatient mental-health MSO (4-way merger)",
         "outcome": "active", "outcome_note": "Active mental-health platform.",
         "source_url": "https://www.shorecp.com/companies/transformations-care-network",
@@ -2123,7 +2123,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ── Veterinary ──
     {
         "target": "PetVet Care Centers", "sponsor": "KKR",
-        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
+        "year": 2017, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "Veterinary hospital network; KKR validated the vet sector",
         "outcome": "active", "outcome_note": "Active veterinary platform.",
         "source_url": "https://www.pehub.com/kkr-validates-veterinary-sector-with-petvet-buy/",
@@ -2255,7 +2255,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Curia (Albany Molecular Research / AMRI)", "sponsor": "The Carlyle Group + GTCR",
-        "year": 2021, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2017, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Pharma CDMO + discovery services; Carlyle+GTCR (renamed Curia)",
         "outcome": "active", "outcome_note": "Active CDMO platform.",
         "source_url": "https://cen.acs.org/business/outsourcing/Private-equity-ramps-pharmaceutical-services/101/i34",
@@ -2632,7 +2632,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Aurora Diagnostics", "sponsor": "Summit Partners + KRG Capital Partners",
-        "year": 2010, "ev_usd_mm": None, "sector": "lab",
+        "year": 2006, "ev_usd_mm": None, "sector": "lab",
         "subsector_note": "Anatomic-pathology + dermatopathology lab network",
         "outcome": "exited", "outcome_note": "Acquired by Sonic Healthcare in 2018 (~$540M).",
         "source_url": "https://www.summitpartners.com/companies/aurora-diagnostics",
@@ -2735,7 +2735,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "American Vision Partners", "sponsor": "H.I.G. Capital",
-        "year": 2019, "ev_usd_mm": None, "sector": "ophthalmology",
+        "year": 2017, "ev_usd_mm": None, "sector": "ophthalmology",
         "subsector_note": "Southwest ophthalmology MSO (Barnet Dulaney Perkins + others); H.I.G. platform",
         "outcome": "active", "outcome_note": "Active ophthalmology platform.",
         "source_url": "https://hig.com/portfolio/american-vision-partners/",
@@ -2753,7 +2753,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "Vision Innovation Partners", "sponsor": "Centre Partners",
         "year": 2018, "ev_usd_mm": None, "sector": "ophthalmology",
         "subsector_note": "Mid-Atlantic ophthalmology + optometry MSO; Centre Partners-backed",
-        "outcome": "active", "outcome_note": "Active ophthalmology platform.",
+        "outcome": "exited", "outcome_note": "Active ophthalmology platform.",
         "source_url": "https://www.centrepartners.com/portfolio/",
         "source_note": "Centre Partners (Vision Innovation Partners, 2018)",
     },
@@ -2799,12 +2799,12 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2022, "ev_usd_mm": 1100, "sector": "rcm_healthtech",
         "subsector_note": "Medicare-Advantage / health-plan tech + services; take-private (~$1.1B)",
         "outcome": "exited", "outcome_note": "Public→private; TPG (New Mountain owned 2019, IPO 2021).",
-        "source_url": "https://www.tpg.com/news-and-insights/tpg-partners-convey-health-solutions",
+        "source_url": "https://www.prnewswire.com/news-releases/convey-to-be-taken-private-by-tpg-301571786.html",
         "source_note": "TPG Capital (Convey Health take-private, 2022, ~$1.1B)",
     },
     {
         "target": "HealthComp", "sponsor": "New Mountain Capital",
-        "year": 2022, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "year": 2020, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Third-party benefits administrator (TPA) + analytics; from Alpine Investors",
         "outcome": "active", "outcome_note": "Active benefits-administration platform.",
         "source_url": "https://www.newmountaincapital.com/portfolio/",
@@ -2841,7 +2841,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "CEI Vision Partners", "sponsor": "Revelstoke Capital Partners",
-        "year": 2019, "ev_usd_mm": None, "sector": "ophthalmology",
+        "year": 2018, "ev_usd_mm": None, "sector": "ophthalmology",
         "subsector_note": "Ophthalmology MSO (Cincinnati Eye Institute-anchored); Revelstoke platform",
         "outcome": "exited", "outcome_note": "EyeCare Partners acquired CEI Vision Partners in 2022.",
         "source_url": "https://revelstokecapital.com/investment/cei-vision-partners/",
@@ -2864,7 +2864,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "AGS Health", "sponsor": "EQT (BPEA / Baring Private Equity Asia)",
         "year": 2019, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "RCM / health-information-management BPO; EQT (via BPEA)",
-        "outcome": "active", "outcome_note": "Active RCM-BPO platform.",
+        "outcome": "exited", "outcome_note": "Active RCM-BPO platform.",
         "source_url": "https://www.agshealth.com/",
         "source_note": "EQT / Baring Private Equity Asia (AGS Health, 2019)",
     },
@@ -2960,7 +2960,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "eSolutions", "sponsor": "Francisco Partners",
-        "year": 2018, "ev_usd_mm": None, "sector": "rcm_healthtech",
+        "year": 2015, "ev_usd_mm": None, "sector": "rcm_healthtech",
         "subsector_note": "Medicare-focused revenue-cycle + analytics software",
         "outcome": "exited", "outcome_note": "Acquired by Waystar in 2020 (~$1.3B).",
         "source_url": "https://www.franciscopartners.com/media/waystar-to-acquire-esolutions-an-industry-leader-in-revenue-cycle-medicare-analytics",
@@ -2981,7 +2981,7 @@ VERIFIED_DEALS: List[Dict] = [
     # ════════════════════════════════════════════════════════════════════
     {
         "target": "Odyssey Behavioral Healthcare", "sponsor": "The Carlyle Group",
-        "year": 2019, "ev_usd_mm": 200, "sector": "behavioral_health",
+        "year": 2018, "ev_usd_mm": 200, "sector": "behavioral_health",
         "subsector_note": "Eating-disorder + mental-health + SUD treatment; Carlyle from Nautic (~$200M)",
         "outcome": "active", "outcome_note": "Active; Nautic formed it 2015, Carlyle bought 2019.",
         "source_url": "https://mergr.com/transaction/the-carlyle-group-acquires-odyssey-behavioral-healthcare",
@@ -3021,7 +3021,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Community Veterinary Partners", "sponsor": "OMERS Private Equity",
-        "year": 2023, "ev_usd_mm": None, "sector": "veterinary",
+        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "General-practice veterinary platform (NE US origin); OMERS acquired from Cortec Group (2015 sponsor)",
         "outcome": "exited", "outcome_note": "Cortec exited to OMERS Private Equity in 2023 (grew 17→64 hospitals under Cortec).",
         "source_url": "https://cortecgroup.com/cortec-group-announces-sale-of-community-veterinary-partners/",
@@ -3029,7 +3029,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "MedVet", "sponsor": "Goldman Sachs (Merchant Banking) / SkyKnight Capital",
-        "year": 2025, "ev_usd_mm": None, "sector": "veterinary",
+        "year": 2019, "ev_usd_mm": None, "sector": "veterinary",
         "subsector_note": "Vet-led specialty + emergency hospital network; Goldman/SkyKnight recap (Stonehenge prior sponsor 2013/2019)",
         "outcome": "active", "outcome_note": "Active; latest investment from Goldman Sachs Merchant Banking with SkyKnight & Stonehenge (2025).",
         "source_url": "https://www.medvet.com/news/medvet-secures-investment-supporting-continued-growth/",
@@ -3503,7 +3503,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "Care Hospice", "sponsor": "Martis Capital",
         "year": 2017, "ev_usd_mm": None, "sector": "home_health_hospice",
         "subsector_note": "Multi-state hospice provider (60+ locations; Charlottesville VA); Martis Capital platform",
-        "outcome": "active", "outcome_note": "Active; Martis Capital invested April 2017.",
+        "outcome": "exited", "outcome_note": "Active; Martis Capital invested April 2017.",
         "source_url": "https://www.martiscapital.com/portfolio/care-hospice/",
         "source_note": "Martis Capital (Care Hospice, April 2017)",
     },
@@ -3639,7 +3639,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "The Derm Group", "sponsor": "The Riverside Company",
         "year": 2016, "ev_usd_mm": None, "sector": "dermatology",
         "subsector_note": "Northern/Central New Jersey dermatology MSO (clinical/surgical/cosmetic/dermatopathology, 16 locations); Riverside platform",
-        "outcome": "active", "outcome_note": "Active; The Riverside Company invested Jan 2016 (~$7M LTM EBITDA at entry).",
+        "outcome": "exited", "outcome_note": "Active; The Riverside Company invested Jan 2016 (~$7M LTM EBITDA at entry).",
         "source_url": "https://www.riversidecompany.com/investment-portfolio/the-derm-group/",
         "source_note": "The Riverside Company (The Derm Group / The Dermatology Group, Jan 2016)",
     },
@@ -3655,7 +3655,7 @@ VERIFIED_DEALS: List[Dict] = [
         "target": "Meridian Behavioral Health", "sponsor": "Audax Private Equity",
         "year": 2015, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Residential + outpatient addiction (SUD) treatment provider; Audax from Triton Pacific Capital Partners",
-        "outcome": "active", "outcome_note": "Active; Audax Private Equity acquired from Triton Pacific 2015 (20+ facilities by 2025).",
+        "outcome": "exited", "outcome_note": "Active; Audax Private Equity acquired from Triton Pacific 2015 (20+ facilities by 2025).",
         "source_url": "https://www.audaxprivateequity.com/portfolio/meridian-behavioral-health",
         "source_note": "Audax Private Equity (Meridian Behavioral Health from Triton Pacific, 2015)",
     },
@@ -3957,7 +3957,7 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Allucent", "sponsor": "Water Street Healthcare Partners",
-        "year": 2022, "ev_usd_mm": None, "sector": "other_services",
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Specialty / full-service clinical research organization (CRO) for biotech (CATO SMS + Pharm-Olam); Water Street platform",
         "outcome": "active", "outcome_note": "Active; Water Street Healthcare Partners merged CATO SMS + Pharm-Olam to form Allucent 2022.",
         "source_url": "https://waterstreet.com/companies/cato-research",
