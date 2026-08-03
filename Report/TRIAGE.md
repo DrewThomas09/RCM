@@ -136,3 +136,31 @@ When a fix lands, replace `[ ]` with `[x]` and append `| <commit-hash> | <ISO-da
 ```
 <commit-hash> | <ISO date> | <SEVERITY> | <Report-NNNN> | <one-line summary>
 ```
+
+## MR1073 — LOW / OWNER DECISION: documented number format vs implemented convention
+
+`CLAUDE.md` states financial figures render at **2 decimal places** ("Never 1
+or 3"). The package overwhelmingly does not, for *abbreviated* magnitudes:
+
+| Form | 1dp sites | 2dp sites |
+|---|---|---|
+| `$X.XM` | **691** | 127 |
+| `$X.XB` | 84 | **92** |
+| `$X.XK` | 5 | 4 |
+
+Found while triaging a UI-audit finding that `regression_page._fmt_num`
+violates the rule (its `$B` branch is 2dp, its `$M` branch 1dp). Flipping
+that one site would have satisfied the written rule while making it
+inconsistent with 691 siblings, so it was **not** applied — the deviation is
+now documented in place at `rcm_mc/ui/regression_page.py:1148`.
+
+Two coherent resolutions, both owner calls:
+
+1. Amend `CLAUDE.md` to "2dp for exact amounts (`$1,204.50`), 1dp for
+   abbreviated magnitudes (`$105.2M`)" — ratifies what the code does, zero
+   code change, and `$B` becomes the outlier to clean up (~92 sites).
+2. Keep the rule and migrate ~780 sites — rewrites most numeric test
+   assertions and every export golden.
+
+Not actionable without that decision; do not let a future sweep "fix" it
+piecemeal, which is how the two conventions arose.
