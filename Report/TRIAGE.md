@@ -199,3 +199,97 @@ Fix belongs in `train_distress_model`, not the page: return the no-model
 result when the required feature columns are absent, which `render_ml_insights`
 already handles (it has `ck_empty_state` fallbacks for eight panels as of the
 UI wave).
+
+## MR1075 — HIGH: regulatory content is materially wrong, not merely stale
+
+The `test_regulatory_packet` freshness lock (60 days) has been failing since
+roughly 2026-06-22. A primary-source review on 2026-08-03 of all five YAMLs
+under `rcm_mc/diligence/regulatory/content/` checked **161 claims**:
+
+| Verdict | Count |
+|---|---|
+| WRONG | 43 |
+| STALE | 21 |
+| UNVERIFIABLE | 30 |
+| CONFIRMED | 34 |
+
+The lock was right. This is a content-accuracy problem, and a date bump would
+have laundered it into a "verified" stamp.
+
+**Two entries cited authorities that do not support them** (both confirmed
+independently, not on the reviewer's word):
+
+- `cpom_states.yaml` **WA "HB 2548 (2024)"** — no such bill. The Washington
+  Legislature's own database returns *"Bill 2548 for the 2023-2024 biennium
+  was not found."* The real regime, ch. 19.390 RCW, is a 60-day **notice**
+  requirement, not the approval-with-unwind mandate the entry described.
+- `cpom_states.yaml` **NY "S8157"** — is *"An act to amend the public health
+  law, the tax law and the state finance law, in relation to enacting the
+  'NYS health care tax reform act'"*. A surcharge bill. No CPOM, MSO or
+  ownership content at all.
+
+A cited authority that does not exist is worse than no citation: it survives
+review by looking checked.
+
+**Applied** (commit below): OR compliance deadline 2027-01-01 → **2029-01-01**
+(SB 951 SEC. 9(3); the old value understated the runway by two years and
+mis-priced every Oregon remediation estimate); NM statute re-pointed to the
+HB 586 (2025) recompilation after the 2024 Act self-repealed 2025-06-30, and
+the reviewing agency corrected from the Attorney General to the **Health Care
+Authority**; MA effective date 2025-01-01 → 2025-04-08 (the old value predated
+the governor's signature and was impossible) and its unsourced 2026-01-01
+compliance deadline nulled; WA re-pointed to ch. 19.390 RCW with the overstated
+unwind remedy removed; NY entry **withdrawn**; four dead source URLs replaced
+or removed.
+
+**Still open — why the lock stays red:**
+
+1. **Connecticut.** The operative law is SB 196 (2026) / Public Act 26-22,
+   signed 2026-05-27 — not the HB 5316 (2025) the file cited. `cga.ct.gov`
+   returned 503 on every attempt, so the Public Act text was never read. Its
+   effective and compliance dates are nulled rather than filled from secondary
+   reporting.
+2. **Indiana.** `iga.in.gov` serves a JS shell to automated fetches and
+   bot-walls its PDFs. Every Indiana field is marked `unverified_fields`.
+   Secondary sources suggest HB 1666 is a 2025-session ownership-**reporting**
+   bill with no noncompete content, which would make both the session year and
+   the `voided_contracts` claim wrong — a lead, not a finding.
+3. The other four YAMLs have their own applied/open findings (NSA IDR: QPA
+   methodology wrong in both mechanics, APP bankruptcy date off by two months,
+   APP LBO block appears fabricated; site-neutral: 340B recoupment 2.0% → CMS
+   proposed 3.0% on 2026-07-07; TEAM CBSA and antitrust precedents likewise).
+
+Close by reading the two remaining statutes in a browser, then stamp. Do not
+stamp before that — it converts known-unknowns into unknown-unknowns.
+
+**Behaviour change worth knowing:** withdrawing NY means a NY-only footprint
+now bands **UNKNOWN** instead of GREEN. That is the correct answer — GREEN
+means "checked, no exposure", UNKNOWN means "no verified data" — and the
+distinction is now pinned by
+`test_state_absent_from_the_lattice_is_unknown_not_green`.
+
+## MR1076 — HIGH: green CI is not evidence the test suite passes
+
+MR1075's lock had been red for ~6 weeks while every PR showed 6/6 green. The
+reason is structural:
+
+- `.github/workflows/ci.yml` runs an explicit allowlist of **17 test files**
+  out of ~600. `test_regulatory_packet.py` is in no CI workflow at all —
+  nor are `test_market_reports_vintage_consistency.py`, `test_source_registry.py`
+  or most of the suite.
+- `.github/workflows/regression-sweep.yml` *does* run the full suite, but the
+  step carries **both** `continue-on-error: true` and a trailing `|| true`.
+  It scrapes totals into a report and can never fail the build.
+
+So the full suite is executed and its result is discarded. Any test outside
+the 17-file allowlist can rot indefinitely behind a green badge — which is
+precisely what happened.
+
+This also means "CI green" in this audit chain has been a weaker claim than it
+reads. It should be stated as "the 17 CI-covered files pass".
+
+Fix is a product decision (runtime vs coverage): promote the freshness/vintage
+guards into the ci.yml allowlist, and/or make regression-sweep fail on a
+regression against a committed baseline count rather than always succeeding.
+The full suite takes ~49 minutes locally, so simply un-swallowing it will make
+every PR slow — hence a decision, not a blind fix.
