@@ -7,14 +7,15 @@ factors, and hospital-specific outlier detection.
 from __future__ import annotations
 
 import html as _html
+import urllib.parse as _urlparse
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
-    ck_section_intro,
+    chartis_shell, ck_empty_state, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_section_intro, ck_source_link,
 )
 from .brand import PALETTE
 from ..data.hospital_taxonomy import (
@@ -178,7 +179,18 @@ def _vif_bar_chart(vifs: List[Dict[str, Any]]) -> str:
     scale = 20.0  # full bar width == VIF 20; higher clamps and shows ">"
     t5 = 5 / scale * 100.0
     t10 = 10 / scale * 100.0
-    out = ['<div style="margin:4px 0 2px;">']
+    # role=img + aria-label: the bars carry the meaning (which predictor is
+    # over-collinear) and a screen reader would otherwise read a bare column
+    # of numbers with no indication of the 5 / 10 thresholds.
+    _worst = rows[0]
+    _summary = _html.escape(
+        f"Variance inflation factors for {len(rows)} predictors, highest "
+        f"first. Worst: {str(_worst['feature']).replace('_', ' ')} at VIF "
+        f"{float(_worst['vif']):.1f}. Thresholds: 5 caution, 10 unreliable.",
+        quote=True,
+    )
+    out = [f'<div role="img" aria-label="{_summary}" '
+           'style="margin:4px 0 2px;">']
     for v in rows:
         vif = float(v["vif"])
         color = neg if vif > 10 else (warn if vif > 5 else pos)
@@ -222,7 +234,16 @@ def _univariate_corr_chart(corrs: List[Dict[str, Any]]) -> str:
         return ""
     pos = PALETTE["positive"]; neg = PALETTE["negative"]
     txt = "var(--sc-text-dim,#465366)"
-    out = ['<div style="margin:4px 0 2px;">']
+    _top = rows[0]
+    _summary = _html.escape(
+        f"Univariate correlation with the target for {len(rows)} features, "
+        f"strongest first. Strongest: "
+        f"{str(_top['feature']).replace('_', ' ')} at r "
+        f"{float(_top.get('correlation', 0)):+.2f}.",
+        quote=True,
+    )
+    out = [f'<div role="img" aria-label="{_summary}" '
+           'style="margin:4px 0 2px;">']
     for c in rows:
         r = float(c.get("correlation", 0))
         color = pos if r >= 0 else neg
@@ -1124,6 +1145,20 @@ def _fmt_num(val: float) -> str:
         return "—"
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
+    # NOTE — deliberately left at 1dp. A UI audit flagged this as a
+    # house-rule violation (CLAUDE.md: money renders at 2dp, "never 1") and
+    # proposed flipping it, since the $B branch above uses 2dp. Counting the
+    # package before acting showed the rule is the minority practice for
+    # ABBREVIATED magnitudes: 691 sites render $X.XM at 1dp against 127 at
+    # 2dp (for $B it is near-even, 84 vs 92). So flipping this one call site
+    # would satisfy the written rule while making it inconsistent with 691
+    # siblings — and every affected numeric assertion and export would move.
+    #
+    # Which convention wins is an owner decision, not a local cleanup: either
+    # CLAUDE.md should say "2dp for exact amounts, 1dp for abbreviated
+    # magnitudes" (matching what the code overwhelmingly does), or ~780 sites
+    # need a coordinated migration. Filed rather than half-applied. The $B
+    # branch here is the genuinely odd one out within this function.
     if abs(val) >= 1e6:
         return f"${val/1e6:.1f}M"
     if abs(val) >= 1e3:
@@ -1357,7 +1392,7 @@ def _rge_headline_strip(
     inconclusive = (cv_res is not None and cv_res.mean_test_r2 < 0.0)
     if cv_res is not None:
         if inconclusive:
-            oos_val_html = f'{cv_res.mean_test_r2:.0%}'
+            oos_val_html = f'{cv_res.mean_test_r2:.1%}'
             oos_sub_html = '<div class="sub bad">WORSE THAN MEAN</div>'
         else:
             oos_val_html = f'{cv_res.mean_test_r2:.1%}'
@@ -1412,7 +1447,7 @@ def _rge_headline_strip(
             'border-radius:4px;padding:10px 14px;margin:0 0 12px;font-size:12.5px;'
             'color:#1a2332;line-height:1.5;">'
             '<b style="color:#b5321e;">⚠ Inconclusive: this model does not beat the mean.</b> '
-            f'Out-of-sample R² is {cv_res.mean_test_r2:.0%}: the {cv_res.k}-fold cross-'
+            f'Out-of-sample R² is {cv_res.mean_test_r2:.1%}: the {cv_res.k}-fold cross-'
             'validated fit predicts <b>worse than simply guessing the average</b> '
             '(R²&lt;0 ⇒ residual error exceeds the variance). The in-sample R² below is '
             'overfitting: <b>do not use these predictions</b>. This usually means too '
@@ -1435,7 +1470,7 @@ def _rge_headline_strip(
         f'<div class="cell"><div class="label">RMSE</div>'
         f'<div class="val">{rmse:.3f}</div>'
         f'<div class="sub {"bad" if rmse_pct_of_sd > 80 else "warn"}">'
-        f'{rmse_pct_of_sd:.0f}% vs SD</div></div>'
+        f'{rmse_pct_of_sd:.1f}% vs SD</div></div>'
         f'<div class="cell"><div class="label">80% PI width</div>'
         f'<div class="val">{pi_val}</div>'
         f'{pi_sub}</div>'
@@ -1494,10 +1529,17 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
         cal_verdict_cls = "" if med_err < 0.15 else "warn"
         cal_verdict_lbl = (
             "● Calibrated through middle 80%" if med_err < 0.15
-            else f"● Median decile error {med_err*100:.0f}%"
+            else f"● Median decile error {med_err*100:.1f}%"
+        )
+        _cal_alt = _html.escape(
+            f"Calibration scatter: {n} predicted deciles plotted against the "
+            f"rank of their actual value. Dots on the 45-degree line mean "
+            f"actual rises with predicted. Median decile error "
+            f"{med_err*100:.1f}%.",
+            quote=True,
         )
         cal_body = (
-            '<div class="rge-cal">'
+            f'<div class="rge-cal" role="img" aria-label="{_cal_alt}">'
             '<span class="grid h" style="top:25%"></span>'
             '<span class="grid h" style="top:50%"></span>'
             '<span class="grid h" style="top:75%"></span>'
@@ -1552,8 +1594,15 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
             f"● {'Heavy' if share_2s > 0.06 else 'Light'}-tailed "
             f"· skew {sign}{abs(skew):.2f}"
         )
+        _hist_alt = _html.escape(
+            f"Histogram of standardized residuals across {n_bins} bins from "
+            f"−4σ to +4σ. Skew {sign}{abs(skew):.2f}; "
+            f"{share_2s*100:.1f}% of rows fall outside ±2σ.",
+            quote=True,
+        )
         resid_body = (
-            f'<div class="rge-hist">{bars}</div>'
+            f'<div class="rge-hist" role="img" aria-label="{_hist_alt}">'
+            f'{bars}</div>'
             '<div class="x-axis">'
             '<span>−4σ</span>'
             '<span>STD residual</span>'
@@ -1602,13 +1651,29 @@ def _rge_hero_grid(result: Dict[str, Any]) -> str:
             f'<div class="{val_cls}">{sign}{abs(coef):.2f}</div>'
             '</div>'
         )
-    drv_body = (
-        f'<div class="rge-drv">{drv_rows}</div>'
-        '<div class="x-axis" style="margin-top:14px">'
-        '<span>−1.0σ</span>'
-        '<span>standardized β</span>'
-        '<span>+1.0σ</span></div>'
-    )
+    if drv_rows:
+        _drv_alt = _html.escape(
+            "Standardized coefficients for the "
+            f"{len(by_mag)} strongest drivers, diverging from a zero centre "
+            "line; right is positive, left is negative.",
+            quote=True,
+        )
+        drv_body = (
+            f'<div class="rge-drv" role="img" aria-label="{_drv_alt}">'
+            f'{drv_rows}</div>'
+            '<div class="x-axis" style="margin-top:14px">'
+            '<span>−1.0σ</span>'
+            '<span>standardized β</span>'
+            '<span>+1.0σ</span></div>'
+        )
+    else:
+        # A fit can survive with zero usable coefficients (every candidate
+        # feature dropped as constant within the filtered universe). Say so
+        # instead of shipping an empty tile the partner can't interpret.
+        drv_body = (
+            '<div class="rge-empty">No drivers in this fit &mdash; '
+            'widen the universe or add features</div>'
+        )
 
     return (
         '<div class="rge-bar"><span>At a glance · the model\'s three '
@@ -1688,7 +1753,7 @@ def _rge_verdict_row(
             import math as _math
             pct = (_math.exp(p80) - 1.0) * 100
             caution_text = (
-                f'<b>±{pct:.0f}% 80% PI width.</b> Use for ranking, '
+                f'<b>±{pct:.1f}% 80% PI width.</b> Use for ranking, '
                 'not point valuation.'
             )
         else:
@@ -1708,13 +1773,13 @@ def _rge_verdict_row(
         if (hi_p - lo_p) > 0.20:
             regime_cls = "flag"
             regime_text = (
-                f'<b>R² spans {lo_p*100:.0f}–{hi_p*100:.0f}% '
+                f'<b>R² spans {lo_p*100:.1f}–{hi_p*100:.1f}% '
                 f'across states.</b> Segment before extrapolating.'
             )
         else:
             regime_cls = ""
             regime_text = (
-                f'<b>R² within {(hi_p-lo_p)*100:.0f}pp across states.</b> '
+                f'<b>R² within {(hi_p-lo_p)*100:.1f}pp across states.</b> '
                 'Headline applies broadly.'
             )
     else:
@@ -1752,30 +1817,37 @@ def _rge_verdict_row(
         'Prediction block; cross-validate before sourcing.'
     )
 
+    # a11y: role="status" lives on the card's TEXT, not on the <a>. An ARIA
+    # role on an anchor overrides its implicit link role, so the previous
+    # markup announced five jump-links as bare status regions — a keyboard /
+    # screen-reader user lost the "link" affordance on every verdict card.
+    # The status semantics belong to the derived sentence anyway.
     return (
         '<div class="rge-bar"><span>Verdict · 5 things this '
         'regression is telling you</span>'
         '<span class="meta">click a card to jump to the supporting block'
         '</span></div>'
         '<div class="rge-verdict rge-tokens">'
-        '<a class="v" href="#fit" role="status" aria-label="Signal verdict">'
+        '<a class="v" href="#fit" '
+        'aria-label="Signal verdict — jump to the model-fit block">'
         '<div class="tag"><span class="dot"></span>Signal</div>'
-        f'<p>{signal_text}</p></a>'
-        '<a class="v warn" href="#prediction" role="status" '
-        'aria-label="Caution verdict">'
+        f'<p role="status">{signal_text}</p></a>'
+        '<a class="v warn" href="#prediction" '
+        'aria-label="Caution verdict — jump to the prediction-interval block">'
         '<div class="tag"><span class="dot"></span>Caution</div>'
-        f'<p>{caution_text}</p></a>'
-        f'<a class="v {regime_cls}" href="#cohort" role="status" '
-        'aria-label="Regime break verdict">'
+        f'<p role="status">{caution_text}</p></a>'
+        f'<a class="v {regime_cls}" href="#cohort" '
+        'aria-label="Regime-break verdict — jump to the cohort block">'
         '<div class="tag"><span class="dot"></span>Regime break</div>'
-        f'<p>{regime_text}</p></a>'
-        f'<a class="v {infl_cls}" href="#leverage" role="status" '
-        'aria-label="Influence verdict">'
+        f'<p role="status">{regime_text}</p></a>'
+        f'<a class="v {infl_cls}" href="#leverage" '
+        'aria-label="Influence verdict — jump to the leverage block">'
         '<div class="tag"><span class="dot"></span>Influence</div>'
-        f'<p>{infl_text}</p></a>'
-        '<a class="v" href="#next" role="status" aria-label="Do next">'
+        f'<p role="status">{infl_text}</p></a>'
+        '<a class="v" href="#next" '
+        'aria-label="Do next — jump to the interpretation block">'
         '<div class="tag"><span class="dot"></span>Do next</div>'
-        f'<p>{next_text}</p></a>'
+        f'<p role="status">{next_text}</p></a>'
         '</div>'
     )
 
@@ -2169,6 +2241,19 @@ def _rge_learning_curve(result: Dict[str, Any]) -> str:
             "more data would likely still help."
         )
 
+    # Alt text: the curve pair IS the argument ("does more data help?"), so a
+    # non-visual reader needs the endpoints and the verdict, not just "chart".
+    _last = curve[-1]
+    _lc_alt = _html.escape(
+        "Learning curve: train and held-out test R² against training "
+        f"fraction, {len(curve)} points from "
+        f"{curve[0]['train_fraction']*100:.1f}% to "
+        f"{_last['train_fraction']*100:.1f}% of the pool. At full size, "
+        f"train R² {_last['train_r2']*100:.1f}% versus test R² "
+        f"{_last['test_r2']*100:.1f}%. {plateau_text}",
+        quote=True,
+    )
+
     return (
         '<div class="rge-bar"><span>Learning curve · '
         'does more data help?</span>'
@@ -2177,7 +2262,9 @@ def _rge_learning_curve(result: Dict[str, Any]) -> str:
         '<div class="head">spec §11</div>'
         f'<h3>{_html.escape(plateau_text)}</h3>'
         f'<svg class="rge-lc-svg" viewBox="0 0 {W:.0f} {H:.0f}" '
-        'preserveAspectRatio="none">'
+        'preserveAspectRatio="none" role="img" '
+        f'aria-label="{_lc_alt}">'
+        f'<title>{_lc_alt}</title>'
         f'{ticks_y_html}{ticks_x_html}'
         f'<path d="{train_path}" stroke="#506478" stroke-width="1.6" '
         'fill="none"/>'
@@ -2324,7 +2411,8 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
     placed: List[Tuple[float, float]] = []
     labels_html = ""
     for o, x, y in flagged_for_label[:9]:
-        name = (o.get("name") or o.get("ccn") or "?")[:16]
+        full_name = str(o.get("name") or o.get("ccn") or "?")
+        name = full_name[:16]
         right = x < (W - pad_r - 90)
         lx = x + 8 if right else x - 8
         anchor = "start" if right else "end"
@@ -2334,11 +2422,25 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
                 break
             ly += 12
         placed.append((lx, ly))
+        # Labels are clipped to 16 chars to stop them colliding, which makes
+        # two "…Regional Medical Center" hospitals read identically. Hovering
+        # a clipped label now reveals the full name plus the numbers behind
+        # the dot. The name is repeated in the tooltip ONLY when it was
+        # actually cut — no point echoing a label that is already complete.
+        tip_bits = []
+        if len(full_name) > 16:
+            tip_bits.append(full_name)
+        tip_bits.append(
+            f"leverage {float(o['leverage']):.3f} · residual "
+            f"{float(o['std_residual']):+.2f}σ · Cook's D "
+            f"{float(o.get('cooks_d') or 0.0):.3f}"
+        )
+        tip = _html.escape(" · ".join(tip_bits))
         labels_html += (
             f'<text x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" '
             'font-family="JetBrains Mono,monospace" font-size="9.5" '
             'fill="#0e1a29" style="letter-spacing:.03em">'
-            f'{_html.escape(name)}</text>'
+            f'<title>{tip}</title>{_html.escape(name)}</text>'
         )
 
     # Cook's D conventional cutoff at 4/n (where n is the model's n).
@@ -2349,6 +2451,14 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
     n_flagged = len(flagged)
     # Quote the cutoff in the verdict line (not on the chart itself —
     # it's a Cook's-D space, not a leverage-space contour).
+    _lev_alt = _html.escape(
+        f"Scatter of leverage against standardized residual for the top "
+        f"{len(safe[:20])} rows by influence. "
+        f"{n_flagged} of {len(safe)} exceed the Cook's D cutoff of "
+        f"{cook_cut:.4f} (4/n). Points far right carry high leverage; points "
+        "far from the centre line are poorly predicted.",
+        quote=True,
+    )
 
     return (
         '<div class="rge-bar"><span>Leverage × residual · '
@@ -2360,8 +2470,10 @@ def _rge_leverage_scatter(result: Dict[str, Any]) -> str:
         f'<h3>{n_flagged} hospitals carry disproportionate '
         f'weight on the fit.</h3>'
         f'<svg class="rge-lev-svg" viewBox="0 0 {W:.0f} {H:.0f}" '
-        'preserveAspectRatio="xMidYMid meet" '
+        'preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="{_lev_alt}" '
         'style="width:100%;height:auto;display:block;">'
+        f'<title>{_lev_alt}</title>'
         f'{axis_html}{ticks_html}{dots_html}{labels_html}'
         f'<text x="{pad_l + (W - pad_l - pad_r)/2:.1f}" '
         f'y="{H - 8:.1f}" text-anchor="middle" '
@@ -2516,10 +2628,11 @@ def _rge_formula_explainer(result: Dict[str, Any]) -> str:
         '</p>'
         f'{eq}{log_note}'
         '<table class="cad-table" style="margin-top:10px;"><thead><tr>'
-        '<th>Driver</th><th>Typical (mean)</th><th>One-SD step</th>'
-        '<th>Effect on prediction<br><span style="font-weight:400;'
+        '<th scope="col">Driver</th><th scope="col">Typical (mean)</th>'
+        '<th scope="col">One-SD step</th>'
+        '<th scope="col">Effect on prediction<br><span style="font-weight:400;'
         'color:var(--rge-muted);">(+1 SD, others held at average)</span></th>'
-        '<th>Sig</th></tr></thead>'
+        '<th scope="col">Sig</th></tr></thead>'
         f'<tbody>{"".join(rows)}</tbody></table>'
         '<p class="ck-section-body" style="margin-top:10px;">'
         f'<strong>Worked example.</strong> {_eff_worked(top_label, baseline_raw, to_val, predicted, delta_txt, target)}'
@@ -2565,18 +2678,18 @@ def _rge_interpretation(
 
     if r2 >= 0.5 and sig_count == len(coefs) and coefs:
         use_for.append(
-            f"Ranking targets across the universe: R² {r2*100:.0f}% "
+            f"Ranking targets across the universe: R² {r2*100:.1f}% "
             f"with every one of the {len(coefs)} drivers significant."
         )
     elif r2 >= 0.3:
         use_for.append(
             f"Generating hypotheses about the {sig_count} "
-            f"significant drivers; R² {r2*100:.0f}% is enough "
+            f"significant drivers; R² {r2*100:.1f}% is enough "
             "for a directional read."
         )
     if cv_res is not None and cv_res.overfit_gap <= 0.05:
         use_for.append(
-            f"Out-of-sample reads: the OOS R² ({cv_res.mean_test_r2*100:.0f}%) "
+            f"Out-of-sample reads: the OOS R² ({cv_res.mean_test_r2*100:.1f}%) "
             f"is within {cv_res.overfit_gap*100:.1f}pp of in-sample, "
             "so the headline survives held-out folds."
         )
@@ -2594,7 +2707,7 @@ def _rge_interpretation(
             if pct > 25:
                 skip_for.append(
                     f"Point valuation of a single hospital: the "
-                    f"80% PI half-width is ±{pct:.0f}%, so a "
+                    f"80% PI half-width is ±{pct:.1f}%, so a "
                     "stand-alone forecast carries too much spread."
                 )
         else:
@@ -2607,7 +2720,7 @@ def _rge_interpretation(
     if share_2s > 0.08:
         skip_for.append(
             "Reading heavy-tailed residuals as Gaussian: "
-            f"{share_2s*100:.0f}% of rows exceed ±2σ. Quote "
+            f"{share_2s*100:.1f}% of rows exceed ±2σ. Quote "
             "conformal PIs (above), not parametric ones."
         )
     if bp_p < 0.05:
@@ -2634,8 +2747,8 @@ def _rge_interpretation(
                 skip_for.append(
                     f"Cross-{grid_name}extrapolation: the "
                     f"{_html.escape(str(r['bucket']))} cohort fits "
-                    f"at R² {r['r2']*100:.0f}% "
-                    f"({(r['delta_vs_headline'])*100:+.0f}pp vs "
+                    f"at R² {r['r2']*100:.1f}% "
+                    f"({(r['delta_vs_headline'])*100:+.1f}pp vs "
                     "headline). Segment first."
                 )
                 break
@@ -2735,6 +2848,17 @@ border-color:var(--sc-navy,#0b2341);
 box-shadow:0 1px 2px rgba(11,35,65,0.18);}
 .rg-pill-active:hover{background:var(--sc-navy-2,#132e53);color:#fff;
 border-color:var(--sc-navy-2,#132e53);}
+/* Provenance footnote under the inputs form — the dataset label is a live
+   link (ck_source_link) so any number on the page is traceable to its
+   public origin in one click. */
+.rg-provenance{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+margin:14px 0 0;padding-top:10px;
+border-top:1px solid var(--sc-rule,#d6cfc0);
+font-size:12px;line-height:1.5;color:var(--sc-text-dim,#465366);}
+.rg-provenance-label{font-family:var(--sc-mono,monospace);font-size:10px;
+font-weight:600;letter-spacing:0.16em;text-transform:uppercase;
+color:var(--sc-text-faint,#7a8699);flex-shrink:0;}
+.rg-provenance a{color:var(--sc-teal-ink,#155752);}
 .rg-diagnostic-banner{display:flex;align-items:baseline;gap:12px;
 padding:14px 18px;margin:0 0 16px;background:#fff;
 border:1px solid var(--sc-rule,#d6cfc0);
@@ -2992,6 +3116,29 @@ def render_regression_page(
         '<button type="submit" class="cad-btn cad-btn-primary">Run Regression</button>'
         '</div></form>'
     )
+    # Provenance line — every coefficient on this page is derived from a
+    # public filing, so the dataset label is a LINK to its CMS origin rather
+    # than plain text a partner (or an LP reading an export) has to take on
+    # faith. ck_source_link falls back to escaped text for unknown labels.
+    if data_source == "portfolio":
+        provenance_row = (
+            '<div class="rg-provenance">'
+            '<span class="rg-provenance-label">Source</span>'
+            '<span>Partner-entered portfolio deal records &middot; '
+            'self-reported, not a public filing. Cross-check against '
+            + ck_source_link("CMS HCRIS")
+            + ' before quoting externally.</span></div>'
+        )
+    else:
+        provenance_row = (
+            '<div class="rg-provenance">'
+            '<span class="rg-provenance-label">Source</span>'
+            '<span>' + ck_source_link("CMS HCRIS")
+            + ' &middot; latest cost report per CCN. Segment labels derive '
+            'from the hospital taxonomy; provider identity from '
+            + ck_source_link("NPPES")
+            + '.</span></div>'
+        )
     source_selector = ck_panel(
         '<div class="rg-pills-row">'
         '<div class="rg-pills-label">UNIVERSE</div>'
@@ -3001,7 +3148,8 @@ def render_regression_page(
         '<div class="rg-pills-label">BY SEGMENT</div>'
         f'<div class="rg-pills">{universe_pills_segments}</div>'
         '</div>'
-        + selector_form,
+        + selector_form
+        + provenance_row,
         title="Regression inputs",
     )
 
@@ -3038,23 +3186,33 @@ def render_regression_page(
         computed = [k for k, _ in _COMPUTED_HCRIS if k != target and k in df.columns]
         all_features = base + computed
     else:
-        next_step = (
-            "Add or import deals from the Pipeline, then reload this page."
-            if data_source == "portfolio"
-            else "Load CMS HCRIS public data first (run "
-            "<code>rcm-mc data refresh</code> or use the Data Catalog), "
-            "then reload this page."
-        )
+        # Editorial empty state (not a bare paragraph) with the ONE action
+        # that fills it. ck_empty_state escapes its body, so the concrete
+        # command stays plain text and the dataset link rides alongside.
+        if data_source == "portfolio":
+            next_step = (
+                "Add or import deals from the Pipeline, then reload this "
+                "page."
+            )
+            cta_label, cta_href = "Open the Pipeline", "/pipeline"
+        else:
+            next_step = (
+                "Load CMS HCRIS public data first — run `rcm-mc data "
+                "refresh` or use the Data Catalog — then reload this page."
+            )
+            cta_label, cta_href = "Open the CMS data catalog", "/cms-sources"
         body = (
             _REGRESSION_CSS + f'{source_selector}'
-            + ck_panel(
-                '<p class="ck-section-body">'
-                '<strong>No data loaded yet.</strong> Regression Analysis fits '
-                'KPI driver models across a dataset, so it needs records before '
-                'it can show coefficients, fit quality, or driver rankings.<br>'
-                f'{next_step}'
-                '</p>',
-                title="Regression Analysis",
+            + ck_empty_state(
+                "No data loaded yet.",
+                "Regression Analysis fits KPI driver models across a "
+                "dataset, so it needs records before it can show "
+                "coefficients, fit quality, or driver rankings. "
+                + next_step,
+                eyebrow="REGRESSION ANALYSIS",
+                cta_label=cta_label,
+                cta_href=cta_href,
+                icon="&#931;",
             )
         )
         return chartis_shell(
@@ -3068,11 +3226,22 @@ def render_regression_page(
         if df.empty:
             body = (
                 _REGRESSION_CSS + f'{source_selector}'
-                + ck_panel(
-                    '<p class="ck-section-body">'
-                    f'No rows in universe <code>{_html.escape(universe)}</code>. '
-                    'Pick a different universe from the pills above.</p>',
-                    title="Regression Analysis",
+                + ck_empty_state(
+                    f"No hospitals in the {universe} universe.",
+                    "Every row was filtered out before the regression could "
+                    "run. Pick a different universe from the pills above, or "
+                    "fall back to all hospitals and segment afterwards.",
+                    eyebrow="EMPTY UNIVERSE",
+                    cta_label="Reset to all hospitals",
+                    # Raw "&" — ck_empty_state escapes the href itself, so
+                    # pre-escaping here would double-encode to "&amp;amp;".
+                    cta_href=(
+                        "/portfolio/regression?source="
+                        + _urlparse.quote(data_source, safe="")
+                        + "&target=" + _urlparse.quote(target, safe="")
+                        + "&universe=all"
+                    ),
+                    tone="warning",
                 )
             )
             return chartis_shell(
@@ -3107,11 +3276,22 @@ def render_regression_page(
     if result is None:
         body = (
             _REGRESSION_CSS + f'{source_selector}'
-            + ck_panel(
-                '<p class="ck-section-body">'
-                'Insufficient data for regression. Need at least 3 observations with '
-                'non-null values for target and features.</p>',
-                title="Regression Analysis",
+            + ck_empty_state(
+                "Not enough data to fit this regression.",
+                "OLS needs at least 3 observations with non-null values for "
+                "both the target and every feature, and at least one feature "
+                "that actually varies within the selected universe. Widen the "
+                "universe, pick a different target, or untick "
+                "“Drop leakage features” to keep more columns.",
+                eyebrow="INSUFFICIENT DATA",
+                cta_label="Fit across all hospitals",
+                cta_href=(
+                    "/portfolio/regression?source="
+                    + _urlparse.quote(data_source, safe="")
+                    + "&target=" + _urlparse.quote(target, safe="")
+                    + "&universe=all"
+                ),
+                tone="warning",
             )
         )
         return chartis_shell(body, "Regression Analysis", subtitle="Insufficient data")
@@ -3169,7 +3349,7 @@ def render_regression_page(
     else:
         _clean_clause = (" No predictors are collinear, so every coefficient "
                          "can be read directly.")
-    _r2_pct = f"{result['r2']:.0%}"
+    _r2_pct = f"{result['r2']:.1%}"
     intro = ck_section_intro(
         eyebrow=f"REGRESSION · {_html.escape(_tgt_words.upper())}",
         headline=(f"Predicting {_html.escape(_tgt_words)} across "
@@ -3503,8 +3683,8 @@ def render_regression_page(
         'n, not the 1.96 normal value.</p></details>'
         f'{_coef_fig}'
         '<table class="cad-table"><thead><tr>'
-        '<th>Variable</th><th>Strength</th><th>t</th><th>p-value</th>'
-        '<th>Sig</th><th>95% CI</th><th>Impact</th>'
+        '<th scope="col">Variable</th><th scope="col">Strength</th><th scope="col">t</th><th scope="col">p-value</th>'
+        '<th scope="col">Sig</th><th scope="col">95% CI</th><th scope="col">Impact</th>'
         f'</tr></thead><tbody>{coef_rows}</tbody></table>',
         title="Coefficients (Standardized)",
     )
@@ -3557,7 +3737,7 @@ def render_regression_page(
             f'&mdash; they sum to the model&rsquo;s R&sup2; ({result.get("r2", 0):.1%}). '
             'This is the honest answer to &ldquo;which lever matters most?&rdquo;</p>'
             '<table class="cad-table"><thead><tr>'
-            '<th>Driver</th><th>R&sup2; share</th><th>% of R&sup2;</th><th>&nbsp;</th>'
+            '<th scope="col">Driver</th><th scope="col">R&sup2; share</th><th scope="col">% of R&sup2;</th><th scope="col">&nbsp;</th>'
             f'</tr></thead><tbody>{_shap_rows}</tbody></table>',
             title="Driver Importance (Shapley R&sup2;)",
         )
@@ -3645,10 +3825,20 @@ def render_regression_page(
     for o in result["outliers"][:15]:
         resid_val = o["std_residual"]
         resid_cls = "cad-neg" if abs(resid_val) > 2 else ("cad-warn" if abs(resid_val) > 1.5 else "")
-        name = _html.escape(o.get("name", "")[:35])
+        full_name = str(o.get("name", ""))
+        name = _html.escape(full_name[:35])
         ccn = o.get("ccn", "")
         state = o.get("state", "")
-        link = f'<a href="/hospital/{_html.escape(ccn)}" class="ck-link">{name}</a>' if ccn else name
+        # title= carries the untruncated name (and the CCN) — the cell clips
+        # at 35 chars, which routinely cuts "…Regional Medical Center" off
+        # two hospitals that then read identically.
+        name_title = _html.escape(
+            f"{full_name} (CCN {ccn})" if ccn else full_name, quote=True)
+        link = (
+            f'<a href="/hospital/{_urlparse.quote(str(ccn), safe="")}" '
+            f'class="ck-link" title="{name_title}">{name}</a>'
+            if ccn else f'<span title="{name_title}">{name}</span>'
+        )
         seg_cell = (
             f'<td><span class="rg-segment-chip">'
             f'{_html.escape(o.get("segment", ""))}</span></td>'
@@ -3692,7 +3882,7 @@ def render_regression_page(
                 }.get(buy_info["tier"], "")
                 buy_cell = (
                     f'<td class="num {buy_cls}">'
-                    f'{buy_pct:.0f}%</td>'
+                    f'{buy_pct:.1f}%</td>'
                 )
                 att_pct = buy_info["attractiveness"] * 100
                 att_tier_cls = {
@@ -3703,7 +3893,7 @@ def render_regression_page(
                 }.get(buy_info["attractiveness_tier"], "")
                 att_cell = (
                     f'<td class="num {att_tier_cls}">'
-                    f'{att_pct:.0f}%</td>'
+                    f'{att_pct:.1f}%</td>'
                 )
             else:
                 buy_cell = '<td class="num">—</td>'
@@ -3723,12 +3913,12 @@ def render_regression_page(
             f'</tr>'
         )
 
-    seg_header = '<th>Segment</th>' if has_segments else ''
+    seg_header = '<th scope="col">Segment</th>' if has_segments else ''
     influence_headers = (
-        '<th>Cook\'s D</th><th>Class</th>' if has_influence else ''
+        '<th scope="col">Cook\'s D</th><th scope="col">Class</th>' if has_influence else ''
     )
     buyability_headers = (
-        '<th>P(buyable)</th><th>Attractiveness</th>'
+        '<th scope="col">P(buyable)</th><th scope="col">Attractiveness</th>'
         if has_buyability else ''
     )
     # Make the residual-space-vs-display-space contract explicit
@@ -3773,8 +3963,8 @@ def render_regression_page(
             if has_influence else ''
         )
         + '<table class="cad-table"><thead><tr>'
-        f'<th>Hospital</th>{seg_header}<th>State</th>'
-        '<th>Actual</th><th>Predicted</th><th>Residual</th>'
+        f'<th scope="col">Hospital</th>{seg_header}<th scope="col">State</th>'
+        '<th scope="col">Actual</th><th scope="col">Predicted</th><th scope="col">Residual</th>'
         f'{influence_headers}'
         f'{buyability_headers}'
         f'</tr></thead><tbody>{outlier_rows}</tbody></table>',
@@ -3856,6 +4046,23 @@ def render_regression_page(
         'and inflating R². Toggle "Drop leakage features" above.</em>'
         if leak_count else ''
     )
+    # The audit table is built unconditionally, so an empty candidate list
+    # (every column excluded as collinear with this target) previously shipped
+    # a panel with a header row and no body. Say why it's empty instead.
+    leak_table_html = (
+        '<table class="cad-table"><thead><tr>'
+        '<th scope="col">Feature</th><th scope="col">Verdict</th>'
+        '<th scope="col">Reason</th><th scope="col">Status</th>'
+        f'</tr></thead><tbody>{"".join(leak_rows)}</tbody></table>'
+        if leak_rows else
+        ck_empty_state(
+            "No candidate features to audit.",
+            "Every column was excluded before the audit ran — usually "
+            "because they are all definitionally collinear with this "
+            "target. Pick a different target to see the leakage verdicts.",
+            eyebrow="LEAKAGE AUDIT",
+        )
+    )
     # Concise lede (was a ~10-line wall defining every verdict inline). The
     # essentials only; the per-verdict definitions live in a collapsible note
     # so the table — the actual content — leads.
@@ -3873,10 +4080,7 @@ def render_regression_page(
         'chip = detected via a multi-hop input walk); softer, kept by default. '
         '<strong>SAFE</strong>: no algebraic link. <strong>SELF</strong>: is '
         'the target. <strong>UNKNOWN</strong>: no provenance record.</p></details>'
-        '<table class="cad-table"><thead><tr>'
-        '<th>Feature</th><th>Verdict</th>'
-        '<th>Reason</th><th>Status</th>'
-        f'</tr></thead><tbody>{"".join(leak_rows)}</tbody></table>',
+        f'{leak_table_html}',
         title="Feature Leakage Audit",
     )
 
@@ -3979,15 +4183,15 @@ def render_regression_page(
                     # "typical prediction is off by ±X%" (exp(rmse)-1).
                     # For a raw fit show RMSE in the target's own units.
                     "Mean test RMSE (OOS)",
-                    (f"±{(_math.exp(cv_res.mean_test_rmse) - 1.0) * 100:.0f}%"
+                    (f"±{(_math.exp(cv_res.mean_test_rmse) - 1.0) * 100:.1f}%"
                      if cv_res.target_was_log_transformed
                      else f"{cv_res.mean_test_rmse:,.3g}"),
                     "typical OOS error" if cv_res.target_was_log_transformed else "",
                 )
                 + '</div>'
                 '<table class="cad-table"><thead><tr>'
-                '<th>Fold</th><th>n train</th><th>n test</th>'
-                '<th>Train R²</th><th>Test R²</th><th>Test RMSE</th>'
+                '<th scope="col">Fold</th><th scope="col">n train</th><th scope="col">n test</th>'
+                '<th scope="col">Train R²</th><th scope="col">Test R²</th><th scope="col">Test RMSE</th>'
                 f'</tr></thead><tbody>{fold_rows}</tbody></table>',
                 title=panel_title,
             )
@@ -4021,7 +4225,7 @@ def render_regression_page(
                 dist.segment_means.items(), key=lambda kv: kv[1],
             )
             for seg_name, mean in sorted_segs:
-                share_str = f"{mean * 100:.0f}%"
+                share_str = f"{mean * 100:.1f}%"
                 tier_cls = (
                     "cad-pos" if mean >= 0.55
                     else "cad-warn" if mean >= 0.30
@@ -4085,7 +4289,7 @@ def render_regression_page(
                 'Mean buyability by hospital segment'
                 '</h4>'
                 '<table class="cad-table"><thead><tr>'
-                '<th>Segment</th><th>Mean P(buyable)</th>'
+                '<th scope="col">Segment</th><th scope="col">Mean P(buyable)</th>'
                 f'</tr></thead><tbody>{seg_rows}</tbody></table>',
                 title="Buyability Lens",
             )
@@ -4126,17 +4330,17 @@ def render_regression_page(
                     f'<td class="num">{p.size:,}</td>'
                     f'<td>{_html.escape(p.dominant_segment)} '
                     f'<span class="cad-text2">'
-                    f'({p.segment_share * 100:.0f}%)</span></td>'
+                    f'({p.segment_share * 100:.1f}%)</span></td>'
                     f'<td class="num">{p.median_beds:.0f}</td>'
-                    f'<td class="num">{p.median_medicare_pct:.0f}%</td>'
-                    f'<td class="num">{p.median_medicaid_pct:.0f}%</td>'
-                    f'<td class="num">{p.safety_net_share * 100:.0f}%</td>'
-                    f'<td class="num">{p.academic_share * 100:.0f}%</td>'
+                    f'<td class="num">{p.median_medicare_pct:.1f}%</td>'
+                    f'<td class="num">{p.median_medicaid_pct:.1f}%</td>'
+                    f'<td class="num">{p.safety_net_share * 100:.1f}%</td>'
+                    f'<td class="num">{p.academic_share * 100:.1f}%</td>'
                     '</tr>'
                 )
             pca_var = cluster_res.pca.explained_variance_ratio
             var_str = " · ".join(
-                f"PC{i + 1}: {v * 100:.0f}%"
+                f"PC{i + 1}: {v * 100:.1f}%"
                 for i, v in enumerate(pca_var)
             )
             # PCA scatter plot — turns the cluster panel from a
@@ -4163,10 +4367,10 @@ def render_regression_page(
                 f'{scatter_svg}'
                 '</div>'
                 '<table class="cad-table"><thead><tr>'
-                '<th>#</th><th>Cluster name</th><th>n</th>'
-                '<th>Dominant segment</th><th>Med beds</th>'
-                '<th>Med MC%</th><th>Med MD%</th>'
-                '<th>Safety-net share</th><th>Academic share</th>'
+                '<th scope="col">#</th><th scope="col">Cluster name</th><th scope="col">n</th>'
+                '<th scope="col">Dominant segment</th><th scope="col">Med beds</th>'
+                '<th scope="col">Med MC%</th><th scope="col">Med MD%</th>'
+                '<th scope="col">Safety-net share</th><th scope="col">Academic share</th>'
                 f'</tr></thead><tbody>{cluster_rows}</tbody></table>',
                 title="Cluster Explorer (PCA + k-means)",
             )
@@ -4215,7 +4419,7 @@ def render_regression_page(
                 f'<td class="num">{seg_res.baseline.rmse:.3f}</td>'
                 f'<td class="num">'
                 + (
-                    f'{seg_res.baseline.typical_fractional_error * 100:.0f}%'
+                    f'{seg_res.baseline.typical_fractional_error * 100:.1f}%'
                     if seg_res.baseline.target_was_log_transformed else '—'
                 )
                 + '</td>'
@@ -4253,7 +4457,7 @@ def render_regression_page(
                     f'<td class="num">{sr.rmse:.3f}</td>'
                     f'<td class="num">'
                     + (
-                        f'{sr.typical_fractional_error * 100:.0f}%'
+                        f'{sr.typical_fractional_error * 100:.1f}%'
                         if sr.target_was_log_transformed else '—'
                     )
                     + '</td>'
@@ -4282,8 +4486,8 @@ def render_regression_page(
                     '<h4 class="rg-subhead">Segments not fit '
                     '(insufficient n)</h4>'
                     '<table class="cad-table"><thead><tr>'
-                    '<th>Segment</th><th>n</th><th>Required</th>'
-                    f'<th>Reason</th></tr></thead><tbody>{insuf_rows}'
+                    '<th scope="col">Segment</th><th scope="col">n</th><th scope="col">Required</th>'
+                    f'<th scope="col">Reason</th></tr></thead><tbody>{insuf_rows}'
                     '</tbody></table>'
                 )
 
@@ -4306,8 +4510,8 @@ def render_regression_page(
                 f'by the current feature set, not that it\'s inherently '
                 f'unmodellable.{log_note}</p>'
                 '<table class="cad-table"><thead><tr>'
-                '<th>Segment</th><th>n</th><th>R²</th>'
-                '<th>RMSE</th><th>typ. err</th><th>vs baseline</th>'
+                '<th scope="col">Segment</th><th scope="col">n</th><th scope="col">R²</th>'
+                '<th scope="col">RMSE</th><th scope="col">typ. err</th><th scope="col">vs baseline</th>'
                 f'</tr></thead><tbody>{seg_rows}</tbody></table>'
                 f'{insuf_html}',
                 title="Segmented Regression (per regime)",
@@ -4334,7 +4538,7 @@ def render_regression_page(
         'How well the national model predicts within each state. Low R² states have unique '
         'market dynamics not captured by national features: consider state-specific models.</p>'
         '<table class="cad-table"><thead><tr>'
-        '<th>State</th><th>n</th><th>R²</th><th>Mean Residual</th>'
+        '<th scope="col">State</th><th scope="col">n</th><th scope="col">R²</th><th scope="col">Mean Residual</th>'
         f'</tr></thead><tbody>{state_rows}</tbody></table>',
         title="Model Fit by State",
     ) if state_rows else ""
@@ -4354,22 +4558,41 @@ def render_regression_page(
     if corr_rows:
         corr_section = ck_panel(
             '<table class="cad-table"><thead><tr>'
-            '<th>Variable 1</th><th>Variable 2</th><th>r</th>'
+            '<th scope="col">Variable 1</th><th scope="col">Variable 2</th><th scope="col">r</th>'
             f'</tr></thead><tbody>{corr_rows}</tbody></table>',
             title="Top Pairwise Correlations",
         )
 
     # ── Navigation ──
+    # `target` and `universe` arrive straight off the query string, so both are
+    # percent-encoded before they go into an href AND attribute-escaped after.
+    # The JSON-API link previously interpolated `target` raw — a value like
+    # `"><svg onload=…>` broke out of the attribute (the same escaping-in-a-
+    # URL-context bug class that was just fixed elsewhere).
+    def _q(val: str) -> str:
+        return _html.escape(_urlparse.quote(str(val), safe=""), quote=True)
+
+    def _target_link(key: str, label: str) -> str:
+        # Carry the reader's universe through the quick-jump links — landing
+        # back on "all hospitals" silently discarded their filter.
+        return (
+            f'<a href="/portfolio/regression?source={_q(data_source)}'
+            f'&amp;target={_q(key)}&amp;universe={_q(universe)}" '
+            f'class="cad-btn">{_html.escape(label)}</a> '
+        )
+
     nav_section = ck_panel(
         '<p class="ck-section-body">'
         '<a href="/market-data/map" class="cad-btn">Market Heatmap</a> '
         '<a href="/analysis" class="cad-btn">Analysis Hub</a> '
-        f'<a href="/api/portfolio/regression?target={target}" class="cad-btn">Regression JSON API</a> '
-        '<a href="/portfolio/regression?source=hcris&target=operating_margin" class="cad-btn">Operating Margin</a> '
-        '<a href="/portfolio/regression?source=hcris&target=revenue_per_bed" class="cad-btn">Revenue/Bed</a> '
-        '<a href="/portfolio/regression?source=hcris&target=occupancy_rate" class="cad-btn">Occupancy</a> '
-        '<a href="/portfolio/regression?source=hcris&target=net_to_gross_ratio" class="cad-btn">Net-to-Gross</a>'
-        '</p>',
+        '<a href="/cms-sources" class="cad-btn">CMS Source Catalog</a> '
+        f'<a href="/api/portfolio/regression?target={_q(target)}" '
+        'class="cad-btn">Regression JSON API</a> '
+        + _target_link("operating_margin", "Operating Margin")
+        + _target_link("revenue_per_bed", "Revenue/Bed")
+        + _target_link("occupancy_rate", "Occupancy")
+        + _target_link("net_to_gross_ratio", "Net-to-Gross")
+        + '</p>',
         title="Cross-links",
     )
 

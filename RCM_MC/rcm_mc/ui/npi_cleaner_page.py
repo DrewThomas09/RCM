@@ -26,8 +26,10 @@ stdlib-only.
 from __future__ import annotations
 
 import html as _html
+import json as _json
 
 from ._chartis_kit import (
+    SOURCE_URLS,
     chartis_shell,
     ck_arrow_link,
     ck_editorial_head,
@@ -37,6 +39,7 @@ from ._chartis_kit import (
     ck_provenance_tooltip,
     ck_section_header,
     ck_signal_badge,
+    ck_source_link,
 )
 from ..npi_cleaner.rules import catalog as _rule_catalog
 
@@ -44,6 +47,17 @@ from ..npi_cleaner.rules import catalog as _rule_catalog
 # Accepted upload formats — drives both the dropzone badge row and the
 # masthead meta count, so the two can never drift apart.
 _FORMATS = ("CSV", "TSV", ".xlsx", "837 / 835", ".edi", ".zip")
+
+# The kit's canonical source→URL registry, handed to the client-side
+# renderers. Almost every data-source label on this page arrives in the
+# status JSON (connector `source` strings, NPPES verification, Medicare
+# marts) and is painted by JS, so `ck_source_link` can't reach it from
+# Python. Shipping the same dict to the browser keeps one registry: a
+# label resolves to the SAME dataset here as on every server-rendered
+# surface, and unknown labels still fall back to escaped plain text.
+# `</` is neutralised so the literal can never close the <script> early.
+_SOURCE_REGISTRY_JS = _json.dumps(
+    SOURCE_URLS, sort_keys=True, separators=(",", ":")).replace("</", "<\\/")
 
 
 _EXTRA_CSS = r"""
@@ -396,6 +410,13 @@ _EXTRA_CSS = r"""
 .npi-cat .c.on{border-color:color-mix(in srgb,var(--green-deep,#154e36) 45%,transparent);
   background:color-mix(in srgb,var(--green-deep,#154e36) 5%,transparent)}
 .npi-cat .c .n{font-size:12.5px;font-weight:600}
+.npi-cat .c .n a{color:var(--green-deep,#154e36);text-decoration:underline;
+  text-underline-offset:2px}
+/* Source labels rendered through srcLink() sit inside .src / .npi-eng /
+   .npi-fine runs — keep them legible as links without breaking the mono
+   micro-type those runs are set in. */
+.npi-conn .src a,.npi-eng a,.npi-fine a{color:var(--green-deep,#154e36);
+  text-decoration:underline;text-underline-offset:2px}
 .npi-cat .c .o{font-size:11px;color:var(--sc-text-dim,#465366)}
 .npi-cat .c .free{color:var(--green-deep,#154e36)}
 .npi-plan{border:1px solid var(--rule,#c9bf9c);border-radius:var(--sc-r-2,4px);
@@ -669,6 +690,13 @@ def _body() -> str:
         "Reference data packs — pull the real code sets",
         eyebrow="REFERENCE DATA · AUTHORITATIVE SETS")
     history_link = ck_arrow_link("Run history", "/npi-cleaner/history")
+    # Provenance: the two datasets the methodology note names by hand are
+    # real public sources, so they link to their origin like every other
+    # source label on the platform (ck_source_link falls back to escaped
+    # plain text if the registry ever loses the entry).
+    src_nppes = ck_source_link("CMS/NPPES")
+    src_nppes_bare = ck_source_link("NPPES")
+    src_registry = ck_source_link("NPI Registry")
     bridge_eyebrow = ck_eyebrow("NEXT STEP · ANALYSIS")
     setup_eyebrow = ck_eyebrow("CLEANER SETUP & FEEDBACK")
     catalog_link = ck_arrow_link("Browse the full data catalog",
@@ -691,7 +719,7 @@ def _body() -> str:
     </div>
     <p class="npi-samplerow">New here?
       <a href="/npi-cleaner/sample" download>Try a sample file</a> —
-      no upload needed.</p>
+      no upload needed. Been here before? {history_link}</p>
     <input type="file" id="npi-file" class="npi-hidden"
            accept=".csv,.tsv,.txt,.xlsx,.837,.835,.edi,.x12,.zip,text/csv,text/plain,application/zip,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
     <div class="npi-optbox">
@@ -1004,8 +1032,9 @@ def _body() -> str:
   <div class="npi-note" id="npi-method">
     <strong>What "cleaned" means.</strong> An NPI is <em>valid</em> when it is
     exactly 10 digits and passes the Luhn check over the constant prefix
-    <code>80840</code> plus its first nine digits — the same rule CMS/NPPES
-    uses. <em>Malformed</em> = present but not 10 digits; <em>checksum</em> =
+    <code>80840</code> plus its first nine digits — the same rule {src_nppes}
+    uses (look any single NPI up in the {src_registry}).
+    <em>Malformed</em> = present but not 10 digits; <em>checksum</em> =
     10 digits but the check digit is wrong; <em>blank</em> = missing. Rows and
     columns are preserved exactly; only surrounding whitespace is trimmed and
     byte-identical duplicate rows are dropped. Nothing is written to a
@@ -1035,7 +1064,8 @@ def _body() -> str:
     <strong>Online mode (opt-in).</strong> Tick "Go online" and the cleaner
     lights up PE&nbsp;Desk's own live public-data connectors under the
     <em>Live connectors</em> tab:
-    <strong>NPPES</strong> (<code>data_public.nppes_api_client</code>) verifies
+    <strong>{src_nppes_bare}</strong>
+    (<code>data_public.nppes_api_client</code>) verifies
     each distinct NPI (active vs. deactivated) and recovers a candidate NPI for
     rows with a provider/organization name but a missing billing NPI;
     <strong>RxNorm / RxNav</strong> and <strong>openFDA</strong>
@@ -1090,9 +1120,47 @@ _EXTRA_JS = r"""
     var n=Number(v==null?0:v);
     return (isNaN(n)?0:n).toFixed(1)+"%";
   }
+  // The kit's canonical source→URL registry, injected server-side from
+  // _chartis_kit.SOURCE_URLS so a JS-painted source label links to exactly
+  // the dataset ck_source_link would pick.
+  var SOURCE_URLS = __SOURCE_URLS__;
+  // Mirror of _chartis_kit.source_url: exact match first, then the LONGEST
+  // substring key. Longest-match (not first-match) is what makes a
+  // decorated label like "NPPES via rcm_mc.data_public.nppes_api_client"
+  // resolve deterministically regardless of key insertion order.
+  function srcUrl(label){
+    var s=String(label==null?"":label).trim();
+    if(!s) return null;
+    if(SOURCE_URLS[s]) return SOURCE_URLS[s];
+    var bestKey="", bestUrl=null;
+    Object.keys(SOURCE_URLS).forEach(function(k){
+      if(s.indexOf(k)>=0 && k.length>bestKey.length){
+        bestKey=k; bestUrl=SOURCE_URLS[k];
+      }
+    });
+    return bestUrl;
+  }
+  // Mirror of ck_source_link: a data-source label renders as a link to its
+  // public origin so a partner can verify the value at source, and falls
+  // back to escaped plain text for any label the registry doesn't know —
+  // always safe to call on engine-supplied strings.
+  function srcLink(label){
+    var safe=esc(label==null?"":label);
+    if(!safe) return "";
+    var url=srcUrl(label);
+    if(!url) return safe;
+    return '<a href="'+esc(url)+'" target="_blank" rel="noopener" '+
+      'title="Open the source dataset — verify this value at its origin.">'+
+      safe+' <span aria-hidden="true">↗</span></a>';
+  }
+
   // After innerHTML lands, hydrate data-w / data-h bar geometry. Keeps
   // every dynamic width/height out of HTML style attributes so the bar
-  // styling lives in one CSS class per tone.
+  // styling lives in one CSS class per tone. Also stamps scope="col" on
+  // every JS-rendered table header: doing it centrally (rather than in the
+  // ~25 table literals below) means a newly added table cannot ship
+  // without the header association screen readers need to announce the
+  // column name alongside each cell.
   function applyBars(box){
     if(!box) return;
     box.querySelectorAll("[data-w]").forEach(function(el){
@@ -1102,6 +1170,9 @@ _EXTRA_JS = r"""
     box.querySelectorAll("[data-h]").forEach(function(el){
       var h=parseFloat(el.getAttribute("data-h"));
       if(!isNaN(h)) el.style.height=Math.max(0,Math.min(100,h))+"%";
+    });
+    box.querySelectorAll("thead th:not([scope])").forEach(function(th){
+      th.setAttribute("scope","col");
     });
   }
   // Section header in the page's editorial idiom: optional mono eyebrow,
@@ -1236,6 +1307,7 @@ _EXTRA_JS = r"""
     renderNppes(s.nppes);
     renderConnectors(s.connectors);
     renderCatalog(s.catalog);
+    connectorsFallback();
 
     // Tab badges: issue count + live-connector count.
     var nIssues=(s.advanced&&s.advanced.issues?s.advanced.issues.length:0)+
@@ -1307,6 +1379,11 @@ _EXTRA_JS = r"""
           'in this file — nothing to mask.</p>';
       } else { dn.innerHTML=""; }
     }
+
+    // One sweep over the whole result stage: every panel renderer above
+    // has finished writing innerHTML, so this is the single place that
+    // guarantees scope="col" on tables the individual renderers build.
+    applyBars(stRes);
 
     // Always land on the Overview tab for a fresh result.
     selectTab("overview");
@@ -1697,7 +1774,17 @@ _EXTRA_JS = r"""
 
   function renderAdvanced(adv){
     var box=$("npi-advanced");
-    if(!adv){ box.innerHTML=""; return; }
+    // Without the real engine there is nothing else in this panel
+    // (renderSuggestions also no-ops), so an early return left the whole
+    // "Issues & fixes" tab blank with no explanation of why.
+    if(!adv){
+      box.innerHTML=emptyCard('◎','No coding-edit analysis for this run.',
+        'The NCCI / ICD-10 / cross-field screens run on the pandas engine. '+
+        'This run used the dependency-free stdlib pass — the scorecard, '+
+        'sanity flags and cleaned file on the other tabs are complete.',
+        'What the two engines do','#npi-method');
+      return;
+    }
     var html='<div class="npi-adv">';
     html+=secHead('Coding, consistency &amp; issue analysis', null,
       'ISSUES · SIZED &amp; VERDICTED');
@@ -1729,6 +1816,13 @@ _EXTRA_JS = r"""
         }
       });
       html+='</tbody></table></div>';
+    } else {
+      // The engine ran and found nothing — say so. A silent gap here read
+      // as "the screens didn't run", which is the opposite of the truth.
+      html+='<section class="ck-affirm-empty"><h3>No coding-edit or '+
+        'consistency findings.</h3><p>Every screen below ran against this '+
+        'file and none of them flagged a row — nothing to size, and no '+
+        'suggested corrections to review.</p></section>';
     }
 
     var scr=adv.screens||{};
@@ -1775,7 +1869,8 @@ _EXTRA_JS = r"""
       html+='<p class="npi-mono-note">'+esc(n.note)+'</p></div>';
       box.innerHTML=html; return;
     }
-    html+='<p class="npi-eng">real connection · '+esc(n.source||'NPPES')+'</p>';
+    html+='<p class="npi-eng">real connection · '+
+      srcLink(n.source||'NPPES')+'</p>';
 
     var v=n.verify||{};
     html+='<div class="npi-cards tight">'+
@@ -1869,12 +1964,20 @@ _EXTRA_JS = r"""
         '<th>Subcategory</th><th class="num">Lines</th>'+
         '<th class="num">% of file</th><th class="num">Charges</th>'+
         '</tr></thead><tbody>';
-      pop.service_mix.categories.slice(0,14).forEach(function(c){
+      var svcCats=pop.service_mix.categories||[];
+      svcCats.slice(0,14).forEach(function(c){
         h+='<tr><td>'+esc(c.category)+'</td><td>'+esc(c.subcategory)+
           '</td><td class="num">'+fmt(c.rows)+'</td><td class="num">'+
           pct1(c.pct)+'</td><td class="num">'+dollars(c.charges)+'</td></tr>';
       });
       h+='</tbody></table></div>';
+      // The table is capped at 14 rows; without this the tail was silently
+      // missing and the "% of file" column looked like it didn't sum.
+      if(svcCats.length>14){
+        h+='<p class="npi-muted">'+fmt(svcCats.length-14)+
+          ' more service categories — full breakdown in the .xlsx '+
+          'report.</p>';
+      }
     }
     if(pop.encounters){
       var e=pop.encounters;
@@ -1914,12 +2017,17 @@ _EXTRA_JS = r"""
         '<th>Condition</th>'+
         '<th class="num">Patients</th><th class="num">Prevalence</th>'+
         '<th class="num">Rows</th></tr></thead><tbody>';
-      c0.prevalence.slice(0,12).forEach(function(p){
+      var prev=c0.prevalence||[];
+      prev.slice(0,12).forEach(function(p){
         h+='<tr><td>'+esc(p.condition)+'</td><td class="num">'+
           fmt(p.patients)+'</td><td class="num">'+pct1(p.pct)+
           '</td><td class="num">'+fmt(p.rows)+'</td></tr>';
       });
       h+='</tbody></table></div>';
+      if(prev.length>12){
+        h+='<p class="npi-muted">'+fmt(prev.length-12)+
+          ' more condition groups — full list in the .xlsx report.</p>';
+      }
       if(c0.multimorbidity){
         var mm=c0.multimorbidity;
         h+='<p class="npi-muted npi-mt-sm">'+
@@ -2031,10 +2139,14 @@ _EXTRA_JS = r"""
         html+='<span class="cnt'+(flag?' bad':'')+'">'+
           (c.available?(fmt(c.checked)+' screened'):'offline')+'</span>';
       }
-      html+='</div><div class="src">'+esc(c.source||"")+'</div>';
+      html+='</div><div class="src">'+srcLink(c.source||"")+'</div>';
       if(c.matches && c.matches.length){
         html+='<div class="nt bad">Excluded NPIs: '+
-          c.matches.slice(0,8).map(function(m){return esc(m.npi);}).join(", ")+'</div>';
+          c.matches.slice(0,8).map(function(m){return esc(m.npi);}).join(", ")+
+          (c.matches.length>8
+            ? ' <span class="npi-fine">…and '+fmt(c.matches.length-8)+
+              ' more (full list in the .xlsx report)</span>'
+            : '')+'</div>';
       }
       // PECOS per-NPI enrollment/opt-out verdicts — fetched all along,
       // now shown: enrollment gaps and opt-outs are the actionable rows.
@@ -2146,7 +2258,7 @@ _EXTRA_JS = r"""
       html+='<div class="npi-conn"><div class="top">'+
         '<span class="nm">'+esc(c.label)+'</span>'+
         '<span class="cnt">'+fmt(c.resolved||0)+' / '+fmt(c.queried||0)+' resolved</span>'+
-        '</div><div class="src">'+esc(c.source||"")+'</div>';
+        '</div><div class="src">'+srcLink(c.source||"")+'</div>';
       if(c.sample && c.sample.length){
         html+='<div class="nt">';
         c.sample.slice(0,6).forEach(function(s){
@@ -2181,18 +2293,42 @@ _EXTRA_JS = r"""
       var badge=s.cleaning_wired
         ? '<span class="npi-badge">wired for cleaning</span>'
         : '';
-      var doc=s.docs_url
-        ? ' · <a href="'+esc(s.docs_url)+'" target="_blank" '+
-          'rel="noopener">docs</a>'
-        : '';
+      // Provenance: the source NAME is the link. The catalog's own
+      // docs_url points at the exact dataset page, so it beats the shared
+      // registry; srcLink is the fallback. This replaces a trailing
+      // " · docs" anchor that repeated the same ambiguous link text on
+      // every card — unusable in a screen-reader link list.
+      var nm=s.docs_url
+        ? '<a href="'+esc(s.docs_url)+'" target="_blank" rel="noopener" '+
+          'title="Open the '+esc(s.name)+' documentation" '+
+          'aria-label="'+esc(s.name)+' — open documentation">'+esc(s.name)+
+          ' <span aria-hidden="true">↗</span></a>'
+        : srcLink(s.name);
       html+='<div class="c'+(s.cleaning_wired?' on':'')+'">'+
-        '<div class="n">'+esc(s.name)+badge+'</div>'+
+        '<div class="n">'+nm+badge+'</div>'+
         '<div class="o">'+esc(s.operator||"")+
         ' · <span class="'+(free?"free":"")+'">'+esc(s.cost||"")+
-        '</span>'+doc+'</div></div>';
+        '</span></div></div>';
     });
     html+='</div>';
     box.innerHTML=html;
+  }
+
+  // "Live connectors" is seven independently-rendered sub-panels, and on an
+  // offline run (the default) every one of them writes an empty string —
+  // the tab opened completely blank with no hint that the partner simply
+  // hadn't opted in. Called once, after they have all had their turn.
+  function connectorsFallback(){
+    var panel=$("npi-panel-connectors");
+    if(!panel || panel.textContent.trim()) return;   // something rendered
+    var slot=$("npi-conn-plan");
+    if(!slot) return;
+    slot.innerHTML=emptyCard('◇','This run stayed offline.',
+      'No public-data connector was called, so nothing was sent off this '+
+      'server. Tick “Go online” (or “Deep recovery”) before the next '+
+      'upload to verify NPIs against NPPES, screen against the OIG '+
+      'exclusion list and price codes against Medicare.',
+      'What online mode adds','#npi-method');
   }
 
   function toggleDrill(d){
@@ -2339,6 +2475,7 @@ _EXTRA_JS = r"""
         }).join("")+'</div>';
     }
     out.innerHTML=h;
+    applyBars(out);   // scope="col" on the reconcile tables
   }
 
   function fmtDur(s){
@@ -2569,7 +2706,14 @@ _EXTRA_JS = r"""
       .then(function(j){
         var box=$("npi-enrich-list"); if(!box) return;
         var list=j.enrichments||[];
-        if(!list.length){ box.innerHTML=""; return; }
+        // An empty registry left the enrichment band showing its blurb
+        // over a void; say plainly that nothing is on offer.
+        if(!list.length){
+          box.innerHTML='<p class="npi-muted">No enrichments are available '+
+            'on this server — the file will still be cleaned, graded and '+
+            'downloadable, just without added analysis columns.</p>';
+          return;
+        }
         var prefs=enrichPrefs();
         box.innerHTML=list.map(function(e){
           var needs = e.status==="needs_data";
@@ -2639,8 +2783,12 @@ _EXTRA_JS = r"""
         if(tr){
           tone=tr.direction==="rising"?"good":
                (tr.direction==="falling"?"bad":"");
+          // House rule: percentages are always 1 decimal, and the sign
+          // carries meaning here. Raw `tr.change_pct` printed a whole
+          // number whenever the engine's round(x, 1) landed on .0
+          // ("rising 12%" next to "rising 12.4%" in the same column).
           ttxt=esc(tr.direction)+' '+
-            (tr.change_pct>0?'+':'')+tr.change_pct+'% '+
+            (tr.change_pct>0?'+':'')+pct1(tr.change_pct)+' '+
             '<span class="npi-fine">('+esc(tr.window)+')</span>';
         }
         h+='<tr><td>'+esc(c.code)+'</td><td class="npi-cell-sm">'+
@@ -2656,12 +2804,18 @@ _EXTRA_JS = r"""
     if(pr && pr.providers && pr.providers.length){
       var hasMed=pr.providers.some(function(p){
         return p.medicare_payment!=null; });
+      // The Medicare columns are folded in from the medicare_providers
+      // mart, whose `source` the panel used to drop on the floor — the
+      // partner saw CMS dollars with no way to trace them.
+      var mpSrc=(marts.medicare_providers||{}).source;
       h+=secHead("Key players — revenue by billing provider",
         fmt(pr.n_providers)+" distinct billing NPIs"+
         (pr.hhi!=null?(" · HHI "+fmt(pr.hhi)+
           (pr.hhi>=2500?" (highly concentrated)":
            pr.hhi>=1500?" (moderately concentrated)":" (unconcentrated)")):
-          "")+".",
+          "")+"."+
+        ((hasMed&&mpSrc)?(' <span class="npi-fine">Medicare columns: '+
+          srcLink(mpSrc)+'</span>'):""),
         "ENRICHMENT · REVENUE SIZING", pr.providers.length);
       h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
         '<th>Billing NPI</th><th>Name</th><th class="num">Lines</th>'+
@@ -2715,7 +2869,9 @@ _EXTRA_JS = r"""
             "codes — "+dollars(mb.matched_dollars)+" of file charges vs a "+
             dollars(mb.medicare_equivalent_dollars)+" Medicare-equivalent "+
             "value. "
-          : "")+esc(mb.note||""),
+          : "")+esc(mb.note||"")+
+        (mb.source?(' <span class="npi-fine">Source: '+srcLink(mb.source)+
+          '</span>'):""),
         "ENRICHMENT · LIVE CMS", (mb.codes||[]).length);
       if(mb.codes && mb.codes.length){
         h+='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
@@ -2809,9 +2965,24 @@ _EXTRA_JS = r"""
       .then(function(j){
         var box=$("npi-refdata-list"); if(!box) return;
         var packs=j.packs||[];
+        // A zero-pack registry used to render a table with headers and no
+        // body — a blank panel that read as a broken page rather than an
+        // explainable state.
+        if(!packs.length){
+          box.innerHTML=emptyCard('◫','No reference packs on offer.',
+            'The pack registry came back empty. The cleaner still grades '+
+            'files against its vendored CMS catalogs — only the optional '+
+            'full NUCC / ICD-10 / HCPCS / OIG pulls are unavailable.',
+            'Browse the full data catalog','/data/catalog');
+          return;
+        }
         var pulling=false;
-        var h='<div class="npi-scroll"><table class="npi-tbl"><thead><tr><th>Pack</th>'+
-          '<th>Status</th><th>Enables</th><th></th></tr></thead><tbody>';
+        // The action column needs a real header; an empty <th> gives
+        // screen readers nothing to announce for the button cells.
+        var h='<div class="npi-scroll"><table class="npi-tbl"><thead><tr>'+
+          '<th scope="col">Pack</th><th scope="col">Status</th>'+
+          '<th scope="col">Enables</th><th scope="col">Action</th>'+
+          '</tr></thead><tbody>';
         packs.forEach(function(p){
           var st;
           if(p.pull && p.pull.state==="pulling"){
@@ -2832,13 +3003,17 @@ _EXTRA_JS = r"""
             '<td>'+st+'</td>'+
             '<td class="npi-cell-sm">'+esc(p.enables)+'</td>'+
             '<td><button class="npi-again npi-ref-pull" data-pack="'+
-            esc(p.id)+'">'+(p.installed?"Refresh":"Pull")+
+            esc(p.id)+'" aria-label="'+(p.installed?"Refresh":"Pull")+
+            ' the '+esc(p.title)+' reference pack">'+
+            (p.installed?"Refresh":"Pull")+
             '</button></td></tr>';
         });
         h+='</tbody></table></div>'+
           '<p class="npi-mt-sm"><button class="npi-again" '+
-          'id="npi-ref-pull-all">Pull everything</button></p>';
+          'id="npi-ref-pull-all" aria-label="Pull every reference pack">'+
+          'Pull everything</button></p>';
         box.innerHTML=h;
+        applyBars(box);
         function startPull(pack){
           fetch("/npi-cleaner/api/refdata/pull", {method:"POST",
             headers:{"Content-Type":"application/json"},
@@ -2974,6 +3149,17 @@ _EXTRA_JS = r"""
 """
 
 
+def _extra_js() -> str:
+    """Page JS with the shared source registry substituted in.
+
+    ``_EXTRA_JS`` stays a plain r-string rather than an f-string: it is
+    ~1,900 lines of JavaScript, and every ``{`` in it would otherwise
+    need doubling. One placeholder token is cheaper and cannot silently
+    corrupt a brace somewhere in the middle of the file.
+    """
+    return _EXTRA_JS.replace("__SOURCE_URLS__", _SOURCE_REGISTRY_JS)
+
+
 def render_npi_cleaner() -> str:
     """Full HTML for GET /npi-cleaner."""
     return chartis_shell(
@@ -2982,5 +3168,5 @@ def render_npi_cleaner() -> str:
         active_nav="TOOLS",
         breadcrumbs=[("Tools", None), ("NPI Cleaner", None)],
         extra_css=_EXTRA_CSS,
-        extra_js=_EXTRA_JS,
+        extra_js=_extra_js(),
     )

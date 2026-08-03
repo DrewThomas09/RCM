@@ -335,7 +335,10 @@ def answer_question(
             confidence=0.0,
         )
 
-    client = llm_client or LLMClient()
+    # MR1010: pass the store so the default client gets the SQLite
+    # response cache + llm_calls cost logging — a bare LLMClient()
+    # silently ran uncached and unmetered on this path.
+    client = llm_client or LLMClient(store=store)
 
     if not client.is_configured:
         # Fallback: display top chunks

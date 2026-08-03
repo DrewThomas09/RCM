@@ -368,7 +368,7 @@ _READINESS = Block(
            "booking unsynchronized with any of them."),
         _S("Is paperwork incomplete?",
            "Often: the PCS/medical-necessity packet is the top ambulance "
-           "documentation failure (insufficient documentation is 63.5% of "
+           "documentation failure (insufficient documentation is 46.7% of "
            "improper payments)."),
         _S("Are medications unfinished?",
            "A named non-clinical delay cause in discharge audits (final "
@@ -404,14 +404,14 @@ _MODALITY = Block(
     "q7-modality", "Modality errors",
     conclusion=(
         "No clean national rate exists for wrong-level IFT requests; the "
-        "measurable shadows are payment-integrity data (27.5% of improper "
+        "measurable shadows are payment-integrity data (24.9% of improper "
         "ambulance payments fail medical necessity) and secondary-"
         "overtriage studies — enough to prove both over- and "
         "under-selection happen, not enough to size them."),
     why_true=(
         "The payment record shows selection failure at scale: ambulance "
-        "improper payments run 13.2% ($595.1M projected), of which 63.5% "
-        "is insufficient documentation and 27.5% medical necessity — the "
+        "improper payments run 10.4% ($452.6M projected), of which 46.7% "
+        "is insufficient documentation and 24.9% medical necessity — the "
         "necessity share is substantially level-of-service mis-selection.",
         "Over-triage is measured in adjacent transfer literature: facial-"
         "fracture transfers saw a 151% rise in patients discharged "
@@ -431,10 +431,12 @@ _MODALITY = Block(
         "structured request tools with embedded modality rules are the "
         "cheapest control available."),
     evidence=(
-        _E("Ambulance improper payment rate 13.2%, $595.1M projected; "
-           "insufficient documentation 63.5%, medical necessity 27.5%",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+        _E("Ambulance improper payment rate 10.4% (95% CI 5.6-15.3%), "
+           "$452.6M projected; insufficient documentation 46.7%, medical "
+           "necessity 24.9%",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("Facial-fracture transfers: 151% increase in the share "
            "discharged from the receiving ED on arrival — measured "
            "secondary overtriage",
@@ -452,7 +454,7 @@ _MODALITY = Block(
     ),
     subqs=(
         _S("How often is the wrong transport level requested?",
-           "No IFT-specific published rate — flagged; the 27.5% medical-"
+           "No IFT-specific published rate — flagged; the 24.9% medical-"
            "necessity share of improper payments is the payment-side "
            "shadow."),
         _S("How often is a trip upgraded?",
@@ -497,9 +499,9 @@ _FRAGMENTATION = Block(
         "market bought without contracts."),
     why_true=(
         "The denominator is real: ~10,600 ground ambulance organizations "
-        "bill Medicare; NE+IA alone carry 751 organizational NPIs, ~85-90% "
-        "of Nebraska's municipal/volunteer — a long tail no hospital can "
-        "manage as a vendor panel.",
+        "bill Medicare; NE+IA alone carry 751 organizational NPIs, and 82% "
+        "of Nebraska's 400 are municipal/fire/volunteer — a long tail no "
+        "hospital can manage as a vendor panel.",
         "Nebraska's own assessment says fragmentation harms service: "
         "'Nebraska may have an excess of licensed EMS transporting "
         "agencies, which may be exacerbating shortages and creating "
@@ -915,18 +917,18 @@ _FINANCIAL = Block(
     "q7-financial", "Financial impact",
     conclusion=(
         "The costs of IFT failure are real but scattered across ledgers "
-        "that never meet — bed-days (~$3,132 adjusted expense per "
-        "inpatient day), denied and never-paid claims (13.2% improper; "
+        "that never meet — bed-days (~$3,297 adjusted expense per "
+        "inpatient day), denied and never-paid claims (10.4% improper; "
         "19.7% collect nothing), unpaid crew wait, and uncounted "
         "coordination labor — so no single owner sees the total, and no "
         "single owner funds the fix."),
     why_true=(
-        "The bed-day is the biggest line: adjusted expense ~$3,132 per "
-        "inpatient day (an expense proxy, not marginal cost — labeled), "
-        "against delayed-discharge costs measured from $142 to $31,935 "
-        "per case.",
-        "The claims lines are measured: 13.2% ambulance improper payment "
-        "($595.1M projected) and 19.7% of transports collecting nothing — "
+        "The bed-day is the biggest line: adjusted expense ~$3,297 per "
+        "inpatient day (2024; an expense proxy, not marginal cost — "
+        "labeled), against delayed-discharge costs measured from $142 to "
+        "$31,935 per case.",
+        "The claims lines are measured: 10.4% ambulance improper payment "
+        "($452.6M projected) and 19.7% of transports collecting nothing — "
         "denial and non-payment costs that reprice into everyone's rates.",
         "The hidden lines are structurally hidden: crew wait (unpaid by "
         "Medicare), coordination labor (no time-motion study exists), and "
@@ -939,23 +941,26 @@ _FINANCIAL = Block(
         "priced)."),
     why_matters=(
         "Whoever prices the bed-day, not the trip, buys correctly: one "
-        "avoided bed-day (~$3,132 expense proxy) is worth roughly 6-7 "
+        "avoided bed-day (~$3,297 expense proxy, 2024) is worth roughly 7 "
         "Medicare-average transports ($469 each) — that arithmetic, both "
         "inputs cited, is the entire commercial argument for paying for "
         "reliability."),
     evidence=(
-        _E("Adjusted expense per inpatient day ~$3,132 (2023; nonprofit "
-           "$3,288, for-profit $2,529) — an expense proxy, not marginal "
+        _E("Adjusted expense per inpatient day $3,297 (2024; nonprofit "
+           "$3,449, for-profit $2,623) — an expense proxy, not marginal "
            "cost",
-           "SOURCED", "KFF state indicator on AHA survey data (re-verify)",
-           ""),
+           "SOURCED", "KFF State Health Facts, Hospital Expenses per "
+           "Adjusted Inpatient Day, 2024 (AHA Annual Survey)",
+           "https://www.kff.org/health-costs/state-indicator/expenses-per-inpatient-day/"),
         _E("Delayed-discharge costs $142-31,935 per case (USD PPP) "
            "across the systematic review",
            "ACADEMIC", "Landeiro et al., The Gerontologist 2019",
            "https://doi.org/10.1093/geront/gnx028"),
-        _E("Ambulance improper payments 13.2% / $595.1M projected "
-           "(insufficient documentation 63.5%)",
-           "GOV", "CMS CERT 2024 supplemental data (re-verify)", ""),
+        _E("Ambulance improper payments 10.4% / $452.6M projected "
+           "(insufficient documentation 46.7%)",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("19.7% of transports collect nothing — the provider-side "
            "non-payment tax",
            "SOURCED", "CMS/RAND GADCS Year 1-4 appendix, via AAA coverage",
@@ -968,7 +973,7 @@ _FINANCIAL = Block(
     ),
     subqs=(
         _S("What is the cost of additional bed occupancy?",
-           "~$3,132 adjusted expense per inpatient day (proxy, not "
+           "~$3,297 adjusted expense per inpatient day (2024; proxy, not "
            "marginal); delayed-discharge case costs measured at "
            "$142-31,935."),
         _S("What is the opportunity cost of an unavailable bed?",
@@ -986,7 +991,7 @@ _FINANCIAL = Block(
            "Crew hours Medicare does not pay — absorbed by providers, "
            "then repriced into rates or withdrawn availability."),
         _S("What cost is created by denied claims?",
-           "The 13.2%/$595.1M improper-payment exposure plus the 19.7% "
+           "The 10.4%/$452.6M improper-payment exposure plus the 19.7% "
            "never-paid share — both ultimately reprice into the market."),
         _S("What cost is created by missed appointments or placements?",
            "Priced only in the NEMT analog: RSNAT's 19% rise in emergency "
@@ -1703,21 +1708,21 @@ _ECONOMICS = Block(
         "No MMT financial figure in public view is usable — the three "
         "estimators disagree ~3x ($100M to $296M) and all conflict with "
         "the company's own headcount — so the economics answer is the "
-        "industry ledger MMT must beat: $1,147 mean reimbursement vs "
-        "$1,778 private-for-profit mean cost per transport, with payer "
-        "mix, unit-hour utilization, and density as the levers that make "
-        "a dedicated book positive."),
+        "industry ledger MMT must beat: $1,268 mean revenue vs $1,912 "
+        "for-profit mean cost per transport, with payer mix, unit-hour "
+        "utilization, and density as the levers that make a dedicated "
+        "book positive."),
     why_true=(
         "The estimate conflict is disqualifying by itself: $296.4M / 784 "
         "employees (Growjo) vs $293.6M (ZoomInfo) vs $100-250M / ~700 "
         "(LeadIQ) — shown side by side, never blended, never used for "
         "underwriting.",
-        "The published mean spread is negative — $1,147 mean "
-        "reimbursement vs $2,673 all-agency mean cost — because the mean "
-        "carries municipal readiness books; the private for-profit cost "
-        "mean ($1,778) plus a scheduled book's higher unit-hour "
-        "utilization is the structural path to a positive spread — the "
-        "IFT thesis in one line.",
+        "The published mean spread is negative — $1,268 mean revenue vs "
+        "$2,763 all-agency mean cost per transport (Year 1-Year 4 "
+        "cohorts) — because the mean carries municipal readiness books; "
+        "the for-profit cost mean ($1,912) plus a scheduled book's higher "
+        "unit-hour utilization is the structural path to a positive "
+        "spread — the IFT thesis in one line.",
         "Revenue per trip is fee-ladder arithmetic: BLS 1.00 → ALS1 1.20 "
         "→ ALS2 2.75 → SCT 3.25 relative values on a $278.98 CY2025 "
         "conversion factor, ~$8/loaded-mile Medicare vs ~$17 commercial, "
@@ -1739,12 +1744,14 @@ _ECONOMICS = Block(
            "all conflicting with the company's 2,800+ headcount claim",
            "SOURCED", "Growjo / ZoomInfo / LeadIQ, 2026 (unaudited "
            "third-party estimates; re-verify)", ""),
-        _E("Mean reimbursement $1,147/transport vs mean cost $2,673 "
-           "all-agency / $1,778 private for-profit; labor 70.7%; 19.7% "
-           "of transports unpaid",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
-           "trade coverage; re-verify)",
-           "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
+        _E("Mean revenue $1,268/transport vs mean cost $2,763 all-agency "
+           "/ $1,912 for-profit-or-unknown (n=9,599 weighted NPIs); "
+           "labor 70.7% of aggregate cost; 19.7% of transports unpaid",
+           "SOURCED", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 "
+           "cohort analysis, Dec 2025 (2022-24 collection periods, data "
+           "through 2025-05-15), Tables 3.1 / 4.1 / 4.2; unpaid share "
+           "via AAA coverage (re-verify)",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("CY2025 AFS conversion factor $278.98 × RVUs (BLS 1.00 / ALS1 "
            "1.20 / ALS2 2.75 / SCT 3.25); super-rural add-on +22.6% "
            "through 2027",
@@ -1792,7 +1799,7 @@ _ECONOMICS = Block(
         _S("How much risk does MMT bear for denials?", "",
            skip="Company data — diligence request: denial rate, "
            "clean-claim rate, and contract allocation of denied trips; "
-           "industry exposure is 13.2% improper (63.5% documentation)."),
+           "industry exposure is 10.4% improper (46.7% documentation)."),
         _S("How long does a new market take to mature?", "",
            skip="Company data — diligence request: ramp curves by market "
            "cohort (the 2023-24 NPI vintage is the natural test set)."),

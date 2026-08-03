@@ -125,27 +125,72 @@ class TestPinnedDealsPopulates(unittest.TestCase):
 
 
 class TestPinnedDealsSafety(unittest.TestCase):
-    def test_malicious_deal_id_is_escaped(self):
-        """Deal IDs come from user input (watchlist star_deal).
-        Any ID that somehow contains HTML metacharacters must be
-        escaped before injection into the card."""
-        tmp = tempfile.TemporaryDirectory()
-        db = os.path.join(tmp.name, "t.db")
-        try:
+    """The deal_id XSS class is defended at TWO layers; test both.
+
+    Report-0269 added a safe-slug validator at the ingestion chokepoint, so
+    ``star_deal('<script>…')`` now raises instead of creating the row. That
+    is the fix working — but it also means the original single test could no
+    longer reach the render sink it was written to guard, and a test that
+    cannot reach its subject silently stops protecting it.
+
+    The sink still matters: ``upsert_deal`` deliberately grandfathers rows
+    that already exist, so a legacy id created before the validator landed
+    keeps flowing to the renderer forever. Layer 1 stops new ones; layer 2
+    has to keep containing the old ones.
+    """
+
+    MALICIOUS = '<script>alert(1)</script>'
+
+    def test_ingestion_rejects_a_malicious_deal_id(self):
+        """Layer 1 — the id never becomes a row in the first place."""
+        with tempfile.TemporaryDirectory() as tmp:
             from rcm_mc.portfolio.store import PortfolioStore
-            store = PortfolioStore(db)
             from rcm_mc.deals.watchlist import star_deal
-            star_deal(store, '<script>alert(1)</script>')
+            store = PortfolioStore(os.path.join(tmp, "t.db"))
+            with self.assertRaises(ValueError):
+                star_deal(store, self.MALICIOUS)
+            with store.connect() as con:
+                self.assertEqual(
+                    0,
+                    con.execute("SELECT COUNT(*) FROM deals").fetchone()[0],
+                    "rejected deal_id must not leave a partial row behind",
+                )
+
+    def test_grandfathered_malicious_deal_id_is_escaped_on_render(self):
+        """Layer 2 — a legacy row still renders escaped.
+
+        The row is inserted directly, bypassing the validator, because that
+        is exactly the state of a database written before Report-0269.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            db = os.path.join(tmp, "t.db")
+            from rcm_mc.portfolio.store import PortfolioStore
+            from rcm_mc.deals.watchlist import _ensure_stars_table, _utcnow
+            store = PortfolioStore(db)
+            _ensure_stars_table(store)
+            with store.connect() as con:
+                con.execute(
+                    "INSERT INTO deals (deal_id, name, created_at, "
+                    "profile_json) VALUES (?, ?, ?, '{}')",
+                    (self.MALICIOUS, self.MALICIOUS, _utcnow()),
+                )
+                con.execute(
+                    "INSERT INTO deal_stars (deal_id, starred_at) "
+                    "VALUES (?, ?)",
+                    (self.MALICIOUS, _utcnow()),
+                )
+                con.commit()
 
             with patch("rcm_mc.deals.health_score.compute_health",
                        return_value={"score": 50, "band": "fair",
                                      "components": []}):
                 from rcm_mc.ui.dashboard_page import render_dashboard
                 html = render_dashboard(db)
-            # Raw script tag must NOT appear
-            self.assertNotIn("<script>alert(1)</script>", html)
-        finally:
-            tmp.cleanup()
+
+            self.assertNotIn(self.MALICIOUS, html)
+            # And prove the row actually reached the page — otherwise this
+            # passes trivially on a card that was never rendered.
+            self.assertIn("&lt;script&gt;", html)
 
 
 if __name__ == "__main__":

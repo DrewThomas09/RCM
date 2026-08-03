@@ -279,8 +279,26 @@ class ContentFreshnessTests(unittest.TestCase):
         stale = [k for k, v in report.items() if v["stale"]]
         self.assertEqual(
             stale, [],
-            msg=f"Stale regulatory content: {stale}. "
-                f"Refresh last_reviewed in the YAMLs.",
+            msg=(
+                f"Stale regulatory content: {stale}.\n"
+                "\n"
+                "THIS RED IS KNOWN AND DELIBERATE — see TRIAGE MR1075.\n"
+                "\n"
+                "Do NOT clear it by bumping last_reviewed. A 2026-08-03\n"
+                "primary-source review of all five files checked 161 claims\n"
+                "and found 43 WRONG, 21 STALE and 30 UNVERIFIABLE — including\n"
+                "two entries citing statutes that do not support them (WA\n"
+                "'HB 2548' does not exist; NY 'S8157' is a tax bill). The\n"
+                "verified corrections are applied and the unverifiable fields\n"
+                "are now marked in the YAMLs, but Connecticut and Indiana\n"
+                "still have open primary-source gaps that no automated fetch\n"
+                "could close (cga.ct.gov 503s; iga.in.gov bot-walls).\n"
+                "\n"
+                "The lock is working as designed: it caught content rot, not\n"
+                "an expired timestamp. Stamping the files would convert those\n"
+                "known-unknowns into unknown-unknowns. Close MR1075 by reading\n"
+                "the two remaining statutes, then stamp."
+            ),
         )
 
     def test_stale_detection_triggers_when_past_threshold(self):
@@ -314,19 +332,44 @@ class ComposePacketTests(unittest.TestCase):
         self.assertEqual(packet.composite_band, RegulatoryBand.RED)
         self.assertTrue(packet.critical_findings)
 
-    def test_pending_statute_state_is_green(self):
-        """New York's bill is pending (no effective_date). A
-        direct-employment target touching only NY should score
-        GREEN on CPOM."""
+    def test_state_with_no_structural_restriction_is_green(self):
+        """A state whose regime imposes no structural condition on the
+        target's structure scores GREEN.
+
+        Washington: ch. 19.390 RCW is a 60-day advance-notice requirement,
+        so a direct-employment target touching only WA carries no CPOM
+        structural exposure.
+
+        (This test previously used New York, which scored GREEN only
+        because the lattice held an all-empty NY entry. That entry was
+        withdrawn on 2026-08-03 — it had been built on S8157, the "NYS
+        health care tax reform act", which has no CPOM content. See the
+        companion test below for what NY does now.)
+        """
+        cpom = compute_cpom_exposure(
+            target_structure="DIRECT_EMPLOYMENT",
+            footprint_states=["WA"],
+        )
+        packet = compose_packet(target_name="T2", cpom=cpom)
+        self.assertEqual(packet.composite_band, RegulatoryBand.GREEN)
+
+    def test_state_absent_from_the_lattice_is_unknown_not_green(self):
+        """An UNASSESSED state must never read as clear.
+
+        This is the load-bearing distinction. GREEN means "we checked and
+        there is no structural exposure"; UNKNOWN means "we have no
+        verified data for this state". Collapsing the second into the
+        first is how a partner ends up believing a jurisdiction was
+        cleared when nobody ever looked at it — which is exactly what the
+        withdrawn New York entry did, on the strength of a misidentified
+        tax bill.
+        """
         cpom = compute_cpom_exposure(
             target_structure="DIRECT_EMPLOYMENT",
             footprint_states=["NY"],
         )
-        packet = compose_packet(target_name="T2", cpom=cpom)
-        self.assertEqual(
-            packet.composite_band,
-            RegulatoryBand.GREEN,
-        )
+        packet = compose_packet(target_name="T3", cpom=cpom)
+        self.assertEqual(packet.composite_band, RegulatoryBand.UNKNOWN)
 
     def test_to_dict_round_trip_shape(self):
         cpom = compute_cpom_exposure(

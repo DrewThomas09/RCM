@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import html as _html
 from typing import List, Optional
+from urllib.parse import quote
 
 from ..ui._chartis_kit import chartis_shell
 from .filter import DealFilter
@@ -157,7 +158,12 @@ def render_screening_dashboard(
     else:
         sorted_uplift = sorted(
             r.predicted_ebitda_uplift_mm for r in results)
-        median_uplift = sorted_uplift[n // 2]
+        # True median: average the two central values for even n
+        # (was sorted_uplift[n // 2], the upper-middle element).
+        _mid = n // 2
+        median_uplift = (
+            sorted_uplift[_mid] if n % 2
+            else (sorted_uplift[_mid - 1] + sorted_uplift[_mid]) / 2)
         high_count = sum(
             1 for r in results
             if r.confidence_band == "high")
@@ -261,8 +267,16 @@ def render_screening_dashboard(
             '<th>Top Risk Factors</th>'
             '</tr></thead><tbody>')
         for r in results:
+            # MR1021: this URL is interpolated into an onclick JS-string
+            # literal below. html.escape is the WRONG codec there — the
+            # browser HTML-decodes the attribute before the JS parser
+            # runs, so an escaped quote reverts to a real one and breaks
+            # out (stored XSS, deal_id is partner-supplied). Percent-
+            # encoding the path segment is both correct URL handling and
+            # safe in a JS string + HTML attribute (yields only
+            # [A-Za-z0-9_.~%-]).
             link = (f"/diligence/synthesis/"
-                    f"{_html.escape(r.deal_id)}")
+                    f"{quote(str(r.deal_id), safe='')}")
             risks_html = (
                 "<br>".join(
                     _html.escape(rf) for rf in r.risk_factors)

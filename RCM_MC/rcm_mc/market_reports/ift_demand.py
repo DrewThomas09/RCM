@@ -376,7 +376,18 @@ _MC_FFS_YEAR = 2024
 _NEDS_ED_TRANSFERS_TOTAL = 9_867_701   # Am J Emerg Med 2025 (ACADEMIC, quoted)
 _NEDS_YEARS = 5
 _NEDS_ED_TRANSFERS_M = round(_NEDS_ED_TRANSFERS_TOTAL / _NEDS_YEARS / 1e6, 2)  # 1.97
-_NEDS_CRITICAL = 655_442               # 6.6% with a critical procedure (quoted)
+# 6.6% with a critical procedure (quoted). This is a 2018-2022 FIVE-YEAR
+# CUMULATIVE weighted estimate, exactly like _NEDS_ED_TRANSFERS_TOTAL above —
+# both come from the same abstract and the same study period.
+#
+# 2026-08-03: the annualization was applied to the DENOMINATOR and not to the
+# NUMERATOR. _NEDS_ED_TRANSFERS_M correctly divides by _NEDS_YEARS, but
+# _NEDS_CRITICAL was rendered raw into a table column headed "Value / yr",
+# overstating the CCT-relevant slice ~5x against the per-year figures beside
+# it. The 6.6% share is unaffected — it is a ratio of two cumulative numbers,
+# so it annualizes to itself.
+_NEDS_CRITICAL_TOTAL = 655_442
+_NEDS_CRITICAL = round(_NEDS_CRITICAL_TOTAL / _NEDS_YEARS)   # 131,088 / yr
 _INTERHOSPITAL_M = 1.5                  # ~1.5M/yr = 3.5% of admissions (quoted)
 # Acuity: GADCS — "56 percent of transports were at the basic life support level."
 _BLS_SHARE = 56.0
@@ -459,9 +470,11 @@ def national_transport_volume() -> NationalVolume:
                  "Overlaps the NEDS ED count where the transfer originates in an ED."),
         VolumeTier(
             tier="ED transfers needing critical care (CCT-relevant)",
-            value=f"{_NEDS_CRITICAL:,} (6.6%)", basis="ACADEMIC",
-            source="HCUP NEDS — 655,442 of 9,867,701 ED transfers had a critical "
-                   "procedure (Am J Emerg Med 2025)",
+            value=f"{_NEDS_CRITICAL:,}/yr (6.6%)", basis="ACADEMIC",
+            source=f"HCUP NEDS — {_NEDS_CRITICAL_TOTAL:,} of "
+                   f"{_NEDS_ED_TRANSFERS_TOTAL:,} ED transfers had a critical "
+                   f"procedure across {_NEDS_YEARS} years (2018-2022), i.e. "
+                   f"~{_NEDS_CRITICAL:,}/yr (Am J Emerg Med 2025)",
             evidence_key="neds_critical_share",
             note="The SCT/CCT-relevant slice, measured directly: the premium, "
                  "highest-value interfacility tier."),
@@ -476,7 +489,8 @@ def national_transport_volume() -> NationalVolume:
         VolumeSplit("ALS (advanced life support)", _ALS_SHARE, "SOURCED",
                     "CMS GADCS (RAND) — the balance of the 56% BLS split",
                     "Monitored transfers + the emergent up-transfer stream. SCT/CCT "
-                    "sits at the top of ALS; the CCT count is the NEDS 655,442."),
+                    "sits at the top of ALS; the CCT count is the NEDS "
+                    "~131,088/yr (655,442 across 2018-2022)."),
     )
 
     # Emergency vs non-emergency — the ONLY sourced split is GADCS BLS claim lines
@@ -569,7 +583,7 @@ _DEMAND_SOURCES: Tuple[DemandSource, ...] = (
         "AHRQ HCUP",
         "Inpatient discharges + discharge-disposition split (transfer-to-hospital, "
         "transfer-to-SNF/IRF/other) — the scheduled discharge-book denominator.",
-        "~35M discharges/yr (20% sample); ~20-25% to a facility", "2022", "SOURCED",
+        "33.7M discharges/yr (20% sample); ~20-25% to a facility", "2023", "SOURCED",
         "https://hcup-us.ahrq.gov/nisoverview.jsp",
         "The f_IFT discharge-disposition fraction the health-system model needs; "
         "same loader (source_db='NIS'). The post-acute share is a superset of the "
@@ -670,9 +684,14 @@ _DEMAND_DRIVERS: Tuple[DemandDriver, ...] = (
     DemandDriver(
         "Annual hospital admissions",
         "US inpatient admissions / discharges per year",
-        "~33.7M admissions (AHA 2022); ~35M discharges (HCUP NIS 2022)",
+        # HCUP NIS 2022 is 32,891,849 weighted discharges, not ~35M. The
+        # ~35M figure is the PRE-COVID level (2019 = 35,419,023) carried
+        # forward under a 2022 label. Latest release is NIS 2023 =
+        # 33,718,585, so the series is quoted at its own vintage here.
+        "~33.7M admissions (AHA 2022); 33.7M discharges (HCUP NIS 2023; "
+        "NIS 2022 = 32.9M)",
         "SOURCED",
-        "AHA Fast Facts / AHA Annual Survey (2022); AHRQ HCUP NIS (2022)",
+        "AHA Fast Facts / AHA Annual Survey (2022); AHRQ HCUP NIS (2023)",
         "https://www.aha.org/statistics/fast-facts-us-hospitals",
         "AHA Annual Survey admissions; HCUP NIS weighted discharges; per-hospital "
         "HCRIS Worksheet S-3 discharges (already vendored).",

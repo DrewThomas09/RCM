@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import html
 from typing import Any, Dict, Optional
+from urllib.parse import urlencode
 
 from ..diligence.cdd_scope import (
     CDD_LEVELS, DEAL_TYPES, FAMILIARITY, STAGES,
@@ -23,19 +24,29 @@ from ..diligence.cdd_scope import (
 )
 from ._chartis_kit import (
     chartis_shell, ck_action_button, ck_arrow_link, ck_data_cell,
-    ck_data_table, ck_editorial_head, ck_fmt_number, ck_help_tooltip,
-    ck_next_section, ck_page_actions, ck_provenance_tooltip,
-    ck_section_header, ck_signal_badge, ck_source_purpose,
+    ck_data_table, ck_editorial_head, ck_empty_state, ck_fmt_number,
+    ck_help_tooltip, ck_next_section, ck_page_actions,
+    ck_provenance_tooltip, ck_section_header, ck_signal_badge,
+    ck_source_purpose,
 )
 
 # Depth is intensity, not severity — a neutral ink ramp (muted →
 # deep teal → navy), never the semantic red/amber/green palette.
 # Colors live in _CDD_CSS below as kit tokens with canonical
 # fallbacks so the site-wide dark-mode CSS can retheme the chips.
+# The third slot is the hover gloss: in the 9 × 4 matrix a chip sits
+# far from the legend that defines it, so each cell carries its own
+# definition rather than making the partner scroll back up.
 _DEPTH_CHIP = {
-    DESKTOP:  ("cdd-chip-desktop", "DESKTOP"),
-    TARGETED: ("cdd-chip-targeted", "TARGETED"),
-    FULL:     ("cdd-chip-full", "FULL"),
+    DESKTOP:  ("cdd-chip-desktop", "DESKTOP",
+               "Desk-only pass — filed data and the platform's own "
+               "screens; no primary research at this depth."),
+    TARGETED: ("cdd-chip-targeted", "TARGETED",
+               "Run only on thesis-critical claims — what could change "
+               "the bid, not what merely refines it."),
+    FULL:     ("cdd-chip-full", "FULL",
+               "Full build — the workstream runs to depth with the "
+               "complete evidence base behind it."),
 }
 
 # Page-scoped classes (injected via chartis_shell's extra_css) —
@@ -151,15 +162,39 @@ def _depth_chip(depth: str) -> str:
     reader, which made the depth matrix unreadable non-visually."""
     if depth not in _DEPTH_CHIP:
         return ('<span class="cdd-none" role="img" '
+                'title="Not run at this level." '
                 'aria-label="Not run at this level">·</span>')
-    cls, label = _DEPTH_CHIP[depth]
-    return f'<span class="cdd-chip {cls}">{label}</span>'
+    cls, label, gloss = _DEPTH_CHIP[depth]
+    return (f'<span class="cdd-chip {cls}" '
+            f'title="{html.escape(gloss)}">{label}</span>')
 
 
-def _level_cards(selected: str) -> str:
+def _scope_qs(stage: str, familiarity: str, deal_type: str) -> str:
+    """The recommender inputs as a trailing ``&k=v`` fragment.
+
+    The scoped URL *is* the engagement plan, so browsing a different
+    level must not silently drop the deal's scoping inputs — without
+    this, clicking "View tasks" on any card wiped the recommendation
+    and the partner had to re-pick all three selects. Values are
+    percent-encoded by ``urlencode`` and the caller HTML-escapes the
+    result into the attribute, so partner-supplied query strings stay
+    inert in both the URL and the HTML context."""
+    pairs = [(k, v) for k, v in (("stage", stage),
+                                 ("familiarity", familiarity),
+                                 ("type", deal_type)) if v]
+    return ("&" + urlencode(pairs)) if pairs else ""
+
+
+def _level_cards(selected: str, scope_qs: str = "") -> str:
     cards = ""
+    keep = html.escape(scope_qs)
     for i, lv in enumerate(CDD_LEVELS):
         sel = lv["key"] == selected
+        # The three per-card links repeat verbatim across all four
+        # cards; without a qualified accessible name a screen-reader
+        # link list reads "Task list (CSV)" four times with no way to
+        # tell the levels apart (WCAG 2.4.4).
+        lname = html.escape(lv["label"])
         # Duration is a calibrated claim — say where it comes from
         # (and surface the team shape, which the card otherwise drops).
         duration = ck_provenance_tooltip(
@@ -174,9 +209,10 @@ def _level_cards(selected: str) -> str:
         aria = ' aria-current="true"' if sel else ""
         cards += (
             f'<article id="{lv["key"]}" '
-            f'class="cdd-card{" is-selected" if sel else ""}"{aria}>'
+            f'class="cdd-card{" is-selected" if sel else ""}"{aria} '
+            f'aria-labelledby="{lv["key"]}-h">'
             f'{tag}'
-            f'<h3>{html.escape(lv["label"])}</h3>'
+            f'<h3 id="{lv["key"]}-h">{lname}</h3>'
             f'<p class="cdd-when">{html.escape(lv["when"])}</p>'
             f'<div class="cdd-duration-row">{duration}</div>'
             f'<p class="cdd-fact"><b>Decision:</b> '
@@ -186,13 +222,19 @@ def _level_cards(selected: str) -> str:
             f'<p class="cdd-note">{html.escape(lv["note"])}</p>'
             f'<div class="cdd-card-links">'
             f'<a class="cdd-link" '
-            f'href="/diligence/expert-calls?n={lv["calls"]}">'
-            f'Call program (~{ck_fmt_number(lv["calls"])} calls) →</a>'
+            f'href="/diligence/expert-calls?n={lv["calls"]}" '
+            f'aria-label="Call program for {lname} — about '
+            f'{ck_fmt_number(lv["calls"])} calls">'
+            f'Call program (~{ck_fmt_number(lv["calls"])} calls) '
+            f'<span aria-hidden="true">→</span></a>'
             f'<a class="cdd-link" '
-            f'href="/api/diligence/cdd-scope.csv?level={lv["key"]}">'
+            f'href="/api/diligence/cdd-scope.csv?level={lv["key"]}" '
+            f'download="cdd-task-list-{lv["key"]}.csv" '
+            f'aria-label="Task list (CSV) for {lname}">'
             f'Task list (CSV)</a>'
             f'<a class="cdd-link" '
-            f'href="/diligence/cdd-scope?level={lv["key"]}#tasks">'
+            f'href="/diligence/cdd-scope?level={lv["key"]}{keep}#tasks" '
+            f'aria-label="View tasks for {lname}">'
             f'View tasks</a>'
             f'</div></article>')
     return f'<div class="cdd-levels">{cards}</div>'
@@ -241,9 +283,10 @@ def _matrix_table() -> str:
         + '</section>')
 
 
-def _task_panel(level_key: str) -> str:
+def _task_panel(level_key: str, rec: Optional[Dict[str, Any]] = None,
+                scope_qs: str = "") -> str:
     lv = level(level_key)
-    tasks = level_task_list(level_key)
+    tasks = level_task_list(level_key) if lv else []
     rows = ""
     for t in tasks:
         surface = (f'<a class="cdd-link" href="{html.escape(t["surface"])}">'
@@ -258,16 +301,51 @@ def _task_panel(level_key: str) -> str:
                {"label": "Depth", "align": "center"},
                {"label": "Task"},
                {"label": "Executes on"}]
+    label = lv["label"] if lv else "—"
+
+    # An all-NONE level (or a level that fell out of the registry) would
+    # otherwise render as table chrome with an empty body — a blank panel
+    # reads as a broken page, not as "nothing runs here".
+    if not tasks:
+        body = ck_empty_state(
+            "No workstream runs at this level.",
+            "Every workstream is marked not-run at this depth, so there "
+            "is no task list to hand off. Pick one of the four levels "
+            "above, or let the scoping aid choose one.",
+            eyebrow="TASK LIST",
+            cta_label="Scope this deal",
+            cta_href="/diligence/cdd-scope",
+        )
+    else:
+        body = (
+            ck_data_table(headers=headers, rows_html=rows)
+            + '<p class="cdd-download">'
+            + ck_arrow_link(
+                "Download this task list (CSV)",
+                f"/api/diligence/cdd-scope.csv?level={lv['key']}")
+            + '</p>')
+
+    # An explicit ?level= wins over the recommendation, so the two can
+    # disagree on screen. Say which is which and offer the way back
+    # rather than leaving the partner to spot the mismatch.
+    mismatch = ""
+    rec_lv = rec["level"] if rec else None
+    if rec_lv and lv and rec_lv["key"] != lv["key"]:
+        mismatch = (
+            f'<p class="cdd-footnote">Showing <b>{html.escape(label)}</b> '
+            f'because the URL asks for it — the scoping aid recommends '
+            f'<a class="cdd-link" href="/diligence/cdd-scope?level='
+            f'{rec_lv["key"]}{html.escape(scope_qs)}#tasks">'
+            f'{html.escape(rec_lv["label"])}</a> for these inputs.</p>')
+
     return (
         '<section id="tasks" class="cdd-section">'
         + ck_section_header(
             "The engagement plan, task by task",
-            eyebrow=f"TASK LIST — {lv['label'].upper()}")
-        + ck_data_table(headers=headers, rows_html=rows)
-        + '<p class="cdd-download">'
-        + ck_arrow_link("Download this task list (CSV)",
-                        f"/api/diligence/cdd-scope.csv?level={lv['key']}")
-        + '</p></section>')
+            eyebrow=f"TASK LIST — {label.upper()}")
+        + mismatch
+        + body
+        + '</section>')
 
 
 def cdd_scope_csv(qs: "Dict[str, Any] | None" = None) -> str:
@@ -376,6 +454,9 @@ def render_cdd_scope_page(qs: "Dict[str, Any] | None" = None) -> str:
     level_key = _qs1(qs, "level", "").lower()
     if level(level_key) is None:
         level_key = (rec["level"]["key"] if rec else "l3")
+    # Carried onto every level link so switching levels keeps the deal
+    # scoped (the URL is the engagement plan).
+    scope_qs = _scope_qs(stage, familiarity, deal_type)
 
     head = ck_editorial_head(
         "DILIGENCE · ENGAGEMENT SCOPING",
@@ -411,10 +492,10 @@ def render_cdd_scope_page(qs: "Dict[str, Any] | None" = None) -> str:
         + _recommender(stage, familiarity, deal_type, rec)
         + '<section class="cdd-section">'
         + ck_section_header("The four levels", eyebrow="ENGAGEMENT DEPTHS")
-        + _level_cards(level_key)
+        + _level_cards(level_key, scope_qs)
         + '</section>'
         + _matrix_table()
-        + _task_panel(level_key)
+        + _task_panel(level_key, rec, scope_qs)
         + '</div>'
         + ck_next_section("Plan the call program",
                           "/diligence/expert-calls",

@@ -52,11 +52,21 @@ _DATA_PUBLIC = (
     / "rcm_mc" / "ui" / "data_public"
 )
 
-# Any one of these source signals guarantees a rendered ck-page-title.
+# Any one of these source signals guarantees a rendered page heading.
 _EXPLICIT_TITLE = re.compile(r"\bck_page_title\s*\(")
 _EDITORIAL_INTRO = re.compile(r"\beditorial_intro\s*=")
 _SECTION_INTRO = re.compile(r"\bck_section_intro\s*\(")
 _BESPOKE_H1 = re.compile(r"<h1\b")
+# ck_editorial_head is the Tier-1 masthead helper (~270 pages adopted it).
+# It has a single unconditional return and always emits an <h1>, so a page
+# that calls it does carry a heading — but the literal "<h1" never appears
+# in that page's own source, so _BESPOKE_H1 could not see it.
+#
+# rxnorm_page.py was reported titleless on exactly this basis. It is not:
+# it builds a full masthead through ck_editorial_head. Adding a redundant
+# ck_page_title to satisfy the regex would have put two headings on the
+# page to fix a gap in the checker.
+_EDITORIAL_HEAD = re.compile(r"\bck_editorial_head\s*\(")
 
 
 class DataPublicPageTitleContractTests(unittest.TestCase):
@@ -75,6 +85,7 @@ class DataPublicPageTitleContractTests(unittest.TestCase):
                 or _EDITORIAL_INTRO.search(src)
                 or _SECTION_INTRO.search(src)
                 or _BESPOKE_H1.search(src)
+                or _EDITORIAL_HEAD.search(src)
             ):
                 continue
             titleless.append(p.name)

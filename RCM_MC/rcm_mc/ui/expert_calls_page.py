@@ -20,8 +20,9 @@ the tracker state lives in it.
 from __future__ import annotations
 
 import html
+import re
 from typing import Any, Dict, List, Optional
-from urllib.parse import quote_plus
+from urllib.parse import quote, quote_plus
 
 from ..diligence.expert_calls import (
     BANK_VINTAGE, LEDGER_TAG_ORDER, SECTOR_PACKS, STAKEHOLDER_TYPES,
@@ -34,7 +35,7 @@ from ._chartis_kit import (
     ExhibitFactory, chartis_shell, ck_action_button, ck_data_cell,
     ck_data_table, ck_editorial_head, ck_empty_state, ck_fmt_number,
     ck_page_actions, ck_provenance_tooltip, ck_section_header,
-    ck_signal_badge, ck_source_purpose,
+    ck_signal_badge, ck_source_link, ck_source_purpose,
 )
 
 # Coverage / triangulation statuses → kit badge tones. The tone map IS
@@ -70,6 +71,25 @@ _SHORT_LENS = {
     "patient_advocate": "Patient",
     "industry_expert": "Expert",
 }
+
+# Public datasets that can legitimately appear in a lens's sourcing
+# prose ("Expert networks; NPPES referral-pattern pulls; the target's
+# own referrer list"). A WHITELIST, not a substring scan of the whole
+# registry: the sourcing line is a sentence naming several channels,
+# so routing the whole string through ck_source_link would hyperlink
+# every channel to whichever dataset matched longest — a wrong link
+# looks verified, which is worse than no link. Same discipline as
+# tam_sam_page._source_list_links. Unknown names simply never match,
+# and ck_source_link falls back to escaped plain text anyway.
+_SOURCING_DATASETS = (
+    "NPI Registry", "CMS HCRIS", "MedPAC", "NPPES", "PECOS", "HCRIS",
+    "MGMA",
+)
+# Longest-first alternation so "CMS HCRIS" wins over the bare "HCRIS".
+_SOURCING_RE = re.compile(
+    r"\b(" + "|".join(
+        re.escape(d) for d in sorted(
+            _SOURCING_DATASETS, key=len, reverse=True)) + r")\b")
 
 # Page-scoped editorial styles (xc- namespace). Every color is a kit
 # token with its canonical fallback — no ad-hoc hexes — so the page
@@ -218,6 +238,25 @@ def _status_chip(status: str) -> str:
         status, tone=_STATUS_TONE.get(status, "neutral"))
 
 
+def _sourcing_html(text: str) -> str:
+    """Escape a lens's sourcing prose, linking the public datasets in it.
+
+    The associate reading the guide is being told where to find these
+    humans; when a channel is a real public file (NPPES referral-pattern
+    pulls), the name should be one click from the download rather than a
+    string to google. Everything outside a whitelisted dataset name stays
+    escaped plain text."""
+    s = str(text or "")
+    out: List[str] = []
+    pos = 0
+    for m in _SOURCING_RE.finditer(s):
+        out.append(html.escape(s[pos:m.start()]))
+        out.append(ck_source_link(m.group(1)))
+        pos = m.end()
+    out.append(html.escape(s[pos:]))
+    return "".join(out)
+
+
 def _plan_table(plan: List[Dict[str, Any]], lens_key: str,
                 base_qs: str) -> str:
     rows = ""
@@ -284,7 +323,8 @@ def _guide_html(guide: Dict[str, Any]) -> str:
         f'<div class="xc-kicker">CALL GUIDE'
         f'{" · " + html.escape(deal.upper()) if deal else ""}</div>'
         f'<div class="xc-guide-h">{html.escape(s["label"])}</div>'
-        f'<div class="xc-sub">Sourcing: {html.escape(s["sourcing"])}</div>'
+        f'<div class="xc-sub">Sourcing: {_sourcing_html(s["sourcing"])}'
+        f'</div>'
         f'<div class="xc-sub"><span class="xc-bias-tag">Lens bias:</span> '
         f'<span class="xc-bias">{html.escape(s["bias"])}</span></div>'
         f'<div class="xc-guide-sec">Opening — compliance &amp; vantage '
@@ -303,10 +343,19 @@ def _guide_html(guide: Dict[str, Any]) -> str:
 
 
 def _coverage_block(read: Dict[str, Any], qs: Dict[str, Any],
-                    n: int, lens_key: str, deal: str) -> str:
+                    n: int, lens_key: str, deal: str,
+                    base_qs: str = "") -> str:
     rows = ""
     for r in read["rows"]:
         s = r["stakeholder"]
+        # A THIN / UNCOVERED row is a prompt to book another call, so
+        # the lens name links straight to its guide — the same jump the
+        # plan table offers, from the panel that names the gap.
+        lens_cell = (
+            f'<a class="xc-lens-link" href="/diligence/expert-calls?'
+            f'lens={s["key"]}{base_qs}#guide" '
+            f'title="Open the call guide for this lens">'
+            f'{html.escape(s["label"])}</a>')
         done_input = (
             f'<input type="number" class="xc-input xc-done-input" '
             f'name="done_{s["key"]}" min="0" max="99" '
@@ -315,7 +364,7 @@ def _coverage_block(read: Dict[str, Any], qs: Dict[str, Any],
             f'done" value="{r["done"]}">')
         rows += (
             "<tr>"
-            + ck_data_cell(html.escape(s["label"]), weight=600)
+            + ck_data_cell(lens_cell, weight=600)
             + ck_data_cell(done_input, align="right")
             + ck_data_cell(str(r["target"]), align="right", mono=True,
                            tone="dim")
@@ -376,7 +425,9 @@ def _cadence_table(cad: Dict[str, Any]) -> str:
         cells = "".join(
             ck_data_cell(str(c), align="right", mono=True, weight=700)
             if c else
-            ck_data_cell('<span class="xc-dot-off">·</span>',
+            # "·" is a zero, not a missing value — say so for AT.
+            ck_data_cell('<span class="xc-dot-off" role="img" '
+                         'aria-label="no calls this week">·</span>',
                          align="right", mono=True)
             for c in per_week)
         rows += (
@@ -417,13 +468,24 @@ def _topic_matrix(coverage: List[Dict[str, Any]],
         for s in STAKEHOLDER_TYPES:
             asked = s["key"] in row["lenses"]
             live = s["key"] in row["active_lenses"]
+            # The dot IS the datum in this matrix, and three states are
+            # carried by two glyphs + a color — invisible to a screen
+            # reader and to a partner who cannot separate the green.
+            # Each cell states its meaning in words.
             if live:
-                cells += ck_data_cell("●", align="center", tone="pos")
+                cells += ck_data_cell(
+                    '<span role="img" aria-label="asked by this lens; '
+                    'lens has a completed call">●</span>',
+                    align="center", tone="pos")
             elif asked:
-                cells += ck_data_cell("●", align="center")
+                cells += ck_data_cell(
+                    '<span role="img" aria-label="asked by this lens; '
+                    'no completed call yet">●</span>', align="center")
             else:
                 cells += ck_data_cell(
-                    '<span class="xc-dot-off">·</span>', align="center")
+                    '<span class="xc-dot-off" role="img" '
+                    'aria-label="not asked by this lens">·</span>',
+                    align="center")
         chip = (ck_data_cell(_status_chip(row["status"]))
                 if any_done else "")
         rows += (
@@ -443,8 +505,14 @@ def _topic_matrix(coverage: List[Dict[str, Any]],
 
 
 def _csv_defang(cell: str) -> str:
-    """Excel formula-injection guard (house CSV convention)."""
-    return "'" + cell if cell[:1] in ("=", "+", "-", "@") else cell
+    """Excel formula-injection guard (house CSV convention).
+
+    Report-0270: delegates to the shared helper so the character set
+    (which now includes tab + CR — this local copy missed them) can't
+    drift from the canonical one again.
+    """
+    from ..infra.csv_safety import defang_cell
+    return defang_cell(cell)
 
 
 def expert_calls_csv(qs: "Dict[str, Any] | None" = None) -> str:
@@ -511,10 +579,14 @@ def _ledger_panel(ledger: Dict[str, Any], deal_label: str,
             f'<div class="xc-kicker">{counts} · '
             f'{ck_fmt_number(ledger["total"])} TOTAL</div>'
             + sections + warn
+            # deal_id is free-form partner text (up to 128 chars) in a
+            # URL-query position: html.escape alone leaves "&" / "="
+            # / spaces to break the link, so percent-encode FIRST and
+            # escape the result for the attribute.
             + f'<div class="xc-dl"><a class="ck-arrow" '
               f'href="/api/expert-calls/findings.csv?deal_id='
-              f'{html.escape(deal_id)}">Download findings (CSV)</a>'
-              f'</div>')
+              f'{html.escape(quote_plus(deal_id))}">'
+              f'Download findings (CSV)</a></div>')
     return xf.wrap(
         inner,
         title=f"Findings ledger — {deal_label}",
@@ -631,7 +703,8 @@ def render_expert_calls_page(
         if _qs1(qs, "logged") == "1":
             confirm = (
                 f'<div class="xc-note xc-note-pos">'
-                f'Call logged to <a href="/deal/{html.escape(deal_id)}">'
+                f'Call logged to '
+                f'<a href="/deal/{html.escape(quote(deal_id))}">'
                 f'{html.escape(deal_label)}</a> as a structured note — '
                 f'the coverage tracker below counts it.</div>')
         else:
@@ -736,7 +809,7 @@ def render_expert_calls_page(
             vintage=f"bank {BANK_VINTAGE}")
 
     coverage_exhibit = xf.wrap(
-        _coverage_block(read, qs, n, lens_key, deal),
+        _coverage_block(read, qs, n, lens_key, deal, base_qs),
         title="Coverage tracker",
         units="COVERAGE — CALLS COMPLETED PER LENS · covered ≥ 2 "
               "voices · thin = 1 · uncovered = 0",

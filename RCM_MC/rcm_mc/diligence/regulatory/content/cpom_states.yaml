@@ -1,5 +1,27 @@
 # Corporate Practice of Medicine state lattice.
 #
+# ⚠ PARTIALLY RE-VERIFIED 2026-08-03 — DO NOT TREAT AS CURATED. See MR1075.
+#
+# A primary-source review of all 41 claims in this file found 13 WRONG,
+# 4 STALE and 10 UNVERIFIABLE. The 60-day freshness lock had been failing
+# since ~2026-06-22 and it was RIGHT to: the problem turned out to be
+# content accuracy, not an expired timestamp.
+#
+# Two entries cited statutes that do not say what the entry says:
+#   · WA "HB 2548 (2024)" — no such bill exists. The Washington
+#     Legislature's own database returns "Bill 2548 for the 2023-2024
+#     biennium was not found." Independently confirmed 2026-08-03.
+#   · NY "S8157" — is the "NYS health care tax reform act", a surcharge
+#     bill with no CPOM, MSO or ownership content whatsoever.
+#     Independently confirmed 2026-08-03.
+# Both are corrected below. A cited authority that does not exist is worse
+# than no citation, because it survives review by looking checked.
+#
+# `last_reviewed` is deliberately NOT bumped. Connecticut and Indiana still
+# have open primary-source gaps (see their entries), and stamping the file
+# would convert those known-unknowns into unknown-unknowns. The lock stays
+# red until a human closes them.
+#
 # Seeded from the PESP tracker + state bill texts as of 2026-04.
 # Every entry MUST carry source_urls and last_reviewed. The
 # regulatory content-freshness test fails any entry older than
@@ -26,14 +48,22 @@
 
 last_reviewed: 2026-04-23
 source_urls:
-  - https://pestakeholder.org/healthcare-legislation-tracker/
+  # The PESP tracker permalink 404s; the issue hub below is the stable
+  # entry point. No stable tracker permalink was found, so none is invented.
+  - https://pestakeholder.org/issues/healthcare/
 
 states:
   - code: OR
     name: Oregon
     statute: SB 951 (2025)
     effective_date: 2026-01-01
-    compliance_deadline: 2027-01-01
+    # Corrected 2027-01-01 -> 2029-01-01 (2026-08-03). Enrolled SB 951
+    # SEC. 9(3) gives MSO/PC arrangements existing before the 2025-06-09
+    # enactment until 2029-01-01. The old value understated the runway by
+    # two years and would have mis-priced every Oregon remediation estimate.
+    # Entities formed on or after 2025-06-09 are covered from 2026-01-01,
+    # which is the effective_date above.
+    compliance_deadline: 2029-01-01
     structure_bans: [FRIENDLY_PC_PASS_THROUGH]
     structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
     voided_contracts:
@@ -69,9 +99,17 @@ states:
 
   - code: MA
     name: Massachusetts
-    statute: H.5159 (2024)
-    effective_date: 2025-01-01
-    compliance_deadline: 2026-01-01
+    # Session law cite added: H.5159 was enacted as Chapter 343 of the Acts
+    # of 2024, approved 2025-01-08.
+    statute: H.5159 (2024), enacted as Chapter 343 of the Acts of 2024
+    # CORRECTED 2026-08-03. The old value, 2025-01-01, PREDATED the
+    # governor's signature (2025-01-08) and was therefore impossible. The
+    # general rule is 90 days after approval.
+    effective_date: 2025-04-08
+    # WITHDRAWN 2026-08-03: no 2026-01-01 compliance deadline was found
+    # anywhere in the act's 88 sections. Rather than keep an unsourced
+    # deadline that a diligence timeline would be built on, it is nulled.
+    compliance_deadline: null
     structure_bans: []
     structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
     voided_contracts:
@@ -84,73 +122,130 @@ states:
 
   - code: IN
     name: Indiana
-    statute: HB 1666 (2024)
-    effective_date: 2024-07-01
+    # ENTIRELY UNVERIFIED — 2026-08-03. iga.in.gov serves a JavaScript
+    # shell to automated fetches and bot-walls its PDF endpoints, so no
+    # primary text was obtained for ANY field below. Converging secondary
+    # sources place HB 1666 in the 2025 session (not 2024) on an
+    # ownership-REPORTING subject, with no noncompete content — which would
+    # make both the session year and the voided_contracts claim wrong. That
+    # is a lead, not a finding, so nothing here is edited on its strength.
+    #
+    # Treat every field in this entry as unconfirmed until someone opens
+    # iga.in.gov in a browser. The old source URL 404s.
+    statute: HB 1666 (2024)          # UNVERIFIED; may be 2025 session
+    effective_date: 2024-07-01       # UNVERIFIED
     compliance_deadline: null
+    unverified_fields: [statute, effective_date, structure_restrictions, voided_contracts]
     structure_bans: []
-    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]   # UNVERIFIED
     voided_contracts:
+      # UNVERIFIED, and specifically contradicted by secondary sources that
+      # describe HB 1666 as an ownership-reporting bill with no noncompete
+      # provisions.
       - Restrictive covenants on primary care physicians
         are unenforceable after 2024-07-01.
-    remediation_cost_usd: 450000
+    remediation_cost_usd: 450000     # UNVERIFIED internal estimate
     last_reviewed: 2026-04-23
     source_urls:
-      - https://iga.in.gov/legislative/2024/bills/house/1666
+      - https://iga.in.gov/
 
   - code: NM
     name: New Mexico
-    statute: Health Care Consolidation Oversight Act (2024)
-    effective_date: 2024-05-15
+    # CORRECTED 2026-08-03. The 2024 Act (SB 15, NMSA 1978 ch. 59A art. 63)
+    # SELF-REPEALED on 2025-06-30. The Act now in force was recompiled by
+    # HB 586 (2025) under the Health Care Code.
+    statute: Health Care Consolidation Oversight Act, as recompiled by HB 586 (2025)
+    effective_date: 2025-07-01     # was 2024-05-15 (the repealed version)
     compliance_deadline: null
     structure_bans: []
     structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
     voided_contracts:
-      - HCCOA notice-and-review required for PE acquisition of
-        provider entities; closings prior to AG review are voidable.
-    remediation_cost_usd: 500000
+      # The reviewing agency was WRONG: it is the Health Care Authority,
+      # not the Attorney General. Review moved from the Office of
+      # Superintendent of Insurance to HCA under HB 586. Naming the wrong
+      # agency sends a diligence team to the wrong filing desk.
+      - HCCOA notice-and-review by the Health Care Authority (HCA) required
+        for PE acquisition of provider entities; closings prior to HCA
+        review are voidable.
+    remediation_cost_usd: 500000   # UNVERIFIED internal estimate
     last_reviewed: 2026-04-23
     source_urls:
-      - https://www.nmlegis.gov/Legislation/Legislation?chamber=H&legType=B&legNo=24&year=24
+      # The prior URL resolved, but to an entirely unrelated bill.
+      - https://www.nmlegis.gov/Sessions/25%20Regular/firs/HB0586.PDF
 
   - code: WA
     name: Washington
-    statute: HB 2548 (2024)
-    effective_date: 2024-06-06
+    # CORRECTED 2026-08-03. The previous cite, "HB 2548 (2024)", does not
+    # exist: app.leg.wa.gov returns "Bill 2548 for the 2023-2024 biennium
+    # was not found." Washington's operative health-care transaction regime
+    # is ch. 19.390 RCW.
+    statute: ch. 19.390 RCW (Health Care Entity Transactions)
+    effective_date: null          # was 2024-06-06, tied to the phantom bill
     compliance_deadline: null
     structure_bans: []
-    structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
+    # Downgraded: a notice regime imposes no structural condition on the
+    # MSO/PC fee arrangement itself, so this no longer claims one.
+    structure_restrictions: []
     voided_contracts:
-      - AG transaction-review mandate for provider deals above
-        threshold; unreviewed closings subject to unwind.
-    remediation_cost_usd: 500000
+      # Previously described an "AG transaction-review mandate ... subject
+      # to unwind". Ch. 19.390 RCW is a 60-day advance NOTICE requirement;
+      # no approval gate and no unwind remedy was found in the chapter.
+      # Overstating a notice duty as an approval-with-unwind mandate is the
+      # kind of error that changes a deal's go/no-go, so it is removed
+      # rather than softened.
+      []
+    notice_regime: 60-day advance written notice to the Attorney General
+    remediation_cost_usd: 500000   # UNVERIFIED internal estimate
     last_reviewed: 2026-04-23
     source_urls:
-      - https://app.leg.wa.gov/billsummary?BillNumber=2548&Year=2023
+      - https://app.leg.wa.gov/RCW/default.aspx?cite=19.390&full=true
 
   - code: CT
     name: Connecticut
-    statute: HB 5316 (2025)
-    effective_date: 2026-10-01
-    compliance_deadline: 2027-10-01
+    # SUPERSEDED STATUTE, DATES UNVERIFIED — 2026-08-03.
+    # Connecticut's operative law is SB 196 (2026), signed 2026-05-27 as
+    # Public Act 26-22, confirmed from the Governor's official bill
+    # notification. The prior cite, HB 5316 (2025), did not become the
+    # operative law. This is exactly the post-April-2026 movement the
+    # freshness lock exists to catch.
+    statute: SB 196 (2026), Public Act 26-22 (signed 2026-05-27)
+    # NULLED, NOT REPLACED. Secondary reporting puts the sale-leaseback
+    # date at 2027-07-01 and an attestation deadline at 2027-02-15, but
+    # cga.ct.gov returned 503 on every attempt, so the Public Act text was
+    # never read. Dates in a diligence timeline must come off the act
+    # itself, so none are recorded here.
+    effective_date: null
+    compliance_deadline: null
+    unverified_fields: [effective_date, compliance_deadline, voided_contracts]
     structure_bans: []
     structure_restrictions: [MSO_PC_MANAGEMENT_FEE]
     voided_contracts:
-      - REIT operational control of hospitals banned from
-        2026-10-01; sale-leasebacks banned from 2027-10-01.
-    remediation_cost_usd: 750000
+      # The prior text described a REIT OPERATIONAL-CONTROL ban. PA 26-22 is
+      # framed around hospital sale-leaseback transactions and private-equity
+      # controlling-interest attestations — a different subject. Left
+      # deliberately empty pending a read of the Public Act.
+      []
+    remediation_cost_usd: 750000   # UNVERIFIED internal estimate
     last_reviewed: 2026-04-23
     source_urls:
-      - https://www.cga.ct.gov/asp/cgabillstatus/cgabillstatus.asp?selBillType=Bill&bill_num=HB05316
+      - https://portal.ct.gov/governor
 
-  - code: NY
-    name: New York
-    statute: S8157 (pending 2026)
-    effective_date: null
-    compliance_deadline: null
-    structure_bans: []
-    structure_restrictions: []
-    voided_contracts: []
-    remediation_cost_usd: 300000
-    last_reviewed: 2026-04-23
-    source_urls:
-      - https://www.nysenate.gov/legislation/bills/2025/S8157
+  # NEW YORK ENTRY WITHDRAWN 2026-08-03 — it was built on a misidentified
+  # statute. S8157 is the "NYS health care tax reform act" (Sen. Ramos):
+  # "An act to amend the public health law, the tax law and the state
+  # finance law, in relation to enacting the 'NYS health care tax reform
+  # act'" — an insurance/business surcharge bill with no corporate-practice,
+  # MSO or ownership content at all. Independently confirmed 2026-08-03.
+  #
+  # The entry is withdrawn rather than corrected because there is nothing to
+  # correct toward: it asserted no bans, no restrictions and no voided
+  # contracts, so its only real content was the (wrong) claim that New York
+  # has a pending CPOM vehicle worth a $300k remediation reserve. Restoring
+  # NY coverage requires re-seeding from an actual NY CPOM/MSO bill, which
+  # is a research task, not an edit.
+  #
+  # NOTE: withdrawing NY drops this lattice from 8 states to 7. Callers that
+  # read absence as "no CPOM exposure in NY" would be wrong either way — the
+  # old entry said the same thing with a fabricated citation attached.
+
+

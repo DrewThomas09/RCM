@@ -1,5 +1,10 @@
 # File Index
 
+> **HISTORICAL SNAPSHOT — frozen at April 2026** (Report-0265/MR1033).
+> Directory structure and per-file rows reflect the April 2026 tree;
+> the July 2026 merge wave added files not indexed here. Per-directory
+> READMEs are the maintained source of truth.
+
 A navigable directory to every significant file in the repo. Use this to find what file owns a behaviour before diving in. Every major directory has its own README with per-file detail — this is the **map of those maps**.
 
 **See also**:
@@ -16,8 +21,6 @@ A navigable directory to every significant file in the repo. Use this to find wh
 |------|-----------|
 | [README.md](README.md) | 9th-grade plain-English front page — start here |
 | [WALKTHROUGH.md](WALKTHROUGH.md) | 13-step case study walking a PE VP through a real deal |
-| [COMPUTER_24HOUR_UPDATE_NUMBER_1.md](COMPUTER_24HOUR_UPDATE_NUMBER_1.md) | Snapshot of a 24-hour build cycle |
-| [SESSION_SUMMARY.md](SESSION_SUMMARY.md) | Multi-session build log |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add features or fix bugs |
 | [LICENSE](LICENSE) | License |
 | **FILE_INDEX.md** | *(this file)* |

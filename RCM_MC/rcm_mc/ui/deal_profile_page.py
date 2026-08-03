@@ -34,9 +34,9 @@ from urllib.parse import urlencode
 
 from ..diligence._pages import AVAILABLE_FIXTURES
 from ._chartis_kit import (
-    P, chartis_shell, ck_help_tooltip, ck_next_section,
+    P, chartis_shell, ck_empty_state, ck_help_tooltip, ck_next_section,
     ck_page_title, ck_panel, ck_section_header, ck_section_intro,
-    ck_signal_badge, ck_sticky_toc, ck_page_explainer)
+    ck_signal_badge, ck_source_link, ck_sticky_toc, ck_page_explainer)
 from .power_ui import bookmark_hint
 
 
@@ -126,6 +126,18 @@ _FIELD_HINTS: Dict[str, str] = {
 # The href_template may contain %KEY% placeholders the renderer
 # replaces with URL-encoded values from the deal params. Params
 # that aren't on the profile are dropped; empty values too.
+#
+# ``sources`` (optional) names the public datasets the downstream
+# analytic actually reads, so the card can carry a traceable
+# provenance line via ``ck_source_link`` instead of leaving the
+# partner to guess where the numbers came from. Only populate it from
+# a source the target page itself declares — an unverified label here
+# would be a false provenance claim, which is worse than no claim at
+# all. Verified today:
+#   * HCRIS Peer X-Ray -> ui/hcris_xray_page.py ck_source_link("CMS HCRIS")
+#   * Payer Mix Stress -> ui/payer_stress_page.py "HFMA / MGMA / AHA + 10-K"
+# (HFMA has no entry in the kit's SOURCE_URLS registry, so it would
+# render as dead plain text; MGMA and AHA both resolve.)
 _ANALYTICS = [
     dict(
         label="Thesis Pipeline",
@@ -250,6 +262,7 @@ _ANALYTICS = [
             "$80K/yr CapIQ subscription on this use case."
         ),
         badge="Public Data",
+        sources=["CMS HCRIS"],
     ),
     dict(
         label="Payer Mix Stress",
@@ -272,6 +285,7 @@ _ANALYTICS = [
             "the payer-contract renewal calendar."
         ),
         badge="Stress",
+        sources=["MGMA", "AHA"],
     ),
     dict(
         label="Bear Case Auto-Gen",
@@ -468,6 +482,10 @@ def _slugs_from_request(qs: Optional[Dict[str, List[str]]] = None) -> List[str]:
 
 _LANDING_JS = r"""<script>
 (function() {
+  // Denominator for the completeness bar. Emitted by the server from
+  // len(_FIELDS) so adding a deal parameter cannot silently make every
+  // saved profile read as ">100% complete" (it was a hardcoded 24).
+  var RCM_DP_FIELD_TOTAL = window.RCM_DP_FIELD_TOTAL || 24;
   // Enumerate localStorage for saved deal profiles and render a
   // "recent deals" grid so returning users see their work.
   function loadSavedDeals() {
@@ -510,12 +528,27 @@ _LANDING_JS = r"""<script>
     return new Date(iso).toLocaleDateString();
   }
 
+  // Full HTML-escape via a text node. The old inline
+  // `.replace(/</g,'&lt;')` left `&` and quotes alone, so a deal named
+  // "A &amp; B" rendered as "A & B" and the same value could not be
+  // reused safely in an attribute.
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = String(s == null ? '' : s);
+    return d.innerHTML;
+  }
+  function escAttr(s) {
+    return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function render() {
     var root = document.querySelector('[data-rcm-recent-deals]');
     if (!root) return;
     var deals = loadSavedDeals();
     if (deals.length === 0) {
-      root.innerHTML =
+      // Server-rendered ck_empty_state; the bespoke div is only a
+      // fallback for a cached page that predates the constant.
+      root.innerHTML = window.RCM_DP_SAVED_EMPTY ||
         '<div class="ck-dp-saved-empty">' +
         'No saved deals yet. Enter a slug above to ' +
         'create your first profile; it will appear here on subsequent ' +
@@ -523,31 +556,42 @@ _LANDING_JS = r"""<script>
       return;
     }
     var cards = deals.map(function(d) {
-      var completion = Math.min(100, Math.round(d.filled / 24 * 100));
+      var pct = Math.min(100, d.filled / RCM_DP_FIELD_TOTAL * 100);
+      var completion = Math.round(pct);
       var barColor = completion >= 75 ? 'var(--green)' :
         completion >= 40 ? 'var(--amber)' : 'var(--muted)';
-      var name = (d.name || d.slug).replace(/</g, '&lt;');
-      var slug = d.slug.replace(/</g, '&lt;');
+      var label = d.name || d.slug;
+      var name = esc(label);
+      var slug = esc(d.slug);
       var safeSlug = encodeURIComponent(d.slug);
       return (
         '<div class="ck-dp-saved-card">' +
         '<div class="ck-dp-saved-row">' +
         '<div class="ck-dp-saved-slug">' + slug + '</div>' +
-        '<div class="ck-dp-saved-rel">' + fmtRelative(d.saved_at) + '</div>' +
+        '<div class="ck-dp-saved-rel">' + esc(fmtRelative(d.saved_at)) +
         '</div>' +
-        '<div class="ck-dp-saved-name">' + name + '</div>' +
-        '<div class="ck-dp-saved-bar">' +
+        '</div>' +
+        '<div class="ck-dp-saved-name" title="' + escAttr(label) + '">' +
+        name + '</div>' +
+        '<div class="ck-dp-saved-bar" role="progressbar" ' +
+        'aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+        completion + '" aria-label="Profile completeness for ' +
+        escAttr(label) + '">' +
         '<div class="ck-dp-saved-bar-fill" style="width:' + completion +
         '%;--bar-tone:' + barColor + ';"></div></div>' +
         '<div class="ck-dp-saved-progress">' + d.filled +
-        ' of 24 fields · ' + completion + '% complete</div>' +
+        ' of ' + RCM_DP_FIELD_TOTAL + ' fields · ' + pct.toFixed(1) +
+        '% complete</div>' +
         '<div class="ck-dp-saved-actions">' +
         '<a href="/diligence/deal/' + safeSlug + '" ' +
-        'class="ck-dp-saved-btn">Open</a>' +
+        'class="ck-dp-saved-btn" aria-label="Open ' + escAttr(label) +
+        '">Open</a>' +
         '<button type="button" data-rcm-duplicate="' + safeSlug + '" ' +
-        'class="ck-dp-saved-btn-secondary">Duplicate</button>' +
+        'class="ck-dp-saved-btn-secondary" aria-label="Duplicate ' +
+        escAttr(label) + '">Duplicate</button>' +
         '<button type="button" data-rcm-delete="' + safeSlug + '" ' +
-        'class="ck-dp-saved-btn-danger">Delete</button>' +
+        'class="ck-dp-saved-btn-danger" aria-label="Delete ' +
+        escAttr(label) + '">Delete</button>' +
         '</div></div>'
       );
     }).join('');
@@ -865,6 +909,19 @@ letter-spacing:1.2px;text-transform:uppercase;}}
 .ck-dp-phase-count{{font-size:10px;color:{P["text_faint"]};
 letter-spacing:1px;font-variant-numeric:tabular-nums;}}
 .ck-dp-card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}}
+/* Card cell wrapper. The provenance line has to live OUTSIDE the
+   card <a>: ck_source_link emits its own anchor and nested <a> is
+   invalid HTML (the browser silently closes the outer one, which
+   breaks the card click target). The flex rules preserve the old
+   behaviour where every card in a row stretches to the tallest —
+   the cell is now the grid item, so the card must fill it. */
+.ck-dp-card-cell{{display:flex;flex-direction:column;}}
+.ck-dp-card-cell > .ck-dp-card{{flex:1 1 auto;}}
+.ck-dp-card-src{{margin-top:5px;font-size:9.5px;letter-spacing:.4px;
+color:{P["text_faint"]};font-family:"JetBrains Mono",monospace;}}
+.ck-dp-card-src a{{color:{P["accent"]};text-decoration:none;
+border-bottom:1px solid transparent;}}
+.ck-dp-card-src a:hover{{border-bottom-color:{P["accent"]};}}
 .ck-dp-thesis-card{{margin-bottom:20px;background:{P["panel"]};
 border:1px solid {P["border"]};border-radius:4px;padding:18px 22px;
 position:relative;overflow:hidden;}}
@@ -924,6 +981,8 @@ font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;}}
 .ck-dp-market-tile-sub{{font-size:9.5px;color:{P["text_faint"]};margin-top:2px;}}
 .ck-dp-market-peers{{font-size:12px;color:{P["text"]};line-height:1.5;
 font-family:"JetBrains Mono",monospace;}}
+.ck-dp-market-more{{margin-top:14px;padding-top:10px;
+border-top:1px solid {P["border"]};font-size:12px;}}
 .ck-dp-lifecycle{{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}}
 .ck-dp-life-seg{{flex:1;padding:12px 14px;background:{P["panel"]};
 border:1px solid {P["border"]};
@@ -931,6 +990,11 @@ border-radius:2px;position:relative;cursor:pointer;
 transition:background 140ms ease, border-color 140ms ease;}}
 .ck-dp-life-seg:hover{{background:var(--paper-hi,#fbf6e8);
 border-color:var(--rule-hi,#b6a87f);}}
+/* Segments are role="button" + tabindex="0"; without a visible
+   focus ring a keyboard user tabbing the ribbon cannot see where
+   they are. */
+.ck-dp-life-seg:focus-visible{{outline:2px solid {P["accent"]};
+outline-offset:2px;}}
 /* 2026-05-28 style-sweep · stripped three spec-forbidden tropes:
    `border-left:3px solid` accent (Tier-4 don'ts),
    `border-radius:4px` (Tier-0 caps radius at 2px),
@@ -1036,22 +1100,44 @@ def _landing_slugs() -> str:
         ".replace(/[^a-z0-9-]/g, '-'); if (slug) "
         'window.location.href = \'/diligence/deal/\' + slug; return false;">'
         '<div class="cad-field">'
-        '<label>Deal slug</label>'
-        '<input class="cad-input" name="slug" required '
-        'placeholder="e.g. aurora" pattern="[a-zA-Z0-9-]+">'
+        '<label for="dp-slug-input">Deal slug</label>'
+        '<input id="dp-slug-input" class="cad-input" name="slug" required '
+        'placeholder="e.g. aurora" pattern="[a-zA-Z0-9-]+" '
+        'aria-describedby="dp-slug-help">'
         '</div>'
-        '<p class="ck-eyebrow">'
+        '<p class="ck-eyebrow" id="dp-slug-help">'
         'Letters, digits, and hyphens only. Bookmarkable. Open the same '
         'slug from any browser to pick up your profile.</p>'
         '<button type="submit" class="cad-btn cad-btn-primary">Open profile</button>'
         '</form>'
+    )
+    # Empty state for the recent-deals grid. Rendered server-side and
+    # handed to the JS as a constant so (a) the region is never a bare
+    # blank strip between first paint and DOMContentLoaded, (b) a
+    # partner with JS blocked still sees the explanation rather than
+    # nothing at all, and (c) the "no deals" copy lives in the shared
+    # ck_empty_state primitive instead of a bespoke div.
+    saved_empty = ck_empty_state(
+        "No saved deals yet.",
+        "Enter a slug above to create your first profile. Saved deals "
+        "show up here on every later visit with a completeness bar and "
+        "one-click re-entry \u2014 they live in this browser only, so "
+        "they travel with the machine, not the login.",
+        eyebrow="RECENT DEALS",
     )
     body = (
         _DP_STYLES
         + title
         + explainer
         + ck_panel(form_inner, title="New profile")
-        + '<div data-rcm-recent-deals class="ck-dp-recent-deals"></div>'
+        + '<div data-rcm-recent-deals class="ck-dp-recent-deals">'
+        + saved_empty
+        + '</div>'
+        # `</` is neutralised so a later edit to the empty-state copy
+        # can never close the <script> element early.
+        + '<script>window.RCM_DP_SAVED_EMPTY='
+        + json.dumps(saved_empty).replace("</", "<\\/")
+        + f';window.RCM_DP_FIELD_TOTAL={len(_FIELDS)};</script>'
         + f'{_LANDING_JS}'
     )
     return chartis_shell(
@@ -1075,28 +1161,43 @@ def _render_form(slug: str, seed_values: Dict[str, str]) -> str:
             f'<span class="ck-dp-tool-chip">{html.escape(t)}</span>'
             for t in tools
         )
+        # The 24 labels were floating <label> elements with no `for`, so
+        # nothing was programmatically tied to its control: a screen
+        # reader announced 24 unlabelled boxes and clicking a label did
+        # not focus its input. `_FIELDS` keys are a fixed
+        # lowercase-underscore allowlist, so the ids are stable and
+        # collision-free under the `dp-f-` prefix. The format hint is
+        # wired through aria-describedby so it is read out too.
+        field_id = f"dp-f-{key}"
+        hint_text = _FIELD_HINTS.get(key, "")
+        hint_id = f"{field_id}-hint" if hint_text else ""
+        describedby = f' aria-describedby="{hint_id}"' if hint_id else ""
         if input_type == "select" and key == "dataset":
             input_html = (
-                f'<select name="{key}" data-rcm-deal-field="{key}" class="ck-dp-input">'
+                f'<select id="{field_id}" name="{key}" '
+                f'data-rcm-deal-field="{key}" class="ck-dp-input"'
+                f'{describedby}>'
                 f'<option value="">(none)</option>{fixture_options}'
                 '</select>'
             )
         else:
             input_html = (
-                f'<input name="{key}" data-rcm-deal-field="{key}" '
+                f'<input id="{field_id}" name="{key}" '
+                f'data-rcm-deal-field="{key}" '
                 f'placeholder="{html.escape(placeholder, quote=True)}" '
-                f'value="{seeded}" class="ck-dp-input">'
+                f'value="{seeded}" class="ck-dp-input"{describedby}>'
             )
-        hint_text = _FIELD_HINTS.get(key, "")
         hint_html = (
-            f'<div class="ck-dp-field-hint" style="font-family:var(--cad-mono,monospace);'
+            f'<div id="{hint_id}" class="ck-dp-field-hint" '
+            f'style="font-family:var(--cad-mono,monospace);'
             f'font-size:10px;color:var(--cad-text-faint,#9aa3ad);letter-spacing:0.03em;'
             f'margin-top:3px;">{html.escape(hint_text)}</div>'
             if hint_text else ""
         )
         fields_html.append(
             '<div class="ck-dp-field">'
-            f'<label class="ck-dp-field-label">{html.escape(label)}</label>'
+            f'<label for="{field_id}" class="ck-dp-field-label">'
+            f'{html.escape(label)}</label>'
             f'{input_html}'
             f'{hint_html}'
             f'<div class="ck-dp-field-chips">{chips}</div>'
@@ -1174,17 +1275,33 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
     # this list and renders a "Pinned tools" rail above the
     # opportunities section. The button is styled as an editorial
     # star (☆ unpinned / ★ pinned) and JS toggles class + state.
+    # aria-label names the analytic. 22 buttons all announcing "Pin
+    # this analytic" gave a screen-reader user no way to tell which
+    # star they were on — the visible title lives in a sibling div the
+    # button does not reference.
     pin_button = (
         '<button type="button" class="ck-dp-card-pin" '
         f'data-rcm-pin-toggle '
         f'data-rcm-pin-href="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-pin-label="{html.escape(a["label"], quote=True)}" '
         f'data-rcm-pin-phase="{html.escape(a.get("phase", "DILIGENCE"))}" '
-        'aria-label="Pin this analytic" aria-pressed="false">'
+        f'aria-label="Pin {html.escape(a["label"], quote=True)} to your '
+        'dashboard" aria-pressed="false">'
         '<span aria-hidden="true" class="ck-dp-card-pin-icon">☆</span>'
         '</button>'
     )
-    return (
+    # Provenance line — the public dataset the downstream analytic
+    # actually reads, rendered through ck_source_link so a partner can
+    # open the origin and verify a number instead of trusting the card.
+    # Sits outside the card anchor: nested <a> is invalid HTML.
+    sources = a.get("sources") or []
+    source_html = ""
+    if sources:
+        links = " · ".join(ck_source_link(s) for s in sources)
+        source_html = (
+            f'<div class="ck-dp-card-src">Source data: {links}</div>'
+        )
+    card = (
         f'<a data-rcm-deal-link '
         f'data-rcm-deal-href-base="{html.escape(a["href"], quote=True)}" '
         f'data-rcm-deal-params="{html.escape(params_json, quote=True)}" '
@@ -1201,6 +1318,7 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
         '<div data-rcm-deal-preview class="ck-dp-card-preview"></div>'
         '</a>'
     )
+    return f'<div class="ck-dp-card-cell">{card}{source_html}</div>'
 
 
 def _render_analytics_grid(slug: str) -> str:
@@ -1317,7 +1435,13 @@ def _render_thesis_snapshot(slug: str) -> str:
         '<div class="ck-dp-thesis-struct-legend" data-rcm-thesis-struct-legend>'
         '— equity · — debt</div>'
         '</div>'
-        '<div class="ck-dp-thesis-struct-bar">'
+        # role="img" + a JS-maintained aria-label: the equity/debt split
+        # is carried purely by two bar widths, which is invisible to a
+        # screen reader and to anyone who cannot separate the two tones.
+        '<div class="ck-dp-thesis-struct-bar" role="img" '
+        'data-rcm-thesis-struct-bar '
+        'aria-label="Capital structure split — enter Equity check '
+        'and Debt in Deal parameters to populate.">'
         '<div data-rcm-thesis-equity-bar class="ck-dp-thesis-equity-bar"></div>'
         '<div data-rcm-thesis-debt-bar class="ck-dp-thesis-debt-bar"></div>'
         '</div></div></div>'
@@ -1329,8 +1453,31 @@ def _render_market_context(slug: str) -> str:
     ``/api/market-intel/peer-snapshot`` whenever the user changes the
     market_category, enterprise_value_usd, revenue_usd, or ebitda_usd
     fields.  Surfaces target-vs-peer multiple delta + named top peers
-    + sentiment + assessment band."""
-    return (
+    + sentiment + assessment band.
+
+    The card is ``display:none`` until the snapshot resolves, so on a
+    fresh deal — and on any deal whose category is blank or has no peer
+    band — the "Market context" panel rendered as an empty box with a
+    title and nothing inside it, including for the partner who just
+    clicked its entry in the sticky TOC. The ``ck_empty_state`` below
+    is what they see instead; the inline JS flips the two so exactly
+    one is ever visible.
+    """
+    empty = (
+        '<div data-rcm-market-empty>'
+        + ck_empty_state(
+            "No peer comparison yet.",
+            "Set Market category in Deal parameters below, plus either "
+            "Enterprise Value or Revenue Y0. The peer median, the "
+            "p25-p75 band and the premium/discount read then load "
+            "automatically from the public-operator comp set.",
+            eyebrow="AWAITING INPUTS",
+            cta_label="Browse Market Intel",
+            cta_href="/market-intel",
+        )
+        + '</div>'
+    )
+    return empty + (
         '<div data-rcm-market-context class="ck-dp-market-card">'
         '<div class="ck-dp-market-head">'
         '<div>'
@@ -1381,7 +1528,16 @@ def _render_market_context(slug: str) -> str:
         '<div class="ck-dp-market-tile-label">Closest peers</div>'
         '<div data-rcm-market-peers class="ck-dp-market-peers">—</div>'
         '</div>'
-        '</div></div>'
+        '</div>'
+        # The panel summarises /market-intel but never linked to it — a
+        # partner reading "PREMIUM" here had to find the full comp set,
+        # the transaction band and the sentiment feed by hand.
+        '<div class="ck-dp-market-more">'
+        '<a href="/market-intel" class="ck-link">'
+        'Full comp set, transaction multiples and sentiment on Market '
+        'Intel →</a>'
+        '</div>'
+        '</div>'
     )
 
 
@@ -1411,9 +1567,22 @@ def _render_lifecycle_ribbon(slug: str) -> str:
         # Default state classes: first phase = current, rest = pending.
         # JS will overwrite based on localStorage after page load.
         state_cls = " is-current" if i == 0 else " is-pending"
+        # These segments have been click-targets (cursor:pointer + a
+        # document click handler) with no button semantics, so keyboard
+        # and screen-reader users could neither reach nor operate the
+        # only control that advances a deal's phase. role+tabindex make
+        # them focusable and announced; the Enter/Space handler in
+        # _inline_js supplies the activation a real <button> gets free.
+        aria = (
+            f'{meta["label"]} phase, step {i + 1} of {len(order)}, '
+            f'{count} {"analytic" if count == 1 else "analytics"}. '
+            'Activate to set as the current diligence phase.'
+        )
         segments.append(
             f'<div data-rcm-phase="{phase}" '
             f'class="ck-dp-life-seg{state_cls}" '
+            'role="button" tabindex="0" '
+            f'aria-label="{html.escape(aria, quote=True)}" '
             f'style="border-left-color:{tone_color};">'
             '<div class="ck-dp-life-seg-head">'
             f'<div class="ck-dp-life-seg-num">{i + 1:02d}</div>'
@@ -1473,12 +1642,16 @@ def _render_diligence_questions(slug: str) -> str:
         'data-rcm-qs-add>Add question →</button>'
         '</form>'
         '<div class="ck-dp-qs-empty" data-rcm-qs-empty hidden>'
-        '<p class="ck-section-body" style="font-style:italic;">'
-        'No questions yet. Diligence is a conversation, so start by '
-        'noting one thing you\'d need to hear from the seller '
-        'before underwriting.'
-        '</p>'
-        '</div>'
+        + ck_empty_state(
+            "No questions yet.",
+            "Diligence is a conversation, so start by noting one thing "
+            "you would need to hear from the seller before "
+            "underwriting. Questions stay in this browser, one list "
+            "per deal, and export to Markdown or CSV once you have a "
+            "few.",
+            eyebrow="DILIGENCE QUESTIONS",
+        )
+        + '</div>'
         '<ol class="ck-dp-qs-list" data-rcm-qs-list></ol>'
         '<div class="ck-dp-qs-meta-row" data-rcm-qs-meta-row hidden>'
         '<div class="ck-dp-qs-meta" data-rcm-qs-meta></div>'
@@ -1534,13 +1707,16 @@ def _render_diligence_pulse(slug: str) -> str:
         'data-rcm-pulse-last-ts></div>'
         '</div>'
         '<div class="ck-dp-pulse-tile">'
-        '<div class="ck-dp-pulse-bar">'
+        '<div class="ck-dp-pulse-bar" role="progressbar" '
+        'data-rcm-pulse-bar aria-valuemin="0" aria-valuemax="100" '
+        'aria-valuenow="0" aria-label="Diligence progress — '
+        'analytics opened on this deal">'
         '<div class="ck-dp-pulse-bar-fill" '
         'data-rcm-pulse-bar-fill></div>'
         '</div>'
         '<div class="ck-dp-pulse-lbl">Diligence progress</div>'
         '<div class="ck-dp-pulse-sub" '
-        'data-rcm-pulse-pct>0%</div>'
+        'data-rcm-pulse-pct>0.0%</div>'
         '</div>'
         '</div>'
         '</section>'
@@ -1553,11 +1729,29 @@ def _render_diligence_pulse(slug: str) -> str:
 
 def _inline_js(slug: str) -> str:
     """Small script — reads/writes localStorage under rcm_deal_<slug>
-    and hydrates form + link hrefs."""
+    and hydrates form + link hrefs.
+
+    The literal MUST stay raw (r-prefixed), like ``_LANDING_JS``. It
+    was a plain triple-quoted string, so every backslash escape in the
+    JS was eaten by Python before the browser ever saw it: the newline
+    separators in the Markdown/CSV exporters and the CSV-quoting regex
+    each became a LITERAL newline inside a JS string literal, which is
+    a hard SyntaxError. The browser therefore discarded the ENTIRE
+    block — form hydration, save/clear, the thesis snapshot, market
+    context, the lifecycle ribbon, per-tool state badges, the
+    questions editor, pins and the recent-deals index were all dead on
+    every /diligence/deal/<slug> page. Nothing caught it because the
+    tests assert on rendered HTML and never on JS parseability;
+    ``node --check`` over the emitted script is the cheap guard if
+    this file grows more escapes.
+    """
     safe_slug = json.dumps(slug)
-    return """<script>
+    return r"""<script>
 (function() {
   var slug = %SLUG%;
+  // Emitted from len(_FIELDS) rather than hardcoded, so the "N of 24
+  // fields" badge cannot drift when a deal parameter is added.
+  var FIELD_TOTAL = %NFIELDS%;
   var storageKey = 'rcm_deal_' + slug;
   function load() {
     try { return JSON.parse(localStorage.getItem(storageKey) || '{}'); }
@@ -1590,13 +1784,16 @@ def _inline_js(slug: str) -> str:
     return out;
   }
   function updateThesisSnapshot(data) {
+    // House format: money is ALWAYS 2dp ($450.25M / $1204.50). The M
+    // and K branches rendered 1dp and 0dp, so the same EV read
+    // "$350.0M" here and "$350.00M" on every downstream analytic.
     function fmtUSD(n) {
       if (n == null || isNaN(n)) return '—';
       var abs = Math.abs(n);
       if (abs >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
-      if (abs >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-      if (abs >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
-      return '$' + n.toFixed(0);
+      if (abs >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+      if (abs >= 1e3) return '$' + (n / 1e3).toFixed(2) + 'K';
+      return '$' + n.toFixed(2);
     }
     var num = function(k) {
       var v = parseFloat(data[k]);
@@ -1624,10 +1821,11 @@ def _inline_js(slug: str) -> str:
     setText('[data-rcm-thesis-revenue]', fmtUSD(rev));
     setText('[data-rcm-thesis-ebitda]', fmtUSD(ebitda));
     // EV sub-line: equity + debt share
+    // Percentages are 1dp house-wide; Math.round() gave 0dp here.
     var evSub = '';
     if (equity != null && debt != null && ev != null && ev > 0) {
-      evSub = 'equity ' + Math.round(equity / ev * 100) + '% · debt ' +
-        Math.round(debt / ev * 100) + '%';
+      evSub = 'equity ' + (equity / ev * 100).toFixed(1) + '% · debt ' +
+        (debt / ev * 100).toFixed(1) + '%';
     }
     setText('[data-rcm-thesis-ev-sub]', evSub);
     // Revenue sub-line: states + specialty if available
@@ -1640,33 +1838,48 @@ def _inline_js(slug: str) -> str:
       marginSub = 'margin ' + (ebitda / rev * 100).toFixed(1) + '%';
     }
     setText('[data-rcm-thesis-margin-sub]', marginSub);
-    // Entry multiple
+    // Entry multiple — multiples render 2dp + 'x' (2.50x), not 1dp.
     if (mult != null) {
-      setText('[data-rcm-thesis-multiple]', mult.toFixed(1) + 'x');
+      setText('[data-rcm-thesis-multiple]', mult.toFixed(2) + 'x');
       if (impliedMult != null && Math.abs(impliedMult - mult) > 0.5) {
         setText('[data-rcm-thesis-mult-sub]',
-          'implied ' + impliedMult.toFixed(1) + 'x from EV/EBITDA');
+          'implied ' + impliedMult.toFixed(2) + 'x from EV/EBITDA');
       } else {
         setText('[data-rcm-thesis-mult-sub]', '');
       }
     } else if (impliedMult != null) {
-      setText('[data-rcm-thesis-multiple]', impliedMult.toFixed(1) + 'x');
+      setText('[data-rcm-thesis-multiple]', impliedMult.toFixed(2) + 'x');
       setText('[data-rcm-thesis-mult-sub]', 'derived from EV ÷ EBITDA');
     } else {
       setText('[data-rcm-thesis-multiple]', '—');
       setText('[data-rcm-thesis-mult-sub]', '');
     }
-    // Capital structure bar
+    // Capital structure bar. The aria-label is kept in step with the
+    // widths so the split is available to anyone who cannot read the
+    // two bar tones.
+    var structBar = document.querySelector('[data-rcm-thesis-struct-bar]');
     if (equity != null && debt != null && (equity + debt) > 0) {
       var total = equity + debt;
-      setWidth('[data-rcm-thesis-equity-bar]', equity / total * 100);
+      var eqPct = equity / total * 100;
+      setWidth('[data-rcm-thesis-equity-bar]', eqPct);
       setWidth('[data-rcm-thesis-debt-bar]', debt / total * 100);
       setText('[data-rcm-thesis-struct-legend]',
         fmtUSD(equity) + ' equity · ' + fmtUSD(debt) + ' debt');
+      if (structBar) {
+        structBar.setAttribute('aria-label',
+          'Capital structure — ' + fmtUSD(equity) + ' equity (' +
+          eqPct.toFixed(1) + '%) and ' + fmtUSD(debt) + ' debt (' +
+          (100 - eqPct).toFixed(1) + '%).');
+      }
     } else {
       setWidth('[data-rcm-thesis-equity-bar]', 0);
       setWidth('[data-rcm-thesis-debt-bar]', 0);
       setText('[data-rcm-thesis-struct-legend]', '— equity · — debt');
+      if (structBar) {
+        structBar.setAttribute('aria-label',
+          'Capital structure split — enter Equity check and Debt ' +
+          'in Deal parameters to populate.');
+      }
     }
     // One-line auto-thesis narrative
     var bits = [];
@@ -1700,7 +1913,7 @@ def _inline_js(slug: str) -> str:
         badge.style.color = 'var(--green)';
         badge.style.borderColor = 'var(--green)';
       } else {
-        badge.textContent = completion + ' of 24 fields';
+        badge.textContent = completion + ' of ' + FIELD_TOTAL + ' fields';
         badge.style.color = 'var(--amber)';
         badge.style.borderColor = 'var(--amber)';
       }
@@ -1710,6 +1923,15 @@ def _inline_js(slug: str) -> str:
   // ── Market Context (live peer snapshot) ────────────────────
   var marketCtxTimer = null;
   var marketCtxLastKey = '';
+  // Exactly one of the peer card / the empty state is ever visible.
+  // Before this the panel simply rendered as an empty titled box on
+  // every deal without a resolvable peer band.
+  function setMarketCardVisible(visible) {
+    var card = document.querySelector('[data-rcm-market-context]');
+    var empty = document.querySelector('[data-rcm-market-empty]');
+    if (card) card.style.display = visible ? 'block' : 'none';
+    if (empty) empty.style.display = visible ? 'none' : 'block';
+  }
   function updateMarketContext(data) {
     var el = document.querySelector('[data-rcm-market-context]');
     if (!el) return;
@@ -1719,7 +1941,7 @@ def _inline_js(slug: str) -> str:
     var ebitda = data.ebitda_usd || '';
     var specialty = data.specialty || '';
     if (!category || (!ev && !rev)) {
-      el.style.display = 'none';
+      setMarketCardVisible(false);
       return;
     }
     // Debounce: only fetch when inputs actually change.
@@ -1741,7 +1963,7 @@ def _inline_js(slug: str) -> str:
           renderMarketContext(snap);
         })
         .catch(function() {
-          el.style.display = 'none';
+          setMarketCardVisible(false);
         });
     }, 250);
   }
@@ -1750,10 +1972,10 @@ def _inline_js(slug: str) -> str:
     var el = document.querySelector('[data-rcm-market-context]');
     if (!el) return;
     if (!snap || snap.assessment === 'NO_DATA') {
-      el.style.display = 'none';
+      setMarketCardVisible(false);
       return;
     }
-    el.style.display = 'block';
+    setMarketCardVisible(true);
     var setText = function(sel, txt) {
       var n = document.querySelector(sel);
       if (n) n.textContent = txt;
@@ -1769,11 +1991,14 @@ def _inline_js(slug: str) -> str:
       snap.peer_median_ev_ebitda != null
         ? snap.peer_median_ev_ebitda.toFixed(2) + 'x' : '—',
     );
+    // Multiples: 2dp + 'x' everywhere. The band read 1dp while the
+    // median directly above it read 2dp, so "10.5x - 12.8x" sat under
+    // an "11.40x" median as if they were different quantities.
     setText(
       '[data-rcm-market-band-range]',
       (snap.peer_p25_ev_ebitda != null && snap.peer_p75_ev_ebitda != null)
-        ? 'p25–p75 ' + snap.peer_p25_ev_ebitda.toFixed(1) + 'x – ' +
-          snap.peer_p75_ev_ebitda.toFixed(1) + 'x'
+        ? 'p25–p75 ' + snap.peer_p25_ev_ebitda.toFixed(2) + 'x – ' +
+          snap.peer_p75_ev_ebitda.toFixed(2) + 'x'
         : '',
     );
     var deltaEl = document.querySelector('[data-rcm-market-delta]');
@@ -1789,9 +2014,13 @@ def _inline_js(slug: str) -> str:
       }
     }
     var peerNames = (snap.peers || []).map(function(p) {
-      return p.ticker + ' ' + p.ev_ebitda_multiple.toFixed(1) + 'x';
+      return p.ticker + ' ' + p.ev_ebitda_multiple.toFixed(2) + 'x';
     }).join(' · ');
     setText('[data-rcm-market-peers]', peerNames || '—');
+    // The peer strip truncates in a narrow tile; keep the full list
+    // reachable on hover / focus.
+    var peersEl = document.querySelector('[data-rcm-market-peers]');
+    if (peersEl) peersEl.title = peerNames || '';
     // Assessment pill
     var asEl = document.querySelector('[data-rcm-market-assessment]');
     if (asEl) {
@@ -1856,6 +2085,14 @@ def _inline_js(slug: str) -> str:
         }).join(' · ');
         if (queryParts.length > 3) shown += ' · +' + (queryParts.length - 3) + ' more';
         preview.textContent = shown;
+        // The preview elides both long values and every param past the
+        // third, with no way to see what is actually handed to the
+        // tool. Decoded, one per line, on hover / focus.
+        preview.title = queryParts.length
+          ? queryParts.map(function(q) {
+              return decodeURIComponent(q.replace(/\+/g, ' '));
+            }).join('\n')
+          : 'No deal parameters set yet — this card opens the tool empty.';
       }
     });
   }
@@ -1909,6 +2146,13 @@ def _inline_js(slug: str) -> str:
       if (idx < currentIdx)        el.classList.add("is-done");
       else if (idx === currentIdx) el.classList.add("is-current");
       else                          el.classList.add("is-pending");
+      // State was conveyed by opacity / an inset ring / a ::after tick
+      // — all CSS-only, so assistive tech saw five identical segments.
+      if (idx === currentIdx) el.setAttribute("aria-current", "step");
+      else el.removeAttribute("aria-current");
+      el.setAttribute("data-rcm-phase-state",
+        idx < currentIdx ? "done" : idx === currentIdx ? "current"
+                                                       : "pending");
     });
   }
   document.addEventListener("click", function(e) {
@@ -1928,6 +2172,17 @@ def _inline_js(slug: str) -> str:
       localStorage.setItem(phaseKey, phase);
     }
     paintLifecycle();
+  });
+  // The segments are role="button" + tabindex="0" but they are <div>s,
+  // so the browser does not synthesise a click from Enter / Space the
+  // way it would for a real <button>. Without this the ribbon was
+  // mouse-only.
+  document.addEventListener("keydown", function(e) {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    var tile = e.target.closest && e.target.closest("[data-rcm-phase]");
+    if (!tile) return;
+    e.preventDefault();
+    tile.click();
   });
   document.addEventListener("DOMContentLoaded", paintLifecycle);
 
@@ -2012,6 +2267,12 @@ def _inline_js(slug: str) -> str:
     d.textContent = String(s || "");
     return d.innerHTML;
   }
+  // textContent->innerHTML escapes < > &, but NOT quotes — safe for a
+  // text node, NOT safe for an attribute value. Anything interpolated
+  // into an attribute below goes through this instead.
+  function escQAttr(s) {
+    return escQ(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
   function paintQs() {
     var root = document.querySelector("[data-rcm-dp-qs]");
     if (!root) return;
@@ -2039,20 +2300,31 @@ def _inline_js(slug: str) -> str:
       if (!CAT_LABELS[cat]) cat = "other";
       var pill = '<span class="ck-dp-qs-pill cat-' + cat + '">' +
         escQ(CAT_LABELS[cat]) + '</span>';
+      // Every row renders two identically-labelled buttons, so a
+      // screen-reader user heard "Mark asked / Remove" N times with no
+      // way to tell the rows apart. The question text is partner-typed,
+      // so it is attribute-escaped, never just escQ'd.
+      var shortQ = String(r.text || "");
+      if (shortQ.length > 60) shortQ = shortQ.slice(0, 60) + "…";
+      var qAttr = escQAttr(shortQ);
       return '<li class="ck-dp-qs-row' + stateCls + '" ' +
-        'data-rcm-qs-id="' + escQ(r.id) + '">' +
-        '<span class="ck-dp-qs-row-num">' +
+        'data-rcm-qs-id="' + escQAttr(r.id) + '">' +
+        '<span class="ck-dp-qs-row-num" aria-hidden="true">' +
         String(i + 1).padStart(2, "0") + '</span>' +
-        '<span class="ck-dp-qs-row-text">' + pill +
-        escQ(r.text) + '</span>' +
-        '<span class="ck-dp-qs-row-ts">' + qsRel(r.ts) + '</span>' +
+        '<span class="ck-dp-qs-row-text" title="' + escQAttr(r.text) +
+        '">' + pill + escQ(r.text) + '</span>' +
+        '<span class="ck-dp-qs-row-ts">' + escQ(qsRel(r.ts)) + '</span>' +
         '<span class="ck-dp-qs-row-actions">' +
         '<button type="button" class="ck-dp-qs-row-btn ' +
         'ck-dp-qs-row-btn-asked' + btnCls + '" ' +
+        'aria-pressed="' + (r.asked ? "true" : "false") + '" ' +
+        'aria-label="' + (r.asked ? "Mark not yet asked: "
+                                  : "Mark asked: ") + qAttr + '" ' +
         'data-rcm-qs-ask>' + (r.asked ? "Asked ✓" : "Mark asked") +
         '</button>' +
         '<button type="button" class="ck-dp-qs-row-btn ' +
-        'ck-dp-qs-row-btn-remove" data-rcm-qs-remove>Remove</button>' +
+        'ck-dp-qs-row-btn-remove" aria-label="Remove question: ' +
+        qAttr + '" data-rcm-qs-remove>Remove</button>' +
         '</span></li>';
     }).join("");
     var nOpen = rows.filter(function(r) { return !r.asked; }).length;
@@ -2365,7 +2637,7 @@ def _inline_js(slug: str) -> str:
       : d < 60 ? d + " min ago"
       : d < 1440 ? Math.round(d / 60) + " hr ago"
       : Math.round(d / 1440) + " d ago";
-    var pct = Math.round((count / total) * 100);
+    var pct = (count / total) * 100;
     var pctClamped = Math.max(0, Math.min(100, pct));
     var cnt = sec.querySelector("[data-rcm-pulse-count]");
     if (cnt) cnt.textContent = String(count);
@@ -2373,10 +2645,18 @@ def _inline_js(slug: str) -> str:
     if (lastEl) lastEl.textContent = lastLabel;
     var lastTsEl = sec.querySelector("[data-rcm-pulse-last-ts]");
     if (lastTsEl) lastTsEl.textContent = rel;
+    // Percentages are 1dp house-wide (was Math.round -> 0dp).
     var pctEl = sec.querySelector("[data-rcm-pulse-pct]");
-    if (pctEl) pctEl.textContent = pct + "% of " + total;
+    if (pctEl) pctEl.textContent = pct.toFixed(1) + "% of " + total;
     var fill = sec.querySelector("[data-rcm-pulse-bar-fill]");
     if (fill) fill.style.width = pctClamped + "%";
+    var bar = sec.querySelector("[data-rcm-pulse-bar]");
+    if (bar) {
+      bar.setAttribute("aria-valuenow", String(Math.round(pctClamped)));
+      bar.setAttribute("aria-valuetext",
+        count + " of " + total + " analytics opened (" +
+        pct.toFixed(1) + "%)");
+    }
     var meta = sec.querySelector("[data-rcm-pulse-meta]");
     if (meta) {
       meta.textContent = "from your visit history on " + slug;
@@ -2458,7 +2738,8 @@ def _inline_js(slug: str) -> str:
   }
   document.addEventListener("DOMContentLoaded", pushRecent);
 })();
-</script>""".replace("%SLUG%", safe_slug)
+</script>""".replace("%SLUG%", safe_slug).replace(
+        "%NFIELDS%", str(len(_FIELDS)))
 
 
 def render_deal_profile_page(

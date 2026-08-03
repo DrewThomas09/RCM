@@ -7,10 +7,12 @@ source. Three layers:
   1. The Medicare FEE LADDER — CY2025 conversion factor × the AFS relative
      value units = national unadjusted base rates by HCPCS (GOV inputs,
      DERIVED arithmetic, equation shown).
-  2. The GADCS BENCHMARKS — mean cost + mean reimbursement per transport,
-     labor share, unpaid share, from the first federal ambulance cost
-     collection (RAND/CMS; figures captured from trade coverage of the
-     report → needs_reverify until the PDFs are re-pulled).
+  2. The GADCS BENCHMARKS — mean cost + mean revenue per transport,
+     labor share, payment status, from the first federal ambulance cost
+     collection (RAND/CMS). Refreshed 2026-08-03 against the Year 1–Year 4
+     cohort appendix (posted 2025-12-09, data reported through
+     2025-05-15), fetched and read directly from cms.gov — these no
+     longer ride on trade coverage and are tagged GOV.
   3. The PAYER ECONOMICS — commercial-vs-Medicare multiples and OON shares
      (HCCI / FAIR Health / Peterson-KFF / Health Affairs / JAMA, several
      PubMed-verbatim).
@@ -21,7 +23,8 @@ specialist's thesis is the spread it earns via unit-hour utilization and
 payer selection — a diligence request against MMT's actuals, not a public
 number. No fabricated margin is published here.
 
-Research pull 2026-07-10. Degrade — never raise.
+Research pull 2026-07-10; GADCS layer re-pulled from the primary CMS PDFs
+2026-08-03. Degrade — never raise.
 """
 from __future__ import annotations
 
@@ -90,54 +93,111 @@ _B = EconBenchmark
 
 BENCHMARKS: Tuple[EconBenchmark, ...] = (
     _B("gadcs_cost_mean",
-       "Mean cost to complete an ambulance transport (2022–23, all payers, "
-       "readiness included)",
-       "$2,673 all agencies · $3,127 governmental · $1,778 private "
-       "for-profit",
-       "SOURCED",
-       "CMS/RAND GADCS Report, Year 1–2 cohort (Dec 2024), via EMS|MC "
-       "coverage",
+       "Mean unadjusted total cost per ambulance transport (Y1–Y4 cohorts; "
+       "data collection periods beginning 2022–2023 and running into 2024, "
+       "reported through 2025-05-15; all payers, readiness included)",
+       "$2,763 all NPIs (median $1,355) · $3,167 government · $2,578 "
+       "non-profit · $1,912 for-profit/unknown",
+       "GOV",
+       "CMS/RAND, GADCS Report Appendix — Year 1–Year 4 Cohort Analysis "
+       "(Dec 2025), Table 4.1; PDF fetched and read 2026-08-03. "
+       "SUPERSEDES the Year 1–2 cohort figures ($2,673 / $3,127 / $1,788, "
+       "Dec 2024).",
+       "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+       "collection-system-gadcs-report-appendix-year-1-year-4-cohort-"
+       "analysis.pdf",
+       "Table 4.1. Summary Table of Unadjusted Total Cost per Service — "
+       "All NPIs (n=9,599): Total Cost per Transport mean $2,763, median "
+       "$1,355.",
+       needs_reverify=False),
+    _B("gadcs_reimb_mean",
+       "Mean unadjusted total REVENUE per ambulance transport (all "
+       "provider + payer types; Y1–Y4 cohorts, reported through "
+       "2025-05-15)",
+       "$1,268 all NPIs (median $613) · $1,384 government · $1,136 "
+       "non-profit · $1,135 for-profit/unknown",
+       "GOV",
+       "CMS/RAND, GADCS Report Appendix — Year 1–Year 4 Cohort Analysis "
+       "(Dec 2025), Table 4.2; PDF fetched and read 2026-08-03. "
+       "SUPERSEDES the Year 1–2 cohort figure ($1,147, Dec 2024). RAND's "
+       "own label is 'revenue per transport'; the trade press renders it "
+       "as 'reimbursement'.",
+       "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+       "collection-system-gadcs-report-appendix-year-1-year-4-cohort-"
+       "analysis.pdf",
+       "Table 4.2. Summary Table of Unadjusted Revenue per Service — All "
+       "NPIs (n=9,599): Total Revenue per Transport mean $1,268, median "
+       "$613.",
+       needs_reverify=False),
+    _B("gadcs_labor_share",
+       "Labor share of aggregated total ground-ambulance cost (Y1–Y4 "
+       "cohorts, reported through 2025-05-15)",
+       "70.7% (Y1–Y4, Dec 2025) — up from 69.4% in the Y1–2 cohort "
+       "(Dec 2024)",
+       "GOV",
+       "CMS/RAND, GADCS Report Appendix — Year 1–Year 4 Cohort Analysis "
+       "(Dec 2025), Figure S.1; PDF fetched and read 2026-08-03 "
+       "(citation upgraded off member-gated AAA coverage; value "
+       "unchanged)",
+       "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+       "collection-system-gadcs-report-appendix-year-1-year-4-cohort-"
+       "analysis.pdf",
+       "After aggregating ground ambulance costs across all reporting "
+       "organizations, 71 percent of total expenses were for labor costs, "
+       "9 percent for vehicle expenses, 3 percent for facilities "
+       "expenses, 4 percent for equipment and supply costs, and 12 "
+       "percent for “other” costs",
+       verbatim=True, needs_reverify=False),
+    _B("gadcs_unpaid",
+       "Payment status of transports — CORRECTED FRAMING. There is NO "
+       "CMS/RAND published rate for transports that 'go entirely unpaid'",
+       "Published Y1–2 statistic: 18.4M of 22.9M transports (80%) were "
+       "paid in part or in full BY THE TIME OF REPORTING — RAND calls the "
+       "80% a LOWER BOUND because claims adjudication continues, so the "
+       "~20% residual is 'not yet paid', NOT 'entirely unpaid'. The Y1–Y4 "
+       "appendix does not restate a paid-transport share in text. The "
+       "nearest Y1–Y4 statistic is ORGANIZATION-level: 'about one in five "
+       "organizations reported that they did not always bill patients in "
+       "one or more payer categories for transports'. Separately, 24% of "
+       "the 61.3M reported ground-ambulance responses did not result in a "
+       "transport and so were not paid by an insurer (Y1–Y4). The widely "
+       "recirculated '19.7% of transports go unpaid, up from 18.8%' is "
+       "EMS1/AAA trade framing — it does not appear in either CMS/RAND "
+       "report text; do not cite it as a federal figure.",
+       "GOV",
+       "CMS/RAND, GADCS Report Year 1–2 Cohort Analysis (Dec 2024), "
+       "Section 5 narrative (paid-transport share + lower-bound caveat); "
+       "CMS/RAND GADCS Report Appendix Year 1–Year 4 (Dec 2025), Table "
+       "S.1 Sections 5 and 13 (organization-level billing statistic). "
+       "Both PDFs fetched and read 2026-08-03.",
        "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
        "collection-system-gadcs-report-year-1-and-year-2-cohort-analysis."
        "pdf",
-       "The mean cost to complete an ambulance transport was $2,673."),
-    _B("gadcs_reimb_mean",
-       "Mean reimbursement per ambulance transport (all provider + payer "
-       "types)",
-       "$1,147",
-       "SOURCED",
-       "CMS/RAND GADCS Report, Year 1–2 cohort, via EMS|MC coverage",
-       "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-"
-       "collection-report-on-ambulance-services-and-what-we-need-to-do-"
-       "about-it/",
-       "Across all provider and payer types, the mean reimbursement per "
-       "ambulance transport is $1,147."),
-    _B("gadcs_labor_share",
-       "Labor share of total ambulance cost",
-       "69% (Y1–2) → 70.7% (Y1–4 appendix, Dec 2025)",
-       "SOURCED",
-       "GADCS reports via AIMHI/EMS1 + AAA coverage",
-       "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/",
-       "labor (including wages and benefits) represents 69% of the cost "
-       "of ambulance service delivery."),
-    _B("gadcs_unpaid",
-       "Share of ambulance transports that go entirely unpaid",
-       "19.7% (up from 18.8% in the first cohort)",
-       "SOURCED",
-       "GADCS Year 1–4 appendix (Dec 2025) via AAA coverage",
-       "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/",
-       "19.7% of ambulance transports go unpaid, up from 18.8% in the "
-       "initial cohort."),
+       "Organizations reported receiving payment in part or in full for "
+       "18.4 million ground ambulance transports, 80 percent of all "
+       "transports. … In other words, the 80 percent overall result "
+       "should be viewed as a lower bound.",
+       verbatim=True, needs_reverify=False),
     _B("gadcs_medicare_revshare",
-       "Medicare + Medicare Advantage share of transport revenue",
-       "42% (MA share of revenue grew >30% across cohorts)",
-       "SOURCED",
-       "GADCS reports via EMS|MC / AAA coverage",
-       "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-"
-       "collection-report-on-ambulance-services-and-what-we-need-to-do-"
-       "about-it/",
-       "Medicare and Medicare Advantage brought in 42% of total transport "
-       "revenue."),
+       "Medicare + Medicare Advantage share of transport revenue per NPI "
+       "(Y1–Y4 cohorts, reported through 2025-05-15)",
+       "47% = 29% Traditional FFS Medicare + 18% Medicare Advantage; "
+       "Traditional Medicare + MA + commercial together ≈75%",
+       "GOV",
+       "CMS/RAND, GADCS Report Appendix — Year 1–Year 4 Cohort Analysis "
+       "(Dec 2025), Table S.1 Section 13; PDF fetched and read "
+       "2026-08-03. SUPERSEDES the Year 1–2 cohort figure (25% + 17% = "
+       "42% of aggregated transport revenue, Dec 2024) — MA overtook "
+       "Traditional Medicare as the primary revenue source for some "
+       "organization types.",
+       "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+       "collection-system-gadcs-report-appendix-year-1-year-4-cohort-"
+       "analysis.pdf",
+       "Traditional FFS Medicare accounted for 29 percent of transport "
+       "revenue per NPI on average, while Medicare Advantage "
+       "(“Medicare managed care”) plans accounted for an "
+       "additional 18 percent of total transport revenue.",
+       verbatim=True, needs_reverify=False),
     _B("medicare_avg_payment",
        "Medicare FFS average payment per ground transport (incl. mileage)",
        "$469 = $5.3B / 11.3M transports (2024)",
@@ -245,16 +305,17 @@ PAYER_FACTS: Tuple[EconBenchmark, ...] = (
 )
 
 THE_HONEST_BOTTOM_LINE = (
-    "GADCS mean economics are negative — mean cost $2,673 vs mean "
-    "reimbursement $1,147 — because the mean carries readiness-heavy "
-    "municipal 911 books. The IFT specialist thesis is precisely the "
-    "spread against that mean: a scheduled book runs unit-hour "
-    "utilization above the 0.30–0.50 911 band, a private for-profit "
-    "cost base ($1,778 GADCS mean) rather than a governmental one "
-    "($3,127), and a payer-selected mix where commercial pays ~2.0x "
-    "Medicare. MMT's actual per-leg P&L is a diligence request against "
-    "company data — no public figure exists, and this page does not "
-    "invent one."
+    "GADCS mean economics are negative — mean cost $2,763 vs mean "
+    "revenue $1,268 per transport in the Year 1–Year 4 cohort appendix "
+    "(Dec 2025) — because the mean carries readiness-heavy municipal 911 "
+    "books. Both means are right-skewed: the medians are $1,355 cost and "
+    "$613 revenue. The IFT specialist thesis is precisely the spread "
+    "against that mean: a scheduled book runs unit-hour utilization "
+    "above the 0.30–0.50 911 band, a for-profit cost base ($1,912 GADCS "
+    "mean) rather than a governmental one ($3,167), and a payer-selected "
+    "mix where commercial pays ~2.0x Medicare. MMT's actual per-leg P&L "
+    "is a diligence request against company data — no public figure "
+    "exists, and this page does not invent one."
 )
 
 

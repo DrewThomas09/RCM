@@ -1,6 +1,13 @@
 # FILE_MAP — per-file function index
 
-**Scope**: every `.py` file in the repo (excluding `__pycache__`, `.egg-info`, `.venv`, and macOS `* 2.py` duplicates). **Total: 1,705 files.** Built incrementally, 50 files per chunk, so a reader (human or agent) can land anywhere and know what every file does without reading source.
+> **HISTORICAL SNAPSHOT — counts frozen at April 2026** (Report-0265/MR1033).
+> The catalogue below describes the tree as of the April 2026 audit
+> (1,705 files then; ~3,900 .py files by August 2026 — the tree roughly
+> doubled in the July merge wave). Per-file descriptions remain accurate
+> for the files listed; files added after April are NOT catalogued here.
+> For current per-package detail use the per-directory READMEs.
+
+**Scope**: every `.py` file in the repo (excluding `__pycache__`, `.egg-info`, `.venv`, and macOS `* 2.py` duplicates). **Total: 1,705 files** (as of April 2026). Built incrementally, 50 files per chunk, so a reader (human or agent) can land anywhere and know what every file does without reading source.
 
 **Grand-total breakdown**:
 
@@ -26,7 +33,7 @@
 |------|---------|
 | [RCM_MC/demo.py](RCM_MC/demo.py) | One-shot demo — seeds a realistic portfolio to a temp SQLite DB, starts HTTP server on a free port, prints login URLs. Zero-config onboarding. |
 | [RCM_MC/seekingchartis.py](RCM_MC/seekingchartis.py) | `python seekingchartis.py` front-door launcher — starts the server, opens the browser, `--port` / `--db` / `--no-browser` flags. |
-| [RCM_MC/handoff/verify_rework.py](RCM_MC/handoff/verify_rework.py) | Post-handoff smoke test — validates that a UI rework drop landed cleanly (file presence, CSS tokens, shell-render check). CI-friendly exit codes. |
+| [design_reference/handoff/verify_rework.py](design_reference/handoff/verify_rework.py) | Post-handoff smoke test — validates that a UI rework drop landed cleanly (file presence, CSS tokens, shell-render check). CI-friendly exit codes. *(moved from `RCM_MC/handoff/` in the reorg)* |
 
 ### `rcm_mc/` top-level modules (8 files, covered by package docs)
 

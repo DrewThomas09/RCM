@@ -27,6 +27,8 @@ from typing import Any, Callable, Dict, List, Optional
 from ._chartis_kit import (
     P,
     chartis_shell,
+    ck_arrow_link,
+    ck_empty_state,
     ck_illustrative_note,
     ck_kpi_block,
     ck_page_title,
@@ -39,14 +41,27 @@ def _humanize(name: str) -> str:
     return " ".join(w.capitalize() for w in str(name).replace("_", " ").split())
 
 
+def _plural(n: int, one: str, many: str) -> str:
+    """Counts render with no decimals — the noun still has to agree with them
+    ("1 entry", not "1 entries"), which a bare f-string kept getting wrong."""
+    return f"{n} {one if n == 1 else many}"
+
+
 # ── generic card primitives ────────────────────────────────────────────────
 def _chip(text: str) -> str:
+    raw = str(text)
+    label = _humanize(raw)
+    # The raw value is a packet expression ("ebitda_share_from_340b > 0.15")
+    # that _humanize flattens into prose. Partners match these against packet
+    # field names, so keep the exact string reachable on hover instead of
+    # losing it to the display transform.
+    tip = f' title="{_html.escape(raw)}"' if label != raw else ""
     return (
-        f'<span style="display:inline-block;font-family:var(--ck-mono);'
+        f'<span{tip} style="display:inline-block;font-family:var(--ck-mono);'
         f'font-size:9.5px;letter-spacing:0.03em;color:{P["text_dim"]};'
         f'background:{P["panel"]};border:1px solid {P["border_dim"]};'
         f'border-radius:2px;padding:2px 6px;margin:0 5px 5px 0;">'
-        f'{_html.escape(_humanize(text))}</span>'
+        f'{_html.escape(label)}</span>'
     )
 
 
@@ -74,9 +89,23 @@ def _field(label: str, value: str, *, italic: bool = False) -> str:
     )
 
 
+# What each headline badge actually measures. The badge itself is two words
+# wide, so the denominator lives in a tooltip rather than the label.
+_BADGE_HELP: Dict[str, str] = {
+    "ebitda_destruction_pct":
+        "Approximate EBITDA destroyed versus the entry case — partner "
+        "judgment on a public event, not an audited figure.",
+    "expected_price_premium_pct":
+        "Premium over our base price this buyer type typically pays.",
+    "typical_cost_to_buyer_pct":
+        "Typical cost to the buyer if the risk lands, as a percent of EBITDA.",
+}
+
+
 def _render_card(item: Any, spec: Dict[str, Any]) -> str:
     g = lambda f: getattr(item, f, None)  # noqa: E731
-    title = _humanize(g(spec["title"]) or "")
+    # escape: _humanize only re-cases the string, it does not make it safe.
+    title = _html.escape(_humanize(g(spec["title"]) or ""))
     if spec.get("title_suffix") and g(spec["title_suffix"]) is not None:
         title += f' &middot; {_html.escape(str(g(spec["title_suffix"])))}'
     badge = ""
@@ -84,7 +113,11 @@ def _render_card(item: Any, spec: Dict[str, Any]) -> str:
         field, fmt = spec["badge"]
         v = g(field)
         if isinstance(v, (int, float)):
-            badge = (f'<span style="font-family:var(--ck-mono);font-size:11px;'
+            # A bare "15.0% cost" doesn't say cost of what — the tooltip names
+            # the denominator and flags the figure as partner judgment.
+            tip = _BADGE_HELP.get(field, "")
+            tip_attr = f' title="{_html.escape(tip)}"' if tip else ""
+            badge = (f'<span{tip_attr} style="font-family:var(--ck-mono);font-size:11px;'
                      f'font-weight:700;color:{P["negative"] if fmt.startswith("-") else P["accent"]};'
                      f'white-space:nowrap;">{fmt.format(v * 100)}</span>')
     metas = "".join(_meta_badge(lbl, str(g(f))) for f, lbl in spec.get("metas", [])
@@ -113,16 +146,19 @@ def _render_card(item: Any, spec: Dict[str, Any]) -> str:
                   f'{_html.escape(lbl)}</span><div style="font-size:12.5px;'
                   f'line-height:1.55;color:{P["text"]};margin-top:3px;">'
                   f'{_html.escape(str(v))}</div></div>')
+    # <article> + <h3>: the library is a long browsable list, so each entry
+    # needs to be a landmark a screen reader can jump between. Margins are set
+    # explicitly so the heading renders exactly like the old <span>.
     head = (
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:baseline;gap:12px;margin-bottom:6px;">'
-        f'<span style="font-family:var(--sc-serif);font-size:16px;font-weight:600;'
-        f'color:{P["text"]};">{title}</span>{badge}</div>'
+        f'<h3 style="font-family:var(--sc-serif);font-size:16px;font-weight:600;'
+        f'color:{P["text"]};margin:0;">{title}</h3>{badge}</div>'
     )
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'<article style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:3px;padding:14px 16px;margin-bottom:12px;">'
-        f'{head}{metas}{bodies}{chips}{hi}</div>'
+        f'{head}{metas}{bodies}{chips}{hi}</article>'
     )
 
 
@@ -186,7 +222,7 @@ def _render_chain(thesis_id: str, impls: List[Any]) -> str:
             f'<div style="display:flex;gap:8px;align-items:baseline;">'
             f'<span style="font-family:var(--ck-mono);font-size:8.5px;'
             f'font-weight:700;letter-spacing:0.06em;text-transform:uppercase;'
-            f'color:{rc};white-space:nowrap;">{_html.escape(risk) or "—"} risk</span>'
+            f'color:{rc};white-space:nowrap;">{_html.escape(risk) or "unrated"} risk</span>'
             f'<span style="font-size:12.5px;line-height:1.5;color:{P["text"]};'
             f'font-weight:600;">{_html.escape(getattr(im,"claim","") or "")}</span>'
             f'</div>'
@@ -195,15 +231,24 @@ def _render_chain(thesis_id: str, impls: List[Any]) -> str:
             f'color:{P["text_dim"]};">&rarr; {_html.escape(getattr(im,"partner_check","") or "")}'
             f'</span>{pf_chip}</div></div>'
         )
+    if not rows:
+        # A chain with no implications would otherwise render as a title over
+        # a blank card — say so instead of showing the partner an empty panel.
+        rows.append(
+            f'<div style="padding:8px 0;font-size:12.5px;line-height:1.55;'
+            f'color:{P["text_dim"]};">No implicit claims are written up for '
+            f'this thesis yet — treat the whole chain as unchecked.</div>'
+        )
     return (
-        f'<div style="background:{P["panel"]};border:1px solid {P["border"]};'
+        f'<article style="background:{P["panel"]};border:1px solid {P["border"]};'
         f'border-radius:3px;padding:14px 16px;margin-bottom:12px;">'
-        f'<div style="font-family:var(--sc-serif);font-size:16px;font-weight:600;'
-        f'color:{P["text"]};margin-bottom:4px;">{_html.escape(_humanize(thesis_id))}'
-        f'</div><div style="font-family:var(--ck-mono);font-size:9px;'
+        f'<h3 style="font-family:var(--sc-serif);font-size:16px;font-weight:600;'
+        f'color:{P["text"]};margin:0 0 4px;">{_html.escape(_humanize(thesis_id))}'
+        f'</h3><div style="font-family:var(--ck-mono);font-size:9px;'
         f'letter-spacing:0.1em;text-transform:uppercase;color:{P["text_faint"]};'
-        f'margin-bottom:6px;">{len(impls)} implicit claims to check</div>'
-        f'{"".join(rows)}</div>'
+        f'margin-bottom:6px;">'
+        f'{_plural(len(impls), "implicit claim to check", "implicit claims to check")}'
+        f'</div>{"".join(rows)}</article>'
     )
 
 
@@ -332,13 +377,33 @@ def render_pe_reference_page(library: str = "") -> str:
         cards = "".join(_render_chain(tid, impls) for tid, impls in items)
     else:
         cards = "".join(_render_card(it, cfg["spec"]) for it in items)
+    if not cards:
+        # A curated constant can be emptied (or a library wired before its
+        # content lands) — the section header would then sit above nothing.
+        cards = ck_empty_state(
+            f"No entries in the {title} library yet.",
+            "This library is curated partner knowledge, so it fills in as "
+            "patterns get written up. Pick another library above, or take a "
+            "live deal to the tool runner.",
+            eyebrow="EMPTY LIBRARY",
+            cta_label="Run a tool on a deal",
+            cta_href="/diligence/pe-tool",
+        )
 
     tabs = []
     for key, c in _LIBRARIES.items():
         on = key == library
-        n = len(c["load"]())
+        # The active library is already loaded; only the other loaders have to
+        # run for their tab counts.
+        n = len(items) if on else len(c["load"]())
+        # aria-current marks the selected library, and the aria-label spells
+        # out the bare "(24)" count for a screen reader.
+        cur = ' aria-current="page"' if on else ""
+        aria = _html.escape(
+            f'{c["title"]} — {_plural(n, "entry", "entries")}')
         tabs.append(
-            f'<a href="/diligence/pe-reference?library={key}" '
+            f'<a href="/diligence/pe-reference?library={key}"{cur} '
+            f'aria-label="{aria}" '
             f'style="font-family:var(--ck-mono);font-size:11px;padding:5px 11px;'
             f'margin:0 6px 6px 0;display:inline-block;border-radius:3px;'
             f'text-decoration:none;border:1px solid '
@@ -366,13 +431,27 @@ def render_pe_reference_page(library: str = "") -> str:
         next_href="/diligence/pe-tool",
     )
 
+    # ck_source_purpose keeps next_action/next_href in its signature but no
+    # longer renders them (2026 under-title rehaul), so this page's way back
+    # out — to the deal-driven runner and to the catalog that links here —
+    # had silently disappeared. Render the two links explicitly.
+    onward = (
+        '<div style="display:flex;gap:18px;flex-wrap:wrap;margin:0 0 14px;">'
+        + ck_arrow_link("Run a tool on a deal", "/diligence/pe-tool")
+        + ck_arrow_link("Back to the PE tool catalog", "/diligence/pe-library")
+        + '</div>'
+    )
+
     body = (
         ck_page_title(title, eyebrow="DILIGENCE · REFERENCE",
-                      meta=f"{len(items)} entries · curated knowledge base")
+                      meta=f'{_plural(len(items), "entry", "entries")} · '
+                           "curated knowledge base")
         + ck_illustrative_note("a curated knowledge base: real patterns with "
                                "partner-judgment analysis, not live data")
         + sp
-        + f'<div style="margin:10px 0 14px;">{"".join(tabs)}</div>'
+        + f'<nav aria-label="Reference libraries" style="margin:10px 0 14px;">'
+          f'{"".join(tabs)}</nav>'
+        + onward
         + f'<div class="ck-kpi-grid">{kpis}</div>'
         + ck_section_header(title.upper(), intro, count=len(items))
         + cards

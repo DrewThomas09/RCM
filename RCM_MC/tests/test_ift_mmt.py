@@ -139,12 +139,17 @@ class MmtModelTests(unittest.TestCase):
     def test_operating_model_margin_and_metrics(self):
         op = m.mmt_operating_model()
         self.assertGreater(len(op.metrics), 5)
-        # 2026-07-10 re-anchor: the numeric fields now carry the PUBLISHED
-        # GADCS means (mean reimbursement $1,147 vs private-for-profit mean
-        # cost $1,778) — the published mean spread is NEGATIVE by design;
-        # the old fabricated 0–60% margin is gone. Guard the honesty.
-        self.assertEqual(op.revenue_per_leg, 1147.0)
-        self.assertEqual(op.cost_per_leg, 1778.0)
+        # 2026-08-03 re-anchor: the numeric fields carry the PUBLISHED GADCS
+        # means from the Year 1–Year 4 cohort appendix (posted 2025-12-09,
+        # data through 2025-05-15), which SUPERSEDES the Year 1–2 report
+        # (Dec 2024) this test previously pinned ($1,147 / $1,788). Verified
+        # against the CMS PDF directly: mean total revenue/transport $1,268
+        # (n=9,599, median $613) and mean total cost/transport $1,912 for
+        # for-profit/unknown agencies (n=1,869). The published mean spread
+        # is NEGATIVE by design; the old fabricated 0–60% margin is gone.
+        # Guard the honesty.
+        self.assertEqual(op.revenue_per_leg, 1268.0)
+        self.assertEqual(op.cost_per_leg, 1912.0)
         self.assertLess(op.contribution_margin_pct, 0.0)
         self.assertGreaterEqual(op.est_units, 1)
         self.assertTrue(op.headline)

@@ -27,6 +27,7 @@ from __future__ import annotations
 import html
 import json
 from typing import Any, Dict, Iterable, List, Optional
+from urllib.parse import quote
 
 from ..analysis.packet import (
     DealAnalysisPacket,
@@ -1216,6 +1217,22 @@ def _esc(s: Any) -> str:
     return html.escape("" if s is None else str(s))
 
 
+def _seg(s: Any) -> str:
+    """Percent-encode a value for use as a URL path segment.
+
+    Report-0268: deal_id is partner-supplied and unvalidated. In a
+    plain href="/route/<id>" attribute html.escape is enough, but the
+    Delete button interpolates it into an onclick fetch() JS-string,
+    where html.escape is the wrong codec (the browser HTML-decodes the
+    attribute before the JS parser runs, so an escaped quote reverts
+    and breaks out → stored XSS). Percent-encoding yields only
+    [A-Za-z0-9_.~%-] — safe in a JS string, an HTML attribute, and a
+    URL path segment alike, and it also fixes latent URL malformation
+    for ids containing ?, #, or spaces.
+    """
+    return quote("" if s is None else str(s), safe="")
+
+
 def _metric_display_name(metric_key: str) -> str:
     """Partner-facing label for a metric key.
 
@@ -1413,19 +1430,19 @@ def _render_header(packet: DealAnalysisPacket) -> str:
           &nbsp;›&nbsp; <span class="here">workbench</span>
         </div>
         <div class="wb-utility-actions">
-          <a class="wb-btn" href="/models/dcf/{_esc(packet.deal_id)}">DCF</a>
-          <a class="wb-btn" href="/models/lbo/{_esc(packet.deal_id)}">LBO</a>
-          <a class="wb-btn" href="/models/financials/{_esc(packet.deal_id)}">Financials</a>
-          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}">JSON</a>
-          <a class="wb-btn" href="/api/analysis/{_esc(packet.deal_id)}/diligence-questions">Diligence CSV</a>
+          <a class="wb-btn" href="/models/dcf/{_seg(packet.deal_id)}">DCF</a>
+          <a class="wb-btn" href="/models/lbo/{_seg(packet.deal_id)}">LBO</a>
+          <a class="wb-btn" href="/models/financials/{_seg(packet.deal_id)}">Financials</a>
+          <a class="wb-btn" href="/api/analysis/{_seg(packet.deal_id)}">JSON</a>
+          <a class="wb-btn" href="/api/analysis/{_seg(packet.deal_id)}/diligence-questions">Diligence CSV</a>
           <span class="wb-spacer"></span>
-          <form method="POST" action="/api/deals/{_esc(packet.deal_id)}/archive" class="wb-inline-form">
+          <form method="POST" action="/api/deals/{_seg(packet.deal_id)}/archive" class="wb-inline-form">
             <button class="wb-btn wb-btn-warn" type="submit"
                     onclick="return confirm('Archive this deal? It will be hidden from the dashboard.');"
                     aria-label="Archive this deal">Archive</button>
           </form>
           <button class="wb-btn wb-btn-danger" type="button"
-                  onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_esc(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
+                  onclick="if(confirm('Permanently delete this deal and ALL associated data? This cannot be undone.')){{fetch('/api/deals/{_seg(packet.deal_id)}',{{method:'DELETE'}}).then(r=>r.json()).then(d=>{{if(d.deleted){{if(window.rcmToast)rcmToast('Deal deleted','success');setTimeout(function(){{window.location='/';}},500);}}}}).catch(function(){{if(window.rcmToast)rcmToast('Delete failed','error');}});}}"
                   aria-label="Permanently delete this deal">Delete</button>
         </div>
       </div>

@@ -94,11 +94,40 @@ _DEFAULT_BASE = "/data/exports"
 # Filename character that's legal everywhere (Linux + macOS + Windows).
 # ISO 8601 uses ``:`` in the time portion; substitute with ``-``.
 _TIMESTAMP_FMT = "%Y-%m-%dT%H-%M-%S"
+# MR1070: the auto-generated stamp carries microseconds so two exports of
+# the same (deal_id, filename) within one wall-clock second resolve to
+# distinct paths instead of the second silently overwriting the first via
+# canonical_facade's shutil.move. Still colon-free / filesystem-safe, and
+# nothing parses the stamp back out of a filename (grep-verified).
+_TIMESTAMP_FMT_MICRO = "%Y-%m-%dT%H-%M-%S-%f"
 
 
 def _now_utc_iso() -> str:
-    """Filesystem-safe UTC timestamp (no colons, no microseconds)."""
-    return datetime.now(timezone.utc).strftime(_TIMESTAMP_FMT)
+    """Filesystem-safe UTC timestamp (no colons; microsecond-precise).
+
+    Microseconds make same-second exports collision-resistant (MR1070).
+    """
+    return datetime.now(timezone.utc).strftime(_TIMESTAMP_FMT_MICRO)
+
+
+def _reject_path_chars(label: str, value: str) -> None:
+    """Reject any path component that could escape the exports root (MR1019).
+
+    Bars OS path separators, ``.``/``..`` traversal segments, and absolute
+    paths. Applied to every user-influenced component (deal_id, filename,
+    timestamp) before it is joined into an export path.
+    """
+    # Reject both separators on every platform (an export written on one
+    # OS may be read on another; a backslash in a name is suspicious
+    # regardless). os.altsep is None on Linux, so check literals directly.
+    if "/" in value or "\\" in value:
+        raise ValueError(
+            f"{label} must be a bare name, not a path: {value!r}"
+        )
+    if value in (".", "..") or os.path.isabs(value):
+        raise ValueError(
+            f"{label} must not be a traversal or absolute path: {value!r}"
+        )
 
 
 def _resolve_export_path(
@@ -114,10 +143,7 @@ def _resolve_export_path(
     above route through the public ``canonical_*_export_path``
     functions which carry the scope choice in their names.
     """
-    if "/" in filename or "\\" in filename:
-        raise ValueError(
-            f"filename must be a bare name, not a path: {filename!r}"
-        )
+    _reject_path_chars("filename", filename)
 
     if base is None:
         base = Path(os.environ.get("EXPORTS_BASE") or _DEFAULT_BASE)
@@ -125,17 +151,35 @@ def _resolve_export_path(
         base = Path(base)
 
     ts = timestamp or _now_utc_iso()
+    # The timestamp is interpolated into the leaf name; a caller-supplied
+    # value must not smuggle separators either (MR1019).
+    _reject_path_chars("timestamp", ts)
 
     # Cross-portfolio routing — None or empty deal_id → _portfolio/.
     # The empty-string fallback is defensive: a DB row with a blank
     # deal_id would otherwise write to /data/exports/ root, which is
     # the wrong place. Underscore prefix sorts above any real deal_id.
     scope = (deal_id or "").strip() or "_portfolio"
+    # MR1019: deal_id is partner-supplied (import routes accept it with
+    # only a non-empty check) and lands in a filesystem path here — the
+    # export layer is the single chokepoint every writer routes through,
+    # so validate the dangerous component too, not just filename. A
+    # ``../`` or absolute deal_id would otherwise escape the exports root.
+    _reject_path_chars("deal_id", scope)
 
     parent = base / scope
-    parent.mkdir(parents=True, exist_ok=True)
+    resolved = (parent / f"{ts}_{filename}").resolve()
 
-    return (parent / f"{ts}_{filename}").resolve()
+    # Belt-and-suspenders: even if a new caller sneaks a bad component
+    # past the checks above, never return a path outside the base root.
+    base_resolved = base.resolve()
+    if not resolved.is_relative_to(base_resolved):
+        raise ValueError(
+            f"resolved export path {resolved} escapes base {base_resolved}"
+        )
+
+    parent.mkdir(parents=True, exist_ok=True)
+    return resolved
 
 
 def canonical_deal_export_path(
@@ -156,7 +200,8 @@ def canonical_deal_export_path(
             Must not contain path separators. Encode hierarchy in the
             filename itself (``"lp_q1.html"``), not via subdirectories.
         timestamp: Filesystem-safe UTC timestamp string (default: now).
-            Format ``YYYY-MM-DDTHH-MM-SS``.
+            Format ``YYYY-MM-DDTHH-MM-SS`` (the auto-generated
+            default also appends ``-<microseconds>`` for uniqueness).
         base: Override the ``/data/exports/`` root. Precedence:
             explicit ``base=`` arg > ``EXPORTS_BASE`` env var >
             ``/data/exports`` default.
@@ -203,7 +248,8 @@ def canonical_portfolio_export_path(
         filename: Bare filename (e.g. ``"corpus_summary.xlsx"``).
             Must not contain path separators.
         timestamp: Filesystem-safe UTC timestamp string (default: now).
-            Format ``YYYY-MM-DDTHH-MM-SS``.
+            Format ``YYYY-MM-DDTHH-MM-SS`` (the auto-generated
+            default also appends ``-<microseconds>`` for uniqueness).
         base: Override the ``/data/exports/`` root. Precedence:
             explicit ``base=`` arg > ``EXPORTS_BASE`` env var >
             ``/data/exports`` default.

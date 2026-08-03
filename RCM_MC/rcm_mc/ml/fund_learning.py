@@ -44,6 +44,10 @@ def compute_fund_accuracy(db_path: str) -> Optional[FundAccuracy]:
     """Aggregate value creation accuracy across all deals with plans + actuals."""
     try:
         con = sqlite3.connect(db_path)
+        # MR1067 residual: the last direct portfolio-DB connection
+        # without busy_timeout — a concurrent writer could SQLITE_BUSY
+        # these read-only SELECTs immediately instead of retrying.
+        con.execute("PRAGMA busy_timeout = 5000")
     except Exception:
         return None
 

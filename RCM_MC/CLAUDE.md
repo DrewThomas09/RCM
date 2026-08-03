@@ -235,7 +235,7 @@ The audit chain (Reports 0167, 0181, 0211, MR982) found five distinct delete beh
 - Deal page — snapshot trail, variance, initiatives, notes, tags,
   owner, deadlines, health score + trend sparkline, rerun simulation
 - Deal lifecycle — create / archive / unarchive / clone / delete
-  (cascade across 23 child tables) / pin / validate / IC checklist
+  (cascade across 24 child tables) / pin / validate / IC checklist
 - Cohorts, owners, watchlist, deadlines, notes search (+ tag filter)
 - Variance drill-down, escalations, LP digest (HTML + download)
 - Compare deals (side-by-side + EBITDA trajectory SVG + JSON API)

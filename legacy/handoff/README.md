@@ -7,7 +7,7 @@
 | File | What it is |
 |---|---|
 | `HANDOFF_FOR_CURSOR.md` | Prompt-style brief. Read first. Contains the exact change set, acceptance criteria, grep commands, and Cursor copy-paste prompt. |
-| `CHARTIS_KIT_REWORK.py` | Drop-in replacement for `rcm_mc/ui/_chartis_kit.py`. Same public API; new palette + shell + panel chrome. |
+| `CHARTIS_KIT_REWORK.py` | **Removed (Report-0265, MR1032)** — it was a byte-identical duplicate of [`design_reference/handoff/CHARTIS_KIT_REWORK.py`](../../design_reference/handoff/CHARTIS_KIT_REWORK.py), which is the maintained copy. The rework itself shipped long ago; this dir is history. |
 | `chartis_tokens.css` | CSS design tokens. Land at `rcm_mc/ui/static/chartis_tokens.css` or inline into the shell. |
 | `MODULE_ROUTE_MAP.md` | Table of every module surface (79) with route and source `.py` file. Walk this to verify the reskin. |
 | `SeekingChartis Rework.html` | Interactive reference mockup. Five linked screens (marketing → login → home → workbench → module pages). Open in any browser. |

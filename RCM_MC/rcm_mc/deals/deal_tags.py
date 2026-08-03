@@ -73,6 +73,7 @@ def _ensure_tags_table(store: PortfolioStore) -> None:
                 tag TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(deal_id) REFERENCES deals(deal_id)
+                    ON DELETE CASCADE
             )"""
         )
         con.execute(

@@ -7173,9 +7173,16 @@ class RCMHandler(BaseHTTPRequestHandler):
                 )
                 return self._send_html(render_memo_html(memo))
             except Exception as exc:  # noqa: BLE001
+                # Report-0268: escape the reflected exception — the
+                # deal_id path segment (partner-supplied) can surface in
+                # the message, so an unescaped reflection is XSS (twin of
+                # the MR1021 screening-route fix). `html` is a local
+                # further down this method, so alias the module here.
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>IC memo failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         # ── Deal Screening dashboard ──
@@ -7249,9 +7256,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                     filtered, flt=flt)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
+                # MR1021: the size_min/size_max/confidence_floor query
+                # params are parsed with float(), whose ValueError message
+                # embeds the raw input verbatim — reflecting {exc}
+                # unescaped is a reflected-XSS vector. Escape it.
+                # NB: `html` is a function-local further down this method
+                # (html = render_*(...)), so the module must be re-imported
+                # under an alias here or the reference is UnboundLocalError
+                # (see the note near the workspace badge above).
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>Screening failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         # ── Synthesis runner — IC binder over 13 packets ──
@@ -7303,9 +7320,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 html = render_html_binder(result)
                 return self._send_html(html)
             except Exception as exc:  # noqa: BLE001
+                # Report-0268: escape the reflected exception (partner
+                # deal_id can surface in the message). `html` is a local
+                # further down this method, so alias the module here.
+                import html as _html
                 return self._send_html(
                     f"<h1>500</h1><p>Synthesis failed: "
-                    f"{type(exc).__name__}: {exc}</p>",
+                    f"{_html.escape(type(exc).__name__)}: "
+                    f"{_html.escape(str(exc))}</p>",
                     status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
         if path.startswith("/api/diligence/synthesis/"):
@@ -8847,7 +8869,7 @@ class RCMHandler(BaseHTTPRequestHandler):
         from .infra._bundle import _TOP_LEVEL_KEEP as _bnd_keep  # noqa: F401
         from .infra._terminal import _RESET as _term_reset  # noqa: F401
         from .infra.capacity import compute_queue_metrics  # noqa: F401
-        from .infra.config import MANDATORY_PAYERS  # noqa: F401
+        from .infra.config import CURRENT_SCHEMA_VERSION  # noqa: F401
         from .infra.logger import logger as _infra_logger  # noqa: F401
         from .infra.output_formats import write_summary_json  # noqa: F401
         from .infra.output_index import _FILE_DESCRIPTIONS as _oi_desc  # noqa: F401
@@ -14438,9 +14460,9 @@ class RCMHandler(BaseHTTPRequestHandler):
         it as literal text. Numbers and non-strings pass through.
         """
         import pandas as _pd
+        from .infra.csv_safety import FORMULA_LEAD as dangerous
         if df is None or df.empty:
             return df
-        dangerous = ("=", "+", "@", "-", "\t", "\r")
         out = df.copy()
         for col in out.columns:
             # Modern pandas uses StringDtype(), older uses object.
@@ -15797,15 +15819,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             deals = [deals]
         store = PortfolioStore(self.config.db_path)
         imported = 0
+        skipped = 0
         for d in deals:
             did = d.get("deal_id", "").strip()
             nm = d.get("name", did)
             prof = d.get("profile", {})
             if did:
-                store.upsert_deal(did, name=nm, profile=prof)
+                try:
+                    # Report-0268: skip unsafe deal_ids instead of 500ing.
+                    store.upsert_deal(did, name=nm, profile=prof)
+                except ValueError:
+                    skipped += 1
+                    continue
                 imported += 1
+        _tail = f" ({skipped} skipped: invalid deal_id)" if skipped else ""
         return self._send_html(render_quick_import(
-            success_msg=f"Successfully imported {imported} deal(s). "
+            success_msg=f"Successfully imported {imported} deal(s).{_tail} "
                         f"View them in the portfolio."))
 
     def _route_screen_post(self) -> None:
@@ -20476,6 +20505,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                     status=HTTPStatus.BAD_REQUEST,
                 )
             imported = []
+            skipped = []
             for d in deals:
                 did = str(d.get("deal_id") or "").strip()
                 if not did:
@@ -20484,12 +20514,19 @@ class RCMHandler(BaseHTTPRequestHandler):
                 profile = d.get("profile") or {}
                 if not isinstance(profile, dict):
                     profile = {}
-                store.upsert_deal(did, name=name, profile=profile)
+                try:
+                    # Report-0268: upsert_deal rejects an unsafe new
+                    # deal_id — skip and report rather than 500 the batch.
+                    store.upsert_deal(did, name=name, profile=profile)
+                except ValueError as exc:
+                    skipped.append({"deal_id": did, "error": str(exc)})
+                    continue
                 imported.append(did)
             self._log_audit("deal.import", f"{len(imported)} deals")
             return self._send_json({
                 "imported": len(imported),
                 "deal_ids": imported,
+                "skipped": skipped,
             })
 
         # POST /api/deals/<deal_id>/pin — pin/unpin a deal
@@ -20533,7 +20570,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                         profile[pk] = float(profile[pk])
                     except (ValueError, TypeError):
                         pass
-                store.upsert_deal(did, name=name, profile=profile)
+                try:
+                    # Report-0268: reject an unsafe new deal_id (report it
+                    # in the row-error list rather than 500 the import).
+                    store.upsert_deal(did, name=name, profile=profile)
+                except ValueError as exc:
+                    errors.append(f"row {i+1}: {exc}")
+                    continue
                 imported.append(did)
             self._log_audit("deal.import_csv", f"{len(imported)} deals")
             return self._send_json({
@@ -20635,7 +20678,14 @@ class RCMHandler(BaseHTTPRequestHandler):
                 payload = {}
             new_id = str(payload.get("new_deal_id") or f"{deal_id}_copy")
             new_name = payload.get("new_name") or None
-            cloned = store.clone_deal(deal_id, new_id, new_name)
+            try:
+                # Report-0268: clone_deal validates the new (partner-chosen)
+                # deal_id; surface a 400 rather than a 500 on a bad slug.
+                cloned = store.clone_deal(deal_id, new_id, new_name)
+            except ValueError as exc:
+                return self._send_json(
+                    {"error": str(exc)}, status=HTTPStatus.BAD_REQUEST,
+                )
             if not cloned:
                 return self._send_json(
                     {"error": f"deal {deal_id!r} not found"},
@@ -20936,6 +20986,29 @@ class RCMHandler(BaseHTTPRequestHandler):
                     raise ValueError(
                         "actual, benchmark, and outdir are required"
                     )
+                # Report-0268: the "protect against path-traversal" the old
+                # comment promised for outdir was never implemented — outdir
+                # flowed straight into run_main(['--outdir', outdir]) which
+                # mkdir's it and writes files, so a partner could write
+                # anywhere. Reject traversal / null bytes always, and when
+                # the server has an output root (--outdir) confine outdir
+                # under it (same base+os.sep idiom as _route_output / the
+                # jobs progress page).
+                if "\x00" in outdir or ".." in Path(outdir).parts:
+                    raise ValueError(f"invalid outdir: {outdir!r}")
+                _out_base = (
+                    os.path.abspath(self.config.outdir)
+                    if self.config.outdir else ""
+                )
+                if _out_base:
+                    _abs_out = os.path.abspath(outdir)
+                    if not (_abs_out == _out_base
+                            or _abs_out.startswith(_out_base + os.sep)):
+                        raise ValueError(
+                            f"outdir must be under the server output root "
+                            f"{_out_base}: {outdir!r}"
+                        )
+                    outdir = _abs_out
                 # Protect against obvious path-traversal — require absolute
                 # paths or paths under the server's --outdir.
                 for label, p in [("actual", actual), ("benchmark", benchmark)]:

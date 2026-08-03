@@ -2,7 +2,7 @@
 
 **Text-based architecture visualizations using GitHub-native Mermaid.** No build step, no HTML, no external dependencies — this file renders as diagrams when viewed on GitHub. Edit as text, diff cleanly in git.
 
-Eight diagrams capturing the load-bearing architectural decisions. Paired with [FILE_MAP.md](FILE_MAP.md) (1,659-file catalogue) and the per-package READMEs.
+Eight diagrams capturing the load-bearing architectural decisions. Paired with [FILE_MAP.md](FILE_MAP.md) (per-file catalogue, frozen at April 2026 — see its snapshot banner) and the per-package READMEs. The diagrams describe layering that has stayed stable through the July 2026 merge wave; file *counts* elsewhere in these maps are April-vintage.
 
 ---
 

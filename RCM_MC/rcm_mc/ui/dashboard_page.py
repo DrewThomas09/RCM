@@ -1813,9 +1813,17 @@ def _render_saved_templates_section(db_path: str) -> str:
             f'<a href="/api/saved-analyses/{t["id"]}/run" '
             f'class="dash-tpl-launch" '
             f'title="Click to launch"'
+            # Report-0268: the target route is partner-supplied and was
+            # interpolated into this onclick JS-string via html.escape —
+            # the wrong codec there (the browser HTML-decodes the
+            # attribute before JS parses it, so an escaped quote reverts
+            # and breaks out → stored XSS). Carry it in a data- attribute
+            # (html.escape IS correct for a double-quoted attribute) and
+            # read it back via this.dataset in the handler.
+            f' data-target="{_html.escape(href)}"'
             f' onclick="if(!event.metaKey&&!event.ctrlKey){{'
             f'fetch(this.href,{{method:\'POST\',credentials:\'same-origin\'}})'
-            f'.then(()=>window.location=\'{_html.escape(href)}\');'
+            f'.then(()=>window.location=this.dataset.target);'
             f'event.preventDefault();}}">'
             f'<span class="dash-link">'
             f'{_html.escape(name)}</span>{pinned_chip}'

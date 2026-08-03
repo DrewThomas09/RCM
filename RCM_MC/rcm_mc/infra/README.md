@@ -184,6 +184,42 @@ Platform infrastructure: configuration, logging, job queuing, migrations, notifi
 
 ---
 
+## `exports.py` — Canonical Export Path Policy
+
+**What it does:** The single home for the export filesystem-layout decision. `canonical_deal_export_path(deal_id, filename)` and `canonical_portfolio_export_path(filename)` are the two functions every export writer routes through, so cleanup/retention/sharding policy changes happen in one place.
+
+**How it works:** Resolves `<base>/<deal_id-or-_portfolio>/<timestamp>_<filename>`. Base precedence: explicit `base=` arg > `EXPORTS_BASE` env (test override) > `/data/exports`. Two named functions (rather than one with `deal_id=None`) make the deal-scoped vs cross-portfolio choice explicit at every call site. **Security (Report-0267/0268):** `_reject_path_chars` validates `deal_id`, `filename`, and `timestamp` (no separators, `.`/`..`, or absolute paths) and an `is_relative_to(base)` backstop guarantees the resolved path never escapes the exports root — `deal_id` is partner-supplied, so this is the traversal chokepoint. The auto-generated timestamp is microsecond-precise so two same-second exports of the same artifact don't silently overwrite (MR1070). Colons are swapped for `-` for cross-filesystem safety.
+
+**Data in:** A deal_id (or none), a bare filename, an optional timestamp/base.
+
+**Data out:** An absolute `Path` with parent dirs created; the caller writes the artifact and records it via `exports/canonical_facade.py`.
+
+---
+
+## `cache.py` — TTL Function Cache Decorator
+
+**What it does:** Decorator-style TTL cache (`@ttl_cache(seconds=300)`) for repeated-expensive deterministic operations — the dashboard model panels that rebuild identically on every page load.
+
+**How it works:** Wraps the function with a thread-safe dict of `{args-key: (value, expires_at)}`. Unlike `functools.lru_cache` it expires, so DB-backed results can't go permanently stale; unlike `response_cache.py` (endpoint payloads keyed by request) it caches at the *function* level with the decorated signature as the key. Exposes `cache_clear()` for explicit invalidation and `cache_info()` mirroring the `lru_cache` shape so monitoring scripts keep working. Cache hits return identical-by-reference values — callers must not mutate results in place (documented in the module docstring).
+
+**Data in:** Hashable call arguments of the decorated function.
+
+**Data out:** Cached return values within the TTL window; hit/miss stats via `cache_info()`.
+
+---
+
+## `morning_digest.py` — Daily Portfolio Digest Email
+
+**What it does:** Builds and sends the 8 AM "comes to you" partner email: sharpest insight, top-3 deals needing attention, top-3 predicted watchlist exits, and overnight activity (alerts, refreshes, packets built).
+
+**How it works:** `build_morning_digest(db_path)` reuses the same compute as the `/dashboard` sections (so email and web never disagree) and returns a `DigestPayload`; `digest_to_html` / `digest_to_text` render it (all partner strings `html.escape`d); `send_morning_digest(db_path, recipient)` delivers via `notifications.send_email`. Wired to `GET /api/digest/morning` (JSON preview, no send), `POST /api/digest/morning/send`, and a CLI command for cron scheduling.
+
+**Data in:** Portfolio DB (deals, alerts, watchlist, predictions) via the dashboard compute paths.
+
+**Data out:** `DigestPayload`; HTML/text email via `notifications.py`.
+
+---
+
 ## `run_history.py` — CLI Run History
 
 **What it does:** Appends a row to the `run_history` SQLite table after each `rcm-mc run` CLI invocation, tracking when simulations were run and what the key outputs were.

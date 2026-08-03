@@ -12,10 +12,25 @@ import yaml
 from .logger import logger
 
 
-# Step 31: Kept for backward compatibility but no longer enforced
-MANDATORY_PAYERS = ("Medicare", "Medicaid", "Commercial", "SelfPay")
-
 CURRENT_SCHEMA_VERSION = "1.0"
+
+# MR1046: explicit public surface. Anything not listed here is an
+# implementation detail free to be renamed without a deprecation cycle.
+__all__ = [
+    "ConfigError",
+    "CURRENT_SCHEMA_VERSION",
+    "load_yaml",
+    "canonical_payer_name",
+    "validate_config",
+    "load_and_validate",
+    "diff_configs",
+    "validate_config_from_path",
+    "is_multi_site",
+    "expand_multi_site",
+    "export_config_json",
+    "import_config_json",
+    "flatten_config",
+]
 
 
 class ConfigError(ValueError):
@@ -55,8 +70,17 @@ def _resolve_env_vars(obj: Any) -> Any:
     return obj
 
 
-def load_yaml(path: str) -> Dict[str, Any]:
-    """Load YAML with support for _extends inheritance (Step 34) and env var substitution (Step 38)."""
+def load_yaml(path: str, _seen: Optional[frozenset] = None) -> Dict[str, Any]:
+    """Load YAML with support for _extends inheritance (Step 34) and env var substitution (Step 38).
+
+    ``_seen`` is internal recursion state (MR1047): the realpaths already
+    visited on this _extends chain. A self-extending or mutually-extending
+    config fails with a clear ConfigError instead of RecursionError.
+    """
+    real = os.path.realpath(path)
+    seen = _seen if _seen is not None else frozenset()
+    if real in seen:
+        raise ConfigError(f"Circular _extends chain detected at {path}")
     with open(path, "r") as f:
         data = yaml.safe_load(f)
     if not isinstance(data, dict):
@@ -68,7 +92,7 @@ def load_yaml(path: str) -> Dict[str, Any]:
         if not os.path.isabs(base_path):
             base_path = os.path.join(os.path.dirname(os.path.abspath(path)), base_path)
         logger.info("Loading base config: %s", base_path)
-        base_data = load_yaml(base_path)
+        base_data = load_yaml(base_path, _seen=seen | {real})
         data = _deep_merge(base_data, data)
 
     # Step 38: Environment variable resolution
@@ -78,6 +102,16 @@ def load_yaml(path: str) -> Dict[str, Any]:
 
 
 def canonical_payer_name(name: str) -> str:
+    """Normalize payer spellings from partner YAMLs onto the four canonical keys.
+
+    Partner-supplied configs arrive with inconsistent payer labels; the
+    simulator and every downstream exhibit key on exactly ``Medicare``,
+    ``Medicaid``, ``Commercial``, ``SelfPay``. Matching is case-, hyphen-
+    and space-insensitive; the non-obvious aliases are ``Self-Pay``/``self``
+    -> ``SelfPay`` and ``private``/``phi`` -> ``Commercial``. Unknown
+    segments pass through stripped (extra payer segments are allowed).
+    The mapping is pinned by tests/test_config_public_helpers.py (MR1049).
+    """
     n = str(name).strip()
     lower = n.lower().replace("-", "").replace(" ", "")
     if lower in ("selfpay", "self"):
@@ -434,6 +468,13 @@ def validate_config(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def load_and_validate(path: str) -> Dict[str, Any]:
+    """Canonical hard-fail entry point: load + validate, raising ConfigError.
+
+    Every production caller (cli.py, packet_builder, deal.py,
+    scenario_shocks, server.py) goes through this; a malformed config must
+    stop the run. The soft alternative for report-style "list every issue"
+    flows is ``validate_config_from_path`` below (MR1050).
+    """
     return validate_config(load_yaml(path))
 
 
@@ -467,7 +508,13 @@ def diff_configs(cfg_a: Dict[str, Any], cfg_b: Dict[str, Any], prefix: str = "")
 # ── Step 37: Validation-only mode ──────────────────────────────────────────
 
 def validate_config_from_path(path: str) -> Tuple[bool, List[str]]:
-    """Validate a config file. Returns (is_valid, list_of_issues)."""
+    """Validation-only soft wrapper: never raises, returns (is_valid, issues).
+
+    This is the Step 37 ``--validate`` surface for pre-flight checks where
+    the caller wants a report, not an exception. Anything that needs the
+    loaded config should call ``load_and_validate`` (the canonical
+    hard-fail entry) instead of re-implementing this try/except (MR1050).
+    """
     issues: List[str] = []
     try:
         load_and_validate(path)

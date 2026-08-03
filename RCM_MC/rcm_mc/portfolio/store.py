@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -17,6 +18,32 @@ from ..core.distributions import sample_dist
 
 def _utcnow() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Report-0268: deal_id is partner-supplied at the import routes and flows
+# into URL path segments, filesystem export paths, and (historically)
+# HTML/JS sinks. Every one of those sinks is now individually neutralized,
+# but validating the id to a safe slug at the ONE creation chokepoint
+# (upsert_deal / clone_deal, INSERT path only) is the durable defense — a
+# future sink can't reintroduce the class. Observed real ids are slugs
+# ("DEAL_001", "acme_health_2026", CCN "010001"), so this charset is not
+# a functional restriction. Existing rows are grandfathered (validation
+# runs only when a NEW row is about to be inserted), so odd legacy ids
+# keep working for owner/tag/note updates.
+_DEAL_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,128}$")
+
+
+def is_valid_deal_id(deal_id: str) -> bool:
+    """True if ``deal_id`` is a safe slug (see ``_DEAL_ID_RE``)."""
+    return bool(_DEAL_ID_RE.match(deal_id or ""))
+
+
+def _require_valid_new_deal_id(deal_id: str) -> None:
+    if not is_valid_deal_id(deal_id):
+        raise ValueError(
+            "deal_id must be 1-128 chars of letters, digits, '.', '_' or "
+            f"'-' (got {deal_id!r})"
+        )
 
 
 def _beta_params_from_mean_sd(mean: float, sd: float) -> Tuple[float, float]:
@@ -144,6 +171,14 @@ class PortfolioStore:
             # "missing" and race into a UNIQUE violation.
             con.execute("BEGIN IMMEDIATE")
             try:
+                # Validate only when creating a NEW deal — existing rows
+                # (possibly with legacy ids) are grandfathered so their
+                # owner/tag/note refreshes still work (Report-0268).
+                already = con.execute(
+                    "SELECT 1 FROM deals WHERE deal_id=?", (deal_id,),
+                ).fetchone()
+                if not already:
+                    _require_valid_new_deal_id(deal_id)
                 con.execute(
                     "INSERT OR IGNORE INTO deals (deal_id, name, created_at, profile_json) "
                     "VALUES (?, ?, ?, ?)",
@@ -171,20 +206,30 @@ class PortfolioStore:
         Returns True if the deal existed and was deleted.
         """
         self.init_db()
+        # Report-0262 MR1068: this list previously named four tables that do
+        # not exist (deal_owners / deal_stages / health_scores / watchlist —
+        # the real tables are deal_owner_history / deal_stage_history /
+        # deal_health_history / deal_stars) plus five phantoms, and the
+        # blanket except swallowed the "no such table" errors, silently
+        # orphaning rows on any DB whose FKs predate the CASCADE DDL. Names
+        # below are verified against the live CREATE TABLE registry; only
+        # "no such table" is tolerated (lazily-created tables may be absent),
+        # so a genuine IntegrityError now surfaces instead of half-deleting.
         child_tables = [
             "runs", "deal_overrides", "analysis_runs", "mc_simulation_runs",
-            "generated_exports", "deal_notes", "deal_tags", "deal_owners",
-            "deal_deadlines", "deal_sim_inputs", "comments",
-            "approval_requests", "alert_acks", "alert_history",
-            "deal_stages", "health_scores", "watchlist",
-            "value_creation_plans", "value_tracker_plans", "hold_period_tracking",
-            "initiative_tracking", "provenance_registry",
-            "refresh_schedule", "portfolio_snapshots",
-            # These three FK deals(deal_id) without ON DELETE CASCADE, so they
-            # must be cleared here or the final DELETE FROM deals raises
-            # IntegrityError. Their omission silently broke deletion of any
-            # deal that had a snapshot, quarterly actuals, or initiative
-            # actuals — i.e. essentially every real (or demo) deal.
+            "generated_exports", "deal_notes", "deal_tags",
+            "deal_owner_history", "deal_deadlines", "deal_sim_inputs",
+            "comments", "approval_requests", "alert_acks", "alert_history",
+            "deal_stage_history", "deal_health_history", "deal_stars",
+            "value_creation_plans", "value_tracker_plans",
+            # covenant_metrics before deal_snapshots: its snapshot_id FK is
+            # SET NULL, so deleting snapshots first would pointlessly null
+            # rows we are about to remove anyway.
+            "covenant_metrics",
+            # These three FK deals(deal_id) without ON DELETE CASCADE by
+            # design (NO ACTION per the CLAUDE.md delete-policy matrix), so
+            # they must be cleared here or the final DELETE FROM deals
+            # raises IntegrityError.
             "deal_snapshots", "quarterly_actuals", "initiative_actuals",
         ]
         with self.connect() as con:
@@ -197,14 +242,27 @@ class PortfolioStore:
                 if not existing:
                     con.rollback()
                     return False
+                # note_tags keys on note_id, not deal_id — clear it before
+                # deal_notes or the note FK blocks the notes delete on DBs
+                # whose note_tags FK predates ON DELETE CASCADE.
+                try:
+                    con.execute(
+                        "DELETE FROM note_tags WHERE note_id IN "
+                        "(SELECT note_id FROM deal_notes WHERE deal_id = ?)",
+                        (deal_id,),
+                    )
+                except sqlite3.OperationalError as exc:
+                    if "no such table" not in str(exc):
+                        raise
                 for tbl in child_tables:
                     try:
                         con.execute(
                             f"DELETE FROM {tbl} WHERE deal_id = ?",
                             (deal_id,),
                         )
-                    except Exception:
-                        pass
+                    except sqlite3.OperationalError as exc:
+                        if "no such table" not in str(exc):
+                            raise
                 con.execute(
                     "DELETE FROM deals WHERE deal_id = ?", (deal_id,),
                 )
@@ -227,6 +285,8 @@ class PortfolioStore:
             if not src:
                 return False
             name = new_name or f"{src['name']} (copy)"
+            # new_id is always a fresh row here — validate it (Report-0268).
+            _require_valid_new_deal_id(new_id)
             con.execute("BEGIN IMMEDIATE")
             try:
                 con.execute(
@@ -235,23 +295,33 @@ class PortfolioStore:
                     (new_id, name, _utcnow(), src["profile_json"]),
                 )
                 for tbl in ("deal_tags", "deal_sim_inputs"):
-                    try:
-                        cols_rows = con.execute(
-                            f"PRAGMA table_info({tbl})"
-                        ).fetchall()
-                        cols = [c["name"] for c in cols_rows if c["name"] != "id"]
-                        col_list = ", ".join(cols)
-                        select_cols = ", ".join(
-                            f"'{new_id}'" if c == "deal_id" else c
-                            for c in cols
-                        )
-                        con.execute(
-                            f"INSERT INTO {tbl} ({col_list}) "
-                            f"SELECT {select_cols} FROM {tbl} WHERE deal_id = ?",
-                            (source_id,),
-                        )
-                    except Exception:
-                        pass
+                    # Report-0273: a lazily-created child table may not exist
+                    # yet — tolerate ONLY that. The old blanket
+                    # `except Exception: pass` (sibling of the delete_deal
+                    # bug fixed in Report-0263) also ate genuine copy
+                    # failures — a locked DB, disk I/O error, or constraint
+                    # violation — then fell through to commit()+return True,
+                    # committing a partial clone (e.g. missing the
+                    # deal_sim_inputs actual/benchmark paths that power the
+                    # "rerun simulation" shortcut) while telling the caller
+                    # it fully succeeded. Skip absent tables up front; let
+                    # any real error propagate to the outer rollback.
+                    cols_rows = con.execute(
+                        f"PRAGMA table_info({tbl})"
+                    ).fetchall()
+                    if not cols_rows:
+                        continue  # table not created yet — nothing to copy
+                    cols = [c["name"] for c in cols_rows if c["name"] != "id"]
+                    col_list = ", ".join(cols)
+                    select_cols = ", ".join(
+                        f"'{new_id}'" if c == "deal_id" else c
+                        for c in cols
+                    )
+                    con.execute(
+                        f"INSERT INTO {tbl} ({col_list}) "
+                        f"SELECT {select_cols} FROM {tbl} WHERE deal_id = ?",
+                        (source_id,),
+                    )
                 con.commit()
                 return True
             except Exception:

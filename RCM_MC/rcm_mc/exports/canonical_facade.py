@@ -39,6 +39,7 @@ Per Phase 3 conventions:
 """
 from __future__ import annotations
 
+import logging
 import shutil
 import tempfile
 from pathlib import Path
@@ -46,6 +47,8 @@ from typing import Any, Optional
 
 from rcm_mc.exports.export_store import record_export
 from rcm_mc.infra.exports import canonical_deal_export_path
+
+logger = logging.getLogger(__name__)
 
 
 def _move_to_canonical(
@@ -58,10 +61,14 @@ def _move_to_canonical(
     dir lives on a different mountpoint than ``/data/exports/`` in
     most production setups (tmpfs vs. persistent volume), and
     ``rename()`` fails across filesystem boundaries.
+
+    No pre-unlink of an existing canonical file (MR1065): rename and
+    copy2 both overwrite the destination, and every caller holds
+    ``produced`` inside a TemporaryDirectory — a crash between an
+    unlink and the move would have destroyed BOTH copies of the
+    artifact once the tmp dir cleanup ran.
     """
     canonical.parent.mkdir(parents=True, exist_ok=True)
-    if canonical.exists():
-        canonical.unlink()  # idempotent overwrite — same canonical path = same artifact
     shutil.move(str(produced), str(canonical))
     return canonical
 
@@ -97,8 +104,14 @@ def _record(
             file_size_bytes=size,
             generated_by=generated_by,
         )
-    except Exception:  # noqa: BLE001 — manifest failure must not break the export
-        pass
+    except Exception as exc:  # noqa: BLE001 — manifest failure must not break the export
+        # MR1066: still swallowed (the artifact on disk is the
+        # load-bearing thing) but no longer invisible — a silent skip
+        # here means the deliverables manifest quietly stops filling.
+        logger.warning(
+            "generated_exports manifest write failed for %s (deal %s): %s",
+            canonical, deal_id, exc,
+        )
 
 
 # ── Facade functions (5 reports) ──────────────────────────────────

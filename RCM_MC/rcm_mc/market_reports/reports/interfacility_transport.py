@@ -26,6 +26,14 @@ The geographic deep-dive — every metro, its anchor systems, its insource-vs-
 outsource read and its moat — lives on the NEW ``/ift-markets`` page (a separate
 renderer), linked from Connections.
 
+GADCS vintage: every mean-cost / mean-revenue / labor-share figure on this page
+is the CMS/RAND **Year 1-Year 4 cohort appendix** (posted 2025-12-09, data
+reported through 2025-05-15), refreshed 2026-08-03 to match the sibling IFT
+modules. It SUPERSEDES the Year 1-Year 2 cohort report ($2,673 / $3,127 /
+$1,788 cost, $1,147 revenue) that this module previously asserted as current —
+do not reintroduce those values here except inside an explicit before/after
+comparison.
+
 ``interfacility_transport`` is a canonical subsector (a ``CANONICAL_SUBSECTORS``
 row under "Other services"), so the dossier registers and renders in FULL at
 ``/market/interfacility_transport``, is listed on the ``/market`` index, and
@@ -191,8 +199,9 @@ REPORT = MarketReport(
         "CFR 414 Subpart H) — plus long loaded mileage. An interfacility book "
         "skewed to SCT/CCT + commercial is worth multiples of a 911-scene BLS book.",
         "Density is the durable moat. Ground IFT is a unit-hour-utilization "
-        "business: labor is ~69-70% of cost (GOV, CMS GADCS) and mean cost/"
-        "transport is ~$2,673 all-in (GOV, GADCS), so profit is made by chaining "
+        "business: labor is ~70.7% of cost and mean total cost/transport is "
+        "~$2,763 all-in (GOV, CMS/RAND GADCS Report Appendix, Year 1-Year 4 "
+        "cohort, Dec 2025, Tables 3.1/4.1), so profit is made by chaining "
         "loads and killing deadhead. An incumbent with many hospital + post-acute "
         "nodes in one metro underbids a single-contract entrant structurally.",
         "Two compliance overhangs define the risk. RSNAT prior authorization "
@@ -244,8 +253,10 @@ REPORT = MarketReport(
             "AIF = 2.4%, GOV), and temporary rural/urban/super-rural add-ons "
             "(+2%/+3%/+22.6%, extended through 12/31/2027, GOV) prop up rural legs. "
             "But the fee schedule does not cover the cost of standing up a truck: "
-            "industry data put mean all-payer reimbursement near ~$1,147/transport "
-            "against a much higher cost basis (INDUSTRY, AAA/EMS1). The gap is "
+            "the first federal ambulance cost collection puts mean total revenue "
+            "at ~$1,268/transport against a ~$2,763 mean total cost (GOV, "
+            "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort, Dec 2025, "
+            "Tables 4.2/4.1). The gap is "
             "closed by the FACILITY CONTRACT — per-transport rates at or above AFS "
             "allowed, an availability/subsidy retainer so dedicated trucks post at "
             "the campus regardless of volume, and exclusivity with the transfer "
@@ -387,10 +398,12 @@ REPORT = MarketReport(
             "is still legal where state law allows (GOV/INDUSTRY).",
         ],
         reimbursement_risk=(
-            "The fee schedule under-reimburses the cost of a truck (industry "
-            "data put average under-reimbursement well north of $2,000/transport "
-            "versus cost; mean all-payer reimbursement ~$1,147, INDUSTRY "
-            "AAA/EMS1), so margin depends on the contract layer and on payer mix, "
+            "The fee schedule under-reimburses the cost of a truck (mean total "
+            "cost $2,763/transport versus mean total revenue $1,268 — a "
+            "~$1,495/transport gap on the all-NPI mean, widening to ~$1,899 "
+            "against the $3,167 government-agency cost mean; GOV, CMS/RAND GADCS "
+            "Report Appendix, Year 1-Year 4 cohort, Dec 2025, Tables 4.1/4.2), so "
+            "margin depends on the contract layer and on payer mix, "
             "not the AFS allowed amount. Three specific risks dominate. First, the "
             "temporary add-ons (2/3/22.6%) lapse 1/1/2028 absent re-extension and "
             "the productivity-adjusted AIF lags labor — a single non-extension or "
@@ -528,11 +541,13 @@ REPORT = MarketReport(
                 "Scheduled discharge IFT has high empty-return miles; local "
                 "density + on-campus posting dilute fixed crew cost across more "
                 "billed legs — where a good IFT operator separates from a bad one."),
-            Kpi("Mean cost per transport (all-in)", "~$2,673 (GOV, GADCS)",
-                "$1,778 private-for-profit vs $3,127 governmental (GOV, CMS GADCS "
-                "Yr1-2); the fee schedule alone does not cover it — the contract does."),
-            Kpi("Crew labor share of cost", "~69-70% (GOV)",
-                "The binding constraint (CMS GADCS / MedPAC). Paramedic/EMT/nurse "
+            Kpi("Mean cost per transport (all-in)", "~$2,763 (GOV, GADCS Y1-Y4)",
+                "$1,912 for-profit/unknown vs $3,167 government (GOV, CMS/RAND "
+                "GADCS Report Appendix, Year 1-Year 4 cohort, Dec 2025, Table 4.1); "
+                "the fee schedule alone does not cover it — the contract does."),
+            Kpi("Crew labor share of cost", "~70.7% (GOV, GADCS Y1-Y4)",
+                "The binding constraint (CMS/RAND GADCS Year 1-Year 4 appendix, "
+                "Dec 2025, Table 3.1; MedPAC). Paramedic/EMT/nurse "
                 "wage inflation and shortage cap unit-hour capacity and squeeze "
                 "margin faster than the AIF replaces it."),
             Kpi("Blended net revenue / IFT transport", "~$1,200-1,400 (ILLUSTRATIVE)",
@@ -548,8 +563,10 @@ REPORT = MarketReport(
         ],
         margin_profile=(
             "Ground IFT is a labor-heavy, density-driven fixed-cost business. "
-            "Because labor is ~69-70% of cost (GOV) and mean cost/transport is "
-            "~$2,673 all-in (GOV), margin is made by raising unit-hour utilization "
+            "Because labor is ~70.7% of cost and mean total cost/transport is "
+            "~$2,763 all-in (GOV, CMS/RAND GADCS Report Appendix, Year 1-Year 4 "
+            "cohort, Dec 2025, Tables 3.1/4.1), margin is made by raising "
+            "unit-hour utilization "
             "and killing deadhead — which is a function of local node density and "
             "on-campus posting, not clinical differentiation. Layer the facility "
             "contract on top (per-transport rates + availability retainer + "
@@ -725,8 +742,16 @@ REPORT = MarketReport(
         Source("CMS — RSNAT prior authorization (repetitive scheduled "
                "non-emergent ambulance transport)", "GOV",
                "https://www.cms.gov/data-research/monitoring-programs/medicare-fee-service-compliance-programs/prior-authorization-and-pre-claim-review-initiatives/prior-authorization-repetitive-scheduled-non-emergent-ambulance-transport-rsnat"),
-        Source("CMS — Ground Ambulance Data Collection System (GADCS): mean cost "
-               "$2,673, labor ~69-70%, 10,500+ orgs", "GOV",
+        Source("CMS/RAND — GADCS Report Appendix, Year 1-Year 4 Cohort Analysis "
+               "(posted 2025-12-09, data reported through 2025-05-15): mean total "
+               "cost $2,763/transport ($3,167 government, $1,912 for-profit/"
+               "unknown, Table 4.1), mean total revenue $1,268 (Table 4.2), labor "
+               "70.7% of aggregate cost (Table 3.1), 10,500+ orgs. SUPERSEDES the "
+               "Year 1-Year 2 cohort report.", "GOV",
+               "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
+        Source("CMS — Ground Ambulance Data Collection System (GADCS) program "
+               "page (reporting rules, selected-organization cohorts, the 10% "
+               "non-reporting penalty)", "GOV",
                "https://www.cms.gov/medicare/payment/fee-schedules/ambulance/medicare-ground-ambulance-data-collection-system"),
         Source("CMS — Origin & Destination codes for ambulance claims "
                "(the interfacility modifier fingerprint)", "GOV",
@@ -746,8 +771,11 @@ REPORT = MarketReport(
                "(LOS +19% overall, +24% for post-acute discharges, 2019-2022)",
                "INDUSTRY",
                "https://www.aha.org/press-releases/2022-12-06-new-aha-report-hospital-length-stay-increased-19-2019-2022"),
-        Source("AAA / EMS1 Trend Report — gap between EMS expenses and "
-               "reimbursement (~$1,147 mean/transport)", "INDUSTRY",
+        Source("AAA / EMS1 Trend Report — industry framing of the gap between EMS "
+               "expenses and revenue (qualitative context only; the "
+               "per-transport means are taken from the CMS/RAND GADCS Year 1-Year "
+               "4 primary above, which supersedes the Year 1-Year 2 figures this "
+               "trade coverage reported)", "INDUSTRY",
                "https://www.ems1.com/ems-trend-report/quantifying-the-gap-between-expenses-and-revenue-for-ems-services"),
         Source("IBISWorld / Grand View — US Ambulance Services market "
                "(~$21-22B; ground ~60-70%) — context cross-check only", "INDUSTRY",

@@ -161,6 +161,19 @@ _CSS = """
 .ts-mode-label{font-family:var(--sc-serif);font-size:14px;color:var(--sc-navy,#15202b);line-height:1.2;}
 .ts-mode-how{font-family:var(--sc-mono);font-size:10px;letter-spacing:.04em;
  color:var(--sc-text-dim,#6a7480);line-height:1.4;}
+/* The preset-screen cards on the Saved view emit a .ts-mode-go footer
+   ("Open screen →") that had no rule at all, so it rendered as
+   unstyled 16px body serif under the mono description line. Give it
+   the same mono/teal call-to-action treatment the rest of the page
+   uses for "go" affordances. */
+.ts-mode-go{font-family:var(--sc-mono);font-size:9.5px;letter-spacing:.1em;
+ text-transform:uppercase;color:var(--sc-teal,#155752);font-weight:700;
+ margin-top:5px;}
+/* Screen-reader-only utility — used for <caption> on the data tables so
+   assistive tech announces what each table contains without adding a
+   visible heading the sighted partner does not need. */
+.ts-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+ overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 /* 2026-05-28 merged universe panel — three named sub-blocks (universe
    selector / active screen summary / pre-set entry points) inside
    one ck_panel. Each sub-block carries its own eyebrow lbl + prompt
@@ -479,6 +492,43 @@ def _q1(qs: Dict[str, List[str]], key: str, default: str = "") -> str:
     return (qs.get(key) or [default])[0].strip()
 
 
+def _qv(value) -> str:
+    """Percent-encode a partner-supplied value for a server-rendered href.
+
+    Most links on this page echo the current query state back into their
+    own URL (tab bar, sort headers, chip strips, relax links). Those values
+    come straight from ``parse_qs`` on the request, so they are partner
+    input: a bare f-string interpolation let ``?state="><svg onload=…``
+    break out of the ``href="…"`` attribute, and an embedded ``&`` forge an
+    extra parameter. ``html.escape`` alone would not stop the second, so
+    percent-encode instead — the same fix class as the JS-string escape
+    sweep. ``,`` stays literal because ``?compare=`` is a comma-joined CCN
+    basket and the tests/bookmarks read it that way.
+    """
+    return _uq(str(value), safe=",")
+
+
+def _source_label(vertical: str) -> str:
+    """Canonical, link-resolvable dataset label for a vertical.
+
+    ``_VERTICALS[…]["universe"]`` carries short chips ("CMS HHA", "CMS
+    SNF") that read fine on a toggle but do NOT resolve in the
+    ``_chartis_kit.SOURCE_URLS`` registry, so printing them as provenance
+    produced dead text. The per-vertical loader config already knows the
+    real dataset name ("CMS Nursing Home Compare"), which does resolve —
+    use that wherever the page is citing a SOURCE rather than labelling a
+    toggle. Falls back to the universe chip for the geography verticals
+    that have no provider dataset.
+    """
+    if vertical == "hospitals":
+        return "CMS HCRIS"
+    cfg = _VERTICAL_TABLE.get(vertical)
+    if cfg and cfg.get("src"):
+        return str(cfg["src"])
+    vinfo = next((v for v in _VERTICALS if v["key"] == vertical), None)
+    return str(vinfo["universe"]) if vinfo else "—"
+
+
 def screen_results_for_params(query_params: str) -> Dict[str, Dict]:
     """A saved screen's CURRENT result set keyed by CCN (P9 snapshot/diff).
 
@@ -779,7 +829,7 @@ def _href(view: str, qs: Dict[str, List[str]]) -> str:
         v = _q1(qs, k)
         if v:
             keep[k] = v
-    parts = [f"view={view}"] + [f"{k}={v}" for k, v in keep.items()]
+    parts = [f"view={_qv(view)}"] + [f"{k}={_qv(v)}" for k, v in keep.items()]
     return "/target-screener?" + "&".join(parts)
 
 
@@ -788,7 +838,7 @@ def _vhref(vertical: str, qs: Dict[str, List[str]]) -> str:
     st = _q1(qs, "state")
     if st:
         keep["state"] = st
-    return "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
+    return "/target-screener?" + "&".join(f"{k}={_qv(v)}" for k, v in keep.items())
 
 
 def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
@@ -820,7 +870,12 @@ def _tab_bar(active_view: str, qs: Dict[str, List[str]]) -> str:
                 f'<a class="{cls}" href="{_href(v["key"], qs)}" '
                 f'aria-current="{"page" if v["key"] == active_view else "false"}" '
                 f'title="{v["sub"]}">'
-                f'<span class="tsw-num">{v["num"]}</span>'
+                # The 01..06 numeral is a visual index, not content —
+                # hidden from AT so the tab announces "Compare", not
+                # "zero four Compare". (aria-hidden precedes class= so
+                # the `tsw-num">NN` pin in test_all_six_tabs_present
+                # still matches.)
+                f'<span aria-hidden="true" class="tsw-num">{v["num"]}</span>'
                 f'<span class="tsw-meta"><span class="tsw-t">{t}</span></span></a>'
             )
         html.append('</div>')
@@ -861,11 +916,20 @@ def _vertical_chips_html(active_vertical: str, qs: Dict[str, List[str]]) -> str:
         count_html = (
             f'<span class="n">{count:,}</span>' if count is not None else ""
         )
+        is_active = v["key"] == active_vertical
+        # Counts are the differentiator between chips; spell the number out
+        # for AT (the visual badge is a bare "5,234" with no unit).
+        count_a11y = (f' ({count:,} providers)' if count is not None else "")
         chips.append(
-            f'<a class="{cls}" href="{_vhref(v["key"], qs)}" title="{v["note"]}">'
+            f'<a class="{cls}" href="{_vhref(v["key"], qs)}" title="{v["note"]}"'
+            + (' aria-current="true"' if is_active else "")
+            + f' aria-label="Screen the {v["label"]} universe · '
+              f'{v["universe"]}{count_a11y}">'
             f'{v["label"]} <span class="u">{v["universe"]}</span>{count_html}</a>'
         )
-    return '<div class="tsw-verticals">' + "".join(chips) + '</div>'
+    return ('<div class="tsw-verticals" role="group" '
+            'aria-label="Provider universe (dataset) selector">'
+            + "".join(chips) + '</div>')
 
 
 def _vertical_bar(active_vertical: str, qs: Dict[str, List[str]]) -> str:
@@ -891,16 +955,24 @@ def _layer_chips_html(active_layer: str, qs: Dict[str, List[str]]) -> str:
             st = _q1(qs, "state")
             if st:
                 keep["state"] = st
-            href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
-            cls = "tsw-vert is-active" if ly["key"] == active_layer else "tsw-vert"
-            chips.append(f'<a class="{cls}" href="{href}">{ly["label"]}</a>')
+            href = "/target-screener?" + "&".join(
+                f"{k}={_qv(v)}" for k, v in keep.items())
+            is_active = ly["key"] == active_layer
+            cls = "tsw-vert is-active" if is_active else "tsw-vert"
+            chips.append(
+                f'<a class="{cls}" href="{href}"'
+                + (' aria-current="true"' if is_active else "")
+                + f' aria-label="Shade the map by {ly["label"]}">'
+                f'{ly["label"]}</a>')
         else:
             # No fabricated shade — point at the surface that owns the real data.
             chips.append(
                 f'<a class="tsw-vert" href="{ly["href"]}" '
                 f'title="Lives on the geo/market intelligence surface (real data)">'
                 f'{ly["label"]} <span class="u">↗ geo</span></a>')
-    return '<div class="tsw-verticals">' + "".join(chips) + '</div>'
+    return ('<div class="tsw-verticals" role="group" '
+            'aria-label="Map shading layer">'
+            + "".join(chips) + '</div>')
 
 
 def _layer_subblock(qs: Dict[str, List[str]]) -> str:
@@ -933,6 +1005,8 @@ def _layer_bar(active_layer: str, qs: Dict[str, List[str]]) -> str:
 
 
 def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
+    import html as _h
+    from ._chartis_kit import ck_source_link as _ck_source_link
     from .us_geo_map import render_us_geo_map
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     sel = _q1(qs, "state").upper()
@@ -955,7 +1029,8 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
                 f"the table below still lists {vinfo['label']} providers."),
             empty_message=f"No state-level {mlabel} available right now.")
         summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">Map layer: '
-                   f'<strong>{mlabel}</strong> (real {src}) as market context over '
+                   f'<strong>{mlabel}</strong> (real {_ck_source_link(src)}) as '
+                   f'market context over '
                    f'the {vinfo["label"]} screen. The provider table below is '
                    f'unchanged: {total:,} providers across {n_states} states.</p>')
     else:
@@ -975,9 +1050,14 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
                 f"No state-level {vinfo['label']} provider counts available from "
                 "the loader right now. Pick another vertical."),
         )
+        # Provenance for the shading: the dataset label is routed through
+        # ck_source_link so the partner can click straight to the CMS
+        # dataset the counts came from (the short "CMS HHA"-style chip
+        # never resolved in the registry — see _source_label).
         summary = (f'<p class="ck-section-body" style="margin:0 0 6px;">'
                    f'{total:,} {vinfo["label"]} providers across {n_states} states '
-                   f'(real {vinfo["universe"]} counts).</p>' if counts else "")
+                   f'(real {_ck_source_link(_source_label(vertical))} counts).</p>'
+                   if counts else "")
     # Click a state → server round-trip adding state= (server owns filter truth).
     listener = (
         "<script>(function(){document.addEventListener('us-map-select',"
@@ -1003,13 +1083,21 @@ def _render_map(vertical: str, qs: Dict[str, List[str]]) -> str:
             f" · <strong>{in_state_count:,}</strong> {vinfo['label']} providers"
             if in_state_count else ""
         )
+        # ?state= is partner input echoed straight back into the banner —
+        # .upper() is not a sanitiser, so escape it in this content context.
+        _sel_txt = _h.escape(sel)
+        _name_txt = _h.escape(str(state_name))
+        # NB: the opening tag is pinned verbatim by
+        # test_map_filter_banner_renders_when_state_selected — do not add
+        # attributes to this <div>.
         filt = (
             '<div class="ts-map-filter-banner">'
             '<span class="ts-map-filter-lbl">FILTERED TO</span> '
-            f'<span class="ts-map-filter-state">{sel} · {state_name}</span>'
+            f'<span class="ts-map-filter-state">{_sel_txt} · {_name_txt}</span>'
             f'{count_clause}'
-            f' <a class="ts-map-filter-clear" href="{clear_href}">'
-            'Clear state filter</a>'
+            f' <a class="ts-map-filter-clear" href="{clear_href}" '
+            f'aria-label="Clear the {_name_txt} state filter and show every '
+            f'state">Clear state filter</a>'
             '</div>'
         )
     # 2026-05-28 wave-4: layer bar moved up into the universe panel
@@ -1046,7 +1134,11 @@ def _fmt_q(row: Dict) -> str:
         # Plausible but in the >24% tail — show the value, mark it "verify"
         # so a partner treats a near-ceiling margin with due skepticism (it
         # ranks below clean values via _quality_sort_key).
-        out += ('<span style="color:var(--sc-warning,#b8732a);cursor:help;'
+        # role/aria-label: the glyph is the ONLY carrier of the "verify this"
+        # signal in this cell, and title= alone is not announced reliably.
+        out += ('<span role="img" aria-label="Verify — unusually high, may be '
+                'an incomplete filing" '
+                'style="color:var(--sc-warning,#b8732a);cursor:help;'
                 'margin-left:4px;" title="Unusually high for a hospital '
                 '(≥24%, ~95th percentile) — verify; may be an incomplete '
                 'HCRIS filing. Ranked below clean values.">⚠</span>')
@@ -1093,14 +1185,14 @@ def _compare_basket_banner(vertical: str,
             base[k] = v
     base["compare"] = ",".join(cur)
     cmp_href = "/target-screener?" + "&".join(
-        f"{k}={_h.escape(str(v))}" for k, v in base.items()
+        f"{k}={_qv(v)}" for k, v in base.items()
     )
     # Clear basket = same URL minus compare=
     clear_base = dict(base)
     clear_base.pop("compare", None)
     clear_base["view"] = "main"  # stay on main when clearing
     clear_href = "/target-screener?" + "&".join(
-        f"{k}={_h.escape(str(v))}" for k, v in clear_base.items()
+        f"{k}={_qv(v)}" for k, v in clear_base.items()
     )
     plural = "" if len(cur) == 1 else "s"
     return (
@@ -1145,7 +1237,7 @@ def _topn_toggle_html(vertical: str, qs: Dict[str, List[str]],
         q = dict(base)
         q["limit"] = str(n)
         href = "/target-screener?" + "&".join(
-            f"{k}={_h.escape(str(v))}" for k, v in q.items()
+            f"{k}={_qv(v)}" for k, v in q.items()
         )
         cls = "ts-topn-chip is-active" if n == active_limit else "ts-topn-chip"
         chips.append(f'<a class="{cls}" href="{href}">{n}</a>')
@@ -1248,15 +1340,31 @@ _TS_SEARCH_JS = """
 
 def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
     import html as _h
+    from ._chartis_kit import ck_empty_state
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     state = _q1(qs, "state").upper()
     # Load the full universe so the filters operate on everything, then cap
     # for display.
     all_rows = _vertical_rows(vertical, state, limit=None)
     if not all_rows:
-        return (f'<p class="ck-section-body">No {vinfo["label"]} rows available '
-                f'{("for " + state) if state else ""} from the loader right now. '
-                f'Try another vertical or clear the state filter.</p>')
+        # Editorial empty state rather than a lone <p> — this is the
+        # ?state=ZZ / loader-down path, and the partner needs the way out
+        # (clear the state filter) as a control, not as prose.
+        return ck_empty_state(
+            f'No {vinfo["label"]} providers'
+            + (f' in {state}.' if state else ' available right now.'),
+            ("That state filter matches nothing in this dataset. Clear it, or "
+             "switch to another provider universe."
+             if state else
+             "The loader returned no rows for this universe. Try another "
+             "universe from the dataset picker above."),
+            eyebrow="NO RESULTS",
+            cta_label=("Clear the state filter" if state
+                       else "Back to Hospitals (HCRIS)"),
+            cta_href=(f"/target-screener?view=main&vertical={_qv(vertical)}"
+                      if state else
+                      "/target-screener?view=main&vertical=hospitals"),
+        )
     total_universe = len(all_rows)
     # Apply the optional filter panel (min_quality / min_size / ownership).
     min_q = _f_or_none(qs, "min_quality")
@@ -1363,8 +1471,9 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
            f'<br><input name="ownership" value="{_h.escape(own)}" size="14" '
            f'{_inp}></label>' if has_own_any else "")
         + '<button type="submit" class="tsw-vert" style="cursor:pointer;">Apply filters</button>'
-        + (f'<a class="ck-link" style="font-size:11px;" href="/target-screener?view=main&vertical={vertical}'
-           + (f"&state={state}" if state else "") + '">clear</a>'
+        + (f'<a class="ck-link" style="font-size:11px;" href="/target-screener?view=main&vertical={_qv(vertical)}'
+           + (f"&state={_qv(state)}" if state else "")
+           + '" aria-label="Clear the refine filters">clear</a>'
            if refine_open else "")
         + '</form>'
         # Predicted values aren't in this screen (it's all live CMS data) —
@@ -1384,11 +1493,25 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         # remain visible while they iterate filters.
         top_n = _topn_toggle_html(vertical, qs, row_limit)
         basket = _compare_basket_banner(vertical, qs)
-        return (filter_form + basket + top_n
-                + f'<p class="ck-section-body">No {vinfo["label"]} '
-                f'providers match these filters (of {total_universe:,} in '
-                f'{("scope " + state) if state else "the universe"}). Relax a '
-                'filter, or open Just-missed to see who narrowly failed.</p>')
+        # Just-missed is the exact next move here (who narrowly failed), so
+        # make it the empty state's CTA instead of a sentence the partner
+        # has to translate into a click. Carry the thresholds across.
+        _jm = {"view": "missed", "vertical": vertical}
+        for _k in ("state", "min_quality", "min_size"):
+            _v = _q1(qs, _k)
+            if _v:
+                _jm[_k] = _v
+        return (filter_form + basket + top_n + ck_empty_state(
+            f'No {vinfo["label"]} providers match these filters.',
+            (f'{total_universe:,} providers are in '
+             + (f'scope {state}' if state else 'the universe')
+             + ' before filtering. Relax one threshold, or open the '
+               'Just-missed scan to see who failed by a single criterion.'),
+            eyebrow="NO MATCHES",
+            cta_label="Open the Just-missed scan",
+            cta_href="/target-screener?" + "&".join(
+                f"{k}={_qv(v)}" for k, v in _jm.items()),
+        ))
     has_size = any(r.get("size") is not None for r in rows)
 
     # Optional sort (?sort=name|location|size|quality & direction=asc|desc).
@@ -1441,7 +1564,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         show_src = False
     else:
         uniform_source = None
-    hide_param = ("&hide=" + ",".join(sorted(hide))) if hide else ""
+    hide_param = ("&hide=" + _qv(",".join(sorted(hide)))) if hide else ""
 
     def _sh(label, col, align="left"):
         # Clickable header: sets sort=col and toggles asc/desc when re-clicked.
@@ -1453,14 +1576,26 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         keep = {"view": "main", "vertical": vertical, "sort": col, "direction": nd}
         if state:
             keep["state"] = state
-        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items()) + hide_param
+        href = ("/target-screener?"
+                + "&".join(f"{k}={_qv(v)}" for k, v in keep.items())
+                + hide_param)
         is_sorted = (sort_key == col)
         arrow_glyph = " ↓" if direction == "desc" else " ↑"
+        # The <span class="ts-sort-arrow"> opening tag is pinned verbatim by
+        # test_sort_by_name_asc_shows_summary_and_arrow, so the glyph cannot
+        # carry aria-hidden; aria-sort on the <th> below is what actually
+        # conveys the sort state to assistive tech.
         arrow = (f'<span class="ts-sort-arrow">{arrow_glyph}</span>'
                  if is_sorted else "")
         ta = f"text-align:{align};"
         cls = "ck-link ts-sort-on" if is_sorted else "ck-link"
-        return (f'<th style="padding:6px 8px;{ta}"><a class="{cls}" href="{href}">'
+        aria_sort = (("ascending" if direction == "asc" else "descending")
+                     if is_sorted else "none")
+        nd_word = "ascending" if nd == "asc" else "descending"
+        return (f'<th scope="col" aria-sort="{aria_sort}" '
+                f'style="padding:6px 8px;{ta}">'
+                f'<a class="{cls}" href="{href}" '
+                f'title="Sort by {_h.escape(str(label))}, {nd_word}">'
                 f'{label}{arrow}</a></th>')
 
     # Wave-13: column count for the no-match placeholder row's
@@ -1481,11 +1616,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         '<tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
         + _sh("Provider", "name")
         + _sh("Location", "location")
-        + ('<th style="padding:6px 8px;text-align:left;">Ownership</th>' if show_own else "")
+        + ('<th scope="col" style="padding:6px 8px;text-align:left;">Ownership</th>'
+           if show_own else "")
         + (_sh(size_label, "size", "right") if show_size else "")
         + (_q_header if show_q else "")
-        + ('<th style="padding:6px 8px;text-align:left;">Source</th>' if show_src else "")
-        + '<th style="padding:6px 8px;text-align:left;">Open</th></tr>'
+        + ('<th scope="col" style="padding:6px 8px;text-align:left;">Source</th>'
+           if show_src else "")
+        + '<th scope="col" style="padding:6px 8px;text-align:left;">Open</th></tr>'
     )
     cur_cmp = [c for c in _q1(qs, "compare").split(",") if c]
     trs = []
@@ -1512,9 +1649,16 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         cmp_list = ",".join(dict.fromkeys(cur_cmp + [r["ccn"]]))  # append, de-dup
         cmp_href = f'/target-screener?view=compare&compare={cmp_list}'
         loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
+        # Counts get thousands separators like every other numeric on the
+        # page (the compare view already did; this cell rendered "1234").
         size_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">'
-                   f'{int(r["size"]) if r.get("size") is not None else "—"}</td>') if show_size else ""
-        own_td = (f'<td style="padding:5px 8px;">{_h.escape(str(r["ownership"]))}</td>'
+                   f'{format(int(r["size"]), ",") if r.get("size") is not None else "—"}</td>'
+                   ) if show_size else ""
+        # Ownership strings run long ("Voluntary Non-Profit - Church") and
+        # get visually clipped in a 7-column table — title= gives the full
+        # value on hover without widening the column.
+        _own_txt = _h.escape(str(r["ownership"]))
+        own_td = (f'<td style="padding:5px 8px;" title="{_own_txt}">{_own_txt}</td>'
                   if show_own else "")
         q_td = (f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_fmt_q(r)}</td>'
                 if show_q else "")
@@ -1532,19 +1676,32 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             (r.get("city") or ""),
             (r.get("state") or ""),
         )).lower()
+        # The provider name is the row header — scope="row" so AT reads
+        # "Baptist Memorial, Ownership: …" instead of a bare cell list.
+        _name_txt = _h.escape(r["name"])
         trs.append(
             f'<tr data-ts-search="{_h.escape(search_blob, quote=True)}" '
             'style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
-            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
+            # Attribute order matters: WorkbenchSortTests._names scrapes
+            # names with a `font-weight:600;">` anchor, so that declaration
+            # has to stay last in the style attribute.
+            f'<th scope="row" title="{_name_txt} · CCN {ccn}" '
+            f'style="padding:5px 8px;text-align:left;font-weight:600;">{_name_txt}'
+            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></th>'
             f'<td style="padding:5px 8px;">{loc}</td>'
             f'{own_td}{size_td}{q_td}{src_td}'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
             f'<span class="ts-actions">'
-            f'<a class="ts-act ts-act-primary" href="{xray}">X-Ray</a>'
-            f'<a class="ts-act" href="{insp}">Inspect</a>'
+            # Every row repeats the same four action labels, so an
+            # unlabelled link list reads as "X-Ray X-Ray X-Ray…" in a
+            # screen-reader's link rota — name the target in each one.
+            f'<a class="ts-act ts-act-primary" href="{xray}" '
+            f'aria-label="Open the X-Ray for {_name_txt}">X-Ray</a>'
+            f'<a class="ts-act" href="{insp}" '
+            f'aria-label="Inspect {_name_txt}">Inspect</a>'
             f'{cim_act}'
-            f'<a class="ts-act" href="{cmp_href}">+Cmp</a>'
+            f'<a class="ts-act" href="{cmp_href}" '
+            f'aria-label="Add {_name_txt} to the compare basket">+Cmp</a>'
             # PAGE_INVENTORY top fix — per-row deal-attach: promote this
             # provider straight to a prefilled /import (deal id, name,
             # state) without the Inspector round-trip.
@@ -1625,10 +1782,11 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
             if v:
                 reset_keep[k] = v
         reset_href = "/target-screener?" + "&".join(
-            f"{k}={v}" for k, v in reset_keep.items()
+            f"{k}={_qv(v)}" for k, v in reset_keep.items()
         )
-        reset_link = (f' <a class="ck-link ts-sort-reset" href="{reset_href}">'
-                      'reset sort</a>')
+        reset_link = (f' <a class="ck-link ts-sort-reset" href="{reset_href}" '
+                      f'aria-label="Reset the sort and return to the default '
+                      f'{q_label.lower()} ranking">reset sort</a>')
     else:
         sort_clause = f"ranked by {q_label.lower()}"
         reset_link = ""
@@ -1673,6 +1831,9 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         f'{flagged_clause}{suspect_clause} '
         f'Capped at {row_limit}.{reset_link}</p>'
         '<div style="overflow-x:auto;"><table class="ts-screen-table">'
+        f'<caption class="ts-sr-only">{_h.escape(vinfo["label"])} providers '
+        f'ranked for screening{_h.escape(scope)} — {len(rows)} rows shown, '
+        f'sortable by column.</caption>'
         f'<thead>{head}</thead><tbody>{"".join(trs)}'
         # Wave-13: hidden placeholder row revealed by the JS filter
         # when every visible row is filtered out. Lives inside the
@@ -1698,7 +1859,10 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
 _MARKET_METRICS = [
     ("population", "Population", lambda v: f"{v/1e6:.2f}M"),
     ("age_65_plus", "Age 65+ %", lambda v: f"{v*100:.1f}%"),
-    ("median_income", "Median income", lambda v: f"${v:,.0f}"),
+    # House rule: money renders at 2dp ($1,204.50). Median household
+    # income is a dollar figure, not a count, so it does not take the
+    # integer-count exemption the population / supply rows do.
+    ("median_income", "Median income", lambda v: f"${v:,.2f}"),
     ("uninsured_acs", "Uninsured %", lambda v: f"{v*100:.1f}%"),
     ("provider_supply", "Provider supply", lambda v: f"{v:,.0f}"),
 ]
@@ -1737,6 +1901,7 @@ def _geo_state_values(vertical: str, metric: str):
 
 def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     import html as _h
+    from ._chartis_kit import ck_empty_state, ck_source_link as _ck_source_link
     from .us_geo_map import render_us_geo_map
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     sel = _q1(qs, "state").upper()
@@ -1755,28 +1920,53 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
     if vertical == "market":
         chips = []
         for key, lab, _f in _MARKET_METRICS:
-            cls = "tsw-vert is-active" if key == metric else "tsw-vert"
-            chips.append(f'<a class="{cls}" href="/target-screener?view=main&vertical=market&metric={key}'
-                         + (f"&state={sel}" if sel else "") + f'">{lab}</a>')
+            is_active = key == metric
+            cls = "tsw-vert is-active" if is_active else "tsw-vert"
+            chip_href = (
+                f"/target-screener?view=main&vertical=market&metric={_qv(key)}"
+                + (f"&state={_qv(sel)}" if sel else ""))
+            chips.append(
+                f'<a class="{cls}" href="{chip_href}"'
+                + (' aria-current="true"' if is_active else "")
+                + f' aria-label="Rank states by {lab}">{lab}</a>')
         layer_bar = ('<div style="font-family:var(--sc-mono);font-size:9px;letter-spacing:.12em;'
                      'text-transform:uppercase;color:var(--sc-text-faint,#8b94a0);margin:2px 0 5px;">'
-                     'Market metric</div><div class="tsw-verticals">' + "".join(chips) + '</div>')
+                     'Market metric</div>'
+                     '<div class="tsw-verticals" role="group" '
+                     'aria-label="Market metric selector">'
+                     + "".join(chips) + '</div>')
     # Ranked state table.
     rows = sorted(values.items(), key=lambda kv: -kv[1])
     trs = "".join(
         '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-        f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(st)}</td>'
+        f'<th scope="row" style="padding:5px 8px;text-align:left;'
+        f'font-weight:600;">{_h.escape(st)}</th>'
         f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{fmt(v)}</td>'
-        f'<td style="padding:5px 8px;"><a class="ck-link" href="/state-profile?state={_h.escape(st)}">market →</a> · '
-        f'<a class="ck-link" href="/diligence/xray?state={_h.escape(st)}">X-Ray search →</a></td></tr>'
+        f'<td style="padding:5px 8px;">'
+        f'<a class="ck-link" href="/state-profile?state={_qv(st)}" '
+        f'aria-label="Open the {_h.escape(st)} market profile">market →</a> · '
+        f'<a class="ck-link" href="/diligence/xray?state={_qv(st)}" '
+        f'aria-label="Search {_h.escape(st)} providers in X-Ray">'
+        f'X-Ray search →</a></td></tr>'
         for st, v in rows[:60]
     )
     table = ('<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+             f'<caption class="ts-sr-only">States ranked by '
+             f'{_h.escape(mlabel)} — top {min(len(rows), 60)} of '
+             f'{len(rows)}.</caption>'
              '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
-             f'<th style="padding:6px 8px;">State</th><th style="padding:6px 8px;text-align:right;">{_h.escape(mlabel)}</th>'
-             '<th style="padding:6px 8px;">Open</th></tr></thead>'
-             f'<tbody>{trs}</tbody></table></div>') if rows else (
-             '<p class="ck-section-body">No state-level values available.</p>')
+             f'<th scope="col" style="padding:6px 8px;">State</th>'
+             f'<th scope="col" style="padding:6px 8px;text-align:right;">{_h.escape(mlabel)}</th>'
+             '<th scope="col" style="padding:6px 8px;">Open</th></tr></thead>'
+             f'<tbody>{trs}</tbody></table></div>') if rows else ck_empty_state(
+                 f"No state-level {mlabel.lower()} available right now.",
+                 "The public geographic loader returned no values for this "
+                 "metric, so nothing is ranked rather than shading the map "
+                 "with a guess. Pick another market metric above, or open "
+                 "Geographic Intelligence for the full market detail.",
+                 eyebrow="NO DATA",
+                 cta_label="Open Geographic Intelligence",
+                 cta_href="/geo-intel")
     listener = (
         "<script>(function(){document.addEventListener('us-map-select',function(e){"
         "var st=e&&e.detail&&e.detail.state;if(!st)return;"
@@ -1801,7 +1991,8 @@ def _render_geo_view(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         + ck["panel"](
             f'<p class="ck-section-body" style="margin:0;"><strong>{vinfo["label"]}</strong> is a '
             f'<strong>market/geography</strong> view: it screens states (and, later, counties), '
-            f'not individual providers. Real {source}. Click a state to open its '
+            f'not individual providers. Real {_ck_source_link(source)}. '
+            f'Click a state to open its '
             f'<a href="/geo-intel" class="ck-link">Geographic Intelligence</a> market detail.</p>'
             + geo_kpis,
             title="Market-level universe (not individual providers)")
@@ -1899,8 +2090,11 @@ def _active_filter_chips(vertical: str, qs: Dict[str, List[str]]) -> str:
             dirn = _q1(qs, "direction")
             if dirn:
                 kept["direction"] = dirn
+        # Percent-encode rather than html-escape: html.escape turns a value's
+        # "&" into "&amp;", which the HTML parser hands back as a literal "&"
+        # — i.e. a value containing "&" would forge an extra query param.
         return "/target-screener?" + "&".join(
-            f"{k}={_h.escape(str(v))}" for k, v in kept.items() if v
+            f"{k}={_qv(v)}" for k, v in kept.items() if v
         )
 
     chips_html = "".join(
@@ -1977,7 +2171,10 @@ def _universe_kpis(vertical: str, rows: List[Dict],
         cov_sub = f"{len(qs_vals):,} of {n:,} report it"
         if state_scope:
             cov_sub += f" · {state_scope}-only"
-        blocks.append(ck_kpi_block(f"{q_label} coverage", f"{pct:.0f}%",
+        # House rule: percentages render at 1dp. The 0dp form rounded a
+        # 4.4%-coverage universe to a flat "4%", which reads as a rounder
+        # (more complete) number than the data supports.
+        blocks.append(ck_kpi_block(f"{q_label} coverage", f"{pct:.1f}%",
                                    cov_sub))
     return f'<div class="ck-kpi-grid">{"".join(blocks)}</div>'
 
@@ -2077,9 +2274,11 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
         + ck["panel"](
             _render_table(vertical, qs)
             + (f'<p style="margin:10px 0 0;"><a class="ck-link" '
-               f'href="/target-screener.csv?vertical={vertical}'
-               + (f'&state={_q1(qs, "state").upper()}' if _q1(qs, "state") else "")
-               + '">Download CSV (this screen) ↓</a></p>'),
+               f'href="/target-screener.csv?vertical={_qv(vertical)}'
+               + (f'&state={_qv(_q1(qs, "state").upper())}'
+                  if _q1(qs, "state") else "")
+               + '" aria-label="Download this screen as CSV">'
+                 'Download CSV (this screen) ↓</a></p>'),
             # 2026-05-30 audit: drop "real loader" engineer-ese
             # (the platform's job is to be real; partners don't need
             # to be reassured the data isn't mocked).
@@ -2155,7 +2354,8 @@ def _guide_questions() -> List[str]:
 
 def _screen_inspector(qs, ck) -> str:
     import html as _h
-    from ._chartis_kit import ck_source_link as _ck_source_link
+    from ._chartis_kit import (ck_empty_state,
+                               ck_source_link as _ck_source_link)
     ccn = _q1(qs, "ccn")
     if not ccn:
         return _scaffold("Inspector · no target selected", "now", [
@@ -2165,9 +2365,16 @@ def _screen_inspector(qs, ck) -> str:
         ])
     r = _find_provider(ccn)
     if not r:
-        return (f'<p class="ck-section-body">CCN <code>{_h.escape(ccn)}</code> did '
-                'not resolve to any live provider universe. Check the ID or pick '
-                'a row from Main.</p>')
+        # ck_empty_state escapes its body, so the raw (possibly hostile)
+        # CCN is safe to quote back at the partner here.
+        return ck_empty_state(
+            f'CCN {ccn} did not resolve to any live provider universe.',
+            "Nothing was fabricated for it. Check the identifier, or pick a "
+            "row from the Main screen to inspect a provider we actually hold.",
+            eyebrow="UNKNOWN CCN",
+            cta_label="Back to the ranked table",
+            cta_href="/target-screener?view=main",
+        )
     vertical = r["vertical"]
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     state = r["state"]
@@ -2192,7 +2399,8 @@ def _screen_inspector(qs, ck) -> str:
         f'<div style="font-family:var(--sc-serif);font-size:16px;color:var(--sc-navy,#15202b);">'
         f'{_h.escape(r["name"])}</div>'
         f'<div style="font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-faint,#8b94a0);'
-        f'margin-bottom:8px;">{_h.escape(ccn)} · {_h.escape(vertical)} · {_h.escape(vinfo["universe"])}</div>'
+        f'margin-bottom:8px;">{_h.escape(ccn)} · {_h.escape(vertical)} · '
+        f'{_ck_source_link(_source_label(vertical))}</div>'
         + _kv("Location", _h.escape(", ".join([p for p in (r["city"], state) if p]) or "—"))
         + _kv("Ownership", _h.escape(str(r["ownership"])))
         + _kv(r.get("size_label") or "Size", f'{int(r["size"]):,}' if r.get("size") is not None else "—")
@@ -2204,21 +2412,29 @@ def _screen_inspector(qs, ck) -> str:
     links = ck["panel"](
         f'<a class="ck-link" href="/diligence/xray?ccn={_h.escape(ccn)}&vertical={vertical}">CMS X-Ray (full diligence) →</a><br>'
         + (f'<a class="ck-link" href="/diligence/hcris-xray?ccn={_h.escape(ccn)}">HCRIS X-Ray →</a><br>' if vertical == "hospitals" else "")
-        + f'<a class="ck-link" href="/state-profile?state={state}">{state} market context →</a><br>'
-        f'<a class="ck-link" href="/target-screener?view=compare&compare={_h.escape(ccn)}">Add to Compare →</a><br>'
+        + f'<a class="ck-link" href="/state-profile?state={_qv(state)}">{_h.escape(state)} market context →</a><br>'
+        f'<a class="ck-link" href="/target-screener?view=compare&compare={_qv(ccn)}">Add to Compare →</a><br>'
         + (lambda slug, nm: (
             f'<a class="ck-link" href="/import?deal_id={_uq(slug)}&name={_uq(r["name"])}'
             f'{("&state=" + _uq(state)) if state else ""}">Promote to Pipeline '
             f'(prefilled deal) →</a>')
-           )(f"{vertical}_{ccn}".lower().replace(" ", "_"), r["name"]),
+           )(f"{vertical}_{ccn}".lower().replace(" ", "_"), r["name"])
+        # The inspector was a dead end: every link led further out, none
+        # led back to the screen the partner came from. Return them to
+        # the ranked table pre-scoped to this provider's universe + state.
+        + '<br><a class="ck-link" href="/target-screener?view=main&vertical='
+        + f'{_qv(vertical)}' + (f'&state={_qv(state)}' if state else "")
+        + f'">&larr; Back to the {_h.escape(vinfo["label"])} ranked table'
+        + (f' ({_h.escape(state)})' if state else "") + '</a>',
         title="Open next")
     qs_list = "".join(f'<li>{_h.escape(q)}</li>' for q in _guide_questions())
     guide = ck["panel"](
         '<p class="ck-section-body" style="margin:0 0 6px;">Ask the Guide (drawer, top-right):</p>'
         f'<ul style="margin:0 0 0 18px;font-family:var(--sc-serif);font-size:13px;line-height:1.6;">{qs_list}</ul>',
         title="Guide")
-    caveat = ('<p class="ck-section-body" style="font-style:italic;">Real CMS '
-              f'{vinfo["universe"]} data; "—" = not reported. Peer rank is within '
+    caveat = ('<p class="ck-section-body" style="font-style:italic;">Real '
+              f'{_ck_source_link(_source_label(vertical))} data; '
+              '"—" = not reported. Peer rank is within '
               f'{state} for this vertical only, not a cross-vertical or investment '
               'judgment. No notes are fabricated.</p>')
     return identity + links + guide + caveat
@@ -2240,13 +2456,31 @@ def _quality_keys(vertical: str) -> List[str]:
 
 def _screen_columns(qs, ck) -> str:
     import html as _h
+    from ._chartis_kit import ck_empty_state, ck_source_link as _ck_source_link
     vertical = _q1(qs, "vertical", "hospitals") or "hospitals"
     if vertical not in _VERTICAL_KEYS:
         vertical = "hospitals"
     vinfo = next((v for v in _VERTICALS if v["key"] == vertical), _VERTICALS[0])
     rows = _vertical_rows(vertical, limit=None)
+    if not rows:
+        # The metric dictionary is derived from the loaded universe — with
+        # no rows every availability cell would read "0/0", which looks
+        # like the columns are empty rather than the loader being down.
+        return ck_empty_state(
+            f'No {vinfo["label"]} universe loaded, so there is no metric '
+            f'dictionary to show.',
+            "Column availability is computed from the live rows; with none "
+            "loaded the page would only be able to report 0 of 0. Pick "
+            "another dataset from the workbench, or retry once the loader "
+            "is back.",
+            eyebrow="NO DATA",
+            cta_label="Back to the screen",
+            cta_href=f"/target-screener?view=main&vertical={_qv(vertical)}",
+        )
     n = len(rows) or 1
-    src = vinfo["universe"]
+    # Cite the real dataset name (which resolves in the source registry and
+    # therefore links), not the short "CMS SNF" toggle chip.
+    src = _source_label(vertical)
 
     def _field_count(field) -> int:
         return sum(1 for r in rows if r.get(field) not in (None, "", "—"))
@@ -2299,13 +2533,16 @@ def _screen_columns(qs, ck) -> str:
             return '<span style="color:var(--sc-text-faint,#8b94a0)">always</span>'
         hidden = key in hide
         new = (hide - {key}) if hidden else (hide | {key})
-        base = f"/target-screener?view=main&vertical={vertical}"
+        base = f"/target-screener?view=main&vertical={_qv(vertical)}"
         if state:
-            base += f"&state={state}"
+            base += f"&state={_qv(state)}"
         if new:
-            base += "&hide=" + ",".join(sorted(new))
+            base += "&hide=" + _qv(",".join(sorted(new)))
         word = "Hidden · show" if hidden else "Shown · hide"
-        return f'<a class="ck-link" href="{_h.escape(base)}">{word}</a>'
+        act = "Show" if hidden else "Hide"
+        return (f'<a class="ck-link" href="{_h.escape(base)}" '
+                f'aria-label="{act} the {_h.escape(key)} column on the '
+                f'Main table">{word}</a>')
 
     # Group rows by category.
     from collections import OrderedDict
@@ -2317,8 +2554,12 @@ def _screen_columns(qs, ck) -> str:
     for cat, items in groups.items():
         trs = "".join(
             f'<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(label)}</td>'
-            f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-dim,#6a7480);">{_h.escape(source)}</td>'
+            f'<th scope="row" style="padding:5px 8px;text-align:left;'
+            f'font-weight:600;">{_h.escape(label)}</th>'
+            # Every Source cell in this dictionary was dead text; route it
+            # through ck_source_link so each column's provenance is one
+            # click from the public dataset it is derived from.
+            f'<td style="padding:5px 8px;font-family:var(--sc-mono);font-size:10px;color:var(--sc-text-dim,#6a7480);">{_ck_source_link(source)}</td>'
             f'<td style="padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;">{_avail(field)}</td>'
             f'<td style="padding:5px 8px;font-size:11px;">{_vis_cell(field)}</td></tr>'
             for label, field, source in items
@@ -2326,10 +2567,14 @@ def _screen_columns(qs, ck) -> str:
         body.append(
             f'<h3 style="font-family:var(--sc-serif);font-size:15px;margin:14px 0 4px;color:var(--sc-navy,#15202b);">{_h.escape(cat)}</h3>'
             '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+            f'<caption class="ts-sr-only">{_h.escape(cat)} columns — source, '
+            f'availability across the {_h.escape(vinfo["label"])} universe, '
+            f'and whether each shows on the Main table.</caption>'
             '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
-            '<th style="padding:6px 8px;">Column</th><th style="padding:6px 8px;">Source</th>'
-            '<th style="padding:6px 8px;text-align:right;">Availability</th>'
-            '<th style="padding:6px 8px;">On Main table</th></tr></thead>'
+            '<th scope="col" style="padding:6px 8px;">Column</th>'
+            '<th scope="col" style="padding:6px 8px;">Source</th>'
+            '<th scope="col" style="padding:6px 8px;text-align:right;">Availability</th>'
+            '<th scope="col" style="padding:6px 8px;">On Main table</th></tr></thead>'
             f'<tbody>{trs}</tbody></table></div>'
         )
 
@@ -2339,7 +2584,8 @@ def _screen_columns(qs, ck) -> str:
         chips = " · ".join(_h.escape(k) for k in extra_q[:18])
         extra = (f'<h3 style="font-family:var(--sc-serif);font-size:15px;margin:14px 0 4px;color:var(--sc-navy,#15202b);">'
                  f'Additional {vinfo["label"]} quality columns available</h3>'
-                 f'<p class="ck-section-body" style="margin:0;">From {src}, not yet surfaced in the '
+                 f'<p class="ck-section-body" style="margin:0;">From '
+                 f'{_ck_source_link(src)}, not yet surfaced in the '
                  f'table (real, available to add): <span style="font-family:var(--sc-mono);font-size:11px;">{chips}</span>.</p>')
 
     hidden_note = ""
@@ -2353,9 +2599,12 @@ def _screen_columns(qs, ck) -> str:
             f'{_h.escape(", ".join(_hidden_zero))}</span>.</p>')
     return (
         f'<p class="ck-section-body" style="margin:0 0 8px;">Columns for the '
-        f'<strong>{vinfo["label"]}</strong> universe ({src}), grouped by category '
+        f'<strong>{vinfo["label"]}</strong> universe ({_ck_source_link(src)}), '
+        f'grouped by category '
         f'with real source + availability across {len(rows):,} providers. Columns '
-        f'CMS doesn\'t report are dropped entirely, never shown at 0%.</p>'
+        f'CMS doesn\'t report are dropped entirely, never shown at 0%. '
+        f'<a class="ck-link" href="/target-screener?view=main&vertical='
+        f'{_qv(vertical)}">Back to the ranked table →</a></p>'
         + "".join(body) + extra + hidden_note
     )
 
@@ -2416,7 +2665,9 @@ def _peer_set_block(owner: str, cols,
             f'<input type="hidden" name="id" value="{s["id"]}">'
             f'<button type="submit" class="ck-link" style="border:0;'
             f'background:none;cursor:pointer;font-size:10px;'
-            f'color:var(--sc-negative,#b5321e);">delete</button>'
+            f'color:var(--sc-negative,#b5321e);" '
+            f'aria-label="Delete the saved peer set '
+            f'{_h.escape(str(s["name"]))}">delete</button>'
             f'</form></li>')
     sets_html = (
         '<div style="margin-top:12px;">'
@@ -2431,7 +2682,8 @@ def _peer_set_block(owner: str, cols,
 def _screen_compare(qs, ck, owner: str = "",
                     peer_sets: "Optional[List[Dict]]" = None) -> str:
     import html as _h
-    from ._chartis_kit import ck_source_link as _ck_source_link
+    from ._chartis_kit import (ck_empty_state,
+                               ck_source_link as _ck_source_link)
     comp = _q1(qs, "compare")
     ccns = [c.strip() for c in comp.split(",") if c.strip()][:6]
     if not ccns:
@@ -2448,31 +2700,45 @@ def _screen_compare(qs, ck, owner: str = "",
     cols = [(c, r) for c, r in found if r]
     missing = [c for c, r in found if not r]
     if not cols:
-        return ('<p class="ck-section-body">None of the requested CCNs '
-                f'({_h.escape(", ".join(ccns))}) resolved to a live provider '
-                'universe. Check the IDs or add targets from Main.</p>')
+        return ck_empty_state(
+            "None of the requested CCNs resolved to a live provider universe.",
+            f'Asked for: {", ".join(ccns)}. Nothing was invented for them — '
+            f'check the identifiers, or stage targets from the Main screen '
+            f'with the row "+Cmp" action.',
+            eyebrow="EMPTY COMPARISON",
+            cta_label="Back to the ranked table",
+            cta_href="/target-screener?view=main",
+        ) + _peer_set_block(owner, [], peer_sets)
     verticals = {r["vertical"] for _, r in cols}
     cross = len(verticals) > 1
 
     def _rm_link(drop):
         keep = [c for c, _ in cols if c != drop]
         return _href("compare", qs).split("?")[0] + (
-            f'?view=compare&compare={",".join(keep)}' if keep else "?view=compare")
+            f'?view=compare&compare={_qv(",".join(keep))}' if keep
+            else "?view=compare")
 
     # Header row: one column per provider with a remove (✕) control.
-    ths = ['<th style="padding:6px 8px;text-align:left;">Metric</th>']
+    ths = ['<th scope="col" style="padding:6px 8px;text-align:left;">Metric</th>']
     for c, r in cols:
         ths.append(
-            f'<th style="padding:6px 8px;text-align:left;vertical-align:top;">'
+            f'<th scope="col" style="padding:6px 8px;text-align:left;vertical-align:top;">'
             f'{_h.escape(r["name"])}'
             f'<div style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);font-weight:400;">'
             f'{_h.escape(c)} · {_h.escape(r["vertical"])}</div>'
-            f'<a class="ck-link" style="font-size:10px;" href="{_rm_link(c)}">✕ remove</a></th>')
+            # The ✕ is the only glyph in an otherwise identical set of
+            # "remove" links — name the provider it removes.
+            f'<a class="ck-link" style="font-size:10px;" href="{_rm_link(c)}" '
+            f'aria-label="Remove {_h.escape(r["name"])} from the comparison">'
+            f'<span aria-hidden="true">✕</span> remove</a></th>')
 
     def _row(label, fn):
+        # scope="row": in a metric-by-metric grid the metric name is the
+        # row header, so AT can announce "Ownership — For profit" per cell.
         tds = "".join(f'<td style="padding:5px 8px;">{fn(r)}</td>' for _, r in cols)
         return (f'<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-                f'<td style="padding:5px 8px;font-weight:600;">{label}</td>{tds}</tr>')
+                f'<th scope="row" style="padding:5px 8px;text-align:left;'
+                f'font-weight:600;">{label}</th>{tds}</tr>')
 
     def _q_cell(r):
         # Cross-vertical quality metrics aren't the same scale → label each;
@@ -2512,7 +2778,7 @@ def _screen_compare(qs, ck, owner: str = "",
     if len(hosp_ccns) >= 2:
         rollup_link = (
             f' <a class="ck-link" href="/pipeline/rollup?ccns='
-            f'{",".join(_h.escape(c) for c in hosp_ccns)}">'
+            f'{_qv(",".join(hosp_ccns))}">'
             f'Roll-up these {len(hosp_ccns)} → pro-forma platform</a> ·')
     # P5 exhibit chrome: the compare basket is a paste-ready comp table —
     # number it, state the units, stamp the source family.
@@ -2522,6 +2788,8 @@ def _screen_compare(qs, ck, owner: str = "",
     table = _xf.wrap(
         '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;'
         'font-size:12.5px;font-family:var(--sc-sans,Inter Tight,sans-serif);">'
+        f'<caption class="ts-sr-only">Metric-by-metric comparison of '
+        f'{len(cols)} screened providers.</caption>'
         f'<thead><tr style="border-bottom:2px solid var(--sc-rule,#c9c1ac);">{"".join(ths)}</tr></thead>'
         f'<tbody>{rows_html}</tbody></table></div>',
         title=("Compare basket — side-by-side"
@@ -2549,6 +2817,7 @@ def _f_or_none(qs, key):
 
 def _screen_missed(qs, ck) -> str:
     import html as _h
+    from ._chartis_kit import ck_empty_state
     vertical = _q1(qs, "vertical", "hospitals") or "hospitals"
     if vertical not in _VERTICAL_KEYS:
         vertical = "hospitals"
@@ -2567,7 +2836,7 @@ def _screen_missed(qs, ck) -> str:
         '<form method="get" action="/target-screener" class="tsw-verticals" '
         'style="align-items:flex-end;gap:14px;">'
         '<input type="hidden" name="view" value="missed">'
-        f'<input type="hidden" name="vertical" value="{vertical}">'
+        f'<input type="hidden" name="vertical" value="{_h.escape(vertical)}">'
         '<label style="font-family:var(--sc-mono);font-size:10px;">State'
         f'<br><input name="state" value="{_h.escape(state)}" size="3" '
         'style="font-family:var(--sc-mono);padding:3px 6px;"></label>'
@@ -2580,6 +2849,20 @@ def _screen_missed(qs, ck) -> str:
         + '<button type="submit" class="tsw-vert" style="cursor:pointer;">Scan</button>'
         '</form>'
     )
+
+    if not rows:
+        # No universe to scan (unknown state filter / loader down) — say so
+        # instead of reporting "0 just missed", which reads as a real result.
+        return form + ck_empty_state(
+            f'No {vinfo["label"]} providers'
+            + (f' in {state} to scan.' if state else ' loaded to scan.'),
+            "The just-missed scan compares the live universe against your "
+            "thresholds; with no rows loaded there is nothing to measure a "
+            "near-miss against.",
+            eyebrow="NOTHING TO SCAN",
+            cta_label="Back to the ranked table",
+            cta_href=f"/target-screener?view=main&vertical={_qv(vertical)}",
+        )
 
     if min_q is None and min_size is None:
         return (form + '<p class="ck-section-body">Set a <strong>minimum '
@@ -2599,13 +2882,30 @@ def _screen_missed(qs, ck) -> str:
                 miss_bits.append(f"{q_label} not reported")
             elif r["q"] < min_q:
                 fails.append("q")
-                dist_bits.append(f"{q_label} short by {min_q - r['q']:.3g}")
+                # House rule: a percentage gap renders at 1dp, in
+                # percentage points. The old "%.3g" printed an operating
+                # margin shortfall as "0.0234" and left the partner to
+                # translate it into 2.3pp themselves.
+                gap = min_q - r["q"]
+                if r.get("q_pct"):
+                    gap_pp = gap * 100.0
+                    # 1dp is the house percentage format, but the nearest
+                    # misses round to "0.0pp", which reads as "not short at
+                    # all". Floor them at "<0.1pp" instead of printing a
+                    # zero that contradicts the row being in this table.
+                    # Raw "<" here: dist_bits is html-escaped at render time.
+                    gap_txt = (f"{gap_pp:.1f}pp" if gap_pp >= 0.05
+                               else "<0.1pp")
+                else:
+                    gap_txt = f"{gap:.2f}"
+                dist_bits.append(f"{q_label} short by {gap_txt}")
         if min_size is not None and has_size:
             if r.get("size") is None:
                 miss_bits.append(f"{size_label} not reported")
             elif r["size"] < min_size:
                 fails.append("size")
-                dist_bits.append(f"{size_label} short by {min_size - r['size']:.0f}")
+                dist_bits.append(
+                    f"{size_label} short by {min_size - r['size']:,.0f}")
         if miss_bits and not fails:
             missing_data.append((r, miss_bits))
         elif len(fails) == 1:
@@ -2626,29 +2926,47 @@ def _screen_missed(qs, ck) -> str:
             keep["state"] = state
         if min_size is not None:
             keep["min_size"] = min_size
-        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
-        relax_links.append(f'<a class="ck-link" href="{href}">Relax {q_label} → +{relax_q} providers</a>')
+        href = "/target-screener?" + "&".join(
+            f"{k}={_qv(v)}" for k, v in keep.items())
+        relax_links.append(
+            f'<a class="ck-link" href="{href}" aria-label="Drop the minimum '
+            f'{_h.escape(str(q_label)).lower()} threshold, adding {relax_q} '
+            f'providers">Relax {q_label} → +{relax_q} providers</a>')
     if min_size is not None and relax_size:
         keep = {"view": "missed", "vertical": vertical}
         if state:
             keep["state"] = state
         if min_q is not None:
             keep["min_quality"] = min_q
-        href = "/target-screener?" + "&".join(f"{k}={v}" for k, v in keep.items())
-        relax_links.append(f'<a class="ck-link" href="{href}">Relax {size_label} → +{relax_size} providers</a>')
+        href = "/target-screener?" + "&".join(
+            f"{k}={_qv(v)}" for k, v in keep.items())
+        relax_links.append(
+            f'<a class="ck-link" href="{href}" aria-label="Drop the minimum '
+            f'{_h.escape(str(size_label)).lower()} threshold, adding '
+            f'{relax_size} providers">Relax {size_label} → '
+            f'+{relax_size} providers</a>')
 
     def _row_html(r, bits):
         ccn = _h.escape(r["ccn"])
-        cmp_href = f'/target-screener?view=compare&compare={ccn}'
+        name = _h.escape(r["name"])
+        cmp_href = f'/target-screener?view=compare&compare={_qv(r["ccn"])}'
+        # Parity with the Main table: hospital rows drill into the rich
+        # HCRIS X-Ray, everything else into the generic CMS provider
+        # scanner. Just-missed used to send hospitals to the generic one.
+        xray = (f'/diligence/hcris-xray?ccn={ccn}' if vertical == "hospitals"
+                else f'/diligence/xray?ccn={ccn}&vertical={_qv(vertical)}')
         return (
             '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
-            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
+            f'<th scope="row" title="{name} · CCN {ccn}" '
+            f'style="padding:5px 8px;text-align:left;font-weight:600;">{name}'
+            f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></th>'
             f'<td style="padding:5px 8px;">{_h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")}</td>'
             f'<td style="padding:5px 8px;color:var(--sc-warning,#b8732a);">{_h.escape("; ".join(bits))}</td>'
             f'<td style="padding:5px 8px;white-space:nowrap;">'
-            f'<a class="ck-link" href="/diligence/xray?ccn={ccn}&vertical={vertical}">X-Ray</a> · '
-            f'<a class="ck-link" href="{cmp_href}">+Cmp</a></td></tr>'
+            f'<a class="ck-link" href="{xray}" '
+            f'aria-label="Open the X-Ray for {name}">X-Ray</a> · '
+            f'<a class="ck-link" href="{cmp_href}" '
+            f'aria-label="Add {name} to the compare basket">+Cmp</a></td></tr>'
         )
 
     jm = "".join(_row_html(r, bits) for _, r, bits in just_missed[:50])
@@ -2659,20 +2977,41 @@ def _screen_missed(qs, ck) -> str:
                + (f' · {" · ".join(relax_links)}' if relax_links else "") + '.</p>')
     if jm:
         out.append('<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+                   f'<caption class="ts-sr-only">{_h.escape(vinfo["label"])} '
+                   f'providers that failed the screen by exactly one '
+                   f'criterion, nearest miss first.</caption>'
                    '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
-                   '<th style="padding:6px 8px;">Provider</th><th style="padding:6px 8px;">Location</th>'
-                   '<th style="padding:6px 8px;">Just missed because…</th><th style="padding:6px 8px;">Open</th></tr></thead>'
+                   '<th scope="col" style="padding:6px 8px;">Provider</th>'
+                   '<th scope="col" style="padding:6px 8px;">Location</th>'
+                   '<th scope="col" style="padding:6px 8px;">Just missed because…</th>'
+                   '<th scope="col" style="padding:6px 8px;">Open</th></tr></thead>'
                    f'<tbody>{jm}</tbody></table></div>')
     else:
-        out.append('<p class="ck-section-body">No single-criterion near-misses at these thresholds.</p>')
+        out.append(ck_empty_state(
+            "No single-criterion near-misses at these thresholds.",
+            f'Every {vinfo["label"]} provider that failed missed on more '
+            f'than one criterion, so none is a one-tweak candidate. Loosen '
+            f'a threshold in the scan form above, or go back to the ranked '
+            f'table and screen from there.',
+            eyebrow="NO NEAR-MISSES",
+            tone="positive",
+            cta_label="Back to the ranked table",
+            cta_href=f"/target-screener?view=main&vertical={_qv(vertical)}"
+                     + (f"&state={_qv(state)}" if state else ""),
+        ))
     if md:
         out.append(f'<p class="ck-section-body" style="margin:14px 0 4px;"><strong>Excluded only '
                    f'for missing data</strong> ({len(missing_data)}): these were not failed, the '
                    f'value simply is not reported:</p>'
                    '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+                   f'<caption class="ts-sr-only">{_h.escape(vinfo["label"])} '
+                   f'providers excluded only because a required value is not '
+                   f'reported.</caption>'
                    '<thead><tr style="text-align:left;border-bottom:2px solid var(--sc-rule,#c9c1ac);">'
-                   '<th style="padding:6px 8px;">Provider</th><th style="padding:6px 8px;">Location</th>'
-                   '<th style="padding:6px 8px;">Missing</th><th style="padding:6px 8px;">Open</th></tr></thead>'
+                   '<th scope="col" style="padding:6px 8px;">Provider</th>'
+                   '<th scope="col" style="padding:6px 8px;">Location</th>'
+                   '<th scope="col" style="padding:6px 8px;">Missing</th>'
+                   '<th scope="col" style="padding:6px 8px;">Open</th></tr></thead>'
                    f'<tbody>{md}</tbody></table></div>')
     return "".join(out)
 
@@ -2712,7 +3051,10 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
         if v:
             keep[k] = v
     keep.setdefault("view", "main")
-    cur_qs = "&".join(f"{k}={_h.escape(v)}" for k, v in keep.items())
+    # Percent-encoded, not html-escaped: cur_url goes into a readonly input
+    # the partner copies verbatim, so it has to be a URL that works when
+    # pasted — "&quot;" and "&amp;" would survive the copy as literal text.
+    cur_qs = "&".join(f"{k}={_qv(v)}" for k, v in keep.items())
     cur_url = f"/target-screener?{cur_qs}"
 
     # Persisted, owner-scoped saved screens (real storage). When no user/owner
@@ -2738,13 +3080,16 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
                         f'since {_h.escape(str(info["taken_at"])[:10])}: {body}'
                         f' · <a class="ck-link" href="/target-screener?view=saved'
                         f'&diff={int(s["id"])}" style="font-size:9.5px;">detail</a></div>')
+                _word = "re-baseline" if info.get("taken_at") else "snapshot"
                 btn = (
                     f'<form method="post" action="/api/target-screener/snapshot" style="margin:0;">'
                     f'<input type="hidden" name="id" value="{int(s["id"])}">'
                     f'<button type="submit" class="ck-link" title="Snapshot this screen\'s '
                     f'current results as the new diff baseline" style="background:none;border:0;'
-                    f'cursor:pointer;font-size:10px;color:var(--sc-teal,#155752);">'
-                    f'{"re-baseline" if info.get("taken_at") else "snapshot"}</button></form>')
+                    f'cursor:pointer;font-size:10px;color:var(--sc-teal,#155752);" '
+                    f'aria-label="{_word.capitalize()} the saved screen '
+                    f'{_h.escape(str(s["title"]))}">'
+                    f'{_word}</button></form>')
                 return line, btn
 
             cards = ""
@@ -2760,12 +3105,25 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
                     f'{_btn}'
                     f'<form method="post" action="/api/target-screener/delete" style="margin:0;">'
                     f'<input type="hidden" name="id" value="{int(s["id"])}">'
+                    # Icon-only control: without a label AT announces a bare
+                    # "button" and the partner cannot tell WHICH screen it
+                    # deletes (every row renders the same ✕).
                     f'<button type="submit" class="ck-link" style="background:none;border:0;cursor:pointer;'
-                    f'font-size:11px;color:var(--sc-negative,#b5321e);">✕</button></form></div>'
+                    f'font-size:11px;color:var(--sc-negative,#b5321e);" '
+                    f'title="Delete this saved screen" '
+                    f'aria-label="Delete the saved screen '
+                    f'{_h.escape(str(s["title"]))}">'
+                    f'<span aria-hidden="true">✕</span></button></form></div>'
                 )
         else:
-            cards = ('<p class="ck-section-body" style="margin:0;">No saved screens yet. '
-                     'Name and save the current screen below.</p>')
+            from ._chartis_kit import ck_empty_state as _ck_empty
+            cards = _ck_empty(
+                "No saved screens yet.",
+                "A screen is just its query string — name the one you are "
+                "looking at and it reopens live, with a snapshot baseline you "
+                "can diff against later.",
+                eyebrow="NOTHING SAVED",
+            )
         save_form = (
             '<form method="post" action="/api/target-screener/save" '
             'style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">'
@@ -2838,7 +3196,8 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
 
     presets = "".join(
         f'<a class="ts-mode" href="/target-screener?{p["params"]}" '
-        f'style="border-top-color:var(--sc-teal,#155752);">'
+        f'style="border-top-color:var(--sc-teal,#155752);" '
+        f'aria-label="Open the prebuilt screen: {_h.escape(p["title"])}">'
         f'<span class="ts-mode-label" style="font-size:16px;">{_h.escape(p["title"])}</span>'
         f'<span class="ts-mode-how">{_h.escape(p["desc"])}</span>'
         f'<span class="ts-mode-go">Open screen →</span></a>'
@@ -2849,6 +3208,7 @@ def _screen_saved(qs, ck, saved: Optional[List[Dict]] = None, owner: str = "",
         '<p class="ck-section-body" style="margin:0 0 6px;">Your current screen '
         'is a shareable link; copy it to save or send:</p>'
         f'<input type="text" readonly value="{cur_url}" '
+        'aria-label="Shareable URL for the screen you are looking at" '
         'onclick="this.select()" style="width:100%;font-family:var(--sc-mono);'
         'font-size:11px;padding:7px 9px;border:1px solid var(--sc-rule,#c9c1ac);'
         'border-radius:2px;background:var(--sc-paper,#faf6ec);">'

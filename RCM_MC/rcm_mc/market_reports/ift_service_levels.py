@@ -21,7 +21,10 @@ Design contract (mirrors the IFT estate, esp. ``ift_demand_evidence``):
 Everything here was verified against the primary source in July 2026; the
 verification date matters because the fee-schedule dollars (CY2026), the CY2024
 utilization file (published May 2026), and the OEWS wage vintage (May 2025)
-roll annually.
+roll annually. The GADCS cost and labour-share figures were refreshed on
+2026-08-03 to the Year 1-Year 4 cohort appendix (Dec 2025), which supersedes
+the Year 1-2 cost tables; the Year 1-2 report remains cited for the
+service-mix quote it alone carries.
 
 Public API:
     service_levels() -> Tuple[ServiceLevel, ...]        # the top table
@@ -215,6 +218,16 @@ S_GADCS = Src("CMS/RAND GADCS report — Year 1 + Year 2 cohorts (Dec 2024)",
               "https://www.cms.gov/files/document/medicare-ground-ambulance-"
               "data-collection-system-gadcs-report-year-1-and-year-2-cohort-"
               "analysis.pdf")
+# Cost/labour dollars come from the Year 1-Year 4 cohort appendix (posted
+# 2025-12-09, data through 2025-05-15), which SUPERSEDES the Year 1-2 cost
+# tables. The Year 1-2 report above is still the source for the service-mix
+# quote and the volume-drives-unit-cost narrative, so both stay in the
+# bibliography rather than one overwriting the other.
+S_GADCS_Y14 = Src("CMS/RAND GADCS report appendix — Year 1-Year 4 cohort "
+                  "analysis (Dec 2025), Tables 3.1/4.1",
+                  "https://www.cms.gov/files/document/medicare-ground-"
+                  "ambulance-data-collection-system-gadcs-report-appendix-"
+                  "year-1-year-4-cohort-analysis.pdf")
 S_OIG15 = Src("HHS OIG OEI-09-12-00351 — Inappropriate Payments and "
               "Questionable Billing for Ambulance Transports (2015)",
               "https://oig.hhs.gov/oei/reports/oei-09-12-00351.pdf")
@@ -907,12 +920,14 @@ def payment_mechanics() -> Tuple[Fact, ...]:
              "2%/3% add-ons 'did not have an underlying empirical basis.'",
              "GOV", (S_CAA26, S_MEDPAC26)),
         Fact("Scale economics: GADCS (the mandatory federal cost survey) "
-             "found mean cost per transport of $2,673 (median $1,340), "
-             "labor = 69.4% of costs, and volume the strongest driver of "
-             "unit cost; GAO found 2010 cost per transport ranged $224-"
-             "$2,204 (median $429) and the median Medicare margin was "
-             "about +2% WITH the add-ons, -1% without.", "GOV",
-             (S_GADCS, S_GAO13_6)),
+             "found mean total cost per transport of $2,763 (median "
+             "$1,355) and labor = 70.7% of aggregate cost in the Year 1-"
+             "Year 4 cohort appendix (Dec 2025, data through 2025-05-15), "
+             "with volume the strongest driver of unit cost; GAO found "
+             "2010 cost per transport ranged $224-$2,204 (median $429) "
+             "and the median Medicare margin was about +2% WITH the "
+             "add-ons, -1% without.", "GOV",
+             (S_GADCS_Y14, S_GADCS, S_GAO13_6)),
     )
 
 

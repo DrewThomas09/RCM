@@ -266,9 +266,9 @@ _SIGNALS: Tuple[DemandSignal, ...] = (
         "hcris_s3_part_i"),
     DemandSignal(
         "Discharge disposition split",
-        "The f_IFT fraction — ~35M inpatient discharges/yr, ~20-25% to a facility "
+        "The f_IFT fraction — 33.7M inpatient discharges/yr, ~20-25% to a facility "
         "(SNF/IRF/LTCH/transfer); the scheduled discharge-book share.",
-        "AHRQ HCUP NIS (2022) — loader in rcm_mc/data/ahrq_hcup.py (source_db=NIS)",
+        "AHRQ HCUP NIS (2023) — loader in rcm_mc/data/ahrq_hcup.py (source_db=NIS)",
         "ACADEMIC", "ingest-ready", "ahrq_hcup_nis"),
     DemandSignal(
         "Hospital-to-hospital up-transfer rate",

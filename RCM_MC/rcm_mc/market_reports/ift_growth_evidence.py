@@ -22,6 +22,15 @@ search-result excerpts of the cited page and should be re-verified from an
 unblocked network before external circulation (tracked in ``needs_reverify``).
 
 Research pull 2026-07-10. Degrade — never raise.
+
+Refresh 2026-08-03 (primary sources re-fetched and read, not excerpted):
+  * ``rural_closures``  194/151 → 197/154 (Sheps tracker, updated 2025-12-04).
+  * ``closure_at_risk`` 432 + 46%-in-the-red (Chartis 2025) → 417 + 41.2%
+    (Chartis '2026 Rural Health State of the State', 2026-02-10).
+  * ``reh_conversions`` the cited paper's imprecise payment clause is now
+    elided; the CY2026 CMS terms live in the new ``reh_payment`` entry.
+  * ``gadcs``           the 'MedPAC verdict expected June 2026' placeholder
+    has RESOLVED — June 2026 Report to the Congress, ch. 6, Rec. 6.
 """
 from __future__ import annotations
 
@@ -246,42 +255,81 @@ _EVIDENCE: Tuple[GrowthEvidence, ...] = (
     _E("rural_closures",
        "closures-reh",
        "Rural hospital closures since 2005 (Sheps Center)",
-       "194 since 2005 (151 after 2010); NE: 2 (latest MercyOne Oakland "
-       "2021); IA: Blessing Health Keokuk 2022 (first in 22 years)",
+       "197 closures + conversions since Jan 2005 (109 complete, 88 "
+       "converted); 154 since 2010 (86 complete, 68 converted) — tracker "
+       "as of 2025-12-04; NE: 2 (latest MercyOne Oakland 2021); IA: "
+       "Blessing Health Keokuk 2022 (first in 22 years)",
        "SOURCED",
-       "UNC Sheps Center rural hospital closures tracker",
-       "194 facilities have closed since 2005, with 151 occurring after "
-       "2010.",
+       "UNC Sheps Center rural hospital closures tracker, page updated "
+       "2025-12-04 (supersedes the 194/151 counts carried through "
+       "mid-2025)",
+       "197 Rural Hospital Closures and Conversions since January 2005: "
+       "109 complete closures + 88 converted closures. 154 Closures and "
+       "Conversions since 2010: 86 complete closures + 68 converted "
+       "closures.",
        "https://www.shepscenter.unc.edu/programs-projects/rural-health/"
-       "rural-hospital-closures/", needs_reverify=True),
+       "rural-hospital-closures/", verbatim=True),
     _E("closure_at_risk",
        "closures-reh",
        "Rural hospitals at risk of closure",
-       "432 at risk (Chartis 2025); 417 (2026 update); 46% of rural "
-       "hospitals in the red",
+       "417 vulnerable to closure; 41.2% of all rural hospitals operating "
+       "in the red (34.9% in Medicaid-expansion states vs 52.2% in "
+       "non-expansion) — Chartis, Feb 2026 (prior edition: 432 / 46%)",
        "SOURCED",
-       "Chartis rural health analyses 2025/2026",
-       "46% of rural hospitals in the red, 432 at risk to close.",
-       "https://www.fiercehealthcare.com/providers/46-rural-hospitals-red-"
-       "432-vulnerable-closure-report-finds", needs_reverify=True),
+       "Chartis Center for Rural Health, '2026 Rural Health State of the "
+       "State', published 2026-02-10 (supersedes the 2025 edition's 432 "
+       "at-risk / 46%-in-the-red figures)",
+       "417 rural hospitals are vulnerable to closure… 41.2% of all rural "
+       "hospitals operating in the red.",
+       "https://www.chartis.com/insights/2026-rural-health-state-state",
+       verbatim=True),
     _E("reh_conversions",
        "closures-reh",
        "Rural Emergency Hospital conversions (no inpatient beds — every "
        "admission becomes a transfer)",
-       "40–50 conversions since Jan 2023; nearly half in KS/TX/NE/OK; "
-       "NE: Warren Memorial (Friend) Jan 2024, Garden County (Oshkosh) "
-       "announced Dec 2025",
+       "40–50 conversions since Jan 2023 (42 REHs as of Oct 2025 per "
+       "RHIhub); nearly half in KS/TX/NE/OK; NE: Warren Memorial (Friend) "
+       "Jan 2024, Garden County (Oshkosh) announced Dec 2025",
        "ACADEMIC",
-       "J Rural Health 2026 (REH adaptation study; counts corroborated by "
-       "KFF Health News / NCSL / Becker's)",
+       "J Rural Health 2026 (REH adaptation study; count corroborated by "
+       "RHIhub REH topic page, 42 as of Oct 2025 / KFF Health News / "
+       "NCSL). NOTE: the paper's payment clause ('a 5% Medicare "
+       "reimbursement increase and a $3.2 M annual facility subsidy') is "
+       "elided below because it is imprecise and now out of date — see "
+       "the ``reh_payment`` entry for the CY2026 CMS terms.",
        "The Rural Emergency Hospital (REH) designation… allows small rural "
-       "hospitals to discontinue inpatient services in exchange for a 5% "
-       "Medicare reimbursement increase and a $3.2 M annual facility "
-       "subsidy… Since its implementation, over 40 hospitals have "
-       "converted to REH status… REHs must… limit average patient stays "
-       "to under 24 hours… and must establish transfer agreements with "
-       "Medicare-certified level I or level II trauma centers.",
+       "hospitals to discontinue inpatient services… Since its "
+       "implementation, over 40 hospitals have converted to REH status… "
+       "REHs must… limit average patient stays to under 24 hours… and must "
+       "establish transfer agreements with Medicare-certified level I or "
+       "level II trauma centers.",
        "https://doi.org/10.1111/jrh.70112", verbatim=True),
+    _E("reh_payment",
+       "closures-reh",
+       "REH payment terms (what a converting hospital trades its "
+       "inpatient beds for)",
+       "OPPS rate +5% on REH services only — copays are computed on the "
+       "un-augmented OPPS rate, and services paid outside OPPS (e.g. the "
+       "Clinical Laboratory Fee Schedule) get no add-on — plus a flat "
+       "additional facility payment of $295,051.54/month in CY2026 "
+       "(~$3.54M/yr, net of sequestration; CY2025: $285,625.90/month), "
+       "uprated each year by the hospital market basket",
+       "GOV",
+       "CMS MLN Booklet 2259384, 'Rural Emergency Hospitals', Dec 2025 "
+       "(supersedes the '5% Medicare reimbursement increase / $3.2M "
+       "subsidy' shorthand, which described the CY2023 amount)",
+       "We pay an additional 5% over the payment rate of the Hospital "
+       "Outpatient Prospective Payment System (OPPS) for REH services. We "
+       "calculate any copayments for these services based on the standard "
+       "Hospital OPPS rate for the service, excluding the 5% payment "
+       "increase… We don't consider these services REH services, and they "
+       "don't get the additional 5% payment that REH services get… For CY "
+       "2024 and each year after, the additional payment increases by the "
+       "hospital market basket percentage increase… The CY 2026 REH "
+       "facility monthly payment amount is $295,051.54 with the "
+       "sequestration amount deducted.",
+       "https://www.cms.gov/files/document/mln2259384-rural-emergency-"
+       "hospitals.pdf", verbatim=True),
     _E("closure_transport_times",
        "closures-reh",
        "Effect of rural closures on EMS transport times (NEMSIS 2010–16)",
@@ -432,18 +480,35 @@ _EVIDENCE: Tuple[GrowthEvidence, ...] = (
        needs_reverify=True),
     _E("gadcs",
        "payment",
-       "Ground Ambulance Data Collection System (cost transparency)",
-       "Collected from ~half of the 10,500+ ground organizations billing "
-       "Medicare; MedPAC rate-adequacy verdict expected June 2026",
+       "Ground Ambulance Data Collection System — MedPAC's mandated "
+       "rate-adequacy assessment (RESOLVED, June 2026)",
+       "In 2024 ~10,600 ground organizations billed 11.3M FFS transports "
+       "($5.3B Medicare). GADCS sampled 10,581 organizations across four "
+       "cohorts; 7,885 certified submissions, of which 7,572 complete. "
+       "MedPAC declined to rule on rate adequacy — revenue-to-cost "
+       "measures judged unreliable for now — and recommended Congress "
+       "direct continued but streamlined collection (Recommendation 6)",
        "GOV",
-       "MedPAC ambulance assessment, Dec 2025; CMS GADCS Year 1–2 cohort "
-       "report",
-       "since 2023, representative samples of organizations billing "
-       "Traditional Medicare… have reported cost, revenue, utilization… "
-       "Now collected from roughly half of the more than 10,500 ground "
-       "ambulance organizations billing Medicare annually.",
-       "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-"
-       "Dec-2025.pdf", needs_reverify=True),
+       "MedPAC, June 2026 Report to the Congress, ch. 6 'Mandated report: "
+       "Assessment of the Medicare Ground Ambulance Data Collection "
+       "System' (supersedes the Dec 2025 Tab-M session materials and the "
+       "'verdict expected June 2026' placeholder); underlying data = "
+       "CMS/RAND GADCS Year 1–Year 4 cohort analysis, posted 2025-12-09, "
+       "https://www.cms.gov/files/document/medicare-ground-ambulance-data-"
+       "collection-system-gadcs-report-appendix-year-1-year-4-cohort-"
+       "analysis.pdf",
+       "The four cohorts combined included 10,581 organizations… 84 "
+       "percent of these organizations were still billing Medicare when "
+       "CMS collected the data. Of these remaining organizations, 86 "
+       "percent (7,572) submitted and certified a complete response to "
+       "CMS… These data issues suggest that GADCS-based measures of "
+       "revenues relative to costs might not be reliable indicators of "
+       "payment adequacy at this time… RECOMMENDATION 6: The Congress "
+       "should direct the Secretary to continue collecting cost and "
+       "revenue data from suppliers and providers of ground ambulance "
+       "services.",
+       "https://www.medpac.gov/wp-content/uploads/2026/06/Jun26_Ch6_"
+       "MedPAC_Report_To_Congress_SEC.pdf", verbatim=True),
     _E("gapb_risk",
        "payment",
        "Ground-ambulance balance-billing policy risk (GAPB committee)",

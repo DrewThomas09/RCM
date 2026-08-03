@@ -892,6 +892,86 @@ SOURCE_URLS: dict = {
         "inpatient-rehabilitation-facilities",
     "CMS LTCH Compare":
         "https://data.cms.gov/provider-data/topics/long-term-care-hospitals",
+    # Report-0277: the registry covered 7 labels while the platform cites
+    # dozens, so most provenance labels rendered as dead plain text. Every
+    # URL below was fetched and confirmed live before being added — do the
+    # same for any future entry rather than guessing a plausible link.
+    # Bare "HCRIS" is cited far more often than the decorated
+    # "CMS HCRIS" form, and substring matching runs key-in-label, so the
+    # short form needs its own entry (Report-0277).
+    "HCRIS": "https://www.cms.gov/research-statistics-data-and-systems/"
+             "downloadable-public-use-files/cost-reports",
+    "NPPES": "https://download.cms.gov/nppes/NPI_Files.html",
+    "NPI Registry": "https://npiregistry.cms.hhs.gov/",
+    "MedPAC": "https://www.medpac.gov/",
+    "IRS990": "https://www.irs.gov/charities-non-profits/form-990-series-downloads",
+    "IRS 990": "https://www.irs.gov/charities-non-profits/form-990-series-downloads",
+    "CMS Physician & Other Practitioners":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-physician-other-practitioners",
+    "Medicare Physician Fee Schedule":
+        "https://www.cms.gov/medicare/payment/fee-schedules/physician",
+    "OEWS": "https://www.bls.gov/oes/",
+    "BLS": "https://www.bls.gov/oes/",
+    "HRSA OPA": "https://www.hrsa.gov/opa",
+    "340B": "https://www.hrsa.gov/opa",
+    "MGMA": "https://www.mgma.com/",
+    "AHA": "https://www.aha.org/",
+    # Report-0282: requested by four independent UI-wave audits, which found
+    # pages naming these sources verbatim while the label rendered as dead
+    # plain text. Every URL below returned HTTP 200 on a live fetch before it
+    # was added. One suggestion was NOT added: the DOJ "horizontal-merger-
+    # guidelines" path 404s (the 2023 Merger Guidelines superseded it), so
+    # the 2023 page is registered instead.
+    #
+    # NOTE for future entries: the emitter alias below exists because
+    # npi_cleaner/enrich.py labels its two CMS marts "Medicare Physician &
+    # Other Practitioners", which does NOT substring-match the "CMS Physician
+    # & Other Practitioners" key above. Match the label the emitter actually
+    # produces, not the one the dataset is officially called.
+    "Medicare Physician & Other Practitioners":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-physician-other-practitioners",
+    "CMS Medicare Monthly Enrollment":
+        "https://data.cms.gov/summary-statistics-on-beneficiary-enrollment/"
+        "medicare-and-medicaid-reports/medicare-monthly-enrollment",
+    "Medicare Outpatient Hospitals":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-outpatient-hospitals",
+    "ASP Pricing":
+        "https://www.cms.gov/medicare/payment/part-b-drugs/asp-pricing-files",
+    "Chronic Conditions":
+        "https://data.cms.gov/medicare-chronic-conditions",
+    # The CCW is a distinct resource from the Chronic Conditions dataset
+    # above (different publisher host, request-based access). Without its own
+    # longer key the shorter "Chronic Conditions" would capture it and link
+    # the CCW to the wrong destination.
+    "Chronic Conditions Data Warehouse": "https://www2.ccwdata.org/",
+    "PECOS":
+        "https://data.cms.gov/provider-characteristics/"
+        "medicare-provider-supplier-enrollment",
+    "CDC PLACES":
+        "https://data.cdc.gov/500-Cities-Places/"
+        "PLACES-Local-Data-for-Better-Health-Place-Data-202/i46a-9kgh",
+    "PLACES":
+        "https://data.cdc.gov/500-Cities-Places/"
+        "PLACES-Local-Data-for-Better-Health-Place-Data-202/i46a-9kgh",
+    # DELIBERATELY NOT a bare "ACS" key. The platform also cites "ACS Cancer
+    # Facts & Figures" — the American Cancer Society, not the American
+    # Community Survey — and a bare key would silently link it to the Census.
+    # A wrong link is worse than no link: it looks verified. These three
+    # forms cover every Census-ACS label the package actually emits; the
+    # cancer-society label correctly falls through to plain text.
+    "Census ACS": "https://www.census.gov/programs-surveys/acs",
+    "Census / ACS": "https://www.census.gov/programs-surveys/acs",
+    "ACS demographics": "https://www.census.gov/programs-surveys/acs",
+    "Census Population Estimates":
+        "https://www.census.gov/programs-surveys/popest.html",
+    "openFDA": "https://open.fda.gov/apis/drug/drugshortages/",
+    "NUCC": "https://www.nucc.org/index.php/code-sets-mainmenu-41",
+    "NHIA": "https://nhia.org/",
+    "Merger Guidelines":
+        "https://www.justice.gov/atr/2023-merger-guidelines",
 }
 
 
@@ -900,16 +980,26 @@ def source_url(label: Optional[str]) -> Optional[str]:
 
     Tries an exact match first, then a substring match so a decorated label
     (e.g. ``"CMS HCRIS · FY2023"``) still resolves to the base dataset. Never
-    raises — partner UI; an unknown label simply renders as plain text."""
+    raises — partner UI; an unknown label simply renders as plain text.
+
+    Report-0277: the substring pass takes the LONGEST matching key, not the
+    first one in dict order. Insertion-order matching made the registry
+    unsafe to extend — a short generic key ("BLS", "340B") added anywhere
+    above a specific one could silently hijack every label containing it,
+    and the bug would depend on literal source-line order. Longest-match
+    is deterministic: "CMS HCRIS · FY2023" resolves to the HCRIS dataset
+    even though "CMS Hospice Compare" is also a candidate substring."""
     if not label:
         return None
     s = str(label).strip()
     if s in SOURCE_URLS:
         return SOURCE_URLS[s]
+    best_key = ""
+    best_url = None
     for key, url in SOURCE_URLS.items():
-        if key in s:
-            return url
-    return None
+        if key in s and len(key) > len(best_key):
+            best_key, best_url = key, url
+    return best_url
 
 
 def ck_source_link(label: Optional[str], *, style: str = "") -> str:
@@ -11075,7 +11165,14 @@ _NAV_MENU_JS = """
 """
 
 
-_PALETTE_JS = """
+# RAW string: the palette JS contains regex literals (/^\d{6}$/, /^\d+$/).
+# In a non-raw literal Python reads "\d" as an invalid escape — today it is
+# preserved with a DeprecationWarning, so the JS happens to still work, but
+# the warning is scheduled to become a SyntaxError and any future escape
+# added here (\b, \n, \t in a regex) would be silently eaten by Python
+# before the browser ever saw it. The sibling deal_profile_page._inline_js
+# had exactly this bug.
+_PALETTE_JS = r"""
 <script>
 /* Cmd+K palette behaviour:
  *   - Cmd/Ctrl+K opens, Esc closes.

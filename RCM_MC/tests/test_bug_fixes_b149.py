@@ -64,10 +64,39 @@ class TestCsvExportDefanged(unittest.TestCase):
 
     def test_variance_csv_defangs_injection(self):
         """An attacker who stored a note starting with = shouldn't be
-        able to turn a downloaded CSV into an active spreadsheet formula."""
+        able to turn a downloaded CSV into an active spreadsheet formula.
+
+        The '=DROP' deal_id is now GRANDFATHERED IN DIRECTLY rather than
+        created through the normal path. Report-0269 added a safe-slug
+        validator at the ingestion chokepoint, so ``upsert_deal('=DROP')``
+        raises — layer 1 doing its job. But that must not silently retire
+        this test: ``upsert_deal`` deliberately skips validation for rows
+        that already exist, so any database written before the validator
+        landed still feeds ids like this straight to the CSV writer. The
+        export-side defang is the guarantee under test here, and it still
+        has to hold.
+
+        (Same treatment as TestPinnedDealsSafety — see that class for the
+        two-layer rationale.)
+        """
         from rcm_mc.pe.hold_tracking import record_quarterly_actuals
+        from rcm_mc.portfolio.store import PortfolioStore
         from tests.test_alerts import _seed_with_pe_math
         with tempfile.TemporaryDirectory() as tmp:
+            # Pre-create the legacy row so the seeder's upsert_deal finds
+            # it and takes the grandfathered path.
+            pre = PortfolioStore(os.path.join(tmp, "p.db"))
+            # A valid upsert first, purely to force the lazy CREATE TABLE;
+            # removed again so it cannot appear in the exported CSV.
+            pre.upsert_deal("bootstrap")
+            with pre.connect() as con:
+                con.execute(
+                    "INSERT INTO deals (deal_id, name, created_at, "
+                    "profile_json) VALUES (?, ?, ?, '{}')",
+                    ("=DROP", "=DROP", "2026-01-01T00:00:00+00:00"),
+                )
+                con.execute("DELETE FROM deals WHERE deal_id='bootstrap'")
+                con.commit()
             store = _seed_with_pe_math(tmp, "=DROP", headroom=-0.5)
             record_quarterly_actuals(
                 store, "=DROP", "2026Q1",

@@ -16,12 +16,14 @@ import pandas as pd
 from ._chartis_kit import (
     chartis_shell,
     ck_confidence_band,
+    ck_empty_state,
     ck_eyebrow,
     ck_fmt_num,
     ck_fmt_pct,
     ck_kpi_block,
     ck_next_section,
     ck_provenance_tooltip,
+    ck_source_link,
 )
 from .brand import PALETTE
 
@@ -52,13 +54,37 @@ def _na(val: Any, spec: str, na: str = "—") -> str:
 
 
 def _fmt_money(val: float) -> str:
+    """Money in the house format — 2 decimals ($450.25M), never 1.
+
+    The millions branch printed ``$450.2M``; CLAUDE.md's number rules
+    say financial figures carry 2 decimal places so a partner reading
+    a lever impact next to an EBITDA bridge sees the same precision on
+    both. Non-finite input renders an em dash rather than ``$nanM``.
+    """
+    if not _fin(val):
+        return "—"
     if abs(val) >= 1e9:
         return f"${val/1e9:.2f}B"
     if abs(val) >= 1e6:
-        return f"${val/1e6:.1f}M"
+        return f"${val/1e6:.2f}M"
     if abs(val) >= 1e3:
         return f"${val/1e3:.0f}K"
     return f"${val:,.0f}"
+
+
+def _trunc(text: Any, limit: int) -> str:
+    """Escaped cell text, clipped to ``limit`` chars with a full-text tooltip.
+
+    Several tables clipped driver explanations / peer names with a bare
+    slice, so the partner read the clipped string as the whole value and
+    had no way to recover the tail. When we clip we now emit the full
+    string in ``title=`` and an ellipsis so the truncation is visible.
+    """
+    s = "" if text is None else str(text)
+    if len(s) <= limit:
+        return _html.escape(s)
+    return (f'<span title="{_html.escape(s)}">'
+            f'{_html.escape(s[:limit].rstrip())}&hellip;</span>')
 
 
 def _risk_badge(label: str) -> str:
@@ -74,7 +100,12 @@ def _risk_badge(label: str) -> str:
 def _grade_badge(grade: str) -> str:
     colors = {"A": "var(--cad-pos)", "B": "var(--cad-accent)", "C": "var(--cad-warn)", "D": "var(--cad-neg)"}
     color = colors.get(grade, "var(--cad-text3)")
-    return f'<span style="background:{color};color:#fff;padding:3px 10px;border-radius:3px;font-size:12px;font-weight:700;">{grade}</span>'
+    # Colour alone must not carry the meaning, so the badge keeps its
+    # letter and adds a spelled-out label for assistive tech.
+    return (f'<span role="img" aria-label="Grade {_html.escape(str(grade))}" '
+            f'style="background:{color};color:#fff;padding:3px 10px;'
+            f'border-radius:3px;font-size:12px;font-weight:700;">'
+            f'{_html.escape(str(grade))}</span>')
 
 
 # ── Editorial inline-SVG charts ────────────────────────────────────
@@ -85,6 +116,11 @@ def _distress_distribution_chart(probs: List[float], width: int = 720,
                                  height: int = 160) -> str:
     """Histogram of distress probabilities across the corpus, with
     the high-risk threshold marked."""
+    # A sparse-data hospital yields a non-finite probability; int(nan)
+    # raises ValueError and would 500 the whole page from inside the
+    # binning loop. Drop them from the histogram (the table still shows
+    # "—" for that row) rather than crash.
+    probs = [p for p in probs if _fin(p)]
     if not probs:
         return ""
     pad_l, pad_r, pad_t, pad_b = 40, 18, 22, 38
@@ -93,7 +129,7 @@ def _distress_distribution_chart(probs: List[float], width: int = 720,
     bins = 20
     counts = [0] * bins
     for p in probs:
-        idx = min(bins - 1, int(p * bins))
+        idx = min(bins - 1, max(0, int(p * bins)))
         counts[idx] += 1
     max_n = max(counts) or 1
     bw = plot_w / bins
@@ -152,11 +188,19 @@ def _distress_distribution_chart(probs: List[float], width: int = 720,
         f'y2="{pad_t + plot_h}" stroke="#BFB6A2" stroke-width="1"/>'
     )
 
+    n_high = sum(1 for p in probs if p > 0.5)
+    alt = (
+        f"Histogram of predicted distress probability across "
+        f"{len(probs):,} hospitals; {n_high:,} sit above the 50% "
+        f"high-risk threshold."
+    )
     return (
-        f'<svg viewBox="0 0 {width} {height}" '
+        f'<svg viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="{_html.escape(alt)}" '
         f'preserveAspectRatio="xMidYMid meet" '
         f'style="width:100%;max-width:{width}px;height:auto;display:block;'
         f'margin:0 auto 1rem;">'
+        f'<title>{_html.escape(alt)}</title>'
         f'{base}{tick_svg}{bars_svg}{threshold_svg}{y_label_svg}</svg>'
     )
 
@@ -218,11 +262,18 @@ def _factor_contribution_chart(factors: List[Dict[str, Any]],
         f'fill="#A53A2D" text-anchor="middle">▲ RISK</text>'
     )
 
+    alt = (
+        "Per-factor contribution to the distress score for "
+        + ", ".join(str(f.get("feature", "")) for f in rows)
+        + ". Bars right of the axis add risk; bars left reduce it."
+    )
     return (
-        f'<svg viewBox="0 0 {width} {height}" '
+        f'<svg viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="{_html.escape(alt)}" '
         f'preserveAspectRatio="xMidYMid meet" '
         f'style="width:100%;max-width:{width}px;height:auto;display:block;'
         f'margin:0 auto 1rem;">'
+        f'<title>{_html.escape(alt)}</title>'
         f'{axis_svg}{bars_svg}</svg>'
     )
 
@@ -271,14 +322,23 @@ def _rcm_lever_chart(levers: List[Any], width: int = 720,
             f'<text x="{pad_l + bw + 6:.1f}" y="{ry + 16:.1f}" '
             f'font-family="JetBrains Mono,monospace" font-size="9" '
             f'fill="#5C6878">'
-            f'{conf * 100:.0f}% · {getattr(l, "implementation_months", 0)}mo</text>'
+            f'{conf * 100:.1f}% · {getattr(l, "implementation_months", 0)}mo</text>'
         )
 
+    alt = (
+        "Risk-adjusted EBITDA impact by RCM lever: "
+        + "; ".join(
+            f"{getattr(l, 'lever', '')} {_fmt_money(l.risk_adjusted_impact)}"
+            for l in pos)
+        + ". Darker bars carry higher model confidence."
+    )
     return (
-        f'<svg viewBox="0 0 {width} {height}" '
+        f'<svg viewBox="0 0 {width} {height}" role="img" '
+        f'aria-label="{_html.escape(alt)}" '
         f'preserveAspectRatio="xMidYMid meet" '
         f'style="width:100%;max-width:{width}px;height:auto;display:block;'
-        f'margin:0 auto 1rem;">{bars_svg}</svg>'
+        f'margin:0 auto 1rem;">'
+        f'<title>{_html.escape(alt)}</title>{bars_svg}</svg>'
     )
 
 
@@ -289,6 +349,29 @@ _ML_CHART_CSS = """
   font-size: .72rem; color: #5C6878;
   text-align: center; letter-spacing: 0.06em;
   text-transform: uppercase; margin: -.5rem 0 1.25rem;
+}
+/* Row headers. Naming the first cell of each data row with
+   <th scope="row"> lets a screen reader announce "Mercy General,
+   Distress P, 61.2%" instead of a bare number, which is the whole
+   point of a 7-column screening table. But `.cad-table th` is styled
+   for the header band (mono, uppercase, dim, alt background), so an
+   unstyled row header would visibly wreck the first column. Reset it
+   back to body-cell appearance — the a11y win costs nothing visually. */
+.cad-table tbody th.ml-rowhead {
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  text-align: left;
+  color: var(--ck-text);
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--ck-border-dim);
+}
+.cad-table tbody tr:nth-child(even) th.ml-rowhead {
+  background: var(--ck-stripe);
 }
 @media print {
   .ml-chart-caption { color: #1a2332; }
@@ -322,6 +405,9 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         avg_margin = float(_mser[margin_is_plausible_series(_mser)].dropna().median())
     else:
         avg_margin = 0
+    # median() over an all-filtered-out series is NaN; ck_fmt_pct would
+    # then print the literal "nan%" into the hero strip.
+    avg_margin_str = ck_fmt_pct(avg_margin) if _fin(avg_margin) else "—"
 
     # Cycle 39 — port hero KPI strip + add provenance on AUC and
     # distress count.
@@ -349,9 +435,14 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         ),
         inject_css=False,
     )
+    # Provenance is one click away: the data-source labels in the hero
+    # strip route through ck_source_link so the partner can open the
+    # originating CMS dataset instead of taking the corpus on faith.
+    hcris_src = ck_source_link("CMS HCRIS")
     kpis = (
         f'<div class="ck-kpi-grid" style="grid-template-columns:repeat(5,1fr);">'
-        + ck_kpi_block("Hospitals Analyzed", ck_fmt_num(n_hospitals), "HCRIS corpus")
+        + ck_kpi_block("Hospitals Analyzed", ck_fmt_num(n_hospitals),
+                       f"{hcris_src} corpus")
         + ck_kpi_block(
             "Archetypes", ck_fmt_num(n_clusters), "k-means clusters",
             help={
@@ -391,7 +482,8 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             },
         )
         + ck_kpi_block(
-            "Median Op Margin", ck_fmt_pct(avg_margin), "credible filings",
+            "Median Op Margin", avg_margin_str,
+            f"{hcris_src} · credible filings",
             help={
                 "definition": (
                     "Median operating margin across the universe of "
@@ -416,7 +508,15 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         rev = cp.centroid.get("net_patient_revenue", 0)
         medicare = cp.centroid.get("medicare_day_pct", 0)
 
-        top_names = ", ".join(h["name"][:20] for h in cp.top_hospitals[:3])
+        # Full names live in the tooltip — the 20-char slice alone read
+        # as the hospital's actual name.
+        _full_names = ", ".join(str(h["name"]) for h in cp.top_hospitals[:3])
+        top_names_html = (
+            f'<span title="{_html.escape(_full_names)}">'
+            + _html.escape(", ".join(
+                str(h["name"])[:20] for h in cp.top_hospitals[:3]))
+            + '</span>'
+        ) if cp.top_hospitals else "—"
 
         cluster_cards += (
             f'<div class="cad-card" style="margin-bottom:8px;">'
@@ -434,11 +534,11 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f'<div><span style="color:var(--cad-text3);">Revenue:</span> <strong>{_fmt_money(rev)}</strong></div>'
             f'<div><span style="color:var(--cad-text3);">Margin:</span> '
             f'<strong style="color:{margin_color};">{margin:.1%}</strong></div>'
-            f'<div><span style="color:var(--cad-text3);">Medicare:</span> <strong>{medicare:.0%}</strong></div>'
+            f'<div><span style="color:var(--cad-text3);">Medicare:</span> <strong>{medicare:.1%}</strong></div>'
             f'</div>'
             f'<p style="font-size:11.5px;color:var(--cad-text2);margin:0 0 6px;line-height:1.5;">'
             f'{_html.escape(cp.pe_relevance)}</p>'
-            f'<div style="font-size:10.5px;color:var(--cad-text3);">Representative: {_html.escape(top_names)}</div>'
+            f'<div style="font-size:10.5px;color:var(--cad-text3);">Representative: {top_names_html}</div>'
             f'<div style="font-size:10.5px;color:var(--cad-text3);margin-top:4px;">'
             f'Cluster separation (silhouette): <strong>{cp.silhouette:.2f}</strong> '
             f'· {_html.escape(silhouette_quality_label(cp.silhouette))}</div>'
@@ -455,13 +555,25 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'are soft &mdash; read the archetypes as indicative groupings, not hard categories.</p>'
         if cluster_profiles else ""
     )
+    if not cluster_profiles:
+        cluster_cards = ck_empty_state(
+            "No archetypes could be fit.",
+            "K-means needs hospitals with usable beds, revenue, margin "
+            "and payer-mix fields. The current corpus has none that "
+            "clear those filters, so no clusters were produced. Check "
+            "which hospitals actually have reported HCRIS financials, "
+            "then reload this page.",
+            eyebrow="CLUSTERING",
+            cta_label="Browse hospitals with reported data",
+            cta_href="/screen",
+        )
     cluster_section = (
         f'<div class="cad-card">'
         f'<h2>Hospital Archetypes (K-Means Clustering)</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:6px;">'
         f'Unsupervised clustering of {n_hospitals:,} US hospitals into {n_clusters} investable archetypes '
         f'based on size, revenue, margins, payer mix, and occupancy. Each cluster has a distinct '
-        f'risk/return profile for PE evaluation.</p>'
+        f'risk/return profile for PE evaluation. Source: {hcris_src}.</p>'
         f'{sil_note}'
         f'{cluster_cards}</div>'
     )
@@ -474,9 +586,17 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         margin_color = "var(--cad-neg)" if margin < 0 else ("var(--cad-warn)" if margin < 0.05 else "var(--cad-pos)")
         distress_rows += (
             f'<tr>'
-            f'<td><a href="/hospital/{_html.escape(d["ccn"])}" '
+            f'<th scope="row" class="ml-rowhead">'
+            f'<a href="/hospital/{_html.escape(d["ccn"])}" '
+            f'title="Open the hospital profile for '
+            f'{_html.escape(d["name"])} (CCN {_html.escape(d["ccn"])})" '
             f'style="color:var(--cad-link);text-decoration:none;">'
-            f'{_html.escape(d["name"])}</a></td>'
+            f'{_html.escape(d["name"])}</a> '
+            f'<a href="/ml-insights/hospital/{_html.escape(d["ccn"])}" '
+            f'aria-label="Per-hospital ML analysis for '
+            f'{_html.escape(d["name"])}" title="Per-hospital ML analysis" '
+            f'style="color:var(--cad-text3);text-decoration:none;'
+            f'font-size:10px;">ML&nbsp;&rarr;</a></th>'
             f'<td>{_html.escape(d["state"])}</td>'
             f'<td class="num">{d["beds"]}</td>'
             f'<td class="num">{_fmt_money(d["revenue"])}</td>'
@@ -494,18 +614,36 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         '</div>'
     ) if distress_chart else ""
 
+    distress_table = (
+        f'<table class="cad-table"><caption class="sr-only">'
+        f'Hospitals ranked by predicted distress probability, highest '
+        f'first.</caption><thead><tr>'
+        f'<th scope="col">Hospital</th><th scope="col">State</th>'
+        f'<th scope="col">Beds</th><th scope="col">Revenue</th>'
+        f'<th scope="col">Margin</th>'
+        f'<th scope="col" aria-sort="descending" '
+        f'title="Sorted highest distress probability first">Distress P</th>'
+        f'<th scope="col">Risk</th>'
+        f'</tr></thead><tbody>{distress_rows}</tbody></table>'
+    ) if distress_rows else ck_empty_state(
+        "No hospitals cleared the distress screen.",
+        "The predictor needs occupancy, payer mix and revenue-per-bed "
+        "on file before it will score a hospital. Nothing in the current "
+        "corpus had a complete enough filing to rank.",
+        eyebrow="DISTRESS SCREEN",
+        cta_label="Browse hospitals with reported data",
+        cta_href="/screen",
+    )
     distress_section = (
         f'<div class="cad-card">'
         f'<h2>Distress Risk Screening (Logistic Regression)</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:12px;">'
         f'Hospitals ranked by predicted probability of financial distress '
-        f'(operating margin &lt; -5%). Model AUC = {auc:.3f} on {n_train:,} training samples. '
+        f'(operating margin &lt; -5%). Model AUC = {auc:.3f} on {n_train:,} training samples '
+        f'from {hcris_src}. '
         f'High-distress hospitals are potential turnaround acquisition targets at discounted multiples.</p>'
         f'{distress_chart}{distress_caption}'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Hospital</th><th>State</th><th>Beds</th><th>Revenue</th>'
-        f'<th>Margin</th><th>Distress P</th><th>Risk</th>'
-        f'</tr></thead><tbody>{distress_rows}</tbody></table></div>'
+        f'{distress_table}</div>'
     )
 
     # ── RCM Performance Screening ──
@@ -517,9 +655,12 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             "var(--cad-warn)" if r["rcm_score"] < 60 else "var(--cad-pos)")
         rcm_rows += (
             f'<tr>'
-            f'<td><a href="/ml-insights/hospital/{_html.escape(r["ccn"])}" '
+            f'<th scope="row" class="ml-rowhead">'
+            f'<a href="/ml-insights/hospital/{_html.escape(r["ccn"])}" '
+            f'title="Per-hospital ML analysis for '
+            f'{_html.escape(r["name"])} (CCN {_html.escape(r["ccn"])})" '
             f'style="color:var(--cad-link);text-decoration:none;">'
-            f'{_html.escape(r["name"])}</a></td>'
+            f'{_html.escape(r["name"])}</a></th>'
             f'<td>{_html.escape(r["state"])}</td>'
             f'<td class="num">{r["beds"]}</td>'
             f'<td class="num">{r["denial_rate"]:.1%}</td>'
@@ -529,17 +670,33 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
             f'</tr>'
         )
 
+    rcm_table = (
+        f'<table class="cad-table"><caption class="sr-only">'
+        f'Hospitals ranked by predicted RCM score, worst first.</caption>'
+        f'<thead><tr>'
+        f'<th scope="col">Hospital</th><th scope="col">State</th>'
+        f'<th scope="col">Beds</th><th scope="col">Est Denial</th>'
+        f'<th scope="col">Est AR Days</th><th scope="col">Est Clean Claim</th>'
+        f'<th scope="col" aria-sort="ascending" '
+        f'title="0-100; lower is worse. Sorted worst first.">RCM Score</th>'
+        f'</tr></thead><tbody>{rcm_rows}</tbody></table>'
+    ) if rcm_rows else ck_empty_state(
+        "No RCM screening candidates.",
+        "The RCM predictor scores a hospital only when its HCRIS "
+        "financials, payer mix and geography are all present. Nothing "
+        "in the current corpus met that bar.",
+        eyebrow="RCM SCREEN",
+        cta_label="Browse hospitals with reported data",
+        cta_href="/screen",
+    )
     rcm_screen = (
         f'<div class="cad-card">'
         f'<h2>RCM Performance Screening (Predicted from Public Data)</h2>'
         f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:10px;">'
         f'Hospitals with the worst predicted RCM metrics — highest denial rates, longest AR days. '
         f'These are potential PE targets where RCM improvement could create the most value. '
-        f'Predictions use HCRIS financials + payer mix + geography only (no internal data needed).</p>'
-        f'<table class="cad-table"><thead><tr>'
-        f'<th>Hospital</th><th>State</th><th>Beds</th><th>Est Denial</th>'
-        f'<th>Est AR Days</th><th>Est Clean Claim</th><th>RCM Score</th>'
-        f'</tr></thead><tbody>{rcm_rows}</tbody></table></div>'
+        f'Predictions use {hcris_src} financials + payer mix + geography only (no internal data needed).</p>'
+        f'{rcm_table}</div>'
     )
 
     # ── Model methodology ──
@@ -558,7 +715,7 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'<div>'
         f'<h3 style="font-size:12px;color:var(--cad-accent);margin-bottom:4px;">Distress Predictor</h3>'
         f'<p style="color:var(--cad-text2);">L2-regularized logistic regression predicting P(margin &lt; -5%). '
-        f'Trained on cross-sectional HCRIS data. Features: occupancy, Medicare %, Medicaid %, '
+        f'Trained on cross-sectional {hcris_src} data. Features: occupancy, Medicare %, Medicaid %, '
         f'revenue/bed, net-to-gross ratio, beds. AUC measured by 5-fold cross-validation (out-of-sample).</p>'
         f'</div>'
         f'<div>'
@@ -573,7 +730,13 @@ def render_ml_insights(hcris_df: pd.DataFrame, ccn: Optional[str] = None) -> str
         f'inference. Guarantees finite-sample coverage — every point estimate comes with a calibrated '
         f'uncertainty band, not just a standard error.</p>'
         f'</div>'
-        f'</div></div>'
+        f'</div>'
+        f'<p style="font-size:11px;color:var(--cad-text3);margin:12px 0 0;">'
+        f'Every model on this page is fit on public filings only — '
+        f'sole source {hcris_src}, with peer benchmarks drawn from the '
+        f'same corpus. No client or internal RCM data is used, so every '
+        f'figure here is reproducible from the underlying dataset.</p>'
+        f'</div>'
     )
 
     # ── Navigation ──
@@ -673,8 +836,22 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
                 f'</div></div></div>'
             )
 
-        risk_html = "".join(f'<li style="color:var(--cad-neg);">{_html.escape(r)}</li>' for r in invest_result.risk_factors)
-        cat_html = "".join(f'<li style="color:var(--cad-pos);">{_html.escape(c)}</li>' for c in invest_result.catalysts)
+        # Multiples carry 2 decimals and an "x" suffix per the house
+        # number rules; ".1f" understated the precision of the estimate.
+        moic_str = (f"{invest_result.estimated_moic:.2f}x"
+                    if _fin(invest_result.estimated_moic) else "—")
+        # An empty <ul> rendered as a bare gap under the heading, which
+        # reads as "not computed" rather than "the model found none".
+        risk_html = "".join(
+            f'<li style="color:var(--cad-neg);">{_html.escape(r)}</li>'
+            for r in invest_result.risk_factors
+        ) or ('<li style="color:var(--cad-text3);list-style:none;'
+              'margin-left:-16px;">None flagged by the scorer.</li>')
+        cat_html = "".join(
+            f'<li style="color:var(--cad-pos);">{_html.escape(c)}</li>'
+            for c in invest_result.catalysts
+        ) or ('<li style="color:var(--cad-text3);list-style:none;'
+              'margin-left:-16px;">None flagged by the scorer.</li>')
 
         sections.append(
             f'<div class="cad-card" style="border-left:4px solid {score_color};">'
@@ -695,7 +872,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<div style="font-size:12px;margin-bottom:6px;"><strong>Entry Multiple:</strong> '
             f'{_html.escape(invest_result.entry_multiple_range)}</div>'
             f'<div style="font-size:12px;margin-bottom:6px;"><strong>Est. MOIC:</strong> '
-            f'{invest_result.estimated_moic:.1f}x</div>'
+            f'{moic_str}</div>'
             f'<div style="font-size:11px;margin-top:8px;"><strong>Risk Factors:</strong></div>'
             f'<ul style="font-size:11px;padding-left:16px;margin:4px 0;">{risk_html}</ul>'
             f'</div>'
@@ -717,15 +894,37 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             bar_pct = min(100, abs(d.contribution) / max(0.001, abs(mp.top_drivers[0].contribution)) * 80)
             driver_rows += (
                 f'<tr>'
-                f'<td style="font-weight:500;">{_html.escape(d.label)}</td>'
+                f'<th scope="row" class="ml-rowhead">'
+                f'{_html.escape(d.label)}</th>'
                 f'<td class="num">{_na(d.value, ".3f")}</td>'
                 f'<td class="num" style="color:{d_color};font-weight:600;">{_na(d.contribution, "+.4f")}</td>'
-                f'<td><div style="background:var(--cad-bg3);border-radius:2px;height:8px;width:60px;">'
+                f'<td><div role="img" aria-label="Relative contribution '
+                f'{bar_pct:.0f} percent of the largest driver" '
+                f'title="{bar_pct:.0f}% of the largest driver\'s effect" '
+                f'style="background:var(--cad-bg3);border-radius:2px;height:8px;width:60px;">'
                 f'<div style="width:{bar_pct:.0f}%;background:{d_color};border-radius:2px;height:8px;">'
                 f'</div></div></td>'
-                f'<td style="font-size:11px;color:var(--cad-text2);">{_html.escape(d.explanation[:50])}</td>'
+                f'<td style="font-size:11px;color:var(--cad-text2);">{_trunc(d.explanation, 50)}</td>'
                 f'</tr>'
             )
+
+        driver_table = (
+            f'<table class="cad-table"><caption class="sr-only">'
+            f'Top model drivers of the predicted operating margin.'
+            f'</caption><thead><tr>'
+            f'<th scope="col">Driver</th><th scope="col">Value</th>'
+            f'<th scope="col">Effect</th>'
+            f'<th scope="col"><span class="sr-only">Relative contribution'
+            f'</span></th><th scope="col">Explanation</th>'
+            f'</tr></thead><tbody>{driver_rows}</tbody></table>'
+        ) if driver_rows else ck_empty_state(
+            "No driver breakdown available.",
+            "The ridge model produced a point estimate but no ranked "
+            "feature contributions for this hospital — usually because "
+            "its HCRIS filing is missing the inputs the drivers are "
+            "computed from.",
+            eyebrow="EXPLAINABILITY",
+        )
 
         actual_str = f" | Actual: {mp.actual_margin:.1%}" if mp.actual_margin is not None else ""
         turnaround_html = ""
@@ -734,7 +933,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             tp_color = "var(--cad-pos)" if tp > 0.6 else ("var(--cad-warn)" if tp > 0.3 else "var(--cad-neg)")
             turnaround_html = (
                 f'<div style="margin-top:10px;padding:8px 12px;background:var(--cad-bg3);border-radius:4px;">'
-                f'<span style="font-weight:600;color:{tp_color};">Turnaround: {tp:.0%}</span>'
+                f'<span style="font-weight:600;color:{tp_color};">Turnaround: {_na(tp, ".1%")}</span>'
                 f'<span style="font-size:12px;color:var(--cad-text2);margin-left:8px;">'
                 f'{_html.escape(mp.turnaround_explanation)}</span></div>'
             )
@@ -750,12 +949,11 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'R²={mp.model_r2:.2f} | n={mp.n_training:,} | Grade {mp.confidence_grade}'
             f'{actual_str}</div></div></div>'
             f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-            f'Ridge regression trained on {mp.n_training:,} HCRIS hospitals. '
+            f'Ridge regression trained on {mp.n_training:,} '
+            f'{ck_source_link("CMS HCRIS")} hospitals. '
             f'90% CI: [{mp.ci_low:.1%}, {mp.ci_high:.1%}]. '
             f'P{mp.peer_percentile:.0f} nationally.</p>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Driver</th><th>Value</th><th>Effect</th><th></th><th>Explanation</th>'
-            f'</tr></thead><tbody>{driver_rows}</tbody></table>'
+            f'{driver_table}'
             f'{turnaround_html}</div>'
         )
 
@@ -764,8 +962,8 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
     if cluster_result:
         kpi_parts.append(ck_kpi_block(
             "Archetype",
-            _html.escape(cluster_result.label[:25]),
-            "k-means cluster",
+            _trunc(cluster_result.label, 25),
+            f'k-means cluster · {ck_source_link("CMS HCRIS")}',
         ))
     if distress_result:
         prob = distress_result.distress_probability
@@ -804,13 +1002,32 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
         for peer in cluster_result.nearest_peers[:6]:
             peer_rows += (
                 f'<tr>'
-                f'<td><a href="/hospital/{_html.escape(peer["ccn"])}" '
+                f'<th scope="row" class="ml-rowhead">'
+                f'<a href="/ml-insights/hospital/{_html.escape(peer["ccn"])}" '
+                f'title="Per-hospital ML analysis for '
+                f'{_html.escape(peer["name"])} (CCN {_html.escape(peer["ccn"])})" '
                 f'style="color:var(--cad-link);text-decoration:none;">'
-                f'{_html.escape(peer["name"])}</a></td>'
+                f'{_html.escape(peer["name"])}</a></th>'
                 f'<td>{_html.escape(peer["state"])}</td>'
                 f'<td class="num">{peer["beds"]}</td>'
                 f'</tr>'
             )
+
+        peer_table = (
+            f'<table class="cad-table"><caption class="sr-only">'
+            f'Nearest peers inside the same k-means cluster.</caption>'
+            f'<thead><tr><th scope="col">Hospital</th>'
+            f'<th scope="col">State</th><th scope="col">Beds</th>'
+            f'</tr></thead><tbody>{peer_rows}</tbody></table>'
+        ) if peer_rows else ck_empty_state(
+            "No nearest peers in this cluster.",
+            "This hospital is the only member of its archetype in the "
+            "current corpus, so there is nothing to compare it against "
+            "yet. Treat the cluster label as indicative only.",
+            eyebrow="NEAREST PEERS",
+            cta_label="Screen for comparable hospitals",
+            cta_href="/screen",
+        )
 
         cp = next((p for p in cluster_result.all_clusters if p.cluster_id == cluster_result.cluster_id), None)
         desc = cp.pe_relevance if cp else ""
@@ -822,8 +1039,7 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'Percentile within cluster: P{cluster_result.cluster_percentile:.0f}. '
             f'{_html.escape(desc)}</p>'
             f'<h3 style="font-size:12px;margin:10px 0 6px;">Nearest Peers</h3>'
-            f'<table class="cad-table"><thead><tr><th>Hospital</th><th>State</th><th>Beds</th>'
-            f'</tr></thead><tbody>{peer_rows}</tbody></table></div>'
+            f'{peer_table}</div>'
         )
 
     # ── Distress detail ──
@@ -833,7 +1049,8 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             dir_color = "var(--cad-neg)" if f["direction"] == "increases" else "var(--cad-pos)"
             factor_rows += (
                 f'<tr>'
-                f'<td>{_html.escape(f["feature"])}</td>'
+                f'<th scope="row" class="ml-rowhead">'
+                f'{_html.escape(f["feature"])}</th>'
                 f'<td class="num">{_na(f["value"], ".3f")}</td>'
                 f'<td class="num" style="color:{dir_color};">{_na(f["contribution"], "+.3f")}</td>'
                 f'<td style="color:{dir_color};font-size:11px;">'
@@ -853,6 +1070,23 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             '</div>'
         ) if factor_chart else ""
 
+        factor_table = (
+            f'<table class="cad-table"><caption class="sr-only">'
+            f'Model factors contributing to this hospital\'s distress '
+            f'score.</caption><thead><tr>'
+            f'<th scope="col">Factor</th><th scope="col">Value</th>'
+            f'<th scope="col">Contribution</th>'
+            f'<th scope="col">Direction</th>'
+            f'</tr></thead><tbody>{factor_rows}</tbody></table>'
+        ) if factor_rows else ck_empty_state(
+            "No factor breakdown for this hospital.",
+            "The distress model returned a probability but could not "
+            "attribute it to individual features — its HCRIS filing is "
+            "missing one or more of occupancy, payer mix or "
+            "revenue-per-bed.",
+            eyebrow="DISTRESS DRIVERS",
+        )
+
         sections.append(
             f'<div class="cad-card">'
             f'<h2>Distress Analysis</h2>'
@@ -862,11 +1096,10 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'<div>{_html.escape(distress_result.state)} distress rate: '
             f'<strong>{distress_result.state_distress_rate:.1%}</strong></div>'
             f'<div>Model AUC: <strong>{distress_result.model_auc:.3f}</strong></div>'
+            f'<div>Source: {ck_source_link("CMS HCRIS")}</div>'
             f'</div>'
             f'{factor_chart}{factor_caption}'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Factor</th><th>Value</th><th>Contribution</th><th>Direction</th>'
-            f'</tr></thead><tbody>{factor_rows}</tbody></table></div>'
+            f'{factor_table}</div>'
         )
 
     # ── RCM Opportunity ──
@@ -878,13 +1111,14 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             gap_pct = f"{lev.gap:.1%}" if abs(lev.gap) < 2 else f"{lev.gap:.2f}"
             lever_rows += (
                 f'<tr>'
-                f'<td style="font-weight:500;">{_html.escape(lev.lever)}</td>'
+                f'<th scope="row" class="ml-rowhead">'
+                f'{_html.escape(lev.lever)}</th>'
                 f'<td class="num">{lev.current_value:.3f}</td>'
                 f'<td class="num">{lev.benchmark_value:.3f}</td>'
                 f'<td class="num">{gap_pct}</td>'
                 f'<td class="num" style="color:var(--cad-pos);font-weight:600;">'
                 f'{_fmt_money(lev.risk_adjusted_impact)}</td>'
-                f'<td class="num">{lev.confidence:.0%}</td>'
+                f'<td class="num">{lev.confidence:.1%}</td>'
                 f'<td class="num">{lev.implementation_months}mo</td>'
                 f'</tr>'
             )
@@ -895,6 +1129,29 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             'Risk-adjusted EBITDA impact per lever · darker = higher confidence · timeline shown in months'
             '</div>'
         ) if lever_chart else ""
+
+        # Every lever can fall below the $1,000 materiality floor on a
+        # small or already-efficient hospital, leaving an empty tbody
+        # under a promising heading. Say so instead.
+        lever_table = (
+            f'<table class="cad-table"><caption class="sr-only">'
+            f'RCM levers ranked by risk-adjusted EBITDA impact.'
+            f'</caption><thead><tr>'
+            f'<th scope="col">Lever</th><th scope="col">Current</th>'
+            f'<th scope="col">Benchmark</th><th scope="col">Gap</th>'
+            f'<th scope="col" aria-sort="descending" '
+            f'title="Sorted largest risk-adjusted impact first">Impact</th>'
+            f'<th scope="col">Confidence</th><th scope="col">Timeline</th>'
+            f'</tr></thead><tbody>{lever_rows}</tbody></table>'
+        ) if lever_rows else ck_empty_state(
+            "No lever clears the materiality floor.",
+            "Every RCM lever modelled for this hospital lands below "
+            "$1,000 of risk-adjusted annual impact — it is already at "
+            "or near P75 on each benchmarked metric, or too small for "
+            "the gaps to be worth capital. There is no RCM thesis here.",
+            eyebrow="RCM LEVERS",
+            tone="positive",
+        )
 
         sections.append(
             f'<div class="cad-card">'
@@ -910,12 +1167,10 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'</div>'
             f'<p style="font-size:11.5px;color:var(--cad-text2);margin-bottom:8px;">'
             f'Gap analysis vs P75 peers with 60% closure assumption. Confidence-weighted by '
-            f'lever implementation difficulty.</p>'
+            f'lever implementation difficulty. Source: '
+            f'{ck_source_link("CMS HCRIS")}.</p>'
             f'{lever_chart}{lever_caption}'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Lever</th><th>Current</th><th>Benchmark</th><th>Gap</th>'
-            f'<th>Impact</th><th>Confidence</th><th>Timeline</th>'
-            f'</tr></thead><tbody>{lever_rows}</tbody></table></div>'
+            f'{lever_table}</div>'
         )
 
     # ── RCM Performance Predictions ──
@@ -940,10 +1195,11 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             )
             pred_rows += (
                 f'<tr>'
-                f'<td style="font-weight:500;">{_html.escape(p.metric)}</td>'
+                f'<th scope="row" class="ml-rowhead">'
+                f'{_html.escape(p.metric)}</th>'
                 f'<td class="num" style="font-weight:600;">{val_band}</td>'
                 f'<td class="num">P{p.peer_percentile:.0f}</td>'
-                f'<td style="font-size:11px;">{_html.escape(p.interpretation[:60])}</td>'
+                f'<td style="font-size:11px;">{_trunc(p.interpretation, 60)}</td>'
                 f'</tr>'
             )
 
@@ -951,6 +1207,23 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             "A": "var(--cad-pos)", "B": "var(--cad-accent)",
             "C": "var(--cad-warn)", "D": "var(--cad-neg)",
         }.get(rcm_perf.overall_rcm_grade, "var(--cad-text3)")
+
+        pred_table = (
+            f'<table class="cad-table"><caption class="sr-only">'
+            f'Predicted RCM metrics with 90% conformal intervals and '
+            f'national peer percentiles.</caption><thead><tr>'
+            f'<th scope="col">Metric</th>'
+            f'<th scope="col">Predicted [90% CI]</th>'
+            f'<th scope="col">Percentile</th>'
+            f'<th scope="col">Assessment</th>'
+            f'</tr></thead><tbody>{pred_rows}</tbody></table>'
+        ) if pred_rows else ck_empty_state(
+            "No RCM metrics could be predicted.",
+            "The public-data RCM predictor needs beds, payer mix and "
+            "revenue on file. This CCN's HCRIS filing is too sparse to "
+            "produce a calibrated estimate.",
+            eyebrow="PREDICTED RCM",
+        )
 
         sections.append(
             f'<div class="cad-card">'
@@ -961,11 +1234,27 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
             f'font-family:var(--cad-mono);">{rcm_perf.overall_rcm_grade}</span>'
             f'<div style="font-size:10px;color:var(--cad-text3);">RCM Grade</div></div></div>'
             f'<p style="font-size:12px;color:var(--cad-text2);margin-bottom:8px;">'
-            f'{_html.escape(rcm_perf.screening_recommendation)}</p>'
-            f'<table class="cad-table"><thead><tr>'
-            f'<th>Metric</th><th>Predicted [90% CI]</th><th>Percentile</th><th>Assessment</th>'
-            f'</tr></thead><tbody>{pred_rows}</tbody></table></div>'
+            f'{_html.escape(rcm_perf.screening_recommendation)} '
+            f'Predicted from {ck_source_link("CMS HCRIS")} only.</p>'
+            f'{pred_table}</div>'
         )
+
+    # Every model returned None (unknown CCN, or a filing too sparse for
+    # any of them). Without this the page rendered as a lone nav strip
+    # under a confident "What the model says" intro — the partner had no
+    # way to tell an empty result from a broken page.
+    if not sections:
+        sections.append(ck_empty_state(
+            "No model output for this CCN.",
+            f"None of the clustering, distress, RCM-opportunity or "
+            f"margin models could score CCN {ccn}. Either the CCN is "
+            f"not in the current HCRIS extract, or its filing is "
+            f"missing the beds / revenue / payer-mix fields every "
+            f"model depends on.",
+            eyebrow="HOSPITAL ML",
+            cta_label="Find a hospital with reported data",
+            cta_href="/screen",
+        ))
 
     # ── Navigation ──
     sections.append(
@@ -992,9 +1281,11 @@ def render_hospital_ml(ccn: str, hcris_df: pd.DataFrame) -> str:
     # + Back-to-top affordances. Idempotent JS guards.
     from ._chartis_kit import ck_page_actions
     body = body + ck_page_actions()
+    # An unresolvable CCN left the tab titled "ML Analysis — " with a
+    # dangling em dash; fall back to the CCN so the tab stays findable.
     return chartis_shell(
         body,
-        f"ML Analysis — {_html.escape(name)}",
+        f"ML Analysis — {_html.escape(name or f'CCN {ccn}')}",
         subtitle=f"CCN {_html.escape(ccn)} | Clustering + Distress + RCM Opportunity",
         editorial_intro={
             "eyebrow": "HOSPITAL ML",

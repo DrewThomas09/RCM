@@ -378,7 +378,8 @@ def _emergency_sheet() -> Optional[Sheet]:
          "CMS GADCS / Medicare claims — 43.7%→37.1% (2018→2022)"],
         ["ED transfers needing a critical procedure (CCT)", (0.066, "pct"),
          "ACADEMIC",
-         "HCUP NEDS — 655,442 of 9,867,701 ED transfers (Am J Emerg Med 2025)"],
+         "HCUP NEDS — 655,442 of 9,867,701 ED transfers across 2018-2022 "
+         "(~131,088/yr of ~1.97M/yr) (Am J Emerg Med 2025)"],
     ]
     rows += [
         [],

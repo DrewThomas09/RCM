@@ -2219,21 +2219,31 @@ def chart_export_toolbar(target_id: str, filename: str = "chart") -> str:
     """Buttons to download the rendered SVG / a 3× PNG, or copy the SVG —
     pure vanilla JS, no dependencies. ``target_id`` is the id of the
     container holding the <svg>. PNG renders at 3× for crisp slide paste."""
+    # Report-0272: carry target_id/filename in data-* attributes (where
+    # html.escape(quote=True) IS the correct codec) and read them via
+    # this.dataset in the handler — never interpolate them into the
+    # onclick JS-string. Inlining an html.escape'd value into a JS-string
+    # is the wrong-codec class (the browser HTML-decodes the attribute
+    # before the JS parser runs, so an escaped quote reverts and breaks
+    # out). No current caller passes attacker text here — every call site
+    # uses a constant or a validated chart-type keyword — so this is
+    # defense-in-depth hardening of the shared primitive, not a live fix.
     fn = html.escape(filename, quote=True)
     tid = html.escape(target_id, quote=True)
     btn = ("padding:6px 13px;border:1px solid #c9c1ac;border-radius:5px;"
            "background:#fff;color:#0b2341;font-size:12px;font-weight:600;"
            "cursor:pointer;")
+    data = f'data-ckt="{tid}" data-ckf="{fn}"'
     return (
         f'<div class="cd-export-tb" '
         f'style="display:flex;gap:8px;justify-content:center;'
         f'margin-top:10px;flex-wrap:wrap;">'
-        f'<button type="button" style="{btn}" '
-        f'onclick="ckDlSvg(\'{tid}\',\'{fn}\')">⬇ SVG</button>'
-        f'<button type="button" style="{btn}" '
-        f'onclick="ckDlPng(\'{tid}\',\'{fn}\')">⬇ PNG (3×)</button>'
-        f'<button type="button" style="{btn}" '
-        f'onclick="ckCopySvg(\'{tid}\',this)">⧉ Copy SVG</button></div>'
+        f'<button type="button" style="{btn}" {data} '
+        f'onclick="ckDlSvg(this.dataset.ckt,this.dataset.ckf)">⬇ SVG</button>'
+        f'<button type="button" style="{btn}" {data} '
+        f'onclick="ckDlPng(this.dataset.ckt,this.dataset.ckf)">⬇ PNG (3×)</button>'
+        f'<button type="button" style="{btn}" {data} '
+        f'onclick="ckCopySvg(this.dataset.ckt,this)">⧉ Copy SVG</button></div>'
         # Print fidelity + keyboard affordance: download buttons are
         # meaningless on paper (and used to print as grey pills under
         # every chart), and the inline-styled buttons had no visible

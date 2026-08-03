@@ -29,6 +29,7 @@ from rcm_mc.ui._chartis_kit import (
     ck_kpi_block,
     ck_page_title,
     ck_section_header,
+    ck_source_purpose,
 )
 
 _ROUTE = "/connector-estate"
@@ -482,6 +483,25 @@ def render_connector_estate(params: dict[str, Any] | None = None) -> str:
 
     parts = [
         ck_page_title("Connector Estate", eyebrow="Public Data", meta=meta),
+        # 2026-08-03: this was the only page on the estate rendering figures
+        # with no source disclosure (test_page_data_source_audit). Every
+        # number here is computed live — connectors_summary() walks the
+        # registry and ingested_counts() COUNTs the canonical tables in each
+        # connector's SQLite file — so an "illustrative" banner would be
+        # dishonest. Declaring the real provenance is the correct label.
+        ck_source_purpose(
+            purpose="Show what public healthcare data this deployment can "
+                    "actually reach, and how much of it is already ingested "
+                    "locally.",
+            universe="real",
+            source="repo-root connectors/ registry + each connector's local "
+                   "SQLite ingest (counts computed per request, never "
+                   "hardcoded)",
+            confidence="real",
+            next_action="Open a dataset for its registry detail and sample "
+                        "rows",
+            next_href=_ROUTE,
+        ),
         _kpi_strip(summaries, ingested),
     ]
     if dataset:

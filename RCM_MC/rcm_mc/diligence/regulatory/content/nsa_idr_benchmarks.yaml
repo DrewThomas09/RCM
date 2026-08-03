@@ -1,53 +1,121 @@
 # No Surprises Act IDR (Independent Dispute Resolution) benchmarks.
 #
-# QPA (Qualifying Payment Amount) calculation = median contracted
-# rate for the service × geographic adjustment, bounded below by
-# Medicare rate floor for the CPT. IDR cases settle near QPA when
-# payer prevails; above QPA when provider presents documented cost
-# evidence.
+# ⚠ PARTIALLY RE-VERIFIED 2026-08-03 — see MR1075. `last_reviewed` is NOT
+# bumped: several case-study financials below could not be sourced at all
+# (marked inline), and a "reviewed" stamp would bury that.
 #
-# Seeded from CMS IDR quarterly reports + anchor case studies
-# (Envision, APP). Update cadence: quarterly as CMS issues new
-# geographic adjustments.
+# QPA (Qualifying Payment Amount) methodology — CORRECTED 2026-08-03. The
+# previous description here was wrong in BOTH of its mechanics: it claimed a
+# geographic-adjustment MULTIPLIER and a Medicare rate FLOOR. Neither exists.
+# Read off 45 CFR 149.140 directly (eCFR, 2026-07-01 snapshot):
+#
+#   base   = the median of the contracted rates on JANUARY 31, 2019 for the
+#            same or similar item/service, same or similar specialty, in the
+#            geographic region — requires at least three contracted rates
+#   trend  = escalated by the COMBINED CPI-U percentage increase over 2019,
+#            2020 and 2021, as published by Treasury/IRS, then annually
+#   region = a definitional STRATUM (one region per MSA in a State, plus one
+#            for the rest of the State), NOT a multiplier applied to a rate
+#   floor  = none. There is no Medicare rate floor in the QPA methodology.
+#
+# IDR OUTCOMES — the previous framing ("settle near QPA when payer prevails;
+# above QPA when provider presents documented cost evidence") had the
+# direction backwards. Above-QPA is the norm, not the exception: in H2 2025
+# the prevailing offer exceeded the QPA in ~87% of determinations and
+# provider-side parties prevailed in ~85%. A model that treats QPA as the
+# expected award will systematically understate provider realization.
+#
+# Seeded from CMS IDR reports + anchor case studies (Envision, APP).
+# There is no quarterly geographic-adjustment release to track — that update
+# cadence described a mechanism that does not exist. Track instead: the
+# Federal IDR PUF releases and the Federal IDR Operations final rule
+# (91 FR 33900, published 2026-06-04, effective 2026-08-03), which is NOT
+# yet reflected in this file.
 
 last_reviewed: 2026-04-23
 source_urls:
   - https://www.cms.gov/nosurprises
-  - https://aspe.hhs.gov/reports/no-surprises-act
+  # aspe.hhs.gov/reports/no-surprises-act is a hard 404 — replaced with the
+  # CMS reports index, which is where the IDR PUFs actually land.
+  - https://www.cms.gov/nosurprises/policies-and-resources/reports
+  - https://www.ecfr.gov/current/title-45/part-149/section-149.140
 
 # Anchor case studies we benchmark against.
 case_studies:
   - name: Envision Healthcare
-    bankruptcy_date: 2023-05-15
-    lbo_date: 2018-10-01
-    lbo_leverage_ratio: 0.71        # ~71% leverage at LBO
-    lbo_ev_usd: 9900000000           # $9.9B KKR LBO
-    oon_revenue_share_pre_nsa: 0.45  # ~45% of revenue was OON
-    nsa_revenue_impact_pct: 0.28     # estimated 28% revenue drop post-NSA
+    bankruptcy_date: 2023-05-15       # CONFIRMED (chapter 11 petition)
+    lbo_date: 2018-10-11              # corrected from 2018-10-01: closing was
+                                      # 10-11 (signing/announcement 2018-06-11).
+                                      # 2018-10-01 matches nothing in the timeline.
+    lbo_ev_usd: 9900000000            # CONFIRMED verbatim in the SEC 8-K Ex-99.1
+    # UNVERIFIED — see unverified_fields. Left in place because downstream
+    # thresholds read them, but they must not be quoted as sourced facts.
+    lbo_leverage_ratio: 0.71
+    oon_revenue_share_pre_nsa: 0.45
+    nsa_revenue_impact_pct: 0.28
+    unverified_fields: [lbo_leverage_ratio, oon_revenue_share_pre_nsa,
+                        nsa_revenue_impact_pct]
+    # UNITS HAZARD: lbo_leverage_ratio reads naturally as 0.71x turns of
+    # debt/EBITDA. The comment meant 71% debt/EV. Envision's actual LBO
+    # leverage was roughly 7x. Any consumer of this field must know which
+    # it is.
+    # PROVENANCE GAP: Envision's FY2017 10-K does not contain the string
+    # "out-of-network" anywhere, so 0.45 has no SEC basis; secondary
+    # reporting puts the OON share nearer 13%.
     narrative: |
-      Envision's 2018 KKR LBO loaded the business with ~71% debt.
-      The NSA took effect Jan 2022. Within 18 months Envision's
-      OON-heavy ER physician business saw IDR decisions trend
-      toward payer-offered rates. Bankruptcy May 2023.
+      Envision's 2018 KKR LBO ($9.9B EV, closed 2018-10-11) loaded the
+      business with heavy leverage. The NSA took effect Jan 2022 and
+      bankruptcy followed in May 2023.
+
+      NOTE (corrected 2026-08-03): this narrative previously said IDR
+      decisions "trend toward payer-offered rates". That is backwards.
+      CMS data show provider-side parties prevailing in the large
+      majority of determinations. Envision's failure is a leverage and
+      liquidity story that the NSA transition accelerated — not evidence
+      that IDR resolves toward payers.
 
   - name: American Physician Partners
-    bankruptcy_date: 2023-07-24
+    # Corrected 2026-08-03: chapter 11 petitions were filed 2023-09-18 in the
+    # U.S. Bankruptcy Court for the District of Delaware, Case 23-11469 (BLS).
+    # 2023-07-24 is the operational wind-down, not the filing.
+    bankruptcy_date: 2023-09-18
+    # ⚠ THE ENTIRE LBO BLOCK BELOW IS UNSOURCED AND LIKELY WRONG.
+    # A 2026-08-03 primary-source review could not corroborate any of it.
+    # APP was a 2015 build-up recapitalized by Brown Brothers Harriman on
+    # UNDISCLOSED terms — not a 2016 $860M buyout at 0.65 leverage. These
+    # look like invented structure. They are retained only so downstream
+    # readers can see what was there; do not cite them, and prefer deleting
+    # the block outright once someone confirms there is no real deal record.
     lbo_date: 2016-03-01
     lbo_leverage_ratio: 0.65
     lbo_ev_usd: 860000000
     oon_revenue_share_pre_nsa: 0.38
     nsa_revenue_impact_pct: 0.22
-    nsa_monthly_drag_usd: 3200000
+    nsa_monthly_drag_usd: 3200000     # plausible but only two secondary
+                                      # summaries; the liquidating trustee's
+                                      # adversary complaint was not retrieved
+    unverified_fields: [lbo_date, lbo_leverage_ratio, lbo_ev_usd,
+                        oon_revenue_share_pre_nsa, nsa_revenue_impact_pct,
+                        nsa_monthly_drag_usd]
     narrative: |
-      APP's liquidating trustee filings cited $3.2M/month NSA
-      drag as a direct cause of liquidity failure. Went from
-      profitable to bankrupt in ~18 months post-NSA.
+      APP's liquidating trustee filings cited $3.2M/month NSA drag as a
+      direct cause of liquidity failure. Operations ceased 2023-07-31 and
+      chapter 11 followed on 2023-09-18 — ~20.5 months after the NSA
+      became applicable (2022-01-01), not the "~18 months" previously
+      stated here.
 
 # Flag thresholds. When target's OON revenue share exceeds these
 # we compare to the anchor cases for the pattern-match memo.
 flag_thresholds:
   oon_revenue_share_watch: 0.20     # >20% OON → WATCH
   oon_revenue_share_critical: 0.35  # >35% OON → CRITICAL (Envision-tier)
+  # ⚠ CALIBRATION QUESTION, deliberately NOT changed here (owner decision).
+  # These thresholds treat a seller rate 10%/25% above QPA as notable. CMS
+  # Federal IDR supplemental Table 13 shows MEDIAN prevailing offers running
+  # 169%-522% of QPA by cost band, so on current market outcomes both of
+  # these fire essentially always and the flag carries no information.
+  # Re-basing them means deciding what "unusual" means against the real
+  # distribution, which is a product judgement, not a constant swap.
   qpa_shortfall_watch: 0.10         # seller-claimed rate 10% above QPA
   qpa_shortfall_critical: 0.25      # 25%+ above QPA → headline finding
 

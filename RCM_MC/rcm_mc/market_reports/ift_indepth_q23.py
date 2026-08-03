@@ -36,8 +36,8 @@ _MISSION = Block(
         "inverts the objective and targets utilization above that band by "
         "chaining known trips.",
         "The cost signature follows the mission: GADCS mean cost per "
-        "transport is $2,673 all-agency and $3,127 governmental "
-        "(readiness-heavy) versus $1,778 private for-profit — the spread "
+        "transport is $2,763 all-agency and $3,167 governmental "
+        "(readiness-heavy) versus $1,912 for-profit — the spread "
         "is mostly paid-for idleness, with labor at 70.7% of total cost "
         "either way.",
         "A 911-tuned fleet fails IFT mechanically, not culturally: its "
@@ -61,11 +61,12 @@ _MISSION = Block(
            "books target higher",
            "SOURCED", "AIMHI benchmarking / EMS1",
            "https://aimhi.mobi/benchmarking-resources/"),
-        _E("Mean cost per transport $2,673 all agencies / $3,127 "
-           "governmental / $1,778 private for-profit; labor 70.7% of cost",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports, via "
-           "trade coverage (re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+        _E("Mean cost per transport $2,763 all NPIs / $3,167 governmental "
+           "/ $1,912 for-profit; labor 70.7% of aggregate cost",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (data through 2025-05-15; posted 2025-12-09), "
+           "Tables 3.1 and 4.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("Strong inverse relationship between response volume and cost "
            "per response — the scheduled book monetizes density the "
            "readiness book cannot",
@@ -274,11 +275,12 @@ _CAPACITY = Block(
            "volume and cost per response",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
            "https://www.medpac.gov/wp-content/uploads/2025/12/Tab-M-Ambulance-Dec-2025.pdf"),
-        _E("Labor (wages + benefits) is 70.7% of ambulance cost — the "
-           "crew-hour is the unit everything else must amortize",
-           "SOURCED", "GADCS Year 1-4 appendix via AAA coverage "
-           "(re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+        _E("Labor (wages + benefits) is 70.7% of aggregate ground-"
+           "ambulance cost — the crew-hour is the unit everything else "
+           "must amortize",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (posted 2025-12-09), Table 3.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("Medicare pays loaded miles only (A0425); ~$8/mile vs "
            "commercial ~$17 — deadhead is a pure margin tax",
            "SOURCED", "HCCI ground-ambulance price analysis (2022 data)",
@@ -574,8 +576,8 @@ _CLINICAL = Block(
         "made by the ordering clinician under Medicare's necessity rules "
         "(42 CFR 410.40), with uneven decision support and no published "
         "interfacility over-triage rate; the audit record shows the "
-        "boundary is policed hard from the payment side (13.2% improper "
-        "payment, 27.5% of it medical necessity), while under-triage is "
+        "boundary is policed hard from the payment side (10.4% improper "
+        "payment, 24.9% of it medical necessity), while under-triage is "
         "policed only by adverse events."),
     why_true=(
         "The rule set is explicit: non-emergency ambulance is covered "
@@ -586,8 +588,8 @@ _CLINICAL = Block(
         "preference.",
         "Over-triage is expensive twice: a higher-acuity vehicle burns "
         "scarce ALS/CCT unit-hours on a BLS-appropriate patient, and "
-        "the claim invites denial — CERT attributes 27.5% of the "
-        "ambulance improper-payment rate to medical necessity.",
+        "the claim invites denial — CERT attributes 24.9% of ambulance "
+        "improper payments to medical necessity.",
         "Under-triage is the clinical tail risk: the escalation book "
         "runs high-acuity (the registry's volume-weighted escalation "
         "mix is ~56% CCT/SCT/specialty-team) and 6.6% of ED transfers "
@@ -612,10 +614,11 @@ _CLINICAL = Block(
            "dated ≤60 days ahead",
            "GOV", "42 CFR 410.40(e); MAC guidance",
            "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-410/subpart-B/section-410.40"),
-        _E("Ambulance improper payment rate 13.2% (~$595.1M projected); "
-           "63.5% insufficient documentation, 27.5% medical necessity",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+        _E("Ambulance improper payment rate 10.4% (~$452.6M projected); "
+           "46.7% insufficient documentation, 24.9% medical necessity",
+           "GOV", "CMS 2025 Medicare FFS Supplemental Improper Payment "
+           "Data (CERT; claims 2023-07-01 to 2024-06-30), Table D1",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("Escalation-family transport mix, volume-weighted across the "
            "mapped scenarios: ~56% CCT/SCT + neonatal/peds specialty "
            "team, ~12% ALS/ALS2, ~32% low-acuity/behavioral",
@@ -1175,9 +1178,9 @@ _REASONS = Block(
         "(placement)."),
     why_true=(
         "Capability gaps are widening structurally: 331 rural hospitals "
-        "dropped obstetrics 2011-2024, 194 rural hospitals have closed "
-        "since 2005, and REH conversions eliminate inpatient beds "
-        "outright — each service cut converts local admissions into "
+        "dropped obstetrics 2011-2024, 197 rural hospitals have closed "
+        "or converted since 2005, and REH conversions eliminate inpatient "
+        "beds outright — each service cut converts local admissions into "
         "transfers (51.6% of Nebraska counties are already "
         "maternity-care deserts).",
         "Step-down reasons are payment-defined: IRF admission turns on "
@@ -1211,10 +1214,13 @@ _REASONS = Block(
            "1.56 (95% CI 1.15-2.12)",
            "ACADEMIC", "Wang et al., JAMA 2011 (n=14,821)",
            "https://doi.org/10.1001/jama.2011.862"),
-        _E("194 rural hospital closures since 2005 (151 after 2010); "
-           "432 more at risk",
-           "SOURCED", "UNC Sheps Center tracker; Chartis 2025 "
-           "(re-verify)",
+        _E("197 rural hospital closures and conversions since Jan 2005 "
+           "(109 complete + 88 converted), 154 of them since 2010, "
+           "excluding REH conversions; Chartis separately counts 417 "
+           "rural hospitals vulnerable to closure",
+           "SOURCED", "UNC Sheps Center closure tracker (updated "
+           "2025-12-04); Chartis 2026 Rural Health State of the State "
+           "(published 2026-02-10)",
            "https://www.shepscenter.unc.edu/programs-projects/rural-health/rural-hospital-closures/"),
         _E("Mental-health-related ED visits ~6M/yr (~1 in 8 ED visits "
            "MH/SUD) — the behavioral-placement demand base",
@@ -1237,7 +1243,7 @@ _REASONS = Block(
            "'we don't offer that here' a growing share of transfers."),
         _S("Is the patient being discharged to post-acute care?",
            "The highest-volume reason: SNF/IRF/LTACH/hospice "
-           "admissions off ~35M annual discharges — scheduled, "
+           "admissions off 33.7M annual discharges — scheduled, "
            "repeatable, and the throughput lever hospitals feel most."),
         _S("Is the patient returning to the original facility?",
            "Repatriation — the deliberate return leg that frees hub "
@@ -1401,7 +1407,7 @@ _MODALITY = Block(
         "Over-triage concentrates where documentation meets habit "
         "(stretcher ordered for a chair-capable discharge; ambulance "
         "for a wheelchair-appropriate dialysis run) — no interfacility-"
-        "specific rate is published, but CERT's 27.5% medical-necessity "
+        "specific rate is published, but CERT's 24.9% medical-necessity "
         "share of ambulance improper payments shows the payer sees it "
         "constantly.",
         "Under-triage risk concentrates in escalations: the patient "
@@ -1433,9 +1439,11 @@ _MODALITY = Block(
            "territory (Medicare pays $0 for stretcher van)",
            "GOV", "42 CFR 410.40(e); HCPCS T2049 state placements",
            "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-B/part-410/subpart-B/section-410.40"),
-        _E("Ambulance improper payment 13.2% / $595.1M projected; "
-           "27.5% medical necessity — the over-tiering audit trail",
-           "GOV", "CMS CERT 2024 supplemental (re-verify)", ""),
+        _E("Ambulance improper payment 10.4% / $452.6M projected; "
+           "24.9% medical necessity — the over-tiering audit trail",
+           "GOV", "CMS 2025 Medicare FFS Supplemental Improper Payment "
+           "Data (CERT), Table D1",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
     ),
     subqs=(
         _S("What modality is typically used for each major transition?",
@@ -1634,7 +1642,7 @@ _DELAY = Block(
         "accepting in the late afternoon, so a slipped pickup loses "
         "the bed to the next referral, un-discharges the patient, and "
         "buys another inpatient day (hospital expense averages "
-        "~$3,132/day as a cost proxy).",
+        "~$3,297/day as a cost proxy).",
         "Until the destination handoff, the sending facility keeps "
         "medication schedules, monitoring and EMTALA responsibility — "
         "and the receiving side pays in disrupted staffing: admission "
@@ -1666,10 +1674,12 @@ _DELAY = Block(
            "every timepoint was facility placement",
            "ACADEMIC", "Gao & Berland, Brown J Hosp Med 2022",
            "https://doi.org/10.56305/001c.36593"),
-        _E("Hospital adjusted expense per inpatient day ~$3,132 (2023) "
+        _E("Hospital adjusted expense per inpatient day ~$3,297 (2024) "
            "— the bed-day cost proxy for delay arithmetic",
-           "SOURCED", "KFF state health facts (expense proxy, not "
-           "marginal cost) (re-verify)", ""),
+           "SOURCED", "KFF State Health Facts, Hospital Expenses per "
+           "Adjusted Inpatient Day (2024 AHA Annual Survey; US total "
+           "$3,297.26) — expense proxy, not marginal cost",
+           "https://www.kff.org/health-costs/state-indicator/expenses-per-inpatient-day/"),
     ),
     subqs=(
         _S("What happens if the trip is delayed by 30 minutes?",
@@ -1694,7 +1704,7 @@ _DELAY = Block(
         _S("Can the delay create another inpatient day?",
            "Directly — that is the standard failure: a slipped "
            "pickup past the receiving cutoff converts into a full "
-           "extra day at ~$3,132 expense per day, with delayed-"
+           "extra day at ~$3,297 expense per day, with delayed-"
            "discharge patients consuming bed-days far out of "
            "proportion to their numbers."),
         _S("Does the sending facility retain responsibility for "
