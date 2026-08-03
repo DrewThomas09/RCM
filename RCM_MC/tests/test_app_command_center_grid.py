@@ -69,7 +69,10 @@ class GridLayoutTests(unittest.TestCase):
 
     def test_responsive_breakpoints(self):
         self.assertIn("max-width:1024px", self.html)
-        self.assertIn("max-width:768px", self.html)
+        # 2026-08 UI sweep: the single-column collapse moved 768 -> 640
+        # so tablets keep the two-column band (matches the kit-wide
+        # 641-960 tablet treatment); phones still collapse to 1fr.
+        self.assertIn("max-width:640px", self.html)
 
     def test_carries_app_topbar(self):
         # Grid is an authenticated app page → it gets the editorial top bar.
