@@ -785,12 +785,25 @@ def ck_table(
     and hints at cell formatting.
     """
     cls = "ck-table" + (" ck-dense" if dense else "")
+
+    # Numeric kinds default to right alignment (header AND cells) so
+    # decimals line up down the column — the renderer already knows the
+    # column is numeric (it applies sc-num from the same ``kind``), so
+    # alignment must not be left to each caller to remember. Explicit
+    # caller-passed ``align`` always wins (mirrors
+    # power_table.Column.__post_init__).
+    def _col_align(c: Mapping[str, str]) -> str:
+        return str(c.get("align") or (
+            "right" if c.get("kind", "") in ("currency", "percent", "number")
+            else "left"
+        ))
+
     # Header labels are developer-defined. Most are plain text (escape them),
     # but some callers pass ready-made markup — e.g. deal-library sort links
     # (<a href=…>Company ▲</a>). Render those raw instead of escaping the tag
     # into literal "<A HREF=…>" text in the header.
     header_cells = "".join(
-        f'<th scope="col" class="align-{_esc(c.get("align", "left"))}">'
+        f'<th scope="col" class="align-{_esc(_col_align(c))}">'
         f'{c.get("label", "") if "<" in str(c.get("label", "")) else _esc(c.get("label", ""))}'
         f'</th>'
         for c in columns
@@ -812,9 +825,19 @@ def ck_table(
                 val = _esc(raw if raw is not None else "—")
             num_cls = " sc-num" if kind in ("currency", "percent", "number") else ""
             cells.append(
-                f'<td class="align-{_esc(c.get("align", "left"))}{num_cls}">{val}</td>'
+                f'<td class="align-{_esc(_col_align(c))}{num_cls}">{val}</td>'
             )
         body_rows.append("<tr>" + "".join(cells) + "</tr>")
+    if not body_rows:
+        # Zero-row floor: a floating header band with an empty <tbody>
+        # under it explains nothing. Callers wanting a richer CTA render
+        # ck_empty_state instead of the table; this covers the forgotten
+        # cases (loader returned no rows, filtered-to-empty).
+        body_rows.append(
+            f'<tr><td class="ck-empty-row align-center" '
+            f'colspan="{max(1, len(columns))}" '
+            f'style="text-align:center;">No rows to display.</td></tr>'
+        )
     return (
         f'<table class="{cls}">'
         f"<thead><tr>{header_cells}</tr></thead>"
@@ -1748,6 +1771,7 @@ def ck_scatter(
 
     def fnum(v):
         a = abs(v)
+        if a == 0: return "0"
         if a >= 100: return f"{v:,.0f}"
         if a >= 1: return f"{v:,.1f}"
         return f"{v:,.2f}"
@@ -1758,6 +1782,21 @@ def ck_scatter(
     # frame axes
     parts.append(f'<line x1="{L}" y1="{T}" x2="{L}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
     parts.append(f'<line x1="{L}" y1="{H-B}" x2="{W-R}" y2="{H-B}" stroke="var(--sc-rule,#d6cfc0)" stroke-width="1"/>')
+    # Intermediate round-number ticks with faint solid gridlines so a
+    # point's approximate value reads off the plot instead of requiring
+    # mental interpolation between two corner labels. Imported lazily:
+    # _chart_kit imports P from this module at its top level.
+    from ._chart_kit import ck_nice_ticks as _nice_ticks
+    xticks = _nice_ticks(xmin, xmax, 5)
+    yticks = _nice_ticks(ymin, ymax, 5)
+    for t in xticks:
+        tx = sx(t)
+        parts.append(f'<line x1="{tx:.1f}" y1="{T}" x2="{tx:.1f}" y2="{H-B}" stroke="var(--sc-rule,#e4ddca)" stroke-width="0.75"/>')
+        parts.append(f'<text x="{tx:.1f}" y="{H-B+14}" font-size="9.5" text-anchor="middle" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(t))}</text>')
+    for t in yticks:
+        ty = sy(t)
+        parts.append(f'<line x1="{L}" y1="{ty:.1f}" x2="{W-R}" y2="{ty:.1f}" stroke="var(--sc-rule,#e4ddca)" stroke-width="0.75"/>')
+        parts.append(f'<text x="{L-4}" y="{ty + 3:.1f}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(t))}</text>')
     # quadrant reference lines
     if x_ref is not None:
         try:
@@ -1769,17 +1808,21 @@ def ck_scatter(
             yr = sy(float(y_ref))
             parts.append(f'<line x1="{L}" y1="{yr:.1f}" x2="{W-R}" y2="{yr:.1f}" stroke="var(--sc-text-faint,#5d6675)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>')
         except (TypeError, ValueError): pass
-    # axis min/max ticks
-    parts.append(f'<text x="{L}" y="{H-B+14}" font-size="8" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(xmin))}</text>')
-    parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(xmax))}</text>')
-    parts.append(f'<text x="{L-4}" y="{H-B}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(ymin))}</text>')
-    parts.append(f'<text x="{L-4}" y="{T+8}" font-size="8" text-anchor="end" fill="var(--sc-text-faint,#5d6675)">{_esc(fnum(ymax))}</text>')
+    # Axis min/max corner labels only when the nice-tick pass produced
+    # nothing for that axis (degenerate range) — the ticks otherwise
+    # replace them.
+    if not xticks:
+        parts.append(f'<text x="{L}" y="{H-B+14}" font-size="9.5" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmin))}</text>')
+        parts.append(f'<text x="{W-R}" y="{H-B+14}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(xmax))}</text>')
+    if not yticks:
+        parts.append(f'<text x="{L-4}" y="{H-B}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymin))}</text>')
+        parts.append(f'<text x="{L-4}" y="{T+8}" font-size="9.5" text-anchor="end" fill="var(--sc-text-faint,#7a8699)">{_esc(fnum(ymax))}</text>')
     # axis labels
     if x_label:
-        parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
+        parts.append(f'<text x="{(L+W-R)/2:.0f}" y="{H-2}" font-size="10" text-anchor="middle" fill="var(--sc-text-dim,#465366)">{_esc(x_label)}</text>')
     if y_label:
         cy = (T + H - B) / 2
-        parts.append(f'<text x="11" y="{cy:.0f}" font-size="9" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
+        parts.append(f'<text x="11" y="{cy:.0f}" font-size="10" text-anchor="middle" fill="var(--sc-text-dim,#465366)" transform="rotate(-90 11 {cy:.0f})">{_esc(y_label)}</text>')
     # dots
     for x, y, lab, tn, href in pts:
         cx = sx(x); cy = sy(y)
@@ -1806,6 +1849,7 @@ def ck_value_anchor(
     value: str,
     *,
     delta: str = "",
+    delta_label: Optional[str] = None,
     opportunity: str = "",
     target: str = "",
     tone: str = "teal",
@@ -1819,7 +1863,10 @@ def ck_value_anchor(
     headline metric (e.g. "72 / 100"). The three optional facts render
     as a labelled row — ``opportunity`` is emphasised in the tone color
     because it is the load-bearing number. ``tone`` ∈ {teal, positive,
-    warning, negative, navy}.
+    warning, negative, navy}. ``delta_label`` names the ``delta``
+    comparison (e.g. "vs peer median"); left unset it resolves to
+    "vs benchmark" for a single-figure delta and "context" for a
+    "·"-joined multi-fact string.
 
     DEFENSIBILITY: callers pass only computed figures. Pass ``opportunity``
     empty when no defensible dollar value exists — the band still anchors
@@ -1836,9 +1883,17 @@ def ck_value_anchor(
     }.get(tone, "var(--sc-teal)")
     facts = []
     if delta:
+        # ``delta_label`` names the comparison. Historically hardcoded to
+        # "vs benchmark", but most data_public callers pass a "·"-joined
+        # multi-fact context string as ``delta`` — labelling the page's
+        # own figures as a benchmark comparison is exactly the confusion
+        # the DEFENSIBILITY note warns against. When the caller doesn't
+        # name the label, a multi-fact delta defaults to "context".
+        if delta_label is None:
+            delta_label = "context" if "·" in delta else "vs benchmark"
         facts.append(
             '<div class="ck-va-fact">'
-            '<span class="ck-va-fact-label">vs benchmark</span>'
+            f'<span class="ck-va-fact-label">{_esc(delta_label)}</span>'
             f'<span class="ck-va-fact-value">{_esc(delta)}</span></div>'
         )
     if opportunity:
@@ -2227,10 +2282,28 @@ def ck_sparkline(
         f'<span class="ck-spark-val">{_esc(last_value)}</span>'
         if last_value else ""
     )
+    # Native <title> hover + matching aria-label: every sibling strip
+    # (ck_trajectory_strip, ck_distribution_strip, payer-mix microbar)
+    # ships a no-JS tooltip; the most-used inline trend must not be the
+    # one primitive where hovering tells the partner nothing. %-change
+    # is omitted when the first value is at-or-near zero (no defensible
+    # baseline — same guard as ck_trajectory_strip).
+    if abs(nums[0]) > 1e-12:
+        pct = (nums[-1] - nums[0]) / abs(nums[0]) * 100.0
+        pct_txt = f" ({pct:+.1f}%)"
+    else:
+        pct_txt = ""
+    summary = (
+        (f"{label}: " if label else "")
+        + f"{nums[0]:,.2f} → {nums[-1]:,.2f}{pct_txt}"
+        + f" · min {mn:,.2f} · max {mx:,.2f}"
+        + f" · {len(nums)} pts"
+    )
     svg = (
         f'<svg class="ck-spark-svg" width="{width}" height="{height}" '
         f'viewBox="0 0 {width} {height}" role="img" '
-        f'aria-label="trend sparkline">'
+        f'aria-label="{_esc(summary)}">'
+        f'<title>{_esc(summary)}</title>'
         f'<polyline points="{poly}" fill="none" stroke="{stroke}" '
         f'stroke-width="1.5" stroke-linecap="round" '
         f'stroke-linejoin="round"/>'
@@ -7252,14 +7325,34 @@ def ck_data_table(
             f'{_esc(h.get("label", ""))}</th>'
         )
     head_html = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
+    # Row count is derived before the zero-row placeholder so an empty
+    # table never claims "1 rows".
+    n_rows = rows_html.count("<tr")
+    if not rows_html.strip():
+        # Zero-row floor: without it the page shows a floating header
+        # band over an empty <tbody> with no explanation. Callers that
+        # want a richer CTA render ck_empty_state instead of the table.
+        rows_html = (
+            f'<tr><td class="ck-empty-row ck-cell-c" '
+            f'colspan="{max(1, len(list(headers)))}" '
+            f'style="text-align:center;">No rows to display.</td></tr>'
+        )
     body_html = f"<tbody>{rows_html}</tbody>"
     table = (
         '<table class="ck-data-table">'
         + head_html + body_html + "</table>"
     )
+    # Long tables state their scale — /target-screener and /portfolio
+    # set the "N rows" expectation; the shared renderer provides the
+    # same anchor once a table is long enough to need it. Threshold
+    # keeps small inline tables clean.
+    count_html = (
+        f'<div class="ck-data-table-count">{n_rows:,} rows</div>'
+        if n_rows >= 15 else ""
+    )
     if scrollable:
-        return f'<div class="ck-data-table-scroll">{table}</div>'
-    return table
+        return f'<div class="ck-data-table-scroll">{table}{count_html}</div>'
+    return table + count_html
 
 
 def ck_provenance_tooltip(
@@ -9066,6 +9159,10 @@ _CSS_INLINE_FALLBACK = """
    * source order lets hover win on even (striped) rows too. */
   .ck-data-table tbody tr:hover { background:rgba(21,87,82,0.06); }
   .ck-data-table-head { padding:6px 10px; border-bottom:1px solid var(--sc-rule); font-size:10px; color:var(--sc-text-dim); letter-spacing:0.05em; font-weight:600; text-transform:uppercase; }
+  /* Row-count footer emitted by ck_data_table for long tables — quiet
+   * mono anchor so a partner reads the table's scale without scrolling
+   * to the end. */
+  .ck-data-table-count { font-family:var(--sc-mono); font-size:10px; letter-spacing:0.06em; color:var(--sc-text-dim); text-align:right; padding:4px 2px; }
 
   /* Personal dashboard /my/<owner> — pulse strip uses the existing
    * ck-kpi-grid; health-mix bar is the only bespoke chrome. */
@@ -10316,19 +10413,27 @@ _GUIDE_JS = """
 
 _SORT_JS = """
 <style>
-table.ck-data-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
-table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
+table.ck-data-table th[data-sortable]:hover,
+table.ck-table th[data-sortable]:hover,
+table.cad-table th[data-sortable]:hover{color:var(--sc-teal,#155752);}
+table.ck-data-table th[data-sort-dir],
+table.ck-table th[data-sort-dir],
+table.cad-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
 .ck-sort-ind{font-size:9px;opacity:0.75;}
 </style>
 <script>
 /* Click-to-sort for every editorial data table. Hooks all
- * table.ck-data-table that carry a <thead> + <tbody> with >=2 rows.
+ * table.ck-data-table / table.ck-table / table.cad-table that carry a
+ * <thead> + <tbody> with >=2 rows — identical-looking tables on
+ * adjacent routes must not differ in whether their headers sort.
  * Click (or Enter/Space) on a header sorts the body rows by that
  * column, toggling asc/desc. Numeric cells ($1,204.50 / 12.3% /
  * 2.50x / +4.1% / (1.2) negatives) sort numerically; everything else
  * lexically (locale, numeric-aware). Blank / "—" cells sink to the
  * bottom. Whole <tr> nodes are re-ordered so cell styling + color
- * spans survive. Purely additive: with JS off the table is unchanged.
+ * spans survive. Header cells that already carry a link (server-side
+ * sort / glossary anchors) keep their link behavior — no double
+ * affordance. Purely additive: with JS off the table is unchanged.
  * Opt out per table with data-no-sort. */
 (function(){
   function parseNum(t){
@@ -10373,15 +10478,38 @@ table.ck-data-table th[data-sort-dir]{color:var(--sc-teal,#155752);}
     if(ind) ind.textContent=dir==='asc'?' \\u25B2':' \\u25BC';
   }
   function init(){
-    var tables=document.querySelectorAll('table.ck-data-table');
+    var tables=document.querySelectorAll('table.ck-data-table, table.ck-table, table.cad-table');
     Array.prototype.forEach.call(tables,function(table){
-      if(table.getAttribute('data-no-sort')!=null) return;
       var head=table.tHead, tbody=table.tBodies[0];
-      if(!head||!tbody||tbody.rows.length<2) return;
+      if(!head||!tbody||tbody.rows.length<1) return;
       var hrow=head.rows[head.rows.length-1];
       if(!hrow) return;
+      /* Header-alignment healer: a th over a right-aligned numeric
+       * column (td.num / .ck-cell-r / .align-right on the first body
+       * row) inherits that alignment so the header doesn't float
+       * detached from its values. Applies even to data-no-sort tables
+       * (the opt-out is about the sort affordance, not alignment). */
+      var probe=tbody.rows[0];
+      if(probe&&probe.cells.length===hrow.cells.length){
+        Array.prototype.forEach.call(hrow.cells,function(th,idx){
+          var td=probe.cells[idx];
+          if(!td) return;
+          var right=td.classList.contains('num')||td.classList.contains('ck-cell-r')||td.classList.contains('align-right');
+          var self=th.classList.contains('num')||th.classList.contains('ck-cell-r')||th.classList.contains('align-right')||th.classList.contains('align-center')||th.classList.contains('ck-cell-c');
+          if(right&&!self) th.style.textAlign='right';
+        });
+      }
+      if(table.getAttribute('data-no-sort')!=null) return;
+      if(tbody.rows.length<2) return;
+      /* Section-divider rows (full-width colspan cells) would be
+       * scrambled by a column re-order — leave those tables to their
+       * server-side ordering. */
+      if(tbody.querySelector('td[colspan],th[colspan]')) return;
       Array.prototype.forEach.call(hrow.cells,function(th,idx){
         if(th.getAttribute('data-sortable')!=null) return;
+        /* Linked headers (deal-library server-side sort, glossary
+         * anchors on /portfolio) keep their single affordance. */
+        if(th.querySelector('a')) return;
         th.setAttribute('data-sortable','');
         th.style.cursor='pointer';
         /* Keep the native columnheader role: aria-sort is only honored on a
@@ -10422,15 +10550,16 @@ _BARROW_HOVER_CSS = """
 
 _TABLE_TOTALS_JS = """
 <style>
-.ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0;transition:opacity .12s;
+/* Rest at reduced opacity (not 0) — an invisible control is an
+ * undiscoverable one; hover/focus raises it to full strength. */
+.ck-ttotals{position:absolute;top:4px;right:110px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
 .ck-data-table-scroll:hover .ck-ttotals,
 .ck-data-table-scroll:focus-within .ck-ttotals{opacity:0.9;}
 .ck-ttotals:hover,.ck-ttotals[aria-pressed="true"]{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-/* Same as the copy button: reveal + ring on keyboard focus so a Tab user
- * doesn't land on an invisible toggle. */
+/* Same as the copy button: full-strength + ring on keyboard focus. */
 .ck-ttotals:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:700;
   background:var(--sc-bone,#ece5d6);font-family:var(--sc-mono,'JetBrains Mono',monospace);
@@ -10513,7 +10642,7 @@ tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:
         btn.setAttribute('aria-pressed',on?'true':'false');
         render(table,on);
       });
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
       var fi=host.parentNode?host.parentNode.querySelector('.ck-tfilter input'):null;
       if(fi) fi.addEventListener('input',function(){
         if(btn.getAttribute('aria-pressed')==='true') render(table,true);
@@ -10529,7 +10658,9 @@ tfoot.ck-totals-foot td{border-top:2px solid var(--sc-teal,#155752);font-weight:
 
 _TABLE_BARS_JS = """
 <style>
-.ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0;transition:opacity .12s;
+/* Rests at 0.45 like its siblings (copy / totals) so the control
+ * cluster reads as one row, not two visible buttons flanking a gap. */
+.ck-tbars{position:absolute;top:4px;right:52px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
@@ -10600,7 +10731,7 @@ td.ck-bar-cell{background-repeat:no-repeat;}
         btn.setAttribute('aria-pressed',on?'true':'false');
         paint(table,on);
       });
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
@@ -10613,15 +10744,22 @@ td.ck-bar-cell{background-repeat:no-repeat;}
 _TABLE_COPY_JS = """
 <style>
 .ck-data-table-scroll{position:relative;}
-.ck-tcopy{position:absolute;top:4px;right:4px;z-index:3;opacity:0;transition:opacity .12s;
+/* Once any table control (copy / totals / bars) is injected, reserve a
+ * strip above the thead for it — at rest the controls are visible
+ * (opacity 0.45), so they must not sit on top of the last column
+ * headers. */
+.ck-data-table-scroll.ck-has-tcontrols{padding-top:26px;}
+/* Rest at reduced opacity (not 0) — an invisible control is an
+ * undiscoverable one; hover/focus raises it to full strength. */
+.ck-tcopy{position:absolute;top:4px;right:4px;z-index:3;opacity:0.45;transition:opacity .12s;
   font:9px var(--sc-mono,'JetBrains Mono',monospace);letter-spacing:.04em;text-transform:uppercase;
   padding:2px 7px;border:1px solid var(--sc-rule,#d6cfc0);background:var(--sc-bg,#faf7f0);
   color:var(--sc-text-dim,#465366);border-radius:2px;cursor:pointer;}
 .ck-data-table-scroll:hover .ck-tcopy,
 .ck-data-table-scroll:focus-within .ck-tcopy{opacity:0.9;}
 .ck-tcopy:hover{border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
-/* Reveal + ring the copy button on keyboard focus — without this a Tab
- * user lands on an invisible (opacity:0) control with no focus cue. */
+/* Full-strength + ring on keyboard focus so a Tab user gets an
+ * unmistakable focus cue on the dimmed control. */
 .ck-tcopy:focus-visible{opacity:1;outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 </style>
 <script>
@@ -10664,7 +10802,7 @@ _TABLE_COPY_JS = """
       btn.textContent='Copy'; btn.setAttribute('data-label','Copy');
       btn.setAttribute('aria-label','Copy table to clipboard');
       btn.addEventListener('click',function(e){e.preventDefault();copyTable(table,btn);});
-      host.appendChild(btn);
+      host.appendChild(btn); host.classList.add('ck-has-tcontrols');
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
