@@ -11663,6 +11663,15 @@ _SUB_SECTION_MAP = {
     # leading-slash forms
     "/home": "home", "/app": "home", "/alerts": "home",
     "/escalations": "home", "/watchlist": "home", "/my": "home",
+    # Core daily-driver routes that previously resolved to no section at
+    # all — so they rendered with no active nav tab and no breadcrumb
+    # (2026-08 sweep). /deal prefix-matches every /deal/<id> page.
+    "/deal": "portfolio", "/compare": "portfolio",
+    "/market-data": "library",
+    "/import": "pipeline",
+    "/runs": "home", "/deadlines": "home", "/tools": "home",
+    "/settings": "home", "/search": "home", "/global-search": "home",
+    "/scenarios": "research",
     # Source = target discovery. Target Screener anchors it; Deal Sourcing +
     # Conferences live here now.
     # Source = target discovery (incl. the CMS screeners + thesis screening).
@@ -12598,7 +12607,11 @@ def chartis_shell(
     # for any registered route — idempotent: skip if the page already rendered
     # its own ck-illus-note (per-page labels) so we never double-disclose.
     if (_is_illustrative_route(active_nav)
-            and "ck-illus-note" not in body_html):
+            and "ck-illus-note" not in body_html
+            # A source-purpose band already discloses the data basis
+            # up top — stacking the route-level banner above it double-
+            # discloses on every ck_source_purpose page.
+            and 'class="ck-sp"' not in body_html):
         body_html = ck_illustrative_note(_ILLUSTRATIVE_ROUTE_NOTE) + body_html
 
     # 2026-05-29 audit follow-up — backstop One-H1 invariant.

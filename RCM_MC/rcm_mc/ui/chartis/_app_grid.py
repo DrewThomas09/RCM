@@ -85,7 +85,7 @@ APP_GRID_CSS = """
   .cc-5x2,.cc-7x3,.cc-5x3,.cc-12x2,.cc-12x3,.cc-6x2{grid-column:span 6;}
   .cc-4x1,.cc-3x1{grid-column:span 3;}
 }
-@media (max-width:768px){
+@media (max-width:640px){
   .cc-grid{grid-template-columns:1fr;grid-auto-rows:auto;}
   /* min-width:0 lets the single 1fr column actually shrink to the
      viewport: grid items default to min-width:auto, so a card whose

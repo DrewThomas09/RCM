@@ -388,7 +388,15 @@ _CSS = """
    marker instead of a dominating navy block, so the page stops looking
    boxed-in and the eye flows to the content. ── */
 .ts-sec{background:#fff;border:1px solid var(--sc-rule,#d6cfc0);border-radius:3px;
- margin:0 0 22px;overflow:hidden;}
+ margin:0 0 22px;overflow:visible;}
+/* Results-table chrome: sticky column headers pin below the 58px
+   topbar while the long screen scrolls. The wrapper only becomes a
+   horizontal scroller under 960px — an always-on overflow-x:auto
+   would re-clip the sticky context on desktop. */
+.ts-tblwrap{overflow:visible;}
+@media (max-width:960px){ .ts-tblwrap{overflow-x:auto;} }
+.ts-screen-table thead th{position:sticky;top:var(--ck-sticky-top,58px);
+ background:#fff;z-index:2;}
 .ts-sec-head{display:flex;align-items:center;gap:11px;padding:12px 20px 10px;
  border-bottom:1px solid var(--sc-rule,#e4ddca);}
 .ts-sec-head::before{content:"";flex:none;width:22px;height:2px;
@@ -1689,7 +1697,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         f'real {vinfo["universe"]} data, "—" = not reported).{source_clause}'
         f'{flagged_clause}{suspect_clause} '
         f'Capped at {row_limit}.{reset_link}</p>'
-        '<div style="overflow-x:auto;"><table class="ts-screen-table">'
+        '<div class="ts-tblwrap"><table class="ts-screen-table">'
         f'<thead>{head}</thead><tbody>{"".join(trs)}'
         # Wave-13: hidden placeholder row revealed by the JS filter
         # when every visible row is filtered out. Lives inside the
