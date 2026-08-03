@@ -14760,6 +14760,65 @@ _MANUAL.extend([
          source_confidence=SourceConfidence.DOCUMENTED,
          data_confidence=DataConfidence.MIXED,
          notes_for_assistant=list(_IFT_COMMON_NOTES)),
+    # 2026-08-03: this route was the only Guide-BLIND page on /tools —
+    # it renders on the Tools index but build_guide_context_packet
+    # returned page_context=None, so the Guide could open it and not
+    # explain it. Content below is taken from the page's own module
+    # docstring and its stated data contract, not invented.
+    _ctx("/in-depth-ift-bls-als1-als2-cct",
+         "In-Depth IFT — BLS · ALS1 · ALS2 · CCT",
+         category=PageContextCategory.RESEARCH_BACKTESTING,
+         short_description="The clinical-service-level research page: how "
+         "Basic Life Support, ALS Level 1, ALS Level 2 and Specialty / "
+         "Critical Care Transport differ in care delivered, patients "
+         "served, staffing, equipment, operating complexity, "
+         "reimbursement and IFT relevance — opening with a four-column "
+         "comparison table (definition / typical clinical needs / typical "
+         "operational needs / reimbursement differences).",
+         primary_purpose="Establish what each ambulance service level "
+         "actually IS before any demand, pricing or margin question is "
+         "asked about it.",
+         common_questions=[
+             "What is the difference between BLS, ALS1, ALS2 and CCT?",
+             "Which service level does a given interfacility transfer "
+             "need?",
+             "How does reimbursement differ across the four levels?",
+             "What staffing and equipment does each level require?",
+             "Which edge cases sit between two levels?"],
+         inputs=["rcm_mc.market_reports.ift_service_levels content module",
+                 "CMS ambulance fee-schedule definitions",
+                 "Verbatim regulatory quotes rendered inline."],
+         outputs=["Four-column service-level comparison table",
+                  "Per-fact basis chips with linked sources",
+                  "Edge-case notes where levels overlap."],
+         key_metrics=["Service-level definitions",
+                      "Reimbursement differentials by level"],
+         model_logic_summary="A content surface — no model. Facts are "
+         "authored from cited sources and rendered with their basis; "
+         "nothing on the page is computed or projected.",
+         why_it_matters="Level-of-service selection drives both clinical "
+         "risk and payment; conflating ALS1 with ALS2 or CCT misprices "
+         "the transport and can under-resource the patient.",
+         diligence_use_cases=["Reading an operator's mix disclosure "
+                              "correctly", "Sanity-checking a revenue "
+                              "model that assumes a level mix."],
+         interpretation_guidance=[
+             "The page's stated contract is ZERO illustrative figures — "
+             "every fact carries a basis chip (GOV / ACADEMIC / SOURCED / "
+             "DERIVED / FRAMEWORK) and a source link. Weight accordingly, "
+             "and treat an absent chip as a defect rather than a fact.",
+             "This page defines the levels; it does not size them. Volume "
+             "and demand questions belong on /ift-demand and /ift-markets.",
+         ],
+         limitations=list(_IFT_LIMITS),
+         data_sources=["ift_service_levels content module",
+                       "CMS ambulance fee schedule",
+                       "regulatory source documents quoted verbatim"],
+         related_routes=["/ift", "/ift-demand", "/ift-clinical",
+                         "/ift-research", "/ift-markets"],
+         source_confidence=SourceConfidence.DOCUMENTED,
+         data_confidence=DataConfidence.MIXED,
+         notes_for_assistant=list(_IFT_COMMON_NOTES)),
 ])
 
 
