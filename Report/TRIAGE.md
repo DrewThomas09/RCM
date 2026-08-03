@@ -293,3 +293,50 @@ guards into the ci.yml allowlist, and/or make regression-sweep fail on a
 regression against a committed baseline count rather than always succeeding.
 The full suite takes ~49 minutes locally, so simply un-swallowing it will make
 every PR slow — hence a decision, not a blind fix.
+
+## MR1077 — MEDIUM: NSA IDR benchmarks were wrong on premise, not just vintage
+
+Applied to `nsa_idr_benchmarks.yaml` on 2026-08-03 (part of the MR1075 review).
+Recorded separately because two of these are premise errors that would change
+a diligence conclusion, not stale numbers.
+
+**QPA methodology was wrong in both of its stated mechanics.** The header
+described "median contracted rate × geographic adjustment, bounded below by
+Medicare rate floor". Read off 45 CFR 149.140 directly (eCFR 2026-07-01):
+the base is the median contracted rate **on January 31, 2019**, trended by the
+**combined CPI-U** increase over 2019-2021 and annually thereafter. Geographic
+region is a definitional **stratum** (one per MSA in a State, plus one for the
+rest of the State), not a multiplier. **There is no Medicare rate floor.**
+
+**IDR outcome direction was backwards.** The file framed above-QPA awards as
+the exception requiring cost evidence. In H2 2025 the prevailing offer exceeded
+the QPA in ~87% of determinations and provider-side parties prevailed in ~85%.
+A model treating QPA as the expected award systematically understates provider
+realization — the opposite of the conservative error you would want.
+
+**One case-study block appears fabricated.** American Physician Partners is
+recorded with a 2016-03-01 LBO at $860M and 0.65 leverage. APP was a 2015
+build-up recapitalized by Brown Brothers Harriman on **undisclosed** terms; no
+such transaction was found. The block is retained but every field is marked
+`unverified_fields` — prefer deleting it once someone confirms there is no
+deal record. Its bankruptcy date was also wrong by two months (chapter 11 was
+2023-09-18, D. Del. 23-11469 (BLS); July 2023 was the operational wind-down).
+
+**Envision:** LBO closing corrected 2018-10-01 → 2018-10-11. The $9.9B EV is
+confirmed verbatim in the SEC 8-K. Its `oon_revenue_share_pre_nsa: 0.45` has
+no SEC provenance — the FY2017 10-K does not contain the string
+"out-of-network" at all, and secondary reporting puts the share nearer 13%.
+
+**Two open items left for the owner, both documented in place:**
+
+1. `lbo_leverage_ratio` is a **units hazard**: `0.71` reads as 0.71x turns of
+   debt/EBITDA; the comment means 71% debt/EV. Envision's real LBO leverage was
+   roughly 7x. Any consumer of this field needs to know which it is.
+2. `qpa_shortfall_watch` / `_critical` (0.10 / 0.25) are **mis-calibrated**
+   against reality: CMS supplemental Table 13 shows median prevailing offers at
+   169%-522% of QPA, so both thresholds fire on ordinary outcomes and the flag
+   carries no information. Re-basing them is a product judgement.
+
+Not reflected yet: the Federal IDR Operations final rule (91 FR 33900,
+published 2026-06-04, **effective 2026-08-03**) and the 2025 Q3/Q4 IDR PUFs
+(published 2026-07-22).
