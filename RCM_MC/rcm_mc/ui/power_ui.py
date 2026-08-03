@@ -453,7 +453,8 @@ _STICKY_HEAD_CSS = (
     '<style>table[data-sortable] thead th{position:sticky;'
     'top:var(--ck-sticky-top,58px);z-index:5;'
     'background:var(--paper,#f2ede3);}'
-    '[class*="scroll"] table[data-sortable] thead th{top:0;}</style>'
+    '[class*="scroll"] table[data-sortable] thead th,'
+    '.ck-panel-body table[data-sortable] thead th{top:0;}</style>'
 )
 
 

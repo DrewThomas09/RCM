@@ -175,7 +175,9 @@ def _top_deals_table(deals: List[Any], label: str, corpus_p50: float) -> str:
         me_color = _eff_color(d.moic_efficiency, corpus_p50)
         rows.append(
             f"<tr>"
-            f"<td>{_html.escape(d.company_name[:32] or d.source_id)}</td>"
+            # Full name with CSS ellipsis instead of a hard [:32] chop.
+            f"<td><div style='max-width:340px;overflow:hidden;text-overflow:ellipsis;"
+            f"white-space:nowrap'>{_html.escape(d.company_name or d.source_id)}</div></td>"
             f"<td>{_html.escape(d.sector[:24])}</td>"
             f"<td class='r mn'>{d.year}</td>"
             f"<td class='r mn'>{f'{d.ev_ebitda:.1f}×' if d.ev_ebitda else '—'}</td>"

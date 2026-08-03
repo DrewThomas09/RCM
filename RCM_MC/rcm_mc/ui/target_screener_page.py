@@ -26,6 +26,16 @@ from functools import lru_cache
 from typing import Dict, List, Optional
 from urllib.parse import quote as _uq
 
+# Provider-name link inside result rows — inherits the cell's ink/weight so
+# the table stays editorial (no sea of blue links across 150 rows); hover and
+# keyboard focus reveal that the name is the drill-in. Shared by the main
+# ranked table and the just-missed scan.
+_TS_NAME_CSS = (
+    '.ts-name{color:inherit;text-decoration:none;}'
+    '.ts-name:hover{color:var(--sc-teal-ink,#155752);text-decoration:underline;}'
+    '.ts-name:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}'
+)
+
 # ── Six workbench screens (the view= states) ─────────────────────────────
 # group: "states" (01-03 workbench states) | "linked" (04-06 linked screens).
 _VIEWS = [
@@ -1535,7 +1545,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         trs.append(
             f'<tr data-ts-search="{_h.escape(search_blob, quote=True)}" '
             'style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
+            # The provider name — the row's largest, most obvious click
+            # target — links to the same X-Ray destination as the primary
+            # action chip (matching /portfolio and /predictive-screener,
+            # where the name is the drill-in), so a partner scanning 150
+            # rows never has to aim at the 11px chip.
+            f'<td style="padding:5px 8px;font-weight:600;">'
+            f'<a class="ts-name" href="{xray}">{_h.escape(r["name"])}</a>'
             f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
             f'<td style="padding:5px 8px;">{loc}</td>'
             f'{own_td}{size_td}{q_td}{src_td}'
@@ -1585,6 +1601,7 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         # full fill, so 150 rows of buttons don\'t shout).
         '.ts-act-primary{background:var(--sc-teal-soft,#d4e4e2);'
         'border-color:var(--sc-teal,#155752);color:var(--sc-teal-ink,#155752);font-weight:600;}'
+        + _TS_NAME_CSS +
         '</style>'
     )
     # Wave-5: top-N quick-toggle (10 / 25 / 50 / 100 / 150). Each chip
@@ -2640,9 +2657,13 @@ def _screen_missed(qs, ck) -> str:
     def _row_html(r, bits):
         ccn = _h.escape(r["ccn"])
         cmp_href = f'/target-screener?view=compare&compare={ccn}'
+        xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
         return (
             '<tr style="border-bottom:1px solid var(--sc-rule,#e4ddca);">'
-            f'<td style="padding:5px 8px;font-weight:600;">{_h.escape(r["name"])}'
+            # Name links to the row's X-Ray — same convention as the main
+            # ranked table, so the click target isn't just the small link.
+            f'<td style="padding:5px 8px;font-weight:600;">'
+            f'<a class="ts-name" href="{xray}">{_h.escape(r["name"])}</a>'
             f'<span style="font-family:var(--sc-mono);font-size:9px;color:var(--sc-text-faint,#8b94a0);"> · {ccn}</span></td>'
             f'<td style="padding:5px 8px;">{_h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")}</td>'
             f'<td style="padding:5px 8px;color:var(--sc-warning,#b8732a);">{_h.escape("; ".join(bits))}</td>'
@@ -2653,7 +2674,9 @@ def _screen_missed(qs, ck) -> str:
 
     jm = "".join(_row_html(r, bits) for _, r, bits in just_missed[:50])
     md = "".join(_row_html(r, bits) for r, bits in missing_data[:30])
-    out = [form]
+    # This view renders without the main table's scoped <style>, so the
+    # name-link treatment ships with it.
+    out = [f'<style>{_TS_NAME_CSS}</style>', form]
     out.append(f'<p class="ck-section-body" style="margin:6px 0;"><strong>{len(just_missed)}</strong> '
                f'{vinfo["label"]} providers <em>just missed</em> by exactly one criterion'
                + (f' · {" · ".join(relax_links)}' if relax_links else "") + '.</p>')

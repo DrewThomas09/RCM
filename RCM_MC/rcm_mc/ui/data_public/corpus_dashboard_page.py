@@ -44,8 +44,14 @@ def _moic_color(m: float) -> str:
 # Mini SVG charts for dashboard tiles
 # ---------------------------------------------------------------------------
 
-def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50) -> str:
-    """Mini MOIC histogram for dashboard tile."""
+def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50,
+                    fluid: bool = False) -> str:
+    """Mini MOIC histogram for dashboard tile.
+
+    ``fluid`` emits a viewBox + width:100% (preserveAspectRatio none, fixed
+    CSS height) so a full-width panel placement stretches the bars across
+    the available space instead of parking a 140px tile in a 1200px panel.
+    Safe here because the chart is rects only — no text to distort."""
     if not moics:
         return ""
     buckets = [0] * 8  # 0-1, 1-2, 2-3, 3-4, 4-5, 5-6, 6-8, 8+
@@ -64,6 +70,14 @@ def _mini_moic_hist(moics: List[float], width: int = 140, height: int = 50) -> s
         by = height - 4 - bh
         color = "#0a8a5f" if i >= 2 else ("#b8732a" if i == 1 else "#b5321e")
         elements.append(f'<rect x="{bx}" y="{by}" width="{max(1,bar_w-1)}" height="{bh}" fill="{color}" opacity="0.8"/>')
+    if fluid:
+        return (
+            f'<svg viewBox="0 0 {width} {height}" width="100%" '
+            f'preserveAspectRatio="none" style="display:block;height:{height}px" '
+            f'xmlns="http://www.w3.org/2000/svg">'
+            f'{"".join(elements)}'
+            f'</svg>'
+        )
     return (
         f'<svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg">'
         f'{"".join(elements)}'
@@ -317,21 +331,24 @@ def render_corpus_dashboard(universe: str = "all") -> str:
 
     # MOIC distribution mini panel (guarded for a possibly-empty universe)
     if moics:
-        moic_hist_svg = _mini_moic_hist(moics, width=300, height=70)
+        # Full-width panel: fluid histogram fills the left rail instead of
+        # parking a 300px tile in a 1200px panel; text at/above the ~10px
+        # readable floor.
+        moic_hist_svg = _mini_moic_hist(moics, width=760, height=90, fluid=True)
         _ge2 = sum(1 for m in moics if m >= 2)
         moic_panel = f"""
 <div class="ck-panel" style="grid-column:span 2;">
   <div class="ck-panel-title">MOIC Distribution — {len(moics):,} deals</div>
-  <div style="padding:12px 16px;display:flex;align-items:flex-end;gap:24px;">
-    {moic_hist_svg}
-    <table style="font-size:9.5px;line-height:2.0;">
+  <div style="padding:12px 16px;display:grid;grid-template-columns:1fr auto 200px;align-items:end;gap:24px;">
+    <div style="min-width:0;">{moic_hist_svg}</div>
+    <table style="font-size:11px;line-height:1.9;">
       <tr><td class="dim">P10</td><td class="mono" style="padding-left:12px;">{_pct(moics,10):.2f}x</td></tr>
       <tr><td class="dim">P25</td><td class="mono" style="padding-left:12px;">{_pct(moics,25):.2f}x</td></tr>
       <tr><td class="dim">P50</td><td class="mono" style="padding-left:12px;color:{_moic_color(moic_p50)}">{moic_p50:.2f}x</td></tr>
       <tr><td class="dim">P75</td><td class="mono" style="padding-left:12px;">{_pct(moics,75):.2f}x</td></tr>
       <tr><td class="dim">P90</td><td class="mono" style="padding-left:12px;">{_pct(moics,90):.2f}x</td></tr>
     </table>
-    <div style="font-size:9px;color:#465366;max-width:180px;line-height:1.6;">
+    <div style="font-size:10px;color:#465366;line-height:1.6;">
       Bars: 0–1 (red) · 1–2 (amber) · 2+ (green)<br>
       {_ge2}/{len(moics)} deals achieved ≥2× ({100*_ge2/len(moics):.0f}%)
     </div>

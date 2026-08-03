@@ -123,8 +123,10 @@ def data_required_panel(
     border = P["border"]; tp = P["text"]; td = P["text_dim"]
     fa = P.get("text_faint", td); ac = P["accent"]
     rows = "".join(
+        # width:1% shrinks the field column to its content so descriptions
+        # start right after the names instead of at the table's midpoint.
         f'<tr><td style="padding:3px 10px;font-family:JetBrains Mono,monospace;'
-        f'font-size:11px;color:{tp};white-space:nowrap">{_html.escape(str(f))}</td>'
+        f'font-size:11px;color:{tp};white-space:nowrap;width:1%">{_html.escape(str(f))}</td>'
         f'<td style="padding:3px 10px;font-size:11px;color:{td}">{_html.escape(str(d))}</td></tr>'
         for f, d in needed
     )

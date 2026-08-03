@@ -168,9 +168,11 @@ def _quality_kpi_grid(corpus: List[Dict]) -> str:
     avg_completeness = sum(completeness_scores) / len(completeness_scores) * 100 if completeness_scores else 0
 
     kpis = [
-        ("TOTAL DEALS",    str(n),                       P["text"]),
-        ("SECTORS",        str(sectors),                 P["text"]),
-        ("VINTAGE YEARS",  str(years),                   P["text"]),
+        # House convention: integer counts carry thousands separators so the
+        # KPI matches the "2,159 DEALS" header meta line above it.
+        ("TOTAL DEALS",    f"{n:,}",                     P["text"]),
+        ("SECTORS",        f"{sectors:,}",               P["text"]),
+        ("VINTAGE YEARS",  f"{years:,}",                 P["text"]),
         ("MOIC COVERAGE",  f"{has_moic/n*100:.0f}%",     P["positive"] if has_moic/n >= 0.7 else P["warning"]),
         ("IRR COVERAGE",   f"{has_irr/n*100:.0f}%",      P["positive"] if has_irr/n >= 0.7 else P["warning"]),
         ("PAYER COVERAGE", f"{has_payer/n*100:.0f}%",    P["positive"] if has_payer/n >= 0.7 else P["warning"]),

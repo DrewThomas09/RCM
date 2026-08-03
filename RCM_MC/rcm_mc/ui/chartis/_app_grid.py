@@ -117,6 +117,17 @@ APP_GRID_CSS = """
 .cc-body-scroll{overflow:auto;}
 .cc-body-scroll::-webkit-scrollbar{width:7px;}
 .cc-body-scroll::-webkit-scrollbar-thumb{background:var(--cc-rule);border-radius:4px;}
+/* Embedded pair blocks (viz left / data table right) are laid out for the
+   full-width flat /app. Inside a half-ish-width dossier card the 1.4fr/1fr
+   split starves both columns — one-word-per-line alert text, clipped table
+   headings — so stack the viz above its data table instead. */
+.cc-6x2 .pair,.cc-5x3 .pair,.cc-7x3 .pair{grid-template-columns:1fr;}
+.cc-6x2 .pair>.viz,.cc-5x3 .pair>.viz,.cc-7x3 .pair>.viz{
+  border-right:0;border-bottom:1px solid var(--cc-rule);}
+/* .pair .data-h is flex space-between with no gap: when a card is narrow
+   the section label and the mono source tag collide ("ACTIVE ALERTSalerts").
+   Scoped here; the global chartis.css rule covers non-cc surfaces. */
+.cc-page .pair .data-h{gap:12px;flex-wrap:wrap;}
 /* KPI */
 .cc-kpi{font-family:var(--cc-serif);font-size:36px;color:var(--cc-ink);line-height:1;}
 /* Hero numeral sized for a single-row card — 96px forced the old 2-row
@@ -251,15 +262,26 @@ def _page_top(crumb_slug: str, *, section_label: str = "PORTFOLIO & DILIGENCE",
 def _funnel_card(rollup: Dict[str, Any], idx: int) -> str:
     """Pipeline funnel from real stage counts (0-bars when empty)."""
     funnel = (rollup or {}).get("stage_funnel") or {}
+    # Full DEAL_STAGES order — 'hold' included: the seeded portfolio lives
+    # almost entirely in hold, so omitting it rendered an all-zeros funnel
+    # that contradicted the morning brief on the same page.
     rows = [("Sourced", "sourced"), ("IOI", "ioi"), ("LOI", "loi"),
-            ("SPA", "spa"), ("Closed", "closed"), ("Exit", "exit")]
+            ("SPA", "spa"), ("Closed", "closed"), ("Hold", "hold"),
+            ("Exit", "exit")]
     counts = {k: int(funnel.get(k, 0)) for _, k in rows}
     mx = max(counts.values()) if counts else 0
+    if not mx:
+        # One honest empty state beats seven 0-width bars.
+        body = ('<p class="cc-empty-row">No pipeline activity yet '
+                '<span class="cc-empty-sub">&middot; Add a deal to populate'
+                '</span></p>')
+        return _card(tag="Flow", color="green", title="Pipeline funnel",
+                     em="funnel", body=body, span="cc-5x3", idx=idx)
     bars = ""
     for label, key in rows:
         n = counts[key]
         pct = int(100 * n / mx) if mx else 0
-        closing = key in ("closed", "exit")
+        closing = key in ("closed", "hold", "exit")
         bars += (
             '<div class="cc-funnel-row">'
             f'<span class="cc-funnel-lbl">{_esc(label)}</span>'
