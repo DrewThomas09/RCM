@@ -66,6 +66,22 @@ SUPERSEDED = {
     "85-90%": "pre-2026 guess at the NE municipal/volunteer NPI share; the "
               "vendored NPPES sweep says 82% (328/400) and had said so all "
               "along in a sibling module",
+    "69.4%": "GADCS Y1-2 labor share of aggregate cost (superseded by 70.7%, "
+             "Y1-Y4 Table 3.1). Both figures read off their own CMS PDF: the "
+             "share ROSE across vintages, so two modules claiming it was "
+             "'unchanged' were wrong in the other direction",
+}
+
+# Figures that are correct but whose UNIT or PERIOD is easy to misstate.
+# Each entry is (token, the mistake to guard against). These are checked the
+# same way as SUPERSEDED — the token may only appear with framing that makes
+# its basis explicit.
+PERIOD_HAZARDS = {
+    # 655,442 ED transfers with a critical procedure is a 2018-2022 FIVE-YEAR
+    # cumulative weighted estimate. ift_demand annualized the DENOMINATOR
+    # (9,867,701 / 5) but rendered this numerator raw into a column headed
+    # "Value / yr", overstating the CCT-relevant slice ~5x.
+    "655,442": "five-year cumulative (2018-2022), not annual — ~131,088/yr",
 }
 
 # Phrases that mark a superseded figure as history rather than an assertion.
@@ -146,6 +162,66 @@ class CurrentFiguresAgreeAcrossModules(unittest.TestCase):
                     "cited anywhere -- a figure without a fetchable source "
                     "is exactly what this program exists to eliminate.",
                 )
+
+
+class CumulativeFiguresAreNotPresentedAsAnnual(unittest.TestCase):
+    """A right number under the wrong period is still a wrong number.
+
+    ift_demand divided the NEDS ED-transfer DENOMINATOR by five to annualize
+    it and then rendered the critical-procedure NUMERATOR raw, three lines
+    later, into a table column headed "Value / yr". Same abstract, same study
+    period, one annualized and one not — a ~5x overstatement of the
+    CCT-relevant slice sitting next to correctly-annualized peers.
+    """
+
+    _PERIOD_MARKERS = (
+        "cumulative", "five-year", "5-year", "2018-2022", "across",
+        "over the", "study period", "/yr", "per year", "annualiz",
+    )
+
+    def test_cumulative_tokens_carry_their_period(self):
+        offenders = []
+        for path in sorted(_MR.rglob("*.py")):
+            lines = path.read_text(encoding="utf-8").splitlines()
+            for idx, line in enumerate(lines):
+                for token, why in PERIOD_HAZARDS.items():
+                    if token not in line:
+                        continue
+                    # 5 lines of lookback, not 3: an Evidence(...) record
+                    # puts its period-qualified value line four lines above
+                    # the verbatim source quote, and that record is correctly
+                    # labelled — flagging it would be a false positive.
+                    window = " ".join(
+                        lines[max(0, idx - 5): idx + 4]).lower()
+                    if any(m in window for m in self._PERIOD_MARKERS):
+                        continue
+                    offenders.append(
+                        f"{path.relative_to(_MR.parent.parent)}:{idx + 1} "
+                        f"prints {token!r} with no period qualifier — {why}\n"
+                        f"    {line.strip()[:110]}"
+                    )
+        self.assertEqual(
+            [], offenders,
+            "Cumulative figure(s) rendered without stating their period:\n"
+            + "\n".join(offenders),
+        )
+
+    def test_neds_numerator_and_denominator_share_a_period(self):
+        from rcm_mc.market_reports import ift_demand as d
+        # Both must be per-year, so their ratio reproduces the published
+        # 6.6% share. If someone re-raws the numerator this blows up.
+        share = 100.0 * d._NEDS_CRITICAL / (d._NEDS_ED_TRANSFERS_M * 1e6)
+        self.assertAlmostEqual(
+            6.6, share, delta=0.15,
+            msg=f"NEDS critical share computes to {share:.1f}% against the "
+                "annualized transfer base; the published figure is 6.6%. "
+                "One of the two is on the wrong period.",
+        )
+        self.assertEqual(d._NEDS_CRITICAL_TOTAL, 655_442)
+        self.assertEqual(
+            d._NEDS_CRITICAL,
+            round(d._NEDS_CRITICAL_TOTAL / d._NEDS_YEARS),
+        )
 
 
 class ClaimsMatchTheVendoredArtifact(unittest.TestCase):

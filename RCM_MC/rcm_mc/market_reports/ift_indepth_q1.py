@@ -9,8 +9,9 @@ GADCS vintage: the cost/revenue-per-transport figures were refreshed on
 2026-08-03 to the CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort
 analysis (posted 2025-12-09, data through 2025-05-15), which SUPERSEDES the
 Year 1-2 cohort report this module previously quoted ($2,673 / $3,127 /
-$1,788 mean cost, $1,147 mean revenue). The 70.7% labour share is unchanged
-between vintages (Year 1-Year 4 appendix, Table 3.1).
+$1,788 mean cost, $1,147 mean revenue). The labour share ROSE across the
+vintages — 69.4% in the Year 1-2 cohort, 70.7% in the Year 1-Year 4
+appendix (Table 3.1); both read off the respective CMS PDFs 2026-08-03.
 """
 from __future__ import annotations
 

@@ -935,7 +935,13 @@ def mmt_diligence() -> MmtDiligence:
             "relationship is required to hold the rural corridor.", "Competitive"),
         DiligenceItem(
             "Rate + payer-mix optimization",
-            "Commercial pays ~2-4× Medicare; the AIF floors reimbursement growth. "
+            # "~2-4×" narrowed 2026-08-03 to the measured figure. HCCI, verbatim:
+            # "In 2022, the ESI base rate price ($718) was 2.0 times the Medicare
+            # rate ($365)" — and 2.0x at the trip level holding miles constant.
+            # The top of the old band was ~2x the published multiple, which
+            # materially oversells a payer-mix lever.
+            "Commercial pays ~2.0× Medicare (HCCI 2022: ESI base $718 vs "
+            "Medicare $365); the AIF floors reimbursement growth. "
             "OON leverage + escalators on the routine discharge book are "
             "underpriced levers.", "Reimbursement"),
         DiligenceItem(
@@ -968,7 +974,8 @@ def mmt_diligence() -> MmtDiligence:
         DiligenceItem(
             "Reimbursement / AIF + labor inflation",
             "Ground-ambulance rates track the AIF (CPI-U − productivity); labor "
-            "(~69% of cost) inflation can outrun it, compressing an already-thin "
+            "(70.7% of cost, GADCS Y1-Y4 Table 3.1) inflation can outrun it, "
+            "compressing an already-thin "
             "margin.", "MEDIUM"),
     )
     questions = (
@@ -1152,8 +1159,8 @@ def mmt_swot() -> MmtSwot:
             "share metro by metro.",
             "Anchor-system vendor steering or insourcing (CHI could take high-acuity "
             "CCT in-house).",
-            "Reimbursement risk — AIF-capped rate growth vs labor inflation (~69% of "
-            "cost) squeezing an already-thin margin.",
+            "Reimbursement risk — AIF-capped rate growth vs labor inflation (70.7% "
+            "of cost, GADCS Y1-Y4) squeezing an already-thin margin.",
             "Single-hospital market fragility (Columbus) and any anchor-hospital "
             "ownership change (e.g. a system M&A) redirecting transfer volume.",
         ))

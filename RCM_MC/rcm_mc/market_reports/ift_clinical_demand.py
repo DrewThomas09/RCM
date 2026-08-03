@@ -704,7 +704,14 @@ def _registry() -> Tuple[Condition, ...]:
             ms_drg=("193-195 (pneumonia)", "190-192 (COPD)"),
             national_volume=NationalVolume(740700, 2018, "GOV · AHRQ HCUP SB#277 (2018 NIS)",
                                            "pneumonia inpatient stays (post-acute pool)",
-                                           "COPD ~700k+ stays/yr"),
+                                           # Corrected 2026-08-03: SB#277 Table 1
+                                           # rank 8 gives 569,600 COPD-and-
+                                           # bronchiectasis stays (2018 NIS), not
+                                           # "~700k+" — that band overlapped the
+                                           # 740,700 PNEUMONIA figure on the same
+                                           # row of this record.
+                                           "COPD and bronchiectasis 569,600 "
+                                           "stays (2018 NIS, SB#277 rank 8)"),
             growth=_growth("65-84 skew", _SKEW_RESP_RECOVERY),
         ),
         C(
@@ -746,7 +753,11 @@ def _registry() -> Tuple[Condition, ...]:
             destination_setting="Right-capability facility/service",
             icd10=(),  # condition-agnostic: routed by UB-04 point-of-origin (code 1), not a dx
             ms_drg=("whatever the admitting condition is (e.g. 291 HF, 690 kidney/UTI, 871 sepsis)",),
-            national_volume=NationalVolume(0, 2019, "FRAMEWORK · non-ED share of ~33,700,000 inpatient stays (AHRQ HCUP NIS 2019)",
+            # Vintage corrected 2026-08-03: 33.7M is NIS 2023 (33,718,585).
+            # NIS 2019 is 35,419,023. The figure was right and its year label
+            # was wrong — the COVID step-down moved the series, so the two are
+            # four years and ~1.7M apart.
+            national_volume=NationalVolume(0, 2023, "FRAMEWORK · non-ED share of 33,718,585 inpatient stays (AHRQ HCUP NIS 2023)",
                                            "direct-admit share (not separately counted)",
                                            "no clean national direct-admit count; each is a scheduled/urgent ground-IFT leg"),
             growth=_growth("acute-transfer blended cohort (~70% 65+)", _SKEW_ACUTE_BLEND),
