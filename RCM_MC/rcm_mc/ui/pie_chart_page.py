@@ -15,6 +15,13 @@ hexes), donut-with-centre-TOTAL as the default presentation
 and a skipped-rows warning so a typo'd value never vanishes silently.
 The SVG itself still comes from the shared ``presentable_pie`` —
 its white background is intentional (slide paste) and untouched.
+
+2026-08 provenance/a11y pass: the typed source footnote also renders
+page-side through ``ck_source_link`` (a named dataset becomes a link
+to its origin; anything else stays escaped plain text), the shares
+table gets a ``ck_empty_state`` instead of disappearing when no row
+parses, and the chart/table carry figure-caption + scope/caption
+semantics.
 """
 from __future__ import annotations
 
@@ -24,8 +31,9 @@ from typing import Any, Dict, List, Optional
 
 from ._chartis_kit import (
     chartis_shell, ck_copy_share_link_button, ck_editorial_head,
-    ck_eyebrow, ck_fmt_number, ck_fmt_percent, ck_page_actions,
-    ck_provenance_tooltip, ck_source_purpose,
+    ck_empty_state, ck_eyebrow, ck_fmt_number, ck_fmt_percent,
+    ck_page_actions, ck_provenance_tooltip, ck_source_link,
+    ck_source_purpose,
 )
 from .cdd_chart_kit import (
     presentable_pie, PALETTES, SIZE_PRESETS, chart_export_toolbar,
@@ -95,6 +103,31 @@ def _num(v: float) -> str:
     fractional values at 2dp — never 1 or 3."""
     return ck_fmt_number(v) if v == int(v) else \
         ck_fmt_number(v, precision=2)
+
+
+# A partner types the source into the "Source / footnote" box, and the
+# shared renderer paints it into the SVG as flat text — it has to, the
+# export is a slide plate. So the page renders a SECOND, clickable copy
+# under the chart: provenance a partner can actually follow back to the
+# dataset. Strip a leading "Source:" so the label handed to the registry
+# is the dataset name itself ("Source: CMS HCRIS" → "CMS HCRIS").
+_SOURCE_PREFIX_RE = re.compile(r"^\s*sources?\s*[:–—-]\s*", re.I)
+
+
+def _source_provenance(footnote: str) -> str:
+    """Clickable provenance line for the typed source label, or "".
+
+    ``ck_source_link`` resolves a known dataset label (CMS HCRIS, MedPAC,
+    NPPES, OEWS/BLS, the CMS Compare families …) to its public origin and
+    falls back to escaped plain text for anything else — so an arbitrary
+    partner string is always safe to hand it, and never renders as a
+    broken or (worse) wrong link."""
+    label = _SOURCE_PREFIX_RE.sub("", footnote).strip()
+    if not label:
+        return ""
+    return ('<p class="pc-source">'
+            '<span class="pc-source-tag">Source</span>'
+            + ck_source_link(label) + '</p>')
 
 
 # Page-scoped CSS — every colour is a kit var with its canonical
@@ -171,10 +204,22 @@ _PC_CSS = """
 .pc-card-note{font:500 10px/1.4 var(--sc-mono,monospace);
   letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted,#7a8595);}
+.pc-figure{margin:0;}
 .pc-stage{text-align:center;}
 .pc-caption{font:500 10px/1.6 var(--sc-mono,monospace);
   letter-spacing:.12em;text-transform:uppercase;
   color:var(--muted,#7a8595);text-align:center;margin:12px 0 0;}
+.pc-source{font:400 12px/1.6 var(--sc-sans,Inter),sans-serif;
+  color:var(--muted,#7a8595);text-align:center;margin:8px 0 0;}
+.pc-source-tag{font:500 10px/1 var(--sc-mono,monospace);
+  letter-spacing:.12em;text-transform:uppercase;margin-right:8px;}
+.pc-source a{color:var(--green-deep,#154e36);
+  text-decoration:underline;text-underline-offset:2px;}
+.pc-hint{font:400 11px/1.5 var(--sc-sans,Inter),sans-serif;
+  color:var(--muted,#7a8595);margin:0;}
+.pc-sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+.pc-wrap .ck-empty-state{margin-top:26px;}
 .pc-shares table{width:100%;border-collapse:collapse;}
 .pc-shares th{font:500 10px/1 var(--sc-mono,monospace);
   letter-spacing:.12em;text-transform:uppercase;text-align:left;
@@ -306,7 +351,11 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
     slices_col = (
         '<section>'
         + ck_eyebrow("SLICES — LABEL · VALUE · COLOUR")
-        + '<div class="pc-cols-head"><span></span><span>Label</span>'
+        # aria-hidden: these are the visual column captions for a grid of
+        # inputs that each already carry "Label for slice 1" etc., so a
+        # screen reader would otherwise hear the headings twice.
+        + '<div class="pc-cols-head" aria-hidden="true"><span></span>'
+          '<span>Label</span>'
           '<span class="r">Value</span><span>Colour</span></div>'
         + row_html
         + '<p class="pc-help">Leave a row blank to drop the slice. '
@@ -328,8 +377,13 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'value="{html.escape(subtitle)}"></label>'
         '<label class="pc-field">Source / footnote'
         f'<input type="text" class="pc-input" name="footnote" '
-        f'value="{html.escape(footnote)}" placeholder="Source: …">'
-        '</label></fieldset>'
+        f'value="{html.escape(footnote)}" placeholder="Source: …" '
+        f'aria-describedby="pcSrcHint">'
+        '</label>'
+        '<p class="pc-hint" id="pcSrcHint">Name the dataset (CMS HCRIS, '
+        'MedPAC, NPPES, OEWS/BLS…) — the footnote prints on the chart, '
+        'and a known source also links to its origin below it.</p>'
+        '</fieldset>'
         # Labels & units.
         '<fieldset class="pc-group"><legend>Labels &amp; units</legend>'
         '<div class="pc-duo">'
@@ -361,7 +415,8 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
         '</div></div>')
 
     form = (
-        '<form method="get" action="/pie-chart" class="pc-form">'
+        '<form method="get" action="/pie-chart" class="pc-form" '
+        'aria-label="Pie chart configuration">'
         f'<div class="pc-grid">{slices_col}{opts_col}</div></form>')
 
     # ── Partial-failure feedback: a typo'd or negative value silently
@@ -378,21 +433,27 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
     caption = (f"LIVE PREVIEW · {shape_word} · "
                f"{n} SLICE{'S' if n != 1 else ''} · EXPORTS REPRODUCE "
                f"THIS FRAME ON A WHITE SLIDE PLATE")
+    # <figure>/<figcaption> so the caption is programmatically tied to
+    # the chart it describes (the SVG carries its own role="img" +
+    # aria-label from the shared renderer).
     preview = (
         '<section class="pc-card">'
         '<div class="pc-card-head">'
         + ck_eyebrow("Preview")
         + '<span class="pc-card-note">EXPORTS: SVG · PNG 3× — WHITE '
           'SLIDE BACKGROUND</span></div>'
+        + '<figure class="pc-figure">'
         + f'<div class="pc-stage"><div id="pieOut">{svg}</div>'
         + chart_export_toolbar("pieOut", "pie-chart")
         + '</div>'
-        + f'<p class="pc-caption">{caption}</p>'
+        + f'<figcaption class="pc-caption">{caption}</figcaption>'
+        + '</figure>'
+        + _source_provenance(footnote)
         + '</section>')
 
     # ── Computed shares — the page-side numeric readout at house
-    # discipline (1dp percents, mono tabular-nums, emphasized TOTAL).
-    shares_html = ""
+    # discipline (1dp percents, mono tabular-nums, emphasized TOTAL),
+    # or an empty state when nothing parsed.
     if clean:
         esc_suffix = html.escape(suffix)
         body_rows = ""
@@ -404,7 +465,10 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
             label = s["label"] or f"Slice {i + 1}"
             body_rows += (
                 f'<tr><td class="pc-td-n">{i + 1}</td>'
-                f'<td><span class="pc-swatch" '
+                # The swatch repeats the colour already drawn in the
+                # chart — decorative, so AT skips it and hears the label.
+                f'<td title="{html.escape(label, quote=True)}">'
+                f'<span class="pc-swatch" aria-hidden="true" '
                 f'style="background:{color};"></span>'
                 f'{html.escape(label)}</td>'
                 f'<td class="r">{_num(s["value"])}{esc_suffix}</td>'
@@ -422,14 +486,37 @@ def render_pie_chart_page(qs: "Dict[str, Any] | None" = None) -> str:
             + ck_eyebrow("Computed shares")
             + '<span class="pc-card-note">SHARES AT 1DP · ROWS MATCH '
               'THE DRAWN CHART</span></div>'
-            '<table><thead><tr><th class="r">#</th><th>Slice</th>'
-            '<th class="r">Value</th><th class="r">Share</th></tr>'
+            '<table>'
+            '<caption class="pc-sr-only">Each drawn slice with its '
+            'value and its share of the total.</caption>'
+            '<thead><tr>'
+            '<th class="r" scope="col"><span aria-hidden="true">#</span>'
+            '<span class="pc-sr-only">Row</span></th>'
+            '<th scope="col">Slice</th>'
+            '<th class="r" scope="col">Value</th>'
+            '<th class="r" scope="col">Share</th></tr>'
             '</thead><tbody>'
             + body_rows
             + f'<tr class="pc-total"><td class="pc-td-n"></td>'
               f'<td>TOTAL</td><td class="r">{total_value}</td>'
               f'<td class="r">{ck_fmt_percent(1.0)}</td></tr>'
             + '</tbody></table></section>')
+    else:
+        # Every row blank or non-numeric: the shares card used to vanish
+        # outright, leaving a silent gap under a chart that only says
+        # "enter slice values". Say what the table is waiting for, and
+        # offer the way back to a populated page.
+        shares_html = ck_empty_state(
+            "No shares to compute yet.",
+            body=("Give at least one row a positive number in Value, "
+                  "then Render chart. Blank, non-numeric, zero and "
+                  "negative rows are skipped by both the chart and "
+                  "this table."),
+            eyebrow="COMPUTED SHARES",
+            cta_label="Load the example slices",
+            cta_href="/pie-chart",
+            icon="◔",
+        )
 
     body = (
         head

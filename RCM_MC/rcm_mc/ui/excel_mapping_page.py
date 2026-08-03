@@ -39,7 +39,7 @@ from ._chartis_kit import (
     chartis_shell, ck_copy_share_link_button, ck_editorial_head,
     ck_empty_state, ck_eyebrow, ck_fmt_number, ck_kpi_block,
     ck_page_actions, ck_provenance_tooltip,
-    ck_section_header, ck_signal_badge,
+    ck_section_header, ck_signal_badge, ck_source_link,
 )
 from ._us_geo_paths import US_STATE_PATHS
 from .cdd_chart_kit import chart_export_toolbar
@@ -433,11 +433,13 @@ def _map_svg(cfg: Dict[str, Any]) -> str:
 
 def _stats(cfg: Dict[str, Any]) -> str:
     """Summary KPI strip — ``ck_kpi_block`` row replacing the legacy
-    hand-rolled mini-tiles. Mean and median are BOTH formatted to 1dp
-    (they used to mix ``round(x, 1)`` with raw ``%g``, so '50.5' could
-    sit beside '50'). ``ck_kpi_block`` does not escape value/sub, so
-    the two user-derived state codes pass through ``html.escape``
-    here, upstream."""
+    hand-rolled mini-tiles. EVERY percentage in the strip is formatted
+    to 1dp (house rule: percentages never render with 0 or 2
+    decimals). Mean and median were fixed first; highest/lowest kept
+    printing raw ``%g`` ('TX · 61%' beside 'Mean 50.5%'), so they now
+    go through the same ``ck_fmt_number(precision=1)`` path.
+    ``ck_kpi_block`` does not escape value/sub, so the two user-derived
+    state codes pass through ``html.escape`` here, upstream."""
     vals = {k: v for k, v in cfg["values"].items() if v is not None}
     if not vals:
         return ""
@@ -470,17 +472,36 @@ def _stats(cfg: Dict[str, Any]) -> str:
             "middle values when the count is even)."),
         inject_css=False,
     )
+    # Highest / lowest read off the SAME supplied values as the map, so
+    # they carry a provenance hover too — the strip should not have two
+    # explained numbers and two bare ones.
+    origin = ("supplied values (your paste, or the illustrative "
+              "defaults when nothing is pasted)")
+    hi_v = ck_provenance_tooltip(
+        "Highest",
+        f"{html.escape(hi_code)} · "
+        f"{ck_fmt_number(vals[hi_code], precision=1)}%",
+        explainer=(
+            f"Largest of the {origin}. Ties resolve to whichever state "
+            "appears first in the input."),
+        inject_css=False,
+    )
+    lo_v = ck_provenance_tooltip(
+        "Lowest",
+        f"{html.escape(lo_code)} · "
+        f"{ck_fmt_number(vals[lo_code], precision=1)}%",
+        explainer=(
+            f"Smallest of the {origin}. States left out of the input "
+            "are not counted — they render as neutral grey 'no data'."),
+        inject_css=False,
+    )
     return (
         '<div class="ck-kpi-grid em-kpis">'
         + ck_kpi_block("States", coverage, "with a supplied value")
         + ck_kpi_block(
-            "Highest",
-            f"{html.escape(hi_code)} · {_fmt(vals[hi_code])}%",
-            html.escape(STATE_NAMES.get(hi_code, "")))
+            "Highest", hi_v, html.escape(STATE_NAMES.get(hi_code, "")))
         + ck_kpi_block(
-            "Lowest",
-            f"{html.escape(lo_code)} · {_fmt(vals[lo_code])}%",
-            html.escape(STATE_NAMES.get(lo_code, "")))
+            "Lowest", lo_v, html.escape(STATE_NAMES.get(lo_code, "")))
         + ck_kpi_block("Mean", mean_v, "unweighted")
         + ck_kpi_block("Median", median_v, "50th percentile")
         + '</div>')
@@ -667,6 +688,22 @@ def _map_css_js() -> str:
         '.em-table td{padding:4px 8px;'
         'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
         'color:var(--ink,#16263a);}'
+        # The state cell is a row header for AT (<th scope="row">) but
+        # must keep reading as a body cell, so it inherits td metrics
+        # rather than the browser's bold/centred th default.
+        '.em-table tbody th.em-th-state{padding:4px 8px;font-weight:400;'
+        'text-align:left;position:static;background:none;'
+        'border-bottom:1px solid var(--sc-rule,#d6cfc0);'
+        'color:var(--ink,#16263a);'
+        'font-family:var(--sc-sans,Inter,sans-serif);font-size:12.5px;'
+        'letter-spacing:normal;text-transform:none;}'
+        # Caption carries the table's purpose for screen readers; the
+        # section header already states it visually.
+        '.em-sr-only{position:absolute;width:1px;height:1px;padding:0;'
+        'margin:-1px;overflow:hidden;clip:rect(0 0 0 0);'
+        'white-space:nowrap;border:0;}'
+        '.em-tablewrap:focus-visible{outline:2px solid '
+        'var(--green-deep,#154e36);outline-offset:2px;}'
         '.em-table tbody tr:nth-child(even){'
         'background:var(--sc-bone,#ece5d6);}'
         '.em-table tbody tr:hover{background:var(--bg,#efeadd);}'
@@ -750,7 +787,20 @@ def _data_table(cfg: Dict[str, Any]) -> str:
     gradient swatch plus a proportional micro-bar keyed to the SAME
     gradient, so the column scans without reading every number. The
     two per-row ``style=`` attributes carry the computed gradient
-    colour / bar width; everything static lives in ``_map_css_js``."""
+    colour / bar width; everything static lives in ``_map_css_js``.
+
+    Values print at 1dp (house rule for percentages — the column is
+    headed "Value (%)"), which also settles the decimal point so a
+    ``50.5`` and a ``50`` stop reading ragged in the same tabular-nums
+    column. The in-SVG labels stay on ``%g``: that markup is exported
+    as a self-contained artefact and is shared verbatim with four other
+    pages' ``_map_svg`` embeds.
+
+    A11y: the state cell is the row header (``<th scope="row">``) so a
+    screen reader announces "Texas — Value 61.0" instead of three
+    unlabelled cells; the swatch and micro-bar are decorative
+    restatements of the number and are hidden from AT; the value column
+    carries ``aria-sort`` because the table ships pre-sorted."""
     lo, hi = cfg["lo"], cfg["hi"]
     span = (hi - lo) or 1.0
     rows = ""
@@ -763,23 +813,32 @@ def _data_table(cfg: Dict[str, Any]) -> str:
         if v is None:
             val_txt, pct = "—", 0.0
         else:
-            val_txt = _fmt(v)
+            val_txt = ck_fmt_number(v, precision=1)
             pct = max(2.0, min(100.0, (v - lo) / span * 100.0))
+        name = STATE_NAMES.get(code, "")
         rows += (
             f'<tr><td class="num em-td-rank">{rank}</td>'
-            f'<td><span class="em-swatch" style="background:{sw};">'
-            f'</span>{html.escape(code)} <span class="em-state-name">'
-            f'{html.escape(STATE_NAMES.get(code, ""))}</span></td>'
+            f'<th scope="row" class="em-th-state">'
+            f'<span class="em-swatch" aria-hidden="true" '
+            f'style="background:{sw};"></span>{html.escape(code)} '
+            f'<span class="em-state-name">{html.escape(name)}</span></th>'
             f'<td class="num em-td-val">{val_txt}'
-            f'<span class="em-bar"><span class="em-bar-fill" '
+            f'<span class="em-bar" aria-hidden="true"><span '
+            f'class="em-bar-fill" '
             f'style="width:{pct:.0f}%;background:{sw};"></span></span>'
             f'</td></tr>')
     return (
-        '<table class="em-table"><thead><tr>'
+        '<table class="em-table">'
+        '<caption class="em-sr-only">Every state in this render, ranked '
+        'by value from highest to lowest. Rank, state, and the value as '
+        'supplied (percent).</caption>'
+        '<thead><tr>'
         '<th class="num" scope="col" '
         'title="Rank — highest value first">Rank</th>'
         '<th scope="col">State</th>'
-        '<th class="num" scope="col">Value (%)</th>'
+        '<th class="num" scope="col" aria-sort="descending" '
+        'title="Value as supplied, percent — sorted highest first">'
+        'Value (%)</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>')
 
 
@@ -828,6 +887,19 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
     cfg["legend_suffix"] = "%"
     parse_html, zero_parsed = _parse_status(qs, cfg)
     n_vals = len(cfg["values"])
+    # The SVG is the page's whole argument, so its alt text has to carry
+    # the argument: what is mapped, over how many jurisdictions, on what
+    # scale. The generic _map_svg default ("US state choropleth
+    # (geographic)") told a screen-reader user nothing — the other
+    # embeds (infusion, MA penetration, J-code) already pass their own.
+    cfg["aria_label"] = (
+        "Choropleth of the United States"
+        + (f" — {cfg['title']}" if cfg["title"] else "")
+        + f". {n_vals} of {len(STATE_NAMES)} jurisdictions carry a value, "
+        f"shaded from {ck_fmt_number(cfg['lo'], precision=1)}% (low) to "
+        f"{ck_fmt_number(cfg['hi'], precision=1)}% (high); jurisdictions "
+        "without a value are neutral grey. Every value is also listed in "
+        "the values-by-state table below.")
     head = ck_editorial_head(
         "RESEARCH · STATE CHOROPLETH",
         "Excel Mapping",
@@ -869,22 +941,52 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
             '<label class="em-toggle">'
             '<input type="checkbox" id="emLabelsToggle" checked>'
             'Show labels</label>'
-            '<span id="emSel"></span>'
-            '<span class="em-hint">Hover a state for detail · click '
-            'to pin</span></div>'
+            # The pinned-state chip is written by JS; role=status +
+            # aria-live means a screen reader hears the pick instead of
+            # it changing silently off-screen.
+            '<span id="emSel" role="status" aria-live="polite"></span>'
+            # Keyboard parity is implemented (focus shows the readout,
+            # Enter/Space pins) but the hint used to describe the mouse
+            # path only, so nobody knew.
+            '<span class="em-hint">Hover or Tab to a state for detail · '
+            'click or press Enter to pin</span></div>'
             f'<div class="em-mapcard"><div id="mapOut">{_map_svg(cfg)}'
-            '<div id="emTip"></div></div>'
+            # The tooltip duplicates each path's aria-label/<title>;
+            # hiding it from AT stops the double read.
+            '<div id="emTip" aria-hidden="true"></div></div>'
             '<div class="em-chart-caption">US choropleth · Albers '
-            'projection · Census state boundaries · values as supplied'
-            '</div></div>'
+            'projection · '
+            + ck_source_link("Census cartographic boundaries")
+            + ' · values as supplied</div></div>'
             + chart_export_toolbar("mapOut", "state-map"))
         stats_block = _stats(cfg)
+        if n_vals:
+            # Scrollable panels need to be reachable and named: the
+            # wrapper scrolls 51 rows behind a sticky header, so it is a
+            # focusable labelled region rather than an anonymous div.
+            table_body = (
+                '<div class="em-tablewrap" tabindex="0" role="region" '
+                'aria-label="Values by state, scrollable table">'
+                + _data_table(cfg) + '</div>')
+        else:
+            # Reachable when the Python-side DEFAULT_STATE_VALUES dict is
+            # emptied (the documented "drive it from Python" path) — the
+            # table used to render as an empty bordered box.
+            table_body = ck_empty_state(
+                "No values to rank yet.",
+                body=("Paste a STATE VALUE column into the box above — "
+                      "or set DEFAULT_STATE_VALUES in "
+                      "excel_mapping_page.py — and every supplied "
+                      "jurisdiction lists here, highest first."),
+                eyebrow="NO VALUES SUPPLIED",
+                icon="▦",
+            )
         table_section = (
             '<section>'
             + ck_section_header(
                 "Every state, ranked",
                 eyebrow="VALUES BY STATE", count=n_vals)
-            + f'<div class="em-tablewrap">{_data_table(cfg)}</div>'
+            + table_body
             + '</section>')
     help_section = (
         '<section>'
@@ -900,8 +1002,10 @@ def render_excel_mapping_page(qs: "Dict[str, Any] | None" = None) -> str:
           'paste <code>STATE&nbsp;VALUE</code> rows from Excel. The '
           'gradient interpolates low → mid → high; each state prints '
           'its value in <em>black serif text</em> on the shape.</p>'
-          '<p><strong>Geography:</strong> real US '
-          'Census state boundaries (Albers projection, public domain). '
+          '<p><strong>Geography:</strong> real '
+        + ck_source_link("Census cartographic boundaries")
+        + ' (Albers projection, public domain — vendored, so the map '
+          'draws with no runtime network call). '
           'Alaska and Hawaii are bottom-left insets, Puerto Rico a '
           'bottom-right inset; the nine small Northeast jurisdictions '
           '(VT NH MA RI CT NJ DE MD DC) are labelled in the swatch '

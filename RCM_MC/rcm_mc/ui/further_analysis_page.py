@@ -32,6 +32,7 @@ from ._chartis_kit import (
     ck_panel,
     ck_provenance_tooltip,
     ck_section_header,
+    ck_source_link,
     ck_source_purpose,
 )
 from .cdd_chart_kit import (
@@ -91,10 +92,17 @@ _PAGE_CSS = """
 .fa-gallery-card.is-current .fa-gallery-cap{color:var(--green-deep,#154e36);font-weight:600;}
 .fa-gallery-card.is-current .fa-gallery-cap::after{content:" ✓";}
 .fa-provline{margin:-4px 0 12px;font-family:var(--sc-mono,monospace);font-size:10.5px;letter-spacing:.04em;color:var(--sc-text-dim,#465366);}
-.fa-tablewrap .ck-data-table-scroll{max-height:520px;overflow:auto;margin-top:0;}
+.fa-provline a{color:var(--sc-teal,#155752);}
+.fa-provline a:hover{color:var(--sc-navy,#0b2341);}
+/* The scroll box lives on OUR wrapper, not the kit's inner div, so it can
+   carry tabindex/role and be scrolled from the keyboard (a bare
+   overflow:auto div is unreachable without a pointer). Sticky headers keep
+   working — they now stick to .fa-tablewrap, the nearest scroll ancestor. */
+.fa-tablewrap{max-height:520px;overflow:auto;}
+.fa-tablewrap .ck-data-table-scroll{max-height:none;overflow:visible;margin-top:0;}
 .fa-tablewrap .ck-data-table thead th{position:sticky;top:0;z-index:1;background:var(--sc-bone,#ece5d6);}
 .fa-tablewrap .ck-data-table tbody tr:hover{background:var(--paper-hi,#fbf6e8);}
-.fa-empty-note{font-family:var(--sc-mono,monospace);font-size:10.5px;letter-spacing:.04em;color:var(--sc-text-faint,#7a8699);}
+.fa-tablewrap:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:2px;}
 .fa-foot{font-family:var(--sc-sans,sans-serif);font-size:11.5px;color:var(--sc-text-dim,#465366);margin-top:14px;line-height:1.6;max-width:74ch;}
 .fa-foot a{font-family:var(--sc-mono,monospace);font-size:10.5px;color:var(--sc-teal,#155752);}
 .fa-foot a:hover{color:var(--sc-navy,#0b2341);}
@@ -209,9 +217,27 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
     meta = spec["meta"]
     has_rows = bool(table["rows"])
 
+    # "Back to this dataset's default view" — url-encoded rather than
+    # interpolated raw, so a future dataset id with a reserved character
+    # can't split the query string.
+    reset_href = "/further-analysis?" + urllib.parse.urlencode(
+        {"dataset": dataset.id})
+
     chart_type = spec["chart_type"]
     if chart_type not in dict(CHART_TYPES):
         chart_type = "bar"
+    chart_label = dict(CHART_TYPES).get(chart_type, chart_type)
+
+    # The sort key the ENGINE actually used. ``shape_table`` falls back to
+    # the first *selected* measure when the requested sort column isn't one
+    # of them — and the sort <select> offers every measure, so the partner
+    # can easily ask for one they haven't plotted. Recomputing the fallback
+    # here keeps the provenance line and the column marker honest instead of
+    # claiming a sort that never happened.
+    eff_sort = (spec["sort_key"]
+                if spec["sort_key"] == "_label"
+                or spec["sort_key"] in spec["measures"]
+                else spec["measures"][0])
     palette = _qs1(qs, "palette", "Navy–Teal")
     if palette not in PALETTES:
         palette = "Navy–Teal"
@@ -405,15 +431,29 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
         f'{_toggle("values", "Show values", show_values)}'
         f'{_toggle("legend", "Legend", legend)}'
         f'<button type="submit" class="fa-btn">Render</button>'
-        f'<a href="/further-analysis?dataset={dataset.id}" class="fa-reset">'
+        f'<a href="{html.escape(reset_href, quote=True)}" class="fa-reset" '
+        f'title="Clear every filter and return to the default '
+        f'{html.escape(dataset.label, quote=True)} view">'
         f'Reset</a>'
         f'</div>'
         f'</form>')
 
     # ---- Chart panel / empty state --------------------------------------
     if has_rows:
+        # The SVG carries role="img" with the title as its accessible name,
+        # which says nothing about what is plotted. This adds the sentence a
+        # screen-reader user needs — dimension, measures, row count — and
+        # points at the table below, which is the accessible equivalent of
+        # the exhibit. Visually hidden (.sr-only ships in the shell sheet).
+        chart_desc = (
+            f'<p class="sr-only">{html.escape(chart_label)} chart. '
+            f'{html.escape(title)}. {html.escape(subtitle)}. '
+            f'Plots {meta["n_rows"]} {html.escape(meta["dim_label"].lower())} '
+            f'rows against {html.escape(m_labels)}. '
+            f'The same values are listed in the data table below.</p>')
         chart_block = ck_panel(
-            f'<div class="fa-canvas"><div id="faOut">{chart_svg}</div>'
+            f'<div class="fa-canvas">{chart_desc}'
+            f'<div id="faOut">{chart_svg}</div>'
             + chart_export_toolbar("faOut", "further-analysis-" + dataset.id)
             + '</div>',
             title="Rendered exhibit", code=chart_type)
@@ -430,7 +470,7 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
             eyebrow="DATA EXPLORER",
             icon="◌",
             cta_label="Reset to default view",
-            cta_href=f"/further-analysis?dataset={dataset.id}",
+            cta_href=reset_href,
             tone="neutral")
 
     # ---- Chart-type gallery (same query, other chart types) -------------
@@ -471,12 +511,19 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
                     if vals[ci] is not None]
         col_int_like.append(
             bool(col_vals) and all(float(v).is_integer() for v in col_vals))
-    headers = [{"label": table["headers"][0], "align": "left"}]
+    # Mark the column the rows are actually ordered by, and which way. The
+    # sort lives in a <select> far above the table, so without this the
+    # partner has to scroll back up to read the ordering off the form.
+    arrow = " ↑" if spec["ascending"] else " ↓"
+    headers = [{
+        "label": table["headers"][0] + (arrow if eff_sort == "_label" else ""),
+        "align": "left"}]
     for m in meta["measures"]:
         unit = _UNIT_TAG.get(m["fmt"], "")
-        headers.append({
-            "label": f'{m["label"]} ({unit})' if unit else m["label"],
-            "align": "right"})
+        lab = f'{m["label"]} ({unit})' if unit else m["label"]
+        if m["key"] == eff_sort:
+            lab += arrow
+        headers.append({"label": lab, "align": "right"})
     rows_html = ""
     for lbl, vals in table["rows"]:
         cells = ck_data_cell(html.escape(lbl))
@@ -489,10 +536,10 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
                 cells += ck_data_cell(disp, align="right", mono=True)
         rows_html += f"<tr>{cells}</tr>"
 
-    if spec["sort_key"] == "_label":
+    if eff_sort == "_label":
         sort_lab = f"{dataset.dim_label} (name)"
     else:
-        sort_m = dataset.measure(spec["sort_key"])
+        sort_m = dataset.measure(eff_sort)
         sort_lab = sort_m.label if sort_m else dataset.measures[0].label
     table_sec = (
         ck_section_header("The rows behind the chart",
@@ -507,20 +554,55 @@ def render_further_analysis_page(qs: dict[str, Any] | None = None) -> str:
                 f"{sort_lab} "
                 f"({'ascending' if spec['ascending'] else 'descending'}), "
                 f"top {spec['top_n']} kept. Source: {dataset.source}"))
+        # The source label was previously dead text inside the chart SVG and
+        # the hover card only. Routed through the kit registry it becomes a
+        # link to the origin dataset (and stays escaped plain text for the
+        # labels the registry doesn't know), so a partner can verify any
+        # number at source.
+        + ' · Source: ' + ck_source_link(dataset.source)
         + '</div>')
     if has_rows:
-        table_sec += ('<div class="fa-tablewrap">'
-                      + ck_data_table(headers=headers, rows_html=rows_html)
-                      + '</div>')
+        table_sec += (
+            '<div class="fa-tablewrap" tabindex="0" role="region" '
+            f'aria-label="{html.escape(dataset.label, quote=True)} — '
+            f'{len(table["rows"])} rows behind the chart, scrollable">'
+            + ck_data_table(headers=headers, rows_html=rows_html)
+            + '</div>')
     else:
-        table_sec += ('<p class="fa-empty-note">0 rows — adjust the query '
-                      'above, or reset to the default view.</p>')
+        table_sec += ck_empty_state(
+            "Nothing to tabulate",
+            body=("This slice returned 0 rows, so there is no table to show. "
+                  "Raise Top N, clear the focus filter, or pick another "
+                  "dataset — the JSON endpoint linked below returns the same "
+                  "empty result for this exact query."),
+            eyebrow="0 ROWS",
+            icon="▤",
+            tone="neutral")
 
+    # The JSON link now carries the current query (same params the share URL
+    # uses, minus the presentation-only ones), so "machine readable" means
+    # *this* view rather than the API's default slice. The payload still
+    # embeds the full dataset/measure catalog.
+    api_href = "/api" + _share_url(spec)
+    # Cross-Dataset Analysis joins on the state label, so the hand-off only
+    # makes sense for state-grain datasets — offering it on a category-grain
+    # one would land the partner on a silently substituted dataset.
+    cross_html = ""
+    if dataset.grain == "state":
+        cross_href = "/cross-analysis?" + urllib.parse.urlencode(
+            {"x": dataset.id, "xm": spec["measures"][0]})
+        cross_html = (
+            f' Correlate it against another state-grain dataset: '
+            f'<a href="{html.escape(cross_href, quote=True)}" '
+            f'title="Open Cross-Dataset Analysis with this dataset on the '
+            f'x-axis">/cross-analysis</a>.')
     foot = (
         f'<p class="fa-foot"><strong>{html.escape(dataset.label)}</strong> — '
         f'{html.escape(dataset.note)} Grain: {html.escape(dataset.grain)}. '
-        f'JSON: <a href="/api/further-analysis">/api/further-analysis</a> '
-        f'(every dataset + measure, machine readable).</p>')
+        f'Source: {ck_source_link(dataset.source)}. '
+        f'JSON: <a href="{html.escape(api_href, quote=True)}">'
+        f'/api/further-analysis</a> (this exact query, plus every dataset + '
+        f'measure, machine readable).{cross_html}</p>')
 
     body = (
         ck_editorial_head(

@@ -22,8 +22,9 @@ import json
 from typing import Any, Dict, Optional
 
 from ._chartis_kit import (
-    chartis_shell, ck_arrow_link, ck_editorial_head, ck_fmt_number,
-    ck_page_actions, ck_panel, ck_section_header, ck_source_purpose,
+    chartis_shell, ck_arrow_link, ck_editorial_head, ck_empty_state,
+    ck_fmt_number, ck_page_actions, ck_panel, ck_section_header,
+    ck_source_link, ck_source_purpose, source_url,
 )
 from .saved_charts_page import save_chart_form as _save_chart_form
 from .cdd_chart_kit import (
@@ -68,6 +69,45 @@ _EXAMPLE_BOX = ("Site\tJan\tFeb\tMar\tApr\tMay\tJun\n"
 _EXAMPLE_DUMBBELL = ("Metric\tEntry\tExit\nEBITDA margin\t18\t26\n"
                      "Clean-claim %\t88\t96\nCollections %\t91\t97\n"
                      "Commercial mix\t34\t41")
+
+
+# Which public dataset each platform-data chip actually reads. The data
+# layer's footnote says "CMS provider files (vendored snapshot, …)" —
+# true, but a partner cannot click a sentence. Naming the real CMS
+# Compare dataset lets every chip route through ``ck_source_link`` so
+# its provenance is traceable to the origin, not just asserted. Prefixes
+# match the ``chart_datasets`` registry keys (snf_by_state,
+# dialysis_stations_by_state, …); the two cross-sector aggregates
+# (providers_by_sector, ownership_mix) span all six and match none.
+_SECTOR_SOURCES: list[tuple[str, str]] = [
+    ("snf", "CMS Nursing Home Compare"),
+    ("home_health", "CMS Home Health Compare"),
+    ("hospice", "CMS Hospice Compare"),
+    ("dialysis", "CMS Dialysis Compare"),
+    ("irf", "CMS IRF Compare"),
+    ("ltch", "CMS LTCH Compare"),
+]
+
+
+def _dataset_source(key: str) -> str:
+    """The CMS Compare dataset a chart-dataset key reads, or "" when the
+    dataset spans every sector (no single honest source label)."""
+    for prefix, label in _SECTOR_SOURCES:
+        if key.startswith(prefix):
+            return label
+    return ""
+
+
+def _source_label_of(footnote: str) -> str:
+    """The dataset name inside a partner-typed footnote.
+
+    Footnotes are conventionally typed as ``Source: CMS HCRIS FY2023``;
+    the registry lookup wants the dataset part, so drop a leading
+    ``Source:`` before handing the string to ``ck_source_link``."""
+    s = footnote.strip()
+    if s.lower().startswith("source:"):
+        s = s.split(":", 1)[1].strip()
+    return s
 
 
 def _example_for(ctype: str) -> str:
@@ -209,7 +249,13 @@ _PAGE_CSS = """
 .cb-reset:hover{color:var(--sc-navy,#0b2341);text-decoration:underline;}
 .cb-section-lede{font-family:var(--sc-serif,Georgia,serif);font-size:14px;line-height:1.55;color:var(--sc-text-dim,#465366);max-width:64ch;margin:0 0 var(--sc-s-6,28px);}
 .cb-section-lede em{font-style:italic;color:var(--green-deep,#154e36);}
-.cb-ds-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 var(--sc-s-6,28px);}
+.cb-ds-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
+.cb-src-line{margin:0 0 var(--sc-s-6,28px);font-family:var(--sc-sans,sans-serif);font-size:11.5px;line-height:1.6;color:var(--sc-text-faint,#7a8699);}
+.cb-src-line a{color:var(--sc-teal,#155752);text-decoration:none;}
+.cb-src-line a:hover{color:var(--sc-navy,#0b2341);text-decoration:underline;}
+.cb-canvas-src{margin:9px 0 0;font-family:var(--sc-sans,sans-serif);font-size:11.5px;color:var(--sc-text-faint,#7a8699);}
+.cb-canvas-src a{color:var(--sc-teal,#155752);text-decoration:none;}
+.cb-canvas-src a:hover{color:var(--sc-navy,#0b2341);text-decoration:underline;}
 .cb-ds-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);color:var(--sc-teal-ink,#0f3d39);font-family:var(--sc-sans,sans-serif);font-size:12px;font-weight:600;text-decoration:none;}
 .cb-ds-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sc-teal,#155752);}
 .cb-ds-chip:hover{border-color:var(--sc-teal,#155752);background:#fff;}
@@ -224,6 +270,7 @@ _PAGE_CSS = """
 .cb-gallery-card{display:block;padding:6px;border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);text-decoration:none;}
 .cb-gallery-card:hover{border-color:var(--sc-teal,#155752);}
 .cb-gallery-card.sel{border-color:var(--sc-navy,#0b2341);box-shadow:inset 0 0 0 1px var(--sc-navy,#0b2341);}
+.cb-gallery-thumb{display:block;}
 .cb-gallery-cap{display:block;margin-top:4px;text-align:center;font-family:var(--sc-mono,monospace);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--sc-text-faint,#7a8699);}
 .cb-notes{margin-top:var(--sc-s-6,28px);border:1px solid var(--sc-rule,#d6cfc0);border-radius:2px;background:var(--paper-card,#fefcf3);}
 .cb-notes summary{padding:10px 14px;cursor:pointer;font-family:var(--sc-mono,monospace);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sc-text-dim,#465366);}
@@ -232,7 +279,7 @@ _PAGE_CSS = """
 .cb-notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px 26px;margin:0;padding:14px;}
 .cb-note dt{font-family:var(--sc-sans,sans-serif);font-size:11.5px;font-weight:600;color:var(--ink,#16263a);}
 .cb-note dd{margin:2px 0 0;font-family:var(--sc-serif,Georgia,serif);font-size:13px;line-height:1.5;color:var(--sc-text-dim,#465366);}
-.cb-chip:focus-visible,.cb-btn:focus-visible,.cb-btn-ghost:focus-visible,.cb-reset:focus-visible,.cb-ds-chip:focus-visible,.cb-gallery-card:focus-visible,.cb-input:focus-visible,.cb-select:focus-visible,.cb-textarea:focus-visible,.cb-check input:focus-visible,.cb-color input:focus-visible,.cb-notes summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
+.cb-chip:focus-visible,.cb-btn:focus-visible,.cb-btn-ghost:focus-visible,.cb-reset:focus-visible,.cb-ds-chip:focus-visible,.cb-src-line a:focus-visible,.cb-canvas-src a:focus-visible,.cb-gallery-card:focus-visible,.cb-input:focus-visible,.cb-select:focus-visible,.cb-textarea:focus-visible,.cb-check input:focus-visible,.cb-color input:focus-visible,.cb-notes summary:focus-visible{outline:2px solid var(--sc-teal,#155752);outline-offset:1px;}
 """
 
 
@@ -366,11 +413,20 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
                     else [r[0] for r in table.get("rows", [])])
     color_pickers = ""
     for i, lab in enumerate(color_labels[:10]):
+        # Truncate BEFORE escaping. Slicing escaped markup at 18 chars
+        # cuts entities in half — a series called "A&B …" rendered the
+        # literal text "A&am". Escape once, on the already-shortened
+        # string; the full name stays available via title + aria-label
+        # so the swatch is still identifiable when the name is clipped.
+        full = str(lab)
+        shown = full if len(full) <= 18 else full[:17] + "…"
+        safe_full = html.escape(full, quote=True)
         color_pickers += (
-            f'<label class="cb-color" title="{html.escape(str(lab))}">'
+            f'<label class="cb-color" title="{safe_full}">'
             f'<input type="color" name="sc{i}" '
-            f'value="{html.escape(series_colors[i])}">'
-            f'{html.escape(str(lab))[:18]}</label>')
+            f'value="{html.escape(series_colors[i], quote=True)}" '
+            f'aria-label="Colour for {safe_full}">'
+            f'{html.escape(shown)}</label>')
 
     pal_opts = "".join(
         f'<option value="{p}"{" selected" if p == palette else ""}>{p}'
@@ -432,12 +488,22 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         + _toggle("avg", "Average line", show_avg)
         + '</div></div>')
 
+    # A paste that yields nothing is the one case worth flagging loudly —
+    # it used to read as a neutral "Parsed 0 rows × 0 series" next to a
+    # blank chart, with no hint that the paste shape was the problem.
+    parse_warn = raw_has_blanks or raw_rows == 0
+    if raw_rows == 0:
+        parse_tail = " · nothing parsed — check row 1 holds the headers"
+    elif raw_has_blanks:
+        parse_tail = " · non-numeric cells ignored"
+    else:
+        parse_tail = ""
     parse_note = (
-        f'<div class="cb-parse-note{" warn" if raw_has_blanks else ""}">'
+        f'<div class="cb-parse-note{" warn" if parse_warn else ""}">'
         f'Parsed {ck_fmt_number(raw_rows)} '
         f'row{"s" if raw_rows != 1 else ""} × '
         f'{ck_fmt_number(raw_series)} '
-        f'series{" · non-numeric cells ignored" if raw_has_blanks else ""}'
+        f'series{parse_tail}'
         f'</div>')
 
     form = (
@@ -518,9 +584,20 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
                 f'&title={_urlq(d["label"])}'
                 f'&footnote={_urlq(d["footnote"])}'
                 f'&data={_urlq(d["tsv"])}')
+        # Hover tip names the snapshot AND the originating CMS dataset,
+        # so a partner can tell which file a chip's numbers came from
+        # before clicking (the chip label alone doesn't say).
+        src_label = _dataset_source(m["key"])
+        tip = d["footnote"] + (f" · {src_label}" if src_label else "")
         ds_chips += (
             f'<a href="{html.escape(href, quote=True)}" '
-            f'class="cb-ds-chip">{html.escape(d["label"])}</a>')
+            f'class="cb-ds-chip" title="{html.escape(tip, quote=True)}">'
+            f'{html.escape(d["label"])}</a>')
+    # Provenance for the strip: the six public datasets these aggregates
+    # are built from, each a link to its CMS origin so any number on a
+    # loaded chart can be verified at source rather than trusted.
+    ds_sources = " · ".join(ck_source_link(lab) for _p, lab in
+                            _SECTOR_SOURCES)
     datasets_strip = (
         ck_section_header(
             "Real CMS aggregates, one click away.",
@@ -529,27 +606,48 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
           "platform's public-data layer, then shape and restyle it "
           "freely — the configured chart stays <em>a shareable "
           "URL</em>.</p>"
-        + f'<div class="cb-ds-chips">{ds_chips}</div>')
+        + f'<div class="cb-ds-chips">{ds_chips}</div>'
+        + f'<p class="cb-src-line">Built from: {ds_sources}</p>')
 
-    # Gallery — the same data across a few chart types.
+    # Gallery — the same data across a few chart types. The thumbnails
+    # render the SHAPED table, so the link has to carry the shaping and
+    # the styling options too; carrying only type+palette+data meant
+    # clicking a card silently dropped group/sort/top-N/calc and landed
+    # the partner on a different chart from the one they clicked.
+    # Deliberately no fs=1 — gallery links keep the friendly
+    # values/legend defaults (see the fs marker note above).
+    has_rows = bool(table.get("rows"))
+    carry = ""
+    for _k, _v in (("palette", palette), ("title", title),
+                   ("subtitle", subtitle), ("suffix", suffix),
+                   ("footnote", footnote), ("size", size),
+                   ("group", group), ("sort", sort), ("calc", calc)):
+        if _v:
+            carry += f"&{_k}={_urlq(_v)}"
+    if topn:
+        carry += f"&topn={topn}"
     gallery = ""
     gtypes = ["column", "column_stacked", "column_100", "bar", "pareto",
               "line", "area", "waterfall", "pie", "donut", "marimekko",
               "combo"]
     type_labels = dict(CHART_TYPES)
-    for gt in gtypes:
+    for gt in (gtypes if has_rows else []):
         gdata = table
         gsvg = render_cdd_chart(
             gt, gdata, {"title": type_labels.get(gt, gt),
                         "palette": palette, "W": 330, "H": 210,
                         "px_h": 180, "legend": False, "show_values": False})
         glabel = type_labels.get(gt, gt)
+        ghref = (f'/chart-builder?type={gt}{carry}'
+                 f'&data={_urlq(data_text)}')
         gallery += (
-            f'<a href="/chart-builder?type={gt}&palette={palette}&data='
-            f'{html.escape(_urlq(data_text), quote=True)}" '
+            f'<a href="{html.escape(ghref, quote=True)}" '
             f'class="cb-gallery-card{" sel" if gt == ctype else ""}" '
             f'aria-label="Switch to {html.escape(glabel, quote=True)}">'
-            f'{gsvg}'
+            # The thumbnail duplicates the caption for a screen reader
+            # (the kit gives every chart role="img" + its own aria-label),
+            # so hide it: the card's own aria-label carries the meaning.
+            f'<span class="cb-gallery-thumb" aria-hidden="true">{gsvg}</span>'
             f'<span class="cb-gallery-cap">{html.escape(glabel)}</span>'
             f'</a>')
 
@@ -563,8 +661,20 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         f'&pal0={_urlq(palette)}'
         + (f'&source={_urlq(footnote)}' if footnote else "")
         + f'&d0={_urlq(table_to_tsv(table))}')
+    # The footnote is baked into the SVG as flat text, so a partner who
+    # cites a public dataset ("Source: CMS HCRIS") gets no way to open
+    # it. When the label resolves in the source registry, echo it under
+    # the canvas as a real link — provenance you can click through and
+    # verify. Unknown labels render nothing here (the SVG footnote
+    # already shows them) rather than a dead-looking plain-text repeat.
+    footnote_src = ""
+    _foot_label = _source_label_of(footnote)
+    if _foot_label and source_url(_foot_label):
+        footnote_src = (f'<p class="cb-canvas-src">Source: '
+                        f'{ck_source_link(_foot_label)}</p>')
     canvas_body = (
         f'<div class="cb-canvas"><div id="chartOut">{chart_svg}</div>'
+        + footnote_src
         + chart_export_toolbar("chartOut", "chart-" + ctype)
         # The shaped table travels, not the raw paste — what you see is
         # what lands on the slide.
@@ -583,6 +693,33 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
         '</button>'
         + _save_chart_form("/chart-builder")
         + '</div></div>')
+
+    # A paste that parses to nothing used to render a 450px white box
+    # with one 13px grey line in it, an export toolbar wired to an empty
+    # SVG, a "send to Exhibit Composer" link carrying no data, and twelve
+    # identical blank gallery cards. Swap the canvas for an editorial
+    # empty state that names the likely cause and offers the way out, and
+    # drop the gallery — there is no table for it to render (its loop is
+    # skipped above, so nothing is rendered just to be thrown away).
+    gallery_block = (
+        ck_section_header("Your data in every chart.", eyebrow="GALLERY")
+        + '<p class="cb-section-lede">The same table rendered across the '
+          "deck family — click a card to switch the builder to that "
+          "type.</p>"
+        + f'<div class="cb-gallery">{gallery}</div>')
+    if not has_rows:
+        canvas_body = ck_empty_state(
+            "Nothing to chart yet.",
+            "That paste didn't parse into any rows. Excel paste wants "
+            "the headers in row 1, then one row per category — a label "
+            "column plus at least one numeric column. Comma-separated "
+            "text works too.",
+            eyebrow="NO DATA",
+            icon="▦",
+            cta_label="Load example data",
+            cta_href=f"/chart-builder?type={ctype}",
+        )
+        gallery_block = ""
 
     notes_items = "".join(
         f'<div class="cb-note"><dt>{html.escape(term)}</dt>'
@@ -618,12 +755,7 @@ def render_chart_builder_page(qs: "Dict[str, Any] | None" = None) -> str:
                    code="GET /chart-builder")
         + datasets_strip
         + ck_panel(canvas_body, title="Rendered chart", code=ctype)
-        + ck_section_header(
-            "Your data in every chart.", eyebrow="GALLERY")
-        + '<p class="cb-section-lede">The same table rendered across the '
-          "deck family — click a card to switch the builder to that "
-          "type.</p>"
-        + f'<div class="cb-gallery">{gallery}</div>'
+        + gallery_block
         + notes
         + ck_page_actions()
         + '</div>')
