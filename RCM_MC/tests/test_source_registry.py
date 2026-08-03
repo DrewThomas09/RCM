@@ -64,6 +64,72 @@ class TestLabelResolution(unittest.TestCase):
         self.assertIsNone(source_url(None))
 
 
+class TestAmbiguousAcronymsDoNotHijack(unittest.TestCase):
+    """Report-0282: a wrong link is worse than no link.
+
+    Adding a bare ``"ACS"`` key would have resolved *"ACS Cancer Facts &
+    Figures"* — the American Cancer Society — to the Census Bureau's American
+    Community Survey. The label would have rendered as a confident,
+    clickable, wrong citation on a partner-facing page. Caught by resolving
+    every source label in the package against the proposed registry before
+    committing it; the fix was to register the disambiguated forms only.
+    """
+
+    def test_american_cancer_society_does_not_resolve_to_census(self):
+        self.assertIsNone(source_url("ACS Cancer Facts & Figures"))
+
+    def test_census_acs_labels_still_resolve(self):
+        for label in (
+            "US Census / ACS county estimates",
+            "County Health Rankings / Census ACS",
+            "US Census ACS / County Health Rankings (vendored)",
+            "ACS demographics (vendored) + CMS MA geographic",
+        ):
+            with self.subTest(label=label):
+                url = source_url(label)
+                self.assertIsNotNone(url, f"{label!r} lost its link")
+                self.assertIn("census.gov", url)
+
+    def test_ccw_is_not_captured_by_the_dataset_key(self):
+        # "Chronic Conditions Data Warehouse" must beat "Chronic Conditions".
+        self.assertIn("ccwdata.org",
+                      source_url("CMS Chronic Conditions Data Warehouse"))
+        self.assertIn("medicare-chronic-conditions",
+                      source_url("CMS Medicare Chronic Conditions"))
+
+
+class TestReport0282Additions(unittest.TestCase):
+    """The 14 labels four UI audits found rendering as dead plain text."""
+
+    CASES = {
+        "CDC PLACES county estimates, state-rolled (vendored)": "i46a-9kgh",
+        "CMS PECOS enrolled providers, national (vendored)":
+            "medicare-provider-supplier-enrollment",
+        "FTC/DOJ Horizontal Merger Guidelines (2023)":
+            "2023-merger-guidelines",
+        "NHIA industry report (home + suite)": "nhia.org",
+        "openFDA drug shortages (live snapshot)": "open.fda.gov",
+        "NUCC provider taxonomy": "nucc.org",
+        "CMS ASP Pricing File": "asp-pricing-files",
+        "CMS Medicare Monthly Enrollment": "medicare-monthly-enrollment",
+        "Medicare Outpatient Hospitals by Provider & Service":
+            "medicare-outpatient-hospitals",
+        "Census Population Estimates": "popest",
+        # The emitter alias: npi_cleaner/enrich.py says "Medicare Physician
+        # & Other Practitioners", which does NOT substring-match the
+        # "CMS Physician & Other Practitioners" key.
+        "Medicare Physician & Other Practitioners — by Provider, data.cms.gov":
+            "medicare-physician-other-practitioners",
+    }
+
+    def test_each_resolves(self):
+        for label, fragment in self.CASES.items():
+            with self.subTest(label=label):
+                url = source_url(label)
+                self.assertIsNotNone(url, f"{label!r} did not resolve")
+                self.assertIn(fragment, url)
+
+
 class TestLongestMatchWins(unittest.TestCase):
     def test_specific_key_beats_shorter_substring(self):
         # "CMS HCRIS ..." contains no shorter registry key today, but the

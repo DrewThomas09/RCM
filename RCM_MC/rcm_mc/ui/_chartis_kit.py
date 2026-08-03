@@ -917,6 +917,61 @@ SOURCE_URLS: dict = {
     "340B": "https://www.hrsa.gov/opa",
     "MGMA": "https://www.mgma.com/",
     "AHA": "https://www.aha.org/",
+    # Report-0282: requested by four independent UI-wave audits, which found
+    # pages naming these sources verbatim while the label rendered as dead
+    # plain text. Every URL below returned HTTP 200 on a live fetch before it
+    # was added. One suggestion was NOT added: the DOJ "horizontal-merger-
+    # guidelines" path 404s (the 2023 Merger Guidelines superseded it), so
+    # the 2023 page is registered instead.
+    #
+    # NOTE for future entries: the emitter alias below exists because
+    # npi_cleaner/enrich.py labels its two CMS marts "Medicare Physician &
+    # Other Practitioners", which does NOT substring-match the "CMS Physician
+    # & Other Practitioners" key above. Match the label the emitter actually
+    # produces, not the one the dataset is officially called.
+    "Medicare Physician & Other Practitioners":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-physician-other-practitioners",
+    "CMS Medicare Monthly Enrollment":
+        "https://data.cms.gov/summary-statistics-on-beneficiary-enrollment/"
+        "medicare-and-medicaid-reports/medicare-monthly-enrollment",
+    "Medicare Outpatient Hospitals":
+        "https://data.cms.gov/provider-summary-by-type-of-service/"
+        "medicare-outpatient-hospitals",
+    "ASP Pricing":
+        "https://www.cms.gov/medicare/payment/part-b-drugs/asp-pricing-files",
+    "Chronic Conditions":
+        "https://data.cms.gov/medicare-chronic-conditions",
+    # The CCW is a distinct resource from the Chronic Conditions dataset
+    # above (different publisher host, request-based access). Without its own
+    # longer key the shorter "Chronic Conditions" would capture it and link
+    # the CCW to the wrong destination.
+    "Chronic Conditions Data Warehouse": "https://www2.ccwdata.org/",
+    "PECOS":
+        "https://data.cms.gov/provider-characteristics/"
+        "medicare-provider-supplier-enrollment",
+    "CDC PLACES":
+        "https://data.cdc.gov/500-Cities-Places/"
+        "PLACES-Local-Data-for-Better-Health-Place-Data-202/i46a-9kgh",
+    "PLACES":
+        "https://data.cdc.gov/500-Cities-Places/"
+        "PLACES-Local-Data-for-Better-Health-Place-Data-202/i46a-9kgh",
+    # DELIBERATELY NOT a bare "ACS" key. The platform also cites "ACS Cancer
+    # Facts & Figures" — the American Cancer Society, not the American
+    # Community Survey — and a bare key would silently link it to the Census.
+    # A wrong link is worse than no link: it looks verified. These three
+    # forms cover every Census-ACS label the package actually emits; the
+    # cancer-society label correctly falls through to plain text.
+    "Census ACS": "https://www.census.gov/programs-surveys/acs",
+    "Census / ACS": "https://www.census.gov/programs-surveys/acs",
+    "ACS demographics": "https://www.census.gov/programs-surveys/acs",
+    "Census Population Estimates":
+        "https://www.census.gov/programs-surveys/popest.html",
+    "openFDA": "https://open.fda.gov/apis/drug/drugshortages/",
+    "NUCC": "https://www.nucc.org/index.php/code-sets-mainmenu-41",
+    "NHIA": "https://nhia.org/",
+    "Merger Guidelines":
+        "https://www.justice.gov/atr/2023-merger-guidelines",
 }
 
 
