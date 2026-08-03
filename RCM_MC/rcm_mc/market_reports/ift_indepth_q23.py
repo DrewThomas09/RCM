@@ -1243,7 +1243,7 @@ _REASONS = Block(
            "'we don't offer that here' a growing share of transfers."),
         _S("Is the patient being discharged to post-acute care?",
            "The highest-volume reason: SNF/IRF/LTACH/hospice "
-           "admissions off ~35M annual discharges — scheduled, "
+           "admissions off 33.7M annual discharges — scheduled, "
            "repeatable, and the throughput lever hospitals feel most."),
         _S("Is the patient returning to the original facility?",
            "Repatriation — the deliberate return leg that frees hub "

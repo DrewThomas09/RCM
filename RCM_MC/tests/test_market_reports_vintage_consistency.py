@@ -42,6 +42,15 @@ CURRENT = {
     "cert_ambulance_projected": "452.6",
     "cert_insufficient_doc": "46.7%",
     "cert_medical_necessity": "24.9%",
+    # AHRQ HCUP NIS 2023 (NISIntroduction2023.pdf Table 3): 33,718,585
+    # weighted national discharges. The series steps DOWN across COVID —
+    # 2019 = 35,419,023 but 2020-2023 sit in a 32.4-33.7M band — so a "~35M"
+    # figure is a pre-2020 number, not a rounding.
+    "hcup_nis_discharges": "33.7M",
+    # Vendored NPPES sweep, verifiable in-repo by tallying
+    # reference/nppes_ambulance_orgs_ne_ia_20260710.csv on search_state=NE:
+    # 328 of 400 = 82.0% municipal/fire/volunteer.
+    "nppes_ne_municipal_share": "82%",
 }
 
 # Values a newer official release has replaced. Key = human label used in the
@@ -54,6 +63,9 @@ SUPERSEDED = {
     "13.2%": "CERT 2024 ambulance improper rate (superseded by 10.4%, 2025)",
     "595.1": "CERT 2024 ambulance projected $ (superseded by $452.6M, 2025)",
     "63.5%": "CERT 2024 insufficient-doc share (superseded by 46.7%, 2025)",
+    "85-90%": "pre-2026 guess at the NE municipal/volunteer NPI share; the "
+              "vendored NPPES sweep says 82% (328/400) and had said so all "
+              "along in a sibling module",
 }
 
 # Phrases that mark a superseded figure as history rather than an assertion.
@@ -136,6 +148,58 @@ class CurrentFiguresAgreeAcrossModules(unittest.TestCase):
                 )
 
 
+class ClaimsMatchTheVendoredArtifact(unittest.TestCase):
+    """Strongest available check: the NPPES claim is verifiable IN-REPO.
+
+    Three modules asserted "~85-90%" for the Nebraska municipal/volunteer
+    share while a fourth asserted 82% — and the sweep they all cite is
+    vendored right here as a CSV, so the answer was sitting in the tree the
+    whole time. Tallying it gives 328/400 = 82.0%. This test recomputes that
+    tally from the artifact rather than pinning a literal, so if the sweep is
+    ever re-pulled the test tells you which prose to update instead of
+    silently going green against a stale constant.
+    """
+
+    CSV = (_MR / "reference" / "nppes_ambulance_orgs_ne_ia_20260710.csv")
+
+    def _ne_tally(self):
+        import collections
+        import csv
+        with self.CSV.open(encoding="utf-8") as fh:
+            rows = [r for r in csv.DictReader(fh)
+                    if r.get("search_state") == "NE"]
+        return rows, collections.Counter(r["category"] for r in rows)
+
+    def test_artifact_is_present(self):
+        self.assertTrue(
+            self.CSV.exists(),
+            "the vendored NPPES sweep is gone but modules still cite it — "
+            "either restore it or downgrade those claims to unsourced",
+        )
+
+    def test_municipal_share_matches_the_prose(self):
+        rows, counts = self._ne_tally()
+        self.assertEqual(400, len(rows), "NE row count changed")
+        share = 100.0 * counts["municipal-fire-volunteer"] / len(rows)
+        self.assertAlmostEqual(
+            82.0, share, places=1,
+            msg=f"artifact now says {share:.1f}% municipal/fire/volunteer; "
+                "the 82% quoted across ift_indepth_q1, ift_indepth_q78 and "
+                "ift_growth_evidence needs updating to match",
+        )
+
+    def test_component_counts_match_the_prose(self):
+        _, counts = self._ne_tally()
+        for category, expected in (
+            ("municipal-fire-volunteer", 328),
+            ("private", 58),
+            ("air", 9),
+            ("hospital-owned", 5),
+        ):
+            with self.subTest(category=category):
+                self.assertEqual(expected, counts[category])
+
+
 class SupersededTableIsWellFormed(unittest.TestCase):
     def test_no_token_is_both_current_and_superseded(self):
         overlap = set(CURRENT.values()) & set(SUPERSEDED)
@@ -146,9 +210,26 @@ class SupersededTableIsWellFormed(unittest.TestCase):
         )
 
     def test_tokens_look_like_figures(self):
+        # Digits, optionally with thousands separators / decimals, an
+        # optional range ("85-90"), and an optional %/K/M/B suffix. Kept
+        # tight so a prose fragment can never be smuggled into the tables —
+        # these tokens are substring-matched against every source line, and
+        # a short or wordy token would carpet the package in false hits.
+        pattern = r"^\d[\d,.]*(-\d[\d,.]*)?(%|K|M|B)?$"
         for token in list(CURRENT.values()) + list(SUPERSEDED):
             with self.subTest(token=token):
-                self.assertRegex(token, r"^[\d,.]+%?$")
+                self.assertRegex(token, pattern)
+
+    def test_tokens_are_specific_enough_to_substring_match(self):
+        # "82%" is safe; a bare "82" would match line numbers, sample sizes
+        # and any figure ending in 82.
+        for token in list(CURRENT.values()) + list(SUPERSEDED):
+            with self.subTest(token=token):
+                self.assertTrue(
+                    len(token) >= 4 or token[-1] in "%KMB",
+                    f"{token!r} is too generic to substring-match safely — "
+                    "give it a unit, a separator or more digits",
+                )
 
 
 if __name__ == "__main__":

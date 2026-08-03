@@ -499,9 +499,9 @@ _FRAGMENTATION = Block(
         "market bought without contracts."),
     why_true=(
         "The denominator is real: ~10,600 ground ambulance organizations "
-        "bill Medicare; NE+IA alone carry 751 organizational NPIs, ~85-90% "
-        "of Nebraska's municipal/volunteer — a long tail no hospital can "
-        "manage as a vendor panel.",
+        "bill Medicare; NE+IA alone carry 751 organizational NPIs, and 82% "
+        "of Nebraska's 400 are municipal/fire/volunteer — a long tail no "
+        "hospital can manage as a vendor panel.",
         "Nebraska's own assessment says fragmentation harms service: "
         "'Nebraska may have an excess of licensed EMS transporting "
         "agencies, which may be exacerbating shortages and creating "

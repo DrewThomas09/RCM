@@ -124,12 +124,17 @@ _EVIDENCE: Tuple[Evidence, ...] = (
     Evidence(
         "nis_discharges",
         "US inpatient discharges per year (all-payer)",
-        "~35 million weighted discharges/yr (20% stratified sample)",
+        "33.7 million weighted discharges/yr, NIS 2023 (20% stratified sample)",
         "SOURCED",
-        "AHRQ HCUP National Inpatient Sample (NIS) overview",
-        "\"...the NIS... approximates a 20-percent stratified sample of all "
-        "discharges from US community hospitals... approximately 7 million hospital "
-        "stays each year\" (≈35M weighted).",
+        "AHRQ HCUP National Inpatient Sample (NIS) overview + NIS 2023 "
+        "Introduction, Table 3",
+        "\"Unweighted, it contains discharge or billing data from approximately "
+        "7 million hospital stays each year. Weighted, it estimates over 33 "
+        "million hospitalizations nationally.\" NIS 2023 Table 3 gives the exact "
+        "figure: 6,743,716 unweighted / 33,718,585 weighted. The prior “≈35M” "
+        "gloss here was the PRE-COVID level (2019 = 35,419,023); the series "
+        "steps down to a 32.4-33.7M band from 2020 on, and AHRQ's own overview "
+        "wording was updated from 35 to 33 million to match.",
         "https://hcup-us.ahrq.gov/nisoverview.jsp"),
     Evidence(
         "pop_65_growth",

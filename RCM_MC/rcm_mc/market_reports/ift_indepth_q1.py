@@ -460,10 +460,13 @@ _PURCHASING = Block(
         "makes reliable capacity rational' — minimums, dedicated units, "
         "and enforceable service levels."),
     evidence=(
-        _E("Nebraska EMS structure: 751 org NPIs across NE/IA with ~85-90% "
-           "municipal/volunteer in NE — a supply base contracted for 911 "
-           "coverage, not hospital IFT",
-           "SOURCED", "CMS NPPES registry sweep, vendored 2026-07-10", ""),
+        _E("Nebraska EMS structure: 751 org NPIs across NE/IA; of NE's 400, "
+           "328 (82%) are municipal/fire/volunteer, 58 private, 9 air, 5 "
+           "hospital-owned — a supply base contracted for 911 coverage, not "
+           "hospital IFT",
+           "SOURCED", "CMS NPPES registry sweep, vendored 2026-07-10 "
+           "(reference/nppes_ambulance_orgs_ne_ia_20260710.csv)",
+           "https://npiregistry.cms.hhs.gov/"),
         _E("Nebraska's state EMS assessment: 'Nebraska may have an excess "
            "of licensed EMS transporting agencies, which may be "
            "exacerbating shortages and creating inefficiencies'",
@@ -635,8 +638,9 @@ _COMPETITIVE = Block(
         "market-by-market."),
     why_true=(
         "The registry shows the fragmentation directly: 751 ambulance "
-        "organization NPIs across just NE+IA, ~85-90% of Nebraska's "
-        "municipal/volunteer, a thin private layer, and no operator with "
+        "organization NPIs across just NE+IA, 82% of Nebraska's 400 "
+        "municipal/fire/volunteer, a thin 58-org private layer, and no "
+        "operator with "
         "meaningful multi-state IFT density besides the roll-ups now "
         "forming (MMT/Harbour Point, AmeriPro/Whistler, AMR/KKR).",
         "Entry is cheap at one truck and brutal at scale: vehicles are "

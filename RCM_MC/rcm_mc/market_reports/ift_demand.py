@@ -569,7 +569,7 @@ _DEMAND_SOURCES: Tuple[DemandSource, ...] = (
         "AHRQ HCUP",
         "Inpatient discharges + discharge-disposition split (transfer-to-hospital, "
         "transfer-to-SNF/IRF/other) — the scheduled discharge-book denominator.",
-        "~35M discharges/yr (20% sample); ~20-25% to a facility", "2022", "SOURCED",
+        "33.7M discharges/yr (20% sample); ~20-25% to a facility", "2023", "SOURCED",
         "https://hcup-us.ahrq.gov/nisoverview.jsp",
         "The f_IFT discharge-disposition fraction the health-system model needs; "
         "same loader (source_db='NIS'). The post-acute share is a superset of the "
@@ -670,9 +670,14 @@ _DEMAND_DRIVERS: Tuple[DemandDriver, ...] = (
     DemandDriver(
         "Annual hospital admissions",
         "US inpatient admissions / discharges per year",
-        "~33.7M admissions (AHA 2022); ~35M discharges (HCUP NIS 2022)",
+        # HCUP NIS 2022 is 32,891,849 weighted discharges, not ~35M. The
+        # ~35M figure is the PRE-COVID level (2019 = 35,419,023) carried
+        # forward under a 2022 label. Latest release is NIS 2023 =
+        # 33,718,585, so the series is quoted at its own vintage here.
+        "~33.7M admissions (AHA 2022); 33.7M discharges (HCUP NIS 2023; "
+        "NIS 2022 = 32.9M)",
         "SOURCED",
-        "AHA Fast Facts / AHA Annual Survey (2022); AHRQ HCUP NIS (2022)",
+        "AHA Fast Facts / AHA Annual Survey (2022); AHRQ HCUP NIS (2023)",
         "https://www.aha.org/statistics/fast-facts-us-hospitals",
         "AHA Annual Survey admissions; HCUP NIS weighted discharges; per-hospital "
         "HCRIS Worksheet S-3 discharges (already vendored).",
