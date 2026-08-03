@@ -15,8 +15,8 @@ import re
 from typing import Any, Dict, List, Tuple
 
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_page_title, ck_section_header,
-    ck_source_purpose,
+    chartis_shell, ck_empty_state, ck_kpi_block, ck_page_title,
+    ck_section_header, ck_source_link, ck_source_purpose,
 )
 from .cdd_chart_kit import (
     compose_exhibit, parse_table, chart_export_toolbar,
@@ -32,11 +32,15 @@ _FAINT = "#7a8699"
 
 
 def _money(v: float) -> str:
+    """House rule: financial figures carry 2 decimals at every scale
+    ($3.34B / $450.25M / $85,000.00). The millions branch used to print
+    one decimal, which read as a different precision contract than the
+    billions branch two lines above it."""
     if abs(v) >= 1e9:
         return f"${v/1e9:.2f}B"
     if abs(v) >= 1e6:
-        return f"${v/1e6:.1f}M"
-    return f"${v:,.0f}"
+        return f"${v/1e6:.2f}M"
+    return f"${v:,.2f}"
 
 
 def texas_exhibit_svg(a: Dict[str, Any]) -> str:
@@ -162,7 +166,10 @@ def _thesis_section(a: Dict[str, Any]) -> str:
 def _bar(pct: float, tone: str, width: int = 100) -> str:
     w = max(1.0, min(100.0, pct))
     return (
-        f'<span style="display:inline-block;width:{width}px;height:9px;'
+        # aria-hidden: the bar duplicates the numeric cell beside it, so
+        # AT would otherwise announce the same share twice.
+        f'<span aria-hidden="true" style="display:inline-block;'
+        f'width:{width}px;height:9px;'
         f'background:#ece5d6;border-radius:2px;overflow:hidden;'
         f'vertical-align:middle;">'
         f'<span style="display:block;height:100%;width:{w:.0f}%;'
@@ -177,10 +184,10 @@ def _kpi_strip(a: Dict[str, Any]) -> str:
         + ck_kpi_block("TX infusion TAM", _money(s["tam"]),
                        sub="annual market, all sites")
         + ck_kpi_block("Addressable (SAM)", _money(s["sam"]),
-                       sub=f'{s["sam_share"]*100:.0f}% of TAM · '
+                       sub=f'{s["sam_share"]*100:.1f}% of TAM · '
                            'platform-serviceable')
         + ck_kpi_block("Obtainable (SOM)", _money(s["som"]),
-                       sub=f'{s["som_share"]*100:.0f}% of SAM · entry share')
+                       sub=f'{s["som_share"]*100:.1f}% of SAM · entry share')
         + ck_kpi_block("5-yr market CAGR",
                        f'{s["composite_cagr_pct"]:.1f}%',
                        sub="composite of named drivers")
@@ -213,7 +220,9 @@ def _sizing_chain(a: Dict[str, Any]) -> str:
             f'<tr>'
             f'<td style="padding:6px 8px;">{html.escape(st["name"])}'
             f'<div style="font-size:10px;color:{_FAINT};">'
-            f'{html.escape(st["source"])}</div></td>'
+            + ck_source_link(st["source"],
+                             style=f"color:{_TEAL};text-decoration:none;")
+            + '</div></td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
             f'font-variant-numeric:tabular-nums;color:{_DIM};">{val_s}</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
@@ -226,9 +235,9 @@ def _sizing_chain(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12.5px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Driver (source)</th>'
-        '<th style="text-align:right;padding:6px 8px;">Step</th>'
-        '<th style="text-align:right;padding:6px 8px;">Running</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Driver (source)</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Step</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Running</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:11px;color:{_FAINT};margin:8px 0 0;">'
         'The chain is the methodology — TX patient base × infusion '
@@ -244,7 +253,7 @@ def _segment_table(a: Dict[str, Any]) -> str:
                 % _POS) if seg.get("is_fastest") else ""
         g = seg.get("growth_pct")
         g_s = (f'<span style="color:{_POS if g and g>=6 else _DIM};">'
-               f'+{g:.0f}%</span>' if g is not None else "—")
+               f'+{g:.1f}%</span>' if g is not None else "—")
         y5 = seg.get("tam_y_final")
         rows += (
             f'<tr>'
@@ -253,7 +262,7 @@ def _segment_table(a: Dict[str, Any]) -> str:
                f'{html.escape(seg["note"])}</div>' if seg.get("note") else "")
             + f'</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">'
-            f'{seg["share_of_volume"]*100:.0f}%</td>'
+            f'{seg["share_of_volume"]*100:.1f}%</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
             f'font-weight:600;">{_money(seg["tam_value"])}</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">{g_s}</td>'
@@ -264,11 +273,11 @@ def _segment_table(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12.5px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Therapy form</th>'
-        '<th style="text-align:right;padding:6px 8px;">Share</th>'
-        '<th style="text-align:right;padding:6px 8px;">TAM today</th>'
-        '<th style="text-align:right;padding:6px 8px;">Growth</th>'
-        '<th style="text-align:right;padding:6px 8px;">TAM Y5</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Therapy form</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Share</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">TAM today</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Growth</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">TAM Y5</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>')
 
 
@@ -302,7 +311,10 @@ def _hopd_pool_section(a: Dict[str, Any]) -> str:
         bars += (
             f'<div style="display:grid;grid-template-columns:130px 1fr 150px;'
             f'align-items:center;gap:8px;margin:3px 0;">'
-            f'<div style="font-size:11.5px;color:#1a2332;">'
+            # title carries the untruncated CBSA name — the label is cut
+            # at the first hyphen to fit the 130px rail.
+            f'<div title="{html.escape(m["metro"], quote=True)}" '
+            f'style="font-size:11.5px;color:#1a2332;">'
             f'{html.escape(short)}</div>'
             f'<div style="height:14px;background:#ece5d6;border-radius:2px;'
             f'overflow:hidden;"><div style="height:100%;width:{w:.0f}%;'
@@ -323,7 +335,7 @@ def _hopd_pool_section(a: Dict[str, Any]) -> str:
         f'align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">'
         f'<div style="font-size:13px;font-weight:700;color:{_NAVY};">'
         f'HOPD infusion — the steered-away pool '
-        f'({hp["hopd_share"]*100:.0f}% of volume)</div>{badge}</div>'
+        f'({hp["hopd_share"]*100:.1f}% of volume)</div>{badge}</div>'
         f'<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;">'
         f'<div><div style="font-size:9px;color:{_FAINT};letter-spacing:'
         f'0.06em;font-weight:700;">CAPTURABLE HOPD PATIENTS (4 METROS)</div>'
@@ -345,7 +357,11 @@ def _evolution_section(a: Dict[str, Any]) -> str:
     ev = a.get("site_of_care_evolution") or {}
     series = ev.get("series", [])
     if not series:
-        return ""
+        return ck_empty_state(
+            "No site-of-care time series available.",
+            "The 2015-2024 HOPD → AIS/home migration series did not load, "
+            "so the mix-shift chart and event timeline are unavailable.",
+            eyebrow="SITE-OF-CARE EVOLUTION")
     yrs = [s["year"] for s in series]
     y0, y1 = yrs[0], yrs[-1]
     W, H = 100.0, 56.0
@@ -420,13 +436,13 @@ def _evolution_section(a: Dict[str, Any]) -> str:
     s0, s1 = series[0], series[-1]
     kpis = (
         f'<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;">'
-        + _kpi("HOPD SHARE", f'{s0["hopd"]*100:.0f}% → {s1["hopd"]*100:.0f}%',
+        + _kpi("HOPD SHARE", f'{s0["hopd"]*100:.1f}% → {s1["hopd"]*100:.1f}%',
                f'−{ev["hopd_shift_pts"]} pts to non-hospital')
-        + _kpi("HOME + AIS", f'{(s0["home"]+s0["ais"])*100:.0f}% → '
-               f'{(s1["home"]+s1["ais"])*100:.0f}%',
+        + _kpi("HOME + AIS", f'{(s0["home"]+s0["ais"])*100:.1f}% → '
+               f'{(s1["home"]+s1["ais"])*100:.1f}%',
                f'+{ev["home_ais_gain_pts"]} pts')
-        + _kpi("MARKET SIZE", f'${s0["market_size_b"]:.0f}B → '
-               f'${s1["market_size_b"]:.0f}B',
+        + _kpi("MARKET SIZE", f'${s0["market_size_b"]:.2f}B → '
+               f'${s1["market_size_b"]:.2f}B',
                f'{ev["market_cagr_pct"]:.1f}% CAGR')
         + _kpi("OPAT VOLUME", f'{s0["opat_index"]} → {s1["opat_index"]}',
                f'index, {y0}=100')
@@ -473,14 +489,14 @@ def _site_table(a: Dict[str, Any]) -> str:
     for s in a["site_of_care"]:
         g = s["growth_pct"]
         tone = _POS if g > 0 else _NEG
-        g_s = f'<span style="color:{tone};font-weight:600;">{g:+.0f}%</span>'
+        g_s = f'<span style="color:{tone};font-weight:600;">{g:+.1f}%</span>'
         rows += (
             f'<tr>'
             f'<td style="padding:6px 8px;">{html.escape(s["site"])}'
             f'<div style="font-size:10px;color:{_FAINT};">'
             f'{html.escape(s["note"])}</div></td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">'
-            f'{s["share"]*100:.0f}%</td>'
+            f'{s["share"]*100:.1f}%</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">'
             f'{_money(s["tam_today"])}</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">{g_s}</td>'
@@ -491,11 +507,11 @@ def _site_table(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12.5px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Site of care</th>'
-        '<th style="text-align:right;padding:6px 8px;">Share</th>'
-        '<th style="text-align:right;padding:6px 8px;">TAM today</th>'
-        '<th style="text-align:right;padding:6px 8px;">Growth</th>'
-        '<th style="text-align:right;padding:6px 8px;">TAM Y5</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Site of care</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Share</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">TAM today</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Growth</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">TAM Y5</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:11px;color:{_FAINT};margin:8px 0 0;">'
         'The site-of-care shift is the thesis: HOPD volume (2–3× the '
@@ -532,14 +548,14 @@ def _metro_table(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Rank</th>'
-        '<th style="text-align:left;padding:6px 8px;">Metro</th>'
-        '<th style="text-align:right;padding:6px 8px;">Population</th>'
-        '<th style="text-align:right;padding:6px 8px;">65+</th>'
-        '<th style="text-align:right;padding:6px 8px;">Infusion pts</th>'
-        '<th style="text-align:right;padding:6px 8px;">Per 100k</th>'
-        '<th style="text-align:right;padding:6px 8px;">AIS (est)</th>'
-        '<th style="text-align:right;padding:6px 8px;">Attract.</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Rank</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Metro</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Population</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">65+</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Infusion pts</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Per 100k</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">AIS (est)</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Attract.</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:11px;color:{_FAINT};margin:8px 0 0;'
         f'line-height:1.55;">Population, 65+ share and rurality are REAL '
@@ -562,9 +578,9 @@ def _provider_panel(a: Dict[str, Any]) -> str:
                        sub="NHIA national × TX share")
         + ck_kpi_block("Ambulatory infusion centers (est)",
                        f'~{pl["ambulatory_infusion_centers"]}',
-                       sub=f'growing ~{pl["ais_growth_pct"]:.0f}%/yr')
+                       sub=f'growing ~{pl["ais_growth_pct"]:.1f}%/yr')
         + ck_kpi_block("Health-system (HOPD) capacity",
-                       f'{hs["hopd_share"]*100:.0f}%',
+                       f'{hs["hopd_share"]*100:.1f}%',
                        sub="captive — outside the pool")
         + '</div>'
         + f'<p style="font-size:11px;color:{_FAINT};margin:0 0 12px;'
@@ -592,7 +608,7 @@ def _concentration(a: Dict[str, Any]) -> str:
             f'<div style="font-size:10px;color:{_FAINT};">'
             f'{html.escape(c["note"])}</div></td>'
             f'<td class="num" style="padding:5px 8px;text-align:right;">'
-            f'{c["share"]*100:.0f}%</td>'
+            f'{c["share"]*100:.1f}%</td>'
             f'<td style="padding:5px 8px;">{_bar(c["share"]*100, tone, 120)}</td>'
             f'</tr>')
     band_tone = (_NEG if a["hhi"] > 2500 else _WARN if a["hhi"] >= 1500
@@ -601,9 +617,9 @@ def _concentration(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12.5px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:5px 8px;">Operator</th>'
-        '<th style="text-align:right;padding:5px 8px;">Share</th>'
-        '<th style="padding:5px 8px;"></th>'
+        '<th scope="col" style="text-align:left;padding:5px 8px;">Operator</th>'
+        '<th scope="col" style="text-align:right;padding:5px 8px;">Share</th>'
+        '<th scope="col" style="padding:5px 8px;"></th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:12px;color:{_DIM};margin:10px 0 0;'
         f'line-height:1.6;">Named-chain <strong>HHI = '
@@ -629,7 +645,7 @@ def _payer_section(a: Dict[str, Any]) -> str:
             f'<div style="font-size:10px;color:{_FAINT};">'
             f'{html.escape(p["note"])}</div></td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;">'
-            f'{p["share"]*100:.0f}%</td>'
+            f'{p["share"]*100:.1f}%</td>'
             f'<td style="padding:6px 8px;">{_bar(p["share"]*100, _TEAL, 120)}</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
             f'color:{_DIM};">{_money(p["tam_value"])}</td>'
@@ -638,10 +654,10 @@ def _payer_section(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12.5px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Payer</th>'
-        '<th style="text-align:right;padding:6px 8px;">Share</th>'
-        '<th style="padding:6px 8px;"></th>'
-        '<th style="text-align:right;padding:6px 8px;">TAM $</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Payer</th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">Share</th>'
+        '<th scope="col" style="padding:6px 8px;"></th>'
+        '<th scope="col" style="text-align:right;padding:6px 8px;">TAM $</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>')
 
 
@@ -658,7 +674,13 @@ def _provider_map_section(a: Dict[str, Any]) -> str:
     pm = a.get("provider_map") or {}
     pts = pm.get("points", [])
     if not pts:
-        return ""
+        return ck_empty_state(
+            "No metro provider points to map.",
+            "Add ?nppes=live to pull live NPI Registry counts for the four "
+            "Texas metros, or check that the metro deep-dives resolved.",
+            eyebrow="INFUSION-PROVIDER MAP",
+            cta_label="Reload with live NPPES",
+            cta_href="/diligence/texas-infusion?nppes=live")
     live = pm.get("live")
 
     def _val(p):
@@ -719,14 +741,22 @@ def _provider_map_section(a: Dict[str, Any]) -> str:
         f'<div><table style="width:100%;border-collapse:collapse;'
         f'font-size:12px;margin-bottom:8px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:3px 8px;">Metro</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Est. centers</th>'
-        f'<th style="text-align:right;padding:3px 8px;">NPPES</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Metro</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Est. centers</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">NPPES</th>'
         f'</tr></thead><tbody>{crows}</tbody></table>'
         f'<div style="font-size:10px;color:{_FAINT};letter-spacing:0.06em;'
         f'font-weight:700;margin:6px 0 3px;">NPPES INFUSION TAXONOMIES '
         f'(PUBLIC NUCC CODES)</div>'
-        f'<ul style="margin:0;padding-left:16px;">{taxo}</ul></div></div>')
+        f'<ul style="margin:0;padding-left:16px;">{taxo}</ul>'
+        f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
+        f'Source: '
+        + ck_source_link("NPPES",
+                         style=f"color:{_TEAL};text-decoration:none;")
+        + ' · '
+        + ck_source_link("NPI Registry",
+                         style=f"color:{_TEAL};text-decoration:none;")
+        + '</p></div></div>')
 
 
 def _jcode_pos_section(a: Dict[str, Any]) -> str:
@@ -739,7 +769,12 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
     jp = a.get("jcode_pos") or {}
     states = jp.get("states", [])
     if not states:
-        return ""
+        return ck_empty_state(
+            "No state-level J-code place-of-service data.",
+            "The facility vs non-facility split could not be built, so the "
+            "choropleth, the state ranking and the Texas read are "
+            "unavailable.",
+            eyebrow="J-CODE PLACE OF SERVICE")
     vals = [s["nonfac_pct"] for s in states]
     lo, hi = min(vals), max(vals)
     live = jp.get("live")
@@ -777,11 +812,11 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
             f'<td style="padding:3px 8px;font-weight:600;">'
             f'{html.escape(s["name"])}{tag}</td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
-            f'font-weight:700;color:{_TEAL};">{s["nonfac_pct"]*100:.0f}%</td>'
+            f'font-weight:700;color:{_TEAL};">{s["nonfac_pct"]*100:.1f}%</td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
-            f'color:{_DIM};">{s["rural"]*100:.0f}%</td>'
+            f'color:{_DIM};">{s["rural"]*100:.1f}%</td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
-            f'color:{_DIM};">{s["ma_penetration"]*100:.0f}%</td>'
+            f'color:{_DIM};">{s["ma_penetration"]*100:.1f}%</td>'
             f'<td style="padding:3px 8px;">{live_tag}</td></tr>')
     tx = jp["texas"]
     top = states[:6]
@@ -797,12 +832,12 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
     state_table = (
         f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:{_FAINT};">'
-        f'<th style="text-align:left;padding:3px 8px;">#</th>'
-        f'<th style="text-align:left;padding:3px 8px;">State</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Non-facility</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Rural</th>'
-        f'<th style="text-align:right;padding:3px 8px;">MA pen</th>'
-        f'<th style="text-align:left;padding:3px 8px;">Src</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">#</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">State</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Non-facility</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Rural</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">MA pen</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Src</th>'
         f'</tr></thead><tbody>{body_rows}</tbody></table>')
 
     tr_rows = ""
@@ -811,19 +846,19 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
             f'<tr style="border-bottom:1px solid #e8e1d0;">'
             f'<td style="padding:3px 8px;font-weight:600;">{t["year"]}</td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
-            f'color:{_NAVY};">{t["facility_pct"]*100:.0f}%</td>'
+            f'color:{_NAVY};">{t["facility_pct"]*100:.1f}%</td>'
             f'<td style="padding:3px 8px;">'
             f'{_bar(t["nonfacility_pct"]*100, _TEAL, 90)}</td>'
             f'<td class="num" style="padding:3px 8px;text-align:right;'
             f'font-weight:700;color:{_TEAL};">'
-            f'{t["nonfacility_pct"]*100:.0f}%</td></tr>')
+            f'{t["nonfacility_pct"]*100:.1f}%</td></tr>')
     trend_table = (
         f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:{_FAINT};">'
-        f'<th style="text-align:left;padding:3px 8px;">Year</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Facility (HOPD)</th>'
-        f'<th style="padding:3px 8px;"></th>'
-        f'<th style="text-align:right;padding:3px 8px;">Non-facility</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Year</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Facility (HOPD)</th>'
+        f'<th scope="col" style="padding:3px 8px;"></th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Non-facility</th>'
         f'</tr></thead><tbody>{tr_rows}</tbody></table>')
 
     jcodes = ", ".join(c["hcpcs"] for c in jp.get("jcodes", []))
@@ -840,11 +875,11 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
         f'border-left:3px solid {_NEG};border-radius:0 3px 3px 0;'
         f'font-size:11.5px;color:#1a2332;line-height:1.55;">'
         f'<strong style="color:{_NEG};">Texas:</strong> '
-        f'~{tx["nonfac_pct"]*100:.0f}% of infusion J-code volume is '
+        f'~{tx["nonfac_pct"]*100:.1f}% of infusion J-code volume is '
         f'non-facility (office/AIC), ranking #{tx["rank"]} of '
         f'{len(states)} — pushed up by low rurality '
-        f'({tx["rural"]*100:.0f}%) and high MA penetration '
-        f'({tx["ma_penetration"]*100:.0f}%). That favorable site mix is '
+        f'({tx["rural"]*100:.1f}%) and high MA penetration '
+        f'({tx["ma_penetration"]*100:.1f}%). That favorable site mix is '
         f'why the AIC roll-up thesis works here.</div>')
     return (
         f'<div style="display:flex;justify-content:space-between;'
@@ -886,7 +921,12 @@ def _regulatory_section(a: Dict[str, Any]) -> str:
     re_ = a.get("regulatory_environment") or {}
     cats = re_.get("categories", [])
     if not cats:
-        return ""
+        return ck_empty_state(
+            "No regulatory items loaded.",
+            "The Part B/D, HIT-benefit, IRA, 340B, site-neutral and Texas "
+            "rule set is empty, so there is no tailwind/headwind read to "
+            "show.",
+            eyebrow="REGULATORY & REIMBURSEMENT")
 
     def _pill(label, n, tone):
         return (
@@ -964,8 +1004,8 @@ def _ma_enrollment_panel(a: Dict[str, Any]) -> str:
         f'<div style="display:flex;gap:16px;flex-wrap:wrap;">'
         + _kpi("TX MA ENROLLEES", f'{ma["enrollment"]/1e6:.2f}M')
         + _kpi("TOTAL MEDICARE", f'{ma.get("total_medicare",0)/1e6:.2f}M')
-        + _kpi("MA PENETRATION", f'{ma.get("penetration",0)*100:.0f}%')
-        + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.0f}%')
+        + _kpi("MA PENETRATION", f'{ma.get("penetration",0)*100:.1f}%')
+        + _kpi("DUAL-ELIGIBLE", f'{ma["dual_eligible_pct"]*100:.1f}%')
         + '</div>'
         + f'<p style="font-size:11.5px;color:{_DIM};line-height:1.55;'
         f'margin:8px 0 0;">{html.escape(ma["note"])}</p>'
@@ -986,7 +1026,12 @@ def _medicare_base_section(a: Dict[str, Any]) -> str:
     mb = a.get("medicare_base") or {}
     st = mb.get("state") or {}
     if not st:
-        return ""
+        return ck_empty_state(
+            "No Medicare beneficiary base available.",
+            "Neither the live CMS Medicare Monthly Enrollment rows nor the "
+            "modeled fallback resolved, so the FFS vs MA split cannot be "
+            "sized.",
+            eyebrow="MEDICARE BENEFICIARY BASE")
     live = mb.get("live")
     badge_label = (
         "LIVE — CMS Medicare Monthly Enrollment, " + mb.get("period", "")
@@ -1062,13 +1107,13 @@ def _medicare_base_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;margin-top:10px;"><table '
         f'style="width:100%;border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:5px 8px;">County '
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">County '
         f'(top 12 of the metro set)</th>'
-        f'<th style="text-align:left;padding:5px 8px;">Metro</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Total benes</th>'
-        f'<th style="text-align:right;padding:5px 8px;">FFS</th>'
-        f'<th style="text-align:right;padding:5px 8px;">MA</th>'
-        f'<th style="text-align:right;padding:5px 8px;">MA %</th>'
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">Metro</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">Total benes</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">FFS</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">MA</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">MA %</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'{"● = published county row (live)." if live else ""} '
@@ -1085,7 +1130,14 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
     counts when live."""
     hi = a.get("hopd_infusion") or {}
     if not hi.get("metros"):
-        return ""
+        return ck_empty_state(
+            "No HOPD drug-administration volume by metro.",
+            "The steerable hospital pool could not be built for the four "
+            "metros. Add ?nppes=live to attempt the CMS Outpatient by "
+            "Provider & Service file.",
+            eyebrow="HOPD VOLUME BY HOSPITAL",
+            cta_label="Reload with live CMS",
+            cta_href="/diligence/texas-infusion?nppes=live")
     live = hi.get("live")
     badge_label = (
         "LIVE — CMS Outpatient by Provider & Service" if live else
@@ -1111,7 +1163,7 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
             f'<td class="num" style="padding:5px 8px;text-align:right;">'
             f'{m["live_hospitals"]}</td>'
             f'<td class="num" style="padding:5px 8px;text-align:right;">'
-            f'${m["live_payment_mm"]:,.1f}M</td>'
+            f'${m["live_payment_mm"]:,.2f}M</td>'
             if live else
             f'<td colspan="3" style="padding:5px 8px;text-align:right;'
             f'font-size:10px;color:{_FAINT};">— live via ?nppes=live —</td>')
@@ -1137,7 +1189,7 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
             f'<td class="num" style="padding:4px 8px;text-align:right;'
             f'font-weight:600;">{h["services"]:,}</td>'
             f'<td class="num" style="padding:4px 8px;text-align:right;">'
-            f'${h["payment_mm"]:,.1f}M</td></tr>'
+            f'${h["payment_mm"]:,.2f}M</td></tr>'
             for h in hi["top_hospitals"])
         tops = (
             f'<div style="font-size:10px;letter-spacing:0.06em;'
@@ -1146,10 +1198,10 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
             f'<table style="width:100%;border-collapse:collapse;'
             f'font-size:12px;"><thead>'
             f'<tr style="border-bottom:2px solid #c9c1ac;">'
-            f'<th style="text-align:left;padding:4px 8px;">Hospital</th>'
-            f'<th style="text-align:left;padding:4px 8px;">Metro</th>'
-            f'<th style="text-align:right;padding:4px 8px;">Services</th>'
-            f'<th style="text-align:right;padding:4px 8px;">Medicare $</th>'
+            f'<th scope="col" style="text-align:left;padding:4px 8px;">Hospital</th>'
+            f'<th scope="col" style="text-align:left;padding:4px 8px;">Metro</th>'
+            f'<th scope="col" style="text-align:right;padding:4px 8px;">Services</th>'
+            f'<th scope="col" style="text-align:right;padding:4px 8px;">Medicare $</th>'
             f'</tr></thead><tbody>{trs}</tbody></table>')
     return (
         f'<div style="display:flex;justify-content:space-between;'
@@ -1161,22 +1213,24 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:5px 8px;">Metro</th>'
-        f'<th style="text-align:right;padding:5px 8px;">HOPD pool '
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">Metro</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">HOPD pool '
         f'(modeled patients)</th>'
-        f'<th style="text-align:right;padding:5px 8px;">…Medicare slice</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Drug-admin '
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">…Medicare slice</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">Drug-admin '
         f'services (live)</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Hospitals</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Medicare $</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">Hospitals</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">Medicare $</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         + tops +
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'Drug-administration APCs 5691–5694 are public OPPS facts. The '
         f'live file is Medicare FFS only — MA (~half of Medicare) and all '
         f'commercial volume are excluded, so published counts UNDERSTATE '
-        f'the steerable pool. Hospitals map to metros via their HCRIS '
-        f'county.</p>')
+        f'the steerable pool. Hospitals map to metros via their '
+        + ck_source_link("CMS HCRIS",
+                         style=f"color:{_TEAL};text-decoration:none;")
+        + ' county.</p>')
 
 
 def _asp_pricing_section(a: Dict[str, Any]) -> str:
@@ -1186,7 +1240,11 @@ def _asp_pricing_section(a: Dict[str, Any]) -> str:
     asp = a.get("asp_pricing") or {}
     ref = asp.get("reference", [])
     if not ref:
-        return ""
+        return ck_empty_state(
+            "No J-code pricing reference loaded.",
+            "The marquee infusion J-code basket is empty, so the ASP+6 "
+            "buy-and-bill spread cannot be shown.",
+            eyebrow="PART B ASP PRICING")
     live = asp.get("live")
     badge = (
         f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
@@ -1223,18 +1281,18 @@ def _asp_pricing_section(a: Dict[str, Any]) -> str:
         f'<div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;">'
         f'<div style="padding:5px 10px;background:#eef2f7;border-radius:3px;'
         f'font-size:11px;color:#1a2332;"><strong>Statutory:</strong> '
-        f'ASP + {asp["addon_statutory"]*100:.0f}%</div>'
+        f'ASP + {asp["addon_statutory"]*100:.1f}%</div>'
         f'<div style="padding:5px 10px;background:#fbf3ef;border-radius:3px;'
         f'font-size:11px;color:#1a2332;"><strong>Post-sequester:</strong> '
         f'≈ASP + {asp["addon_sequestered"]*100:.1f}%</div></div>'
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:5px 8px;">HCPCS</th>'
-        f'<th style="text-align:left;padding:5px 8px;">Drug</th>'
-        f'<th style="text-align:left;padding:5px 8px;">Category</th>'
-        f'<th style="text-align:left;padding:5px 8px;">Channel</th>'
-        f'<th style="text-align:right;padding:5px 8px;">ASP pay limit/unit</th>'
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">HCPCS</th>'
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">Drug</th>'
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">Category</th>'
+        f'<th scope="col" style="text-align:left;padding:5px 8px;">Channel</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">ASP pay limit/unit</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'HCPCS J-codes + descriptors are public CMS facts; the per-unit '
@@ -1290,7 +1348,10 @@ def _aic_waterfall_svg(sections: List[Dict[str, Any]]) -> str:
     height = pad_top * 2 + len(sections) * (row_h + gap)
     scale = (width - pad_l - 90) / revenue
     parts = [f'<svg viewBox="0 0 {width} {height}" width="100%" '
-             f'style="max-width:{width}px;display:block;" role="img">']
+             f'role="img" aria-label="Per-chair annual P&amp;L waterfall — '
+             f'gross revenue drawn down by each cost section to '
+             f'contribution margin" '
+             f'style="max-width:{width}px;display:block;">']
     running = 0.0
     for i, s in enumerate(sections):
         y = pad_top + i * (row_h + gap)
@@ -1400,14 +1461,16 @@ def _drug_supply_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Drug class</th>'
-        f'<th style="text-align:left;padding:6px 8px;">FDA status</th>'
-        f'<th style="text-align:right;padding:6px 8px;">Shortages</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Examples</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Drug class</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">FDA status</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">Shortages</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Examples</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
         f'Live from the {html.escape(str(ds["snapshot_date"]))} '
-        f'{html.escape(ds["source"])} ({ds["total_current"]:,} current US '
+        + ck_source_link(ds["source"],
+                         style=f"color:{_TEAL};text-decoration:none;")
+        + f' ({ds["total_current"]:,} current US '
         f'shortages). Full list: '
         f'<a href="/drug-shortage" style="color:{_NAVY};font-weight:600;'
         f'text-decoration:none;">Drug Shortage tracker →</a></p>')
@@ -1471,7 +1534,7 @@ def _aic_assumptions_form(a: Dict[str, Any]) -> str:
         f'Inputs are range-clamped server-side; blank = benchmark '
         f'default. With no explicit admin-fee/drug-margin override, both '
         f'blend from the commercial mix (commercial '
-        f'${"%.0f" % 260}/{14:.0f}% vs Medicare ${"%.0f" % 155}/'
+        f'${"%.0f" % 260}/{14:.1f}% vs Medicare ${"%.0f" % 155}/'
         f'{4.3:.1f}% — MedPAC ASP+4.3 sequestered), so the mix slider '
         f'moves the P&amp;L.</p>'
         f'</form>')
@@ -1491,7 +1554,9 @@ def _aic_tornado_svg(rows: List[Dict[str, Any]]) -> str:
     height = pad * 2 + len(rows) * (row_h + gap) - gap + 16
     parts = [
         f'<svg viewBox="0 0 {width} {height}" width="100%" '
-        f'style="max-width:{width}px;display:block;" role="img">'
+        f'role="img" aria-label="Tornado chart — contribution per chair '
+        f'sensitivity to each operating lever at plus/minus 20 percent" '
+        f'style="max-width:{width}px;display:block;">'
         f'<line x1="{cx}" y1="{pad}" x2="{cx}" y2="{height-22}" '
         f'stroke="#c9c1ac" stroke-width="1"/>'
         f'<text x="{cx}" y="{height-8}" text-anchor="middle" '
@@ -1540,7 +1605,9 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
     zero_y = _y(0)
     parts = [
         f'<svg viewBox="0 0 {width} {h}" width="100%" '
-        f'style="max-width:{width}px;display:block;" role="img">'
+        f'role="img" aria-label="Chair contribution versus utilization, '
+        f'with the cash break-even marker" '
+        f'style="max-width:{width}px;display:block;">'
         f'<line x1="{pad_l}" y1="{zero_y:.1f}" x2="{width-16}" '
         f'y2="{zero_y:.1f}" stroke="#c9c1ac" stroke-width="1" '
         f'stroke-dasharray="3,3"/>'
@@ -1556,12 +1623,12 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
             f'stroke-dasharray="4,3"/>'
             f'<text x="{_x(be):.1f}" y="{pad_t-3}" text-anchor="middle" '
             f'font-size="9" font-weight="700" fill="{_WARN}">'
-            f'break-even {be*100:.0f}%</text>')
+            f'break-even {be*100:.1f}%</text>')
     elif be is not None:
         parts.append(
             f'<text x="{pad_l}" y="{pad_t-3}" font-size="9" '
             f'font-weight="700" fill="{_WARN}">break-even '
-            f'{be*100:.0f}% (left of chart)</text>')
+            f'{be*100:.1f}% (left of chart)</text>')
     cu = curve["current_util"]
     parts.append(
         f'<circle cx="{_x(cu):.1f}" '
@@ -1569,7 +1636,7 @@ def _util_curve_svg(curve: Dict[str, Any]) -> str:
         f'fill="{_POS}"/>'
         f'<text x="{_x(cu)+8:.1f}" '
         f'y="{_y(curve["current_contribution"])-6:.1f}" font-size="9.5" '
-        f'font-weight="700" fill="{_POS}">you: {cu*100:.0f}% · '
+        f'font-weight="700" fill="{_POS}">you: {cu*100:.1f}% · '
         f'${curve["current_contribution"]/1e3:,.0f}K</text>')
     for u in (0.40, 0.60, 0.80, 0.95):
         parts.append(
@@ -1639,7 +1706,11 @@ def _denovo_section(a: Dict[str, Any]) -> str:
     underwrites on a build-vs-buy decision."""
     r = a.get("aic_denovo_ramp") or {}
     if not r.get("series"):
-        return ""
+        return ck_empty_state(
+            "No de-novo ramp series.",
+            "The build J-curve needs a month-by-month cumulative-cash "
+            "series; none was produced for the current assumptions.",
+            eyebrow="DE-NOVO AIC BUILD")
     yc = r.get("year_contribution", [])
 
     def _kpi(label, val, sub=""):
@@ -1657,11 +1728,11 @@ def _denovo_section(a: Dict[str, Any]) -> str:
                f'+ {_money(r["preopen"])} pre-open')
         + _kpi("CASH BREAK-EVEN",
                f'month {be}' if be else '>3 yrs',
-               f'{r["ramp_months"]}-mo ramp to {r["mature_util"]*100:.0f}% util')
+               f'{r["ramp_months"]}-mo ramp to {r["mature_util"]*100:.1f}% util')
         + _kpi("MATURE CONTRIBUTION",
                _money(r["mature_annual_contribution"]) + "/yr",
                'at full utilization')
-        + _kpi("YEAR-3 CASH-ON-CASH", f'{r["y3_cash_on_cash"]:.1f}x',
+        + _kpi("YEAR-3 CASH-ON-CASH", f'{r["y3_cash_on_cash"]:.2f}x',
                'Y3 contribution ÷ build capex')
         + '</div>')
     yrs = "".join(
@@ -1714,7 +1785,7 @@ def _provider_segments_section(a: Dict[str, Any]) -> str:
             f'margin-right:6px;"></span><strong>{html.escape(s["segment"])}'
             f'</strong></td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
-            f'font-weight:600;">{s["share"]*100:.0f}%</td>'
+            f'font-weight:600;">{s["share"]*100:.1f}%</td>'
             f'<td style="padding:6px 8px;">{tag}</td>'
             f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
             f'{html.escape(s["examples"])}</td>'
@@ -1734,11 +1805,11 @@ def _provider_segments_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Ownership segment</th>'
-        f'<th style="text-align:right;padding:6px 8px;">US share</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Pool</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Examples</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Roll-up read</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Ownership segment</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">US share</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Pool</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Examples</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Roll-up read</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
         f'Ownership shares are national estimates (NHIA / industry '
@@ -1759,8 +1830,12 @@ def _cdc_proxies_section(a: Dict[str, Any]) -> str:
     cp = a.get("cdc_proxies") or {}
     rows_data = cp.get("therapies", [])
     if not rows_data:
-        return (f'<p style="font-size:12px;color:{_FAINT};">CDC proxy '
-                f'data unavailable.</p>')
+        return ck_empty_state(
+            "No CDC public-health proxies available.",
+            "Neither the CDC PLACES county API nor the vendored Texas "
+            "state fallback returned prevalence rates, so therapy demand "
+            "cannot be proxied.",
+            eyebrow="CDC DEMAND PROXIES")
     live = cp.get("live")
     badge = (
         f'<span style="font-size:9px;font-weight:700;letter-spacing:0.06em;'
@@ -1786,7 +1861,9 @@ def _cdc_proxies_section(a: Dict[str, Any]) -> str:
             f'<td style="padding:6px 8px;font-size:11px;color:{_FAINT};">'
             f'{html.escape(t["denominator"])}</td>'
             f'<td style="padding:6px 8px;font-size:10.5px;color:{_FAINT};">'
-            f'{html.escape(t["source"])}</td>'
+            + ck_source_link(t["source"],
+                             style=f"color:{_TEAL};text-decoration:none;")
+            + '</td>'
             f'</tr>')
     notes = "".join(
         f'<li style="margin:2px 0;font-size:11px;color:{_DIM};">'
@@ -1801,12 +1878,12 @@ def _cdc_proxies_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Infusion therapy '
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Infusion therapy '
         f'family</th>'
-        f'<th style="text-align:left;padding:6px 8px;">CDC/ACS proxy</th>'
-        f'<th style="text-align:right;padding:6px 8px;">TX rate</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Denominator</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Source</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">CDC/ACS proxy</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">TX rate</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Denominator</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Source</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<ul style="margin:10px 0 0;padding-left:18px;">{notes}</ul>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
@@ -1851,9 +1928,9 @@ def _cdc_demand_block(dd: Dict[str, Any]) -> str:
         f'<strong>Payer access ({html.escape(top.get("county", ""))}):</strong> '
         f'index <strong style="color:{pa_tone};">{pa.get("score", 0):.0f}</strong> '
         f'(<span style="color:{pa_tone};">{html.escape(pa.get("band", ""))}</span>) '
-        f'— {pa.get("uninsured_rate", 0)*100:.0f}% uninsured · '
-        f'{pa.get("child_poverty_rate", 0)*100:.0f}% child poverty · '
-        f'{pa.get("routine_checkup_pct", 0):.0f}% routine checkup</div>'
+        f'— {pa.get("uninsured_rate", 0)*100:.1f}% uninsured · '
+        f'{pa.get("child_poverty_rate", 0)*100:.1f}% child poverty · '
+        f'{pa.get("routine_checkup_pct", 0):.1f}% routine checkup</div>'
         if pa else "")
     return (
         f'<div style="margin-top:10px;"><div style="font-size:10px;'
@@ -1899,7 +1976,7 @@ def _scorecard_section(a: Dict[str, Any]) -> str:
             f'{flag}</div></div>')
     # Undersupplied growth-markets table.
     us_rows = ""
-    for r in sc["undersupplied_growth_markets"]:
+    for r in sc.get("undersupplied_growth_markets", []):
         dc = r["demand_capacity_ratio"]
         us_rows += (
             f'<tr>'
@@ -1928,21 +2005,31 @@ def _scorecard_section(a: Dict[str, Any]) -> str:
         f'font-weight:700;margin:14px 0 4px;">UNDERSUPPLIED GROWTH MARKETS '
         f'— demand likely to exceed AIS chair capacity ({sc["n_undersupplied"]})'
         f'</div>'
-        f'<div style="overflow-x:auto;"><table style="width:100%;'
-        f'border-collapse:collapse;font-size:12px;">'
-        f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:5px 8px;">County</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Infusion pts</th>'
-        f'<th style="text-align:right;padding:5px 8px;">AIS chairs (est)</th>'
-        f'<th style="text-align:right;padding:5px 8px;">Demand / capacity</th>'
-        f'<th style="text-align:left;padding:5px 8px;">Saturation</th>'
-        f'</tr></thead><tbody>{us_rows}</tbody></table></div>'
-        f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
+        + (f'<div style="overflow-x:auto;"><table style="width:100%;'
+           f'border-collapse:collapse;font-size:12px;">'
+           f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
+           f'<th scope="col" style="text-align:left;padding:5px 8px;">County</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">Infusion pts</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">AIS chairs (est)</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">Demand / capacity</th>'
+           f'<th scope="col" style="text-align:left;padding:5px 8px;">Saturation</th>'
+           f'</tr></thead><tbody>{us_rows}</tbody></table></div>'
+           if us_rows else ck_empty_state(
+               "No undersupplied growth markets.",
+               "Every county across the four metros currently shows AIS "
+               "chair capacity keeping pace with demand — no de-novo "
+               "whitespace flag at the present thresholds.",
+               eyebrow="UNDERSUPPLIED MARKETS", tone="positive"))
+        + f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
         f'Demand/capacity = AIS-channel slice (~22% of infusion volume) '
         f'÷ estimated AIS chair capacity; ≥1.10 or a balanced growth '
         f'corridor (where site-of-care migration 22%→30% + population '
         f'growth push it over) flags ★. Score blends demand · '
-        f'under-saturation · payer quality · growth.</p>')
+        f'under-saturation · payer quality · growth.</p>'
+        f'<p style="font-size:11.5px;margin:8px 0 0;">'
+        f'<a class="ck-link" href="/diligence/texas-infusion/counties">'
+        f'Open the county proximity workbench → all 254 counties, '
+        f'patient-to-clinic distance, AIC whitespace</a></p>')
 
 
 def _county_capacity_table(dd: Dict[str, Any]) -> str:
@@ -1971,7 +2058,7 @@ def _county_capacity_table(dd: Dict[str, Any]) -> str:
             f'<td class="num" style="padding:4px 8px;text-align:right;'
             f'color:{bt};font-weight:600;">{dc if dc is not None else "—"}</td>'
             f'<td class="num" style="padding:4px 8px;text-align:right;">'
-            f'{cap.get("non_hospital_penetration",0)*100:.0f}%</td>'
+            f'{cap.get("non_hospital_penetration",0)*100:.1f}%</td>'
             f'<td style="padding:4px 8px;font-size:10px;color:{bt};">'
             f'{html.escape(band)}</td>'
             f'<td class="num" style="padding:4px 8px;text-align:right;'
@@ -1983,14 +2070,14 @@ def _county_capacity_table(dd: Dict[str, Any]) -> str:
         f'CHAIR CAPACITY · SATURATION · OPPORTUNITY BY COUNTY</div>'
         f'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
         f'<thead><tr style="border-bottom:1px solid #d6cfc0;color:{_FAINT};">'
-        f'<th style="text-align:left;padding:3px 8px;">County</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Pts</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Chairs</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Pts/chair</th>'
-        f'<th style="text-align:right;padding:3px 8px;">D/C</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Non-hosp</th>'
-        f'<th style="text-align:left;padding:3px 8px;">Saturation</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Score</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">County</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Pts</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Chairs</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Pts/chair</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">D/C</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Non-hosp</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Saturation</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Score</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>'
         f'<p style="font-size:9px;color:{_FAINT};margin:3px 0 0;">'
         f'D/C = AIS-channel demand ÷ chair capacity · Non-hosp = est. '
@@ -2014,7 +2101,12 @@ def _home_infusion_section(a: Dict[str, Any]) -> str:
     and the Medicare HIT reimbursement gap."""
     hi = a.get("home_infusion") or {}
     if not hi:
-        return ""
+        return ck_empty_state(
+            "No home-infusion detail available.",
+            "Episode economics, the therapy/condition reference, the "
+            "network roster and the Medicare HIT reimbursement read all "
+            "come from this block.",
+            eyebrow="HOME INFUSION")
     ec = hi.get("episode_economics", {})
     conds = {c["key"]: c for c in hi.get("tx_conditions", [])}
 
@@ -2041,7 +2133,7 @@ def _home_infusion_section(a: Dict[str, Any]) -> str:
         f'font-weight:700;">CONTRIBUTION</div><div style="font-size:17px;'
         f'font-weight:700;color:{_POS};">{_money(ec.get("contribution",0))}'
         f' <span style="font-size:11px;color:{_DIM};">'
-        f'({ec.get("contribution_margin",0)*100:.0f}%)</span></div></div>'
+        f'({ec.get("contribution_margin",0)*100:.1f}%)</span></div></div>'
         f'</div>{drivers}'
         f'<div style="margin-top:8px;padding:7px 10px;background:#eef5f4;'
         f'border-left:3px solid {_TEAL};border-radius:0 3px 3px 0;'
@@ -2078,11 +2170,11 @@ def _home_infusion_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Therapy</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Conditions served</th>'
-        f'<th style="text-align:right;padding:6px 8px;">TX eligible/yr</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Regimen</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Why home</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Therapy</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Conditions served</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">TX eligible/yr</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Regimen</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Why home</th>'
         f'</tr></thead><tbody>{trows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'TX eligible/yr = published treated-prevalence / incidence rate '
@@ -2119,12 +2211,12 @@ def _home_infusion_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Network</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Tier</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Ownership</th>'
-        f'<th style="padding:6px 8px;">TX</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Focus</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Accreditation</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Network</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Tier</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Ownership</th>'
+        f'<th scope="col" style="padding:6px 8px;">TX</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Focus</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Accreditation</th>'
         f'</tr></thead><tbody>{nrows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'Payer-owned networks (Optum, Paragon/Elevance) can steer their '
@@ -2210,7 +2302,11 @@ def _home_discharge_section(a: Dict[str, Any]) -> str:
     risk = hi.get("therapy_risk", {})
     refs = hi.get("referral_sources", {})
     if not disch or not risk:
-        return ""
+        return ck_empty_state(
+            "No discharge pipeline or therapy-risk data.",
+            "The annual referral flow, the five-axis risk heatmap and the "
+            "referral-source concentration read are all unavailable.",
+            eyebrow="DISCHARGE PIPELINE & THERAPY RISK")
 
     # Discharge / referral-flow table.
     drows = ""
@@ -2230,17 +2326,17 @@ def _home_discharge_section(a: Dict[str, Any]) -> str:
             f'<td style="padding:6px 8px;font-size:11px;color:{_DIM};">'
             f'{html.escape(d["source"])}</td>'
             f'<td class="num" style="padding:6px 8px;text-align:right;'
-            f'font-weight:700;color:{rt};">{d["readmission_pct"]:.0f}%</td>'
+            f'font-weight:700;color:{rt};">{d["readmission_pct"]:.1f}%</td>'
             f'</tr>')
     flow_table = (
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:6px 8px;">Therapy</th>'
-        f'<th style="text-align:right;padding:6px 8px;">TX referrals/yr</th>'
-        f'<th style="text-align:left;padding:6px 8px;">Discharge / referral '
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Therapy</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">TX referrals/yr</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">Discharge / referral '
         f'source</th>'
-        f'<th style="text-align:right;padding:6px 8px;">30-day readmit</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">30-day readmit</th>'
         f'</tr></thead><tbody>{drows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'Referrals/yr = published new-start / discharge incidence (per '
@@ -2253,7 +2349,7 @@ def _home_discharge_section(a: Dict[str, Any]) -> str:
     axes = ["reimbursement", "steerage", "referral_concentration",
             "clinical", "supply"]
     axhead = "".join(
-        f'<th style="padding:4px 5px;font-size:9px;font-weight:700;'
+        f'<th scope="col" style="padding:4px 5px;font-size:9px;font-weight:700;'
         f'color:{_FAINT};writing-mode:horizontal-tb;text-align:center;">'
         f'{html.escape(risk["axis_labels"][ax].split(" ")[0])}</th>'
         for ax in axes)
@@ -2282,9 +2378,9 @@ def _home_discharge_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th style="text-align:left;padding:4px 8px;">Therapy (most at '
+        f'<th scope="col" style="text-align:left;padding:4px 8px;">Therapy (most at '
         f'risk first)</th>{axhead}'
-        f'<th style="padding:4px 8px;text-align:right;">At-risk</th>'
+        f'<th scope="col" style="padding:4px 8px;text-align:right;">At-risk</th>'
         f'</tr></thead><tbody>{rrows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'Five-axis diligence framework (1 low → 5 high): Reimbursement · '
@@ -2351,7 +2447,8 @@ def _home_discharge_block(dd: Dict[str, Any]) -> str:
             f'width:{w:.0f}%;background:{tone};"></div></div></div>'
             f'<div style="text-align:right;"><span style="font-size:11px;'
             f'font-weight:700;color:{tone};">{r["annual_referrals"]:,}</span>'
-            f'<span style="font-size:9px;color:{rt};"> · {r["readmission_pct"]:.0f}%↩</span>'
+            f'<span style="font-size:9px;color:{rt};"> · '
+            f'{r["readmission_pct"]:.1f}%↩</span>'
             f'</div></div>')
     return (
         f'<div style="margin-top:10px;"><div style="font-size:10px;'
@@ -2422,11 +2519,11 @@ def _players_table(a: Dict[str, Any]) -> str:
         '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:6px 8px;">Operator</th>'
-        '<th style="text-align:left;padding:6px 8px;">Channel</th>'
-        '<th style="text-align:left;padding:6px 8px;">Ownership</th>'
-        '<th style="padding:6px 8px;">TX</th>'
-        '<th style="text-align:left;padding:6px 8px;">Scale / note</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Operator</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Channel</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Ownership</th>'
+        '<th scope="col" style="padding:6px 8px;">TX</th>'
+        '<th scope="col" style="text-align:left;padding:6px 8px;">Scale / note</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:8px 0 0;">'
         'Channel: AIC = ambulatory infusion center · Home = home '
@@ -2437,6 +2534,12 @@ def _players_table(a: Dict[str, Any]) -> str:
 
 
 def _risk_register(a: Dict[str, Any]) -> str:
+    if not a.get("risk_register"):
+        return ck_empty_state(
+            "No risks registered.",
+            "The reimbursement / RCM / market risk register is empty — "
+            "unexpected for a diligence read; check the analysis build.",
+            eyebrow="RISK REGISTER", tone="warning")
     rows = ""
     for r in a["risk_register"]:
         st = _SEV_TONE.get(r["severity"], _FAINT)
@@ -2494,9 +2597,9 @@ def _rcm_playbook(a: Dict[str, Any]) -> str:
         + '<div style="overflow-x:auto;"><table style="width:100%;'
         'border-collapse:collapse;font-size:12px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        '<th style="text-align:left;padding:5px 8px;">KPI</th>'
-        '<th style="text-align:left;padding:5px 8px;">Why it matters here</th>'
-        '<th style="text-align:left;padding:5px 8px;">Read</th>'
+        '<th scope="col" style="text-align:left;padding:5px 8px;">KPI</th>'
+        '<th scope="col" style="text-align:left;padding:5px 8px;">Why it matters here</th>'
+        '<th scope="col" style="text-align:left;padding:5px 8px;">Read</th>'
         f'</tr></thead><tbody>{kpi_rows}</tbody></table></div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;'
         'margin-top:12px;">'
@@ -2511,10 +2614,16 @@ def _rcm_playbook(a: Dict[str, Any]) -> str:
 
 def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
              value_key: str, value_fmt, tone: str, sub_key: str = "",
-             width: int = 560, rank_key: str = "") -> str:
+             width: int = 560, rank_key: str = "",
+             aria_label: str = "") -> str:
     """Compact ranked horizontal-bar SVG — the 'easy to visualize'
     aggregation. ``rows`` already ordered for display; bar length ∝
-    value / max."""
+    value / max.
+
+    ``aria_label`` is optional and defaults to a generic description so
+    existing call sites keep working — the chart carries meaning, so
+    ``role="img"`` on its own left screen readers with nothing to read.
+    """
     if not rows:
         return ""
     vals = [float(r.get(value_key) or 0) for r in rows]
@@ -2523,8 +2632,9 @@ def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
     row_h, gap, pad = 22, 6, 6
     height = pad * 2 + len(rows) * (row_h + gap) - gap
     parts = [
-        f'<svg viewBox="0 0 {width} {height}" width="100%" '
-        f'style="max-width:{width}px;display:block;" role="img">']
+        f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" '
+        f'aria-label="{html.escape(aria_label or "Ranked horizontal bar chart", quote=True)}" '
+        f'style="max-width:{width}px;display:block;">']
     # Zero-baseline + max-value gridline so bar lengths read against a
     # fixed scale anchor rather than floating in space.
     parts.append(
@@ -2580,8 +2690,10 @@ def _city_section(dd: Dict[str, Any]) -> str:
         for b in dd["age_bands"]]
     age_chart = _hbar_svg(
         age_rows, label_key="band", value_key="demand_share",
-        value_fmt=lambda v: f'{v*100:.0f}%', tone=_TEAL, sub_key="sub",
-        rank_key="demand_rank")
+        value_fmt=lambda v: f'{v*100:.1f}%', tone=_TEAL, sub_key="sub",
+        rank_key="demand_rank",
+        aria_label=f'Infusion demand share by age band — '
+                   f'{dd["metro"]}, ranked')
 
     # Top suburbs (member counties) by infusion patients — north
     # suburbs get a ▲N marker on the label.
@@ -2593,7 +2705,9 @@ def _city_section(dd: Dict[str, Any]) -> str:
     sub_chart = _hbar_svg(
         sub_rows, label_key="county_label", value_key="infusion_patients",
         value_fmt=lambda v: f'{v:,.0f} pts', tone=_NAVY, rank_key="demand_rank",
-        sub_key="")
+        sub_key="",
+        aria_label=f'Member counties by estimated infusion patients — '
+                   f'{dd["metro"]}, ranked')
 
     # North-suburb callout.
     north = (
@@ -2624,10 +2738,10 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'(est. adults = pop × TX prevalence)</div>'
         f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
         f'<thead><tr style="border-bottom:1px solid #d6cfc0;color:{_FAINT};">'
-        f'<th style="text-align:left;padding:3px 8px;">Condition</th>'
-        f'<th style="text-align:right;padding:3px 8px;">Est. patients</th>'
-        f'<th style="text-align:left;padding:3px 8px;">Therapy</th>'
-        f'<th style="text-align:left;padding:3px 8px;">Channel</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Condition</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">Est. patients</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Therapy</th>'
+        f'<th scope="col" style="text-align:left;padding:3px 8px;">Channel</th>'
         f'</tr></thead><tbody>{ib_rows}</tbody></table></div>'
         if ib_rows else "")
 
@@ -2642,8 +2756,14 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'<li style="margin:2px 0;font-size:11.5px;color:{_DIM};">'
         f'<strong>{html.escape(w["county"])}</strong> — '
         f'{w["infusion_patients"]:,} patients vs {_ws_cap(w)} · '
-        f'{w["pct_age_65_plus"]*100:.0f}% 65+</li>'
+        f'{w["pct_age_65_plus"]*100:.1f}% 65+</li>'
         for w in dd["whitespace_counties"][:4])
+    ws_block = (
+        f'<ul style="margin:0;padding-left:18px;">{ws}</ul>' if ws else
+        f'<p style="margin:0;font-size:11.5px;color:{_DIM};">No member '
+        f'county in this metro shows demand outrunning its estimated '
+        f'local capacity — entry here is a share-take, not a '
+        f'whitespace build.</p>')
 
     return (
         f'<div style="border:1px solid #d6cfc0;border-radius:5px;'
@@ -2690,7 +2810,7 @@ def _city_section(dd: Dict[str, Any]) -> str:
         f'<div style="font-size:10px;color:{_WARN};font-weight:700;'
         f'letter-spacing:0.06em;margin-bottom:3px;">EARLY / WHITESPACE '
         f'SUBURBS — demand with thin local capacity</div>'
-        f'<ul style="margin:0;padding-left:18px;">{ws}</ul></div>'
+        f'{ws_block}</div>'
         f'</div>')
 
 
@@ -2744,9 +2864,9 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"scale — but the CAGR depends on the site-of-care shift, so "
             f"underwrite the demand chain and steerage, not the headline."),
         "channels": (
-            f"Home ({home*100:.0f}%) + AIS ({ais*100:.0f}%) = "
-            f"{(home+ais)*100:.0f}% of volume already sits outside the "
-            f"hospital; the {hopd*100:.0f}% HOPD pool is white-space to "
+            f"Home ({home*100:.1f}%) + AIS ({ais*100:.1f}%) = "
+            f"{(home+ais)*100:.1f}% of volume already sits outside the "
+            f"hospital; the {hopd*100:.1f}% HOPD pool is white-space to "
             f"capture by steerage, not a competitor to displace."),
         "home": (
             f"IG + rare-disease are the margin engine; the Medicare HIT "
@@ -2755,16 +2875,16 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"first number to diligence."),
         "discharge": (
             f"~{opat:,} OPAT referrals/yr are the volume engine, but "
-            f"{refs['hospital_dependence']*100:.0f}% of referrals flow "
+            f"{refs['hospital_dependence']*100:.1f}% of referrals flow "
             f"through hospital discharge desks — referral concentration is "
             f"the #1 commercial risk, while {risk['most_at_risk'].split('/')[0].strip()} "
             f"and IG/biologics carry the reimbursement + steerage risk."),
         "players": (
-            f"No operator holds more than {frag['top_operator_share']*100:.0f}% "
+            f"No operator holds more than {frag['top_operator_share']*100:.1f}% "
             f"nationally — the real competitive threat is payer-owned "
             f"steerage (Optum, Paragon/Elevance), not a scale incumbent."),
         "segments": (
-            f"~{rollup_pool*100:.0f}% of capacity is the fragmented "
+            f"~{rollup_pool*100:.1f}% of capacity is the fragmented "
             f"independent + physician-owned roll-up pool; the health-"
             f"system-owned third is captive (not for sale) — that split "
             f"defines the acquirable universe."),
@@ -2774,14 +2894,14 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             "where IV-iron, chronic and immunology volume clusters."),
         "aic": (
             f"At ~{_money(aic['contribution_per_chair'])} contribution/"
-            f"chair and break-even near {curve['breakeven_util']*100:.0f}% "
+            f"chair and break-even near {curve['breakeven_util']*100:.1f}% "
             f"utilization, chair throughput + commercial mix make or break "
             f"the unit — de-novo ramps below break-even bleed cash."),
         "denovo": (
             f"A new center costs ~{_money(a['aic_denovo_ramp']['capex_total'])} "
             f"to build and reaches cash break-even around month "
             f"{a['aic_denovo_ramp']['breakeven_month']}, returning "
-            f"~{a['aic_denovo_ramp']['y3_cash_on_cash']:.1f}x cash-on-cash by "
+            f"~{a['aic_denovo_ramp']['y3_cash_on_cash']:.2f}x cash-on-cash by "
             f"year 3 — a fast-payback de-novo engine that, with the no-CON "
             f"runway, can out-pace bolt-on multiples."),
         "asp": (
@@ -2790,7 +2910,7 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"margin is GPO acquisition cost vs the payment limit — and "
             f"white-bagging can erase it entirely."),
         "site": (
-            f"The {hopd*100:.0f}% HOPD pool migrating to AIS/home is the "
+            f"The {hopd*100:.1f}% HOPD pool migrating to AIS/home is the "
             f"growth engine — back operators positioned to RECEIVE the "
             f"steered volume, not defend a chair."),
         "regulatory": (
@@ -2804,8 +2924,8 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
         "evolution": (
             f"Infusion has moved {a['site_of_care_evolution']['hopd_shift_pts']} "
             f"points out of the hospital since 2015 (HOPD "
-            f"{a['site_of_care_evolution']['soc_start']['hopd']*100:.0f}%→"
-            f"{a['site_of_care_evolution']['soc_end']['hopd']*100:.0f}%) while "
+            f"{a['site_of_care_evolution']['soc_start']['hopd']*100:.1f}%→"
+            f"{a['site_of_care_evolution']['soc_end']['hopd']*100:.1f}%) while "
             f"the market compounded "
             f"{a['site_of_care_evolution']['market_cagr_pct']:.1f}%/yr — COVID "
             f"+ the HIT benefit + payer steerage made the discharge shift "
@@ -2819,7 +2939,7 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"Austin and San Antonio are thinner — the white-space metros "
             f"for de-novo or tuck-in entry."),
         "jcode_pos": (
-            f"Texas runs ~{a['jcode_pos']['texas']['nonfac_pct']*100:.0f}% "
+            f"Texas runs ~{a['jcode_pos']['texas']['nonfac_pct']*100:.1f}% "
             f"of infusion J-code volume non-facility (office/AIC), #"
             f"{a['jcode_pos']['texas']['rank']} of "
             f"{len(a['jcode_pos']['states'])} — a structurally favorable "
@@ -2837,18 +2957,18 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"priority de-novo and tuck-in targets."),
         "concentration": (
             f"HHI {frag['hhi']:,.0f} with the largest operator at "
-            f"{frag['top_operator_share']*100:.0f}% and a "
-            f"{frag['independent_pool_share']*100:.0f}% independent pool is "
+            f"{frag['top_operator_share']*100:.1f}% and a "
+            f"{frag['independent_pool_share']*100:.1f}% independent pool is "
             f"a textbook roll-up runway — no incumbent can block a build-up."),
         "payer": (
-            f"Commercial-heavy ({commercial*100:.0f}%) funds the economics, "
+            f"Commercial-heavy ({commercial*100:.1f}%) funds the economics, "
             f"but {ma['enrollment']/1e6:.1f}M MA lives "
-            f"({ma.get('penetration',0)*100:.0f}% of total Medicare) are "
+            f"({ma.get('penetration',0)*100:.1f}% of total Medicare) are "
             f"steering site-of-care and gating biologics — payer mix is "
             f"the swing factor on margin."),
         "hopd": (
             f"~{sum(m['hopd_patients_modeled'] for m in a['hopd_infusion']['metros']):,} "
-            f"metro patients sit in the {a['hopd_infusion']['hopd_share']*100:.0f}% "
+            f"metro patients sit in the {a['hopd_infusion']['hopd_share']*100:.1f}% "
             f"HOPD channel — the pool steerage converts. The CMS "
             f"by-Provider-and-Service file names WHICH hospitals hold it, "
             f"so the de-novo / referral strategy can target the discharge "
@@ -2858,7 +2978,7 @@ def _so_whats(a: Dict[str, Any]) -> Dict[str, str]:
             f"TX's {a['medicare_base']['state']['total_benes']/1e6:.1f}M "
             f"Medicare lives are still FFS — the ungated ASP+6 "
             f"buy-and-bill book — while the "
-            f"{a['medicare_base']['state']['ma_pct']*100:.0f}% MA book is "
+            f"{a['medicare_base']['state']['ma_pct']*100:.1f}% MA book is "
             f"steered and prior-auth'd. Size the Part B opportunity on "
             f"FFS benes by county, and underwrite the MA share "
             f"converting only at managed-care economics."),        "demographics": (
@@ -2905,16 +3025,18 @@ def _inject_section_nav(body: str) -> Tuple[str, str]:
         f'border-bottom:1px solid #efe9dc;">{html.escape(t)}</a>'
         for t, s in items)
     nav = (
+        '<nav aria-label="Section navigator">'
         '<details style="position:fixed;right:18px;bottom:18px;z-index:50;'
         'font-family:\'Inter Tight\',system-ui,sans-serif;">'
-        '<summary style="list-style:none;cursor:pointer;background:#0b2341;'
+        '<summary aria-label="Jump to a section of this page" '
+        'style="list-style:none;cursor:pointer;background:#0b2341;'
         'color:#fff;padding:8px 14px;border-radius:20px;font-size:12px;'
         'font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.18);">'
         '☰ Sections</summary>'
         '<div style="position:absolute;right:0;bottom:40px;width:248px;'
         'max-height:60vh;overflow-y:auto;background:#fff;border:1px solid '
         '#c9c1ac;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.18);'
-        f'">{links}</div></details>')
+        f'">{links}</div></details></nav>')
     return body, nav
 
 
@@ -2940,9 +3062,20 @@ def render_texas_infusion_page(
     # module's section-nav helper, so a top-level import would cycle).
     from .texas_infusion_continued_page import part_tabs
 
+    # Route every data-source label through ck_source_link so a partner
+    # can click through to the dataset a figure came from. Unknown labels
+    # fall back to escaped plain text, so this is always safe.
     sources = "".join(
         f'<li style="margin:3px 0;font-size:11px;color:{_DIM};">'
-        f'{html.escape(src)}</li>' for src in a["sources"])
+        + ck_source_link(src, style=f"color:{_NAVY};font-weight:600;")
+        + '</li>' for src in a.get("sources") or [])
+    sources_block = (
+        f'<ul style="margin:0;padding-left:18px;">{sources}</ul>'
+        if sources else ck_empty_state(
+            "No sources recorded for this analysis.",
+            "Every figure on this page should be traceable; an empty "
+            "source list means the analysis build did not register one.",
+            eyebrow="SOURCES & BASIS", tone="warning"))
 
     body = (
         ck_page_title(
@@ -3169,9 +3302,9 @@ def render_texas_infusion_page(
             f'<p style="margin-top:6px;"><strong>Growth trend:</strong> '
             f'{html.escape(a["population_growth"]["note"])}</p>'
             f'<p style="margin-top:6px;">Counterweights: a '
-            f'<strong>{demo["uninsured_rate"]*100:.0f}% uninsured rate</strong> '
+            f'<strong>{demo["uninsured_rate"]*100:.1f}% uninsured rate</strong> '
             f'(the highest in the US, a Medicaid-non-expansion consequence) '
-            f'and <strong>{demo["pct_rural"]*100:.0f}% rural</strong> '
+            f'and <strong>{demo["pct_rural"]*100:.1f}% rural</strong> '
             f'population that complicates home-nurse route economics outside '
             f'the four big metros. Median household income '
             f'${demo["median_household_income"]:,.0f}.</p></div>')
@@ -3192,7 +3325,7 @@ def render_texas_infusion_page(
         + _exhibit_section(a)
 
         + ck_section_header("Sources & basis", eyebrow="VERIFIABILITY")
-        + f'<ul style="margin:0;padding-left:18px;">{sources}</ul>'
+        + sources_block
         + f'<p style="font-size:11px;color:{_FAINT};margin:10px 0 0;'
         f'line-height:1.6;">{html.escape(a["basis_note"])}</p>'
         + '<p style="font-size:11.5px;margin:10px 0 0;">'
