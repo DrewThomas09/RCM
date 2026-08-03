@@ -825,17 +825,22 @@ def mmt_operating_model() -> MmtOperatingModel:
     """Ground-ambulance unit economics from the PUBLISHED benchmark layer
     (:mod:`ift_unit_economics` — GADCS / MedPAC / HCCI / GAO / AIMHI), not a
     fabricated per-leg P&L. The dataclass numeric fields carry the GADCS
-    published means: mean reimbursement/transport, mean private-for-profit
-    cost/transport, and the (negative) published mean spread — the honest
-    industry baseline an IFT specialist's thesis is measured AGAINST. MMT's
+    published means from the CMS/RAND GADCS Report Appendix — Year 1–Year 4
+    Cohort Analysis (posted 2025-12-09, data through 2025-05-15), Tables 4.1
+    and 4.2: mean revenue/transport, mean for-profit-or-unknown cost/transport,
+    and the (negative) published mean spread — the honest industry baseline an
+    IFT specialist's thesis is measured AGAINST. That appendix supersedes the
+    Year 1–2 cohort report (Dec 2024) this page previously quoted. MMT's
     actual margin is a diligence request; no public figure exists and none
     is invented. Never raises."""
     try:
         from . import ift_unit_economics as ue
     except Exception:  # noqa: BLE001
         ue = None
-    rev = 1147.0       # GADCS mean reimbursement / transport (all payers)
-    cost = 1778.0      # GADCS mean cost / transport, PRIVATE FOR-PROFIT
+    # GADCS Year 1–Year 4 cohort appendix (posted 2025-12-09, data through
+    # 2025-05-15) — SUPERSEDES the Year 1–2 cohort report (Dec 2024).
+    rev = 1268.0       # Table 4.2 mean total revenue / transport, all NPIs
+    cost = 1912.0      # Table 4.1 mean total cost / transport, for-profit/unk
     cm = (rev - cost) / rev          # the published mean spread — negative
     som = mmt_serviceable_model()
     # Units estimate stays a stated equation: legs × ~1.6 crew-hrs /
@@ -846,19 +851,21 @@ def mmt_operating_model() -> MmtOperatingModel:
     labor_share = 0.707              # GADCS Y1–4 appendix (Dec 2025)
     metrics = (
         OpMetric("Mean reimbursement / transport", f"${rev:,.0f}",
-                 "SOURCED (GADCS Y1–2, re-verify)",
+                 "SOURCED (GADCS Y1–4 appendix, Dec 2025, Table 4.2)",
                  "All provider + payer types — the published all-payer "
-                 "revenue benchmark."),
+                 "revenue benchmark (n=9,599 NPIs; median $613). Supersedes "
+                 "the Year 1–2 mean of $1,147."),
         OpMetric("Mean cost / transport (private for-profit)",
-                 f"${cost:,.0f}", "SOURCED (GADCS Y1–2, re-verify)",
-                 "vs $3,127 governmental and $2,673 all-agency mean — "
+                 f"${cost:,.0f}",
+                 "SOURCED (GADCS Y1–4 appendix, Dec 2025, Table 4.1)",
+                 "vs $3,167 governmental and $2,763 all-agency mean — "
                  "readiness-heavy 911 books carry the difference."),
         OpMetric("→ Labor share of cost", f"{labor_share*100:.1f}%",
                  "SOURCED (GADCS Y1–4)",
                  "The binding constraint — crew wages + benefits; up from "
                  "69% in the first cohort."),
         OpMetric("Published mean spread", f"{cm*100:.1f}%",
-                 "DERIVED ($1,147 − $1,788) / $1,147",
+                 "DERIVED ($1,268 − $1,912) / $1,268 · GADCS Y1–4",
                  "The industry's published mean economics are NEGATIVE — "
                  "the mean carries municipal readiness costs. Beating this "
                  "spread via UHU + payer selection IS the IFT thesis."),

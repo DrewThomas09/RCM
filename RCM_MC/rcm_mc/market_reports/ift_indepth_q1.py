@@ -4,6 +4,13 @@ Authored 2026-07-10 from the suite's cited corpus (ift_study taxonomy,
 ift_unit_economics, ift_demand_evidence, ift_growth_evidence,
 ift_npi_landscape). Every evidence line carries its basis + source; company
 or contract facts that are not public are marked as diligence requests.
+
+GADCS vintage: the cost/revenue-per-transport figures were refreshed on
+2026-08-03 to the CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort
+analysis (posted 2025-12-09, data through 2025-05-15), which SUPERSEDES the
+Year 1-2 cohort report this module previously quoted ($2,673 / $3,127 /
+$1,788 mean cost, $1,147 mean revenue). The 70.7% labour share is unchanged
+between vintages (Year 1-Year 4 appendix, Table 3.1).
 """
 from __future__ import annotations
 
@@ -339,12 +346,12 @@ _OPERATING = Block(
     why_true=(
         "911 buys readiness: units posted to hit contractual response "
         "times, utilization deliberately held low (0.30-0.50 UHU band), "
-        "cost per transport carried up by idle coverage — GADCS mean cost "
-        "$2,673 with governmental agencies at $3,127.",
+        "cost per transport carried up by idle coverage — GADCS Year "
+        "1-Year 4 mean cost $2,763 with governmental agencies at $3,167.",
         "IFT converts the same assets to logistics: trips are known, "
         "chainable and positionable, so a scheduled book targets UHU "
-        "ABOVE the 911 band; private for-profit cost per transport "
-        "(GADCS $1,788) already reflects part of that gap.",
+        "ABOVE the 911 band; for-profit/unknown cost per transport "
+        "(GADCS Year 1-Year 4, $1,912) already reflects part of that gap.",
         "Staffing follows the market: EMD-driven 911 crews vs IFT crews "
         "matched to trip acuity (EMT/paramedic/nurse) vs NEMT drivers "
         "without clinical credentials; deadhead and wait time — not wages "
@@ -358,11 +365,12 @@ _OPERATING = Block(
         "and the reason cost comparisons across the three markets mislead "
         "unless the readiness model is named."),
     evidence=(
-        _E("Mean cost per transport $2,673 all agencies / $3,127 "
-           "governmental / $1,788 private for-profit; labor 70.7% of cost",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
-           "trade coverage; re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+        _E("Mean cost per transport $2,763 all NPIs / $3,167 governmental "
+           "/ $1,912 for-profit-or-unknown; labor 70.7% of aggregate cost",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (posted 2025-12-09; data through 2025-05-15), "
+           "Tables 3.1 and 4.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("911 systems target ~0.30-0.50 unit-hour utilization; "
            "non-emergency providers target higher (AIMHI survey mean "
            "0.508)",
@@ -550,10 +558,12 @@ _REIMBURSEMENT = Block(
            "mileage $17 vs $8",
            "SOURCED", "Health Care Cost Institute",
            "https://healthcostinstitute.org/all-hcci-reports/commercial-prices-for-ground-ambulance-are-double-medicare-rates/"),
-        _E("Mean reimbursement per transport $1,147 across all payers vs "
-           "mean cost $2,673 — the published mean spread is negative",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 (via coverage; re-verify)",
-           "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
+        _E("Mean total revenue per transport $1,268 across all payers vs "
+           "mean total cost $2,763 — the published mean spread is negative",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (posted 2025-12-09; data through 2025-05-15), "
+           "Tables 4.1 and 4.2",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("ESRD dialysis-related non-emergency BLS pays fee schedule "
            "minus 23% since Oct 2018",
            "GOV", "42 CFR 414 subpart H",

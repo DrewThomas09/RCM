@@ -8,6 +8,13 @@ payment-rules and operational-failure dossiers. Every evidence line carries
 its basis + source; excerpt-grade captures carry "(re-verify)"; contract and
 company facts that are not public are marked as diligence requests, never
 invented. Analytic scaffolds carry the FRAMEWORK basis.
+
+GADCS vintage: the cost/revenue-per-transport figures were refreshed on
+2026-08-03 to the CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort
+analysis (posted 2025-12-09, data through 2025-05-15), which SUPERSEDES the
+Year 1-2 cohort report this module previously quoted ($2,673 / $3,127 /
+$1,788 mean cost, $1,147 mean revenue). The 70.7% labour share is unchanged
+between vintages (Year 1-Year 4 appendix, Table 3.1).
 """
 from __future__ import annotations
 
@@ -1196,8 +1203,9 @@ _FINANCIAL = Block(
         "selection, and slow ETAs on unprofitable legs.",
         "Retainers and dedicated-unit fees swap money for risk: the "
         "hospital pays for readiness — the 911 lesson, since readiness is "
-        "why the GADCS all-agency mean cost is $2,673 against $1,147 mean "
-        "reimbursement — and the provider commits capacity; observed "
+        "why the GADCS Year 1-Year 4 all-agency mean cost is $2,763 "
+        "against $1,268 mean reimbursement — and the provider commits "
+        "capacity; observed "
         "pricing bases are per-trip, per-unit-hour, per-dedicated-unit, "
         "and blended trip-plus-retainer.",
         "Reimbursement stays with the biller — the provider in nearly all "
@@ -1215,12 +1223,13 @@ _FINANCIAL = Block(
         "businesses if one carries a retainer and a denial backstop and "
         "the other carries neither."),
     evidence=(
-        _E("GADCS means: cost per transport $2,673 all-agency ($3,127 "
-           "governmental / $1,788 private for-profit) vs mean "
-           "reimbursement $1,147 — readiness costs dominate the mean",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 report via trade coverage "
-           "(re-verify)",
-           "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
+        _E("GADCS means: cost per transport $2,763 all-agency ($3,167 "
+           "governmental / $1,912 private for-profit/unknown) vs mean "
+           "reimbursement $1,268 — readiness costs dominate the mean",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (data through 2025-05-15; posted 2025-12-09), "
+           "Tables 4.1 and 4.2",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("19.7% of transports collect nothing; insufficient "
            "documentation is 46.7% of the ambulance improper-payment "
            "error — the denial risk being allocated",
@@ -1519,9 +1528,10 @@ _SELECTION = Block(
         "triggering events — a failure spike, an acquisition, a vendor "
         "exit — not on spreadsheets."),
     why_true=(
-        "The arithmetic: mean cost per transport is $2,673 all-agency — "
-        "$3,127 governmental versus $1,788 private for-profit — with "
-        "labor at 70.7%; a sub-scale hospital fleet buys the governmental "
+        "The arithmetic: GADCS Year 1-Year 4 mean cost per transport is "
+        "$2,763 all-agency — $3,167 governmental versus $1,912 private "
+        "for-profit — with labor at 70.7%; a sub-scale hospital fleet "
+        "buys the governmental "
         "cost curve, and MedPAC's strong inverse volume-cost relationship "
         "is the whole insourcing argument in one line: without referral-"
         "magnet density, self-operation is the expensive way to get "
@@ -1550,11 +1560,13 @@ _SELECTION = Block(
         "captives; watch trigger events (M&A, REH conversions, vendor "
         "exits) as the moments models actually change."),
     evidence=(
-        _E("GADCS mean cost per transport: $2,673 all agencies, $3,127 "
-           "governmental, $1,788 private for-profit; labor 70.7% of cost",
-           "SOURCED", "CMS/RAND GADCS reports via trade coverage "
-           "(re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+        _E("GADCS mean cost per transport: $2,763 all agencies, $3,167 "
+           "governmental, $1,912 private for-profit/unknown; labor 70.7% "
+           "of cost",
+           "GOV", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (data through 2025-05-15; posted 2025-12-09), "
+           "Tables 3.1 and 4.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("Strong inverse relationship between ambulance response volume "
            "and cost per response — the scale gate on insourcing",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
@@ -1575,7 +1587,7 @@ _SELECTION = Block(
            "No published threshold — the observable bar is referral-"
            "magnet density (Mayo ~70 units; Allina ~34,000 interfacility "
            "requests/yr); sub-scale fleets buy the governmental cost "
-           "curve ($3,127 vs $1,788 per transport)."),
+           "curve ($3,167 vs $1,912 per transport, GADCS Year 1-Year 4)."),
         _S("What level of local density is required?",
            "Enough to chain trips and hold unit-hour utilization above "
            "the 911 band — MedPAC's inverse volume-cost curve is the "
