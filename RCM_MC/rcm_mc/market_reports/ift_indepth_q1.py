@@ -344,7 +344,7 @@ _OPERATING = Block(
         "IFT converts the same assets to logistics: trips are known, "
         "chainable and positionable, so a scheduled book targets UHU "
         "ABOVE the 911 band; private for-profit cost per transport "
-        "(GADCS $1,778) already reflects part of that gap.",
+        "(GADCS $1,788) already reflects part of that gap.",
         "Staffing follows the market: EMD-driven 911 crews vs IFT crews "
         "matched to trip acuity (EMT/paramedic/nurse) vs NEMT drivers "
         "without clinical credentials; deadhead and wait time — not wages "
@@ -359,7 +359,7 @@ _OPERATING = Block(
         "unless the readiness model is named."),
     evidence=(
         _E("Mean cost per transport $2,673 all agencies / $3,127 "
-           "governmental / $1,778 private for-profit; labor 70.7% of cost",
+           "governmental / $1,788 private for-profit; labor 70.7% of cost",
            "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
            "trade coverage; re-verify)",
            "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),

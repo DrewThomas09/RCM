@@ -858,7 +858,7 @@ def mmt_operating_model() -> MmtOperatingModel:
                  "The binding constraint — crew wages + benefits; up from "
                  "69% in the first cohort."),
         OpMetric("Published mean spread", f"{cm*100:.1f}%",
-                 "DERIVED ($1,147 − $1,778) / $1,147",
+                 "DERIVED ($1,147 − $1,788) / $1,147",
                  "The industry's published mean economics are NEGATIVE — "
                  "the mean carries municipal readiness costs. Beating this "
                  "spread via UHU + payer selection IS the IFT thesis."),

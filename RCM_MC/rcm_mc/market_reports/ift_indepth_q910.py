@@ -191,7 +191,7 @@ _VS_TRADITIONAL = Block(
            "SOURCED", "AIMHI benchmarking / EMS1",
            "https://aimhi.mobi/benchmarking-resources/"),
         _E("Mean cost per transport $3,127 for governmental agencies vs "
-           "$1,778 private for-profit — readiness coverage rides on every "
+           "$1,788 private for-profit — readiness coverage rides on every "
            "shared-fleet trip",
            "SOURCED", "CMS/RAND GADCS Year 1-2 report, via trade coverage "
            "(re-verify)",
@@ -243,7 +243,7 @@ _VS_TRADITIONAL = Block(
            "density of the wrong shape for IFT economics."),
         _S("How do costs compare?",
            "Readiness is expensive: GADCS mean cost per transport is "
-           "$3,127 governmental vs $1,778 private for-profit — idle "
+           "$3,127 governmental vs $1,788 private for-profit — idle "
            "coverage rides on every trip a shared fleet runs."),
         _S("What advantages does traditional EMS retain?",
            "Emergency depth and surge scale, municipal subsidy, "
@@ -400,7 +400,7 @@ _VS_INSOURCING = Block(
         "The costs are equally real: 24/7 credentialed crews (labor is "
         "~70.7% of ambulance cost), medical direction, fleet capital, "
         "dispatch, and an ambulance revenue cycle — and the GADCS gap "
-        "between governmental ($3,127) and private for-profit ($1,778) "
+        "between governmental ($3,127) and private for-profit ($1,788) "
         "mean cost per transport shows what sub-scale readiness costs, "
         "while the MedPAC volume-cost curve says only high, stable "
         "volume amortizes it.",
@@ -430,7 +430,7 @@ _VS_INSOURCING = Block(
            "archetype",
            "SOURCED", "Children's Nebraska provider pages, 2026",
            "https://www.childrensnebraska.org/providers/specialties/transport-critical-care"),
-        _E("Mean cost per transport $3,127 governmental vs $1,778 "
+        _E("Mean cost per transport $3,127 governmental vs $1,788 "
            "private for-profit; labor 70.7% of total cost — the "
            "sub-scale readiness penalty an owned fleet must beat",
            "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports, via "

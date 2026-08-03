@@ -529,7 +529,7 @@ REPORT = MarketReport(
                 "density + on-campus posting dilute fixed crew cost across more "
                 "billed legs — where a good IFT operator separates from a bad one."),
             Kpi("Mean cost per transport (all-in)", "~$2,673 (GOV, GADCS)",
-                "$1,778 private-for-profit vs $3,127 governmental (GOV, CMS GADCS "
+                "$1,788 private-for-profit vs $3,127 governmental (GOV, CMS GADCS "
                 "Yr1-2); the fee schedule alone does not cover it — the contract does."),
             Kpi("Crew labor share of cost", "~69-70% (GOV)",
                 "The binding constraint (CMS GADCS / MedPAC). Paramedic/EMT/nurse "

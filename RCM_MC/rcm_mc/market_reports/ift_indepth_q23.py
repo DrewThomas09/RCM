@@ -37,7 +37,7 @@ _MISSION = Block(
         "chaining known trips.",
         "The cost signature follows the mission: GADCS mean cost per "
         "transport is $2,673 all-agency and $3,127 governmental "
-        "(readiness-heavy) versus $1,778 private for-profit — the spread "
+        "(readiness-heavy) versus $1,788 private for-profit — the spread "
         "is mostly paid-for idleness, with labor at 70.7% of total cost "
         "either way.",
         "A 911-tuned fleet fails IFT mechanically, not culturally: its "
@@ -62,7 +62,7 @@ _MISSION = Block(
            "SOURCED", "AIMHI benchmarking / EMS1",
            "https://aimhi.mobi/benchmarking-resources/"),
         _E("Mean cost per transport $2,673 all agencies / $3,127 "
-           "governmental / $1,778 private for-profit; labor 70.7% of cost",
+           "governmental / $1,788 private for-profit; labor 70.7% of cost",
            "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports, via "
            "trade coverage (re-verify)",
            "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),

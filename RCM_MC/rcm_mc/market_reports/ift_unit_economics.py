@@ -92,7 +92,7 @@ BENCHMARKS: Tuple[EconBenchmark, ...] = (
     _B("gadcs_cost_mean",
        "Mean cost to complete an ambulance transport (2022–23, all payers, "
        "readiness included)",
-       "$2,673 all agencies · $3,127 governmental · $1,778 private "
+       "$2,673 all agencies · $3,127 governmental · $1,788 private "
        "for-profit",
        "SOURCED",
        "CMS/RAND GADCS Report, Year 1–2 cohort (Dec 2024), via EMS|MC "
@@ -250,7 +250,7 @@ THE_HONEST_BOTTOM_LINE = (
     "municipal 911 books. The IFT specialist thesis is precisely the "
     "spread against that mean: a scheduled book runs unit-hour "
     "utilization above the 0.30–0.50 911 band, a private for-profit "
-    "cost base ($1,778 GADCS mean) rather than a governmental one "
+    "cost base ($1,788 GADCS mean) rather than a governmental one "
     "($3,127), and a payer-selected mix where commercial pays ~2.0x "
     "Medicare. MMT's actual per-leg P&L is a diligence request against "
     "company data — no public figure exists, and this page does not "

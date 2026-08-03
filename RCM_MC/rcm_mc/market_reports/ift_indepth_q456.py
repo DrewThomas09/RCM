@@ -1210,7 +1210,7 @@ _FINANCIAL = Block(
         "the other carries neither."),
     evidence=(
         _E("GADCS means: cost per transport $2,673 all-agency ($3,127 "
-           "governmental / $1,778 private for-profit) vs mean "
+           "governmental / $1,788 private for-profit) vs mean "
            "reimbursement $1,147 — readiness costs dominate the mean",
            "SOURCED", "CMS/RAND GADCS Year 1-2 report via trade coverage "
            "(re-verify)",
@@ -1513,7 +1513,7 @@ _SELECTION = Block(
         "exit — not on spreadsheets."),
     why_true=(
         "The arithmetic: mean cost per transport is $2,673 all-agency — "
-        "$3,127 governmental versus $1,778 private for-profit — with "
+        "$3,127 governmental versus $1,788 private for-profit — with "
         "labor at 70.7%; a sub-scale hospital fleet buys the governmental "
         "cost curve, and MedPAC's strong inverse volume-cost relationship "
         "is the whole insourcing argument in one line: without referral-"
@@ -1544,7 +1544,7 @@ _SELECTION = Block(
         "exits) as the moments models actually change."),
     evidence=(
         _E("GADCS mean cost per transport: $2,673 all agencies, $3,127 "
-           "governmental, $1,778 private for-profit; labor 70.7% of cost",
+           "governmental, $1,788 private for-profit; labor 70.7% of cost",
            "SOURCED", "CMS/RAND GADCS reports via trade coverage "
            "(re-verify)",
            "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
@@ -1568,7 +1568,7 @@ _SELECTION = Block(
            "No published threshold — the observable bar is referral-"
            "magnet density (Mayo ~70 units; Allina ~34,000 interfacility "
            "requests/yr); sub-scale fleets buy the governmental cost "
-           "curve ($3,127 vs $1,778 per transport)."),
+           "curve ($3,127 vs $1,788 per transport)."),
         _S("What level of local density is required?",
            "Enough to chain trips and hold unit-hour utilization above "
            "the 911 band — MedPAC's inverse volume-cost curve is the "

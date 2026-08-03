@@ -1704,7 +1704,7 @@ _ECONOMICS = Block(
         "estimators disagree ~3x ($100M to $296M) and all conflict with "
         "the company's own headcount — so the economics answer is the "
         "industry ledger MMT must beat: $1,147 mean reimbursement vs "
-        "$1,778 private-for-profit mean cost per transport, with payer "
+        "$1,788 private-for-profit mean cost per transport, with payer "
         "mix, unit-hour utilization, and density as the levers that make "
         "a dedicated book positive."),
     why_true=(
@@ -1715,7 +1715,7 @@ _ECONOMICS = Block(
         "The published mean spread is negative — $1,147 mean "
         "reimbursement vs $2,673 all-agency mean cost — because the mean "
         "carries municipal readiness books; the private for-profit cost "
-        "mean ($1,778) plus a scheduled book's higher unit-hour "
+        "mean ($1,788) plus a scheduled book's higher unit-hour "
         "utilization is the structural path to a positive spread — the "
         "IFT thesis in one line.",
         "Revenue per trip is fee-ladder arithmetic: BLS 1.00 → ALS1 1.20 "
@@ -1740,7 +1740,7 @@ _ECONOMICS = Block(
            "SOURCED", "Growjo / ZoomInfo / LeadIQ, 2026 (unaudited "
            "third-party estimates; re-verify)", ""),
         _E("Mean reimbursement $1,147/transport vs mean cost $2,673 "
-           "all-agency / $1,778 private for-profit; labor 70.7%; 19.7% "
+           "all-agency / $1,788 private for-profit; labor 70.7%; 19.7% "
            "of transports unpaid",
            "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
            "trade coverage; re-verify)",
