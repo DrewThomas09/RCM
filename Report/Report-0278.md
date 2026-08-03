@@ -64,9 +64,21 @@ Independent of the source audit: 445 deals, **100%** carry a source URL, 418 uni
 
 | Item | Status |
 |---|---|
-| 78 dead source URLs (77 with a candidate replacement) | verification pass in flight — candidates are only applied after a fetch confirms they resolve *and* name both target and sponsor |
+| 78 dead source URLs | **DONE — 62 repaired** (see below) |
 | 139 UNVERIFIABLE citations | citation-quality upgrade: replace portfolio-index links with the specific transaction announcement |
 | 4 sponsor disputes | needs owner judgement |
+
+## Dead-link repair (commit `447df51`)
+
+The 78 dead URLs carried 77 agent-suggested replacements. **None were applied on suggestion alone.** A second pass (10 agents, 128 fetches) re-fetched every candidate and kept only those that both resolve *and* actually name the target and the sponsor:
+
+- **63 of 77 verified usable; 14 correctly rejected** — they resolve but don't discuss the transaction (American Physician Partners, Olive AI, Compassus, US Urology Partners), or are themselves dead (Aegis Sciences).
+- **62 applied.** Replacements are authoritative: SEC EDGAR filings, sponsor press releases (KKR, Blackstone, Welsh Carson, Warburg Pincus, American Securities), and named trade publications.
+- **1 held for review — IVIRMA Global.** Its candidate page dates the KKR acquisition to January 2023 while the record says 2017. Applying it would have swapped a dead link for a live link that *contradicts its own record*. Which transaction the row describes is a decision, not a URL swap.
+
+Corpus after repair: 445 deals, 100% carry a source URL, unique sources **418 → 425**. 817 tests green.
+
+That the verify pass rejected 14 of 77 (18%) is the argument for having it: those would have been live-but-wrong citations in a corpus whose whole claim is that its sources check out.
 
 ---
 
