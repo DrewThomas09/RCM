@@ -10,8 +10,9 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from ._chartis_kit import (
-    chartis_shell, ck_fmt_num, ck_kpi_block, ck_next_section,
-    ck_provenance_tooltip,
+    chartis_shell, ck_empty_state, ck_fmt_currency, ck_fmt_moic, ck_fmt_num,
+    ck_fmt_percent, ck_kpi_block, ck_next_section, ck_provenance_tooltip,
+    ck_source_link,
 )
 from .brand import PALETTE
 
@@ -25,6 +26,11 @@ _NEWS_CATEGORIES = [
     ("Financial Results", "earnings"),
     ("Research", "research"),
 ]
+
+# Slug -> partner-facing label. The card badge used to print the raw slug
+# ("MA", "EARNINGS"), which reads as jargon next to the tab bar that calls
+# the same buckets "M&A Activity" and "Financial Results". One vocabulary.
+_CATEGORY_LABELS = {slug: label for label, slug in _NEWS_CATEGORIES}
 
 _CURATED_ARTICLES = [
     {
@@ -338,6 +344,144 @@ _CURATED_ARTICLES = [
 ]
 
 
+# Sidebar reference values kept as NUMBERS, not pre-typed strings, so the
+# house formats (multiples 2dp + x, percentages 1dp, money 2dp) are enforced
+# by the formatter instead of by whoever last edited the literal. The panel
+# used to print "10.8x" and "4.31%", both off-format.
+_MARKET_SNAPSHOT = [
+    {"label": "Hospital EV/EBITDA", "value": 10.8, "kind": "multiple"},
+    {"label": "10Y Treasury", "value": 0.0431, "kind": "percent"},
+    {"label": "S&P Healthcare", "value": 0.0018, "kind": "percent_signed",
+     "tone": "up"},
+    {"label": "HCA Healthcare", "value": 284.50, "kind": "price",
+     "tone": "up"},
+    {"label": "Tenet Healthcare", "value": 112.30, "kind": "price",
+     "tone": "down"},
+]
+
+# ISO dates (house rule), not "Apr 30" — and stored so the panel can compare
+# them against today rather than presenting stale milestones as if pending.
+_KEY_DATES = [
+    ("2026-04-30", "CMS IPPS Proposed Rule"),
+    ("2026-05-15", "Q1 Earnings Season Ends"),
+    ("2026-06-01", "Medicaid DSH Reduction Deadline"),
+    ("2026-08-01", "CMS IPPS Final Rule"),
+]
+
+
+def _snapshot_value(row: Dict[str, Any]) -> str:
+    kind = row.get("kind", "")
+    v = row.get("value")
+    if kind == "multiple":
+        return ck_fmt_moic(v)
+    if kind == "price":
+        return ck_fmt_currency(v, precision=2)
+    txt = ck_fmt_percent(v)
+    if kind == "percent_signed" and isinstance(v, (int, float)) and v > 0:
+        txt = "+" + txt
+    return txt
+
+
+def _market_snapshot_panel() -> str:
+    """Two-column metric/value table.
+
+    Was a stack of flex ``<div>``s, which reads to a screen reader as ten
+    unrelated strings. A real table with ``scope="row"`` binds each value to
+    its metric name.
+    """
+    rows = []
+    for row in _MARKET_SNAPSHOT:
+        val = _snapshot_value(row)
+        tone = row.get("tone")
+        color = {
+            "up": PALETTE["positive"],
+            "down": PALETTE["negative"],
+        }.get(tone or "")
+        # Direction is otherwise carried by colour alone. When the value
+        # itself has no +/- sign, spell the direction out for AT.
+        sr = ""
+        if tone and not val.startswith(("+", "-")):
+            sr = (f'<span class="sr-only"> '
+                  f'({"up" if tone == "up" else "down"})</span>')
+        style = 'text-align:right;padding:3px 0;'
+        if color:
+            style += f'color:{color};'
+        rows.append(
+            f'<tr><th scope="row" style="text-align:left;font-weight:400;'
+            f'padding:3px 0;color:{PALETTE["text_secondary"]};">'
+            f'{html.escape(str(row["label"]))}</th>'
+            f'<td class="cad-mono" style="{style}">{val}{sr}</td></tr>'
+        )
+    return (
+        f'<div class="cad-card">'
+        f'<h2>Market Snapshot</h2>'
+        f'<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+        f'<caption class="sr-only">Healthcare valuation and rate '
+        f'benchmarks</caption><tbody>{"".join(rows)}</tbody></table>'
+        f'<div style="margin-top:8px;">'
+        f'<a href="/market-rates" style="color:var(--cad-link);'
+        f'text-decoration:none;font-size:11px;">'
+        f'Rate &amp; multiple detail <span aria-hidden="true">&rarr;</span>'
+        f'</a></div>'
+        f'</div>'
+    )
+
+
+def _key_dates_panel() -> str:
+    """Regulatory calendar, with elapsed milestones marked as elapsed.
+
+    The panel previously hard-coded "Apr 30 / May 15 / …" with no year and no
+    awareness of the current date, so a partner opening it in August still saw
+    four dates styled as if they were pending.
+    """
+    today = datetime.now(timezone.utc).date()
+    items = []
+    upcoming = 0
+    for iso, what in _KEY_DATES:
+        try:
+            d = datetime.fromisoformat(iso).date()
+        except ValueError:
+            d = None
+        past = d is not None and d < today
+        if not past:
+            upcoming += 1
+        marker = ""
+        if past:
+            color = PALETTE["text_faint"]
+            marker = (f'<span style="font-size:10px;color:{color};"> '
+                      f'&middot; elapsed</span>')
+        elif upcoming == 1:
+            color = PALETTE["warning"]
+            marker = (f'<span style="font-size:10px;'
+                      f'color:{PALETTE["warning"]};"> &middot; next</span>')
+        else:
+            color = PALETTE["text_secondary"]
+        items.append(
+            f'<li><time datetime="{html.escape(iso)}" '
+            f'style="color:{color};" class="cad-mono">{html.escape(iso)}'
+            f'</time>: {html.escape(what)}{marker}</li>'
+        )
+    tail = ""
+    if not upcoming:
+        # Zero-state: every tracked milestone has passed. Say so and point at
+        # the surface that has the forward calendar, rather than leaving the
+        # partner to infer it from four greyed-out rows.
+        tail = (
+            f'<div style="margin-top:6px;font-size:11px;'
+            f'color:{PALETTE["text_muted"]};">'
+            f'No upcoming milestones in this window &mdash; '
+            f'<a href="/conferences" style="color:var(--cad-link);">'
+            f'see the full roadmap</a>.</div>'
+        )
+    return (
+        f'<div class="cad-card">'
+        f'<h2>Key Dates</h2>'
+        f'<ul style="list-style:none;margin:0;padding:0;'
+        f'font-size:12px;line-height:2;">{"".join(items)}</ul>'
+        f'{tail}</div>'
+    )
+
+
 def _article_card(article: Dict[str, Any]) -> str:
     sev = article.get("severity", "info")
     color = {
@@ -345,24 +489,50 @@ def _article_card(article: Dict[str, Any]) -> str:
         "warning": PALETTE["warning"],
     }.get(sev, PALETTE["brand_accent"])
 
+    cat_slug = article.get("category", "")
     cat_badge_cls = {
         "ma": "cad-badge-blue",
         "regulatory": "cad-badge-amber",
         "payer": "cad-badge-red",
         "rcm": "cad-badge-green",
         "earnings": "cad-badge-muted",
-    }.get(article.get("category", ""), "cad-badge-muted")
+    }.get(cat_slug, "cad-badge-muted")
+    cat_label = _CATEGORY_LABELS.get(cat_slug, cat_slug)
+
+    # Severity was encoded ONLY in the left border colour, which is invisible
+    # to a screen reader and to anyone who cannot separate amber from red.
+    # Print the word for anything above "info" so the signal survives.
+    sev_chip = ""
+    if sev in ("critical", "warning"):
+        sev_chip = (
+            f'<span class="cad-badge '
+            f'{"cad-badge-red" if sev == "critical" else "cad-badge-amber"}">'
+            f'{html.escape(sev.upper())}</span>'
+        )
+
+    date = article.get("date", "")
+    date_html = (
+        f'<time datetime="{html.escape(date)}">{html.escape(date)}</time>'
+        if date else "—"
+    )
 
     return (
-        f'<div class="cad-card" style="border-left:3px solid {color};">'
+        # <article> (not <div>): each card is a self-contained story, so AT
+        # can enumerate and skip between them.
+        f'<article class="cad-card" style="border-left:3px solid {color};">'
         f'<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">'
-        f'<div style="display:flex;gap:8px;align-items:center;">'
-        f'<span class="cad-badge {cat_badge_cls}">{html.escape(article.get("category", "").upper())}</span>'
+        f'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+        f'<span class="cad-badge {cat_badge_cls}">'
+        f'{html.escape(str(cat_label).upper())}</span>'
+        f'{sev_chip}'
         f'<span style="font-size:11px;color:{PALETTE["text_muted"]};">'
-        f'{html.escape(article.get("source", ""))}</span>'
+        # ck_source_link resolves known datasets to their public origin and
+        # falls back to escaped plain text for editorial sources (Bloomberg,
+        # HFMA), so provenance is one click away wherever we can prove it.
+        f'{ck_source_link(article.get("source", ""))}</span>'
         f'</div>'
         f'<span style="font-size:11px;color:{PALETTE["text_muted"]};">'
-        f'{html.escape(article.get("date", ""))}</span>'
+        f'{date_html}</span>'
         f'</div>'
         f'<h2 style="margin-bottom:4px;">{html.escape(article.get("title", ""))}</h2>'
         f'<div style="color:{PALETTE["text_secondary"]};font-size:12.5px;margin-bottom:10px;">'
@@ -372,24 +542,45 @@ def _article_card(article: Dict[str, Any]) -> str:
         f'font-size:12px;display:flex;gap:8px;align-items:center;">'
         f'<span style="font-weight:600;color:{PALETTE["text_secondary"]};">Diligence Impact:</span>'
         f'<span>{html.escape(article.get("impact", ""))}</span>'
-        f'</div></div>'
+        f'</div></article>'
     )
 
 
 def render_news(category: str = "all") -> str:
     """Render the PE Desk news page."""
-    # Category filter tabs
+    # Category filter tabs. Counts are rendered inline so the partner can
+    # see which buckets are populated before spending a click on an empty
+    # one (and so an empty bucket is a deliberate choice, not a surprise).
+    counts: Dict[str, int] = {}
+    for _a in _CURATED_ARTICLES:
+        _slug = _a.get("category", "")
+        counts[_slug] = counts.get(_slug, 0) + 1
+    counts["all"] = len(_CURATED_ARTICLES)
+
     tabs = []
     for label, cat in _NEWS_CATEGORIES:
-        active = ' style="color:var(--cad-accent);border-bottom:2px solid var(--cad-accent);"' if cat == category else ""
+        is_active = cat == category
+        # Previously the active state was appended as a SECOND style="…"
+        # attribute on the same <a>. HTML parsers keep the first attribute
+        # and drop the duplicate, so the selected tab was never highlighted.
+        # One merged style attribute, plus aria-current for AT.
+        tone = (
+            "color:var(--cad-accent);border-bottom:2px solid var(--cad-accent);"
+            if is_active else f'color:{PALETTE["text_secondary"]};'
+        )
+        current = ' aria-current="page"' if is_active else ""
         tabs.append(
-            f'<a href="/news?cat={cat}" '
-            f'style="padding:8px 16px;text-decoration:none;color:{PALETTE["text_secondary"]};'
-            f'font-size:13px;font-weight:500;"{active}>{html.escape(label)}</a>'
+            f'<a href="/news?cat={cat}"{current} '
+            f'style="padding:8px 16px;text-decoration:none;'
+            f'font-size:13px;font-weight:500;{tone}">{html.escape(label)} '
+            f'<span class="cad-mono" style="font-size:11px;opacity:0.65;">'
+            f'{ck_fmt_num(counts.get(cat, 0))}</span></a>'
         )
     tab_bar = (
-        f'<div style="display:flex;gap:4px;border-bottom:1px solid {PALETTE["border"]};'
-        f'margin-bottom:20px;">{"".join(tabs)}</div>'
+        f'<nav aria-label="Filter news by category" '
+        f'style="display:flex;gap:4px;flex-wrap:wrap;'
+        f'border-bottom:1px solid {PALETTE["border"]};'
+        f'margin-bottom:20px;">{"".join(tabs)}</nav>'
     )
 
     # Filter articles
@@ -401,44 +592,36 @@ def render_news(category: str = "all") -> str:
     cards = "".join(_article_card(a) for a in articles)
 
     if not cards:
-        cards = (
-            f'<div class="cad-card"><p style="color:{PALETTE["text_muted"]};">'
-            f'No articles in this category yet.</p></div>'
+        # ``category`` is a raw query-string value (server truncates to 20
+        # chars but does not validate it against the tab list). ck_empty_state
+        # escapes title/body itself, so pass it unescaped exactly once.
+        known = _CATEGORY_LABELS.get(category)
+        cards = ck_empty_state(
+            "No articles in this category yet.",
+            (
+                f"Nothing filed under “{known}” in the current feed. "
+                if known else
+                f"“{category}” is not one of the tracked news "
+                "categories. "
+            ) + (
+                "The feed is curated by hand, so a quiet category means no "
+                "material healthcare-PE development this cycle rather than a "
+                "data outage. Clear the filter to see everything."
+            ),
+            eyebrow="NO MATCHES",
+            cta_label="Show all articles",
+            cta_href="/news?cat=all",
         )
 
     # Sidebar: market snapshot
     sidebar = (
-        f'<div class="cad-card">'
-        f'<h2>Market Snapshot</h2>'
-        f'<div style="font-size:12px;line-height:2;">'
-        f'<div style="display:flex;justify-content:space-between;">'
-        f'<span style="color:{PALETTE["text_secondary"]};">Hospital EV/EBITDA</span>'
-        f'<span class="cad-mono">10.8x</span></div>'
-        f'<div style="display:flex;justify-content:space-between;">'
-        f'<span style="color:{PALETTE["text_secondary"]};">10Y Treasury</span>'
-        f'<span class="cad-mono">4.31%</span></div>'
-        f'<div style="display:flex;justify-content:space-between;">'
-        f'<span style="color:{PALETTE["text_secondary"]};">S&P Healthcare</span>'
-        f'<span class="cad-mono" style="color:{PALETTE["positive"]};">+0.18%</span></div>'
-        f'<div style="display:flex;justify-content:space-between;">'
-        f'<span style="color:{PALETTE["text_secondary"]};">HCA Healthcare</span>'
-        f'<span class="cad-mono" style="color:{PALETTE["positive"]};">$284.50</span></div>'
-        f'<div style="display:flex;justify-content:space-between;">'
-        f'<span style="color:{PALETTE["text_secondary"]};">Tenet Healthcare</span>'
-        f'<span class="cad-mono" style="color:{PALETTE["negative"]};">$112.30</span></div>'
-        f'</div></div>'
-        f'<div class="cad-card">'
-        f'<h2>Key Dates</h2>'
-        f'<div style="font-size:12px;line-height:2;">'
-        f'<div><span style="color:{PALETTE["warning"]};">Apr 30</span>: CMS IPPS Proposed Rule</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">May 15</span>: Q1 Earnings Season Ends</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">Jun 1</span>: Medicaid DSH Reduction Deadline</div>'
-        f'<div><span style="color:{PALETTE["text_secondary"]};">Aug 1</span>: CMS IPPS Final Rule</div>'
-        f'</div></div>'
-        f'<div class="cad-card" style="text-align:center;">'
+        _market_snapshot_panel()
+        + _key_dates_panel()
+        + f'<div class="cad-card" style="text-align:center;">'
         f'<a href="/conferences" style="color:var(--cad-link);text-decoration:none;'
         f'font-size:13px;font-weight:500;">'
-        f'&#128197; Full Conference Roadmap &rarr;</a></div>'
+        f'<span aria-hidden="true">&#128197;</span> Full Conference Roadmap '
+        f'<span aria-hidden="true">&rarr;</span></a></div>'
     )
 
     # Cycle 58 — KPI strip with provenance.
@@ -457,7 +640,9 @@ def render_news(category: str = "all") -> str:
         "Articles in current view",
         ck_fmt_num(len(articles)),
         explainer=(
-            f"Filtered to {category or 'All'}. Drop the category "
+            f"Filtered to "
+            f"{_CATEGORY_LABELS.get(category) or category or 'All'}. "
+            f"Drop the category "
             f"filter via the tab bar above to widen the feed; the "
             f"sidebar surfaces conference-roadmap items separately."
         ),

@@ -164,3 +164,38 @@ Two coherent resolutions, both owner calls:
 
 Not actionable without that decision; do not let a future sweep "fix" it
 piecemeal, which is how the two conventions arose.
+
+**Interim policy while MR1073 is open** (needed because two edits in the same
+session pulled opposite ways — one page's `_fmt_money` was moved to 2dp as
+part of a house-rule conformance pass, while `regression_page._fmt_num` was
+left at 1dp):
+
+- Code you are **already editing** for other reasons follows the documented
+  rule. That is ordinary conformance, and it is what the rule is for.
+- Code you are **not otherwise touching** stays as it is. Do not open a file
+  solely to change a decimal place.
+
+So the split narrows as pages are worked rather than in one 780-site sweep,
+and no commit exists whose only content is a formatting churn. This is a
+holding pattern, not the resolution — the counts above still need an owner.
+
+## MR1074 — LOW: `render_ml_insights` crashes on an empty HCRIS frame
+
+`render_ml_insights(pd.DataFrame())` raises `KeyError: 'beds'` from
+`rcm_mc/ml/distress_predictor.py:148` (`df["beds"]` accessed before any
+column check, via `screen_distressed` -> `train_distress_model`).
+
+**Pre-existing, not introduced by the UI wave** — confirmed by A/B-ing the
+page module against `HEAD`, which raises the identical `KeyError`. Recorded
+so a future audit does not re-discover it and mis-attribute it to the wave.
+
+Low because the only production caller (`server.py:9105`) passes a loaded
+HCRIS frame, so the empty case is not reachable today. It becomes reachable
+the moment the loader returns empty — a fresh install before `rcm-mc data
+refresh`, or a failed refresh — and the failure mode is a 500 rather than the
+"honest missing data" empty state the rest of the page now renders correctly.
+
+Fix belongs in `train_distress_model`, not the page: return the no-model
+result when the required feature columns are absent, which `render_ml_insights`
+already handles (it has `ck_empty_state` fallbacks for eight panels as of the
+UI wave).
