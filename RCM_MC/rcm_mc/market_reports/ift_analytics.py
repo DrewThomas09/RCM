@@ -794,7 +794,13 @@ def ground_tam() -> GroundTam:
 # structure × the blended all-payer net revenue per IFT transport r_IFT.
 _F_IFT = (0.07, 0.10, 0.12)            # (low, central, high) fraction of discharges
 _LAMBDA_RETURN = (2.0, 3.0, 4.0)       # SNF recurring ground-IFT legs / occ. bed / yr
-_SNF_OCC = 0.77                        # GOV magnitude (NIC/CMS)
+_SNF_OCC = 0.83                        # GOV — median national SNF occupancy, 2024.
+#   MedPAC, March 2026 Report to the Congress, Ch. 7 "Skilled nursing facility
+#   services": "In 2024, the median national SNF occupancy rate was 83 percent;
+#   one-quarter of SNFs had greater than 91 percent occupancy, and one-quarter of
+#   SNFs had occupancy rates of 70 percent or less." Occupancy has recovered to
+#   about the pre-PHE level (85% in 2019) off the January-2021 low of 69%.
+#   https://www.medpac.gov/wp-content/uploads/2026/03/Mar26_Ch7_MedPAC_Report_To_Congress_SEC.pdf
 # Blended net revenue per IFT transport as an operator ACTUALLY REALIZES it —
 # Medicare/Medicaid-weighted, plus facility payments — which lands well below the
 # all-payer market average (_R_PER_TRANSPORT) because the SOM is a real operator's
@@ -891,7 +897,8 @@ def sam_formula(f_ift: float = _F_IFT[1],
 
     Per metro m:  SAM_$(m) = [ D(m)·f_IFT + P(m) ] · s(m) · r_IFT(m)
     where D(m) = HCRIS-beds × 53.3 discharges/bed/yr (ift_geo discharge base,
-    SOURCED beds + labelled factor); P(m) = SNF_beds × occ(0.77) × λ_return
+    SOURCED beds + labelled factor); P(m) = SNF_beds × occ(0.83, MedPAC 2024
+    median national SNF occupancy) × λ_return
     (recurring SNF→hospital / SNF→dialysis legs); s(m) = realistically-serviceable
     share keyed to the insource-vs-outsource archetype (0.15-0.30, FRAMEWORK);
     r_IFT(m) = blended all-payer net revenue per IFT transport (rural metros carry
@@ -976,7 +983,10 @@ def sam_formula(f_ift: float = _F_IFT[1],
                               "high": _LAMBDA_RETURN[2],
                               "basis": "FRAMEWORK — SNF→hospital/dialysis recurring "
                                        "ground-IFT legs per occupied SNF bed/yr"},
-            "snf_occ": {"value": _SNF_OCC, "basis": "GOV magnitude (NIC/CMS ~0.77)"},
+            "snf_occ": {"value": _SNF_OCC,
+                        "basis": "GOV — median national SNF occupancy 83% in 2024 "
+                                 "(MedPAC, March 2026 Report to the Congress, Ch. 7 "
+                                 "Skilled nursing facility services; IQR 70%-91%)"},
             "s_of_m": {"by_class": dict(_SERVICEABLE_SHARE), "default": _SERVICEABLE_DEFAULT,
                        "basis": "FRAMEWORK — realistically-serviceable share keyed "
                                 "to the insource-vs-outsource archetype (0.15-0.30)"},
@@ -1031,14 +1041,22 @@ def sam_formula(f_ift: float = _F_IFT[1],
 # SOM = the operator's current footprint (:func:`sam_formula`); the operator's
 # current revenue is ~1% of SAM — a nascent share with the SAM ~20-30× the SOM.
 _MULTI_SYSTEM_IFT_SHARE = (0.50, 0.60, 0.70)   # FRAMEWORK — share of ground-IFT $
-#   generated within/between multi-hospital health systems. Anchored to AHA 2023
-#   (~68% of community hospitals are in a system) AND the fact that acute up-
+#   generated within/between multi-hospital health systems. Anchored to AHA Fast
+#   Facts on U.S. Hospitals, 2026 (FY2024 AHA Annual Survey): 3,567 of 5,121
+#   community hospitals — 70% — are system-affiliated, AND the fact that acute up-
 #   transfers concentrate at system-owned tertiary/quaternary HUBS, so IFT over-
 #   indexes on system involvement vs the raw hospital count.
-_MULTI_SYSTEM_BED_SHARE = 0.65                 # GOV-magnitude (AHA 2023) — share of
-#   US hospital beds in MULTI-hospital systems (system hospitals skew larger, so
-#   the bed share exceeds the ~68% hospital-count share only modestly once the
-#   single-hospital systems are removed).
+#   https://www.aha.org/system/files/media/file/2026/02/Fast-Facts-on-US-Hospitals-2026.pdf
+_MULTI_SYSTEM_BED_SHARE = 0.77                 # GOV-magnitude — AHA Fast Facts:
+#   U.S. Health Systems, 2025 edition (AHA Annual Survey Database, FY2023): 703,731
+#   of 913,136 US hospital beds are system-affiliated = 77%, against 68% of
+#   hospitals by COUNT (4,157 of 6,093) across 397 systems. System hospitals skew
+#   large, so the BED share runs ~9pp ABOVE the count share — the prior 0.65 sat
+#   below the count share and contradicted that. AHA's "system" spans multihospital
+#   systems AND single diversified hospital systems, so 77% is a mild UPPER bound on
+#   the strictly MULTI-hospital bed share (single-hospital systems are a small
+#   minority of the 397 systems and smaller still by beds).
+#   https://www.aha.org/system/files/media/file/2025/06/Fast-Facts-US-Health-Systems-2025-Infographic.pdf
 _INSOURCE_CEILING = (0.18, 0.25, 0.32)         # FRAMEWORK — health-system-biller
 #   UPPER BOUND on insourcing. Hospitals rarely own ground fleets; the big-IDN
 #   captive-fleet exceptions (Cleveland Clinic, Mayo, Geisinger, Intermountain)
@@ -1174,9 +1192,12 @@ def health_system_sam() -> HealthSystemSam:
         TamStep("→ × multi-hospital-system share of IFT $ (σ)",
                 f"{sig_lo*100:.0f}-{sig_hi*100:.0f}% (central {sig_c*100:.0f}%)",
                 "FRAMEWORK",
-                "AHA 2023 ~68% of hospitals are in a system, and acute up-"
-                "transfers concentrate at system-owned tertiary/quaternary hubs, "
-                "so IFT $ over-indexes on system involvement."),
+                "AHA Fast Facts on U.S. Hospitals 2026 (FY2024 survey): 70% of "
+                "community hospitals (3,567 of 5,121) are system-affiliated, and "
+                "77% of US hospital beds are system-affiliated (AHA Fast Facts: "
+                "U.S. Health Systems 2025, FY2023). Acute up-transfers concentrate "
+                "at system-owned tertiary/quaternary hubs, so IFT $ over-indexes "
+                "on system involvement vs the raw hospital count."),
         TamStep("→ × addressable (outsourceable) share (1 − insource ceiling ι)",
                 f"{addr[0]*100:.0f}-{addr[2]*100:.0f}% (central {addr[1]*100:.0f}%)",
                 "FRAMEWORK",
@@ -1245,8 +1266,11 @@ def health_system_sam() -> HealthSystemSam:
         source_label=("FRAMEWORK · GOV-anchored ground-IFT TAM × FRAMEWORK "
                       "multi-hospital-system share + health-system-biller insource "
                       "ceiling; bottoms-up scaled from the SOURCED footprint "
-                      "(ift_geo/HCRIS) bed structure — the offline proxy for the "
-                      "Komodo claims build"),
+                      "(ift_geo/HCRIS) bed structure by the AHA system bed share "
+                      "(AHA Fast Facts: U.S. Health Systems 2025, AHA Annual Survey "
+                      "FY2023 — 703,731 of 913,136 US hospital beds, 77%, are "
+                      "system-affiliated) — the offline proxy for the Komodo claims "
+                      "build"),
         headline=headline,
         note=("SAM is the STRUCTURAL market (multi-hospital health systems), NOT the "
               "footprint — the footprint is the SOM. Two methods bracket it: the "

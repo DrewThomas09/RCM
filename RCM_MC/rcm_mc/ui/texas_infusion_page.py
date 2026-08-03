@@ -856,7 +856,8 @@ def _jcode_pos_section(a: Dict[str, Any]) -> str:
         f'<table style="width:100%;border-collapse:collapse;font-size:11.5px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;color:{_FAINT};">'
         f'<th scope="col" style="text-align:left;padding:3px 8px;">Year</th>'
-        f'<th scope="col" style="text-align:right;padding:3px 8px;">Facility (HOPD)</th>'
+        f'<th scope="col" style="text-align:right;padding:3px 8px;">'
+        f'Facility (HOPD)</th>'
         f'<th scope="col" style="padding:3px 8px;"></th>'
         f'<th scope="col" style="text-align:right;padding:3px 8px;">Non-facility</th>'
         f'</tr></thead><tbody>{tr_rows}</tbody></table>')
@@ -1216,7 +1217,8 @@ def _hopd_infusion_section(a: Dict[str, Any]) -> str:
         f'<th scope="col" style="text-align:left;padding:5px 8px;">Metro</th>'
         f'<th scope="col" style="text-align:right;padding:5px 8px;">HOPD pool '
         f'(modeled patients)</th>'
-        f'<th scope="col" style="text-align:right;padding:5px 8px;">…Medicare slice</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">'
+        f'…Medicare slice</th>'
         f'<th scope="col" style="text-align:right;padding:5px 8px;">Drug-admin '
         f'services (live)</th>'
         f'<th scope="col" style="text-align:right;padding:5px 8px;">Hospitals</th>'
@@ -1292,7 +1294,8 @@ def _asp_pricing_section(a: Dict[str, Any]) -> str:
         f'<th scope="col" style="text-align:left;padding:5px 8px;">Drug</th>'
         f'<th scope="col" style="text-align:left;padding:5px 8px;">Category</th>'
         f'<th scope="col" style="text-align:left;padding:5px 8px;">Channel</th>'
-        f'<th scope="col" style="text-align:right;padding:5px 8px;">ASP pay limit/unit</th>'
+        f'<th scope="col" style="text-align:right;padding:5px 8px;">'
+        f'ASP pay limit/unit</th>'
         f'</tr></thead><tbody>{rows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
         f'HCPCS J-codes + descriptors are public CMS facts; the per-unit '
@@ -1805,7 +1808,8 @@ def _provider_segments_section(a: Dict[str, Any]) -> str:
         f'<div style="overflow-x:auto;"><table style="width:100%;'
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
-        f'<th scope="col" style="text-align:left;padding:6px 8px;">Ownership segment</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">'
+        f'Ownership segment</th>'
         f'<th scope="col" style="text-align:right;padding:6px 8px;">US share</th>'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Pool</th>'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Examples</th>'
@@ -2009,9 +2013,12 @@ def _scorecard_section(a: Dict[str, Any]) -> str:
            f'border-collapse:collapse;font-size:12px;">'
            f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
            f'<th scope="col" style="text-align:left;padding:5px 8px;">County</th>'
-           f'<th scope="col" style="text-align:right;padding:5px 8px;">Infusion pts</th>'
-           f'<th scope="col" style="text-align:right;padding:5px 8px;">AIS chairs (est)</th>'
-           f'<th scope="col" style="text-align:right;padding:5px 8px;">Demand / capacity</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">'
+           f'Infusion pts</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">'
+           f'AIS chairs (est)</th>'
+           f'<th scope="col" style="text-align:right;padding:5px 8px;">'
+           f'Demand / capacity</th>'
            f'<th scope="col" style="text-align:left;padding:5px 8px;">Saturation</th>'
            f'</tr></thead><tbody>{us_rows}</tbody></table></div>'
            if us_rows else ck_empty_state(
@@ -2171,7 +2178,8 @@ def _home_infusion_section(a: Dict[str, Any]) -> str:
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Therapy</th>'
-        f'<th scope="col" style="text-align:left;padding:6px 8px;">Conditions served</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">'
+        f'Conditions served</th>'
         f'<th scope="col" style="text-align:right;padding:6px 8px;">TX eligible/yr</th>'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Regimen</th>'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Why home</th>'
@@ -2333,9 +2341,10 @@ def _home_discharge_section(a: Dict[str, Any]) -> str:
         f'border-collapse:collapse;font-size:12px;">'
         f'<thead><tr style="border-bottom:2px solid #c9c1ac;">'
         f'<th scope="col" style="text-align:left;padding:6px 8px;">Therapy</th>'
-        f'<th scope="col" style="text-align:right;padding:6px 8px;">TX referrals/yr</th>'
-        f'<th scope="col" style="text-align:left;padding:6px 8px;">Discharge / referral '
-        f'source</th>'
+        f'<th scope="col" style="text-align:right;padding:6px 8px;">'
+        f'TX referrals/yr</th>'
+        f'<th scope="col" style="text-align:left;padding:6px 8px;">'
+        f'Discharge / referral source</th>'
         f'<th scope="col" style="text-align:right;padding:6px 8px;">30-day readmit</th>'
         f'</tr></thead><tbody>{drows}</tbody></table></div>'
         f'<p style="font-size:9.5px;color:{_FAINT};margin:6px 0 0;">'
@@ -2598,7 +2607,8 @@ def _rcm_playbook(a: Dict[str, Any]) -> str:
         'border-collapse:collapse;font-size:12px;">'
         '<thead><tr style="border-bottom:2px solid #c9c1ac;">'
         '<th scope="col" style="text-align:left;padding:5px 8px;">KPI</th>'
-        '<th scope="col" style="text-align:left;padding:5px 8px;">Why it matters here</th>'
+        '<th scope="col" style="text-align:left;padding:5px 8px;">'
+        'Why it matters here</th>'
         '<th scope="col" style="text-align:left;padding:5px 8px;">Read</th>'
         f'</tr></thead><tbody>{kpi_rows}</tbody></table></div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;'
@@ -2631,9 +2641,11 @@ def _hbar_svg(rows: List[Dict[str, Any]], *, label_key: str,
     label_w, bar_w, right_w = 168, 250, 130
     row_h, gap, pad = 22, 6, 6
     height = pad * 2 + len(rows) * (row_h + gap) - gap
+    alt = html.escape(aria_label or "Ranked horizontal bar chart",
+                      quote=True)
     parts = [
         f'<svg viewBox="0 0 {width} {height}" width="100%" role="img" '
-        f'aria-label="{html.escape(aria_label or "Ranked horizontal bar chart", quote=True)}" '
+        f'aria-label="{alt}" '
         f'style="max-width:{width}px;display:block;">']
     # Zero-baseline + max-value gridline so bar lengths read against a
     # fixed scale anchor rather than floating in space.

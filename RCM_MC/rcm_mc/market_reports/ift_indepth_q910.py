@@ -190,12 +190,12 @@ _VS_TRADITIONAL = Block(
            "what scheduled IFT competes against on a shared fleet",
            "SOURCED", "AIMHI benchmarking / EMS1",
            "https://aimhi.mobi/benchmarking-resources/"),
-        _E("Mean cost per transport $3,127 for governmental agencies vs "
-           "$1,788 private for-profit — readiness coverage rides on every "
-           "shared-fleet trip",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 report, via trade coverage "
-           "(re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+        _E("Mean total cost per transport $3,167 for government "
+           "organizations vs $1,912 for-profit/unknown (all NPIs $2,763) — "
+           "readiness coverage rides on every shared-fleet trip",
+           "SOURCED", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (data reported through 2025-05-15), Dec 2025, Table 4.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("Fire-based 911 monopolies (Omaha FD runs 18 ALS ambulances as "
            "the city's primary transport; Lincoln Fire & Rescue runs city "
            "EMS) leave the scheduled-IFT lane to private operators — the "
@@ -242,9 +242,9 @@ _VS_TRADITIONAL = Block(
            "geometry rather than for chaining facility-to-facility legs — "
            "density of the wrong shape for IFT economics."),
         _S("How do costs compare?",
-           "Readiness is expensive: GADCS mean cost per transport is "
-           "$3,127 governmental vs $1,788 private for-profit — idle "
-           "coverage rides on every trip a shared fleet runs."),
+           "Readiness is expensive: GADCS Year 1-Year 4 mean total cost per "
+           "transport is $3,167 government vs $1,912 for-profit/unknown — "
+           "idle coverage rides on every trip a shared fleet runs."),
         _S("What advantages does traditional EMS retain?",
            "Emergency depth and surge scale, municipal subsidy, "
            "licensure everywhere, and in thin rural markets it may be "
@@ -399,11 +399,11 @@ _VS_INSOURCING = Block(
         "acuity is worth owning at any cost.",
         "The costs are equally real: 24/7 credentialed crews (labor is "
         "~70.7% of ambulance cost), medical direction, fleet capital, "
-        "dispatch, and an ambulance revenue cycle — and the GADCS gap "
-        "between governmental ($3,127) and private for-profit ($1,788) "
-        "mean cost per transport shows what sub-scale readiness costs, "
-        "while the MedPAC volume-cost curve says only high, stable "
-        "volume amortizes it.",
+        "dispatch, and an ambulance revenue cycle — and the GADCS "
+        "Year 1-Year 4 gap between government ($3,167) and "
+        "for-profit/unknown ($1,912) mean total cost per transport shows "
+        "what sub-scale readiness costs, while the MedPAC volume-cost "
+        "curve says only high, stable volume amortizes it.",
         "The classification trap cuts against overstating insourcing: "
         "owning a few trucks is not insourcing — measured by transport "
         "VOLUME, most multi-hospital systems sit in hybrid bands, "
@@ -430,12 +430,13 @@ _VS_INSOURCING = Block(
            "archetype",
            "SOURCED", "Children's Nebraska provider pages, 2026",
            "https://www.childrensnebraska.org/providers/specialties/transport-critical-care"),
-        _E("Mean cost per transport $3,127 governmental vs $1,788 "
-           "private for-profit; labor 70.7% of total cost — the "
+        _E("Mean total cost per transport $3,167 government vs $1,912 "
+           "for-profit/unknown; labor 70.7% of aggregated total cost — the "
            "sub-scale readiness penalty an owned fleet must beat",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports, via "
-           "trade coverage (re-verify)",
-           "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
+           "SOURCED", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 cohort "
+           "analysis (data reported through 2025-05-15), Dec 2025, Table 4.1 "
+           "+ Figure S.1",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("Strong inverse relationship between response volume and cost "
            "per response — only high captive volume amortizes a fleet",
            "SOURCED", "MedPAC assessment of GADCS data, Dec 2025",
@@ -661,8 +662,8 @@ _VALUE_PROP = Block(
         "(recorded as not-found).",
         "The total-cost claim is the most contested because the "
         "accounting is asymmetric: a dedicated deal converts hidden "
-        "failure costs (bed-days at roughly $3,132 adjusted expense per "
-        "inpatient day, boarding hours, staff time) into visible "
+        "failure costs (bed-days at roughly $3,297 expense per adjusted "
+        "inpatient day in 2024, boarding hours, staff time) into visible "
         "contract fees — the bed-day arithmetic can justify it, but "
         "only per-account netting decides."),
     why_matters=(
@@ -690,10 +691,12 @@ _VALUE_PROP = Block(
            "transport-attributable",
            "ACADEMIC", "Landeiro et al., The Gerontologist 2019",
            "https://doi.org/10.1093/geront/gnx028"),
-        _E("Adjusted expense per inpatient day ~$3,132 (2023) — the "
-           "bed-day value that total-cost claims net against, an expense "
-           "proxy rather than marginal cost",
-           "SOURCED", "KFF state indicators / AHA data (re-verify)", ""),
+        _E("Hospital expenses per adjusted inpatient day, US $3,297.26 "
+           "(2024) — the bed-day value that total-cost claims net against, "
+           "an expense proxy rather than marginal cost",
+           "SOURCED", "KFF State Health Facts, Hospital Expenses per "
+           "Adjusted Inpatient Day (2024 AHA Annual Survey)",
+           "https://www.kff.org/health-costs/state-indicator/expenses-per-inpatient-day/"),
         _E("No MMT account-level before/after performance data, case "
            "study with baseline, or customer-reported outcome is public "
            "— every value claim is a diligence request, not a fact",
@@ -734,8 +737,8 @@ _VALUE_PROP = Block(
         _S("Does it reduce total transportation cost?",
            "Unvalidated and definitionally contested: the deal converts "
            "hidden failure costs (bed-days, boarding) into visible "
-           "fees — netting can favor it at ~$3,132 expense per "
-           "inpatient day, but only account arithmetic decides."),
+           "fees — netting can favor it at ~$3,297 expense per adjusted "
+           "inpatient day (2024), but only account arithmetic decides."),
         _S("Does it improve patient experience?",
            "Plausible (fewer waits and cancellations) and unmeasured "
            "publicly — no MMT patient-experience data is in the "
@@ -1144,8 +1147,8 @@ _PERFORMANCE = Block(
         "Accountability has a contract test, and external precedent: "
         "comparability to contracted service levels requires such "
         "levels to exist — billing-side accountability is already "
-        "external and measured (CERT ambulance improper-payment rate "
-        "13.2%, $595.1M projected), while service-level accountability "
+        "external and measured (2025 CERT ambulance improper-payment rate "
+        "10.4%, $452.6M projected), while service-level accountability "
         "in IFT exists only where a dedicated contract writes it."),
     why_matters=(
         "A partner's willingness to expose per-facility performance "
@@ -1154,13 +1157,15 @@ _PERFORMANCE = Block(
         "marketing; diligence should ask for the actual monthly packet "
         "from a live account, and treat its absence as the answer."),
     evidence=(
-        _E("Ambulance improper-payment rate 13.2% (projected $595.1M; "
-           "insufficient documentation 63.5%, medical necessity 27.5%) — "
+        _E("Ambulance improper-payment rate 10.4% (95% CI 5.6-15.3%; "
+           "projected $452.6M; insufficient documentation 46.7%, medical "
+           "necessity 24.9%, other 16.6%, no documentation 11.5%) — "
            "external, measured accountability already exists on the "
            "billing side; the service side has no equivalent unless a "
            "contract creates it",
-           "GOV", "CMS CERT 2024 supplemental improper payment data "
-           "(re-verify)", ""),
+           "GOV", "CMS CERT — 2025 Medicare FFS Supplemental Improper "
+           "Payment Data (claims Jul 2023-Jun 2024), Table D1",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("Adjacent-market service accountability is real and enforced: "
            "state NEMT programs run on-time-pickup benchmarks with "
            "fines (Mississippi's broker ran ~5.8% late/missed against a "

@@ -113,13 +113,14 @@ _EVIDENCE: Tuple[Evidence, ...] = (
     Evidence(
         "nemsis_activations",
         "National EMS activations (interfacility transfer is a tracked service type)",
-        "54,190,579 activations; 14,369 agencies; 54 states/territories (2023)",
+        "63,635,893 activations; 14,801 agencies; 54 states/territories (2025)",
         "SOURCED",
-        "NEMSIS 2023 Public-Release Research Dataset (NHTSA Office of EMS)",
-        "\"The 2023 Public-Release Research Dataset includes data from 54,190,579 "
-        "EMS activations... provided by 14,369 agencies across 54 U.S. states and "
-        "territories.\"",
-        "https://nemsis.org/view-reports/public-reports/"),
+        "NEMSIS 2025 Public-Release Research Dataset (NHTSA Office of EMS / "
+        "NEMSIS TAC), announced 2026-05-06",
+        "\"The dataset includes 63,635,893 EMS activations submitted by 14,801 "
+        "EMS agencies servicing 54 states and territories.\"",
+        "https://nemsis.org/wp-content/uploads/2026/05/"
+        "2025-dataset-04-29-26-1205-opt.pdf"),
     Evidence(
         "nis_discharges",
         "US inpatient discharges per year (all-payer)",
@@ -167,12 +168,17 @@ _EVIDENCE: Tuple[Evidence, ...] = (
     Evidence(
         "hospital_admissions",
         "US hospital admissions per year",
-        "~33.7 million admissions (2022)",
+        "35,658,583 admissions, all US hospitals (2024 AHA Annual Survey); "
+        "33,553,725 of them in community hospitals",
         "SOURCED",
-        "American Hospital Association, AHA Hospital Statistics / Fast Facts (2022)",
-        "AHA Fast Facts on US Hospitals reports total admissions in all US hospitals "
-        "of ~33.7 million (2022 AHA Annual Survey).",
-        "https://www.aha.org/statistics/fast-facts-us-hospitals"),
+        "American Hospital Association, \"Fast Facts on U.S. Hospitals, 2026\" "
+        "(2024 AHA Annual Survey; updated January 2026)",
+        "\"The data below, from the 2024 AHA Annual Survey, are a sample of what "
+        "you will find in AHA Hospital Statistics, 2026 edition.\" ... \"Total "
+        "Admissions in All U.S. Hospitals 35,658,583\" / \"Admissions in "
+        "Community Hospitals 33,553,725\"",
+        "https://www.aha.org/system/files/media/file/2026/02/"
+        "Fast-Facts-on-US-Hospitals-2026.pdf"),
     Evidence(
         "emtala_transfer_duty",
         "The legal duty to arrange an appropriate transfer (why hospitals buy IFT)",

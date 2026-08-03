@@ -915,16 +915,16 @@ _FINANCIAL = Block(
     "q7-financial", "Financial impact",
     conclusion=(
         "The costs of IFT failure are real but scattered across ledgers "
-        "that never meet — bed-days (~$3,132 adjusted expense per "
+        "that never meet — bed-days (~$3,297 adjusted expense per "
         "inpatient day), denied and never-paid claims (13.2% improper; "
         "19.7% collect nothing), unpaid crew wait, and uncounted "
         "coordination labor — so no single owner sees the total, and no "
         "single owner funds the fix."),
     why_true=(
-        "The bed-day is the biggest line: adjusted expense ~$3,132 per "
-        "inpatient day (an expense proxy, not marginal cost — labeled), "
-        "against delayed-discharge costs measured from $142 to $31,935 "
-        "per case.",
+        "The bed-day is the biggest line: adjusted expense ~$3,297 per "
+        "inpatient day (2024; an expense proxy, not marginal cost — "
+        "labeled), against delayed-discharge costs measured from $142 to "
+        "$31,935 per case.",
         "The claims lines are measured: 13.2% ambulance improper payment "
         "($595.1M projected) and 19.7% of transports collecting nothing — "
         "denial and non-payment costs that reprice into everyone's rates.",
@@ -939,16 +939,17 @@ _FINANCIAL = Block(
         "priced)."),
     why_matters=(
         "Whoever prices the bed-day, not the trip, buys correctly: one "
-        "avoided bed-day (~$3,132 expense proxy) is worth roughly 6-7 "
+        "avoided bed-day (~$3,297 expense proxy, 2024) is worth roughly 7 "
         "Medicare-average transports ($469 each) — that arithmetic, both "
         "inputs cited, is the entire commercial argument for paying for "
         "reliability."),
     evidence=(
-        _E("Adjusted expense per inpatient day ~$3,132 (2023; nonprofit "
-           "$3,288, for-profit $2,529) — an expense proxy, not marginal "
+        _E("Adjusted expense per inpatient day $3,297 (2024; nonprofit "
+           "$3,449, for-profit $2,623) — an expense proxy, not marginal "
            "cost",
-           "SOURCED", "KFF state indicator on AHA survey data (re-verify)",
-           ""),
+           "SOURCED", "KFF State Health Facts, Hospital Expenses per "
+           "Adjusted Inpatient Day, 2024 (AHA Annual Survey)",
+           "https://www.kff.org/health-costs/state-indicator/expenses-per-inpatient-day/"),
         _E("Delayed-discharge costs $142-31,935 per case (USD PPP) "
            "across the systematic review",
            "ACADEMIC", "Landeiro et al., The Gerontologist 2019",
@@ -968,7 +969,7 @@ _FINANCIAL = Block(
     ),
     subqs=(
         _S("What is the cost of additional bed occupancy?",
-           "~$3,132 adjusted expense per inpatient day (proxy, not "
+           "~$3,297 adjusted expense per inpatient day (2024; proxy, not "
            "marginal); delayed-discharge case costs measured at "
            "$142-31,935."),
         _S("What is the opportunity cost of an unavailable bed?",
@@ -1703,21 +1704,21 @@ _ECONOMICS = Block(
         "No MMT financial figure in public view is usable — the three "
         "estimators disagree ~3x ($100M to $296M) and all conflict with "
         "the company's own headcount — so the economics answer is the "
-        "industry ledger MMT must beat: $1,147 mean reimbursement vs "
-        "$1,788 private-for-profit mean cost per transport, with payer "
-        "mix, unit-hour utilization, and density as the levers that make "
-        "a dedicated book positive."),
+        "industry ledger MMT must beat: $1,268 mean revenue vs $1,912 "
+        "for-profit mean cost per transport, with payer mix, unit-hour "
+        "utilization, and density as the levers that make a dedicated "
+        "book positive."),
     why_true=(
         "The estimate conflict is disqualifying by itself: $296.4M / 784 "
         "employees (Growjo) vs $293.6M (ZoomInfo) vs $100-250M / ~700 "
         "(LeadIQ) — shown side by side, never blended, never used for "
         "underwriting.",
-        "The published mean spread is negative — $1,147 mean "
-        "reimbursement vs $2,673 all-agency mean cost — because the mean "
-        "carries municipal readiness books; the private for-profit cost "
-        "mean ($1,788) plus a scheduled book's higher unit-hour "
-        "utilization is the structural path to a positive spread — the "
-        "IFT thesis in one line.",
+        "The published mean spread is negative — $1,268 mean revenue vs "
+        "$2,763 all-agency mean cost per transport (Year 1-Year 4 "
+        "cohorts) — because the mean carries municipal readiness books; "
+        "the for-profit cost mean ($1,912) plus a scheduled book's higher "
+        "unit-hour utilization is the structural path to a positive "
+        "spread — the IFT thesis in one line.",
         "Revenue per trip is fee-ladder arithmetic: BLS 1.00 → ALS1 1.20 "
         "→ ALS2 2.75 → SCT 3.25 relative values on a $278.98 CY2025 "
         "conversion factor, ~$8/loaded-mile Medicare vs ~$17 commercial, "
@@ -1739,12 +1740,14 @@ _ECONOMICS = Block(
            "all conflicting with the company's 2,800+ headcount claim",
            "SOURCED", "Growjo / ZoomInfo / LeadIQ, 2026 (unaudited "
            "third-party estimates; re-verify)", ""),
-        _E("Mean reimbursement $1,147/transport vs mean cost $2,673 "
-           "all-agency / $1,788 private for-profit; labor 70.7%; 19.7% "
-           "of transports unpaid",
-           "SOURCED", "CMS/RAND GADCS Year 1-2 + Year 1-4 reports (via "
-           "trade coverage; re-verify)",
-           "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
+        _E("Mean revenue $1,268/transport vs mean cost $2,763 all-agency "
+           "/ $1,912 for-profit-or-unknown (n=9,599 weighted NPIs); "
+           "labor 70.7% of aggregate cost; 19.7% of transports unpaid",
+           "SOURCED", "CMS/RAND GADCS Report Appendix, Year 1-Year 4 "
+           "cohort analysis, Dec 2025 (2022-24 collection periods, data "
+           "through 2025-05-15), Tables 3.1 / 4.1 / 4.2; unpaid share "
+           "via AAA coverage (re-verify)",
+           "https://www.cms.gov/files/document/medicare-ground-ambulance-data-collection-system-gadcs-report-appendix-year-1-year-4-cohort-analysis.pdf"),
         _E("CY2025 AFS conversion factor $278.98 × RVUs (BLS 1.00 / ALS1 "
            "1.20 / ALS2 2.75 / SCT 3.25); super-rural add-on +22.6% "
            "through 2027",

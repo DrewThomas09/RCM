@@ -255,7 +255,7 @@ _PROVIDER = Block(
         "After the trip the ePCR is simultaneously the clinical record and "
         "the claim evidence; the provider bills payer or hospital and "
         "manages denials in a market where the ambulance improper-payment "
-        "rate is 13.2% and 63.5% of it is insufficient documentation — "
+        "rate is 10.4% and 46.7% of it is insufficient documentation — "
         "the documentation chain IS the revenue chain.",
         "Account-level performance review is the step most providers skip: "
         "mature operators run joint reviews per account; call-list vendors "
@@ -266,11 +266,12 @@ _PROVIDER = Block(
         "the billing/denial layer is where revenue-cycle scale becomes a "
         "genuine moat rather than a back office."),
     evidence=(
-        _E("Ambulance improper-payment rate 13.2%, projected $595.1M; "
-           "insufficient documentation 63.5% of the error, medical "
-           "necessity 27.5%",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+        _E("Ambulance improper-payment rate 10.4%, projected $452.6M; "
+           "insufficient documentation 46.7% of the error, medical "
+           "necessity 24.9%",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("19.7% of ambulance transports collect nothing (up from 18.8% "
            "in the first cohort) — the denial/no-pay tail the provider "
            "absorbs by default",
@@ -439,7 +440,7 @@ _INFORMATION = Block(
         "Content is re-keyed unit → transfer center → dispatch → crew "
         "ePCR → billing, losing fidelity at each hop; no missing-data rate "
         "is published, but the downstream consequence is measured — "
-        "insufficient documentation drives 63.5% of ambulance improper "
+        "insufficient documentation drives 46.7% of ambulance improper "
         "payments.",
         "Visibility runs one-way and badly: providers rarely see the chart "
         "(no standard EHR access for transport crews), hospitals rarely "
@@ -457,11 +458,12 @@ _INFORMATION = Block(
         "prenotification's minus-20-minutes shows information moving early "
         "is clinically real."),
     evidence=(
-        _E("Insufficient documentation accounts for 63.5% of the 13.2% "
+        _E("Insufficient documentation accounts for 46.7% of the 10.4% "
            "ambulance improper-payment rate — the measured cost of the "
            "broken financial payload",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("EMS prenotification cut stroke-transfer door-in-door-out time "
            "by 20.1 minutes (median DIDO 174 min; only 27.3% within 120 "
            "min; n=108,913 transfers)",
@@ -507,8 +509,8 @@ _INFORMATION = Block(
         _S("How often is key information missing?",
            skip="Not published — no booking-completeness rate exists for "
                 "IFT; the nearest measured proxy is the documentation "
-                "share of ambulance improper payments (63.5% of the CERT "
-                "error), plus per-account intake logs (diligence "
+                "share of ambulance improper payments (46.7% of the 2025 "
+                "CERT error), plus per-account intake logs (diligence "
                 "request)."),
         _S("Can providers access relevant patient information "
            "electronically?",
@@ -558,7 +560,7 @@ _PAYMENT = Block(
         "'a 19% annual increase in the probability of emergency dialysis "
         "use' among ESRD beneficiaries.",
         "Error and audit exposure concentrate exactly here: CERT puts "
-        "ambulance improper payments at 13.2% / $595.1M (63.5% "
+        "ambulance improper payments at 10.4% / $452.6M (46.7% "
         "insufficient documentation), and OIG found $30.2M paid where the "
         "beneficiary received no Medicare service at origin or "
         "destination in one half-year.",
@@ -587,10 +589,11 @@ _PAYMENT = Block(
            "probability of emergency dialysis use' (ESRD cohort)",
            "ACADEMIC", "Contreary et al., JAMA Health Forum 2022",
            "https://doi.org/10.1001/jamahealthforum.2022.2093"),
-        _E("Ambulance improper payments 13.2% / $595.1M projected; "
-           "insufficient documentation 63.5%, medical necessity 27.5%",
-           "GOV", "CMS CERT 2024 supplemental improper-payment data "
-           "(re-verify)", ""),
+        _E("Ambulance improper payments 10.4% / $452.6M projected; "
+           "insufficient documentation 46.7%, medical necessity 24.9%",
+           "GOV", "CMS CERT 2025 supplemental improper-payment data "
+           "(Nov 2025; claims 2023-07 to 2024-06)",
+           "https://www.cms.gov/files/document/nov-2025-medicare-ffs-supplemental-improper-payment-data-2025922.pdf"),
         _E("19.7% of transports collect nothing; Medicare + Medicare "
            "Advantage supply 42% of transport revenue",
            "SOURCED", "CMS/RAND GADCS reports via AAA / EMS|MC coverage "
@@ -673,7 +676,7 @@ _INCENTIVES = Block(
         "the throughput value but pays directly for only a fraction of "
         "trips.",
         "The trip's price and its throughput value differ by an order of "
-        "magnitude — hospital expense per inpatient day runs ~$3,132 "
+        "magnitude — hospital expense per inpatient day runs ~$3,297 "
         "against a $469 Medicare average payment per transport — and "
         "nobody trades between the two ledgers except through the "
         "hospital's direct-pay channel.",
@@ -696,15 +699,18 @@ _INCENTIVES = Block(
         "what delays cost. That arbitrage is the economic core of the "
         "dedicated model."),
     evidence=(
-        _E("Hospital adjusted expense per inpatient day ~$3,132 (2023; "
-           "nonprofit $3,288, for-profit $2,529) — an expense proxy, not "
+        _E("Hospital adjusted expense per inpatient day ~$3,297 (2024; "
+           "nonprofit $3,449, for-profit $2,623) — an expense proxy, not "
            "marginal cost",
-           "SOURCED", "KFF State Health Facts, expenses per inpatient day "
-           "(re-verify)", ""),
+           "SOURCED", "KFF State Health Facts, expenses per adjusted "
+           "inpatient day (and by ownership), 2024 AHA Annual Survey",
+           "https://www.kff.org/health-costs/state-indicator/expenses-per-inpatient-day/"),
         _E("Medicare FFS average payment ~$469 per ground transport "
-           "($5.3B / 11.3M, 2024) — the trip-price side of the mismatch",
-           "DERIVED", "MedPAC Ambulance Payment Basics, Oct 2024",
-           "https://www.medpac.gov/wp-content/uploads/2024/10/MedPAC_Payment_Basics_24_ambulance_FINAL_SEC.pdf"),
+           "($5.3B over 11.3M FFS transports, 2024) — the trip-price side "
+           "of the mismatch",
+           "DERIVED", "MedPAC June 2026 Report to the Congress ch.6 "
+           "(GADCS mandated report)",
+           "https://www.medpac.gov/wp-content/uploads/2026/06/Jun26_Ch6_MedPAC_Report_To_Congress_SEC.pdf"),
         _E("'A 19% annual increase in the probability of emergency "
            "dialysis use' among ESRD beneficiaries after RSNAT squeezed "
            "repetitive transport — cost shifts when incentives clash",
@@ -727,7 +733,7 @@ _INCENTIVES = Block(
            "service levels."),
         _S("Does the hospital benefit financially from reliable "
            "transportation?",
-           "Enormously — freed bed-days at ~$3,132/day expense and reduced "
+           "Enormously — freed bed-days at ~$3,297/day expense and reduced "
            "boarding — but the benefit sits in throughput accounts no "
            "transport budget ever sees."),
         _S("Does the provider receive any benefit from improving hospital "
@@ -1185,7 +1191,7 @@ _FINANCIAL = Block(
         "Under per-trip pricing the provider carries everything, "
         "including demand variability it cannot see and denial risk on "
         "documentation half-created by the hospital (19.7% of transports "
-        "collect nothing; 63.5% of improper payments are documentation) — "
+        "collect nothing; 46.7% of improper payments are documentation) — "
         "so it defends itself the only ways it can: thin capacity, payer "
         "selection, and slow ETAs on unprofitable legs.",
         "Retainers and dedicated-unit fees swap money for risk: the "
@@ -1216,9 +1222,10 @@ _FINANCIAL = Block(
            "(re-verify)",
            "https://emsmc.com/in-the-news/takeaways-from-the-first-cms-data-collection-report-on-ambulance-services-and-what-we-need-to-do-about-it/"),
         _E("19.7% of transports collect nothing; insufficient "
-           "documentation is 63.5% of the ambulance improper-payment "
+           "documentation is 46.7% of the ambulance improper-payment "
            "error — the denial risk being allocated",
-           "SOURCED", "GADCS Y1-4 appendix + CMS CERT 2024 (re-verify)",
+           "SOURCED", "GADCS Y1-4 appendix, Dec 2025 (re-verify) + CMS "
+           "CERT 2025 supplemental data, Nov 2025",
            "https://ambulance.org/2025/12/09/cms-releases-new-gadcs-report/"),
         _E("The study's contracting frame: per-transport rates + "
            "availability/subsidy retainer + exclusivity/first-call + CPI "
