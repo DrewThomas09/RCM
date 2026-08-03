@@ -21,8 +21,8 @@ from ..diligence.tam_sam import (
     monte_carlo,
 )
 from ._chartis_kit import (
-    chartis_shell, ck_kpi_block, ck_next_section, ck_page_title, ck_panel,
-    ck_source_purpose,
+    chartis_shell, ck_empty_state, ck_kpi_block, ck_next_section,
+    ck_page_title, ck_panel, ck_source_link, ck_source_purpose,
 )
 
 _CSS = """
@@ -62,18 +62,37 @@ _CSS = """
 
 
 def _fmt_money(v: float) -> str:
+    # House rule: money always carries 2 decimals ($450.25M, $1,204.50) at
+    # every magnitude — the $M branch used to print 1dp, which read as a
+    # different precision convention from the $B branch two lines above it.
     if abs(v) >= 1e9:
         return f"${v/1e9:,.2f}B"
     if abs(v) >= 1e6:
-        return f"${v/1e6:,.1f}M"
-    return f"${v:,.0f}"
+        return f"${v/1e6:,.2f}M"
+    return f"${v:,.2f}"
+
+
+def _fmt_pct(v: float, *, sign: bool = False) -> str:
+    """House percent format — 1 decimal, never 0 or 2.
+
+    Every rate on this page routes through here so the applied-rate column,
+    the segment shares, the payer mix, and the funnel sub-labels read at one
+    precision instead of the three they drifted into."""
+    return f"{v:+,.1f}%" if sign else f"{v:,.1f}%"
+
+
+def _fmt_multiple(v: Optional[float]) -> str:
+    """House multiple format — 2 decimals + ``x`` (``2.50x``)."""
+    return f"{v:,.2f}x" if v else "—"
 
 
 def _fmt_step_value(st: Dict[str, Any]) -> str:
     if st["op"] == "rate":
-        return f"{st['value']*100:,.2f}%"
+        return _fmt_pct(st["value"] * 100)
     if st["op"] == "price":
-        return f"${st['value']:,.0f}"
+        # A unit price is never abbreviated to $M — the partner needs the
+        # literal rate to check it against a fee schedule.
+        return f"${st['value']:,.2f}"
     # Plain decimal — :,.4g goes scientific on populations (3.66e+06).
     v = st["value"]
     return f"{int(v):,}" if float(v).is_integer() else f"{v:,.2f}"
@@ -83,6 +102,64 @@ def _fmt_running(st: Dict[str, Any]) -> str:
     # Once a price step lands, the running value is dollars.
     return (_fmt_money(st["running"]) if st["op"] == "price"
             else f"{st['running']:,.0f}")
+
+
+def _build_href(template: str, scenario: str = "base", sort: str = "tam",
+                *, explicit_scenario: bool = False) -> str:
+    """Canonical link back into this builder with the partner's context kept.
+
+    ``template`` arrives straight off the query string, so it is
+    percent-encoded (not merely HTML-escaped) — it lands inside a URL, and a
+    key carrying ``&`` or ``#`` would otherwise silently truncate the link.
+    Non-default scenario/sort ride along so switching vertical (or
+    re-sorting) doesn't quietly reset the partner to Base/TAM; the defaults
+    are dropped so the everyday URL stays short. ``explicit_scenario`` keeps
+    ``scenario=base`` on the wire for the scenario chip row, where the Base
+    chip needs a self-describing link."""
+    href = (
+        "/diligence/tam-sam?template="
+        f"{urllib.parse.quote(str(template), safe='')}"
+    )
+    if scenario in ("conservative", "aggressive") or (
+            explicit_scenario and scenario == "base"):
+        href += f"&scenario={scenario}"
+    if sort in ("growth", "archetype"):
+        href += f"&sort={sort}"
+    return html.escape(href, quote=True)
+
+
+def _source_list_links(text: str, sep: str = ", ") -> str:
+    """Link each citation in a comma-joined source list independently.
+
+    The archetype's ``primary_sources`` is a list ("NPPES, POS file, Care
+    Compare, HCRIS facility counts, …"). Routing the WHOLE string through
+    ck_source_link would make every citation in it point at whichever single
+    dataset matched longest — a wrong link looks verified. Splitting first
+    means each name resolves to its own dataset or stays plain text."""
+    if not text:
+        return ""
+    return sep.join(ck_source_link(part.strip())
+                    for part in str(text).split(",") if part.strip())
+
+
+def _cited_prose(text: str) -> str:
+    """Link the citation clause of a ``"<claim> — <commentary>"`` string.
+
+    Triangulation bases and deep-dive source notes read like "Medicare
+    hospice spend ~$25B (MedPAC) - scope check vs the users-days-rate
+    build". Linking the entire sentence would turn a paragraph into one
+    hyperlink; linking only the clause before the first em-dash or semicolon
+    keeps the methodology commentary as prose."""
+    s = str(text or "")
+    if not s:
+        return ""
+    cuts = [i for i in (s.find("—"), s.find(";")) if i > 0]
+    if not cuts:
+        return ck_source_link(s)
+    i = min(cuts)
+    lead = " " if s[i] == "—" else ""
+    return (f'{ck_source_link(s[:i].strip())}{lead}{html.escape(s[i])} '
+            f'{html.escape(s[i + 1:].strip())}')
 
 
 def model_from_qs(qs: Dict[str, List[str]]) -> TamSamModel:
@@ -146,9 +223,21 @@ def _state_bar_svg(states: List[Dict[str, Any]], width: int = 560) -> str:
     mx = max(s["facilities"] for s in states) or 1
     row_h, pad_l, pad_r = 22, 46, 110
     bar_w = width - pad_l - pad_r
+    # The aria-label carries what the picture says, not just what it is —
+    # a screen-reader user gets the scale of the bars and the overlay's
+    # meaning rather than the bare words "facilities by state". Describe
+    # the LARGEST bar, not states[0]: the caller's ordering is not always
+    # by facility count (hospitals ranks by filed NPR).
+    top = max(states, key=lambda s: s["facilities"])
+    summary = (
+        f'Facilities by state — {len(states)} states shown, bars scaled to '
+        f'{top["state"]} at {top["facilities"]:,} facilities; the teal '
+        'overlay on each bar is the independent (acquirable) slice'
+    )
     parts = [f'<svg width="{width}" height="{len(states)*row_h + 6}" '
              'xmlns="http://www.w3.org/2000/svg" role="img" '
-             'aria-label="Facilities by state">']
+             f'aria-label="{html.escape(summary, quote=True)}">'
+             f'<title>{html.escape(summary)}</title>']
     for i, s in enumerate(states):
         y = i * row_h + 4
         w = s["facilities"] / mx * bar_w
@@ -181,9 +270,16 @@ def _projection_svg(projection: List[Dict[str, Any]],
     n = len(projection) - 1
     series = [("TAM", "tam", "#0b2341"), ("SAM", "sam", "#1F7A75"),
               ("SOM", "som", "#a08227")]
+    last = projection[-1]
     parts = [f'<svg width="{width}" height="{height}" '
              'xmlns="http://www.w3.org/2000/svg" role="img" '
-             'aria-label="TAM SAM SOM projection">']
+             'aria-label="TAM SAM SOM projection">'
+             # Hover tooltip for the sighted partner — the end-state the
+             # three lines are heading toward, without reading the table.
+             f'<title>TAM / SAM / SOM projection over '
+             f'{len(projection) - 1} years — by Y{last["year"]}: TAM '
+             f'{_fmt_money(last["tam"])}, SAM {_fmt_money(last["sam"])}, '
+             f'SOM {_fmt_money(last["som"])}</title>']
     for i, p in enumerate(projection):
         x = pad_l + i / n * pw
         parts.append(
@@ -221,27 +317,48 @@ def _sources_panel(out: Dict[str, Any],
         if st["source"] and st["source"] not in seen:
             seen.add(st["source"])
             items.append(f'{html.escape(st["name"])} — '
-                         f'{html.escape(st["source"])}')
+                         f'{ck_source_link(st["source"])}')
     for g in out["growth_drivers"]:
         if g["note"] and g["note"] not in seen:
             seen.add(g["note"])
             items.append(f'{html.escape(g["name"])} (growth driver) — '
-                         f'{html.escape(g["note"])}')
+                         f'{_cited_prose(g["note"])}')
     if dive:
         for k in ("facility_source", "quality_source"):
             v = dive.get(k)
             if v and v not in seen:
                 seen.add(v)
-                items.append(html.escape(v))
+                items.append(_cited_prose(v))
     if out.get("basis_note"):
-        items.append(html.escape(out["basis_note"]))
+        items.append(_cited_prose(out["basis_note"]))
+    if not items:
+        # The blank scaffold carries no sourced defaults — say so rather
+        # than rendering an empty numbered list under a "sources" heading,
+        # which reads as "we lost the citations".
+        return ck_panel(
+            ck_empty_state(
+                "No sourced defaults in this build.",
+                "The blank scaffold ships with unsourced placeholder "
+                "drivers. Pick a vertical template to inherit its public-"
+                "data citations, or type your engagement figures into the "
+                "driver chain and record the source in the deal file.",
+                eyebrow="Sources",
+                cta_label="Start from a sized vertical",
+                cta_href="/diligence/tam-sam?template=fertility_ivf",
+            ),
+            title="Sources & footnotes · every default traces to a named "
+                  "public source",
+        )
     lis = "".join(
         f'<li style="margin:0 0 6px;"><span style="font-family:'
         f'var(--sc-mono);color:#7a8699;">[{i+1}]</span> {t}</li>'
         for i, t in enumerate(items))
     return ck_panel(
         f'<ol style="list-style:none;margin:0;padding:0;font-size:12px;'
-        f'line-height:1.5;color:#465366;">{lis}</ol>',
+        f'line-height:1.5;color:#465366;">{lis}</ol>'
+        '<p class="ts2-src" style="margin:9px 0 0;">Underlined citations '
+        'open the public dataset they came from — check any number at '
+        'its origin.</p>',
         title="Sources & footnotes · every default traces to a named "
               "public source",
     )
@@ -258,9 +375,16 @@ def _segment_bar_svg(segments: List[Dict[str, Any]],
     palette = ["#0b2341", "#1F7A75", "#b8732a", "#a98545", "#5b6b85",
                "#8a5a44", "#46604a"]
     h, bar_h = 64, 26
+    # Slice labels are clipped to 22 chars to fit the bar; the untruncated
+    # composition lives in the SVG <title> so a hover (and the tooltip a
+    # partner reaches for on an unfamiliar segment name) resolves it.
+    full = " \u00b7 ".join(
+        f'{s["name"]} {_fmt_pct(max(0.0, float(s.get("share_of_volume") or 0)) * 100)}'
+        for s in segments)
     parts = [f'<svg width="{width}" height="{h}" '
              'xmlns="http://www.w3.org/2000/svg" role="img" '
-             'aria-label="Segment composition">']
+             'aria-label="Segment composition">'
+             f'<title>Segment composition \u2014 {html.escape(full)}</title>']
     x = 0.0
     legend: List[str] = []
     for i, s in enumerate(segments):
@@ -268,19 +392,28 @@ def _segment_bar_svg(segments: List[Dict[str, Any]],
         w = share * width
         color = palette[i % len(palette)]
         star = " \u2605" if s.get("is_fastest") else ""
+        name = str(s["name"])
+        clipped = name[:22]
+        # Slice labels stay at 0dp: they sit INSIDE the bar and a 110px
+        # slice cannot carry "Commercial payer 23.4%". The segment table
+        # directly below prints the house 1-decimal share.
+        label = f'{clipped}{star} {share*100:.0f}%'
+        title = (f'{name}{star} \u2014 '
+                 f'{_fmt_pct(share * 100)} of volume')
         parts.append(
             f'<rect x="{x:.1f}" y="6" width="{max(w,1):.1f}" '
-            f'height="{bar_h}" fill="{color}"/>')
-        label = f'{s["name"][:22]}{star} {share*100:.0f}%'
+            f'height="{bar_h}" fill="{color}">'
+            f'<title>{html.escape(title)}</title></rect>')
         if w >= 110:
             parts.append(
                 f'<text x="{x + w/2:.1f}" y="{6 + bar_h/2 + 4}" '
                 'text-anchor="middle" font-family="sans-serif" '
                 f'font-size="10" fill="#ffffff">{html.escape(label)}'
-                '</text>')
+                f'<title>{html.escape(title)}</title></text>')
         else:
             legend.append(
-                f'<span style="display:inline-flex;align-items:center;'
+                f'<span title="{html.escape(title, quote=True)}" '
+                f'style="display:inline-flex;align-items:center;'
                 f'gap:4px;margin-right:12px;font-size:10.5px;'
                 f'color:#465366;"><span style="width:9px;height:9px;'
                 f'background:{color};display:inline-block;"></span>'
@@ -303,7 +436,7 @@ def _derive_agenda_items(out: Dict[str, Any]) -> List[str]:
             f'Reconcile the sizing: bottom-up '
             f'({_fmt_money(tri["bottom_up_tam"])}) vs top-down '
             f'({_fmt_money(tri["top_down_tam"])}) diverge '
-            f'{tri["gap_pct"]:.0f}% ({tri["band"].upper()}) — check '
+            f'{_fmt_pct(tri["gap_pct"])} ({tri["band"].upper()}) — check '
             f'segmentation, payer mix, and the top-down basis '
             f'({tri.get("top_down_source", "")})')
     for g in out["growth_drivers"]:
@@ -318,13 +451,15 @@ def _derive_agenda_items(out: Dict[str, Any]) -> List[str]:
         note = f' — {fastest["note"]}' if fastest.get("note") else ""
         items.append(
             f'Validate the growth thesis: can the target capture '
-            f'{fastest["name"]} ({fastest["growth_pct"]:+.0f}%/yr)?'
+            f'{fastest["name"]} '
+            f'({_fmt_pct(fastest["growth_pct"], sign=True)}/yr)?'
             f'{note}')
     for s in out["segments"]:
         if (s.get("growth_pct") or 0) < 0:
             items.append(
                 f'Size the decline: what share of the target revenue '
-                f'sits in {s["name"]} ({s["growth_pct"]:+.0f}%/yr)?')
+                f'sits in {s["name"]} '
+                f'({_fmt_pct(s["growth_pct"], sign=True)}/yr)?')
     if out.get("sam_note"):
         items.append(f'Confirm addressability: {out["sam_note"]}')
     if out.get("som_note"):
@@ -346,9 +481,9 @@ def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
             f'<strong>Reconcile the sizing:</strong> bottom-up '
             f'({_fmt_money(tri["bottom_up_tam"])}) vs top-down '
             f'({_fmt_money(tri["top_down_tam"])}) diverge '
-            f'{tri["gap_pct"]:.0f}% ({tri["band"].upper()}) — check '
+            f'{_fmt_pct(tri["gap_pct"])} ({tri["band"].upper()}) — check '
             f'segmentation, payer mix, and the top-down basis '
-            f'({html.escape(tri.get("top_down_source", ""))})')
+            f'({_cited_prose(tri.get("top_down_source", ""))})')
     for g in out["growth_drivers"]:
         if g["annual_pct"] < 0:
             note = f' — {g["note"]}' if g.get("note") else ""
@@ -363,14 +498,16 @@ def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
         items.append(
             f'<strong>Validate the growth thesis:</strong> can the '
             f'target capture {html.escape(fastest["name"])} '
-            f'({fastest["growth_pct"]:+.0f}%/yr)?{html.escape(note)}')
+            f'({_fmt_pct(fastest["growth_pct"], sign=True)}/yr)?'
+            f'{html.escape(note)}')
     declining = [s for s in out["segments"]
                  if (s.get("growth_pct") or 0) < 0]
     for s in declining:
         items.append(
             f'<strong>Size the decline:</strong> what share of the '
             f'target\u2019s revenue sits in '
-            f'{html.escape(s["name"])} ({s["growth_pct"]:+.0f}%/yr)?')
+            f'{html.escape(s["name"])} '
+            f'({_fmt_pct(s["growth_pct"], sign=True)}/yr)?')
     if out.get("sam_note"):
         items.append(
             f'<strong>Confirm addressability:</strong> '
@@ -379,6 +516,23 @@ def _diligence_agenda_panel(out: Dict[str, Any]) -> str:
         items.append(
             f'<strong>Pressure-test share:</strong> '
             f'{html.escape(out["som_note"])}')
+    if not items:
+        # Reachable today via ?template=blank (and any build with no priced
+        # headwind, no fastest segment and no SAM/SOM notes): the panel used
+        # to render an empty <ol> under its heading, which reads as a bug.
+        return ck_panel(
+            ck_empty_state(
+                "This build implies no questions yet.",
+                "The agenda is derived from the build itself — price a "
+                "headwind as a negative growth driver, set per-segment "
+                "growth, or write the SAM/SOM addressability notes, and "
+                "the questions appear here and in the exports.",
+                eyebrow="Diligence agenda",
+                cta_label="Edit the driver chain",
+                cta_href="#ts-chain",
+            ),
+            title="Diligence agenda · the questions this build implies",
+        )
     lis = "".join(
         f'<li style="margin:0 0 8px;line-height:1.5;">'
         f'<span style="font-family:var(--sc-mono);color:#7a8699;'
@@ -412,8 +566,8 @@ def _industry_panels(tmpl_key: str) -> str:
         mult = sd.get("median_entry_multiple")
         yrs = (f", {sd['year_min']}–{sd['year_max']}"
                if sd.get("year_min") else "")
-        med_s = f"{med:.2f}x" if med else "—"
-        mult_s = f"{mult:.1f}x" if mult else "—"
+        med_s = _fmt_multiple(med)
+        mult_s = _fmt_multiple(mult)
         return ck_panel(
             f'<p class="ck-section-body" style="margin:0 0 8px;">'
             f'<strong>{sd["n"]} corpus deals</strong> '
@@ -444,19 +598,28 @@ def _industry_panels(tmpl_key: str) -> str:
                   if cap_label else "")
         mm = s.get("medicare_mix_med")
         payer_td = (
-            f'<td class="r">{mm*100:,.0f}%</td>' if has_payer and
+            f'<td class="r">{_fmt_pct(mm * 100)}</td>' if has_payer and
             mm is not None else ('<td class="r">—</td>' if has_payer
                                  else "")
         )
         rows += (
             '<tr>'
-            f'<td>{html.escape(s["state"])}</td>'
+            f'<th scope="row" style="font-weight:400;">'
+            f'{html.escape(s["state"])}</th>'
             f'<td class="r">{s["facilities"]:,}</td>'
             f'{cap_td}'
             f'<td class="r">{s["independent"]:,}</td>'
-            f'<td class="r">{s["independent_share"]*100:,.0f}%</td>'
+            f'<td class="r">{_fmt_pct(s["independent_share"] * 100)}</td>'
             f'{payer_td}'
             f'<td class="r">{qs_s}</td></tr>'
+        )
+    if not rows:
+        # A vertical whose vendored facility file loads but yields no state
+        # rows would otherwise print a headed table with nothing under it.
+        rows = (
+            f'<tr><td colspan="{4 + bool(cap_label) + bool(has_payer)}" '
+            'class="ts2-src" style="padding:14px 10px;">No state rows in '
+            'the vendored snapshot for this vertical.</td></tr>'
         )
     footprint = ck_panel(
         '<div style="display:grid;grid-template-columns:minmax(0,1fr) '
@@ -464,20 +627,24 @@ def _industry_panels(tmpl_key: str) -> str:
         f'<div>{_state_bar_svg(dive["top_states"])}'
         '<p class="ts2-src" style="margin:8px 0 0;">Navy = all '
         f'facilities · teal = {html.escape(dive.get("pool_note", "the pool"))}. '
-        f'{html.escape(dive["facility_source"])}.</p></div>'
+        f'{_cited_prose(dive["facility_source"])}.</p></div>'
         '<table class="ts2-chain"><thead><tr>'
-        '<th>State</th><th style="text-align:right;">Facilities</th>'
-        + (f'<th style="text-align:right;">{html.escape(cap_label)}</th>'
-           if cap_label else "")
-        + f'<th style="text-align:right;">{html.escape(pool_label)}</th>'
-        f'<th style="text-align:right;">{html.escape(pool_label)} share</th>'
-        + ('<th style="text-align:right;">Medicare mix (med)</th>'
-           if has_payer else "")
-        + f'<th style="text-align:right;">{html.escape(q_label)}</th>'
+        '<th scope="col">State</th>'
+        '<th scope="col" style="text-align:right;">Facilities</th>'
+        + (f'<th scope="col" style="text-align:right;">'
+           f'{html.escape(cap_label)}</th>' if cap_label else "")
+        + f'<th scope="col" style="text-align:right;">'
+        f'{html.escape(pool_label)}</th>'
+        f'<th scope="col" style="text-align:right;">'
+        f'{html.escape(pool_label)} share</th>'
+        + ('<th scope="col" style="text-align:right;">Medicare mix (med)'
+           '</th>' if has_payer else "")
+        + f'<th scope="col" style="text-align:right;">'
+        f'{html.escape(q_label)}</th>'
         f'</tr></thead><tbody>{rows}</tbody></table>'
         '</div>'
         f'<p class="ts2-src" style="margin:10px 0 0;">'
-        f'{html.escape(dive["quality_source"])}. '
+        f'{_cited_prose(dive["quality_source"])}. '
         f'<a class="ck-link" href="{html.escape(dive["screener_href"])}">'
         'Open the screener for this vertical →</a></p>',
         title=f"State footprint · top 10 of {dive['n_facilities']:,} "
@@ -486,10 +653,15 @@ def _industry_panels(tmpl_key: str) -> str:
     # 2 · Consolidation + whitespace.
     chain_rows = "".join(
         '<tr>'
-        f'<td>{html.escape(c["org"])}</td>'
+        f'<th scope="row" style="font-weight:400;">'
+        f'{html.escape(c["org"])}</th>'
         f'<td class="r">{c["facilities"]:,}</td>'
-        f'<td class="r">{c["share"]*100:,.1f}%</td></tr>'
+        f'<td class="r">{_fmt_pct(c["share"] * 100)}</td></tr>'
         for c in dive["chains"]
+    ) or (
+        '<tr><td colspan="3" class="ts2-src" style="padding:14px 10px;">'
+        'No named operators in the vendored snapshot for this vertical — '
+        'the pool below is the whole market.</td></tr>'
     )
     if dive.get("whitespace_mode") == "density":
         ws = ", ".join(
@@ -501,7 +673,7 @@ def _industry_panels(tmpl_key: str) -> str:
             for s in dive["whitespace_states"][:5])
     duo = dive.get("duopoly_share")
     duo_bit = (
-        f'Top-2 chains hold <strong>{duo*100:,.0f}%</strong> of '
+        f'Top-2 chains hold <strong>{_fmt_pct(duo * 100)}</strong> of '
         'facilities; ' if duo else ""
     )
     # Chain-concentration HHI (DOJ/FTC scale) — the standard read on how
@@ -526,9 +698,10 @@ def _industry_panels(tmpl_key: str) -> str:
         )
     consolidation = ck_panel(
         '<table class="ts2-chain"><thead><tr>'
-        f'<th>{html.escape(dive.get("chains_label", "Chain"))}</th>'
-        '<th style="text-align:right;">Facilities</th>'
-        '<th style="text-align:right;">Share</th>'
+        f'<th scope="col">{html.escape(dive.get("chains_label", "Chain"))}'
+        '</th>'
+        '<th scope="col" style="text-align:right;">Facilities</th>'
+        '<th scope="col" style="text-align:right;">Share</th>'
         f'</tr></thead><tbody>{chain_rows}</tbody></table>'
         f'<p class="ck-section-body" style="margin:12px 0 0;">'
         f'{duo_bit}<strong>{dive["n_independent"]:,} '
@@ -546,8 +719,8 @@ def _industry_panels(tmpl_key: str) -> str:
         mult = sd.get("median_entry_multiple")
         yrs = (f", {sd['year_min']}–{sd['year_max']}"
                if sd.get("year_min") else "")
-        med_s = f"{med:.2f}x" if med else "—"
-        mult_s = f"{mult:.1f}x" if mult else "—"
+        med_s = _fmt_multiple(med)
+        mult_s = _fmt_multiple(mult)
         deals_band = ck_panel(
             f'<p class="ck-section-body" style="margin:0;">'
             f'<strong>{sd["n"]} corpus deals</strong> '
@@ -567,7 +740,21 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     from ..diligence.tam_sam import sensitivity
     rows = sensitivity(model)
     if not rows or tam <= 0:
-        return ""
+        # The jump nav ships a "Sensitivity" chip unconditionally, so an
+        # empty return left that anchor pointing at nothing. Say why the
+        # tornado is absent instead of scrolling the partner into a gap.
+        return ck_panel(
+            ck_empty_state(
+                "No drivers to swing yet.",
+                "The tornado needs a positive TAM and at least one chain "
+                "driver. Enter the population, utilization and price steps "
+                "in the driver chain and the ±20% sensitivity appears here.",
+                eyebrow="Sensitivity",
+                cta_label="Edit the driver chain",
+                cta_href="#ts-chain",
+            ),
+            title="Driver sensitivity · ±20% tornado",
+        )
     width, row_h, pad_l, pad_r = 640, 26, 230, 96
     pw = width - pad_l - pad_r
     lo_all = min(r["tam_low"] for r in rows)
@@ -575,7 +762,11 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
     span = (hi_all - lo_all) or 1
     parts = [f'<svg width="{width}" height="{len(rows)*row_h + 22}" '
              'xmlns="http://www.w3.org/2000/svg" role="img" '
-             'aria-label="Driver sensitivity tornado">']
+             'aria-label="Driver sensitivity tornado">'
+             f'<title>±20% driver sensitivity around a base TAM of '
+             f'{_fmt_money(tam)} — {html.escape(str(rows[0]["name"]))} '
+             f'swings it most, from {_fmt_money(rows[0]["tam_low"])} to '
+             f'{_fmt_money(rows[0]["tam_high"])}</title>']
     x_base = pad_l + (tam - lo_all) / span * pw
     parts.append(
         f'<line x1="{x_base:.1f}" y1="4" x2="{x_base:.1f}" '
@@ -585,13 +776,21 @@ def _tornado_panel(model: TamSamModel, tam: float) -> str:
         y = i * row_h + 12
         x_lo = pad_l + (r["tam_low"] - lo_all) / span * pw
         x_hi = pad_l + (r["tam_high"] - lo_all) / span * pw
+        # Driver names clip at 32 chars in the gutter — the <title> carries
+        # the full name plus the swing, so a clipped label is never a
+        # dead end.
+        r_title = (f'{r["name"]} — ±20% swings TAM '
+                   f'{_fmt_money(r["tam_low"])} to '
+                   f'{_fmt_money(r["tam_high"])} (base {_fmt_money(tam)})')
         parts.append(
             f'<text x="{pad_l-8}" y="{y+5}" text-anchor="end" '
             'font-family="sans-serif" font-size="11" fill="#1a2332">'
-            f'{html.escape(r["name"][:32])}</text>'
+            f'{html.escape(str(r["name"])[:32])}'
+            f'<title>{html.escape(r_title)}</title></text>'
             f'<rect x="{x_lo:.1f}" y="{y-6}" '
             f'width="{max(2, x_hi-x_lo):.1f}" height="12" '
-            'fill="#1F7A75" opacity="0.75"/>'
+            'fill="#1F7A75" opacity="0.75">'
+            f'<title>{html.escape(r_title)}</title></rect>'
             f'<text x="{x_hi+6:.1f}" y="{y+5}" font-family="monospace" '
             'font-size="9.5" fill="#465366">'
             f'{_fmt_money(r["tam_low"])}\u2013{_fmt_money(r["tam_high"])}'
@@ -658,7 +857,7 @@ def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
         f'</div>'
         f'<div class="ts2-src" style="margin-top:3px;">'
         f'<b>Primary sources</b> · '
-        f'{html.escape(arch.get("primary_sources", ""))}</div>'
+        f'{_source_list_links(arch.get("primary_sources", ""))}</div>'
         '</div>'
     )
 
@@ -679,12 +878,12 @@ def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
             f'<span>Bottom-up <b>{_fmt_money(tri["bottom_up_tam"])}</b></span>'
             f'<span>Top-down <b>{_fmt_money(tri["top_down_tam"])}</b></span>'
             f'<span style="color:{bc};font-weight:600;">Gap '
-            f'{tri["gap_pct"]:.1f}% · {tri["band"].upper()}</span>'
+            f'{_fmt_pct(tri["gap_pct"])} · {tri["band"].upper()}</span>'
             '</div>'
             f'<div class="ts2-src" style="margin-top:6px;">'
             f'{html.escape(tri["verdict"])}</div>'
             f'<div class="ts2-src" style="margin-top:3px;">Top-down basis · '
-            f'{html.escape(tri.get("top_down_source", ""))}</div>'
+            f'{_cited_prose(tri.get("top_down_source", ""))}</div>'
             '</div>'
         )
 
@@ -700,7 +899,7 @@ def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
         f'<span>P10 <b>{_fmt_money(mc["p10"])}</b></span>'
         f'<span>P50 <b>{_fmt_money(mc["p50"])}</b></span>'
         f'<span>P90 <b>{_fmt_money(mc["p90"])}</b></span>'
-        f'<span class="ts2-src">CV {mc["cv"]*100:.0f}%</span>'
+        f'<span class="ts2-src">CV {_fmt_pct(mc["cv"] * 100)}</span>'
         '</div>'
         '<p class="ts2-src" style="margin:5px 0 0;">Lognormal driver '
         'uncertainty propagated through the chain (seeded, reproducible, '
@@ -713,16 +912,20 @@ def _method_panel(out: Dict[str, Any], model: TamSamModel) -> str:
     bass_html = ""
     if bass:
         cells = "".join(
-            f'<td class="r">{b["cum_frac"]*100:.0f}%</td>' for b in bass)
-        hdr = "".join(f'<th class="r">Y{b["period"]}</th>' for b in bass)
+            f'<td class="r">{_fmt_pct(b["cum_frac"] * 100)}</td>'
+            for b in bass)
+        hdr = "".join(f'<th scope="col" class="r">Y{b["period"]}</th>'
+                      for b in bass)
         bass_html = (
             '<div style="margin:14px 0 0;">'
             '<div style="font-family:var(--sc-mono);font-size:9.5px;'
             'letter-spacing:.12em;text-transform:uppercase;color:#465366;'
             'margin-bottom:5px;">Bass adoption · SOM(t) = SAM × F(t)</div>'
-            '<table class="ts2-chain"><thead><tr><th>Cumulative adopted</th>'
-            f'{hdr}</tr></thead><tbody><tr><td class="ts2-src">share of '
-            f'SAM</td>{cells}</tr></tbody></table>'
+            '<table class="ts2-chain"><thead><tr>'
+            '<th scope="col">Cumulative adopted</th>'
+            f'{hdr}</tr></thead><tbody><tr>'
+            f'<th scope="row" class="ts2-src" style="font-weight:400;">'
+            f'share of SAM</th>{cells}</tr></tbody></table>'
             '<p class="ts2-src" style="margin:5px 0 0;">Innovation p='
             f'{model.bass_p:g}, imitation q={model.bass_q:g} — the S-curve '
             'that governs realistic near-term capture for an adoption play.'
@@ -755,15 +958,20 @@ def _jump_nav(has_dive: bool) -> str:
         'text-decoration:none;color:var(--sc-text,#1a2332);">'
         f'{label}</a>'
         for h, label in chips)
-    return (f'<div style="display:flex;gap:6px;flex-wrap:wrap;'
-            f'margin:0 0 12px;">{links}</div>')
+    return ('<nav aria-label="Jump to section" '
+            'style="display:flex;gap:6px;flex-wrap:wrap;'
+            f'margin:0 0 12px;">{links}</nav>')
 
 
 def _industry_comparison_panel(active_key: str,
-                               sort: str = "tam") -> str:
+                               sort: str = "tam",
+                               scenario: str = "base") -> str:
     """Every sized vertical side by side — sortable by TAM (where the
     biggest pieces are) or composite growth (where it grows fastest).
-    Each row links into its build."""
+    Each row links into its build.
+
+    ``scenario`` is carried through every link so switching vertical (or
+    re-sorting) does not silently drop the partner back to Base."""
     from ..diligence.tam_sam import (
         TEMPLATES, TEMPLATE_ARCHETYPE, compute as _compute)
     rows = []
@@ -786,35 +994,81 @@ def _industry_comparison_panel(active_key: str,
     trs = ""
     for key, name, tam, cagr, arch_code in rows:
         short = name.split("·")[0].strip()
-        on = ' style="background:var(--sc-bone,#ece5d6);"' if key == active_key else ""
+        is_active = key == active_key
+        on = (' style="background:var(--sc-bone,#ece5d6);"'
+              ' aria-current="page"' if is_active else "")
         bar_w = max(2, tam / max_tam * 160)
         tone = "#0a8a5f" if cagr >= 4 else ("#b5321e" if cagr < 0 else "#1a2332")
+        # The row label is the vertical's short name; the full catalogue
+        # name (everything after the "·") is otherwise invisible here.
+        full = f"{name} — TAM {_fmt_money(tam)}, composite " \
+               f"{_fmt_pct(cagr, sign=True)}/yr"
         trs += (
             f'<tr{on}>'
-            f'<td><a href="/diligence/tam-sam?template={key}" '
+            f'<th scope="row" style="font-weight:400;">'
+            f'<a href="{_build_href(key, scenario, sort)}" '
+            f'title="{html.escape(full, quote=True)}" '
             f'style="color:var(--sc-navy,#0b2341);font-weight:600;'
-            f'text-decoration:none;">{html.escape(short)}</a></td>'
+            f'text-decoration:none;">{html.escape(short)}</a></th>'
             f'<td>{_archetype_chip(arch_code)}</td>'
             f'<td class="r">{_fmt_money(tam)}</td>'
-            f'<td><svg width="170" height="12">'
+            # Decorative duplicate of the TAM cell to its left — hidden
+            # from AT so the row isn't read twice.
+            f'<td><svg width="170" height="12" aria-hidden="true" '
+            f'focusable="false">'
             f'<rect x="0" y="1" width="{bar_w:.0f}" height="10" '
             f'fill="#0b2341" opacity="0.8"/></svg></td>'
             f'<td class="r" style="color:{tone};font-weight:600;">'
-            f'{cagr:+.1f}%/yr</td></tr>'
+            f'{_fmt_pct(cagr, sign=True)}/yr</td></tr>'
         )
+    if not trs:
+        return ck_panel(
+            ck_empty_state(
+                "No sized verticals to compare.",
+                "The cross-industry table is built from the template "
+                "catalogue; none of it computed on this request.",
+                eyebrow="Cross-industry view",
+            ),
+            title="Cross-industry view · where the biggest pieces grow "
+                  "fastest",
+        )
+
     def _sort_link(token: str, label: str) -> str:
-        base = f'/diligence/tam-sam?template={html.escape(active_key)}'
-        href = base if token == "tam" else f'{base}&sort={token}'
+        href = _build_href(active_key, scenario, token)
         weight = 700 if sort == token else 400
-        return (f'<a href="{href}" style="font-weight:{weight};'
+        cur = ' aria-current="true"' if sort == token else ""
+        return (f'<a href="{href}"{cur} style="font-weight:{weight};'
                 f'color:var(--sc-navy);">{label}</a>')
+
+    def _sort_th(token: str, label: str) -> str:
+        """Column header that IS the sort control, with aria-sort so AT
+        announces which column the table is ordered by."""
+        align = 'text-align:right;'
+        state = 'descending' if sort == token else 'none'
+        mark = ' ▾' if sort == token else ''
+        return (f'<th scope="col" aria-sort="{state}" style="{align}">'
+                f'<a href="{_build_href(active_key, scenario, token)}" '
+                f'title="Sort the catalogue by {html.escape(label, quote=True)}" '
+                f'style="color:inherit;text-decoration:none;'
+                f'{"font-weight:700;" if sort == token else ""}">'
+                f'{label}{mark}</a></th>')
+
     return ck_panel(
-        '<table class="ts2-chain"><thead><tr>'
-        '<th>Vertical</th><th>Method</th>'
-        '<th style="text-align:right;">TAM</th>'
-        '<th>Relative size</th>'
-        '<th style="text-align:right;">Composite growth</th>'
-        f'</tr></thead><tbody>{trs}</tbody></table>'
+        '<table class="ts2-chain"><caption class="ts2-src" '
+        'style="caption-side:top;text-align:left;padding:0 0 6px;">'
+        'Every sized vertical, template defaults — click the TAM or '
+        'Composite growth header to re-sort.</caption><thead><tr>'
+        '<th scope="col">Vertical</th>'
+        # NOTE: this header stays bare. tests/test_tam_sam.py
+        # (ArchetypeColumnTests.test_method_column_and_sort_render) asserts
+        # the literal string "<th>Method</th>", so it cannot carry scope or
+        # aria-sort; the "by method" sort stays available in the footer
+        # links below.
+        '<th>Method</th>'
+        + _sort_th("tam", "TAM")
+        + '<th scope="col">Relative size</th>'
+        + _sort_th("growth", "Composite growth")
+        + f'</tr></thead><tbody>{trs}</tbody></table>'
         f'<p class="ts2-src" style="margin:8px 0 0;">Sort: '
         + _sort_link("tam", "biggest pieces (TAM)") + ' · '
         + _sort_link("growth", "growing fastest") + ' · '
@@ -841,7 +1095,8 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         "TAM / SAM Builder",
         eyebrow="DILIGENCE · MARKET SIZING",
         meta=(f"{html.escape(out['name'])} · TAM {_fmt_money(out['tam'])} · "
-              f"{out['composite_cagr_pct']:+.1f}%/yr composite"),
+              f"{_fmt_pct(out['composite_cagr_pct'], sign=True)}/yr "
+              "composite"),
     )
     src = ck_source_purpose(
         purpose=("Build the market-sizing driver tree the IC expects — "
@@ -859,26 +1114,34 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     scenario = (qs.get("scenario") or ["base"])[0].lower()
     if scenario not in ("conservative", "base", "aggressive"):
         scenario = "base"
+    sort_key = (qs.get("sort") or ["tam"])[0]
+    _cur_true = ' aria-current="true"'
+    _cur_page = ' aria-current="page"'
     scen_bar = (
-        '<div class="ts2-tmpl" style="margin:0 0 10px;">'
+        '<nav class="ts2-tmpl" style="margin:0 0 10px;" '
+        'aria-label="Scenario preset">'
         '<span class="ts2-src" style="align-self:center;'
         'margin-right:4px;text-transform:uppercase;letter-spacing:.1em;">'
         'Scenario</span>'
         + "".join(
-            f'<a href="/diligence/tam-sam?template={html.escape(tmpl_key)}'
-            f'&scenario={s}" class="{"on" if s == scenario else ""}">'
+            f'<a href="'
+            f'{_build_href(tmpl_key, s, sort_key, explicit_scenario=True)}" '
+            f'class="{"on" if s == scenario else ""}"'
+            f'{_cur_true if s == scenario else ""}>'
             f'{s.title()}</a>'
             for s in ("conservative", "base", "aggressive"))
         + '<span class="ts2-src" style="align-self:center;">'
         'Conservative halves tailwinds / amplifies headwinds; '
         'Aggressive mirrors. Typed driver values always win.</span>'
-        '</div>'
+        '</nav>'
     )
     tmpl_bar = (
-        '<div class="ts2-tmpl">'
+        '<nav class="ts2-tmpl" aria-label="Sizing template">'
         + "".join(
-            f'<a href="/diligence/tam-sam?template={k}" '
-            f'class="{"on" if k == tmpl_key else ""}">{html.escape(lbl)}</a>'
+            f'<a href="{_build_href(k, scenario, sort_key)}" '
+            f'class="{"on" if k == tmpl_key else ""}"'
+            f'{_cur_page if k == tmpl_key else ""}>'
+            f'{html.escape(lbl)}</a>'
             for k, lbl in (("fertility_ivf", "Fertility · IVF"),
                            ("dialysis", "Dialysis · in-center"),
                            ("home_health", "Home health"),
@@ -972,12 +1235,13 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + ck_kpi_block("TAM", _fmt_money(out["tam"]), "full driver chain")
         + ck_kpi_block(
             "SAM", _fmt_money(out["sam"]),
-            f"{out['sam_share']*100:.0f}% addressable")
+            f"{_fmt_pct(out['sam_share'] * 100)} addressable")
         + ck_kpi_block(
             "SOM", _fmt_money(out["som"]),
-            f"{out['som_share']*100:.0f}% of SAM obtainable")
+            f"{_fmt_pct(out['som_share'] * 100)} of SAM obtainable")
         + ck_kpi_block(
-            "Composite growth", f"{out['composite_cagr_pct']:+.1f}%/yr",
+            "Composite growth",
+            f"{_fmt_pct(out['composite_cagr_pct'], sign=True)}/yr",
             f"{len(out['growth_drivers'])} named drivers")
         + '</div>'
     )
@@ -996,8 +1260,14 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             form_val = f"{st['value']:,.4f}".rstrip("0").rstrip(".")
         chain_rows += (
             '<tr>'
-            f'<td>{html.escape(st["name"])}'
-            f'<div class="ts2-src">{html.escape(st["source"] or "")}</div></td>'
+            f'<th scope="row" style="font-weight:400;">'
+            f'{html.escape(st["name"])}'
+            # The per-step citation is the defensibility of the whole
+            # chain — link it to the dataset instead of printing a dead
+            # label the partner has to Google.
+            f'<div class="ts2-src">'
+            f'{ck_source_link(st["source"]) if st["source"] else ""}'
+            '</div></th>'
             f'<td class="r"><input name="step{i}" value="{form_val}" '
             f'aria-label="{html.escape(st["name"], quote=True)}"/>'
             f' <span class="ts2-src">{html.escape(st["unit"])}'
@@ -1007,39 +1277,47 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
             '</tr>'
         )
     sam_row = (
-        '<tr><td>Addressable share (SAM)'
-        f'<div class="ts2-src">{html.escape(model.sam_note or "")}</div></td>'
+        '<tr><th scope="row" style="font-weight:400;">'
+        'Addressable share (SAM)'
+        f'<div class="ts2-src">{html.escape(model.sam_note or "")}</div></th>'
         f'<td class="r"><input name="sam_share" '
         f'value="{model.sam_share*100:g}" '
         f'aria-label="Addressable share (SAM), % of TAM"/> '
         f'<span class="ts2-src">% of TAM'
         '</span></td>'
-        f'<td class="r">{model.sam_share*100:,.1f}%</td>'
+        f'<td class="r">{_fmt_pct(model.sam_share * 100)}</td>'
         f'<td class="r ts2-run">{_fmt_money(out["sam"])}</td></tr>'
-        '<tr><td>Obtainable share (SOM)'
-        f'<div class="ts2-src">{html.escape(model.som_note or "")}</div></td>'
+        '<tr><th scope="row" style="font-weight:400;">'
+        'Obtainable share (SOM)'
+        f'<div class="ts2-src">{html.escape(model.som_note or "")}</div></th>'
         f'<td class="r"><input name="som_share" '
         f'value="{model.som_share*100:g}" '
         f'aria-label="Obtainable share (SOM), % of SAM"/> '
         f'<span class="ts2-src">% of SAM'
         '</span></td>'
-        f'<td class="r">{model.som_share*100:,.1f}%</td>'
+        f'<td class="r">{_fmt_pct(model.som_share * 100)}</td>'
         f'<td class="r ts2-run">{_fmt_money(out["som"])}</td></tr>'
     )
     # Directionality made visible: ▲ tailwind / ▼ headwind by sign, with
     # the root cause (the note) under each driver name.
     growth_inputs = ""
     for i, g in enumerate(out["growth_drivers"]):
+        # role=img + aria-label so AT announces "tailwind", not the Unicode
+        # name of a triangle; title gives the sighted partner the same word.
         if g["annual_pct"] > 0:
-            arrow = '<span style="color:#0a8a5f;">▲</span>'
+            arrow = ('<span style="color:#0a8a5f;" role="img" '
+                     'aria-label="Tailwind" title="Tailwind">▲</span>')
         elif g["annual_pct"] < 0:
-            arrow = '<span style="color:#b5321e;">▼</span>'
+            arrow = ('<span style="color:#b5321e;" role="img" '
+                     'aria-label="Headwind" title="Headwind">▼</span>')
         else:
-            arrow = '<span style="color:#7a8699;">—</span>'
+            arrow = ('<span style="color:#7a8699;" role="img" '
+                     'aria-label="Neutral" title="Neutral">—</span>')
         growth_inputs += (
             '<div class="ts2-drv">'
             f'<span>{arrow} {html.escape(g["name"])}'
-            f'<div class="ts2-src">{html.escape(g["note"] or "")}</div></span>'
+            f'<div class="ts2-src">{_cited_prose(g["note"] or "")}</div>'
+            '</span>'
             f'<span class="pct"><input name="growth{i}" '
             f'value="{g["annual_pct"]:g}" style="width:70px;" '
             f'aria-label="{html.escape(g["name"], quote=True)} (%/yr)"/> %/yr</span>'
@@ -1049,10 +1327,14 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         f'<form method="GET" action="/diligence/tam-sam">'
         f'<input type="hidden" name="template" '
         f'value="{html.escape(tmpl_key, quote=True)}"/>'
-        '<table class="ts2-chain"><thead><tr>'
-        '<th>Driver</th><th style="text-align:right;">Your input</th>'
-        '<th style="text-align:right;">Applied</th>'
-        '<th style="text-align:right;">Running value</th>'
+        '<table class="ts2-chain"><caption class="ts2-src" '
+        'style="caption-side:top;text-align:left;padding:0 0 6px;">'
+        'Population → utilization → price. Each row multiplies into the '
+        'running value in the last column.</caption><thead><tr>'
+        '<th scope="col">Driver</th>'
+        '<th scope="col" style="text-align:right;">Your input</th>'
+        '<th scope="col" style="text-align:right;">Applied</th>'
+        '<th scope="col" style="text-align:right;">Running value</th>'
         f'</tr></thead><tbody>{chain_rows}{sam_row}</tbody></table>'
         '<div style="margin:16px 0 0;">'
         '<div class="ts2-src" style="margin-bottom:6px;text-transform:'
@@ -1071,27 +1353,32 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
                          for s in out["segments"])
     seg_rows = ""
     for s in out["segments"]:
-        sr = (f"{s['success_rate']*100:,.0f}%"
+        sr = (_fmt_pct(s["success_rate"] * 100)
               if s["success_rate"] is not None else "—")
         fastest = s.get("is_fastest")
         row_style = (' style="background:var(--sc-bone,#ece5d6);"'
                      if fastest else "")
         g = s.get("growth_pct")
-        g_s = (f'{g:+.0f}%' if g is not None else "—")
+        g_s = (_fmt_pct(g, sign=True) if g is not None else "—")
         g_tone = ("#0a8a5f" if (g or 0) >= 5
                   else "#b5321e" if (g or 0) < 0 else "#1a2332")
         y5 = s.get("tam_y_final")
+        star_html = (
+            ' <span role="img" aria-label="fastest-growing segment" '
+            'title="Fastest-growing segment">★</span>' if fastest else ""
+        )
         growth_tds = (
             f'<td class="r" style="color:{g_tone};font-weight:600;">'
-            f'{g_s}{" ★" if fastest else ""}</td>'
+            f'{g_s}{star_html}</td>'
             f'<td class="r">{_fmt_money(y5) if y5 else "—"}</td>'
             if has_seg_growth else ""
         )
         seg_rows += (
             f'<tr{row_style}>'
-            f'<td>{html.escape(s["name"])}'
-            f'<div class="ts2-src">{html.escape(s["note"] or "")}</div></td>'
-            f'<td class="r">{s["share_of_volume"]*100:,.0f}%</td>'
+            f'<th scope="row" style="font-weight:400;">'
+            f'{html.escape(s["name"])}'
+            f'<div class="ts2-src">{html.escape(s["note"] or "")}</div></th>'
+            f'<td class="r">{_fmt_pct(s["share_of_volume"] * 100)}</td>'
             f'<td class="r">{_fmt_money(s["tam_value"])}</td>'
             f'{growth_tds}'
             f'<td class="r">{sr}</td>'
@@ -1100,12 +1387,13 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     seg_panel = ck_panel(
         _segment_bar_svg(out["segments"])
         + '<table class="ts2-chain"><thead><tr>'
-        '<th>Segment</th><th style="text-align:right;">Volume share</th>'
-        '<th style="text-align:right;">TAM slice</th>'
-        + ('<th style="text-align:right;">Growth %/yr</th>'
-           f'<th style="text-align:right;">Y{out["horizon_years"]} '
-           'slice</th>' if has_seg_growth else "")
-        + '<th style="text-align:right;">Success rate</th>'
+        '<th scope="col">Segment</th>'
+        '<th scope="col" style="text-align:right;">Volume share</th>'
+        '<th scope="col" style="text-align:right;">TAM slice</th>'
+        + ('<th scope="col" style="text-align:right;">Growth %/yr</th>'
+           f'<th scope="col" style="text-align:right;">'
+           f'Y{out["horizon_years"]} slice</th>' if has_seg_growth else "")
+        + '<th scope="col" style="text-align:right;">Success rate</th>'
         f'</tr></thead><tbody>{seg_rows}</tbody></table>'
         + ('<p class="ts2-src" style="margin:8px 0 0;">★ = the fastest-'
            'growing segment — where the whitespace compounds. Segment '
@@ -1113,11 +1401,24 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
            'above govern the funnel projection.</p>'
            if has_seg_growth else ""),
         title="Segments · the whitespace map",
-    ) if out["segments"] else ""
+    ) if out["segments"] else ck_panel(
+        # The blank scaffold has no segment bands. The jump nav still ships
+        # a "Segments" chip, so the anchor needs something to land on.
+        ck_empty_state(
+            "No segment bands in this build.",
+            "Segments split the TAM by payer, age band, acuity or site of "
+            "care — the whitespace map the IC asks for. The sized vertical "
+            "templates ship theirs; a blank scaffold starts without one.",
+            eyebrow="Segments",
+            cta_label="Browse the sized verticals",
+            cta_href="#ts-compare",
+        ),
+        title="Segments · the whitespace map",
+    )
 
     proj_rows = "".join(
         '<tr>'
-        f'<td>Year {p["year"]}</td>'
+        f'<th scope="row" style="font-weight:400;">Year {p["year"]}</th>'
         f'<td class="r">{_fmt_money(p["tam"])}</td>'
         f'<td class="r">{_fmt_money(p["sam"])}</td>'
         f'<td class="r">{_fmt_money(p["som"])}</td>'
@@ -1127,36 +1428,50 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
     proj_panel = ck_panel(
         _projection_svg(out["projection"])
         + '<table class="ts2-chain"><thead><tr>'
-        '<th>Horizon</th><th style="text-align:right;">TAM</th>'
-        '<th style="text-align:right;">SAM</th>'
-        '<th style="text-align:right;">SOM</th>'
+        '<th scope="col">Horizon</th>'
+        '<th scope="col" style="text-align:right;">TAM</th>'
+        '<th scope="col" style="text-align:right;">SAM</th>'
+        '<th scope="col" style="text-align:right;">SOM</th>'
         f'</tr></thead><tbody>{proj_rows}</tbody></table>'
         f'<p class="ts2-src" style="margin:10px 0 0;">Composite '
-        f'{out["composite_cagr_pct"]:+.1f}%/yr from the named drivers '
-        'above — the decomposition survives into the export so the IC '
-        'sees which lever carries the growth.</p>',
+        f'{_fmt_pct(out["composite_cagr_pct"], sign=True)}/yr from the '
+        'named drivers above — the decomposition survives into the export '
+        'so the IC sees which lever carries the growth.</p>',
+        title=f"{out['horizon_years']}-year projection",
+    ) if out["projection"] else ck_panel(
+        ck_empty_state(
+            "No horizon to project.",
+            "Set a horizon and at least one growth driver and the "
+            "TAM / SAM / SOM trajectory renders here.",
+            eyebrow="Projection",
+            cta_label="Edit the driver chain",
+            cta_href="#ts-chain",
+        ),
         title=f"{out['horizon_years']}-year projection",
     )
 
-    export_qs = urllib.parse.urlencode(
-        {k: v[0] for k, v in qs.items() if v}, doseq=False)
+    export_qs = html.escape(urllib.parse.urlencode(
+        {k: v[0] for k, v in qs.items() if v}, doseq=False), quote=True)
     export_panel = ck_panel(
         '<div class="ts2-form-bar" style="margin:0;" id="ts2-export">'
         f'<a class="ts2-export" '
-        f'href="/api/diligence/tam-sam.xlsx?{export_qs}" download>'
-        '⬇ Formatted Excel (.xlsx)</a>'
+        f'href="/api/diligence/tam-sam.xlsx?{export_qs}" download '
+        'aria-label="Download this build as a formatted Excel workbook">'
+        '<span aria-hidden="true">⬇</span> Formatted Excel (.xlsx)</a>'
         f'<a class="ts2-export" '
-        f'href="/api/diligence/tam-sam.csv?{export_qs}" download>'
-        '⬇ CSV</a>'
-        '<span class="ts2-src">Excel ships 3 formatted sheets — Funnel '
-        '&amp; chain, Segments, Projection — headers, $ and % formats, '
-        'column widths set.</span></div>',
+        f'href="/api/diligence/tam-sam.csv?{export_qs}" download '
+        'aria-label="Download this build as CSV">'
+        '<span aria-hidden="true">⬇</span> CSV</a>'
+        '<span class="ts2-src">Excel ships 6 formatted sheets — Funnel '
+        '&amp; chain, Segments, Projection, Sources, Diligence agenda, '
+        'Method &amp; uncertainty — headers, $ and % formats, column '
+        'widths set.</span></div>',
         title="Export · drop into the deal model",
     )
 
     basis = (
         f'<p class="ts2-src" style="margin:4px 0 14px;">'
-        f'{html.escape(out["basis_note"])}</p>'
+        f'{_cited_prose(out["basis_note"])}</p>'
         if out["basis_note"] else ""
     )
 
@@ -1165,7 +1480,7 @@ def render_tam_sam_page(qs: Optional[Dict[str, List[str]]] = None) -> str:
         + _jump_nav(bool(_dive_for_sources(tmpl_key)))
         + '<div id="ts-compare"></div>'
         + _industry_comparison_panel(
-            tmpl_key, sort=(qs.get("sort") or ["tam"])[0])
+            tmpl_key, sort=sort_key, scenario=scenario)
         + '<div id="ts-method"></div>' + _method_panel(out, model)
         + '<div id="ts-chain"></div>' + chain_panel
         + '<div id="ts-segments"></div>' + seg_panel
@@ -1272,10 +1587,10 @@ def tam_sam_csv(qs: Dict[str, List[str]]) -> str:
     mc = monte_carlo(model, n=4000, rel_sigma=0.15, seed=1729)
     w.writerow(["Monte-Carlo TAM (P10/P50/P90)", round(mc["p10"], 2),
                 round(mc["p50"], 2), round(mc["p90"], 2),
-                f"CV {mc['cv']*100:.0f}%"])
+                f"CV {_fmt_pct(mc['cv'] * 100)}"])
     if out.get("bass"):
         w.writerow(["Bass cum. adoption (share of SAM)"]
-                   + [f"Y{b['period']}={b['cum_frac']*100:.0f}%"
+                   + [f"Y{b['period']}={_fmt_pct(b['cum_frac'] * 100)}"
                       for b in out["bass"]])
     w.writerow([])
     w.writerow(["Diligence agenda"])
