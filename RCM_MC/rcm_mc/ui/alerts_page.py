@@ -155,6 +155,12 @@ _ALERTS_CSS = """
     color:var(--sc-navy,#0b2341);cursor:pointer;border-radius:2px;}
   .ck-alert-go:hover{background:var(--sc-bone,#ece5d6);
     border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}
+  /* The row's one action button reads navy-filled (like the filter
+     Apply) so it registers as actionable, not another bordered pill. */
+  .ck-alert-go-primary{background:var(--sc-navy,#0b2341);color:#fff;
+    border-color:var(--sc-navy,#0b2341);}
+  .ck-alert-go-primary:hover{background:var(--sc-teal,#155752);
+    border-color:var(--sc-teal,#155752);color:#fff;}
 
   .ck-alerts-filter-row{display:flex;align-items:center;gap:10px;
     margin:0 0 24px;flex-wrap:wrap;}
@@ -267,13 +273,14 @@ def _row(a, name_map: Dict[str, str]) -> str:
         f'value="{html.escape(a.deal_id)}">'
         f'<input type="hidden" name="trigger_key" '
         f'value="{html.escape(tk)}">'
-        f'<select name="snooze_days" aria-label="Snooze duration" '
+        f'<select name="snooze_days" aria-label="Alert action" '
         f'class="ck-alert-snooze">'
-        f'<option value="0">Ack</option>'
-        f'<option value="7">Snooze 7d</option>'
-        f'<option value="30">Snooze 30d</option>'
+        f'<option value="0">Acknowledge</option>'
+        f'<option value="7">Ack + snooze 7d</option>'
+        f'<option value="30">Ack + snooze 30d</option>'
         f'</select>'
-        f'<button type="submit" class="ck-alert-go">Apply</button>'
+        f'<button type="submit" '
+        f'class="ck-alert-go ck-alert-go-primary">Apply</button>'
         f'</form>'
     )
     # Open-questions chip — JS hydrates from
@@ -489,7 +496,22 @@ def render_alerts(
       else{el.hidden=true;}
     });
   }
-  document.addEventListener("DOMContentLoaded",paint);
+  // Ack-form affordance: the submit button mirrors the selected
+  // action's verb so "Apply" never reads ambiguously. Idempotent —
+  // re-running paint() only rewrites textContent.
+  function wireAck(){
+    document.querySelectorAll(".ck-alert-ack-form").forEach(function(f){
+      var sel=f.querySelector("select[name=snooze_days]");
+      var btn=f.querySelector("button[type=submit]");
+      if(!sel||!btn)return;
+      var sync=function(){
+        btn.textContent=sel.value==="0"?"Acknowledge":"Ack + snooze";
+      };
+      sel.addEventListener("change",sync);
+      sync();
+    });
+  }
+  document.addEventListener("DOMContentLoaded",function(){paint();wireAck();});
 }());
 </script>
 """

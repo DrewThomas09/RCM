@@ -66,13 +66,20 @@ _XRAY_ATTR_TO_GLOSSARY_KEY = {
 # ────────────────────────────────────────────────────────────────────
 
 _WORKSTATION_CSS = """
-.xr-ws{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px;}
-@media (max-width:1024px){.xr-ws{grid-template-columns:1fr;}}
+/* minmax(0,1fr) tracks + width:100% inputs: an <input> never shrinks
+   below its size-based intrinsic width, so plain 1fr tracks inflate to
+   ~455px and force horizontal page scroll at 390px viewports. */
+.xr-ws{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;margin-bottom:16px;}
+@media (max-width:1024px){.xr-ws{grid-template-columns:minmax(0,1fr);}}
 .xr-ws-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
 .xr-ws-field label{font-family:var(--xr-mono);font-size:10px;letter-spacing:.14em;
  text-transform:uppercase;color:var(--xr-muted);}
 .xr-ws-field input{background:var(--xr-paper3);border:1px solid var(--xr-rule);
  padding:10px 12px;font-family:var(--xr-mono);font-size:13px;color:var(--xr-ink);}
+/* Direct-child only: the .xr-seg fiscal-year radios are absolutely
+   positioned off-flow and must NOT inherit width:100% (a full-width
+   absolute radio re-creates the very overflow this rule removes). */
+.xr-ws-field > input{width:100%;min-width:0;box-sizing:border-box;}
 .xr-ws-field input:focus{outline:2px solid var(--xr-green);outline-offset:-2px;}
 .xr-seg{display:flex;border:1px solid var(--xr-rule);background:var(--xr-paper3);width:max-content;}
 .xr-seg label{font-family:var(--xr-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
@@ -82,12 +89,20 @@ _WORKSTATION_CSS = """
 .xr-seg input:checked + label,.xr-seg label:has(input:checked){background:var(--xr-navy);color:var(--xr-paper);}
 .xr-ws-actions{display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;}
 .xr-ws-readout{font-family:var(--xr-mono);font-size:10px;letter-spacing:.08em;color:var(--xr-muted);}
-.xr-ws-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+.xr-ws-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin:10px 0;}
+@media (max-width:640px){.xr-ws-grid{grid-template-columns:minmax(0,1fr);}}
 .xr-ws-kpi .k{font-family:var(--xr-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--xr-muted);}
 .xr-ws-kpi .v{font-family:var(--xr-serif);font-size:24px;color:var(--xr-ink);line-height:1;}
 .xr-ws-kpi .v.red{color:var(--xr-red);}
 .xr-sample-tag{font-family:var(--xr-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
  color:var(--xr-amber);background:var(--xr-amber-soft);border:1px solid var(--xr-amber);padding:2px 7px;}
+.xr-ws-deals{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 12px;}
+.xr-ws-deals-label{font-family:var(--xr-mono);font-size:10px;letter-spacing:.14em;
+ text-transform:uppercase;color:var(--xr-muted);margin-right:2px;}
+.xr-deal-chip{font-family:var(--xr-mono);font-size:11px;letter-spacing:.04em;
+ color:var(--xr-green);border:1px solid var(--xr-rule);background:var(--xr-paper3);
+ padding:4px 10px;text-decoration:none;white-space:nowrap;}
+.xr-deal-chip:hover{border-color:var(--xr-green);background:var(--xr-paper);}
 """
 
 
@@ -103,6 +118,67 @@ def _fmt_money_b(v: Optional[float]) -> str:
 def _xray_kit_css() -> str:
     from .xray_kit import XRAY_CSS
     return XRAY_CSS
+
+
+def _active_deal_xray_links() -> str:
+    """Quick-pick chips: one-click X-Ray for active deals with a filed CCN.
+
+    The platform already stores each deal's CCN (``profile_json.hcris_ccn``,
+    the same field the deal page's identity line renders), so the daily
+    "X-Ray my deal" flow shouldn't cost a lookup + retype round trip.
+    Read-only GET links — ``?ccn=`` runs the benchmark directly.
+
+    The renderer receives only the query string (no store), so the DB path
+    comes from the server's runtime config singleton — the same value
+    ``build_server`` wrote — with the env/default fallback used by other
+    store-less UI modules. Any failure (no server context, unbuilt DB,
+    empty portfolio) degrades to no chips, never an error.
+    """
+    import json as _json
+    import os as _os
+    import urllib.parse as _up
+    try:
+        from ..server import RCMHandler
+        db_path = RCMHandler.config.db_path
+    except Exception:  # noqa: BLE001 — e.g. renderer used outside a server
+        db_path = _os.environ.get("RCM_MC_DB") or _os.path.expanduser(
+            "~/.rcm_mc/portfolio.db")
+    try:
+        from ..portfolio.store import PortfolioStore
+        with PortfolioStore(db_path).connect() as con:
+            rows = con.execute(
+                "SELECT deal_id, name, profile_json FROM deals "
+                "WHERE archived_at IS NULL "
+                "ORDER BY created_at DESC LIMIT 12"
+            ).fetchall()
+    except Exception:  # noqa: BLE001 — chips are additive, never 500
+        return ""
+    chips: List[str] = []
+    for r in rows:
+        try:
+            prof = _json.loads(r["profile_json"] or "{}") or {}
+        except Exception:  # noqa: BLE001
+            prof = {}
+        ccn = str(prof.get("hcris_ccn") or "").strip()
+        if not ccn:
+            continue
+        label = str(r["name"] or r["deal_id"])
+        chips.append(
+            f'<a class="xr-deal-chip" '
+            f'href="/diligence/hcris-xray?ccn={_up.quote(ccn)}" '
+            f'title="Run X-Ray on CCN {html.escape(ccn)}">'
+            f'{html.escape(label)}</a>'
+        )
+        if len(chips) >= 6:
+            break
+    if not chips:
+        return ""
+    return (
+        '<div class="xr-ws-deals">'
+        '<span class="xr-ws-deals-label">Your deals</span>'
+        + "".join(chips)
+        + '</div>'
+    )
 
 
 def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
@@ -122,6 +198,7 @@ def _xray_workstation(q: str, state_filter: str, summary: dict) -> str:
     intake = (
         '<form method="get" action="/diligence/hcris-xray">'
         + k.xr_eyebrow("① Identify the hospital")
+        + _active_deal_xray_links()
         + '<div class="xr-ws-field"><label>Name / CCN / city substring</label>'
         f'<input name="q" value="{html.escape(q)}" '
         'placeholder="e.g. REGIONAL, 010001, DOTHAN" autofocus></div>'
