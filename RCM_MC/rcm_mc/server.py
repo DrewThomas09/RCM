@@ -200,21 +200,29 @@ def _render_health_sparkline(
     store: PortfolioStore,
     deal_id: str,
     *,
-    width: int = 260,
-    height: int = 60,
+    width: int = 320,
+    height: int = 72,
 ) -> str:
     """B143: small SVG of health score over time for a deal.
 
     Fixed 0-100 y-scale so partners get visual calibration (a 60 is
     always in the same vertical band). Returns '' if < 2 history
     points so we don't waste space on a deal that has one sighting.
+
+    Legibility contract (2026-08 audit): the 80/50 band lines carry
+    right-gutter mono labels and the newest point carries its score in
+    the band color — without them the chart read as two faint dotted
+    lines with no scale, i.e. a rendering glitch.
     """
     from .deals.health_score import history_series
     series = history_series(store, deal_id)
     if len(series) < 2:
         return ""
     pad = 6
-    chart_w = width - 2 * pad
+    # Right gutter reserves room for the "80" / "50" threshold labels
+    # and the current-score label so they never overlay the line.
+    gutter = 30
+    chart_w = width - pad - gutter
     chart_h = height - 2 * pad
     n = len(series)
 
@@ -236,19 +244,34 @@ def _render_health_sparkline(
     )
     # 80 and 50 threshold lines for visual reference
     y80, y50 = _y(80), _y(50)
+    y_last = _y(last_score)
+    label_x = width - pad - gutter + 6
+    # Threshold labels yield to the score label when the current score
+    # sits on top of a band line (within one text height).
+    thresh_labels = "".join(
+        f'<text x="{label_x}" y="{y_t + 3:.1f}" fill="{c}" opacity="0.8" '
+        f'style="font-family:var(--sc-mono,monospace);" '
+        f'font-size="9">{t}</text>'
+        for y_t, c, t in ((y80, "#0a8a5f", "80"), (y50, "#b5321e", "50"))
+        if abs(y_t - y_last) > 12
+    )
     return (
         f'<svg width="{width}" height="{height}" '
-        f'style="display: block; margin-top: 0.3rem;">'
-        f'<line x1="{pad}" x2="{width - pad}" y1="{y80:.1f}" y2="{y80:.1f}" '
+        f'style="display: block; margin-top: 0.3rem; min-height: 40px;">'
+        f'<line x1="{pad}" x2="{pad + chart_w}" y1="{y80:.1f}" y2="{y80:.1f}" '
         f'stroke="#0a8a5f" stroke-width="1" stroke-dasharray="2,3" '
-        f'opacity="0.5"/>'
-        f'<line x1="{pad}" x2="{width - pad}" y1="{y50:.1f}" y2="{y50:.1f}" '
+        f'opacity="0.75"/>'
+        f'<line x1="{pad}" x2="{pad + chart_w}" y1="{y50:.1f}" y2="{y50:.1f}" '
         f'stroke="#b5321e" stroke-width="1" stroke-dasharray="2,3" '
-        f'opacity="0.5"/>'
-        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="1.5" '
+        f'opacity="0.75"/>'
+        f'{thresh_labels}'
+        f'<polyline fill="none" stroke="var(--sc-navy)" stroke-width="2" '
         f'stroke-linejoin="round" points="{pts}"/>'
-        f'<circle cx="{_x(n - 1):.1f}" cy="{_y(last_score):.1f}" r="3" '
+        f'<circle cx="{_x(n - 1):.1f}" cy="{y_last:.1f}" r="3" '
         f'fill="{last_color}"/>'
+        f'<text x="{label_x}" y="{y_last + 4:.1f}" fill="{last_color}" '
+        f'style="font-family:var(--sc-mono,monospace);" '
+        f'font-size="11" font-weight="700">{int(last_score)}</text>'
         f'<title>Health history ({n} days)</title>'
         f'</svg>'
     )
@@ -986,18 +1009,25 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         # dashboard, which used to strand the partner with no path to the
         # analysis surfaces at all — link the workbench + the model hub
         # forward so the audit trail and the analytics stay one click apart.
-        f'<a href="/analysis/{qd}" class="ck-deal-action">'
+        # Visual hierarchy: the workbench is the one forward path, so it
+        # alone gets the navy fill; Models stays a bordered secondary;
+        # Download/Set-Active demote to quiet text links so six controls
+        # don't compete at equal weight. Only Pin keeps the star glyph.
+        f'<a href="/analysis/{qd}" '
+        'class="ck-deal-action ck-deal-action-primary">'
         'Open Workbench →</a>'
         f'<a href="/models/dcf/{qd}" class="ck-deal-action" '
         'title="DCF · LBO · bridge · the full model set runs off the same '
         'deal profile.">Models</a>'
-        f'<a href="/deal/{qd}?download=1" class="ck-deal-action">'
+        f'<a href="/deal/{qd}?download=1" '
+        'class="ck-deal-action ck-deal-action-quiet">'
         '↓ Download HTML</a>'
         # P1 — carry this deal as ambient context; the active-deal bar then
         # offers pre-scoped module links on every page.
         f'<a href="/deal-context?set={qd}&return=/deal/{qd}" '
-        'class="ck-deal-action" title="Module links in the bar open '
-        'pre-scoped to this deal on every page.">★ Set Active Deal</a>'
+        'class="ck-deal-action ck-deal-action-quiet" '
+        'title="Module links in the bar open '
+        'pre-scoped to this deal on every page.">Set Active Deal</a>'
         '</div>'
     )
     # Health KPI value: coloured number carrying the component
@@ -1018,35 +1048,57 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         moic_v = f"{moic_v:.2f}x"
     if isinstance(irr_v, float):
         irr_v = f"{irr_v*100:.1f}%"
-    kpi_strip = (
-        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
-        + ck_kpi_block(
-            "Health", health_value,
-            sub=html.escape(_HEALTH_BAND_LABELS.get(
-                str(health["band"]).lower(), str(health["band"]))),
-        )
-        + ck_kpi_block(
-            "Stage", html.escape(str(stage)).title(),
-            sub="lifecycle",
-        )
-        + ck_kpi_block("Covenant", cov_badge, sub="latest snapshot")
-        + ck_kpi_block("MOIC", str(moic_v), sub="latest snapshot")
-        + ck_kpi_block("IRR", str(irr_v), sub="latest snapshot")
-        + '</div>'
-    )
-
     # B143 — health-history sparkline. The editorial KPI-strip refactor
     # dropped the inline sparkline; restore it as a small labeled block
     # below the strip (renders only when ≥2 history points exist).
+    # Computed before the KPI strip so the Health KPI can link to it.
     _health_spark = _render_health_sparkline(store, deal_id)
     health_spark_block = (
-        '<div class="ck-deal-health-spark" '
+        '<div class="ck-deal-health-spark" id="health-history" '
         'style="margin:-8px 0 24px;">'
         '<div class="ck-eyebrow" style="margin-bottom:4px;">'
         'Health history</div>'
         f'{_health_spark}'
         '</div>'
     ) if _health_spark else ""
+    # Drill-throughs: the command-center hero KPIs all link to the
+    # surface where a partner acts on the number; the deal page — the
+    # highest-intent surface — left its KPIs inert, so a TRIPPED
+    # covenant forced a scroll-hunt. sub is trusted markup per
+    # ck_kpi_block's documented exemption.
+    _cov_drill = (
+        ' · <a class="ck-kpi-drill" href="#variance">variance →</a>'
+        if var_rows else
+        f' · <a class="ck-kpi-drill" href="/analysis/{qd}">workbench →</a>'
+    )
+    _health_drill = (
+        ' · <a class="ck-kpi-drill" href="#health-history">history →</a>'
+        if _health_spark else ""
+    )
+    kpi_strip = (
+        '<div class="ck-kpi-grid" style="margin:0 0 24px;">'
+        + ck_kpi_block(
+            "Health", health_value,
+            sub=html.escape(_HEALTH_BAND_LABELS.get(
+                str(health["band"]).lower(), str(health["band"])))
+            + _health_drill,
+        )
+        + ck_kpi_block(
+            "Stage", html.escape(str(stage)).title(),
+            sub="lifecycle",
+        )
+        + ck_kpi_block("Covenant", cov_badge,
+                       sub="latest snapshot" + _cov_drill)
+        + ck_kpi_block(
+            "MOIC", str(moic_v),
+            sub='latest snapshot · <a class="ck-kpi-drill" '
+                f'href="/analysis/{qd}">workbench →</a>')
+        + ck_kpi_block(
+            "IRR", str(irr_v),
+            sub='latest snapshot · <a class="ck-kpi-drill" '
+                f'href="/models/dcf/{qd}">models →</a>')
+        + '</div>'
+    )
 
     deal_header_css = (
         '<style>'
@@ -1069,10 +1121,27 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
         'display:inline-flex;align-items:center;}'
         '.ck-deal-action:hover{background:var(--sc-bone,#ece5d6);'
         'border-color:var(--sc-teal,#155752);color:var(--sc-teal,#155752);}'
+        # One primary per row: navy fill marks "Open Workbench" as the
+        # forward path; quiet variant strips the pill chrome from the
+        # utility links so they read as tertiary text actions.
+        '.ck-deal-action-primary{background:var(--sc-navy,#0b2341);'
+        'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        '.ck-deal-action-primary:hover{background:var(--sc-teal,#155752);'
+        'border-color:var(--sc-teal,#155752);color:#fff;}'
+        '.ck-deal-action-quiet{background:transparent;'
+        'border-color:transparent;color:var(--sc-teal,#155752);'
+        'padding-left:4px;padding-right:4px;}'
+        '.ck-deal-action-quiet:hover{background:transparent;'
+        'border-color:transparent;text-decoration:underline;}'
         '.ck-deal-action-star.is-on{background:var(--sc-teal,#155752);'
         'color:#fff;border-color:var(--sc-teal,#155752);}'
         '.ck-deal-action-star.is-on:hover{background:var(--sc-navy,#0b2341);'
         'border-color:var(--sc-navy,#0b2341);color:#fff;}'
+        # KPI drill-through links (variance / workbench / models /
+        # health history) inside the trusted ck_kpi_block sub slot.
+        '.ck-kpi-drill{color:var(--sc-teal,#155752);text-decoration:none;'
+        'font-weight:700;}'
+        '.ck-kpi-drill:hover{text-decoration:underline;}'
         # Editorial section panels for the snapshot trail / variance /
         # initiative-attribution tables further down the page.
         '.ck-deal-section{padding:0;overflow:hidden;margin:0 0 20px;}'
@@ -1134,7 +1203,7 @@ def _render_deal_detail(config: ServerConfig, deal_id: str) -> str:
     {_render_ebitda_sparkline(var_df)}
 
     {
-      '<section class="cad-card ck-deal-section">'
+      '<section class="cad-card ck-deal-section" id="variance">'
       '<header class="ck-deal-section-head">'
       '<h2>Quarterly variance</h2>'
       f'<span class="ck-deal-section-count">{_plural(len(var_df), "row")}</span>'
@@ -2792,14 +2861,22 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # Cached cleaned path used by breadcrumbs + pill match
                 req_path_clean = req_path.rstrip("/") or "/"
                 # Topbar active-link mark based on the resolved section.
+                # Section anchors carry aria-expanded/aria-controls between
+                # href and class (the mega-menu disclosure pattern), so a
+                # literal '<a href=".." class="">' match only ever fired
+                # for the bare Home anchor — match attribute-order-
+                # insensitively, and only promote a still-empty class so a
+                # kit-marked anchor isn't double-classed.
                 if section:
+                    import re as _re_nav
                     for nav_item in _CORPUS_NAV:
                         if nav_item.get("key") == section:
                             href = _h.escape(nav_item["href"], quote=True)
-                            body = body.replace(
-                                f'<a href="{href}" class="">',
-                                f'<a href="{href}" class="active">',
-                                1,
+                            body = _re_nav.sub(
+                                r'(<a href="' + _re_nav.escape(href)
+                                + r'"[^>]*class=")(")',
+                                r'\1active\2',
+                                body, count=1,
                             )
                             break
                 # Auto-breadcrumbs: a FALLBACK for pages that don't
@@ -2831,6 +2908,30 @@ class RCMHandler(BaseHTTPRequestHandler):
                             if sub_href_clean == req_path_clean:
                                 page_label = sub.get("label", "")
                                 break
+                    if not page_label:
+                        # Routes outside _SUB_NAV (deal pages, one-off
+                        # surfaces) used to degenerate the chain to
+                        # "Home / <b>Section</b>" — presenting the section
+                        # as the current page. Fall back to the page's own
+                        # first <h1> (the visible identity), then to the
+                        # <title> with the shell's " · PE Desk"-style
+                        # suffixes trimmed, so the chain reads
+                        # Home / Section / <actual page>.
+                        import re as _re_title
+                        _hm = _re_title.search(
+                            r"<h1[^>]*>([^<]+)</h1>", body,
+                        )
+                        if _hm:
+                            page_label = _h.unescape(_hm.group(1)).strip()
+                        else:
+                            _tm = _re_title.search(
+                                r"<title>(.*?)</title>", body, _re_title.S,
+                            )
+                            if _tm:
+                                _t = _h.unescape(_tm.group(1))
+                                page_label = _re_title.split(
+                                    r"\s+[·—|–]\s+", _t,
+                                )[0].strip()
                     # Home -> [Section] -> Current, with adjacent duplicate
                     # labels collapsed (so Home-section pages read
                     # "Home / Page", not "Home / Home / Page").
@@ -2840,16 +2941,24 @@ class RCMHandler(BaseHTTPRequestHandler):
                     crumbs_parts = []
                     for _i, (_lbl, _hrf) in enumerate(deduped):
                         if _i:
-                            crumbs_parts.append('<span class="sep">/</span>')
+                            crumbs_parts.append(
+                                '<span class="sep" aria-hidden="true">'
+                                '/</span>'
+                            )
                         if _hrf and _i != len(deduped) - 1:
                             crumbs_parts.append(
                                 f'<a href="{_h.escape(_hrf, quote=True)}">'
                                 f'{_h.escape(_lbl)}</a>'
                             )
                         else:
+                            # Terminal crumb follows the kit _breadcrumbs()
+                            # convention: aria-current tells AT this is the
+                            # current page (a bare <strong> says nothing).
                             crumbs_parts.append(
-                                f'<strong style="color:var(--sc-navy);">'
-                                f'{_h.escape(_lbl)}</strong>'
+                                f'<span aria-current="page" '
+                                f'style="color:var(--sc-navy);'
+                                f'font-weight:600;">'
+                                f'{_h.escape(_lbl)}</span>'
                             )
                     crumbs_html = (
                         '<nav class="ck-breadcrumbs" aria-label="Breadcrumb">'
@@ -8363,7 +8472,10 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .analysis.analysis_store import get_or_build_packet as _cmp_build
             from .ui.deal_comparison import render_comparison as _cmp_render
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            raw = (qs.get("deals") or [""])[0]
+            # Join repeated ?deals= params so the empty-state picker's
+            # checkbox form works without its JS shim (a no-JS GET form
+            # submits deals=a&deals=b, not deals=a,b).
+            raw = ",".join(qs.get("deals") or [])
             deal_ids = [d.strip() for d in raw.split(",") if d.strip()]
             store = PortfolioStore(self.config.db_path)
             packets = []
@@ -8384,8 +8496,18 @@ class RCMHandler(BaseHTTPRequestHandler):
                             float(x) for x in _book[_m].dropna().tolist()]
             except Exception:  # noqa: BLE001 — chip is additive context
                 peer_dists = {}
+            # Empty state: hand the active deal book to the renderer so
+            # it can offer an in-place picker instead of a /portfolio
+            # round-trip dead end.
+            _cmp_options = None
+            if not packets:
+                try:
+                    _cmp_options = store.list_deals()
+                except Exception:  # noqa: BLE001 — picker is additive
+                    _cmp_options = None
             return self._send_html(_cmp_render(packets,
-                                               peer_dists=peer_dists))
+                                               peer_dists=peer_dists,
+                                               deal_options=_cmp_options))
         if path == "/api/deals/compare":
             qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             raw = (qs.get("ids") or [""])[0]
