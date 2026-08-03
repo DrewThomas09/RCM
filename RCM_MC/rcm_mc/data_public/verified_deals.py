@@ -2190,11 +2190,21 @@ VERIFIED_DEALS: List[Dict] = [
     },
     {
         "target": "Headlands Research", "sponsor": "KKR",
-        "year": 2019, "ev_usd_mm": None, "sector": "other_services",
+        # Year corrected 2019 -> 2018: the row contradicted its own
+        # subsector_note ("KKR-launched (2018)"). BusinessWire, verbatim:
+        # "KKR founded Headlands in 2018 via its Health Care Strategic
+        # Growth Fund to transform the clinical trial site industry".
+        "year": 2018, "ev_usd_mm": None, "sector": "other_services",
         "subsector_note": "Clinical-trial site network; KKR-launched (2018)",
-        "outcome": "active", "outcome_note": "Active; THL Partners agreed to buy from KKR in 2025.",
-        "source_url": "https://www.nasdaq.com/press-release/headlands-research-acquires-six-clinical-research-sites-as-it-seeks-to-transform-the",
-        "source_note": "KKR (Headlands Research, 2018); THL 2025",
+        # Left "active" deliberately. The primary release announces "entry
+        # into a definitive agreement", not a closing, and KKR's portfolio
+        # page blocks automated fetches, so there is no primary evidence the
+        # sale completed. Secondary trade coverage reports it as done at
+        # ~$600M; the primary calls the price undisclosed, so no EV is
+        # recorded either. Flip to "exited" once a closing is sourced.
+        "outcome": "active", "outcome_note": "Active; THL Partners agreed to buy from KKR in 2025 (announced 2025-08-14, closing not independently sourced).",
+        "source_url": "https://www.businesswire.com/news/home/20250814383571/en/THL-Announces-Agreement-to-Acquire-Headlands-Research-from-KKR",
+        "source_note": "THL/BusinessWire 2025-08-14 — confirms KKR founded Headlands in 2018 and is selling to THL",
     },
     {
         "target": "CenExel Clinical Research", "sponsor": "Webster Equity Partners",
@@ -2873,8 +2883,21 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "dental",
         "subsector_note": "Oral & maxillofacial surgery MSO (physician-owned model)",
         "outcome": "active", "outcome_note": "Active oral-surgery platform.",
+        # DISPUTED SPONSOR — held for owner judgement, NOT silently "fixed".
+        # Report-0278 flagged this; a 2026-08-03 re-check strengthened it
+        # considerably. RiverGlade's own investments page (fetched) does NOT
+        # name Allied OMS, but DOES name U.S. Oral Surgery Management —
+        # RiverGlade's actual OMS platform. Allied OMS's own site and
+        # DuneGlass Capital's both describe DuneGlass forming Allied OMS with
+        # two founding practices in 2020. So the row most likely conflates
+        # RiverGlade/USOSM with DuneGlass/Allied OMS.
+        # The remedy is a decision, not a lookup: is the sponsor wrong, or is
+        # the target wrong? Repointing the URL at the DuneGlass formation
+        # release would swap a dead link for a live one that CONTRADICTS its
+        # own row — the same trap Report-0278 refused for IVIRMA. Left dead
+        # and flagged instead.
         "source_url": "https://www.riverglade.com/portfolio",
-        "source_note": "RiverGlade Capital (Allied OMS, 2019)",
+        "source_note": "DISPUTED (dead link): recorded RiverGlade 2019, but DuneGlass Capital announced forming Allied OMS in 2020 and RiverGlade's OMS platform is USOSM — needs owner judgement",
     },
     {
         "target": "Vibalogics", "sponsor": "Ampersand Capital Partners",
@@ -2935,7 +2958,15 @@ VERIFIED_DEALS: List[Dict] = [
         "subsector_note": "Hispanic-focused DSO (Southwest); Blue Wolf-backed",
         "outcome": "active", "outcome_note": "Active DSO.",
         "source_url": "https://www.bluewolfcapital.com/portfolio/",
-        "source_note": "Blue Wolf Capital Partners (Risas Dental, 2021)",
+        # DEAD LINK, no verified replacement found (2026-08-03). Searched
+        # Blue Wolf's own press-release archive and Risas's PR Newswire feed:
+        # neither carries the transaction. Trade summaries assert "an
+        # affiliate of Blue Wolf has acquired Risas Dental Management" but
+        # none was fetchable as a primary source. Recorded as an admitted gap
+        # rather than repointed at Blue Wolf's homepage — a link that
+        # resolves but does not document the deal is the weak-citation
+        # problem this program exists to remove, not a repair.
+        "source_note": "DEAD LINK, no verified replacement: Blue Wolf Capital Partners (Risas Dental, 2021)",
     },
 
     # ════════════════════════════════════════════════════════════════════
@@ -2971,8 +3002,16 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2021, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "ABA autism therapy (Southeast); RiverGlade-backed",
         "outcome": "active", "outcome_note": "Active ABA platform.",
+        # DISPUTED SPONSOR — held for owner judgement (new finding,
+        # 2026-08-03). RiverGlade's own investments page does not name
+        # InBloom. Webster Equity Partners' portfolio page does, and trade
+        # coverage dates Webster's acquisition to 2018 and its exit to
+        # January 2026 — which would also make "active" wrong. Two
+        # independent fields are in question, so this is a judgement call
+        # rather than a URL swap. Same disposition as the Allied OMS row
+        # above: the other RiverGlade entry in this corpus.
         "source_url": "https://www.riverglade.com/portfolio",
-        "source_note": "RiverGlade Capital (InBloom Autism Services, 2021)",
+        "source_note": "DISPUTED (dead link): recorded RiverGlade 2021, but Webster Equity Partners' portfolio names InBloom (acquired 2018, exited Jan 2026) — needs owner judgement",
     },
 
     # ════════════════════════════════════════════════════════════════════
@@ -3400,8 +3439,8 @@ VERIFIED_DEALS: List[Dict] = [
         "year": 2019, "ev_usd_mm": None, "sector": "behavioral_health",
         "subsector_note": "Outpatient mental-health / psychiatry / SUD provider (Minnesota-centric); Nautic Partners majority",
         "outcome": "active", "outcome_note": "Active; Nautic Partners acquired majority June 2019 (acquired Ellie MN clinics 2025).",
-        "source_url": "https://mergr.com/transaction/nautic-partners-acquires-nystrom-associates",
-        "source_note": "Nautic Partners (Nystrom & Associates, June 2019)",
+        "source_url": "https://nautic.com/portfolio/companies/",
+        "source_note": "Nautic Partners' own portfolio page names Nystrom & Associates, \"Provider of outpatient behavioral health services\" (fetched 2026-08-03; replaces a dead mergr.com link)",
     },
     {
         "target": "ClareMedica Health Partners", "sponsor": "Revelstoke Capital Partners",
