@@ -11165,7 +11165,14 @@ _NAV_MENU_JS = """
 """
 
 
-_PALETTE_JS = """
+# RAW string: the palette JS contains regex literals (/^\d{6}$/, /^\d+$/).
+# In a non-raw literal Python reads "\d" as an invalid escape — today it is
+# preserved with a DeprecationWarning, so the JS happens to still work, but
+# the warning is scheduled to become a SyntaxError and any future escape
+# added here (\b, \n, \t in a regex) would be silently eaten by Python
+# before the browser ever saw it. The sibling deal_profile_page._inline_js
+# had exactly this bug.
+_PALETTE_JS = r"""
 <script>
 /* Cmd+K palette behaviour:
  *   - Cmd/Ctrl+K opens, Esc closes.
