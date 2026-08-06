@@ -34,6 +34,8 @@ import html as _html
 import urllib.parse
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
+import pandas as pd
+
 from rcm_mc.ui._chartis_kit import (
     chartis_shell,
     ck_bar_row,
@@ -45,6 +47,7 @@ from rcm_mc.ui._chartis_kit import (
     ck_source_purpose,
     ck_value_anchor,
 )
+from rcm_mc.ui.us_map import render_us_state_map
 
 ROUTE = "/health-system-lookup"
 
@@ -459,6 +462,7 @@ def _roster_panel(system_id: str, rows) -> str:
                 f'{_fmt_money_m(rollup.net_patient_revenue)} net patient revenue'
                 f'{leads}')
     note = f'<div class="hsl-legend">{_esc(sysdef.note)}</div>' if sysdef.note else ""
+    footprint = _system_footprint_map(system_id, roster)
     return f"""
 <div class="hsl-roster">
   <div class="hsl-roster-head">
@@ -470,6 +474,7 @@ def _roster_panel(system_id: str, rows) -> str:
     <a class="hsl-reset" href="{ROUTE}">← Back to all systems</a>
   </div>
   {note}
+  {footprint}
   {table}
   <div class="hsl-legend">"Matched On" is the registry pattern that pulled the
   facility into this system — the audit trail behind every count above. The
@@ -524,6 +529,66 @@ def _concentration_panel(state: str) -> str:
         'concentration is at least this high, and higher wherever an unmapped '
         'facility is quietly part of a system. Bands are the DOJ/FTC '
         'merger-guideline thresholds (1,500 / 2,500).</div>')
+
+
+def _concentration_map(selected: str = "") -> str:
+    """Every state shaded by bed-share concentration.
+
+    A ranked table answers "which states are concentrated"; the map
+    answers "where", which is the question a sourcing conversation
+    actually starts from. Clicking a state opens its own view.
+    """
+    from rcm_mc.data.health_systems import _all_state_concentration
+
+    values, notes = {}, {}
+    for c in _all_state_concentration():
+        if c.hospitals < 5:
+            # Too few hospitals for the index to mean anything; leave the
+            # tile as "no data" rather than shading it dark.
+            continue
+        values[c.state] = c.hhi
+        leader = c.leader
+        if leader is not None:
+            notes[c.state] = (f"{leader.system_name} leads at "
+                              f"{leader.bed_share * 100:.1f}% of beds")
+    if not values:
+        return ""
+    return render_us_state_map(
+        values,
+        metric_label="HHI (bed share, floor)",
+        value_format=lambda v: f"{v:,.0f}",
+        state_notes=notes,
+        selected_state=selected or None,
+        state_link_template=ROUTE + "?state={state}",
+        empty_message="No concentration data.",
+    )
+
+
+def _system_footprint_map(system_id: str, roster) -> str:
+    """Where one system's hospitals are, with the states it leads accented."""
+    from rcm_mc.data.health_systems import leading_states
+
+    if roster is None or roster.empty:
+        return ""
+    operating = roster[roster["is_operating"]] if "is_operating" in roster else roster
+    if operating.empty:
+        return ""
+    counts = operating["state"].astype(str).str.upper().value_counts().to_dict()
+    beds = (operating.assign(
+        _b=pd.to_numeric(operating["beds"], errors="coerce").fillna(0))
+        .groupby(operating["state"].astype(str).str.upper())["_b"].sum().to_dict())
+    notes = {st: f"{beds.get(st, 0):,.0f} beds" for st in counts}
+    led = leading_states(system_id)
+    return render_us_state_map(
+        {k: float(v) for k, v in counts.items()},
+        metric_label="operating hospitals",
+        value_format=lambda v: f"{v:,.0f}",
+        state_notes=notes,
+        accent_states=led,
+        accent_label="largest operator in the state",
+        state_link_template=ROUTE + "?state={state}",
+        empty_message="No mapped facilities.",
+    )
 
 
 def _concentration_ranking_panel() -> str:
@@ -775,8 +840,9 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     roster = _roster_panel(system_id, m.systems) if system_id else ""
     lookup = _hospital_lookup_panel(hospital_q)
     inactive = _inactive_panel(status)
-    concentration = (_concentration_panel(state) if state
-                     else _concentration_ranking_panel())
+    concentration = ((_concentration_panel(state) + _concentration_map(state))
+                     if state
+                     else (_concentration_map() + _concentration_ranking_panel()))
     concentration_title = (f"Market Concentration — {_esc(state)}" if state
                            else "Most Concentrated States — Bed Share")
     table = _systems_table(rows) if rows else ck_empty_state(

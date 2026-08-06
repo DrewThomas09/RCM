@@ -665,6 +665,44 @@ class PageTests(unittest.TestCase):
         roster = render_health_system_lookup({"system": "providence"})
         self.assertIn("largest operator in", roster)
 
+    def test_concentration_map_shades_states_and_drills_down(self) -> None:
+        html = render_health_system_lookup({})
+        self.assertIn("usm-cell", html)                      # the cartogram
+        self.assertIn("/health-system-lookup?state=", html)  # click-through
+        self.assertIn("Intermountain Health leads at", html)  # tooltip note
+
+    def test_concentration_map_marks_the_filtered_state(self) -> None:
+        html = render_health_system_lookup({"state": "UT"})
+        self.assertIn("usm-selected", html)
+
+    def test_map_shades_only_markets_deep_enough_to_mean_something(self) -> None:
+        """Every shaded tile clears the 5-hospital floor. A three-hospital
+        territory shading as 'highly concentrated' would read as a signal
+        where there is none."""
+        from rcm_mc.data.health_systems import _all_state_concentration
+        from rcm_mc.ui.us_map import STATE_NAMES, _TILE
+
+        html = render_health_system_lookup({})
+        by_state = {c.state: c for c in _all_state_concentration()}
+        for abbr in _TILE:
+            label = STATE_NAMES.get(abbr, abbr)
+            c = by_state.get(abbr)
+            if c is not None and c.hospitals >= 5:
+                self.assertNotIn(f"{label}: no data", html)
+            else:
+                self.assertIn(f"{label}: no data", html)
+        # The markets currently below the floor are territories the
+        # cartogram has no tile for, so they are not drawn at all.
+        for thin in [c.state for c in _all_state_concentration()
+                     if c.hospitals < 5]:
+            self.assertNotIn(thin, _TILE)
+
+    def test_roster_carries_a_footprint_map_with_leads_accented(self) -> None:
+        html = render_health_system_lookup({"system": "providence"})
+        self.assertIn("usm-cell", html)
+        self.assertIn("usm-accent", html)
+        self.assertIn("operating hospitals", html)
+
     def test_registry_note_surfaces_on_the_roster(self) -> None:
         sysdef = get_system("trinity")
         self.assertTrue(sysdef.note)
