@@ -167,6 +167,7 @@ _SUB_NAV = {
     # Screener here. Conferences moved in from Pipeline (it's a sourcing surface).
     "source": [
         {"label": "Target Screener",     "href": "/target-screener"},
+        {"label": "Health System Lookup", "href": "/health-system-lookup"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Geographic Intel",    "href": "/geo-intel"},
         {"label": "Thesis Screening",    "href": "/deal-screening"},
@@ -7421,6 +7422,9 @@ _DEFAULT_PALETTE_MODULES = [
     {"id": "target-screener","title": "Target Screener",    "route": "/target-screener"},
     {"id": "source",      "title": "Deal Sourcing",        "route": "/source"},
     {"id": "screen",      "title": "Hospital Screener",    "route": "/screen"},
+    {"id": "health-system-lookup",
+        "title": "Health System Lookup · master hospital ↔ system mapping",
+        "route": "/health-system-lookup"},
     {"id": "predictive",  "title": "Predictive Screener",  "route": "/predictive-screener"},
     {"id": "pe-intel",    "title": "PE Intelligence",      "route": "/pe-intelligence"},
     {"id": "deal-screen", "title": "Deal Screening",       "route": "/deal-screening"},
@@ -11290,6 +11294,10 @@ _SUB_SECTION_MAP = {
     # Source = target discovery (incl. the CMS screeners + thesis screening).
     "/target-screener": "source", "/source": "source", "/conferences": "source",
     "/screen": "source", "/predictive-screener": "source",
+    # Master mapping of the hospital universe — a sourcing surface: it is
+    # how a partner goes from "which systems own behavioral beds in TX" to
+    # a named target list.
+    "/health-system-lookup": "source",
     "/deal-screening": "source",
     # Geographic Intelligence trio — real-data origination screening.
     "/geo-intel": "source", "/state-compare": "source",
