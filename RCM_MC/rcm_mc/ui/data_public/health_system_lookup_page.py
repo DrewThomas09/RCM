@@ -22,6 +22,11 @@ The page answers the mapping in both directions:
     the direction a partner reading a CIM actually starts from
   - ``/health-system-lookup.csv`` exports the same view, one row per
     hospital keyed on CCN so it joins against a target list in Excel
+
+Beyond "who owns what", the page carries the read a deal team asks for
+next: bed-share concentration. With a state filter it shows that state's
+HHI, top-firm and top-three share; without one it ranks the states by
+how concentrated their beds are.
 """
 from __future__ import annotations
 
@@ -460,6 +465,92 @@ def _roster_panel(system_id: str, rows) -> str:
 </div>"""
 
 
+def _concentration_panel(state: str) -> str:
+    """Who controls the beds in one state.
+
+    The mapping answers "who owns what"; this answers the question a
+    deal team asks next. Share is on beds rather than facility count —
+    a 400-bed flagship and a 15-bed critical-access hospital are not
+    one unit of market power each.
+    """
+    from rcm_mc.data.health_systems import state_concentration
+
+    c = state_concentration(state)
+    if c is None:
+        return ""
+    band_tone = ("negative" if c.hhi >= 2500 else
+                 "warning" if c.hhi >= 1500 else "teal")
+    top = c.shares[:12]
+    bars = []
+    for share in top:
+        label = share.system_name + (" · independent" if share.is_independent else "")
+        tone = "positive" if not share.is_independent else "navy"
+        bars.append(ck_bar_row(
+            label,
+            f"{share.bed_share * 100:.1f}%",
+            share.bed_share * 100.0,
+            tone=tone,
+        ))
+    rest = len(c.shares) - len(top)
+    tail = (f'<div class="hsl-legend">+{rest:,} smaller firms not shown.</div>'
+            if rest > 0 else "")
+    anchor = ck_value_anchor(
+        f"{_esc(c.state)} bed-share concentration",
+        f"HHI {c.hhi:,.0f} · {c.band}",
+        delta=(f"Top firm {c.cr1 * 100:.1f}% · top three {c.cr3 * 100:.1f}% · "
+               f"{c.hospitals:,} operating hospitals · {c.beds:,.0f} beds"),
+        opportunity=(f"{c.independent_share * 100:.1f}% of beds sit outside a "
+                     f"mapped system ({c.independent_facilities:,} facilities)"),
+        tone=band_tone,
+    )
+    return anchor + "".join(bars) + tail + (
+        '<div class="hsl-legend">Share is of the state\u2019s operating beds. '
+        'Each mapped system is one firm and <strong>each unmapped facility is '
+        'its own firm</strong> — the conservative reading when ownership is '
+        'unknown, so every HHI here is a <strong>floor</strong>: real '
+        'concentration is at least this high, and higher wherever an unmapped '
+        'facility is quietly part of a system. Bands are the DOJ/FTC '
+        'merger-guideline thresholds (1,500 / 2,500).</div>')
+
+
+def _concentration_ranking_panel() -> str:
+    """States ranked by how concentrated their beds are — a sourcing lens."""
+    from rcm_mc.data.health_systems import concentration_ranking
+
+    ranked = concentration_ranking(limit=15)
+    if not ranked:
+        return ""
+    cols = [("State", "center"), ("HHI (floor)", "right"), ("Band", "left"),
+            ("Top Firm", "right"), ("Top 3", "right"), ("Leading Firm", "left"),
+            ("Hospitals", "right"), ("Beds", "right"), ("Outside a System", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for c in ranked:
+        leader = c.leader
+        tone = ("neg" if c.hhi >= 2500 else "acc" if c.hhi >= 1500 else "dim")
+        leader_html = (
+            f'{_esc(leader.system_name)}'
+            + (' <span class="tone-dim">· independent</span>'
+               if leader and leader.is_independent else '')) if leader else "—"
+        cells = [
+            f'<td class="ck-cell ck-cell-c ck-cell-mono ck-cell-w-700">'
+            f'<a class="ck-link" href="{_qs(state=c.state)}">{_esc(c.state)}</a></td>',
+            ck_data_cell(f"{c.hhi:,.0f}", align="right", mono=True, weight=700,
+                         tone=tone),
+            ck_data_cell(_esc(c.band), tone=tone),
+            ck_data_cell(f"{c.cr1 * 100:.1f}%", align="right", mono=True),
+            ck_data_cell(f"{c.cr3 * 100:.1f}%", align="right", mono=True),
+            f'<td class="ck-cell">{leader_html}</td>',
+            ck_data_cell(_fmt_int(c.hospitals), align="right", mono=True),
+            ck_data_cell(_fmt_int(c.beds), align="right", mono=True),
+            ck_data_cell(f"{c.independent_share * 100:.1f}%", align="right",
+                         mono=True, tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+            f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+
+
 def _inactive_panel(status_filter: str = "") -> str:
     """Every facility excluded from the operating counts, by name.
 
@@ -671,6 +762,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     roster = _roster_panel(system_id, m.systems) if system_id else ""
     lookup = _hospital_lookup_panel(hospital_q)
     inactive = _inactive_panel(status)
+    concentration = (_concentration_panel(state) if state
+                     else _concentration_ranking_panel())
+    concentration_title = (f"Market Concentration — {_esc(state)}" if state
+                           else "Most Concentrated States — Bed Share")
     table = _systems_table(rows) if rows else ck_empty_state(
         "No systems match these filters. Widen the state or ownership filter, "
         "or reset.")
@@ -712,6 +807,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Behavioral Health Platforms — Ranked</div>
     {_behavioral_panel(rows)}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">{concentration_title}</div>
+    {concentration}
   </div>
   <div style="{cell}">
     <div style="{h3}">Facility-Type Mix — Whole Universe</div>

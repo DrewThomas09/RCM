@@ -2300,8 +2300,202 @@ def export_mapping(
     return rows
 
 
+# ── Market concentration ───────────────────────────────────────────
+#
+# The mapping answers "who owns what". Concentration answers the
+# question a deal team asks next: "who controls this market, and is
+# there room for another operator". Both come out of the same
+# assignment, so they belong in the same module.
+#
+# Method, stated plainly because the number is only as good as its
+# denominator:
+#
+#   - Share is measured on BEDS, not facility count. A 400-bed
+#     flagship and a 15-bed critical-access hospital are not one unit
+#     of market power each.
+#   - Only OPERATING facilities count. Closed hospitals don't hold
+#     share.
+#   - Each mapped system is one firm. **Each unmapped facility is its
+#     own firm**, which is the conservative reading when ownership is
+#     unknown — it can only push the index DOWN. So every HHI here is
+#     a FLOOR: real concentration is at least this high, and higher
+#     wherever an unmapped facility is quietly part of a system.
+#   - HHI is the standard sum of squared percentage shares (0–10,000).
+#     The DOJ/FTC merger-guideline bands are 1,500 and 2,500.
+
+HHI_UNCONCENTRATED = 1500.0
+HHI_MODERATE = 2500.0
+
+
+def hhi_band(hhi: float) -> str:
+    """DOJ/FTC label for an HHI value."""
+    if hhi >= HHI_MODERATE:
+        return "Highly concentrated"
+    if hhi >= HHI_UNCONCENTRATED:
+        return "Moderately concentrated"
+    return "Unconcentrated"
+
+
+@dataclass(frozen=True)
+class MarketShare:
+    """One firm's position in a state."""
+
+    system_id: str
+    system_name: str
+    kind: str
+    hospitals: int
+    beds: float
+    bed_share: float            # 0–1 of the state's operating beds
+    is_independent: bool = False
+
+
+@dataclass(frozen=True)
+class StateConcentration:
+    """Bed-share concentration for one state's operating hospitals."""
+
+    state: str
+    hospitals: int
+    beds: float
+    shares: Tuple[MarketShare, ...]     # every firm, ranked by bed share
+    hhi: float
+    independent_beds: float
+    independent_facilities: int
+
+    @property
+    def band(self) -> str:
+        return hhi_band(self.hhi)
+
+    @property
+    def cr1(self) -> float:
+        return self.shares[0].bed_share if self.shares else 0.0
+
+    @property
+    def cr3(self) -> float:
+        return sum(s.bed_share for s in self.shares[:3])
+
+    @property
+    def leader(self) -> Optional[MarketShare]:
+        """The largest firm — which in a low-coverage state is often a
+        single unmapped hospital, and should read that way."""
+        return self.shares[0] if self.shares else None
+
+    @property
+    def mapped_shares(self) -> Tuple[MarketShare, ...]:
+        return tuple(s for s in self.shares if not s.is_independent)
+
+    @property
+    def independent_share(self) -> float:
+        return (self.independent_beds / self.beds) if self.beds else 0.0
+
+
+def state_concentration(
+    state: str,
+    df: Optional[pd.DataFrame] = None,
+) -> Optional[StateConcentration]:
+    """Bed-share concentration for one state. ``None`` if the state is empty.
+
+    Facilities that report zero beds are excluded from the share math
+    (they cannot hold bed share) but still count in the facility
+    totals, so the two figures on the page don't silently disagree.
+    """
+    st = str(state or "").upper().strip()
+    if not st:
+        return None
+    assigned = assign_systems(df)
+    if assigned.empty:
+        return None
+    rows = assigned[(assigned["state"].astype(str).str.upper() == st)
+                    & assigned["is_operating"]]
+    if rows.empty:
+        return None
+
+    beds = pd.to_numeric(rows["beds"], errors="coerce").fillna(0.0)
+    rows = rows.assign(_beds=beds)
+    total_beds = float(beds.sum())
+    if total_beds <= 0:
+        return None
+
+    shares: List[MarketShare] = []
+    mapped = rows[rows["system_id"] != UNMAPPED_ID]
+    for system_id, group in mapped.groupby("system_id", sort=False):
+        sysdef = _SYSTEM_BY_ID.get(str(system_id))
+        sys_beds = float(group["_beds"].sum())
+        shares.append(MarketShare(
+            system_id=str(system_id),
+            system_name=sysdef.name if sysdef else str(system_id),
+            kind=sysdef.kind if sysdef else "",
+            hospitals=int(len(group)),
+            beds=sys_beds,
+            bed_share=sys_beds / total_beds,
+        ))
+
+    # Each unmapped facility enters the ranking as its OWN firm, not as
+    # one lumped "independent" block. Lumping would invent a cartel that
+    # doesn't exist and put it at the top of every low-coverage state;
+    # leaving them out entirely would hand the leader spot to whichever
+    # small system happens to be mapped. In Rhode Island — 99% unmapped —
+    # only this treatment gives a leader a partner would recognise.
+    independents = rows[rows["system_id"] == UNMAPPED_ID]
+    independent_beds = float(independents["_beds"].sum())
+    for _, solo in independents.iterrows():
+        solo_beds = float(solo["_beds"])
+        shares.append(MarketShare(
+            system_id="",
+            system_name=str(solo.get("name", "")),
+            kind="Independent / Unmapped",
+            hospitals=1,
+            beds=solo_beds,
+            bed_share=solo_beds / total_beds,
+            is_independent=True,
+        ))
+
+    hhi = sum((s.bed_share * 100.0) ** 2 for s in shares)
+    shares.sort(key=lambda s: (-s.bed_share, -s.hospitals, s.system_name))
+    return StateConcentration(
+        state=st,
+        hospitals=int(len(rows)),
+        beds=total_beds,
+        shares=tuple(shares),
+        hhi=hhi,
+        independent_beds=independent_beds,
+        independent_facilities=int(len(independents)),
+    )
+
+
+@lru_cache(maxsize=1)
+def _all_state_concentration() -> Tuple[StateConcentration, ...]:
+    assigned = assign_systems()
+    states = sorted({str(x).upper() for x in assigned["state"] if str(x).strip()})
+    out = [state_concentration(st) for st in states]
+    return tuple(c for c in out if c is not None)
+
+
+def concentration_ranking(
+    df: Optional[pd.DataFrame] = None,
+    *,
+    min_hospitals: int = 10,
+    limit: int = 15,
+) -> List[StateConcentration]:
+    """States ranked most-concentrated first — a sourcing lens.
+
+    ``min_hospitals`` keeps single-hospital territories out of the top
+    of the list: a state with three hospitals is arithmetically
+    "highly concentrated" without that meaning anything to a buyer.
+    """
+    if df is None:
+        pool = list(_all_state_concentration())
+    else:
+        assigned = assign_systems(df)
+        states = sorted({str(x).upper() for x in assigned["state"] if str(x).strip()})
+        pool = [c for c in (state_concentration(st, df) for st in states) if c]
+    pool = [c for c in pool if c.hospitals >= min_hospitals]
+    pool.sort(key=lambda c: (-c.hhi, -c.beds))
+    return pool[:limit]
+
+
 def _clear_cache() -> None:
     """Test hook — drop the memoized assignment + rollup."""
+    _all_state_concentration.cache_clear()
     _assigned_cached.cache_clear()
     _cached_map.cache_clear()
     _last_active_year_by_ccn.cache_clear()

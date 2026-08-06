@@ -35,11 +35,14 @@ from rcm_mc.data.health_systems import (
     assign_systems,
     build_system_map,
     candidate_clusters,
+    concentration_ranking,
     get_system,
     get_system_map,
     export_mapping,
     find_hospitals,
+    hhi_band,
     inactive_facilities,
+    state_concentration,
     match_system,
     normalize_name,
     registry_size,
@@ -419,6 +422,90 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(set(unmapped["system_id"]), {""})
 
 
+class ConcentrationTests(unittest.TestCase):
+    """Bed-share concentration — the "who controls this market" read."""
+
+    def _state(self):
+        """One state: a 2-hospital system, a big independent, a small one."""
+        rows = [
+            ("450001", "ENCOMPASS HEALTH REHAB A", "ZZ", 2022, 100),
+            ("450002", "ENCOMPASS HEALTH REHAB B", "ZZ", 2022, 100),
+            ("450003", "BIG INDEPENDENT HOSPITAL", "ZZ", 2022, 700),
+            ("450004", "SMALL INDEPENDENT HOSPITAL", "ZZ", 2022, 100),
+        ]
+        return pd.DataFrame([
+            {"ccn": c, "name": n, "city": "Town", "state": st,
+             "fiscal_year": fy, "beds": b, "total_patient_days": 1000,
+             "net_patient_revenue": 1e7}
+            for c, n, st, fy, b in rows
+        ])
+
+    def test_share_is_measured_on_beds_not_facility_count(self) -> None:
+        c = state_concentration("ZZ", self._state())
+        self.assertEqual(c.beds, 1000)
+        leader = c.leader
+        # The single 700-bed independent leads, not the 2-facility system.
+        self.assertTrue(leader.is_independent)
+        self.assertAlmostEqual(leader.bed_share, 0.70)
+        system = next(s for s in c.shares if s.system_id == "encompass")
+        self.assertEqual(system.hospitals, 2)
+        self.assertAlmostEqual(system.bed_share, 0.20)
+
+    def test_hhi_treats_each_unmapped_facility_as_its_own_firm(self) -> None:
+        """Lumping independents would invent a cartel; dropping them would
+        hand the lead to whichever small system happens to be mapped."""
+        c = state_concentration("ZZ", self._state())
+        # 20^2 (system) + 70^2 + 10^2 (two independents) = 400 + 4900 + 100
+        self.assertAlmostEqual(c.hhi, 5400.0)
+        self.assertEqual(len(c.shares), 3)
+        self.assertEqual(c.independent_facilities, 2)
+        self.assertAlmostEqual(c.independent_share, 0.80)
+
+    def test_shares_sum_to_one(self) -> None:
+        for st in ("TX", "UT", "CA"):
+            c = state_concentration(st)
+            self.assertAlmostEqual(sum(s.bed_share for s in c.shares), 1.0, places=6)
+
+    def test_cr_measures_are_ordered_and_bounded(self) -> None:
+        c = state_concentration("TX")
+        self.assertLessEqual(c.cr1, c.cr3)
+        self.assertLessEqual(c.cr3, 1.0)
+        self.assertGreater(c.hhi, 0.0)
+
+    def test_closed_hospitals_hold_no_share(self) -> None:
+        df = self._state()
+        df.loc[df["ccn"] == "450003", "fiscal_year"] = 2019   # stopped filing
+        c = state_concentration("ZZ", df)
+        self.assertEqual(c.beds, 300)
+        self.assertEqual(c.hospitals, 3)
+        self.assertEqual(c.leader.system_id, "encompass")
+
+    def test_band_thresholds_follow_the_merger_guidelines(self) -> None:
+        self.assertEqual(hhi_band(1499), "Unconcentrated")
+        self.assertEqual(hhi_band(1500), "Moderately concentrated")
+        self.assertEqual(hhi_band(2499), "Moderately concentrated")
+        self.assertEqual(hhi_band(2500), "Highly concentrated")
+
+    def test_unknown_or_empty_state_returns_none(self) -> None:
+        self.assertIsNone(state_concentration(""))
+        self.assertIsNone(state_concentration("ZZ"))
+
+    def test_ranking_excludes_trivially_small_markets(self) -> None:
+        """A three-hospital territory is arithmetically concentrated
+        without that meaning anything to a buyer."""
+        ranked = concentration_ranking(min_hospitals=10, limit=10)
+        self.assertTrue(ranked)
+        self.assertTrue(all(c.hospitals >= 10 for c in ranked))
+        hhis = [c.hhi for c in ranked]
+        self.assertEqual(hhis, sorted(hhis, reverse=True))
+
+    def test_utah_reads_as_intermountain_led(self) -> None:
+        """Sanity anchor against a market whose shape is public knowledge."""
+        c = state_concentration("UT")
+        self.assertEqual(c.leader.system_id, "intermountain")
+        self.assertGreater(c.hhi, 1500)
+
+
 class PageTests(unittest.TestCase):
     def test_page_renders_with_the_master_table(self) -> None:
         html = render_health_system_lookup({})
@@ -518,6 +605,19 @@ class PageTests(unittest.TestCase):
         self.assertIn("Not operating", html)
         self.assertIn(f"{m.total_hospitals:,}", html)
         self.assertIn(f"of {m.universe_facilities:,} CCNs in HCRIS", html)
+
+    def test_concentration_ranking_shows_nationally(self) -> None:
+        html = render_health_system_lookup({})
+        self.assertIn("Most Concentrated States", html)
+        self.assertIn("HHI", html)
+
+    def test_state_filter_swaps_in_that_state_s_concentration(self) -> None:
+        html = render_health_system_lookup({"state": "UT"})
+        self.assertIn("Market Concentration", html)
+        self.assertIn("UT bed-share concentration", html)
+        self.assertIn("Intermountain Health", html)
+        # The floor caveat travels with the number.
+        self.assertIn("floor", html)
 
     def test_registry_note_surfaces_on_the_roster(self) -> None:
         sysdef = get_system("trinity")
