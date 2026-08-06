@@ -40,6 +40,16 @@ Consequences a reader must hold onto:
     so any count on the page can be traced back to why a facility was
     pulled into a system.
 
+A rejected approach, recorded so it doesn't get re-proposed: matching
+against a CCN's **historical** names from earlier cost reports. It
+sounds like free coverage — HCRIS carries every filing year's name — but
+measuring it found only 7 candidates, and inspecting them showed the
+mechanism points the wrong way. A facility that renamed *away* from a
+system brand has usually been divested: Mercy Hospital and Medical
+Center (Chicago) is now Insights Hospital and Medical Center because
+Insight bought it, so matching it to CommonSpirit on the old name would
+assert an ownership that ended. Latest name only.
+
 Facility type comes from ``hcris._classify_series`` (CCN range first,
 name keywords as fallback) — the same classifier the screeners use, so
 "behavioral" means the same thing here as everywhere else. Behavioral
@@ -685,8 +695,9 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     # ── Midwest ────────────────────────────────────────────────────
     SystemDef(
         "cleveland_clinic", "Cleveland Clinic", KIND_ACADEMIC, FOCUS_ACUTE, "OH",
-        patterns=("^CLEVELAND CLINIC", "^FAIRVIEW HOSPITAL", "^HILLCREST HOSPITAL",
-                  "^MARYMOUNT HOSPITAL", "^LUTHERAN HOSPITAL"),
+        patterns=("^CLEVELAND CLINIC", "^CCF ", "^FAIRVIEW HOSPITAL",
+                  "^HILLCREST HOSPITAL", "^MARYMOUNT HOSPITAL",
+                  "^LUTHERAN HOSPITAL"),
         states=("OH", "FL"),
     ),
     SystemDef(
@@ -1495,6 +1506,14 @@ _PUNCT_RE = re.compile(r"[^A-Z0-9]+")
 _SAINT_RE = re.compile(r"\bST\b\.?")
 _SPACE_RE = re.compile(r"\s+")
 
+# HCRIS sometimes files an amended cost report under a name carrying the
+# amendment marker — "AMEND #1 LAKEVIEW HOSPITAL", "AMEND 1 CENTERPOINT
+# MEDICAL CENTER", "LOUISIANA BEHAVIORAL HEALTH AMEND #1". The marker is
+# filing metadata, not part of the hospital's name, and it silently
+# defeats every anchored pattern: HCA's Lakeview and Centerpoint were
+# both unmapped purely because of the prefix.
+_AMEND_RE = re.compile(r"(?:^|\s)AMEND(?:MENT)?\s*#?\s*\d*(?=\s|$)")
+
 
 def normalize_name(raw: Any) -> str:
     """Upper-case, punctuation-stripped facility name used for matching.
@@ -1508,6 +1527,7 @@ def normalize_name(raw: Any) -> str:
     # Apostrophes are dropped, not spaced: "ST. MARY'S" has to fold onto
     # "ST MARYS", which is how HCRIS files the same hospital elsewhere.
     s = s.replace("'", "").replace("\u2019", "")
+    s = _AMEND_RE.sub(" ", s)
     s = _PUNCT_RE.sub(" ", s)
     s = _SAINT_RE.sub("SAINT", s)
     s = _SPACE_RE.sub(" ", s).strip()
@@ -2493,9 +2513,32 @@ def concentration_ranking(
     return pool[:limit]
 
 
+@lru_cache(maxsize=1)
+def _leader_map() -> Dict[str, Tuple[str, ...]]:
+    """system_id -> the states where it is the largest firm by beds.
+
+    "Runs 22 hospitals in Utah" and "is the largest operator in Utah"
+    are different claims, and only the second one tells a deal team
+    whether they are buying into a market or against its incumbent.
+    """
+    out: Dict[str, List[str]] = {}
+    for c in _all_state_concentration():
+        leader = c.leader
+        if leader is None or leader.is_independent or not leader.system_id:
+            continue
+        out.setdefault(leader.system_id, []).append(c.state)
+    return {k: tuple(sorted(v)) for k, v in out.items()}
+
+
+def leading_states(system_id: str) -> Tuple[str, ...]:
+    """States where this system holds the largest bed share."""
+    return _leader_map().get(str(system_id or ""), ())
+
+
 def _clear_cache() -> None:
     """Test hook — drop the memoized assignment + rollup."""
     _all_state_concentration.cache_clear()
+    _leader_map.cache_clear()
     _assigned_cached.cache_clear()
     _cached_map.cache_clear()
     _last_active_year_by_ccn.cache_clear()

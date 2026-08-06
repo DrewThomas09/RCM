@@ -305,13 +305,16 @@ def _systems_table(rows) -> str:
         ("Acute", "right"), ("Critical Access", "right"), ("Behavioral", "right"),
         ("Rehab", "right"), ("LTACH", "right"), ("Children's", "right"),
         ("Behavioral %", "right"), ("Net Patient Revenue", "right"),
-        ("Not Operating", "right"),
+        ("States Led", "right"), ("Not Operating", "right"),
     ]
+    from rcm_mc.data.health_systems import leading_states
+
     ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
     max_h = max((r.hospitals for r in rows), default=1) or 1
     trs = []
     for i, r in enumerate(rows, start=1):
         beh_tone = "acc" if r.behavioral_hospitals else "dim"
+        led = leading_states(r.system_id)
         link = (f'<a class="ck-link" href="{_qs(system=r.system_id)}">'
                 f'{_esc(r.system_name)}</a>')
         cells = [
@@ -336,6 +339,10 @@ def _systems_table(rows) -> str:
                          tone=beh_tone),
             ck_data_cell(_fmt_money_m(r.net_patient_revenue), align="right",
                          mono=True, tone="pos"),
+            ck_data_cell(f'{len(led)} <span class="tone-dim">{_esc(", ".join(led))}</span>'
+                         if led else "—", align="right", mono=True,
+                         weight=700 if led else None,
+                         tone=None if led else "dim"),
             ck_data_cell(_fmt_int(r.inactive_hospitals) if r.inactive_hospitals
                          else "—", align="right", mono=True,
                          tone="neg" if r.inactive_hospitals else "dim"),
@@ -395,7 +402,9 @@ def _type_mix_panel(m) -> str:
 
 def _roster_panel(system_id: str, rows) -> str:
     """Facility roster for one system — the drill-down half of a lookup."""
-    from rcm_mc.data.health_systems import get_system, system_hospitals
+    from rcm_mc.data.health_systems import (
+        get_system, leading_states, system_hospitals,
+    )
 
     sysdef = get_system(system_id)
     if sysdef is None:
@@ -440,11 +449,15 @@ def _roster_panel(system_id: str, rows) -> str:
     if rollup is not None:
         inactive = (f' · {rollup.inactive_hospitals} not operating'
                     if rollup.inactive_hospitals else '')
+        led = leading_states(system_id)
+        leads = (f' · largest operator in {len(led)} of its '
+                 f'{rollup.state_count} states ({", ".join(led)})' if led else '')
         meta = (f'{rollup.hospitals} operating facilities{inactive} · '
                 f'{_fmt_int(rollup.beds)} beds · {rollup.state_count} states · '
                 f'{rollup.behavioral_hospitals} behavioral '
                 f'({_fmt_pct(rollup.behavioral_share)}) · '
-                f'{_fmt_money_m(rollup.net_patient_revenue)} net patient revenue')
+                f'{_fmt_money_m(rollup.net_patient_revenue)} net patient revenue'
+                f'{leads}')
     note = f'<div class="hsl-legend">{_esc(sysdef.note)}</div>' if sysdef.note else ""
     return f"""
 <div class="hsl-roster">
@@ -800,7 +813,11 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     {_active_chips(selected, len(rows), m.system_count)}
     {table}
     <div class="hsl-legend">Click any column header to re-sort the rows on this
-    screen. Click a system name to open its facility roster. Behavioral counts a
+    screen. Click a system name to open its facility roster. "States Led"
+    counts the states where the system holds the largest bed share —
+    running the most hospitals in a state and being its largest operator
+    are different claims, and only the second says whether you are buying
+    into a market or against its incumbent. Behavioral counts a
     facility as behavioral when its CCN falls in the psychiatric range or its
     name carries a behavioral / psychiatric / BH signal.</div>
   </div>

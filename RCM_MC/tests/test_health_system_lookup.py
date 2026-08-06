@@ -42,6 +42,7 @@ from rcm_mc.data.health_systems import (
     find_hospitals,
     hhi_band,
     inactive_facilities,
+    leading_states,
     state_concentration,
     match_system,
     normalize_name,
@@ -69,6 +70,25 @@ class NormalizationTests(unittest.TestCase):
         for raw in ("ST. MARY'S HOSPITAL", "ST MARYS HOSPITAL",
                     "SAINT MARYS HOSPITAL"):
             self.assertEqual(normalize_name(raw), "SAINT MARYS HOSPITAL")
+
+    def test_amendment_markers_are_stripped(self) -> None:
+        """Regression: HCRIS files amended reports under names carrying the
+        amendment marker, which silently defeated every anchored pattern —
+        HCA's Lakeview and Centerpoint were unmapped purely because of it."""
+        for raw in ("AMEND #1 LAKEVIEW HOSPITAL", "AMEND 1 LAKEVIEW HOSPITAL",
+                    "AMEND #2 LAKEVIEW HOSPITAL"):
+            self.assertEqual(normalize_name(raw), "LAKEVIEW HOSPITAL")
+        self.assertEqual(normalize_name("LOUISIANA BEHAVIORAL HEALTH AMEND #1"),
+                         "LOUISIANA BEHAVIORAL HEALTH")
+        # A real word starting with AMEND is untouched.
+        self.assertEqual(normalize_name("AMENDED CARE HOSPITAL"),
+                         "AMENDED CARE HOSPITAL")
+
+    def test_amended_filings_reach_their_system(self) -> None:
+        self.assertEqual(match_system("AMEND #1 LAKEVIEW HOSPITAL", "UT")[0].system_id,
+                         "hca")
+        self.assertEqual(
+            match_system("AMEND #2 RESEARCH MEDICAL CENTER", "MO")[0].system_id, "hca")
 
     def test_ampersand_becomes_and(self) -> None:
         self.assertEqual(normalize_name("BAYLOR S&W IRVING"), "BAYLOR S AND W IRVING")
@@ -499,6 +519,26 @@ class ConcentrationTests(unittest.TestCase):
         hhis = [c.hhi for c in ranked]
         self.assertEqual(hhis, sorted(hhis, reverse=True))
 
+    def test_leading_states_is_share_based_not_count_based(self) -> None:
+        """Running the most hospitals in a state and being its largest
+        operator are different claims."""
+        for state in leading_states("intermountain"):
+            self.assertEqual(state_concentration(state).leader.system_id,
+                             "intermountain")
+        self.assertIn("UT", leading_states("intermountain"))
+        # A system with no state lead reports none rather than guessing.
+        self.assertEqual(leading_states("not-a-system"), ())
+
+    def test_every_state_lead_is_a_mapped_system(self) -> None:
+        """A single unmapped hospital can top a state; it must not be
+        credited to any system."""
+        from rcm_mc.data.health_systems import _leader_map
+
+        for system_id, states in _leader_map().items():
+            self.assertTrue(system_id)
+            self.assertIsNotNone(get_system(system_id))
+            self.assertTrue(states)
+
     def test_utah_reads_as_intermountain_led(self) -> None:
         """Sanity anchor against a market whose shape is public knowledge."""
         c = state_concentration("UT")
@@ -618,6 +658,12 @@ class PageTests(unittest.TestCase):
         self.assertIn("Intermountain Health", html)
         # The floor caveat travels with the number.
         self.assertIn("floor", html)
+
+    def test_states_led_column_and_roster_line(self) -> None:
+        html = render_health_system_lookup({})
+        self.assertIn("States Led", html)
+        roster = render_health_system_lookup({"system": "providence"})
+        self.assertIn("largest operator in", roster)
 
     def test_registry_note_surfaces_on_the_roster(self) -> None:
         sysdef = get_system("trinity")
