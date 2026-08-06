@@ -472,17 +472,23 @@ def _inactive_panel(status_filter: str = "") -> str:
         inactive_facilities,
     )
 
-    rows = inactive_facilities(status=status_filter or "")
+    # One pass over the held-out set: the counts on the status tabs are
+    # derived from it rather than re-running the filter per tab, which
+    # was four full passes over the universe per render.
+    everything = inactive_facilities()
+    by_status = (everything["facility_status"].value_counts().to_dict()
+                 if not everything.empty else {})
+    rows = (everything[everything["facility_status"] == status_filter]
+            if status_filter else everything)
     if rows.empty:
         return ck_empty_state("No inactive facilities under this filter.")
 
     tabs = ['<div class="hsl-chips">']
-    total = len(inactive_facilities())
     tabs.append(
         f'<a class="hsl-chip{"" if status_filter else " hsl-chip-on"}" '
-        f'href="{_qs()}#inactive">All non-operating ({total:,})</a>')
+        f'href="{_qs()}#inactive">All non-operating ({len(everything):,})</a>')
     for st in STATUS_ORDER[1:]:
-        n = len(inactive_facilities(status=st))
+        n = int(by_status.get(st, 0))
         on = " hsl-chip-on" if status_filter == st else ""
         tabs.append(f'<a class="hsl-chip{on}" href="{_qs(status=st)}#inactive">'
                     f'{_esc(st.split(" — ")[0])} ({n:,})</a>')
