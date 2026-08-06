@@ -27,6 +27,9 @@ from contextlib import closing
 import pandas as pd
 
 from rcm_mc.data.health_systems import (
+    STATUS_ACTIVE,
+    STATUS_DORMANT,
+    STATUS_STOPPED,
     SYSTEM_REGISTRY,
     UNMAPPED_ID,
     assign_systems,
@@ -36,6 +39,7 @@ from rcm_mc.data.health_systems import (
     get_system_map,
     export_mapping,
     find_hospitals,
+    inactive_facilities,
     match_system,
     normalize_name,
     registry_size,
@@ -142,6 +146,8 @@ class AssignmentTests(unittest.TestCase):
             self.assertIn(col, out.columns)
         self.assertEqual(list(out["system_id"]), ["oceans", "encompass", UNMAPPED_ID])
         self.assertEqual(list(out["is_behavioral"]), [True, False, False])
+        # No fiscal_year column to age against -> everything reads operating.
+        self.assertTrue(out["is_operating"].all())
 
     def test_behavioral_detected_by_name_outside_the_psych_ccn_range(self) -> None:
         df = _frame([("010001", "SUN BEHAVIORAL HEALTH KENTUCKY", "KY", 80, 1e7)])
@@ -162,14 +168,140 @@ class AssignmentTests(unittest.TestCase):
         self.assertNotEqual(second["system_name"].iloc[0], "MUTATED")
 
 
+class FacilityStatusTests(unittest.TestCase):
+    """Closed hospitals must not be counted as operating ones."""
+
+    def _aged(self):
+        """A frame whose latest year is 2022, with one row per status."""
+        rows = [
+            ("010001", "ACTIVE GENERAL HOSPITAL", "AL", 2022, 100, 20000, 5e7),
+            ("010002", "DORMANT REGIONAL HOSPITAL", "AL", 2021, 80, 15000, 4e7),
+            ("010003", "CLOSED COUNTY HOSPITAL", "AL", 2020, 60, 12000, 3e7),
+            ("010004", "DARK SHELL HOSPITAL", "AL", 2022, 0, 0, 0),
+        ]
+        return pd.DataFrame([
+            {"ccn": c, "name": n, "city": "Town", "state": st,
+             "fiscal_year": fy, "beds": b, "total_patient_days": d,
+             "net_patient_revenue": r}
+            for c, n, st, fy, b, d, r in rows
+        ])
+
+    def test_status_comes_from_filing_recency(self) -> None:
+        out = assign_systems(self._aged())
+        self.assertEqual(list(out["facility_status"]), [
+            STATUS_ACTIVE, STATUS_DORMANT, STATUS_STOPPED, STATUS_ACTIVE])
+        self.assertEqual(list(out["is_operating"]), [True, False, False, True])
+
+    def test_zero_activity_is_a_flag_not_a_closure(self) -> None:
+        """Regression: an earlier cut treated a zero-activity filing as
+        closed, which dropped Mary Bridge Children's, Shriners and Texas
+        Scottish Rite — all open hospitals that simply do not report beds,
+        days or revenue the way a general acute hospital does."""
+        out = assign_systems(self._aged())
+        self.assertEqual(list(out["reports_no_activity"]),
+                         [False, False, False, True])
+        # The dark shell still filed currently, so it still counts.
+        self.assertTrue(bool(out.iloc[3]["is_operating"]))
+
+        real = assign_systems()
+        for open_hospital in ("MARY BRIDGE CHILDRENS HOSPITAL",
+                              "TEXAS SCOTTISH RITE HOSPITAL FOR CHI"):
+            row = real[real["name"] == open_hospital]
+            self.assertFalse(row.empty, open_hospital)
+            self.assertTrue(bool(row.iloc[0]["is_operating"]), open_hospital)
+            self.assertTrue(bool(row.iloc[0]["reports_no_activity"]), open_hospital)
+
+    def test_only_operating_facilities_feed_the_counts(self) -> None:
+        m = build_system_map(self._aged())
+        self.assertEqual(m.total_hospitals, 2)
+        self.assertEqual(m.inactive_hospitals, 2)
+        self.assertEqual(m.universe_facilities, 4)
+        self.assertEqual(m.zero_activity_hospitals, 1)
+        # Beds follow the same rule — a closed hospital's last-reported
+        # beds are the least real number in the frame.
+        self.assertEqual(m.total_beds, 100)
+
+    def test_status_is_relative_to_the_corpus_not_the_wall_clock(self) -> None:
+        """An older extract must not read as a universe of closed hospitals."""
+        old = self._aged()
+        old["fiscal_year"] = old["fiscal_year"] - 6
+        self.assertEqual(list(assign_systems(old)["facility_status"]),
+                         list(assign_systems(self._aged())["facility_status"]))
+
+    def test_system_counts_exclude_closed_facilities(self) -> None:
+        df = _frame([
+            ("012345", "OCEANS BEHAVIORAL HOSPITAL OF ABILENE", "TX", 24, 1e7),
+            ("012346", "OCEANS BEHAVIORAL HOSPITAL OF KATY", "TX", 20, 8e6),
+        ])
+        df["fiscal_year"] = [2022, 2019]
+        df["total_patient_days"] = [5000, 4000]
+        rollup = build_system_map(df).systems[0]
+        self.assertEqual(rollup.system_id, "oceans")
+        self.assertEqual(rollup.hospitals, 1)
+        self.assertEqual(rollup.inactive_hospitals, 1)
+        self.assertEqual(rollup.total_facilities, 2)
+        self.assertEqual(rollup.beds, 24)
+        self.assertEqual(rollup.behavioral_hospitals, 1)
+
+    def test_real_universe_has_a_plausible_closed_tail(self) -> None:
+        m = get_system_map()
+        self.assertGreater(m.inactive_hospitals, 50)
+        # Closures are a tail, not the bulk of the universe.
+        self.assertLess(m.inactive_hospitals, m.total_hospitals * 0.1)
+        self.assertEqual(m.status_total(STATUS_ACTIVE), m.total_hospitals)
+        self.assertEqual(
+            m.status_total(STATUS_DORMANT) + m.status_total(STATUS_STOPPED),
+            m.inactive_hospitals)
+
+    def test_last_active_year_separates_dark_from_never_reported(self) -> None:
+        real = assign_systems()
+        dark = real[real["reports_no_activity"]]
+        self.assertFalse(dark.empty)
+        # Both kinds exist: some ran and went quiet, some never reported.
+        self.assertGreater(int(dark["last_active_fiscal_year"].notna().sum()), 0)
+        self.assertGreater(int(dark["last_active_fiscal_year"].isna().sum()), 0)
+
+    def test_inactive_list_holds_only_non_filers(self) -> None:
+        rows = inactive_facilities()
+        self.assertEqual(set(rows["facility_status"]),
+                         {STATUS_DORMANT, STATUS_STOPPED})
+
+    def test_inactive_facilities_are_listed_and_ordered_by_signal(self) -> None:
+        rows = inactive_facilities()
+        self.assertEqual(len(rows), get_system_map().inactive_hospitals)
+        self.assertFalse(rows["is_operating"].any())
+        # Stopped-filing first: the strongest closure signal leads.
+        self.assertEqual(rows.iloc[0]["facility_status"], STATUS_STOPPED)
+        stopped = inactive_facilities(status=STATUS_STOPPED)
+        self.assertEqual(set(stopped["facility_status"]), {STATUS_STOPPED})
+        self.assertEqual(len(stopped),
+                         get_system_map().status_total(STATUS_STOPPED))
+
+    def test_known_closures_are_flagged(self) -> None:
+        """Spot-check against hospitals that really did close."""
+        rows = inactive_facilities()
+        names = " | ".join(rows["name"].astype(str))
+        for closed in ("MADERA COMMUNITY HOSPITAL", "OLYMPIA MEDICAL CENTER",
+                       "GALESBURG COTTAGE HOSPITAL", "PICKENS COUNTY MEDICAL"):
+            self.assertIn(closed, names)
+
+
 class RollupTests(unittest.TestCase):
     def setUp(self) -> None:
         self.m = get_system_map()
 
     def test_totals_reconcile(self) -> None:
+        """Operating counts reconcile, and so does the whole extract."""
         mapped = sum(s.hospitals for s in self.m.systems)
         self.assertEqual(mapped, self.m.mapped_hospitals)
         self.assertEqual(mapped + self.m.unmapped.hospitals, self.m.total_hospitals)
+        inactive = sum(s.inactive_hospitals for s in self.m.systems)
+        self.assertEqual(inactive + self.m.unmapped.inactive_hospitals,
+                         self.m.inactive_hospitals)
+        self.assertEqual(self.m.total_hospitals + self.m.inactive_hospitals,
+                         self.m.universe_facilities)
+        self.assertEqual(sum(self.m.status_totals.values()),
+                         self.m.universe_facilities)
 
     def test_per_system_type_counts_sum_to_its_hospital_count(self) -> None:
         for s in self.m.systems:
@@ -196,9 +328,11 @@ class RollupTests(unittest.TestCase):
         self.assertEqual(oceans.focus, "Behavioral")
 
     def test_roster_matches_the_rollup_count(self) -> None:
+        """The roster lists every CCN; only Active ones feed the estate."""
         top = self.m.systems[0]
         roster = system_hospitals(top.system_id)
-        self.assertEqual(len(roster), top.hospitals)
+        self.assertEqual(len(roster), top.total_facilities)
+        self.assertEqual(int(roster["is_operating"].sum()), top.hospitals)
         # Roster is largest-first so the drill-down opens on what matters.
         beds = list(pd.to_numeric(roster["beds"], errors="coerce").fillna(0))
         self.assertEqual(beds, sorted(beds, reverse=True))
@@ -219,6 +353,7 @@ class RollupTests(unittest.TestCase):
         ])
         m = build_system_map(df)
         self.assertEqual(m.total_hospitals, 3)
+        self.assertEqual(m.inactive_hospitals, 0)
         self.assertEqual(m.mapped_hospitals, 2)
         self.assertEqual(m.system_count, 1)
         self.assertEqual(m.systems[0].system_id, "ascension")
@@ -257,8 +392,10 @@ class ReverseLookupTests(unittest.TestCase):
 
 class ExportTests(unittest.TestCase):
     def test_export_is_one_row_per_hospital(self) -> None:
+        """The export ships closed facilities too — the status column is
+        what makes it reconcile against the page rather than diverge."""
         frame = export_mapping()
-        self.assertEqual(len(frame), get_system_map().total_hospitals)
+        self.assertEqual(len(frame), get_system_map().universe_facilities)
         for col in ("ccn", "name", "state", "system_name", "facility_type_label",
                     "is_behavioral", "beds", "net_patient_revenue"):
             self.assertIn(col, frame.columns)
@@ -355,6 +492,33 @@ class PageTests(unittest.TestCase):
         self.assertIn("health-system-lookup.csv", html)
         self.assertIn("state=TX", html)
 
+    def test_inactive_section_lists_closed_facilities(self) -> None:
+        html = render_health_system_lookup({})
+        self.assertIn("Not Operating", html)
+        self.assertIn("Stopped filing", html)
+        self.assertIn("MADERA COMMUNITY HOSPITAL", html)
+        # And it explains the criteria rather than asserting "closed".
+        self.assertIn("no closed flag", html)
+        # The zero-activity group is disclosed as counted, not held out.
+        self.assertIn("Mary Bridge", html)
+
+    def test_inactive_status_filter(self) -> None:
+        html = render_health_system_lookup({"status": STATUS_STOPPED})
+        self.assertIn("hsl-chip-on", html)
+        # Pickens County (last cost report FY2020) is stopped-filing;
+        # Madera closed in 2023 and its last full report is FY2021, so it
+        # reads Dormant and must NOT appear under this filter.
+        self.assertIn("PICKENS COUNTY MEDICAL", html)
+        self.assertNotIn("MADERA COMMUNITY HOSPITAL", html)
+
+    def test_kpis_report_the_operating_basis(self) -> None:
+        m = get_system_map()
+        html = render_health_system_lookup({})
+        self.assertIn("Operating hospitals", html)
+        self.assertIn("Not operating", html)
+        self.assertIn(f"{m.total_hospitals:,}", html)
+        self.assertIn(f"of {m.universe_facilities:,} CCNs in HCRIS", html)
+
     def test_registry_note_surfaces_on_the_roster(self) -> None:
         sysdef = get_system("trinity")
         self.assertTrue(sysdef.note)
@@ -410,7 +574,14 @@ class CsvRouteTests(unittest.TestCase):
     def test_csv_covers_the_whole_universe_unfiltered(self) -> None:
         _, body = self._get("/health-system-lookup.csv")
         rows = list(csv.DictReader(io.StringIO(body)))
+        self.assertEqual(len(rows), get_system_map().universe_facilities)
+        self.assertIn("facility_status", rows[0])
+
+    def test_csv_status_filter(self) -> None:
+        _, body = self._get("/health-system-lookup.csv?status=operating")
+        rows = list(csv.DictReader(io.StringIO(body)))
         self.assertEqual(len(rows), get_system_map().total_hospitals)
+        self.assertEqual({r["facility_status"] for r in rows}, {"Active"})
 
 
 if __name__ == "__main__":

@@ -268,22 +268,25 @@ def _active_chips(selected: Mapping[str, str], shown: int, total: int) -> str:
 
 
 def _kpi_strip(m, largest) -> str:
+    from rcm_mc.data.health_systems import STATUS_DORMANT, STATUS_STOPPED
+
     return (
         ck_kpi_block("Systems mapped", _fmt_int(m.system_count),
                      "name-matched in registry", "")
+        + ck_kpi_block("Operating hospitals", _fmt_int(m.total_hospitals),
+                       f"of {m.universe_facilities:,} CCNs in HCRIS", "")
         + ck_kpi_block("Hospitals in systems", _fmt_int(m.mapped_hospitals),
-                       f"of {m.total_hospitals:,} in HCRIS", "")
-        + ck_kpi_block("Mapping coverage", f"{m.coverage_pct:.1f}%",
-                       "rest carry local names", "")
+                       f"{m.coverage_pct:.1f}% of operating", "")
         + ck_kpi_block("Behavioral facilities", _fmt_int(m.total_behavioral),
                        f"{m.behavioral_systems} systems operate one", "")
         + ck_kpi_block("Multi-state systems", _fmt_int(m.multi_state_systems),
                        "2+ state footprint", "")
         + ck_kpi_block("Largest system",
                        _esc(largest.system_name) if largest else "—",
-                       f"{largest.hospitals} hospitals" if largest else "", "")
-        + ck_kpi_block("States / territories", _fmt_int(m.states_covered),
-                       "in the universe", "")
+                       f"{largest.hospitals} operating" if largest else "", "")
+        + ck_kpi_block("Not operating", _fmt_int(m.inactive_hospitals),
+                       f"{m.status_total(STATUS_STOPPED)} stopped filing · "
+                       f"{m.status_total(STATUS_DORMANT)} dormant", "")
         + ck_kpi_block("Independent / unmapped", _fmt_int(m.unmapped.hospitals),
                        "no system brand in name", "")
     )
@@ -297,6 +300,7 @@ def _systems_table(rows) -> str:
         ("Acute", "right"), ("Critical Access", "right"), ("Behavioral", "right"),
         ("Rehab", "right"), ("LTACH", "right"), ("Children's", "right"),
         ("Behavioral %", "right"), ("Net Patient Revenue", "right"),
+        ("Not Operating", "right"),
     ]
     ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
     max_h = max((r.hospitals for r in rows), default=1) or 1
@@ -327,6 +331,9 @@ def _systems_table(rows) -> str:
                          tone=beh_tone),
             ck_data_cell(_fmt_money_m(r.net_patient_revenue), align="right",
                          mono=True, tone="pos"),
+            ck_data_cell(_fmt_int(r.inactive_hospitals) if r.inactive_hospitals
+                         else "—", align="right", mono=True,
+                         tone="neg" if r.inactive_hospitals else "dim"),
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
     return ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
@@ -395,7 +402,7 @@ def _roster_panel(system_id: str, rows) -> str:
     cols = [("CCN", "left"), ("Facility", "left"), ("City", "left"),
             ("State", "center"), ("Type", "left"), ("Behavioral", "center"),
             ("Beds", "right"), ("Net Patient Revenue", "right"),
-            ("Matched On", "left")]
+            ("Status", "left"), ("Matched On", "left")]
     ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
     trs = []
     for _, row in roster.iterrows():
@@ -414,6 +421,11 @@ def _roster_panel(system_id: str, rows) -> str:
             ck_data_cell(_fmt_int(row.get("beds")), align="right", mono=True),
             ck_data_cell(_fmt_money_m(row.get("net_patient_revenue")),
                          align="right", mono=True, tone="pos"),
+            ck_data_cell(
+                _esc(row.get("facility_status", ""))
+                + (" · no reported activity" if row.get("reports_no_activity") else ""),
+                tone="dim" if row.get("is_operating") else "neg",
+                weight=None if row.get("is_operating") else 600),
             ck_data_cell(_esc(row.get("system_match", "")), mono=True, tone="dim"),
         ]
         trs.append(f'<tr>{"".join(cells)}</tr>')
@@ -421,8 +433,11 @@ def _roster_panel(system_id: str, rows) -> str:
              f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
     meta = ""
     if rollup is not None:
-        meta = (f'{rollup.hospitals} facilities · {_fmt_int(rollup.beds)} beds · '
-                f'{rollup.state_count} states · {rollup.behavioral_hospitals} behavioral '
+        inactive = (f' · {rollup.inactive_hospitals} not operating'
+                    if rollup.inactive_hospitals else '')
+        meta = (f'{rollup.hospitals} operating facilities{inactive} · '
+                f'{_fmt_int(rollup.beds)} beds · {rollup.state_count} states · '
+                f'{rollup.behavioral_hospitals} behavioral '
                 f'({_fmt_pct(rollup.behavioral_share)}) · '
                 f'{_fmt_money_m(rollup.net_patient_revenue)} net patient revenue')
     note = f'<div class="hsl-legend">{_esc(sysdef.note)}</div>' if sysdef.note else ""
@@ -439,8 +454,85 @@ def _roster_panel(system_id: str, rows) -> str:
   {note}
   {table}
   <div class="hsl-legend">"Matched On" is the registry pattern that pulled the
-  facility into this system — the audit trail behind every count above.</div>
+  facility into this system — the audit trail behind every count above. The
+  roster lists every CCN mapped to the system; only the ones marked Active
+  count toward its operating estate.</div>
 </div>"""
+
+
+def _inactive_panel(status_filter: str = "") -> str:
+    """Every facility excluded from the operating counts, by name.
+
+    The exclusion is only trustworthy if it is auditable — a partner has
+    to be able to see which hospitals were dropped and why, rather than
+    take a smaller number on faith.
+    """
+    from rcm_mc.data.health_systems import (
+        STATUS_DORMANT, STATUS_ORDER, STATUS_STOPPED, get_system_map,
+        inactive_facilities,
+    )
+
+    rows = inactive_facilities(status=status_filter or "")
+    if rows.empty:
+        return ck_empty_state("No inactive facilities under this filter.")
+
+    tabs = ['<div class="hsl-chips">']
+    total = len(inactive_facilities())
+    tabs.append(
+        f'<a class="hsl-chip{"" if status_filter else " hsl-chip-on"}" '
+        f'href="{_qs()}#inactive">All non-operating ({total:,})</a>')
+    for st in STATUS_ORDER[1:]:
+        n = len(inactive_facilities(status=st))
+        on = " hsl-chip-on" if status_filter == st else ""
+        tabs.append(f'<a class="hsl-chip{on}" href="{_qs(status=st)}#inactive">'
+                    f'{_esc(st.split(" — ")[0])} ({n:,})</a>')
+    tabs.append("</div>")
+
+    tone_for = {STATUS_STOPPED: "neg", STATUS_DORMANT: "acc"}
+    cols = [("CCN", "left"), ("Facility", "left"), ("City", "left"),
+            ("State", "center"), ("Type", "left"), ("Health System", "left"),
+            ("Last Cost Report", "right"), ("Last Year With Activity", "right"),
+            ("Last Reported Beds", "right"), ("Status", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for row in rows.to_dict("records"):
+        ccn = str(row.get("ccn", ""))
+        status = str(row.get("facility_status", ""))
+        fy = row.get("last_fiscal_year")
+        la = row.get("last_active_fiscal_year")
+        cells = [
+            ck_data_cell(_esc(ccn), mono=True, tone="dim"),
+            f'<td class="ck-cell ck-cell-w-600">'
+            f'<a class="ck-link" href="/hospital/{_esc(ccn)}">'
+            f'{_esc(row.get("name", ""))}</a></td>',
+            ck_data_cell(_esc(row.get("city", "")), tone="dim"),
+            ck_data_cell(_esc(row.get("state", "")), align="center", mono=True),
+            ck_data_cell(_esc(row.get("facility_type_label", "")), tone="dim"),
+            ck_data_cell(_esc(row.get("system_name", "")), tone="dim"),
+            ck_data_cell("—" if fy is None or fy != fy else _esc(fy),
+                         align="right", mono=True),
+            ck_data_cell(_esc(la) if la is not None and la == la else "never",
+                         align="right", mono=True, tone="dim"),
+            ck_data_cell(_fmt_int(row.get("beds")), align="right", mono=True,
+                         tone="dim"),
+            ck_data_cell(_esc(status), tone=tone_for.get(status, "dim"),
+                         weight=600),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+    zero = get_system_map().zero_activity_hospitals
+    flagged = (
+        f'<div class="hsl-legend"><strong>Separately:</strong> {zero:,} '
+        'facilities filed a current cost report reporting zero beds, zero '
+        'patient days and zero net patient revenue. They are NOT held out — '
+        'a current filing is evidence the CCN is live, and this group is '
+        "mostly children's and specialty hospitals (Mary Bridge Children's, "
+        'Shriners, Texas Scottish Rite) that do not report those fields the '
+        'way a general acute hospital does. They count as hospitals while '
+        "contributing nothing to beds or revenue, which is why a system's "
+        'bed count can read light against its hospital count.</div>')
+    return "".join(tabs) + table + flagged
 
 
 def _candidates_panel(m) -> str:
@@ -485,6 +577,8 @@ _PAGE_CSS = """
 .hsl-chip{font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:0.05em;
   padding:3px 8px;border:1px solid var(--sc-teal,#155752);color:var(--sc-teal,#155752)}
 .hsl-chip-quiet{border-color:var(--sc-border,#ded6c8);color:var(--sc-text-faint,#7d7566)}
+.hsl-chips a.hsl-chip{text-decoration:none}
+.hsl-chip-on{background:var(--sc-teal,#155752);color:#fff}
 .hsl-legend{font-family:JetBrains Mono,monospace;font-size:10px;
   color:var(--sc-text-faint,#7d7566);margin-top:6px;line-height:1.5}
 .hsl-roster{background:var(--sc-panel,#faf7f1);border:1px solid var(--sc-border,#ded6c8);
@@ -516,6 +610,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     ftype = str(params.get("type", "")).strip()
     system_id = str(params.get("system", "")).strip()
     hospital_q = str(params.get("hospital", "")).strip()[:80]
+    status = str(params.get("status", "")).strip()[:60]
     sort = str(params.get("sort", "hospitals")).strip()
     if sort not in _SORTS:
         sort = "hospitals"
@@ -547,10 +642,12 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
         "Health System Lookup",
         eyebrow="MASTER MAPPING",
         meta=(f"{m.system_count} health systems mapped across "
-              f"{m.mapped_hospitals:,} of {m.total_hospitals:,} HCRIS hospitals "
-              f"({m.coverage_pct:.1f}% name-matched) · {m.total_behavioral:,} "
-              f"behavioral facilities · {m.multi_state_systems} multi-state "
-              f"systems · {m.states_covered} states and territories"),
+              f"{m.mapped_hospitals:,} of {m.total_hospitals:,} operating "
+              f"hospitals ({m.coverage_pct:.1f}% name-matched) · "
+              f"{m.total_behavioral:,} behavioral facilities · "
+              f"{m.multi_state_systems} multi-state systems · "
+              f"{m.states_covered} states and territories · "
+              f"{m.inactive_hospitals:,} closed or dormant CCNs excluded"),
     )
 
     anchor = ck_value_anchor(
@@ -567,6 +664,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
 
     roster = _roster_panel(system_id, m.systems) if system_id else ""
     lookup = _hospital_lookup_panel(hospital_q)
+    inactive = _inactive_panel(status)
     table = _systems_table(rows) if rows else ck_empty_state(
         "No systems match these filters. Widen the state or ownership filter, "
         "or reset.")
@@ -613,6 +711,22 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     <div style="{h3}">Facility-Type Mix — Whole Universe</div>
     {_type_mix_panel(m)}
   </div>
+  <div style="{cell}" id="inactive">
+    <div style="{h3}">Not Operating — Closed, Merged, Converted or Dark</div>
+    {inactive}
+    <div class="hsl-legend">HCRIS has no closed flag — a hospital leaves the
+    data by not filing another cost report, and that silence is the only
+    closure signal the source carries. Every facility here is excluded from
+    the hospital counts, beds, revenue and behavioral counts above.
+    <strong>Stopped filing</strong> = two or more years behind the corpus
+    (closed, merged into another CCN, or converted — a Rural Emergency
+    Hospital conversion looks the same from here).
+    <strong>Dormant</strong> = one year behind, where a late filer and a
+    mid-year closure are indistinguishable, so the status claims neither.
+    "Last Year With Activity" reads off the full cost-report history, so a
+    facility that ran until 2021 and went quiet is distinguishable from a CCN
+    that never reported at all.</div>
+  </div>
   <div style="{cell}">
     <div style="{h3}">Unmapped Name Families — Registry Backlog</div>
     {_candidates_panel(m)}
@@ -625,6 +739,12 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     var(--sc-border,#ded6c8);border-left:3px solid var(--sc-teal,#155752);
     padding:12px 16px;font-size:11px;color:var(--sc-text-dim,#5b5545);margin-bottom:16px">
     <strong style="color:var(--sc-text,#1a2332)">How to read this mapping:</strong>
+    Every count on this page is the <em>operating</em> estate:
+    {m.inactive_hospitals:,} of the {m.universe_facilities:,} CCNs in the HCRIS
+    extract stopped filing cost reports or last filed a year behind, and they
+    are held out of hospital counts, beds, revenue and behavioral counts
+    alike — then listed by name above so the exclusion is auditable rather
+    than a smaller number taken on faith.
     CMS publishes no parent-system field, so system membership is matched from
     the facility name (plus a state scope wherever a brand names more than one
     unrelated organization — MERCY, BAPTIST, METHODIST, SAINT LUKE'S and AURORA

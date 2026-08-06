@@ -5136,6 +5136,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 ftype=str(_qp.get("type", "")).strip()[:40],
                 system_id=str(_qp.get("system", "")).strip()[:40],
                 query=str(_qp.get("q", "")).strip()[:80],
+                status=str(_qp.get("status", "")).strip()[:60],
             )
             return self._send_csv_df(
                 _frame, f"health-system-mapping{('-' + _st) if _st else ''}.csv")

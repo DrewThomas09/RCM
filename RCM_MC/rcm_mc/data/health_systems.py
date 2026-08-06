@@ -59,7 +59,7 @@ Public API::
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -283,6 +283,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             "^CENTURA", "^DIGNITY HEALTH", "^MERCY HOSPITAL AND MEDICAL CENTER",
             "KY:^SAINT JOSEPH", "KY:^FLAGET MEMORIAL", "AR:^SAINT VINCENT",
             "TX:^SAINT LUKES", "NV:^SAINT ROSE DOMINICAN", "CA:^MERCY MEDICAL CENTER",
+            "CA:^SAINT FRANCIS MEMORIAL", "CA:^METHODIST HOSPITAL OF SACRAMENTO",
         ),
         note="CHI + Dignity + Centura merged into CommonSpirit; HCRIS "
              "names still carry all three legacy brands.",
@@ -294,7 +295,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             "^SAINT MARY MERCY", "^LOYOLA", "^GOTTLIEB", "^SAINT ALPHONSUS",
             "^MERCY HEALTH MUSKEGON", "OH:^MOUNT CARMEL",
             "IN:^SAINT JOSEPHS REG", "GA:^SAINT MARYS",
-            "NY:^SAINT JOSEPHS HOSPITAL HEALTH",
+            "NY:^SAINT JOSEPHS HOSPITAL HEALTH", "MD:^HOLY CROSS",
+            "IA:^MERCY MEDICAL CENTER DES", "IA:^MERCY MEDICAL CENTER NEW HAM",
         ),
         note="Bare '^TRINITY' is NOT a pattern here — Trinity Rock Island / "
              "Muscatine / Bettendorf are UnityPoint, and Trinity Hospital "
@@ -547,7 +549,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "mount_sinai", "Mount Sinai Health System", KIND_ACADEMIC, FOCUS_ACUTE, "NY",
-        patterns=("^MOUNT SINAI",),
+        patterns=("^MOUNT SINAI", "NY:^NEW YORK EYE AND EAR",
+                  "NY:^THE NEW YORK GRACIE SQUARE", "NY:^NEW YORK GRACIE SQUARE"),
         states=("NY",),
     ),
     SystemDef(
@@ -618,7 +621,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "rwjbarnabas", "RWJBarnabas Health", KIND_NONPROFIT, FOCUS_ACUTE, "NJ",
         patterns=("^ROBERT WOOD JOHNSON", "^RWJ", "^BARNABAS", "^NEWARK BETH ISRAEL",
-                  "^COMMUNITY MEDICAL CENTER"),
+                  "^COMMUNITY MEDICAL CENTER", "NJ:^MONMOUTH MEDICAL"),
         states=("NJ",),
     ),
     SystemDef(
@@ -757,7 +760,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "unitypoint", "UnityPoint Health", KIND_NONPROFIT, FOCUS_ACUTE, "IA",
         patterns=("^UNITYPOINT", "IA,IL:^TRINITY", "IA:^ALLEN HOSPITAL",
-                  "IA:^ILES", "IA:^METHODIST WEST"),
+                  "IA:^ILES", "IA:^METHODIST WEST", "IA:^SAINT LUKES"),
         note="Quad-Cities and Fort Dodge facilities still file as TRINITY — "
              "the reason Trinity Health cannot claim a bare '^TRINITY'.",
     ),
@@ -1648,6 +1651,130 @@ def _behavioral_series(names: pd.Series, types: pd.Series) -> pd.Series:
     return (by_ccn | by_name).fillna(False)
 
 
+# ── Facility status — is this hospital still open? ─────────────────
+#
+# HCRIS has no "closed" flag: a hospital leaves the data by simply not
+# filing another cost report. That silence is the only closure signal
+# the source carries, and it is a good one — 98% of the universe filed
+# for the corpus's latest year, and the facilities two years behind are
+# recognisable closures (Pickens County, Coalinga Regional, East Valley
+# Glendora, Mee Memorial). Counting them as operating hospitals
+# overstates a system's estate, which is the number this page exists to
+# get right.
+#
+# Three statuses, on filing recency alone:
+#
+#   Active         — filed for the corpus's latest year. The operating
+#                    estate. A current cost report is the evidence the
+#                    CCN is live.
+#   Dormant        — last filed one year behind. A late filer and a
+#                    mid-year closure are indistinguishable here, so the
+#                    status claims neither; both are held out of the
+#                    operating counts and listed by name.
+#   Stopped filing — last filed two or more years behind. Closed, merged
+#                    into another CCN, or converted (a Rural Emergency
+#                    Hospital conversion looks identical from here). Not
+#                    operating under this CCN either way.
+#
+# Reported activity is deliberately NOT part of this ladder. An earlier
+# cut treated "filed with zero beds, zero patient days and zero net
+# patient revenue" as closed, which dropped Mary Bridge Children's,
+# Shriners and Texas Scottish Rite — all open hospitals that simply do
+# not report those fields the way a general acute hospital does. Those
+# facilities now carry a ``reports_no_activity`` flag instead: they stay
+# in the hospital counts (they are open) while contributing nothing to
+# beds or revenue, and the flag says why a system's bed count can look
+# light against its hospital count.
+#
+# What this is NOT: proof of closure. A CCN can go quiet because the
+# facility was absorbed into a parent's cost report. The page labels the
+# status rather than asserting "closed", and lists every held-out
+# facility by name so the call is auditable rather than buried.
+
+STATUS_ACTIVE = "Active"
+STATUS_DORMANT = "Dormant — last filed prior year"
+STATUS_STOPPED = "Stopped filing — closed, merged or converted"
+
+#: Statuses that count toward a system's operating hospital estate.
+OPERATING_STATUSES: Tuple[str, ...] = (STATUS_ACTIVE,)
+
+#: Every status, in the order the page should list them.
+STATUS_ORDER: Tuple[str, ...] = (STATUS_ACTIVE, STATUS_DORMANT, STATUS_STOPPED)
+
+
+def _numeric(df: pd.DataFrame, col: str) -> pd.Series:
+    if col not in df.columns:
+        return pd.Series(0.0, index=df.index)
+    return pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+
+
+@lru_cache(maxsize=1)
+def _last_active_year_by_ccn() -> "pd.Series":
+    """Per CCN, the last fiscal year that reported any activity.
+
+    Read off the FULL cost-report history rather than the latest filing
+    per CCN, because that is the only way to separate the two very
+    different facilities inside "no reported activity": one that ran
+    until 2021 and went dark (a closure), and one that has never
+    reported beds, days or revenue in the corpus at all (a shell CCN or
+    a chronic non-reporter). The status label can't tell them apart —
+    this column can, and the closed list shows it.
+    """
+    from .hcris import _get_hcris_cached
+
+    hist = _get_hcris_cached()
+    if hist is None or hist.empty or "ccn" not in hist.columns:
+        return pd.Series(dtype="Int64")
+    active = hist[
+        (_numeric(hist, "beds") > 0)
+        | (_numeric(hist, "total_patient_days") > 0)
+        | (_numeric(hist, "net_patient_revenue") > 0)
+    ]
+    if active.empty:
+        return pd.Series(dtype="Int64")
+    years = pd.to_numeric(active["fiscal_year"], errors="coerce")
+    return (active.assign(_fy=years).groupby("ccn")["_fy"].max().astype("Int64"))
+
+
+def _status_series(df: pd.DataFrame) -> Tuple[pd.Series, pd.Series]:
+    """Classify each facility on filing recency. Returns (status, last_fy).
+
+    The corpus's own latest fiscal year is the reference point rather
+    than the wall clock, so the classification stays correct across
+    HCRIS refreshes instead of silently declaring the whole universe
+    closed once the extract ages.
+    """
+    if "fiscal_year" not in df.columns:
+        # A caller-supplied frame without the column can't be aged; treat
+        # every row as operating rather than declaring the frame closed.
+        return (pd.Series(STATUS_ACTIVE, index=df.index),
+                pd.Series(pd.NA, index=df.index, dtype="Int64"))
+    years = pd.to_numeric(df["fiscal_year"], errors="coerce")
+    if years.dropna().empty:
+        return (pd.Series(STATUS_ACTIVE, index=df.index),
+                pd.Series(pd.NA, index=df.index, dtype="Int64"))
+    gap = int(years.max()) - years
+
+    status = pd.Series(STATUS_ACTIVE, index=df.index, dtype=object)
+    status = status.mask(gap == 1, STATUS_DORMANT)
+    status = status.mask(gap >= 2, STATUS_STOPPED)
+    return status, years.astype("Int64")
+
+
+def _no_activity_series(df: pd.DataFrame) -> pd.Series:
+    """True where a filing reports zero beds, zero days and zero revenue.
+
+    A flag, not a closure signal — see the note above. It exists so a
+    system whose bed count reads light against its hospital count has a
+    visible reason.
+    """
+    return ~(
+        (_numeric(df, "beds") > 0)
+        | (_numeric(df, "total_patient_days") > 0)
+        | (_numeric(df, "net_patient_revenue") > 0)
+    )
+
+
 # ── Assignment over the universe ───────────────────────────────────
 
 _SYSTEM_BY_ID: Dict[str, SystemDef] = {s.system_id: s for s in SYSTEM_REGISTRY}
@@ -1705,6 +1832,17 @@ def _assign_universe(df: pd.DataFrame) -> pd.DataFrame:
     out["facility_type"] = types
     out["facility_type_label"] = types.map(lambda t: TYPE_DISPLAY.get(t, "Other"))
     out["is_behavioral"] = _behavioral_series(names, types)
+
+    status, last_fy = _status_series(out)
+    out["facility_status"] = status
+    out["last_fiscal_year"] = last_fy
+    out["is_operating"] = status.isin(OPERATING_STATUSES)
+    out["reports_no_activity"] = _no_activity_series(out)
+    try:
+        last_active = _last_active_year_by_ccn()
+        out["last_active_fiscal_year"] = ccns.astype(str).map(last_active).astype("Int64")
+    except Exception:  # history unavailable (synthetic frame) — leave blank
+        out["last_active_fiscal_year"] = pd.Series(pd.NA, index=out.index, dtype="Int64")
     return out
 
 
@@ -1731,13 +1869,21 @@ class SystemRollup:
     kind: str
     focus: str
     hq_state: str
-    hospitals: int
-    beds: float
+    hospitals: int          # operating estate — closed / dormant excluded
+    beds: float             # operating facilities only
     net_patient_revenue: float
     states: Tuple[str, ...]
     type_counts: Dict[str, int]
     behavioral_hospitals: int
+    inactive_hospitals: int = 0
+    zero_activity_hospitals: int = 0
+    status_counts: Dict[str, int] = field(default_factory=dict)
     note: str = ""
+
+    @property
+    def total_facilities(self) -> int:
+        """Every CCN mapped to the system, operating or not."""
+        return self.hospitals + self.inactive_hospitals
 
     @property
     def state_count(self) -> int:
@@ -1745,7 +1891,7 @@ class SystemRollup:
 
     @property
     def behavioral_share(self) -> float:
-        """Share of the system's facilities that are behavioral (0–1)."""
+        """Share of the system's OPERATING facilities that are behavioral (0-1)."""
         return (self.behavioral_hospitals / self.hospitals) if self.hospitals else 0.0
 
     @property
@@ -1754,6 +1900,9 @@ class SystemRollup:
 
     def type_count(self, label: str) -> int:
         return int(self.type_counts.get(label, 0))
+
+    def status_count(self, status: str) -> int:
+        return int(self.status_counts.get(status, 0))
 
 
 @dataclass(frozen=True)
@@ -1778,13 +1927,21 @@ class HealthSystemMap:
 
     systems: Tuple[SystemRollup, ...]
     unmapped: SystemRollup
-    total_hospitals: int
+    total_hospitals: int        # operating facilities in the universe
     total_beds: float
-    mapped_hospitals: int
+    mapped_hospitals: int       # operating facilities inside a named system
     total_behavioral: int
     states_covered: int
     type_totals: Dict[str, int]
     candidates: Tuple[CandidateCluster, ...] = ()
+    inactive_hospitals: int = 0
+    zero_activity_hospitals: int = 0
+    status_totals: Dict[str, int] = field(default_factory=dict)
+
+    @property
+    def universe_facilities(self) -> int:
+        """Every CCN in the extract, operating or not."""
+        return self.total_hospitals + self.inactive_hospitals
 
     @property
     def system_count(self) -> int:
@@ -1792,10 +1949,13 @@ class HealthSystemMap:
 
     @property
     def coverage_pct(self) -> float:
-        """Share of the universe assigned to a named system (0–100)."""
+        """Share of the OPERATING universe assigned to a named system (0-100)."""
         if not self.total_hospitals:
             return 0.0
         return self.mapped_hospitals / self.total_hospitals * 100.0
+
+    def status_total(self, status: str) -> int:
+        return int(self.status_totals.get(status, 0))
 
     @property
     def multi_state_systems(self) -> int:
@@ -1816,24 +1976,45 @@ def _rollup_group(
     note: str,
     group: pd.DataFrame,
 ) -> SystemRollup:
-    beds = float(pd.to_numeric(group.get("beds"), errors="coerce").fillna(0).sum())
-    npr = float(pd.to_numeric(group.get("net_patient_revenue"), errors="coerce").fillna(0).sum())
-    states = tuple(sorted({str(s).upper() for s in group.get("state", []) if str(s).strip()}))
-    counts = group["facility_type"].value_counts().to_dict() if "facility_type" in group else {}
+    """Roll one system's facilities up.
+
+    Every operating figure — hospital count, beds, revenue, type mix,
+    behavioral count, state footprint — is computed over the OPERATING
+    subset. A closed hospital must not inflate the estate a partner
+    underwrites, and a closed hospital's last-reported beds are the
+    least real number in the frame.
+    """
+    operating = (group[group["is_operating"]] if "is_operating" in group.columns
+                 else group)
+    inactive = int(len(group) - len(operating))
+    beds = float(pd.to_numeric(operating.get("beds"), errors="coerce").fillna(0).sum())
+    npr = float(pd.to_numeric(
+        operating.get("net_patient_revenue"), errors="coerce").fillna(0).sum())
+    states = tuple(sorted({str(s).upper() for s in operating.get("state", [])
+                           if str(s).strip()}))
+    counts = (operating["facility_type"].value_counts().to_dict()
+              if "facility_type" in operating else {})
     type_counts = {label: int(counts.get(label, 0)) for label in TYPE_LABELS}
-    behavioral = int(group["is_behavioral"].sum()) if "is_behavioral" in group else 0
+    behavioral = int(operating["is_behavioral"].sum()) if "is_behavioral" in operating else 0
+    s_counts = (group["facility_status"].value_counts().to_dict()
+                if "facility_status" in group else {})
+    zero_activity = (int(operating["reports_no_activity"].sum())
+                     if "reports_no_activity" in operating else 0)
     return SystemRollup(
         system_id=system_id,
         system_name=system_name,
         kind=kind,
         focus=focus,
         hq_state=hq_state,
-        hospitals=len(group),
+        hospitals=int(len(operating)),
         beds=beds,
         net_patient_revenue=npr,
         states=states,
         type_counts=type_counts,
         behavioral_hospitals=behavioral,
+        inactive_hospitals=inactive,
+        zero_activity_hospitals=zero_activity,
+        status_counts={k: int(v) for k, v in s_counts.items()},
         note=note,
     )
 
@@ -1857,7 +2038,7 @@ def candidate_clusters(
     name stem is evidence of a candidate, not proof of ownership.
     """
     assigned = assign_systems(df)
-    rest = assigned[assigned["system_id"] == UNMAPPED_ID]
+    rest = assigned[(assigned["system_id"] == UNMAPPED_ID) & assigned["is_operating"]]
     if rest.empty:
         return []
     stems: List[str] = []
@@ -1881,12 +2062,19 @@ def candidate_clusters(
     return out[:limit]
 
 
+def _empty_rollup() -> SystemRollup:
+    """Zero-row stand-in so an empty universe still returns a whole map."""
+    return SystemRollup(
+        UNMAPPED_ID, UNMAPPED_NAME, "", "", "", 0, 0.0, 0.0, (),
+        {label: 0 for label in TYPE_LABELS}, 0,
+    )
+
+
 def build_system_map(df: Optional[pd.DataFrame] = None) -> HealthSystemMap:
     """Roll the assigned universe up to one row per health system."""
     assigned = assign_systems(df)
     if assigned.empty:
-        empty = SystemRollup(UNMAPPED_ID, UNMAPPED_NAME, "", "", "", 0, 0.0, 0.0,
-                             (), {label: 0 for label in TYPE_LABELS}, 0)
+        empty = _empty_rollup()
         return HealthSystemMap((), empty, 0, 0.0, 0, 0, 0,
                                {label: 0 for label in TYPE_LABELS})
 
@@ -1905,23 +2093,33 @@ def build_system_map(df: Optional[pd.DataFrame] = None) -> HealthSystemMap:
     rollups.sort(key=lambda s: (-s.hospitals, -s.beds, s.system_name))
 
     if unmapped is None:
-        unmapped = SystemRollup(UNMAPPED_ID, UNMAPPED_NAME, "", "", "", 0, 0.0,
-                                0.0, (), {label: 0 for label in TYPE_LABELS}, 0)
+        unmapped = _empty_rollup()
 
-    counts = assigned["facility_type"].value_counts().to_dict()
+    # Universe totals are computed over OPERATING facilities for the same
+    # reason the per-system ones are: a coverage percentage whose
+    # denominator includes closed hospitals answers a question nobody
+    # asked. The inactive count and the per-status breakdown ride
+    # alongside so the two always reconcile on the page.
+    operating = assigned[assigned["is_operating"]]
+    counts = operating["facility_type"].value_counts().to_dict()
     type_totals = {label: int(counts.get(label, 0)) for label in TYPE_LABELS}
-    states_covered = len({str(s).upper() for s in assigned["state"] if str(s).strip()})
+    states_covered = len({str(x).upper() for x in operating["state"] if str(x).strip()})
+    status_totals = {k: int(v) for k, v
+                     in assigned["facility_status"].value_counts().to_dict().items()}
 
     return HealthSystemMap(
         systems=tuple(rollups),
         unmapped=unmapped,
-        total_hospitals=len(assigned),
-        total_beds=float(pd.to_numeric(assigned["beds"], errors="coerce").fillna(0).sum()),
-        mapped_hospitals=int(len(assigned) - unmapped.hospitals),
-        total_behavioral=int(assigned["is_behavioral"].sum()),
+        total_hospitals=int(len(operating)),
+        total_beds=float(pd.to_numeric(operating["beds"], errors="coerce").fillna(0).sum()),
+        mapped_hospitals=int(len(operating) - unmapped.hospitals),
+        total_behavioral=int(operating["is_behavioral"].sum()),
         states_covered=states_covered,
         type_totals=type_totals,
         candidates=tuple(candidate_clusters(df)),
+        inactive_hospitals=int(len(assigned) - len(operating)),
+        zero_activity_hospitals=int(operating["reports_no_activity"].sum()),
+        status_totals=status_totals,
     )
 
 
@@ -1954,6 +2152,34 @@ def system_hospitals(
         return rows
     beds = pd.to_numeric(rows["beds"], errors="coerce").fillna(0)
     return rows.assign(_beds=beds).sort_values("_beds", ascending=False).drop(columns="_beds")
+
+
+def inactive_facilities(
+    df: Optional[pd.DataFrame] = None,
+    *,
+    status: str = "",
+) -> pd.DataFrame:
+    """Every facility that is NOT counted in a system's operating estate.
+
+    This is the audit list behind the exclusion: a hospital dropped from
+    a system's count has to be nameable, or the count is just a smaller
+    number with no explanation. Ordered by how strong the closure signal
+    is (stopped filing first), then by state and name.
+    """
+    assigned = assign_systems(df)
+    if assigned.empty:
+        return assigned
+    rows = assigned[~assigned["is_operating"]]
+    if status:
+        rows = rows[rows["facility_status"] == status]
+    if rows.empty:
+        return rows
+    rank = {STATUS_STOPPED: 0, STATUS_DORMANT: 1}
+    ordered = rows.assign(_r=rows["facility_status"].map(lambda v: rank.get(v, 3)))
+    ordered = ordered.sort_values(
+        ["_r", "last_fiscal_year", "state", "name"],
+        ascending=[True, True, True, True])
+    return ordered.drop(columns="_r")
 
 
 def find_hospitals(
@@ -2005,12 +2231,14 @@ def mapping_rows(df: Optional[pd.DataFrame] = None) -> List[Dict[str, Any]]:
     assigned = assign_systems(df)
     cols = ["ccn", "name", "city", "state", "system_id", "system_name",
             "system_kind", "system_focus", "system_match",
-            "facility_type_label", "is_behavioral", "beds",
-            "net_patient_revenue"]
+            "facility_type_label", "is_behavioral", "facility_status",
+            "reports_no_activity", "last_fiscal_year",
+            "last_active_fiscal_year", "beds", "net_patient_revenue"]
     present = [c for c in cols if c in assigned.columns]
     out: List[Dict[str, Any]] = []
     for row in assigned[present].to_dict("records"):
         row["is_behavioral"] = "Y" if row.get("is_behavioral") else "N"
+        row["reports_no_activity"] = "Y" if row.get("reports_no_activity") else "N"
         if row.get("system_id") == UNMAPPED_ID:
             row["system_id"] = ""
         out.append(row)
@@ -2027,6 +2255,7 @@ def export_mapping(
     ftype: str = "",
     system_id: str = "",
     query: str = "",
+    status: str = "",
     df: Optional[pd.DataFrame] = None,
 ) -> pd.DataFrame:
     """Filter-aware export frame — one row per hospital.
@@ -2035,6 +2264,12 @@ def export_mapping(
     facility's state and ``ftype`` the facility's own type, so a
     "behavioral in TX" export returns the behavioral facilities in Texas
     rather than every facility of every system that has one.
+
+    ``status`` accepts ``operating`` / ``inactive`` or any single status
+    label. The export ships EVERY facility by default, closed ones
+    included, because the row carries ``facility_status`` — an export
+    that silently dropped them would be harder to reconcile against the
+    page, not easier.
     """
     rows = pd.DataFrame(mapping_rows(df))
     if rows.empty:
@@ -2052,6 +2287,12 @@ def export_mapping(
     elif ftype:
         label = TYPE_DISPLAY.get(ftype, ftype)
         rows = rows[rows["facility_type_label"] == label]
+    if status == "operating":
+        rows = rows[rows["facility_status"].isin(OPERATING_STATUSES)]
+    elif status == "inactive":
+        rows = rows[~rows["facility_status"].isin(OPERATING_STATUSES)]
+    elif status:
+        rows = rows[rows["facility_status"] == status]
     if query:
         q = query.strip().lower()
         rows = rows[rows["system_name"].str.lower().str.contains(re.escape(q), na=False)
@@ -2063,3 +2304,4 @@ def _clear_cache() -> None:
     """Test hook — drop the memoized assignment + rollup."""
     _assigned_cached.cache_clear()
     _cached_map.cache_clear()
+    _last_active_year_by_ccn.cache_clear()
