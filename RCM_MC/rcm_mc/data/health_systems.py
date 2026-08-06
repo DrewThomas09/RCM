@@ -156,6 +156,10 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             "UT:^LONE PEAK HOSPITAL", "UT:^TIMPANOGOS REGIONAL",
             "UT:^BRIGHAM CITY COMMUNITY", "UT:^MOUNTAIN VIEW HOSPITAL",
             "UT:^CACHE VALLEY", "UT:^LAKEVIEW HOSPITAL",
+            # Divisions that never carry the HCA name.
+            "VA:^LEWISGALE", "TX:^CORPUS CHRISTI MEDICAL", "TX:^RIO GRANDE REGIONAL",
+            "TX:^ROUND ROCK MEDICAL", "CO:^THE MEDICAL CENTER OF AURORA",
+            "CO:^MEDICAL CENTER OF AURORA",
         ),
         note="Largest US for-profit operator; many facilities rebranded "
              "to the HCA / Medical City / TriStar house brands.",
@@ -164,7 +168,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
         "tenet", "Tenet Healthcare", KIND_FOR_PROFIT, FOCUS_ACUTE, "TX",
         patterns=("^THE HOSPITALS OF PROVIDENCE", "^HOSPITALS OF PROVIDENCE",
                   "MI:^DETROIT RECEIVING", "MI:^HARPER UNIVERSITY",
-                  "MI:^SINAI GRACE", "MI:^DETROIT MEDICAL CENTER"),
+                  "MI:^SINAI GRACE", "MI:^DETROIT MEDICAL CENTER",
+                  "AZ:^CARONDELET", "TX:^VALLEY BAPTIST", "TN:^SAINT FRANCIS"),
         note="Tenet keeps acquired local names almost everywhere; only the "
              "explicitly branded facilities are reachable from HCRIS names.",
     ),
@@ -184,7 +189,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "uhs", "Universal Health Services", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "PA",
         patterns=("^UHS ", "^UBH ", "UNIVERSAL HEALTH SERVICES",
-                  "TX:^SOUTH TEXAS HEALTH", "TX:^DOCTORS HOSPITAL OF LAREDO"),
+                  "TX:^SOUTH TEXAS HEALTH", "TX:^DOCTORS HOSPITAL OF LAREDO",
+                  "NV:^NORTHERN NEVADA MEDICAL", "NV:^NORTHERN NEVADA SIERRA"),
         note="UHS runs the largest US behavioral estate; HCRIS carries "
              "several of them under the UHS / UBH abbreviations.",
     ),
@@ -198,7 +204,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "select_medical", "Select Medical", KIND_FOR_PROFIT, FOCUS_LTACH, "PA",
-        patterns=("^SSH ", "^SELECT SPECIALTY", "^SELECT REHAB"),
+        patterns=("^SSH ", "^SELECT SPECIALTY", "^SELECT REHAB", "^REGENCY HOSPITAL"),
         note="HCRIS abbreviates Select Specialty Hospital to 'SSH - <city>'.",
     ),
     SystemDef(
@@ -207,7 +213,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "pam", "PAM Health", KIND_FOR_PROFIT, FOCUS_LTACH, "TX",
-        patterns=("^PAM ",),
+        patterns=("^PAM ", "TX:^POST ACUTE MEDICAL", "TX:^WARM SPRINGS"),
     ),
     SystemDef(
         "vibra", "Vibra Healthcare", KIND_FOR_PROFIT, FOCUS_LTACH, "PA",
@@ -266,7 +272,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
         "ascension", "Ascension", KIND_CATHOLIC, FOCUS_ACUTE, "MO",
         patterns=("^ASCENSION", "TN:^SAINT THOMAS", "IL:^PRESENCE",
                   "AL:^SAINT VINCENTS", "KS:^VIA CHRISTI", "OK:^SAINT JOHN",
-                  "MI:^SAINT JOHN HOSPITAL"),
+                  "MI:^SAINT JOHN HOSPITAL", "IL:^ALEXIAN BROTHERS"),
         note="Many Ascension facilities still file under the legacy "
              "Saint Thomas / Presence / Via Christi brands.",
     ),
@@ -276,7 +282,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             "^CHI ", "^CHI-", "^CATHOLIC HEALTH INITIATIVES", "^COMMONSPIRIT",
             "^CENTURA", "^DIGNITY HEALTH", "^MERCY HOSPITAL AND MEDICAL CENTER",
             "KY:^SAINT JOSEPH", "KY:^FLAGET MEMORIAL", "AR:^SAINT VINCENT",
-            "TX:^SAINT LUKES",
+            "TX:^SAINT LUKES", "NV:^SAINT ROSE DOMINICAN", "CA:^MERCY MEDICAL CENTER",
         ),
         note="CHI + Dignity + Centura merged into CommonSpirit; HCRIS "
              "names still carry all three legacy brands.",
@@ -287,6 +293,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             "^TRINITY HEALTH", "^MERCYONE", "^SAINT JOSEPH MERCY",
             "^SAINT MARY MERCY", "^LOYOLA", "^GOTTLIEB", "^SAINT ALPHONSUS",
             "^MERCY HEALTH MUSKEGON", "OH:^MOUNT CARMEL",
+            "IN:^SAINT JOSEPHS REG", "GA:^SAINT MARYS",
+            "NY:^SAINT JOSEPHS HOSPITAL HEALTH",
         ),
         note="Bare '^TRINITY' is NOT a pattern here — Trinity Rock Island / "
              "Muscatine / Bettendorf are UnityPoint, and Trinity Hospital "
@@ -298,7 +306,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "ssm", "SSM Health", KIND_CATHOLIC, FOCUS_ACUTE, "MO",
-        patterns=("^SSM ", "^SSM-"),
+        patterns=("^SSM ", "^SSM-", "OK:^SAINT ANTHONY"),
     ),
     SystemDef(
         "mercy_mo", "Mercy (Chesterfield)", KIND_CATHOLIC, FOCUS_ACUTE, "MO",
@@ -310,7 +318,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "bon_secours", "Bon Secours Mercy Health", KIND_CATHOLIC, FOCUS_ACUTE, "OH",
-        patterns=("^BON SECOURS", "^MERCY HEALTH", "^MERCY ", "^SAINT ELIZABETH YOUNGSTOWN"),
+        patterns=("^BON SECOURS", "^MERCY HEALTH", "^MERCY ",
+                  "OH:^SAINT ELIZABETH", "OH:^SAINT VINCENT MEDICAL"),
         states=("OH", "KY", "VA", "SC"),
     ),
     SystemDef(
@@ -362,7 +371,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "advocate", "Advocate Health", KIND_NONPROFIT, FOCUS_ACUTE, "NC",
-        patterns=("^ADVOCATE", "^AURORA", "^ATRIUM"),
+        patterns=("^ADVOCATE", "^AURORA", "^ATRIUM", "NC:^NORTH CAROLINA BAPTIST",
+                  "NC:^WAKE FOREST"),
         states=("IL", "WI", "NC", "SC", "GA", "AL"),
         note="Advocate Aurora + Atrium Health combination.",
     ),
@@ -468,7 +478,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "prisma", "Prisma Health", KIND_NONPROFIT, FOCUS_ACUTE, "SC",
-        patterns=("^PRISMA",),
+        patterns=("^PRISMA", "SC:^PH "),
     ),
     SystemDef(
         "novant", "Novant Health", KIND_NONPROFIT, FOCUS_ACUTE, "NC",
@@ -569,7 +579,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "beth_israel_lahey", "Beth Israel Lahey Health", KIND_ACADEMIC, FOCUS_ACUTE, "MA",
-        patterns=("^BETH ISRAEL", "^LAHEY", "^MOUNT AUBURN", "^WINCHESTER HOSPITAL"),
+        patterns=("^BETH ISRAEL", "^LAHEY", "^MOUNT AUBURN", "^WINCHESTER HOSPITAL",
+                  "MA:^NEW ENGLAND BAPTIST"),
         states=("MA",),
     ),
     SystemDef(
@@ -645,7 +656,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "lehigh", "Lehigh Valley Health Network", KIND_NONPROFIT, FOCUS_ACUTE, "PA",
-        patterns=("^LEHIGH VALLEY",),
+        patterns=("^LEHIGH VALLEY", "PA:^POCONO MEDICAL"),
     ),
     SystemDef(
         "st_lukes_pa", "St. Luke's University Health Network", KIND_NONPROFIT, FOCUS_ACUTE, "PA",
@@ -701,7 +712,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "corewell", "Corewell Health", KIND_NONPROFIT, FOCUS_ACUTE, "MI",
-        patterns=("^COREWELL", "^BEAUMONT", "^SPECTRUM HEALTH"),
+        patterns=("^COREWELL", "^BEAUMONT", "^SPECTRUM HEALTH", "MI:^WILLIAM BEAUMONT"),
         states=("MI",),
     ),
     SystemDef(
@@ -766,7 +777,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "fairview", "M Health Fairview", KIND_ACADEMIC, FOCUS_ACUTE, "MN",
-        patterns=("^FAIRVIEW", "^M HEALTH"),
+        patterns=("^FAIRVIEW", "^M HEALTH", "MN:^HEALTHEAST"),
         states=("MN",),
     ),
     SystemDef(
@@ -776,7 +787,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "essentia", "Essentia Health", KIND_NONPROFIT, FOCUS_ACUTE, "MN",
-        patterns=("^ESSENTIA",),
+        patterns=("^ESSENTIA", "MN:^SAINT MARYS MEDICAL CENTER"),
     ),
     SystemDef(
         "cuyuna", "CentraCare", KIND_NONPROFIT, FOCUS_ACUTE, "MN",
@@ -823,7 +834,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "bjc", "BJC HealthCare", KIND_ACADEMIC, FOCUS_ACUTE, "MO",
-        patterns=("^BARNES JEWISH", "^BJC", "^MISSOURI BAPTIST", "^CHRISTIAN HOSPITAL"),
+        patterns=("^BARNES JEWISH", "^BJC", "^MISSOURI BAPTIST", "^CHRISTIAN HOSPITAL",
+                  "MO:^SAINT LOUIS CHILDRENS"),
         states=("MO", "IL"),
     ),
     SystemDef(
@@ -835,7 +847,9 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     # ── South / Southeast ──────────────────────────────────────────
     SystemDef(
         "uab", "UAB Health System", KIND_ACADEMIC, FOCUS_ACUTE, "AL",
-        patterns=("^UAB",),
+        patterns=("^UAB", "AL:^BAPTIST MEDICAL CENTER"),
+        note="Baptist Health (Montgomery) came into UAB Health System — "
+             "its facilities still file under the Baptist name.",
     ),
     SystemDef(
         "infirmary", "Infirmary Health", KIND_NONPROFIT, FOCUS_ACUTE, "AL",
@@ -854,7 +868,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "baptist_memphis", "Baptist Memorial Health Care", KIND_NONPROFIT, FOCUS_ACUTE, "TN",
-        patterns=("^BAPTIST MEMORIAL", "^BAPTIST MEM"),
+        patterns=("^BAPTIST MEMORIAL", "^BAPTIST MEM", "MS:^BAPTIST MEDICAL CENTER"),
         states=("TN", "MS", "AR"),
     ),
     SystemDef(
@@ -1118,7 +1132,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "community_health_in", "Community Health Network", KIND_NONPROFIT, FOCUS_ACUTE, "IN",
         patterns=("IN:^COMMUNITY HOSPITAL", "IN:^COMMUNITY HEALTH NETWORK",
-                  "IN:^COMMUNITY HEART AND VASCULAR"),
+                  "IN:^COMMUNITY HEART AND VASCULAR", "IN:^COMMUNITY HOWARD"),
     ),
     SystemDef(
         "parkview", "Parkview Health", KIND_NONPROFIT, FOCUS_ACUTE, "IN",
@@ -1201,7 +1215,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "emory", "Emory Healthcare", KIND_ACADEMIC, FOCUS_ACUTE, "GA",
-        patterns=("^EMORY",),
+        patterns=("^EMORY", "GA:^SAINT JOSEPHS OF ATLANTA"),
     ),
     SystemDef(
         "grady", "Grady Health System", KIND_GOVERNMENT, FOCUS_ACUTE, "GA",
@@ -1219,6 +1233,255 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "san_pablo_pr", "San Pablo Health System", KIND_FOR_PROFIT, FOCUS_ACUTE, "PR",
         patterns=("^HOSPITAL SAN PABLO",),
+    ),
+
+    # ── Round 2: the next pass over the candidate-cluster backlog ──
+    #
+    # Same discipline as the block above — each entry answers a cluster
+    # the scan surfaced. Several are national operators reachable only
+    # through their regional brands (Steward, CHS, Tenet), which is why
+    # the for-profit chains keep showing up in more than one place.
+    SystemDef(
+        "steward", "Steward Health Care", KIND_FOR_PROFIT, FOCUS_ACUTE, "MA",
+        patterns=("^STEWARD", "UT:^SALT LAKE REGIONAL", "UT:^JORDAN VALLEY MEDICAL",
+                  "UT:^DAVIS HOSPITAL", "UT:^MOUNTAIN POINT MEDICAL"),
+    ),
+    SystemDef(
+        "chs", "Community Health Systems", KIND_FOR_PROFIT, FOCUS_ACUTE, "TN",
+        patterns=("^TENNOVA", "MS:^MERIT HEALTH", "AZ:^NORTHWEST MEDICAL CENTER",
+                  "FL:^BAYFRONT HEALTH PUNTA", "FL:^BAYFRONT HEALTH PORT"),
+        note="CHS keeps acquired local names almost everywhere; only the "
+             "regional house brands (Tennova, Merit Health) are reachable.",
+    ),
+    SystemDef(
+        "baycare", "BayCare Health System", KIND_NONPROFIT, FOCUS_ACUTE, "FL",
+        patterns=("FL:^MEASE", "FL:^MORTON PLANT", "FL:^SOUTH FLORIDA BAPTIST"),
+    ),
+    SystemDef(
+        "mainline", "Main Line Health", KIND_NONPROFIT, FOCUS_ACUTE, "PA",
+        patterns=("PA:^BRYN MAWR", "PA:^LANKENAU", "PA:^PAOLI HOSPITAL", "PA:^RIDDLE"),
+    ),
+    SystemDef(
+        "garnet", "Garnet Health", KIND_NONPROFIT, FOCUS_ACUTE, "NY",
+        patterns=("^GARNET HEALTH",),
+    ),
+    SystemDef(
+        "concord_nh", "Concord Hospital Health System", KIND_NONPROFIT, FOCUS_ACUTE, "NH",
+        patterns=("^CONCORD HOSPITAL",),
+        states=("NH",),
+    ),
+    SystemDef(
+        "heritage_valley", "Heritage Valley Health System", KIND_NONPROFIT, FOCUS_ACUTE, "PA",
+        patterns=("^HERITAGE VALLEY",),
+    ),
+    SystemDef(
+        "delta_health_ms", "Delta Health System", KIND_NONPROFIT, FOCUS_ACUTE, "MS",
+        patterns=("^DELTA HEALTH",),
+        states=("MS",),
+    ),
+    SystemDef(
+        "singing_river", "Singing River Health System", KIND_GOVERNMENT, FOCUS_ACUTE, "MS",
+        patterns=("^SINGING RIVER",),
+    ),
+    SystemDef(
+        "loma_linda", "Loma Linda University Health", KIND_ACADEMIC, FOCUS_ACUTE, "CA",
+        patterns=("^LOMA LINDA",),
+    ),
+    SystemDef(
+        "nationwide_childrens", "Nationwide Children's Hospital",
+        KIND_NONPROFIT, FOCUS_CHILDRENS, "OH",
+        patterns=("^NATIONWIDE CHILDRENS",),
+    ),
+    SystemDef(
+        "sarasota", "Sarasota Memorial Health Care System",
+        KIND_GOVERNMENT, FOCUS_ACUTE, "FL",
+        patterns=("^SARASOTA MEMORIAL",),
+    ),
+    SystemDef(
+        "cape_fear", "Cape Fear Valley Health", KIND_NONPROFIT, FOCUS_ACUTE, "NC",
+        patterns=("^CAPE FEAR VALLEY",),
+    ),
+    SystemDef(
+        "hendrick", "Hendrick Health", KIND_NONPROFIT, FOCUS_ACUTE, "TX",
+        patterns=("^HENDRICK",),
+    ),
+    SystemDef(
+        "emanate", "Emanate Health", KIND_NONPROFIT, FOCUS_ACUTE, "CA",
+        patterns=("^EMANATE",),
+    ),
+    SystemDef(
+        "inspira", "Inspira Health", KIND_NONPROFIT, FOCUS_ACUTE, "NJ",
+        patterns=("^INSPIRA",),
+    ),
+    SystemDef(
+        "bayhealth", "Bayhealth", KIND_NONPROFIT, FOCUS_ACUTE, "DE",
+        patterns=("^BAYHEALTH",),
+    ),
+    SystemDef(
+        "palomar", "Palomar Health", KIND_GOVERNMENT, FOCUS_ACUTE, "CA",
+        patterns=("^PALOMAR",),
+    ),
+    SystemDef(
+        "cottage", "Cottage Health", KIND_NONPROFIT, FOCUS_ACUTE, "CA",
+        patterns=("CA:^SANTA BARBARA COTTAGE", "CA:^GOLETA VALLEY COTTAGE",
+                  "CA:^SANTA YNEZ VALLEY COTTAGE"),
+    ),
+    SystemDef(
+        "university_health_kc", "University Health (Kansas City)",
+        KIND_GOVERNMENT, FOCUS_ACUTE, "MO",
+        patterns=("MO:^UNIVERSITY HEALTH",),
+    ),
+    SystemDef(
+        "regional_one", "Regional One Health", KIND_GOVERNMENT, FOCUS_ACUTE, "TN",
+        patterns=("^REGIONAL ONE",),
+    ),
+    SystemDef(
+        "anmed", "AnMed Health", KIND_NONPROFIT, FOCUS_ACUTE, "SC",
+        patterns=("^ANMED",),
+    ),
+    SystemDef(
+        "roper", "Roper St. Francis Healthcare", KIND_NONPROFIT, FOCUS_ACUTE, "SC",
+        patterns=("^ROPER",),
+    ),
+    SystemDef(
+        "union_health_in", "Union Health", KIND_NONPROFIT, FOCUS_ACUTE, "IN",
+        patterns=("IN:^UNION HOSPITAL",),
+    ),
+    SystemDef(
+        "carson_tahoe", "Carson Tahoe Health", KIND_NONPROFIT, FOCUS_ACUTE, "NV",
+        patterns=("^CARSON TAHOE",),
+    ),
+    SystemDef(
+        "conway", "Conway Regional Health System", KIND_NONPROFIT, FOCUS_ACUTE, "AR",
+        patterns=("^CONWAY REGIONAL",),
+    ),
+    SystemDef(
+        "oklahoma_heart", "Oklahoma Heart Hospital", KIND_FOR_PROFIT, FOCUS_ACUTE, "OK",
+        patterns=("^OKLAHOMA HEART",),
+    ),
+    SystemDef(
+        "regional_west", "Regional West Health Services", KIND_NONPROFIT, FOCUS_ACUTE, "NE",
+        patterns=("^REGIONAL WEST",),
+    ),
+    SystemDef(
+        "general_health_la", "General Health System (Baton Rouge)",
+        KIND_NONPROFIT, FOCUS_ACUTE, "LA",
+        patterns=("LA:^BATON ROUGE GENERAL",),
+    ),
+    SystemDef(
+        "cape_cod", "Cape Cod Healthcare", KIND_NONPROFIT, FOCUS_ACUTE, "MA",
+        patterns=("MA:^CAPE COD",),
+    ),
+    SystemDef(
+        "uva", "UVA Health", KIND_ACADEMIC, FOCUS_ACUTE, "VA",
+        patterns=("^UVA ", "VA:^UNIVERSITY OF VIRGINIA"),
+    ),
+
+    # Post-acute / rehab platforms.
+    SystemDef(
+        "madonna", "Madonna Rehabilitation Hospitals", KIND_NONPROFIT, FOCUS_REHAB, "NE",
+        patterns=("^MADONNA",),
+    ),
+    SystemDef(
+        "sheltering_arms", "Sheltering Arms Institute", KIND_NONPROFIT, FOCUS_REHAB, "VA",
+        patterns=("^SHELTERING ARMS",),
+    ),
+    SystemDef(
+        "good_shepherd_pa", "Good Shepherd Rehabilitation Network",
+        KIND_NONPROFIT, FOCUS_REHAB, "PA",
+        patterns=("PA:^GOOD SHEPHERD",),
+    ),
+    SystemDef(
+        "landmark", "Landmark Hospitals", KIND_FOR_PROFIT, FOCUS_LTACH, "MO",
+        patterns=("^LANDMARK HOSPITAL",),
+    ),
+    SystemDef(
+        "solara", "Solara Hospitals", KIND_FOR_PROFIT, FOCUS_LTACH, "TX",
+        patterns=("^SOLARA",),
+    ),
+    SystemDef(
+        "larkin", "Larkin Health System", KIND_FOR_PROFIT, FOCUS_ACUTE, "FL",
+        patterns=("^LARKIN",),
+    ),
+
+    # Behavioral operators — the facet this mapping exists to answer.
+    SystemDef(
+        "assurance_health", "Assurance Health System", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "OH",
+        patterns=("^ASSURANCE HEALTH",),
+    ),
+    SystemDef(
+        "compass_bh", "Compass Behavioral Health", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "LA",
+        patterns=("^COMPASS BEHAVIORAL",),
+    ),
+    SystemDef(
+        "beacon_bh", "Beacon Behavioral Health", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "LA",
+        patterns=("^BEACON BEHAVIORAL",),
+    ),
+    SystemDef(
+        "centerpointe", "CenterPointe Behavioral Health",
+        KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "MO",
+        patterns=("^CENTERPOINTE",),
+    ),
+    SystemDef(
+        "four_winds", "Four Winds Hospitals", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "NY",
+        patterns=("^FOUR WINDS",),
+    ),
+    SystemDef(
+        "college_health", "College Health Enterprises",
+        KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "CA",
+        patterns=("^COLLEGE HOSPITAL",),
+    ),
+    SystemDef(
+        "ridgeview_ga", "Ridgeview Institute", KIND_NONPROFIT, FOCUS_BEHAVIORAL, "GA",
+        patterns=("^RIDGEVIEW INSTITUTE",),
+    ),
+    SystemDef(
+        "spring_mountain", "Spring Mountain Treatment Centers",
+        KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "NV",
+        patterns=("^SPRING MOUNTAIN",),
+    ),
+
+    # Children's systems.
+    SystemDef(
+        "arkansas_childrens", "Arkansas Children's", KIND_NONPROFIT, FOCUS_CHILDRENS, "AR",
+        patterns=("^ARKANSAS CHILDRENS",),
+    ),
+    SystemDef(
+        "childrens_wi", "Children's Wisconsin", KIND_NONPROFIT, FOCUS_CHILDRENS, "WI",
+        patterns=("WI:^CHILDRENS HOSPITAL",),
+    ),
+    SystemDef(
+        "childrens_health_tx", "Children's Health (Dallas)",
+        KIND_NONPROFIT, FOCUS_CHILDRENS, "TX",
+        patterns=("TX:^CHILDRENS MEDICAL CENTER",),
+    ),
+
+    # Puerto Rico.
+    SystemDef(
+        "doctors_center_pr", "Doctors' Center Hospital", KIND_FOR_PROFIT, FOCUS_ACUTE, "PR",
+        patterns=("^DOCTORS CENTER",),
+    ),
+    SystemDef(
+        "metro_pavia", "Metro Pavia Health System", KIND_FOR_PROFIT, FOCUS_ACUTE, "PR",
+        patterns=("^HOSPITAL METROPOLITANO",),
+    ),
+    SystemDef(
+        "sih", "Southern Illinois Healthcare", KIND_NONPROFIT, FOCUS_ACUTE, "IL",
+        patterns=("IL:^MEMORIAL HOSPITAL OF CARBONDALE", "IL:^HERRIN HOSPITAL",
+                  "IL:^SAINT JOSEPH MEMORIAL"),
+    ),
+    SystemDef(
+        "la_county_dhs", "LA County Health Services", KIND_GOVERNMENT, FOCUS_ACUTE, "CA",
+        patterns=("CA:^LOS ANGELES GENERAL", "CA:^HARBOR UCLA", "CA:^OLIVE VIEW",
+                  "CA:^RANCHO LOS AMIGOS"),
+    ),
+    SystemDef(
+        "suny", "SUNY Health", KIND_ACADEMIC, FOCUS_ACUTE, "NY",
+        patterns=("NY:^UNIVERSITY HOSPITAL", "NY:^STONY BROOK"),
+    ),
+    SystemDef(
+        "la_extended", "LA Extended Care Hospitals", KIND_FOR_PROFIT, FOCUS_LTACH, "LA",
+        patterns=("LA:^LA EXTENDED CARE",),
     ),
 )
 
@@ -1431,7 +1694,7 @@ def _assign_universe(df: pd.DataFrame) -> pd.DataFrame:
     states = out["state"] if "state" in out.columns else pd.Series([""] * len(out), index=out.index)
     ccns = out["ccn"] if "ccn" in out.columns else pd.Series([""] * len(out), index=out.index)
 
-    matches = [match_system(n, s) for n, s in zip(names, states)]
+    matches = [match_system(n, s) for n, s in zip(names, states, strict=True)]
     out["system_id"] = [m[0].system_id if m[0] else UNMAPPED_ID for m in matches]
     out["system_name"] = [m[0].name if m[0] else UNMAPPED_NAME for m in matches]
     out["system_kind"] = [m[0].kind if m[0] else "" for m in matches]
@@ -1691,6 +1954,109 @@ def system_hospitals(
         return rows
     beds = pd.to_numeric(rows["beds"], errors="coerce").fillna(0)
     return rows.assign(_beds=beds).sort_values("_beds", ascending=False).drop(columns="_beds")
+
+
+def find_hospitals(
+    query: str,
+    df: Optional[pd.DataFrame] = None,
+    *,
+    limit: int = 60,
+) -> pd.DataFrame:
+    """Reverse lookup — hospital name or CCN in, system out.
+
+    The other half of a lookup: a partner reading a CIM sees a facility
+    name, not a system, and needs to know who owns it. Matches a CCN
+    exactly (with or without the leading zero HCRIS pads onto it) or a
+    normalized substring of the facility name, then sorts exact-CCN and
+    name-prefix hits above mid-string hits so "MERCY" opens on the
+    hospitals actually called Mercy.
+    """
+    assigned = assign_systems(df)
+    q = str(query or "").strip()
+    if not q or assigned.empty:
+        return assigned.iloc[0:0]
+
+    ccn_col = assigned["ccn"].astype(str)
+    by_ccn = ccn_col.str.lstrip("0").eq(q.lstrip("0")) if q.isdigit() else None
+    if by_ccn is not None and by_ccn.any():
+        return assigned[by_ccn]
+
+    needle = normalize_name(q)
+    if not needle:
+        return assigned.iloc[0:0]
+    names = assigned["name"].map(normalize_name)
+    hits = assigned[names.str.contains(re.escape(needle), na=False)].copy()
+    if hits.empty:
+        return hits
+    hit_names = hits["name"].map(normalize_name)
+    hits["_rank"] = (~hit_names.str.startswith(needle)).astype(int)
+    hits["_beds"] = pd.to_numeric(hits["beds"], errors="coerce").fillna(0)
+    hits = hits.sort_values(["_rank", "_beds"], ascending=[True, False])
+    return hits.drop(columns=["_rank", "_beds"]).head(max(1, int(limit)))
+
+
+def mapping_rows(df: Optional[pd.DataFrame] = None) -> List[Dict[str, Any]]:
+    """Flat one-row-per-hospital view of the mapping — for CSV export.
+
+    Deliberately hospital-grained rather than system-grained: the export
+    exists so the mapping can be joined against a target list or a deal
+    model in Excel, and CCN is the only key that joins cleanly.
+    """
+    assigned = assign_systems(df)
+    cols = ["ccn", "name", "city", "state", "system_id", "system_name",
+            "system_kind", "system_focus", "system_match",
+            "facility_type_label", "is_behavioral", "beds",
+            "net_patient_revenue"]
+    present = [c for c in cols if c in assigned.columns]
+    out: List[Dict[str, Any]] = []
+    for row in assigned[present].to_dict("records"):
+        row["is_behavioral"] = "Y" if row.get("is_behavioral") else "N"
+        if row.get("system_id") == UNMAPPED_ID:
+            row["system_id"] = ""
+        out.append(row)
+    out.sort(key=lambda r: (r.get("system_name") or "", str(r.get("state") or ""),
+                            str(r.get("name") or "")))
+    return out
+
+
+def export_mapping(
+    *,
+    state: str = "",
+    kind: str = "",
+    focus: str = "",
+    ftype: str = "",
+    system_id: str = "",
+    query: str = "",
+    df: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """Filter-aware export frame — one row per hospital.
+
+    Filters are hospital-grained, not system-grained: ``state`` is the
+    facility's state and ``ftype`` the facility's own type, so a
+    "behavioral in TX" export returns the behavioral facilities in Texas
+    rather than every facility of every system that has one.
+    """
+    rows = pd.DataFrame(mapping_rows(df))
+    if rows.empty:
+        return rows
+    if state:
+        rows = rows[rows["state"].astype(str).str.upper() == state.upper()]
+    if kind:
+        rows = rows[rows["system_kind"] == kind]
+    if focus:
+        rows = rows[rows["system_focus"] == focus]
+    if system_id:
+        rows = rows[rows["system_id"] == system_id]
+    if ftype == "behavioral":
+        rows = rows[rows["is_behavioral"] == "Y"]
+    elif ftype:
+        label = TYPE_DISPLAY.get(ftype, ftype)
+        rows = rows[rows["facility_type_label"] == label]
+    if query:
+        q = query.strip().lower()
+        rows = rows[rows["system_name"].str.lower().str.contains(re.escape(q), na=False)
+                    | rows["name"].str.lower().str.contains(re.escape(q), na=False)]
+    return rows
 
 
 def _clear_cache() -> None:

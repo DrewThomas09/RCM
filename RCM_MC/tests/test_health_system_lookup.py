@@ -13,7 +13,16 @@ both shipped in the first cut of the matcher:
 """
 from __future__ import annotations
 
+import csv
+import io
+import os
+import socket
+import tempfile
+import threading
+import time
 import unittest
+import urllib.request
+from contextlib import closing
 
 import pandas as pd
 
@@ -25,6 +34,8 @@ from rcm_mc.data.health_systems import (
     candidate_clusters,
     get_system,
     get_system_map,
+    export_mapping,
+    find_hospitals,
     match_system,
     normalize_name,
     registry_size,
@@ -215,6 +226,62 @@ class RollupTests(unittest.TestCase):
         self.assertEqual(m.unmapped.hospitals, 1)
 
 
+class ReverseLookupTests(unittest.TestCase):
+    """Hospital name / CCN in, system out — the other direction."""
+
+    def test_exact_ccn_lookup(self) -> None:
+        hits = find_hospitals("450087")
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits.iloc[0]["system_id"], "hca")
+
+    def test_ccn_lookup_tolerates_a_missing_leading_zero(self) -> None:
+        padded = find_hospitals("010001")
+        unpadded = find_hospitals("10001")
+        self.assertEqual(len(padded), 1)
+        self.assertEqual(list(padded["ccn"]), list(unpadded["ccn"]))
+
+    def test_name_lookup_ranks_prefix_matches_first(self) -> None:
+        hits = find_hospitals("oceans behavioral", limit=5)
+        self.assertGreater(len(hits), 1)
+        self.assertTrue(all(h == "Oceans Healthcare" for h in hits["system_name"]))
+
+    def test_name_lookup_folds_punctuation(self) -> None:
+        """'ST. MARY'S' and 'ST MARYS' are the same hospital name in HCRIS."""
+        self.assertFalse(find_hospitals("st. mary's hospital").empty)
+
+    def test_unmatched_and_empty_queries_return_nothing(self) -> None:
+        self.assertTrue(find_hospitals("zzzz-no-such-hospital").empty)
+        self.assertTrue(find_hospitals("").empty)
+        self.assertTrue(find_hospitals("   ").empty)
+
+
+class ExportTests(unittest.TestCase):
+    def test_export_is_one_row_per_hospital(self) -> None:
+        frame = export_mapping()
+        self.assertEqual(len(frame), get_system_map().total_hospitals)
+        for col in ("ccn", "name", "state", "system_name", "facility_type_label",
+                    "is_behavioral", "beds", "net_patient_revenue"):
+            self.assertIn(col, frame.columns)
+
+    def test_filters_are_facility_grained(self) -> None:
+        """'Behavioral in TX' means behavioral facilities in TX, not every
+        facility of every system that happens to run one."""
+        frame = export_mapping(state="TX", ftype="behavioral")
+        self.assertFalse(frame.empty)
+        self.assertEqual(set(frame["state"]), {"TX"})
+        self.assertEqual(set(frame["is_behavioral"]), {"Y"})
+
+    def test_system_filter_matches_the_rollup(self) -> None:
+        oceans = next(s for s in get_system_map().systems if s.system_id == "oceans")
+        self.assertEqual(len(export_mapping(system_id="oceans")), oceans.hospitals)
+
+    def test_unmapped_rows_carry_an_empty_system_id(self) -> None:
+        frame = export_mapping()
+        unmapped = frame[frame["system_name"] == "Independent / Unmapped"]
+        self.assertFalse(unmapped.empty)
+        self.assertEqual(set(unmapped["system_id"]), {""})
+
+
 class PageTests(unittest.TestCase):
     def test_page_renders_with_the_master_table(self) -> None:
         html = render_health_system_lookup({})
@@ -267,11 +334,83 @@ class PageTests(unittest.TestCase):
         self.assertIn("Health System Lookup", html)
         self.assertNotIn("<script>alert", html)
 
+    def test_hospital_lookup_panel(self) -> None:
+        html = render_health_system_lookup({"hospital": "crenshaw"})
+        self.assertIn("Which System Owns This Facility", html)
+        self.assertIn("CRENSHAW COMMUNITY HOSPITAL", html)
+        # An unmapped facility says so rather than being hidden.
+        self.assertIn("Independent / Unmapped", html)
+
+    def test_hospital_lookup_by_ccn_links_the_system(self) -> None:
+        html = render_health_system_lookup({"hospital": "450087"})
+        self.assertIn("MEDICAL CITY NORTH HILLS", html)
+        self.assertIn("system=hca", html)
+
+    def test_hospital_lookup_miss_shows_an_empty_state(self) -> None:
+        html = render_health_system_lookup({"hospital": "zzzz-nope"})
+        self.assertIn("No facility matches", html)
+
+    def test_csv_link_carries_the_active_filters(self) -> None:
+        html = render_health_system_lookup({"state": "TX", "type": "behavioral"})
+        self.assertIn("health-system-lookup.csv", html)
+        self.assertIn("state=TX", html)
+
     def test_registry_note_surfaces_on_the_roster(self) -> None:
         sysdef = get_system("trinity")
         self.assertTrue(sysdef.note)
         html = render_health_system_lookup({"system": "trinity"})
         self.assertIn("UnityPoint", html)
+
+
+class CsvRouteTests(unittest.TestCase):
+    """The export is served over real HTTP, defanged, on a live server."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.server import build_server
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        with closing(socket.socket()) as sock:
+            sock.bind(("127.0.0.1", 0))
+            cls._port = sock.getsockname()[1]
+        srv, _ = build_server(port=cls._port, host="127.0.0.1",
+                              db_path=os.path.join(cls._tmp.name, "hsl.db"))
+        cls._srv = srv
+        cls._thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        cls._thread.start()
+        time.sleep(0.2)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._srv.shutdown()
+        cls._srv.server_close()
+        cls._tmp.cleanup()
+
+    def _get(self, route: str):
+        resp = urllib.request.urlopen(
+            f"http://127.0.0.1:{self._port}{route}", timeout=60)
+        return resp, resp.read().decode("utf-8")
+
+    def test_page_serves_200(self) -> None:
+        resp, body = self._get("/health-system-lookup")
+        self.assertEqual(resp.status, 200)
+        self.assertIn("Health System Lookup", body)
+
+    def test_csv_serves_as_an_attachment(self) -> None:
+        resp, body = self._get("/health-system-lookup.csv?state=TX&type=behavioral")
+        self.assertEqual(resp.status, 200)
+        self.assertIn("text/csv", resp.headers.get("Content-Type", ""))
+        self.assertIn("attachment", resp.headers.get("Content-Disposition", ""))
+        rows = list(csv.DictReader(io.StringIO(body)))
+        self.assertTrue(rows)
+        self.assertEqual({r["state"] for r in rows}, {"TX"})
+        self.assertEqual({r["is_behavioral"] for r in rows}, {"Y"})
+        self.assertIn("system_name", rows[0])
+
+    def test_csv_covers_the_whole_universe_unfiltered(self) -> None:
+        _, body = self._get("/health-system-lookup.csv")
+        rows = list(csv.DictReader(io.StringIO(body)))
+        self.assertEqual(len(rows), get_system_map().total_hospitals)
 
 
 if __name__ == "__main__":

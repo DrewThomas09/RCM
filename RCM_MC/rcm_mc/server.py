@@ -5122,6 +5122,23 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.health_system_lookup_page import (
                 render_health_system_lookup)
             return self._send_html(render_health_system_lookup(_qp))
+        if path == "/health-system-lookup.csv":
+            # Filter-aware export of the hospital ↔ system mapping, one row
+            # per facility keyed on CCN so it joins against a target list.
+            from .data.health_systems import export_mapping
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            _frame = export_mapping(
+                state=_st,
+                kind=str(_qp.get("kind", "")).strip()[:40],
+                focus=str(_qp.get("focus", "")).strip()[:40],
+                ftype=str(_qp.get("type", "")).strip()[:40],
+                system_id=str(_qp.get("system", "")).strip()[:40],
+                query=str(_qp.get("q", "")).strip()[:80],
+            )
+            return self._send_csv_df(
+                _frame, f"health-system-mapping{('-' + _st) if _st else ''}.csv")
         if path == "/payer-contracts":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}

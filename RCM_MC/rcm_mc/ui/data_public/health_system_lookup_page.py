@@ -13,8 +13,15 @@ Independent / Unmapped, and the page says so in the coverage line rather
 than quietly dropping it.
 
 Filters are server-side (so a filtered view is a shareable URL); column
-sorting is the shell's click-to-sort, which applies to the rendered
-rows. ``?system=<id>`` opens the facility roster for one system.
+sorting is the shell's click-to-sort, which applies to the rendered rows.
+
+The page answers the mapping in both directions:
+
+  - ``?system=<id>`` opens one system's facility roster (system → hospitals)
+  - ``?hospital=<name or CCN>`` resolves a facility to its system, which is
+    the direction a partner reading a CIM actually starts from
+  - ``/health-system-lookup.csv`` exports the same view, one row per
+    hospital keyed on CCN so it joins against a target list in Excel
 """
 from __future__ import annotations
 
@@ -151,6 +158,12 @@ def _filter_bar(*, states: Sequence[str], kinds: Sequence[str],
 
     q = _esc(selected.get("q", ""))
     min_h = _esc(selected.get("min_hospitals", ""))
+    # The export mirrors whatever is on screen — a partner who filtered to
+    # "behavioral in TX" wants that list in Excel, not the whole universe.
+    csv_href = _esc(_qs(
+        state=selected.get("state", ""), kind=selected.get("kind", ""),
+        focus=selected.get("focus", ""), type=selected.get("type", ""),
+        q=selected.get("q", "")).replace(ROUTE, ROUTE + ".csv", 1))
     return f"""
 <form class="hsl-filters" method="get" action="{ROUTE}">
   <label class="hsl-f hsl-f-wide"><span>Search system</span>
@@ -165,8 +178,72 @@ def _filter_bar(*, states: Sequence[str], kinds: Sequence[str],
   <div class="hsl-f hsl-f-actions">
     <button type="submit" class="hsl-btn">Apply</button>
     <a class="hsl-reset" href="{ROUTE}">Reset</a>
+    <a class="hsl-reset" href="{csv_href}">Download CSV</a>
   </div>
 </form>"""
+
+
+def _hospital_lookup_panel(query: str) -> str:
+    """Reverse lookup — a facility name or CCN in, its system out.
+
+    A partner reading a CIM has the hospital's name, not its system.
+    Without this the page only answered the question in one direction.
+    """
+    from rcm_mc.data.health_systems import UNMAPPED_ID, find_hospitals
+
+    hits = find_hospitals(query, limit=60)
+    header = f"""
+<form class="hsl-filters" method="get" action="{ROUTE}">
+  <label class="hsl-f hsl-f-wide"><span>Find a hospital → its system</span>
+    <input type="search" name="hospital" value="{_esc(query)}"
+           placeholder="Facility name or CCN, e.g. 450087 or Crenshaw"></label>
+  <div class="hsl-f hsl-f-actions">
+    <button type="submit" class="hsl-btn">Look up</button>
+    <a class="hsl-reset" href="{ROUTE}">Clear</a>
+  </div>
+</form>"""
+    if not query:
+        return header
+    if hits.empty:
+        return header + ck_empty_state(
+            f"No facility matches “{_esc(query)}”.",
+            "Try a shorter fragment of the name, or the 6-digit CCN.")
+
+    cols = [("CCN", "left"), ("Facility", "left"), ("City", "left"),
+            ("State", "center"), ("Type", "left"), ("Behavioral", "center"),
+            ("Beds", "right"), ("Health System", "left"), ("Matched On", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for row in hits.to_dict("records"):
+        ccn = str(row.get("ccn", ""))
+        beh = bool(row.get("is_behavioral"))
+        mapped = row.get("system_id") != UNMAPPED_ID
+        system = (
+            f'<a class="ck-link" href="{_qs(system=row.get("system_id"))}">'
+            f'{_esc(row.get("system_name"))}</a>' if mapped
+            else f'<span class="tone-dim">{_esc(row.get("system_name"))}</span>')
+        cells = [
+            ck_data_cell(_esc(ccn), mono=True, tone="dim"),
+            f'<td class="ck-cell ck-cell-w-600">'
+            f'<a class="ck-link" href="/hospital/{_esc(ccn)}">'
+            f'{_esc(row.get("name", ""))}</a></td>',
+            ck_data_cell(_esc(row.get("city", "")), tone="dim"),
+            ck_data_cell(_esc(row.get("state", "")), align="center", mono=True),
+            ck_data_cell(_esc(row.get("facility_type_label", "")), tone="dim"),
+            ck_data_cell("YES" if beh else "—", align="center", mono=True,
+                         tone="acc" if beh else "dim", weight=700 if beh else None),
+            ck_data_cell(_fmt_int(row.get("beds")), align="right", mono=True),
+            f'<td class="ck-cell ck-cell-w-600">{system}</td>',
+            ck_data_cell(_esc(row.get("system_match", "")), mono=True, tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
+    return (header + table +
+            f'<div class="hsl-legend">{len(hits):,} facilities match '
+            f'“{_esc(query)}”. Independent / Unmapped means the HCRIS name '
+            'carries no system brand — not that the hospital is '
+            'independently owned.</div>')
 
 
 def _active_chips(selected: Mapping[str, str], shown: int, total: int) -> str:
@@ -438,6 +515,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     focus = str(params.get("focus", "")).strip()
     ftype = str(params.get("type", "")).strip()
     system_id = str(params.get("system", "")).strip()
+    hospital_q = str(params.get("hospital", "")).strip()[:80]
     sort = str(params.get("sort", "hospitals")).strip()
     if sort not in _SORTS:
         sort = "hospitals"
@@ -488,6 +566,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     )
 
     roster = _roster_panel(system_id, m.systems) if system_id else ""
+    lookup = _hospital_lookup_panel(hospital_q)
     table = _systems_table(rows) if rows else ck_empty_state(
         "No systems match these filters. Widen the state or ownership filter, "
         "or reset.")
@@ -512,6 +591,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div class="ck-kpi-grid" style="margin-bottom:20px">{_kpi_strip(m, largest)}</div>
   {anchor}
   {roster}
+  <div style="{cell}">
+    <div style="{h3}">Hospital Lookup — Which System Owns This Facility?</div>
+    {lookup}
+  </div>
   <div style="{cell}">
     <div style="{h3}">Master Mapping — Every System, Every Hospital Count</div>
     {_filter_bar(states=all_states, kinds=kinds, focuses=focuses, selected=selected)}
