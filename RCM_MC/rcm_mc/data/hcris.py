@@ -713,9 +713,27 @@ def browse_by_state(
 # CMS encodes facility type in the *last 4 digits* of the 6-digit CCN.
 # Ranges per the CMS Provider Number table; see SSA §1861 / 42 CFR 413.65.
 # We bucket for peer filtering — full-fidelity mapping has ~15 sub-types.
+#
+# Two ranges below were added after measuring the classifier against CMS's
+# own facility type. Across the 5,085 facilities where Care Compare
+# publishes an independent ``hospital_type``, the CCN-range classifier
+# agrees on 5,077 — and every one of the 8 disagreements sat in the
+# 0880-0899 bucket, which fell through to "other" and was then asserted
+# to be a chronic disease hospital. Care Compare calls all 8 "Acute Care
+# Hospitals": Baylor Scott & White Plano, BSW Centennial, The Heart
+# Hospital Baylor Denton, Texas Health Harris Methodist Southlake and
+# four siblings — physician-owned specialty acute hospitals in Texas.
+#
+# 1990-1999 is the Religious Nonmedical Health Care Institution series.
+# The 13 facilities in it are Christian Science sanatoria (Arden Wood,
+# Chestnut Hill Benevolent Association, High Ridge House, Peace Haven),
+# and none appears in Care Compare at all — consistent with an RNHCI,
+# which files no hospital quality data.
 _CCN_TYPE_RANGES: List[tuple[int, int, str]] = [
     (   1,  879, "general"),
+    ( 880,  899, "general"),
     (1300, 1399, "critical_access"),
+    (1990, 1999, "rnhci"),
     (2000, 2299, "ltach"),
     (3025, 3099, "rehab"),
     (3300, 3399, "children"),
@@ -740,7 +758,7 @@ def classify_hospital_type(ccn: Optional[str], name: Optional[str] = None) -> st
     Name heuristics are a fallback for CCNs outside documented ranges.
 
     Returns one of: ``general``, ``children``, ``psychiatric``, ``rehab``,
-    ``ltach``, ``critical_access``, ``other``.
+    ``ltach``, ``critical_access``, ``rnhci``, ``other``.
     """
     digits = re.sub(r"\D", "", str(ccn or ""))
     if len(digits) >= 4:

@@ -98,6 +98,39 @@ def demographics_sources() -> List[Dict[str, str]]:
     return df[df["source_id"].astype(str) == "chr_county_demographics"].to_dict("records")
 
 
+# Counties whose label differs only in punctuation or an abbreviation.
+# Each rule below was derived by listing the (state, county name) pairs
+# that failed to resolve against the ACS file and asking what single
+# transformation would fix them; the counts are how many crosswalk rows
+# each recovers on its own.
+#
+#   apostrophe   69 rows   O'BRIEN IA, PRINCE GEORGE'S MD, ST. MARY'S
+#   saint        25 rows   ST. LOUIS / ST LUCIE / ST. CLAIR <-> SAINT
+#   directional  20 rows   E. BATON ROUGE, W. FELICIANA
+#   period        3 rows   the residue once the above are applied
+#
+# What is deliberately NOT here is stripping a trailing " CITY". Thirty-
+# six facilities sit in an independent city that shares its name with
+# the surrounding county — Baltimore MD, St. Louis MO, Fairfax /
+# Franklin / Richmond / Roanoke VA — and they carry different FIPS with
+# wildly different demographics (St. Louis County 990,414 people; St.
+# Louis city 286,578). The geocode file already spells them apart
+# correctly. Stripping the suffix would silently relocate large urban
+# academic centers.
+_APOSTROPHES = ("'", "’", "ʼ", "`")
+
+_DIRECTIONAL_PREFIXES = (
+    ("E ", "EAST "), ("W ", "WEST "), ("N ", "NORTH "), ("S ", "SOUTH "),
+)
+
+#: Labels for a county-equivalent that no suffix rule reaches.
+_COUNTY_ALIASES = {
+    ("DC", "DC"): "DISTRICTOFCOLUMBIA",
+    ("DC", "THEDISTRICT"): "DISTRICTOFCOLUMBIA",
+    ("DC", "WASHINGTON"): "DISTRICTOFCOLUMBIA",
+}
+
+
 def _norm_county(name: str) -> str:
     """Normalize a county label for name-matching: uppercase, drop the
     County/Parish/Borough suffix and internal spaces so the geocode file's
@@ -105,11 +138,30 @@ def _norm_county(name: str) -> str:
     'Houston County'. Bridges the common label gaps WITHOUT fuzzy matching
     (which could mis-join a target to the wrong county)."""
     n = (name or "").upper()
+    for mark in _APOSTROPHES:
+        n = n.replace(mark, "")
+    n = n.replace(".", " ")
+    # SAINT and ST are the same saint. Bounded so STERLING and STARK,
+    # which merely begin with the letters, are untouched.
+    if n.startswith("ST "):
+        n = "SAINT " + n[3:]
+    n = n.replace(" ST ", " SAINT ")
+    for short, long in _DIRECTIONAL_PREFIXES:
+        if n.startswith(short):
+            n = long + n[len(short):]
+            break
     for suf in (" COUNTY", " PARISH", " BOROUGH", " CENSUS AREA",
                 " CITY AND BOROUGH", " MUNICIPALITY"):
         if n.endswith(suf):
             n = n[: -len(suf)]
     return n.replace(" ", "").strip()
+
+
+def _norm_county_for(state: str, name: str) -> str:
+    """:func:`_norm_county`, plus the aliases that are state-specific."""
+    normalized = _norm_county(name)
+    return _COUNTY_ALIASES.get(
+        (str(state or "").upper().strip(), normalized), normalized)
 
 
 @functools.lru_cache(maxsize=1)

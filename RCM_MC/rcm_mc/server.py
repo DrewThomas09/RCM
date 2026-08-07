@@ -5116,6 +5116,125 @@ class RCMHandler(BaseHTTPRequestHandler):
             _qp = {k: v[0] for k, v in _qs.items() if v}
             from .ui.data_public.hospital_anchor_page import render_hospital_anchor
             return self._send_html(render_hospital_anchor(_qp))
+        if path == "/health-system-lookup":
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            from .ui.data_public.health_system_lookup_page import (
+                render_health_system_lookup)
+            return self._send_html(render_health_system_lookup(_qp))
+        if path == "/provider-crosswalk.csv":
+            # The full identifier crosswalk: one row per CCN carrying
+            # system, county FIPS, CBSA/MSA, NUCC taxonomy, geo and NPI,
+            # each with the source that produced it.
+            #
+            # scope=all widens from the 6,123 HCRIS hospitals to all
+            # 48,510 Medicare-certified CCNs — nursing homes, home
+            # health, hospice, dialysis, IRF and LTCH included. Default
+            # stays hospital-only because that is the frame with beds
+            # and revenue on it.
+            from .data.provider_crosswalk import (
+                SCOPE_ALL, SCOPE_HOSPITAL, get_crosswalk)
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _scope = (SCOPE_ALL if str(_qp.get("scope", "")).strip().lower()
+                      in ("all", "1", "true") else SCOPE_HOSPITAL)
+            _frame = get_crosswalk(scope=_scope)
+            _cls = str(_qp.get("class", "")).strip().lower()[:12]
+            if _cls:
+                _frame = _frame[_frame["provider_class"].astype(str) == _cls]
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _cbsa = str(_qp.get("cbsa", "")).strip()[:5]
+            if _cbsa:
+                _frame = _frame[_frame["cbsa_code"].astype(str) == _cbsa]
+            _sys = str(_qp.get("system", "")).strip()[:40]
+            if _sys:
+                _frame = _frame[_frame["system_id"].astype(str) == _sys]
+            # parents=1 widens with the resolved final parent — where the
+            # facility's owner ends up after the ownership graph is
+            # walked, which is a different answer from system_id: a
+            # dialysis clinic with no system of its own still reaches
+            # one through its published chain. Opt-in because it costs
+            # a graph build and nine more columns.
+            if str(_qp.get("parents", "")).strip().lower() in ("1", "true", "yes"):
+                from .data.parent_resolution import attach_parents
+                # Built from the UNFILTERED universe: a facility's parent
+                # is a fact about the whole graph, and resolving inside a
+                # one-state slice would silently drop every parent that
+                # happens to sit across a state line.
+                from .data.parent_resolution import crosswalk_graph
+                _frame = attach_parents(_frame, graph=crosswalk_graph())
+            return self._send_csv_df(
+                _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
+        if path == "/master-npi-file.csv":
+            # The NPI-keyed spine: identity, status history, taxonomy and
+            # category, geography, the CCN it bills under, and the final
+            # parent with the evidence for it. Built from whatever NPPES
+            # data this deployment has — the bundled extracts by default,
+            # the full register when an ingest DB is supplied to the CLI.
+            from .data.master_provider_file import cached_master_file
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _frame = cached_master_file()
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _cat = str(_qp.get("category", "")).strip().lower()[:40]
+            if _cat:
+                _frame = _frame[
+                    _frame["taxonomy_category"].astype(str) == _cat]
+            _sta = str(_qp.get("status", "")).strip().lower()[:20]
+            if _sta:
+                _frame = _frame[_frame["status"].astype(str) == _sta]
+            _par = str(_qp.get("parent", "")).strip()[:60]
+            if _par:
+                _frame = _frame[_frame["final_parent"].astype(str) == _par]
+            # parented=1 drops the rows with no owner, which is what a
+            # caller building a portfolio roster actually wants. It is
+            # opt-in because a crosswalk that silently omits the
+            # unresolved looks far more complete than it is.
+            if str(_qp.get("parented", "")).strip().lower() in ("1", "true"):
+                _frame = _frame[_frame["final_parent"].astype(str).ne("")]
+            return self._send_csv_df(
+                _frame, f"master-npi-file{('-' + _st) if _st else ''}.csv")
+        if path == "/npi-registry.csv":
+            # Organization NPIs from the bundled NPPES extracts, each
+            # with its d/b/a, PECOS enrolment group, taxonomy, county
+            # and CBSA. An ambulance/EMS slice, not all of NPPES.
+            from .data.npi_registry import assign_npi_registry
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _frame = assign_npi_registry()
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _sys = str(_qp.get("system", "")).strip()[:40]
+            if _sys:
+                _frame = _frame[_frame["system_id"].astype(str) == _sys]
+            _grp = str(_qp.get("pecos_group", "")).strip()[:20]
+            if _grp:
+                _frame = _frame[_frame["pecos_group"].astype(str) == _grp]
+            return self._send_csv_df(
+                _frame, f"npi-registry{('-' + _st) if _st else ''}.csv")
+        if path == "/health-system-lookup.csv":
+            # Filter-aware export of the hospital ↔ system mapping, one row
+            # per facility keyed on CCN so it joins against a target list.
+            from .data.health_systems import export_mapping
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            _frame = export_mapping(
+                state=_st,
+                kind=str(_qp.get("kind", "")).strip()[:40],
+                focus=str(_qp.get("focus", "")).strip()[:40],
+                ftype=str(_qp.get("type", "")).strip()[:40],
+                system_id=str(_qp.get("system", "")).strip()[:40],
+                query=str(_qp.get("q", "")).strip()[:80],
+                status=str(_qp.get("status", "")).strip()[:60],
+            )
+            return self._send_csv_df(
+                _frame, f"health-system-mapping{('-' + _st) if _st else ''}.csv")
         if path == "/payer-contracts":
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
