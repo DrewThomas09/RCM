@@ -257,6 +257,50 @@ def npi_registry_coverage() -> List[Tuple[str, int, int]]:
     ]
 
 
+@lru_cache(maxsize=1)
+def organization_index() -> Dict[Tuple[str, str, str], Tuple[str, str, str]]:
+    """(normalized name, state, ZIP5) -> (npi, taxonomy_code, basis).
+
+    The key is deliberately all three at once. Name alone collides
+    constantly — there are dozens of MEMORIAL HOSPITALs — and name+state
+    still merges a system's two campuses in one state. Name+state+ZIP5
+    is the same three-way rule :func:`nppes_ingest.link_npis_to_ccns`
+    uses.
+
+    Both the legal name and every d/b/a are indexed, because the brand
+    frequently lives only in the d/b/a: NPI 1841241833 files legally as
+    HOT SPRINGS NATIONAL PARK HOSPITAL HOLDINGS LLC and does business as
+    NATIONAL PARK MEDICAL CENTER, which is the name on the cost report.
+
+    A key claimed by more than one NPI is dropped rather than resolved.
+    """
+    from .health_systems import normalize_name
+
+    claims: Dict[Tuple[str, str, str], set] = {}
+    detail: Dict[Tuple[Tuple[str, str, str], str], str] = {}
+    for rec in load_npi_registry().values():
+        if not rec.state or len(rec.zip5) != 5:
+            continue
+        candidates = [("name", rec.legal_name)]
+        candidates += [("dba", name) for name in rec.dbas]
+        for basis, raw in candidates:
+            normalized = normalize_name(raw)
+            if not normalized:
+                continue
+            key = (normalized, rec.state, rec.zip5)
+            claims.setdefault(key, set()).add(rec.npi)
+            detail.setdefault((key, rec.npi), basis)
+
+    out: Dict[Tuple[str, str, str], Tuple[str, str, str]] = {}
+    for key, npis in claims.items():
+        if len(npis) != 1:
+            continue
+        npi = next(iter(npis))
+        out[key] = (npi, load_npi_registry()[npi].taxonomy_code,
+                    detail.get((key, npi), "name"))
+    return out
+
+
 def pecos_groups(min_size: int = 2) -> pd.DataFrame:
     """NPIs sharing a PECOS Associate Control ID, largest group first.
 
@@ -285,3 +329,4 @@ def _clear_cache() -> None:
     """Test hook."""
     load_npi_registry.cache_clear()
     _assigned_cached.cache_clear()
+    organization_index.cache_clear()

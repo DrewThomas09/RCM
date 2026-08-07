@@ -55,11 +55,15 @@ The chain, and what each link is worth over the full universe:
      │        class. Where a facility maps to no system, this is the
      │        only ownership signal there is.
      │
-     └──►  NPI                     0 until an NPPES file is present
-              see nppes_ingest.py — the linkage is built, the bulk
-              source is a 9GB monthly file this environment cannot
-              currently reach. npi_registry.py covers the NPPES
-              extracts that ARE bundled.
+     └──►  NPI                     90 of 48,510 (0.2%)
+              matched against the bundled NPPES roster on
+              name+state+ZIP5, over both the legal name and every
+              d/b/a. Small because that roster is a 20,401-NPI
+              ambulance slice, not NPPES; nppes_ingest.py streams the
+              full 9GB dissemination file, which this environment
+              cannot reach. Two rules keep the 90 trustworthy: exactly
+              one NPI may claim a key, and the NPI must describe the
+              same kind of provider as the row — see _npi_for.
 
 Public API::
 
@@ -82,7 +86,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 
 from .cms_facility_names import cms_facility, load_cms_facilities
-from .health_systems import assign_systems
+from .health_systems import assign_systems, normalize_name
+from .npi_registry import organization_index
 
 _CBSA_CSV = (Path(__file__).resolve().parent / "vendor" / "cbsa_crosswalk"
              / "cbsa_county_crosswalk.csv")
@@ -284,6 +289,7 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "is_behavioral",
     "cms_name", "cms_ownership", "cms_hospital_type", "emergency_services",
     "certification_date",
+    "npi_taxonomy",
     "county", "county_fips", "county_fips_source",
     "cbsa_code", "cbsa_title", "cbsa_type", "cbsa_central_outlying",
     "lat", "lon", "geo_match_quality",
@@ -327,7 +333,65 @@ def _records(assigned: pd.DataFrame) -> List[Dict[str, Any]]:
             for values in zip(*columns.values(), strict=True)]
 
 
-def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
+#: How much of a NUCC code identifies the kind of provider. Four
+#: characters is the grouping plus the classification letter: every
+#: hospital variant shares "282N" (general, critical access, rural,
+#: children's), while a rehab hospital is "283X", a SNF "3140", a home
+#: health agency "251E". Comparing at this depth keeps a refinement and
+#: rejects a different provider.
+_TAXONOMY_FAMILY_LEN = 4
+
+
+def _same_taxonomy_family(left: Any, right: Any) -> bool:
+    a, b = str(left or ""), str(right or "")
+    if not a or not b:
+        return False
+    return a[:_TAXONOMY_FAMILY_LEN] == b[:_TAXONOMY_FAMILY_LEN]
+
+
+def _npi_for(rec: Dict[str, Any], zip5: str, index,
+             row_taxonomy: str) -> Tuple[str, str, str]:
+    """(npi, source, taxonomy) from the bundled NPPES roster, or blanks.
+
+    Matched on (normalized name, state, ZIP5) against both the legal
+    name and every d/b/a. Two rules make the result trustworthy rather
+    than merely large:
+
+    1. **Exactly one NPI must claim the key.** Handled in
+       :func:`npi_registry.organization_index`.
+    2. **The NPI must describe the same kind of provider as the row.**
+       277 crosswalk rows match the roster on name+state+ZIP5, and the
+       match is real every time — but 187 of them attach the wrong
+       NPI, because a hospital's ambulance service, its rehab unit and
+       its nursing home all file under the hospital's name at the
+       hospital's address. Comparing the NUCC classification family
+       (the first four characters) rejects every one of those while
+       keeping the refinements that matter: 282NR1301X (Rural Acute
+       Care) on a row typed 282N00000X is the same hospital, not a
+       different provider.
+
+    ``npi_taxonomy`` rides along on the row so the claim stays
+    checkable rather than having to be trusted.
+    """
+    name = str(rec.get("name", "") or "")
+    state = str(rec.get("state", "") or "").upper().strip()
+    # HCRIS spells ZIPs three ways — "35957", "35957-", "372051609". The
+    # roster is ZIP5, so key on the first five digits rather than on
+    # whatever the cost report happened to type.
+    key_zip = zip5[:5]
+    if not name or not state or len(key_zip) != 5 or not key_zip.isdigit():
+        return "", "", ""
+    hit = index.get((normalize_name(name), state, key_zip))
+    if hit is None:
+        return "", "", ""
+    npi, taxonomy, basis = hit
+    if not _same_taxonomy_family(taxonomy, row_taxonomy):
+        return "", "", ""
+    return npi, f"nppes {basis}+state+zip5", taxonomy
+
+
+def _crosswalk_row(rec: Dict[str, Any], coords, care_compare,
+                   npi_index) -> Dict[str, Any]:
     """Flatten one assigned facility onto the crosswalk shape."""
     ccn = str(rec.get("ccn", ""))
     coord = coords.get(ccn)
@@ -337,6 +401,7 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
         ccn, rec.get("state"), rec.get("county"), zip5)
     cbsa = cbsa_for_county(fips) or {}
     code, desc = facility_taxonomy(rec.get("facility_type"))
+    npi, npi_source, npi_taxonomy = _npi_for(rec, zip5, npi_index, code)
     return {
         "ccn": ccn,
         "name": rec.get("name", ""),
@@ -368,6 +433,7 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
         "cms_hospital_type": cms.hospital_type if cms else "",
         "emergency_services": cms.emergency_services if cms else "",
         "certification_date": rec.get("certification_date", "") or "",
+        "npi_taxonomy": npi_taxonomy,
         "county": rec.get("county", "") if isinstance(rec.get("county"), str) else "",
         "county_fips": fips,
         "county_fips_source": fips_source,
@@ -378,9 +444,8 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
         "lat": coord.lat if coord else None,
         "lon": coord.lon if coord else None,
         "geo_match_quality": coord.match_quality if coord else "",
-        # Populated by nppes_ingest when an NPPES extract is present.
-        "npi": "",
-        "npi_source": "",
+        "npi": npi,
+        "npi_source": npi_source,
         "beds": rec.get("beds"),
         "net_patient_revenue": rec.get("net_patient_revenue"),
     }
@@ -405,11 +470,50 @@ def build_crosswalk(df: Optional[pd.DataFrame] = None, *,
 
     coords = load_hospital_coords()
     care_compare = load_cms_facilities()
+    npi_index = organization_index()
     rows: List[Dict[str, Any]] = [
-        _crosswalk_row(rec, coords, care_compare)
+        _crosswalk_row(rec, coords, care_compare, npi_index)
         for rec in _records(assigned)
     ]
+    _resolve_npi_collisions(rows)
     return pd.DataFrame(rows, columns=list(CROSSWALK_COLUMNS))
+
+
+def _resolve_npi_collisions(rows: List[Dict[str, Any]]) -> None:
+    """Strip an NPI that more than one CCN claims, unless one row owns it.
+
+    The name+state+ZIP5 key is unique on the NPPES side but not on ours:
+    a hospital and its own hospital-based rehab unit file the SAME name
+    at the SAME address under two CCNs, so both match the hospital's
+    NPI. Riverside Medical Center IL is 140186 and 14T186; Poudre Valley
+    is 060010 and 06T010. Eight pairs behave this way.
+
+    The NPI's own taxonomy settles it. NPI 1184891343 is 282N00000X, a
+    General Acute Care Hospital — so it belongs to the acute row, not to
+    the rehab unit that shares its front door. Where exactly one
+    claimant's taxonomy matches the NPI's, that row keeps it and the
+    others are cleared; where the tie does not break, every claimant
+    loses it. An NPI on the wrong row is worse than an absent one,
+    because a claims join would silently attribute the unit's volume to
+    the hospital.
+    """
+    by_npi: Dict[str, List[Dict[str, Any]]] = {}
+    for row in rows:
+        if row.get("npi"):
+            by_npi.setdefault(row["npi"], []).append(row)
+
+    for claimants in by_npi.values():
+        if len(claimants) < 2:
+            continue
+        owners = [r for r in claimants
+                  if r.get("taxonomy_code") == r.get("npi_taxonomy")]
+        keep = owners[0] if len(owners) == 1 else None
+        for row in claimants:
+            if row is keep:
+                continue
+            row["npi"] = ""
+            row["npi_source"] = ""
+            row["npi_taxonomy"] = ""
 
 
 @lru_cache(maxsize=len(CROSSWALK_SCOPES))
@@ -483,7 +587,9 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                      "provider class — the only ownership signal an "
                      "unmapped facility has"),
         CoverageStat("NPI", filled("npi"), total,
-                     "requires an NPPES extract — see nppes_ingest"),
+                     "matched against the bundled NPPES roster on "
+                     "name+state+ZIP5; a national fill needs the full "
+                     "dissemination file — see nppes_ingest"),
     ]
     stats.sort(key=lambda s: s.pct)
     return stats

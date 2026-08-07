@@ -39,6 +39,7 @@ from rcm_mc.data.provider_crosswalk import (
     NUCC_BY_FACILITY_TYPE,
     SCOPE_ALL,
     _county_by_zip,
+    _same_taxonomy_family,
     build_crosswalk,
     cbsa_for_county,
     county_fips_for,
@@ -326,6 +327,92 @@ class FullScopeTests(unittest.TestCase):
         self.assertEqual(len(set(learned)), len(learned))
 
 
+class NpiLinkTests(unittest.TestCase):
+    """CCN -> NPI, from the one NPPES source that exists offline.
+
+    The join is name+state+ZIP5 against both the legal name and every
+    d/b/a. What makes it worth shipping at 90 rows is not the count —
+    it is that 187 of the 277 raw matches are WRONG in a way that looks
+    right, and the rules reject all of them.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.xw = get_crosswalk(scope=SCOPE_ALL)
+        cls.linked = cls.xw[cls.xw["npi"].ne("")]
+
+    def test_the_column_is_no_longer_hardcoded_empty(self) -> None:
+        self.assertGreater(len(self.linked), 50)
+        self.assertTrue(self.linked["npi"].str.fullmatch(r"\d{10}").all())
+        self.assertTrue(self.linked["npi_source"].ne("").all())
+
+    def test_one_npi_per_ccn_and_one_ccn_per_npi(self) -> None:
+        """A hospital and its own rehab unit file the same name at the
+        same address under two CCNs, so both match the hospital's NPI.
+        An NPI on the wrong row is worse than an absent one — a claims
+        join would attribute the unit's volume to the hospital."""
+        self.assertEqual(len(self.linked), self.linked["npi"].nunique())
+        self.assertEqual(len(self.linked), self.linked["ccn"].nunique())
+
+    def test_the_npi_describes_the_same_kind_of_provider_as_the_row(self) -> None:
+        """A hospital's ambulance service, its rehab unit and its
+        nursing home all enumerate under the hospital's name at the
+        hospital's address. Comparing the NUCC classification family
+        rejects every one of those."""
+        for row in self.linked.to_dict("records"):
+            self.assertEqual(row["npi_taxonomy"][:4], row["taxonomy_code"][:4],
+                             f"{row['ccn']} {row['name']}")
+
+    def test_a_finer_taxonomy_is_a_refinement_not_a_conflict(self) -> None:
+        """282NR1301X (Rural Acute Care) on a row typed 282N00000X is
+        the same hospital described more precisely. Rejecting it would
+        throw away correct links to prove a point."""
+        self.assertTrue(_same_taxonomy_family("282NR1301X", "282N00000X"))
+        self.assertTrue(_same_taxonomy_family("282NC0060X", "282N00000X"))
+        self.assertFalse(_same_taxonomy_family("283X00000X", "282N00000X"))
+        self.assertFalse(_same_taxonomy_family("3416L0300X", "282N00000X"))
+        self.assertFalse(_same_taxonomy_family("", "282N00000X"))
+        refined = self.linked[
+            self.linked["npi_taxonomy"] != self.linked["taxonomy_code"]]
+        self.assertGreater(len(refined), 0)
+
+    def test_the_dba_tier_carries_its_weight(self) -> None:
+        """NPI 1841241833 files legally as HOT SPRINGS NATIONAL PARK
+        HOSPITAL HOLDINGS LLC and does business as NATIONAL PARK MEDICAL
+        CENTER, which is the name on the cost report."""
+        sources = self.linked["npi_source"].value_counts()
+        self.assertGreater(sources.get("nppes dba+state+zip5", 0), 20)
+        self.assertGreater(sources.get("nppes name+state+zip5", 0), 20)
+        by_ccn = self.linked.set_index("ccn")
+        self.assertEqual(by_ccn.loc["040078", "npi"], "1841241833")
+        self.assertEqual(by_ccn.loc["040078", "npi_source"],
+                         "nppes dba+state+zip5")
+
+    def test_every_linked_npi_is_in_the_roster(self) -> None:
+        from rcm_mc.data.npi_registry import load_npi_registry
+
+        roster = load_npi_registry()
+        for row in self.linked.to_dict("records"):
+            record = roster.get(row["npi"])
+            self.assertIsNotNone(record, row["npi"])
+            self.assertEqual(record.state, row["state"])
+            self.assertEqual(record.zip5, str(row["zip"])[:5])
+
+    def test_the_index_drops_a_key_two_npis_claim(self) -> None:
+        from rcm_mc.data.npi_registry import load_npi_registry, organization_index
+
+        index = organization_index()
+        self.assertGreater(len(index), 15000)
+        # Every entry resolves to exactly one NPI by construction.
+        roster = load_npi_registry()
+        for (_, state, zip5), (npi, taxonomy, basis) in list(index.items())[:200]:
+            self.assertIn(npi, roster)
+            self.assertEqual(roster[npi].state, state)
+            self.assertEqual(roster[npi].zip5, zip5)
+            self.assertEqual(roster[npi].taxonomy_code, taxonomy)
+            self.assertIn(basis, ("name", "dba"))
+
+
 class CoverageTests(unittest.TestCase):
     def test_coverage_is_reported_worst_first(self) -> None:
         stats = crosswalk_coverage()
@@ -333,11 +420,16 @@ class CoverageTests(unittest.TestCase):
         pcts = [s.pct for s in stats]
         self.assertEqual(pcts, sorted(pcts))
 
-    def test_ccn_is_complete_and_npi_is_honest_about_being_empty(self) -> None:
+    def test_ccn_is_complete_and_npi_is_honest_about_being_thin(self) -> None:
+        """NPI is the weakest link and the note has to say why. It is
+        thin because the only NPPES source available offline is a
+        20,401-NPI ambulance roster, not because the join is broken."""
         by_id = {s.identifier: s for s in crosswalk_coverage()}
         self.assertEqual(by_id["CCN"].pct, 100.0)
-        self.assertEqual(by_id["NPI"].resolved, 0)
+        self.assertGreater(by_id["NPI"].resolved, 0)
+        self.assertLess(by_id["NPI"].pct, 5.0)
         self.assertIn("NPPES", by_id["NPI"].note)
+        self.assertIn("name+state+ZIP5", by_id["NPI"].note)
 
     def test_observed_ownership_is_reported_as_its_own_identifier(self) -> None:
         by_id = {s.identifier: s for s in crosswalk_coverage()}
