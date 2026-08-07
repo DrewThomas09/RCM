@@ -18,14 +18,21 @@ join, not in a re-derivation of something already tested elsewhere.
 
 What it will and will not claim
 -------------------------------
-**Individual NPIs get no parent, and that is not a gap to be filled by
-guessing.** NPPES has no employer field for a person. There is no column
-that says which system a physician works for, and no amount of name or
-address matching invents one — two physicians sharing a building are not
-colleagues. An individual therefore resolves to itself, with
-``parent_basis`` saying why. The one honest route to a physician's
-employer is a facility-affiliation source (CMS Doctors and Clinicians),
-which is a separate ingest and not pretended at here.
+**An individual NPI gets a parent only from an affiliation source, never
+from geography.** NPPES has no employer field for a person: no column
+says which system a physician works for, and two physicians sharing a
+medical office building are not colleagues. So an individual resolves to
+itself, with ``parent_basis`` saying why, unless something outside NPPES
+links them.
+
+The one such source in this repository is the derived bridge in
+``connectors/nppes/affiliation.py``, which pairs an individual with an
+organization at the same practice address *and* sharing a name token —
+Dr. Smith billing where Smith Family Medicine bills. Pass it via
+``affiliations`` and those individuals resolve, carrying the bridge's own
+per-pair confidence and its method in ``parent_basis``. The bridge's
+other method, bare co-location, is refused rather than scored down: a low
+number on a claim that should not have been made is still the claim.
 
 **Organization NPIs are where the ownership graph does its work**, via
 NPPES's own subpart filing, PECOS enrolment groups, the CCN link, chain
@@ -66,7 +73,8 @@ from .nppes_ingest import (
 )
 from .nucc_categories import classify_taxonomy
 from .parent_resolution import (
-    NS_CCN, NS_NPI, ParentGraph, build_parent_graph, node_key,
+    NS_CCN, NS_NPI, ParentGraph, build_parent_graph, load_affiliations,
+    node_key,
 )
 
 MASTER_COLUMNS: Tuple[str, ...] = (
@@ -276,7 +284,10 @@ def _enrich_chunk(chunk: pd.DataFrame, graph: ParentGraph,
         node = node_key(NS_NPI, npi)
         res = graph.resolve(node) if node else None
         individual = _entity_label(rec.get("entity_type"), is_org) == "individual"
-        if individual:
+        if individual and (res is None or res.is_root):
+            # NPPES carries no employer field, so a person only gets a
+            # parent when an affiliation source supplies one. Absent
+            # that, the blank is the answer and the basis says why.
             final_parent, tier, confidence, hops = "", "", "", 0
             basis = INDIVIDUAL_NO_PARENT
         elif res is None or res.is_root:
@@ -373,6 +384,8 @@ def build_master_file(
     db_path: Optional[Any] = None,
     crosswalk: Optional[pd.DataFrame] = None,
     npi_frame: Optional[pd.DataFrame] = None,
+    affiliations: Optional[pd.DataFrame] = None,
+    affiliation_db: Optional[Any] = None,
     graph: Optional[ParentGraph] = None,
 ) -> pd.DataFrame:
     """One row per NPI, every organization walked to a final parent.
@@ -387,8 +400,11 @@ def build_master_file(
 
     xw = get_crosswalk(scope=SCOPE_ALL) if crosswalk is None else crosswalk
     frame = _sources(db_path, xw, npi_frame)
+    if affiliations is None and affiliation_db is not None:
+        affiliations = load_affiliations(affiliation_db)
     if graph is None:
-        graph = build_parent_graph(crosswalk=xw, npi_frame=frame)
+        graph = build_parent_graph(crosswalk=xw, npi_frame=frame,
+                                   affiliations=affiliations)
     rows = _enrich_chunk(frame, graph, _facility_index(xw),
                          graph.contested())
     if not rows:
@@ -402,6 +418,8 @@ def export_master_file(
     db_path: Optional[Any] = None,
     crosswalk: Optional[pd.DataFrame] = None,
     npi_frame: Optional[pd.DataFrame] = None,
+    affiliations: Optional[pd.DataFrame] = None,
+    affiliation_db: Optional[Any] = None,
     chunk_size: int = 250_000,
     compress: bool = False,
     progress: Optional[Any] = None,
@@ -434,7 +452,10 @@ def export_master_file(
             ignore_index=True)
         chunks = _read_db_chunks(db_path, chunk_size)
 
-    graph = build_parent_graph(crosswalk=xw, npi_frame=graph_source)
+    if affiliations is None and affiliation_db is not None:
+        affiliations = load_affiliations(affiliation_db)
+    graph = build_parent_graph(crosswalk=xw, npi_frame=graph_source,
+                               affiliations=affiliations)
     contested = graph.contested()
 
     path = Path(path)
@@ -481,10 +502,17 @@ def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
         return {"npis": 0}
     orgs = frame[frame["entity_label"] == "organization"]
     with_parent = orgs[orgs["final_parent"].astype(str).ne("")]
+    people = frame[frame["entity_label"] == "individual"]
     return {
         "npis": len(frame),
         "organizations": len(orgs),
-        "individuals": int((frame["entity_label"] == "individual").sum()),
+        "individuals": len(people),
+        # Counted separately, never folded into the organization rate.
+        # An individual only has a parent when an affiliation source
+        # supplied one, so mixing the two would make the file look
+        # better or worse depending on which sources happened to load.
+        "individuals_with_a_parent": int(
+            people["final_parent"].astype(str).ne("").sum()) if len(people) else 0,
         "organizations_with_a_parent": len(with_parent),
         "organization_parent_pct": (len(with_parent) / len(orgs) * 100.0
                                     if len(orgs) else 0.0),

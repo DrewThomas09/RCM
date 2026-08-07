@@ -1238,6 +1238,10 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                     help="Rows read per pass when streaming from --npi-db")
     mf.add_argument("--gzip", action="store_true",
                     help="Compress the CSV as it is written")
+    mf.add_argument("--affiliation-db", default="",
+                    help="NPPES connector store holding "
+                         "bridge_provider_affiliation — the only source that "
+                         "gives an individual NPI a parent")
     mf.add_argument("--disagreements-out", default="",
                     help="Write the ownership-disagreement work queue here "
                          "(facilities whose sources name different owners)")
@@ -1457,13 +1461,14 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         )
 
         db = args.npi_db or None
+        affil = args.affiliation_db or None
         if args.out:
-            stats = export_master_file(
-                args.out, db_path=db, chunk_size=max(1, args.chunk_size),
-                compress=bool(args.gzip))
-            report = stats
+            report = export_master_file(
+                args.out, db_path=db, affiliation_db=affil,
+                chunk_size=max(1, args.chunk_size), compress=bool(args.gzip))
         else:
-            report = master_file_coverage(build_master_file(db_path=db))
+            report = master_file_coverage(
+                build_master_file(db_path=db, affiliation_db=affil))
 
         if args.disagreements_out:
             from .data.parent_resolution import (

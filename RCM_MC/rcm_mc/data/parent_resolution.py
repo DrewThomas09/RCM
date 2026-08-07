@@ -87,8 +87,13 @@ TIER_CCN_CHAIN = "ccn_chain"
 #: The health system a CCN belongs to, per the registry.
 TIER_CCN_SYSTEM = "ccn_system"
 #: A name matched against the brand registry, with no CCN behind it.
-#: The weakest tier here and the one that needs the guards most.
 TIER_NAME_SYSTEM = "name_system"
+#: An individual linked to an organization by the derived affiliation
+#: bridge — co-located AND sharing a name token. The weakest tier here,
+#: deliberately: it is the only one that is an inference about a person
+#: rather than a filing about an organization. Edges on this tier carry
+#: the bridge's own per-pair confidence instead of the tier constant.
+TIER_AFFILIATION = "affiliation"
 
 TIER_CONFIDENCE: Dict[str, float] = {
     TIER_NPPES_SUBPART: 0.95,
@@ -98,14 +103,28 @@ TIER_CONFIDENCE: Dict[str, float] = {
     TIER_CCN_CHAIN: 0.80,
     TIER_CCN_SYSTEM: 0.75,
     TIER_NAME_SYSTEM: 0.60,
+    TIER_AFFILIATION: 0.50,
 }
 
 #: Lower rank wins when a node has more than one candidate parent.
 TIER_RANK: Dict[str, int] = {
     tier: i for i, tier in enumerate((
         TIER_NPPES_SUBPART, TIER_PECOS_GROUP, TIER_CCN_PARENT,
-        TIER_NPI_CCN, TIER_CCN_CHAIN, TIER_CCN_SYSTEM, TIER_NAME_SYSTEM))
+        TIER_NPI_CCN, TIER_CCN_CHAIN, TIER_CCN_SYSTEM, TIER_NAME_SYSTEM,
+        TIER_AFFILIATION))
 }
+
+#: The affiliation bridge emits two methods. Only one of them is an
+#: affiliation claim: ``shared_address+name`` means Dr. Smith bills at
+#: the same address as Smith Family Medicine. ``shared_practice_address``
+#: alone means two providers are in the same building, which is not
+#: evidence of anything — it is the exact claim this crosswalk refuses
+#: to make, so it is filtered out rather than scored down.
+AFFILIATION_METHODS: Tuple[str, ...] = ("shared_address+name",)
+#: …and even within that method, a pair scoring below this is a suite
+#: shared by so many organizations that the name overlap is likely
+#: coincidence.
+AFFILIATION_MIN_CONFIDENCE = 0.50
 
 #: Walking further than this means the graph is pathological, not deep.
 #: Real ownership chains here are three or four hops; the cap is a
@@ -157,9 +176,17 @@ class ParentEdge:
     parent: str
     tier: str
     evidence: str = ""
+    #: Per-edge override. Most tiers score every edge the same because
+    #: the confidence is a statement about the *source*. The affiliation
+    #: bridge is the exception: it scores each pair individually, and
+    #: flattening that to a tier constant would throw away the one thing
+    #: that separates a strong link from a weak one.
+    score: Optional[float] = None
 
     @property
     def confidence(self) -> float:
+        if self.score is not None:
+            return float(self.score)
         return TIER_CONFIDENCE.get(self.tier, 0.0)
 
     @property
@@ -224,7 +251,7 @@ class ParentGraph:
 
     # ── construction ───────────────────────────────────────────────
     def add_edge(self, child: str, parent: str, tier: str,
-                 evidence: str = "") -> bool:
+                 evidence: str = "", score: Optional[float] = None) -> bool:
         """Record a claim. Returns False when the claim is unusable.
 
         A self-edge is dropped rather than stored: a node cannot be its
@@ -234,7 +261,7 @@ class ParentGraph:
         if not child or not parent or child == parent:
             return False
         self._claims.setdefault(child, []).append(
-            ParentEdge(child, parent, tier, evidence))
+            ParentEdge(child, parent, tier, evidence, score))
         kids = self._children.setdefault(parent, [])
         if not kids or kids[-1] != child:
             kids.append(child)
@@ -242,7 +269,8 @@ class ParentGraph:
         return True
 
     def add_edges(self, edges: Iterable[ParentEdge]) -> int:
-        return sum(self.add_edge(e.child, e.parent, e.tier, e.evidence)
+        return sum(self.add_edge(e.child, e.parent, e.tier, e.evidence,
+                                 e.score)
                    for e in edges)
 
     # ── inspection ─────────────────────────────────────────────────
@@ -512,10 +540,87 @@ def edges_from_npi_frame(frame: pd.DataFrame) -> List[ParentEdge]:
     return edges
 
 
+def edges_from_affiliations(
+    frame: pd.DataFrame,
+    *,
+    methods: Iterable[str] = AFFILIATION_METHODS,
+    min_confidence: float = AFFILIATION_MIN_CONFIDENCE,
+) -> List[ParentEdge]:
+    """Individual→organization links from the derived affiliation bridge.
+
+    This is the only route by which a person gets a parent, and it is
+    fenced on both sides. NPPES has no employer field, so the bridge in
+    ``connectors/nppes/affiliation.py`` infers one from co-location plus
+    a shared name token — Dr. Smith billing at the same address as Smith
+    Family Medicine. That is a real signal.
+
+    Co-location *alone* is not, and the bridge emits it as a separate
+    method scored 0.20-0.45. Two physicians in the same medical office
+    building are not colleagues, and a crosswalk that says otherwise is
+    worse than one that says nothing. Those rows are filtered out by
+    method rather than scored down, because a low score on a claim that
+    should never have been made is still a claim.
+
+    The per-pair confidence is carried through onto the edge rather than
+    collapsed to the tier constant: the bridge already knows that a pair
+    in a two-tenant building is stronger evidence than one in a
+    forty-tenant tower, and that is exactly what a reviewer needs.
+    """
+    wanted = frozenset(methods)
+    edges: List[ParentEdge] = []
+    for rec in frame.to_dict("records"):
+        method = str(rec.get("method") or "").strip()
+        if wanted and method not in wanted:
+            continue
+        try:
+            score = float(rec.get("confidence") or 0.0)
+        except (TypeError, ValueError):
+            continue
+        if score < min_confidence:
+            continue
+        child = node_key(NS_NPI, rec.get("individual_npi"))
+        parent = node_key(NS_NPI, rec.get("organization_npi"))
+        if not child or not parent:
+            continue
+        edges.append(ParentEdge(
+            child, parent, TIER_AFFILIATION,
+            f"{method}: {str(rec.get('evidence') or '').strip()}".strip(": "),
+            score))
+    return edges
+
+
+def load_affiliations(db_path: Any) -> pd.DataFrame:
+    """Read ``bridge_provider_affiliation`` from an NPPES connector store.
+
+    Optional throughout. The bridge is built by a pipeline that needs
+    the full dissemination file, so most builds will not have one, and
+    a missing table degrades to an empty frame rather than raising —
+    the same rule every other reference loader in this package follows.
+    """
+    import sqlite3
+
+    columns = ["individual_npi", "organization_npi", "method", "confidence",
+               "evidence"]
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return pd.DataFrame(columns=columns)
+    try:
+        rows = con.execute(
+            f"SELECT {', '.join(columns)} FROM bridge_provider_affiliation"
+        ).fetchall()
+    except sqlite3.Error:
+        return pd.DataFrame(columns=columns)
+    finally:
+        con.close()
+    return pd.DataFrame(rows, columns=columns)
+
+
 def build_parent_graph(
     *,
     crosswalk: Optional[pd.DataFrame] = None,
     npi_frame: Optional[pd.DataFrame] = None,
+    affiliations: Optional[pd.DataFrame] = None,
     lift_names_to_systems: bool = True,
 ) -> ParentGraph:
     """Assemble the ownership graph from whichever sources are supplied.
@@ -540,6 +645,8 @@ def build_parent_graph(
     if npi_frame is not None and not npi_frame.empty:
         graph.add_edges(edges_from_npi_frame(npi_frame))
         _collect_states(states, npi_frame, NS_ORG, "parent_org_lbn")
+    if affiliations is not None and not affiliations.empty:
+        graph.add_edges(edges_from_affiliations(affiliations))
 
     if lift_names_to_systems:
         for node in sorted(graph.nodes):

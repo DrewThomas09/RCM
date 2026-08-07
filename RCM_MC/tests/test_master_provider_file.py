@@ -158,6 +158,57 @@ class IndividualTests(unittest.TestCase):
         self.assertEqual(row["is_organisation"], 0)
 
 
+class AffiliatedIndividualTests(unittest.TestCase):
+    """The one route by which a person gets a parent — and its fence."""
+
+    def _affiliations(self) -> pd.DataFrame:
+        return pd.DataFrame([
+            {"individual_npi": "3333333333",
+             "organization_npi": "1111111111",
+             "method": "shared_address+name", "confidence": 0.85,
+             "evidence": "co-located @ 810 ST VINCENTS DR|35205"},
+        ])
+
+    def _rows(self, affiliations=None):
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_npi_frame(),
+                                  affiliations=affiliations)
+        return {r["npi"]: r for r in frame.to_dict("records")}
+
+    def test_a_physician_reaches_a_system_when_a_bridge_names_the_link(self):
+        row = self._rows(self._affiliations())["3333333333"]
+        self.assertEqual(row["final_parent"], node_key(NS_SYSTEM, "ascension"))
+        self.assertIn("affiliation", row["parent_basis"])
+        self.assertEqual(row["entity_label"], "individual")
+
+    def test_without_a_bridge_the_same_physician_has_no_parent(self):
+        """Nothing about the person changed. The difference is whether a
+        source exists, and the file says which."""
+        row = self._rows()["3333333333"]
+        self.assertEqual(row["final_parent"], "")
+        self.assertEqual(row["parent_basis"], INDIVIDUAL_NO_PARENT)
+
+    def test_co_location_alone_still_buys_nothing(self):
+        weak = pd.DataFrame([{
+            "individual_npi": "3333333333", "organization_npi": "1111111111",
+            "method": "shared_practice_address", "confidence": 0.45,
+            "evidence": "co-located; 3 org(s) at address"}])
+        row = self._rows(weak)["3333333333"]
+        self.assertEqual(row["final_parent"], "")
+        self.assertEqual(row["parent_basis"], INDIVIDUAL_NO_PARENT)
+
+    def test_coverage_counts_affiliated_individuals_separately(self):
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_npi_frame(),
+                                  affiliations=self._affiliations())
+        cov = master_file_coverage(frame)
+        # The organization percentage must not move: individuals are not
+        # in that denominator and adding one to the numerator would make
+        # the file look better for the wrong reason.
+        self.assertAlmostEqual(cov["organization_parent_pct"], 75.0)
+        self.assertEqual(cov["individuals_with_a_parent"], 1)
+
+
 class ParentResolutionTests(unittest.TestCase):
     def setUp(self) -> None:
         frame = build_master_file(crosswalk=_crosswalk(),

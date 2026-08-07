@@ -20,12 +20,12 @@ import pandas as pd
 from rcm_mc.data.health_systems import UNMAPPED_ID
 from rcm_mc.data.parent_resolution import (
     MAX_HOPS, NS_CCN, NS_CHAIN, NS_NPI, NS_ORG, NS_PECOS, NS_SYSTEM,
-    DISAGREEMENT_COLUMNS, RESOLUTION_COLUMNS, TIER_CCN_CHAIN,
-    TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE, TIER_NAME_SYSTEM,
-    TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP, TIER_RANK,
-    ParentGraph, build_parent_graph, edges_from_crosswalk,
-    edges_from_npi_frame, node_key, ownership_disagreements,
-    resolve_identifiers,
+    DISAGREEMENT_COLUMNS, RESOLUTION_COLUMNS, TIER_AFFILIATION,
+    TIER_CCN_CHAIN, TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE,
+    TIER_NAME_SYSTEM, TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP,
+    TIER_RANK, ParentGraph, build_parent_graph, edges_from_affiliations,
+    edges_from_crosswalk, edges_from_npi_frame, load_affiliations, node_key,
+    ownership_disagreements, resolve_identifiers,
 )
 
 
@@ -242,6 +242,78 @@ class ChainAliasTests(unittest.TestCase):
                                   "northwest_kidney", state="WA"))
         self.assertEqual(graph.resolve(node_key(NS_CCN, "332514")).final_parent,
                          node_key(NS_SYSTEM, "northwest_kidney"))
+
+
+class AffiliationTierTests(unittest.TestCase):
+    """The only route by which a person gets a parent, and the fence
+    around it."""
+
+    def _frame(self):
+        return pd.DataFrame([
+            {"individual_npi": "3333333333", "organization_npi": "1111111111",
+             "method": "shared_address+name", "confidence": 0.85,
+             "evidence": "co-located @ 810 ST VINCENTS DR|35205; "
+                         "name token overlap ['SMITH']"},
+            # Co-location alone: two providers in the same building.
+            {"individual_npi": "4444444444", "organization_npi": "1111111111",
+             "method": "shared_practice_address", "confidence": 0.45,
+             "evidence": "co-located @ 810 ST VINCENTS DR|35205; 3 org(s)"},
+            # Name overlap in a tower so crowded the token is noise.
+            {"individual_npi": "5555555555", "organization_npi": "1111111111",
+             "method": "shared_address+name", "confidence": 0.28,
+             "evidence": "co-located; 40 org(s) at address"},
+        ])
+
+    def test_a_named_and_co_located_pair_becomes_an_edge(self):
+        edges = edges_from_affiliations(self._frame())
+        self.assertEqual([e.child for e in edges], ["npi:3333333333"])
+        self.assertEqual(edges[0].tier, TIER_AFFILIATION)
+
+    def test_bare_co_location_is_refused_not_merely_scored_down(self):
+        """Two physicians in the same medical office building are not
+        colleagues. A low number on a claim that should not have been
+        made is still the claim."""
+        edges = edges_from_affiliations(self._frame())
+        self.assertNotIn("npi:4444444444", {e.child for e in edges})
+
+    def test_a_weak_pair_is_dropped_by_the_confidence_floor(self):
+        edges = edges_from_affiliations(self._frame())
+        self.assertNotIn("npi:5555555555", {e.child for e in edges})
+
+    def test_the_bridges_own_score_is_carried_not_flattened(self):
+        """The bridge already knows a pair in a two-tenant building is
+        stronger than one in a forty-tenant tower. Collapsing that to a
+        tier constant throws away the only thing separating them."""
+        edge = edges_from_affiliations(self._frame())[0]
+        self.assertEqual(edge.confidence, 0.85)
+        self.assertNotEqual(edge.confidence, TIER_CONFIDENCE[TIER_AFFILIATION])
+
+    def test_a_person_reaches_the_system_their_organization_belongs_to(self):
+        graph = build_parent_graph(affiliations=self._frame())
+        graph.add_edge(node_key(NS_NPI, "1111111111"),
+                       node_key(NS_SYSTEM, "ascension"), TIER_CCN_SYSTEM)
+        res = graph.resolve(node_key(NS_NPI, "3333333333"))
+        self.assertEqual(res.final_parent, node_key(NS_SYSTEM, "ascension"))
+        self.assertEqual(res.hops, 2)
+        self.assertIn(TIER_AFFILIATION, res.tiers)
+
+    def test_affiliation_is_the_weakest_tier(self):
+        # Anything an organization files about itself outranks an
+        # inference about where a person practises.
+        self.assertEqual(max(TIER_RANK, key=lambda t: TIER_RANK[t]),
+                         TIER_AFFILIATION)
+        graph = build_parent_graph(affiliations=self._frame())
+        graph.add_edge("npi:3333333333", "org:FILED", TIER_NPPES_SUBPART)
+        self.assertEqual(graph.resolve("npi:3333333333").final_parent,
+                         "org:FILED")
+
+    def test_a_missing_bridge_database_is_empty_not_an_error(self):
+        """Every optional reference source in this package degrades to
+        empty rather than taking the build down."""
+        frame = load_affiliations("/nonexistent/nppes.db")
+        self.assertTrue(frame.empty)
+        self.assertEqual(build_parent_graph(affiliations=frame).nodes,
+                         frozenset())
 
 
 class DisagreementFrameTests(unittest.TestCase):
