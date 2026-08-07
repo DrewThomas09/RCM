@@ -48,6 +48,7 @@ from rcm_mc.data.provider_crosswalk import (
     CBSA_SOURCE_NO_COUNTY,
     CBSA_SOURCE_OMB,
     CBSA_SOURCE_OUTSIDE,
+    PARENT_SOURCE,
     SCOPE_ALL,
     _cbsa_by_county,
     _county_by_zip,
@@ -62,6 +63,7 @@ from rcm_mc.data.provider_crosswalk import (
     crosswalk_coverage,
     facility_taxonomy,
     get_crosswalk,
+    parent_ccn_for,
 )
 
 
@@ -129,7 +131,8 @@ class CountyAndCbsaTests(unittest.TestCase):
             if row["cbsa_code"]:
                 self.assertIn(row["cbsa_source"],
                               (CBSA_SOURCE_OMB, CBSA_SOURCE_CT_CITY,
-                               CBSA_SOURCE_CT_COUNTY), row["ccn"])
+                               CBSA_SOURCE_CT_COUNTY, PARENT_SOURCE),
+                              row["ccn"])
             else:
                 self.assertIn(row["cbsa_source"],
                               (CBSA_SOURCE_OUTSIDE, CBSA_SOURCE_NO_COUNTY),
@@ -140,7 +143,8 @@ class CountyAndCbsaTests(unittest.TestCase):
         blank_county = xw["county_fips"].eq("")
         self.assertEqual(set(xw.loc[blank_county, "cbsa_source"]),
                          {CBSA_SOURCE_NO_COUNTY, CBSA_SOURCE_CT_CITY})
-        outside_ct = blank_county & xw["state"].ne("CT")
+        outside_ct = (blank_county & xw["state"].ne("CT")
+                      & xw["parent_ccn"].eq(""))
         self.assertEqual(set(xw.loc[outside_ct, "cbsa_source"]),
                          {CBSA_SOURCE_NO_COUNTY})
 
@@ -208,6 +212,92 @@ class CountyNameNormalizationTests(unittest.TestCase):
     def test_county_coverage_moved(self) -> None:
         xw = get_crosswalk(scope=SCOPE_ALL)
         self.assertGreater(int(xw["county_fips"].ne("").sum()), 46600)
+
+
+class ParentHospitalTests(unittest.TestCase):
+    """A rehab unit inside a hospital knows nothing about where it is.
+
+    810 of the 879 IRF rows are hospital-based units. They carry no
+    coordinates at all and a county only when they happened to file
+    one — while their parent hospital, already in this universe, has
+    every bit of it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.xw = get_crosswalk(scope=SCOPE_ALL)
+        cls.children = cls.xw[cls.xw["parent_ccn"].ne("")]
+
+    def test_the_transform_is_signal_not_ccn_density(self) -> None:
+        """Worth checking rather than assuming: perturbing the sequence
+        number by one resolves 41% and a random in-state sequence 12%,
+        against 99.9% for the real rule."""
+        universe = set(self.xw["ccn"])
+        t_units = [c for c in universe
+                   if len(c) == 6 and c[2] == "T" and c[3:].isdigit()]
+        self.assertGreater(len(t_units), 700)
+        real = sum(1 for c in t_units if parent_ccn_for(c) in universe)
+        placebo = sum(1 for c in t_units
+                      if f"{c[:2]}0{int(c[3:]) + 1:0{len(c) - 3}d}" in universe)
+        self.assertGreater(real / len(t_units), 0.99)
+        self.assertGreater(real, placebo * 2)
+
+    def test_alpha_tailed_units_resolve_to_nothing_rather_than_guessing(self) -> None:
+        """45TA23 is an LTCH unit whose parent is not in this universe.
+        None of the ten digit substitutions hits, so it is unresolvable
+        here rather than a near miss."""
+        self.assertEqual(parent_ccn_for("45TA23"), "")
+        self.assertEqual(parent_ccn_for("060010"), "")   # not a unit
+        self.assertEqual(parent_ccn_for(""), "")
+        self.assertEqual(parent_ccn_for("06T010"), "060010")
+
+    def test_every_parent_is_a_hospital_in_this_universe(self) -> None:
+        self.assertGreater(len(self.children), 700)
+        self.assertEqual(set(self.children["provider_class"]), {"irf"})
+        parents = self.xw[self.xw["ccn"].isin(set(self.children["parent_ccn"]))]
+        self.assertEqual(len(parents), len(set(self.children["parent_ccn"])))
+        self.assertEqual(set(parents["provider_class"]), {"hospital"})
+
+    def test_geography_is_inherited_and_says_so(self) -> None:
+        located = self.children[self.children["lat"].notna()]
+        self.assertGreater(len(located), 600)
+        self.assertEqual(set(located["geo_match_quality"]), {PARENT_SOURCE})
+
+    def test_beds_and_revenue_are_never_inherited(self) -> None:
+        """01T033 Spain Rehabilitation Center would take 1,138 beds and
+        $2.29B from University of Alabama Hospital, and every per-bed
+        figure downstream would be nonsense."""
+        # A post-acute row carries "" where a hospital carries a
+        # number, so assert on numeric content rather than on NaN.
+        beds = pd.to_numeric(self.children["beds"], errors="coerce")
+        revenue = pd.to_numeric(self.children["net_patient_revenue"],
+                                errors="coerce")
+        self.assertEqual(int(beds.notna().sum()), 0)
+        self.assertEqual(int(revenue.notna().sum()), 0)
+
+    def test_the_units_own_health_system_wins(self) -> None:
+        """Where both name a system they agree 257 times in 262, but
+        five genuinely differ — a Mercy rehab unit inside an Ascension
+        hospital is still Mercy's."""
+        inherited = self.children[
+            self.children["system_match"].str.startswith(PARENT_SOURCE)]
+        self.assertGreater(len(inherited), 100)
+        # Nothing inherited a system it already had.
+        by_ccn = self.xw.set_index("ccn")
+        for row in inherited.to_dict("records"):
+            parent = by_ccn.loc[row["parent_ccn"]]
+            self.assertNotEqual(parent["system_id"], "_unmapped")
+            self.assertEqual(row["system_id"], parent["system_id"])
+
+    def test_the_rule_is_not_generalised_to_nursing_homes(self) -> None:
+        """SNF CCNs also carry an alpha third character, but those are
+        state numbering overflow rather than unit designators — the same
+        transform resolves 17% of them and would fabricate ~211 false
+        parent edges."""
+        snf = self.xw[self.xw["provider_class"].eq("snf")]
+        alpha = snf[snf["ccn"].str[2].str.isalpha()]
+        self.assertGreater(len(alpha), 100)
+        self.assertTrue(alpha["parent_ccn"].eq("").all())
 
 
 class ConnecticutVintageTests(unittest.TestCase):

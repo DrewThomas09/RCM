@@ -26,20 +26,19 @@ eight times the rows should not silently get them.
 
 The chain, and what each link is worth over the full universe:
 
-    CCN  ──►  health system        14,261 of 48,510 (29.4%)
+    CCN  ──►  health system        14,425 of 48,510 (29.7%)
      │        (health_systems.py registry). The average hides an
      │        enormous spread — 89% of dialysis, 8.5% of nursing
      │        homes — so crosswalk_by_class() reports it per class.
      │
-     ├──►  county FIPS             46,499 of 48,510 (95.9%)
+     ├──►  county FIPS             46,633 of 48,510 (96.1%)
      │        four independent sources of the same fact, tried in
-     │        confidence order and named on the row: Census geocode
-     │        (4,325), the county the facility filed (30,836), Care
-     │        Compare's county (66), and an unambiguous ZIP (11,272).
-     │        The last exists because home health is the one class
-     │        CMS publishes with no county column at all.
+     │        confidence order and named on the row: Census geocode,
+     │        the county the facility filed, Care Compare's county, and
+     │        an unambiguous ZIP. The last exists because home health is
+     │        the one class CMS publishes with no county column at all.
      │
-     ├──►  CBSA / MSA              42,225 of 48,510 (87.0%)
+     ├──►  CBSA / MSA              42,357 of 48,510 (87.3%)
      │        county FIPS -> OMB 2023 delineation, plus a Connecticut
      │        layer: CT replaced counties with planning regions in 2022
      │        and the two bundled files disagree on the vintage, so all
@@ -56,6 +55,11 @@ The chain, and what each link is worth over the full universe:
      │        CMS's observed class, published for every provider
      │        class. Where a facility maps to no system, this is the
      │        only ownership signal there is.
+     │
+     ├──►  parent hospital          768 hospital-based rehab units
+     │        a unit's CCN is its parent's with a T in third position.
+     │        Geography is inherited, never beds or revenue, and the
+     │        unit's own health system always wins over the parent's.
      │
      └──►  NPI                     90 of 48,510 (0.2%)
               matched against the bundled NPPES roster on
@@ -418,6 +422,7 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "county", "county_fips", "county_fips_source",
     "cbsa_code", "cbsa_title", "cbsa_type", "cbsa_central_outlying",
     "cbsa_source",
+    "parent_ccn", "parent_ccn_source",
     "lat", "lon", "geo_match_quality",
     "npi", "npi_source",
     "beds", "net_patient_revenue",
@@ -568,6 +573,9 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare,
         "cbsa_type": cbsa.get("cbsa_type", ""),
         "cbsa_central_outlying": cbsa.get("cbsa_central_outlying", ""),
         "cbsa_source": cbsa_source,
+        # Filled by _inherit_from_parent for hospital-based units.
+        "parent_ccn": "",
+        "parent_ccn_source": "",
         "lat": coord.lat if coord else None,
         "lon": coord.lon if coord else None,
         "geo_match_quality": coord.match_quality if coord else "",
@@ -603,7 +611,94 @@ def build_crosswalk(df: Optional[pd.DataFrame] = None, *,
         for rec in _records(assigned)
     ]
     _resolve_npi_collisions(rows)
+    _inherit_from_parent(rows)
     return pd.DataFrame(rows, columns=list(CROSSWALK_COLUMNS))
+
+
+def parent_ccn_for(ccn: Any) -> str:
+    """The parent hospital's CCN for a hospital-based unit, or empty.
+
+    A rehab unit inside a hospital gets the hospital's CCN with a ``T``
+    in the third position: Poudre Valley Hospital is 060010 and its
+    rehab unit is 06T010. Putting the digit back is the whole rule.
+
+    It is a real signal and not a coincidence of CCN density, which is
+    worth checking rather than assuming: the transform resolves 99.87%
+    of numeric-tailed T-units to a CCN that exists, while perturbing
+    the sequence number by one resolves 41% and a random in-state
+    sequence resolves 12%.
+
+    Alpha-tailed T-units (``45TA23``) return empty. They are LTCH and
+    specialty-hospital units whose parent CCN is not in this universe
+    at all — none of the ten digit substitutions hits — so they are
+    unresolvable here rather than near-misses.
+    """
+    text = str(ccn or "").strip()
+    if len(text) != 6 or text[2].upper() != "T" or not text[3:].isdigit():
+        return ""
+    return text[:2] + "0" + text[3:]
+
+
+#: Fields a hospital-based unit may take from its parent, as
+#: (field, source_field). Geography only.
+_INHERITABLE = (
+    ("county_fips", "county_fips_source"),
+    ("cbsa_code", "cbsa_source"),
+    ("cbsa_title", ""),
+    ("cbsa_type", ""),
+    ("cbsa_central_outlying", ""),
+    ("lat", ""),
+    ("lon", ""),
+)
+
+PARENT_SOURCE = "parent facility"
+
+
+def _inherit_from_parent(rows: List[Dict[str, Any]]) -> None:
+    """Fill a hospital-based unit's blanks from its parent hospital.
+
+    810 of the 879 IRF rows are units inside a hospital that is already
+    in this universe, and they carry none of its geography — no
+    coordinates at all, and a county only when they happened to file
+    one. The parent has all of it.
+
+    Three rules, each from a measured failure:
+
+    1. **Fallback only, never overwrite.** Where both the unit and its
+       parent name a health system they agree 257 times out of 262, but
+       five genuinely differ — 17T006 is Mercy inside an Ascension
+       hospital, 36T070 is Bon Secours Mercy inside a Cleveland Clinic
+       hospital. The unit's own answer is the better one.
+    2. **Never beds or revenue.** 01T033 Spain Rehabilitation Center
+       would inherit 1,138 beds and $2.29B from University of Alabama
+       Hospital, and every per-bed figure downstream would be nonsense.
+    3. **Only the T rule.** SNF CCNs also carry an alpha third
+       character, and the same transform resolves just 17% of them —
+       those letters are state numbering overflow, not unit
+       designators. Applying it there would fabricate ~211 false parent
+       edges.
+    """
+    by_ccn = {str(row.get("ccn", "")): row for row in rows}
+    for row in rows:
+        parent_ccn = parent_ccn_for(row.get("ccn"))
+        parent = by_ccn.get(parent_ccn) if parent_ccn else None
+        if parent is None:
+            continue
+        row["parent_ccn"] = parent_ccn
+        row["parent_ccn_source"] = PARENT_SOURCE
+        for field, source_field in _INHERITABLE:
+            if row.get(field) in ("", None) and parent.get(field) not in ("", None):
+                row[field] = parent[field]
+                if source_field:
+                    row[source_field] = PARENT_SOURCE
+        if row.get("lat") is not None and not row.get("geo_match_quality"):
+            row["geo_match_quality"] = PARENT_SOURCE
+        if row.get("system_id") in ("", "_unmapped") and \
+                parent.get("system_id") not in ("", "_unmapped"):
+            for field in ("system_id", "system_name", "system_kind",
+                          "system_focus"):
+                row[field] = parent.get(field, "")
+            row["system_match"] = f"{PARENT_SOURCE} {parent_ccn}"
 
 
 def _resolve_npi_collisions(rows: List[Dict[str, Any]]) -> None:
