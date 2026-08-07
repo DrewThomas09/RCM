@@ -1221,6 +1221,25 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
     sp.add_argument("--city", default="", help="Narrow to one city")
     sp.add_argument("--json", action="store_true", help="Emit JSON")
 
+    # The master NPI crosswalk file: one row per NPI, every organization
+    # walked to a final parent. Reads a database written by
+    # `nppes_ingest.ingest_nppes` when one is supplied, and the bundled
+    # NPPES extracts when one is not.
+    mf = sub.add_parser(
+        "master-file",
+        help="Build the master NPI crosswalk (identity, taxonomy, geo, parent)",
+    )
+    mf.add_argument("--out", default="",
+                    help="Write CSV here (omit to print the coverage report only)")
+    mf.add_argument("--npi-db", default="",
+                    help="SQLite database written by the NPPES ingest "
+                         "(omit to use the bundled extracts)")
+    mf.add_argument("--chunk-size", type=int, default=250_000,
+                    help="Rows read per pass when streaming from --npi-db")
+    mf.add_argument("--gzip", action="store_true",
+                    help="Compress the CSV as it is written")
+    mf.add_argument("--json", action="store_true", help="Emit JSON")
+
     # Two-source market structure: NPPES provider supply x Census CBP
     # establishments for one vertical in a state.
     mk = sub.add_parser(
@@ -1425,6 +1444,43 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
             else:
                 sys.stdout.write(f"  {r['vertical']:<22}  {'—':>7}  (unavailable)\n")
         sys.stdout.write("  ('+' = hit 200/desc page cap; true count is higher)\n")
+        return 0
+
+    if args.action == "master-file":
+        # No store needed — this reads the bundled extracts, or an NPPES
+        # ingest database, and writes a CSV.
+        from .data.master_provider_file import (
+            build_master_file, export_master_file, master_file_coverage,
+        )
+
+        db = args.npi_db or None
+        if args.out:
+            stats = export_master_file(
+                args.out, db_path=db, chunk_size=max(1, args.chunk_size),
+                compress=bool(args.gzip))
+            report = stats
+        else:
+            report = master_file_coverage(build_master_file(db_path=db))
+
+        if args.json:
+            sys.stdout.write(json.dumps(report, indent=2, default=int) + "\n")
+            return 0
+
+        sys.stdout.write("Master NPI crosswalk\n")
+        for key in ("path", "npis", "rows", "organizations", "individuals",
+                    "organizations_with_a_parent", "with_parent",
+                    "linked_to_ccn", "with_ccn", "contested"):
+            if key in report:
+                value = report[key]
+                pretty = f"{value:,}" if isinstance(value, int) else value
+                sys.stdout.write(f"  {key.replace('_', ' '):<28}  {pretty}\n")
+        by_category = report.get("by_category") or {}
+        if by_category:
+            sys.stdout.write("  top categories\n")
+            for name, count in list(by_category.items())[:10]:
+                sys.stdout.write(f"    {name or 'unclassified':<24}  {count:>9,}\n")
+        if not args.out:
+            sys.stdout.write("  (no --out given; nothing was written)\n")
         return 0
 
     if args.action == "market":
