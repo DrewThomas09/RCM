@@ -1120,6 +1120,57 @@ class PageTests(unittest.TestCase):
         self.assertIn("PECOS", html)
 
 
+class SystemNpiRosterTests(unittest.TestCase):
+    """An operator's estate is its CCNs and its NPIs, and those are
+    different lists."""
+
+    def test_an_operator_with_no_ccn_still_has_a_roster(self) -> None:
+        """Air Methods holds 289 NPIs and no certified facility. A bare
+        "no facilities mapped" was hiding its entire estate — which is
+        the case this page exists for."""
+        html = render_health_system_lookup({"system": "air_methods"})
+        self.assertIn("NPI ROSTER", html)
+        self.assertIn("bills under NPIs only", html)
+        self.assertIn("289 NPIs", html)
+
+    def test_a_system_with_both_shows_both(self) -> None:
+        html = render_health_system_lookup({"system": "ascension"})
+        self.assertIn("SYSTEM ROSTER", html)
+        self.assertIn("NPI ROSTER", html)
+
+    def test_the_tier_travels_with_each_npi(self) -> None:
+        """A PECOS enrolment group is CMS's own grouping; a name match is
+        our reading of the signage. The roster cannot present them as the
+        same claim, so every row names the hop it is least sure about."""
+        from rcm_mc.data.master_provider_file import cached_master_file
+
+        html = render_health_system_lookup({"system": "global_medical_response"})
+        frame = cached_master_file()
+        hits = frame[frame["final_parent"] == "sys:global_medical_response"]
+        tiers = {str(t).replace("_", " ") for t in hits["parent_tier"]}
+        self.assertTrue(tiers)
+        for tier in tiers:
+            with self.subTest(tier=tier):
+                self.assertIn(tier, html)
+        self.assertIn("CMS's own", html.replace("&#x27;", "'"))
+
+    def test_the_count_is_labelled_a_floor(self) -> None:
+        """The bundled extracts are an ambulance and EMS slice. Reading
+        648 NPIs as an operator's full estate would be wrong."""
+        html = render_health_system_lookup({"system": "air_methods"})
+        self.assertIn("floor rather than", html)
+
+    def test_an_absence_is_explained_rather_than_left_blank(self) -> None:
+        """DaVita has no ambulance NPIs. That is a gap in the slice, not
+        a statement about DaVita."""
+        html = render_health_system_lookup({"system": "davita"})
+        self.assertIn("gap in the", html)
+
+    def test_the_roster_links_to_the_full_download(self) -> None:
+        html = render_health_system_lookup({"system": "air_methods"})
+        self.assertIn("/master-npi-file.csv?parent=sys%3Aair_methods", html)
+
+
 class NpiLookupPanelTests(unittest.TestCase):
     """The crosswalk answered from the direction people hold it: a
     ten-digit number and nothing else."""

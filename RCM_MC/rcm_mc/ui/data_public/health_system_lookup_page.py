@@ -414,7 +414,23 @@ def _roster_panel(system_id: str, rows) -> str:
         return ""
     roster = system_hospitals(system_id)
     if roster.empty:
-        return ck_empty_state(f"No facilities mapped to {sysdef.name}.")
+        # An operator with no CCN is not an empty result — it is the
+        # case this page exists for. Air Methods holds 289 NPIs and no
+        # certified facility at all, and a bare "no facilities mapped"
+        # was hiding its entire estate.
+        return f"""
+<div class="hsl-roster">
+  <div class="hsl-roster-head">
+    <div>
+      <div class="hsl-roster-eyebrow">SYSTEM ROSTER</div>
+      <div class="hsl-roster-title">{_esc(sysdef.name)}</div>
+      <div class="hsl-roster-meta">No Medicare-certified facility — this
+      operator bills under NPIs only</div>
+    </div>
+    <a class="hsl-reset" href="{ROUTE}">&larr; Back to all systems</a>
+  </div>
+  {_system_npi_roster(system_id, sysdef.name)}
+</div>"""
     rollup = next((r for r in rows if r.system_id == system_id), None)
     cols = [("CCN", "left"), ("Facility", "left"), ("City", "left"),
             ("State", "center"), ("Type", "left"), ("Behavioral", "center"),
@@ -463,6 +479,7 @@ def _roster_panel(system_id: str, rows) -> str:
                 f'{leads}')
     note = f'<div class="hsl-legend">{_esc(sysdef.note)}</div>' if sysdef.note else ""
     footprint = _system_footprint_map(system_id, roster)
+    npis = _system_npi_roster(system_id, sysdef.name)
     return f"""
 <div class="hsl-roster">
   <div class="hsl-roster-head">
@@ -480,7 +497,82 @@ def _roster_panel(system_id: str, rows) -> str:
   facility into this system — the audit trail behind every count above. The
   roster lists every CCN mapped to the system; only the ones marked Active
   count toward its operating estate.</div>
+  {npis}
 </div>"""
+
+
+def _system_npi_roster(system_id: str, system_name: str,
+                       limit: int = 40) -> str:
+    """The other half of an operator's estate: the NPIs, not the CCNs.
+
+    A system roster that lists only certified facilities answers "what
+    does it operate" and not "what does it bill under", and those are
+    different lists — an operator can hold hundreds of NPIs against a
+    handful of CCNs, or, like the air-medical companies here, hold
+    hundreds of NPIs and no CCN at all. Without this, assembling one
+    operator's full identifier estate takes two queries and a join.
+    """
+    from rcm_mc.data.master_provider_file import cached_master_file
+    from rcm_mc.data.parent_resolution import NS_SYSTEM, node_key
+
+    target = node_key(NS_SYSTEM, system_id)
+    if not target:
+        return ""
+    frame = cached_master_file()
+    if frame.empty:
+        return ""
+    hits = frame[frame["final_parent"].astype(str) == target]
+    if hits.empty:
+        return (
+            '<div class="hsl-legend">No NPI in the bundled NPPES extracts '
+            f'resolves to {_esc(system_name)}. Those extracts are an '
+            'ambulance and EMS slice, so an absence here is a gap in the '
+            'data rather than a statement about the operator.</div>')
+
+    states = hits["state"].astype(str).nunique()
+    categories = (hits["taxonomy_category"].astype(str)
+                  .value_counts().head(4).to_dict())
+    cols = [("NPI", "left"), ("Name", "left"), ("Category", "left"),
+            ("State", "center"), ("Status", "center"), ("Via", "left"),
+            ("Conf.", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for row in hits.head(limit).to_dict("records"):
+        conf = row.get("parent_confidence")
+        cells = [
+            ck_data_cell(_esc(row.get("npi")), mono=True, tone="dim"),
+            ck_data_cell(_esc(row.get("legal_name")), weight=600),
+            ck_data_cell(_esc(row.get("taxonomy_category")) or "—", tone="dim"),
+            ck_data_cell(_esc(row.get("state")), align="center", mono=True),
+            ck_data_cell(_esc(row.get("status")), align="center", tone="dim"),
+            ck_data_cell(_esc(row.get("parent_tier")).replace("_", " "),
+                         tone="dim"),
+            ck_data_cell(f"{float(conf):.2f}" if conf not in ("", None) else "—",
+                         align="right", mono=True),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    mix = " · ".join(f"{name or 'unclassified'} {count:,}"
+                     for name, count in categories.items())
+    more = (f' Showing the first {limit:,}; download all of them at '
+            f'<a class="ck-link" href="/master-npi-file.csv?parent='
+            f'{urllib.parse.quote(target)}">/master-npi-file.csv?parent='
+            f'{_esc(target)}</a>.' if len(hits) > limit else
+            f' Download them at <a class="ck-link" '
+            f'href="/master-npi-file.csv?parent={urllib.parse.quote(target)}">'
+            f'/master-npi-file.csv?parent={_esc(target)}</a>.')
+    return (
+        '<div class="hsl-roster-eyebrow" style="margin-top:18px">'
+        'NPI ROSTER</div>'
+        '<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table>'
+        '</div>'
+        f'<div class="hsl-legend">{len(hits):,} NPIs across {states} states '
+        f'resolve to {_esc(system_name)} — {mix}. "Via" is the tier that got '
+        'each one here, and it matters: a PECOS enrolment group is CMS\'s own '
+        'grouping, while a name match is our reading of the signage.'
+        f'{more} These come from the bundled NPPES extracts, an ambulance and '
+        'EMS slice, so the count is a floor rather than the operator\'s full '
+        'estate.</div>')
 
 
 def _concentration_panel(state: str) -> str:
