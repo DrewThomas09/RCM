@@ -529,6 +529,38 @@ def cached_master_file() -> pd.DataFrame:
     return _cached_master_file().copy()
 
 
+def find_npis(query: Any, *, limit: int = 40,
+              frame: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """Resolve a query to master-file rows — the direction people ask in.
+
+    A partner holding a claims extract has a ten-digit number, not a
+    system. A partner holding a CIM has a name. Both are accepted, and
+    an exact NPI is answered exactly rather than being buried in a
+    substring sweep that also matches every NPI containing those digits.
+    """
+    text = str(query or "").strip()
+    if not text:
+        return pd.DataFrame(columns=list(MASTER_COLUMNS))
+    rows = cached_master_file() if frame is None else frame
+    if rows.empty:
+        return rows
+
+    digits = "".join(c for c in text if c.isdigit())
+    if len(digits) == 10:
+        exact = rows[rows["npi"].astype(str) == digits]
+        if not exact.empty:
+            return exact.head(max(1, int(limit)))
+
+    needle = text.upper()
+    names = (rows["legal_name"].astype(str).str.upper()
+             + " " + rows["dba_name"].astype(str).str.upper())
+    hits = rows[names.str.contains(needle, regex=False, na=False)]
+    if hits.empty and digits:
+        hits = rows[rows["npi"].astype(str).str.contains(digits, regex=False,
+                                                         na=False)]
+    return hits.head(max(1, int(limit)))
+
+
 def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
     """What the built file actually covers — measured, never estimated."""
     if frame.empty:

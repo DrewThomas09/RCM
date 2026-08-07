@@ -769,6 +769,77 @@ def _npi_panel(limit: int = 10) -> str:
         'match in a state where the system operates nothing.</div>')
 
 
+def _npi_lookup_panel(query: str) -> str:
+    """An NPI in, its owner and the chain of reasoning out.
+
+    The page already resolved a hospital name or CCN to a system. This
+    is the same question from the direction a partner holding a claims
+    extract actually starts from: they have a ten-digit number and
+    nothing else. Showing the provenance chain beside the answer is the
+    point — "belongs to Air Methods" is a claim, "matched Rocky Mountain
+    Holdings' d/b/a, which the registry knows as Air Methods" is
+    something a reviewer can check.
+    """
+    from rcm_mc.data.master_provider_file import find_npis
+
+    header = f"""
+<form class="hsl-filters" method="get" action="{ROUTE}">
+  <label class="hsl-f hsl-f-wide"><span>Find an NPI &rarr; its final parent</span>
+    <input type="search" name="npi" value="{_esc(query)}"
+           placeholder="NPI or organization name, e.g. 1144223199 or Acadian"></label>
+  <div class="hsl-f hsl-f-actions">
+    <button type="submit" class="hsl-btn">Look up</button>
+    <a class="hsl-reset" href="{ROUTE}">Clear</a>
+  </div>
+</form>"""
+    if not query:
+        return header
+    hits = find_npis(query, limit=40)
+    if hits.empty:
+        return header + ck_empty_state(
+            f"No NPI matches “{_esc(query)}”.",
+            "Try the 10-digit NPI, or a fragment of the organization name. "
+            "This build carries the bundled NPPES extracts, not the full "
+            "register.")
+
+    cols = [("NPI", "left"), ("Name", "left"), ("Category", "left"),
+            ("State", "center"), ("Status", "center"), ("CCN", "left"),
+            ("Final parent", "left"), ("Conf.", "right"), ("Why", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for row in hits.to_dict("records"):
+        parent = str(row.get("final_parent") or "")
+        conf = row.get("parent_confidence")
+        status = str(row.get("status") or "")
+        cells = [
+            ck_data_cell(_esc(row.get("npi")), mono=True, tone="dim"),
+            ck_data_cell(_esc(row.get("legal_name")), weight=600),
+            ck_data_cell(_esc(row.get("taxonomy_category")) or "—", tone="dim"),
+            ck_data_cell(_esc(row.get("state")), align="center", mono=True),
+            ck_data_cell(_esc(status), align="center", tone=(
+                "dim" if status == "active" else "acc")),
+            ck_data_cell(_esc(row.get("ccn")) or "—", mono=True, tone="dim"),
+            ck_data_cell(_esc(parent) or "—", weight=600 if parent else None,
+                         tone=None if parent else "dim"),
+            ck_data_cell(f"{float(conf):.2f}" if conf not in ("", None) else "—",
+                         align="right", mono=True),
+            ck_data_cell(_esc(row.get("parent_basis")), tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+    return (header + table +
+            f'<div class="hsl-legend">{len(hits):,} NPIs match '
+            f'“{_esc(query)}”. The <strong>Why</strong> column is the whole '
+            'chain, hop by hop, with the tier that produced each one — a '
+            'parent nobody can audit is a parent nobody should trust. A '
+            'blank parent on an individual is not a gap: NPPES carries no '
+            'employer field for a person, and the column says so. '
+            'Confidence is the weakest hop in the chain, so read it '
+            'alongside the reason rather than on its own.</div>')
+
+
 def _ownership_panel(limit: int = 12) -> str:
     """Where the ownership graph gets each facility to, and what it can't
     settle.
@@ -1049,6 +1120,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     ftype = str(params.get("type", "")).strip()
     system_id = str(params.get("system", "")).strip()
     hospital_q = str(params.get("hospital", "")).strip()[:80]
+    npi_q = str(params.get("npi", "")).strip()[:80]
     status = str(params.get("status", "")).strip()[:60]
     sort = str(params.get("sort", "hospitals")).strip()
     if sort not in _SORTS:
@@ -1108,6 +1180,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
     ownership = _ownership_panel()
+    npi_lookup = _npi_lookup_panel(npi_q)
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
                      if state
@@ -1181,6 +1254,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Organization NPIs — Bundled NPPES Extracts</div>
     {npis}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">NPI Lookup — Which Operator Bills Under This Number?</div>
+    {npi_lookup}
   </div>
   <div style="{cell}">
     <div style="{h3}">Ownership Graph — Final Parents and What They Disagree On</div>

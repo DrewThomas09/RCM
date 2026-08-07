@@ -1120,6 +1120,43 @@ class PageTests(unittest.TestCase):
         self.assertIn("PECOS", html)
 
 
+class NpiLookupPanelTests(unittest.TestCase):
+    """The crosswalk answered from the direction people hold it: a
+    ten-digit number and nothing else."""
+
+    def test_an_exact_npi_returns_that_row(self) -> None:
+        html = render_health_system_lookup({"npi": "1316943566"})
+        self.assertIn("NPI Lookup", html)
+        self.assertIn("ACADIAN AMBULANCE SERVICE", html)
+
+    def test_a_name_fragment_works_too(self) -> None:
+        """A partner reading a CIM has the name, not the number."""
+        html = render_health_system_lookup({"npi": "AIR METHODS"})
+        self.assertIn("1285773473", html)
+        self.assertIn("sys:air_methods", html)
+
+    def test_the_answer_shows_the_chain_not_just_the_conclusion(self) -> None:
+        """"Belongs to Air Methods" is a claim. The hops that produced it
+        are what makes it checkable."""
+        html = render_health_system_lookup({"npi": "AIR METHODS"})
+        self.assertIn("name_system", html)
+        self.assertIn("The <strong>Why</strong> column", html)
+
+    def test_the_form_renders_before_anything_is_typed(self) -> None:
+        html = render_health_system_lookup({})
+        self.assertIn("NPI Lookup", html)
+        self.assertIn('name="npi"', html)
+
+    def test_a_miss_explains_the_slice_rather_than_going_blank(self) -> None:
+        html = render_health_system_lookup({"npi": "ZZZZ-NOT-A-THING"})
+        self.assertIn("No NPI matches", html)
+        self.assertIn("not the full register", html)
+
+    def test_the_individual_caveat_travels_with_the_panel(self) -> None:
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("no employer field", html)
+
+
 class OwnershipPanelTests(unittest.TestCase):
     """The ownership graph on the page — how the answers were reached,
     and the ones the sources cannot agree on."""
