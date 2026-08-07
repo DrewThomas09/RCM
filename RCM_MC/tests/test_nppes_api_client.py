@@ -20,6 +20,7 @@ from rcm_mc.data_public.nppes_api_client import (
     _parse_record,
     _parse_results,
     fetch_by_npi,
+    paginate,
     search_by_address,
     search_by_organization,
 )
@@ -317,3 +318,95 @@ class CacheTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PaginationTests(unittest.TestCase):
+    """The 200-per-page walk, and the 1,200 ceiling it cannot pass.
+
+    Both numbers are the server's, not ours: NPPES returns at most 200
+    records per call and refuses to skip past 1,000. A query with more
+    matches than that cannot be enumerated at all, which is exactly why
+    this client cannot harvest the register and the dissemination file
+    exists.
+    """
+
+    def _pages(self, total: int):
+        """A fake NPPES that holds ``total`` records and honours skip."""
+        captured = []
+
+        def _fake(request, timeout=None):  # noqa: ARG001
+            url = request.full_url
+            query = dict(
+                part.split("=", 1) for part in url.split("?", 1)[1].split("&")
+            )
+            skip = int(query.get("skip", 0))
+            limit = int(query.get("limit", 200))
+            captured.append((skip, limit))
+            window = range(skip, min(skip + limit, total))
+            return _FakeResponse({"results": [
+                dict(_ORG_RESULT, number=f"{1000000000 + i}") for i in window
+            ]})
+
+        return _fake, captured
+
+    def test_a_result_set_larger_than_one_page_is_walked(self):
+        fake, captured = self._pages(450)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            results = paginate({"version": "2.1"}, limit=450,
+                               sleep=lambda _s: None)
+        self.assertEqual(len(results), 450)
+        self.assertEqual(captured, [(0, 200), (200, 200), (400, 50)])
+
+    def test_skip_is_the_count_already_returned(self):
+        fake, captured = self._pages(1000)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            paginate({"version": "2.1"}, limit=600, sleep=lambda _s: None)
+        self.assertEqual([skip for skip, _ in captured], [0, 200, 400])
+
+    def test_a_short_page_ends_the_walk(self):
+        """Without this the client re-requests an exhausted result set
+        until it hits the ceiling, getting the same short page each time."""
+        fake, captured = self._pages(250)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            results = paginate({"version": "2.1"}, limit=1200,
+                               sleep=lambda _s: None)
+        self.assertEqual(len(results), 250)
+        self.assertEqual(len(captured), 2)
+
+    def test_an_empty_first_page_stops_immediately(self):
+        fake, captured = self._pages(0)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            self.assertEqual(paginate({"version": "2.1"}, limit=1200,
+                                      sleep=lambda _s: None), [])
+        self.assertEqual(len(captured), 1)
+
+    def test_the_ceiling_is_the_servers_not_a_suggestion(self):
+        fake, _ = self._pages(50_000)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            results = paginate({"version": "2.1"}, limit=99_999,
+                               sleep=lambda _s: None)
+        self.assertEqual(len(results), 1200)
+
+    def test_the_walk_paces_itself_between_pages(self):
+        """NPPES returns 503 under load. A harvest that trips that is
+        slower than one that waits."""
+        slept = []
+        fake, _ = self._pages(600)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            paginate({"version": "2.1"}, limit=600, sleep=slept.append)
+        self.assertEqual(len(slept), 2)      # between pages, not after the last
+        self.assertTrue(all(s > 0 for s in slept))
+
+    def test_a_single_page_request_does_not_sleep(self):
+        slept = []
+        fake, _ = self._pages(10)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            paginate({"version": "2.1"}, limit=200, sleep=slept.append)
+        self.assertEqual(slept, [])
+
+    def test_search_helpers_go_through_the_walk(self):
+        fake, captured = self._pages(300)
+        with patch("rcm_mc.data_public.nppes_api_client.urlopen", fake):
+            results = search_by_organization("Demo", state="GA", limit=300)
+        self.assertEqual(len(results), 300)
+        self.assertEqual(len(captured), 2)

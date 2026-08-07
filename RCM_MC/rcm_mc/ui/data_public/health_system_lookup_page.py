@@ -873,6 +873,7 @@ def _npi_lookup_panel(query: str) -> str:
     something a reviewer can check.
     """
     from rcm_mc.data.master_provider_file import find_npis
+    from rcm_mc.data.npi_identifier import is_valid_npi
 
     header = f"""
 <form class="hsl-filters" method="get" action="{ROUTE}">
@@ -886,6 +887,18 @@ def _npi_lookup_panel(query: str) -> str:
 </form>"""
     if not query:
         return header
+    # "We don't hold that NPI" and "that is not an NPI" are different
+    # answers, and only one of them is the partner's problem to fix.
+    # Every NPI carries a Luhn check digit over "80840" + its first nine,
+    # so a typo is detectable here without a lookup.
+    digits = "".join(c for c in query if c.isdigit())
+    if len(digits) == 10 and not is_valid_npi(digits):
+        return header + ck_empty_state(
+            f"“{_esc(query)}” is not a valid NPI.",
+            "It is ten digits, but it fails the check digit CMS assigns "
+            "under 69 FR 3434 — so it was never issued to anyone. Almost "
+            "always a transposed pair or a mistyped digit; check it "
+            "against the source.")
     hits = find_npis(query, limit=40)
     if hits.empty:
         return header + ck_empty_state(

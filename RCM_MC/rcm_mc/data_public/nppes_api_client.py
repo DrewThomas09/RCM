@@ -40,6 +40,13 @@ from urllib.request import Request, urlopen
 NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/"
 _DEFAULT_VERSION = "2.1"
 _MAX_LIMIT = 200  # NPPES hard cap per request
+# NPPES will not skip past 1,000, so 200 + 1,000 is the most any single
+# query can ever enumerate. A server limit, not ours.
+_MAX_TOTAL = 1200
+# rOpenSci's npi package waits this long between paged calls. NPPES
+# does not publish a rate limit but returns 503 under load, and a
+# harvest that trips that is slower than one that paces itself.
+_THROTTLE_S = 1.5
 # ASCII only, and deliberately so. HTTP header values are encoded
 # latin-1 by ``http.client.putheader``, which raises UnicodeEncodeError
 # on anything above U+00FF — before a socket is even opened. This
@@ -214,6 +221,55 @@ def _parse_results(
     return [_parse_record(r) for r in payload.get("results", []) or []]
 
 
+def paginate(
+    params: Dict[str, str],
+    *,
+    limit: int = _MAX_LIMIT,
+    throttle_s: float = _THROTTLE_S,
+    sleep: Any = time.sleep,
+) -> List[NppesProvider]:
+    """Walk one NPPES query past its 200-record page, up to the API cap.
+
+    The API returns at most 200 records per call and will not skip past
+    1,000, so **1,200 records is the hard ceiling for any one query** —
+    not a client limit, a server one. A query with more matches than
+    that cannot be enumerated, and the honest response is to narrow the
+    query (add a state, a taxonomy, a postal prefix) rather than to
+    believe the first 1,200.
+
+    That ceiling is why this cannot harvest the register. Eight million
+    NPIs at 1,200 per query is not a pagination problem, it is a
+    different source: the monthly dissemination file, which
+    :mod:`rcm_mc.data.nppes_ingest` streams.
+
+    Loop discipline follows the rOpenSci ``npi`` package, which solved
+    this first: ``skip`` is the count already returned, each page asks
+    for whatever is still wanted up to 200, and a page that comes back
+    short ends the walk. The short-page stop is the load-bearing part —
+    without it a query whose result set is exhausted spins against the
+    cap re-requesting nothing.
+    """
+    wanted = max(1, min(int(limit), _MAX_TOTAL))
+    out: List[NppesProvider] = []
+    while len(out) < wanted:
+        page_size = min(_MAX_LIMIT, wanted - len(out))
+        page_params = dict(params)
+        page_params["limit"] = str(page_size)
+        if out:
+            page_params["skip"] = str(len(out))
+        page = _parse_results(_request_json(page_params))
+        if not page:
+            break
+        out.extend(page)
+        if len(page) < page_size:
+            # The server had nothing more to give. Asking again returns
+            # the same short page forever.
+            break
+        if len(out) < wanted:
+            sleep(throttle_s)
+    return out[:wanted]
+
+
 def search_by_organization(
     organization_name: str,
     state: str = "",
@@ -233,11 +289,10 @@ def search_by_organization(
         "version": version,
         "organization_name": organization_name,
         "enumeration_type": enumeration_type,
-        "limit": str(min(limit, _MAX_LIMIT)),
     }
     if state:
         params["state"] = state
-    return _parse_results(_request_json(params))
+    return paginate(params, limit=limit)
 
 
 def search_by_address(
@@ -264,13 +319,12 @@ def search_by_address(
         "city": city,
         "state": state,
         "enumeration_type": enumeration_type,
-        "limit": str(min(limit, _MAX_LIMIT)),
     }
     if postal_code:
         params["postal_code"] = postal_code
     if taxonomy_description:
         params["taxonomy_description"] = taxonomy_description
-    return _parse_results(_request_json(params))
+    return paginate(params, limit=limit)
 
 
 def fetch_by_npi(npi: str, *, version: str = _DEFAULT_VERSION) -> Optional[NppesProvider]:
