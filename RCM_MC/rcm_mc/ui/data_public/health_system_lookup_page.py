@@ -705,7 +705,12 @@ def _provider_class_panel() -> str:
         'Download the full crosswalk at <a class="ck-link" '
         'href="/provider-crosswalk.csv?scope=all">'
         '/provider-crosswalk.csv?scope=all</a>, or one class at a time with '
-        '<code>&amp;class=snf</code>.</div>')
+        '<code>&amp;class=snf</code>. Add <code>&amp;parents=1</code> for the '
+        'resolved final parent — where the facility&rsquo;s owner ends up '
+        'after the ownership graph is walked, with the tier, the confidence '
+        'and the evidence for it. That is a different answer from the system '
+        'column: a dialysis clinic with no system of its own still reaches '
+        'one through its published chain.</div>')
 
 
 def _npi_panel(limit: int = 10) -> str:

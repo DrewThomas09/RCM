@@ -5151,6 +5151,20 @@ class RCMHandler(BaseHTTPRequestHandler):
             _sys = str(_qp.get("system", "")).strip()[:40]
             if _sys:
                 _frame = _frame[_frame["system_id"].astype(str) == _sys]
+            # parents=1 widens with the resolved final parent — where the
+            # facility's owner ends up after the ownership graph is
+            # walked, which is a different answer from system_id: a
+            # dialysis clinic with no system of its own still reaches
+            # one through its published chain. Opt-in because it costs
+            # a graph build and nine more columns.
+            if str(_qp.get("parents", "")).strip().lower() in ("1", "true", "yes"):
+                from .data.parent_resolution import attach_parents
+                # Built from the UNFILTERED universe: a facility's parent
+                # is a fact about the whole graph, and resolving inside a
+                # one-state slice would silently drop every parent that
+                # happens to sit across a state line.
+                from .data.parent_resolution import crosswalk_graph
+                _frame = attach_parents(_frame, graph=crosswalk_graph(_scope))
             return self._send_csv_df(
                 _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
         if path == "/npi-registry.csv":

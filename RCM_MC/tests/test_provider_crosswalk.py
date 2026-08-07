@@ -1312,6 +1312,41 @@ class CrosswalkRouteTests(unittest.TestCase):
         self.assertEqual({r["provider_class"] for r in rows}, {"snf"})
         self.assertEqual({r["taxonomy_code"] for r in rows}, {"314000000X"})
 
+    def test_parents_are_opt_in_and_off_by_default(self) -> None:
+        """Nine extra columns and a graph build. A caller who did not ask
+        should not pay for them."""
+        rows = self._rows("/provider-crosswalk.csv?state=UT")
+        self.assertNotIn("final_parent", rows[0])
+
+    def test_parents_widen_the_export_with_a_resolved_owner(self) -> None:
+        rows = self._rows("/provider-crosswalk.csv?state=UT&parents=1")
+        self.assertTrue(rows)
+        for col in ("final_parent", "final_parent_name", "parent_tier",
+                    "parent_confidence", "parent_hops", "parent_basis"):
+            self.assertIn(col, rows[0])
+        resolved = [r for r in rows if r["final_parent"]]
+        self.assertTrue(resolved)
+        for row in resolved:
+            with self.subTest(ccn=row["ccn"]):
+                # A readable name, not just the internal key, and the
+                # evidence for it.
+                self.assertTrue(row["final_parent_name"])
+                self.assertNotEqual(row["final_parent_name"],
+                                    row["final_parent"])
+                self.assertIn(row["ccn"], row["parent_basis"])
+
+    def test_a_parent_across_a_state_line_survives_a_state_filter(self) -> None:
+        """The graph is a property of the whole universe. Resolving inside
+        a one-state slice would drop every parent that sits outside it —
+        which is most of them, since systems are multi-state."""
+        national = {r["ccn"]: r["final_parent"] for r in
+                    self._rows("/provider-crosswalk.csv?scope=all&parents=1")}
+        utah = self._rows("/provider-crosswalk.csv?scope=all&state=UT&parents=1")
+        self.assertTrue(utah)
+        for row in utah:
+            with self.subTest(ccn=row["ccn"]):
+                self.assertEqual(row["final_parent"], national[row["ccn"]])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -56,12 +56,13 @@ Public API::
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
 from .health_systems import (
-    CHAIN_ALIASES, UNMAPPED_ID, match_system, normalize_name,
+    CHAIN_ALIASES, UNMAPPED_ID, get_system, match_system, normalize_name,
 )
 
 # ── Tiers, strongest first ─────────────────────────────────────────
@@ -714,6 +715,111 @@ RESOLUTION_COLUMNS: Tuple[str, ...] = (
 )
 
 
+PARENT_COLUMNS: Tuple[str, ...] = (
+    "final_parent", "final_parent_type", "final_parent_id",
+    "final_parent_name", "parent_tier", "parent_confidence", "parent_hops",
+    "parent_basis", "parent_contested",
+)
+
+
+def _parent_display_name(final_parent: str) -> str:
+    """A partner-readable name for a resolved parent.
+
+    ``sys:davita`` is an internal key; "DaVita Kidney Care" is the
+    answer. Chain and organization roots already carry a name — the
+    normalised one, which is ugly but is not a lie — and PECOS and CCN
+    roots have no name at all, so they render as the identifier they
+    are rather than as a blank that reads like a failure.
+    """
+    namespace, _, value = final_parent.partition(":")
+    if namespace == NS_SYSTEM:
+        sysdef = get_system(value)
+        return sysdef.name if sysdef is not None else value
+    if namespace in (NS_CHAIN, NS_ORG):
+        return value
+    if namespace == NS_PECOS:
+        return f"PECOS enrolment group {value}"
+    if namespace == NS_CCN:
+        return f"CCN {value}"
+    if namespace == NS_NPI:
+        return f"NPI {value}"
+    return final_parent
+
+
+def attach_parents(frame: pd.DataFrame, *,
+                   graph: Optional[ParentGraph] = None,
+                   namespace: str = NS_CCN,
+                   key: str = "ccn") -> pd.DataFrame:
+    """Widen a frame of identifiers with where each one's owner ends up.
+
+    Kept out of :func:`provider_crosswalk.get_crosswalk` on purpose. The
+    graph is *built from* the crosswalk, so folding the result back into
+    the same function would make the crosswalk depend on itself; and 104
+    tests pin that frame's 45-column shape, which is a contract worth
+    keeping stable. This is the opt-in widening instead.
+
+    Builds a graph from ``frame`` when none is supplied, so the common
+    case is one call.
+    """
+    if frame.empty or key not in frame.columns:
+        widened = frame.copy()
+        for column in PARENT_COLUMNS:
+            widened[column] = ""
+        return widened
+
+    if graph is None:
+        graph = build_parent_graph(crosswalk=frame)
+    contested = graph.contested()
+
+    rows: List[Dict[str, Any]] = []
+    for value in frame[key]:
+        node = node_key(namespace, value)
+        res = graph.resolve(node) if node else None
+        if res is None or res.is_root:
+            # Blank text, zero counts. Mixing "" into the count columns
+            # makes the whole column object-typed, and every downstream
+            # `parent_hops > 1` then raises rather than filtering.
+            blank = {c: "" for c in PARENT_COLUMNS}
+            blank["parent_hops"] = 0
+            blank["parent_contested"] = 0
+            rows.append(blank)
+            continue
+        parent_ns, _, parent_id = res.final_parent.partition(":")
+        rows.append({
+            "final_parent": res.final_parent,
+            "final_parent_type": parent_ns,
+            "final_parent_id": parent_id,
+            "final_parent_name": _parent_display_name(res.final_parent),
+            "parent_tier": res.weakest_tier,
+            "parent_confidence": res.confidence,
+            "parent_hops": res.hops,
+            "parent_basis": res.provenance,
+            "parent_contested": 1 if node in contested else 0,
+        })
+
+    widened = frame.copy()
+    attached = pd.DataFrame(rows, columns=list(PARENT_COLUMNS),
+                            index=frame.index)
+    for column in PARENT_COLUMNS:
+        widened[column] = attached[column]
+    return widened
+
+
+@lru_cache(maxsize=4)
+def crosswalk_graph(scope: str = "") -> ParentGraph:
+    """The ownership graph over the certified universe, built once.
+
+    Memoised because a graph is a property of the whole universe, not of
+    whatever slice a request asked for. Resolving inside a one-state
+    filter would silently drop every parent that sits across a state
+    line, and rebuilding per request would pay two seconds for an answer
+    that does not change between them.
+    """
+    from .provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+    return build_parent_graph(crosswalk=get_crosswalk(scope=scope or SCOPE_ALL))
+
+
 DISAGREEMENT_COLUMNS: Tuple[str, ...] = (
     "node", "namespace", "identifier", "resolved_parent", "resolved_tier",
     "resolved_confidence", "rival_parent", "rival_tier", "rival_confidence",
@@ -814,3 +920,8 @@ def resolve_identifiers(graph: ParentGraph, *,
     if not rows:
         return pd.DataFrame(columns=list(RESOLUTION_COLUMNS))
     return pd.DataFrame(rows, columns=list(RESOLUTION_COLUMNS))
+
+
+def _clear_cache() -> None:
+    """Test hook."""
+    crosswalk_graph.cache_clear()

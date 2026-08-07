@@ -20,12 +20,14 @@ import pandas as pd
 from rcm_mc.data.health_systems import UNMAPPED_ID
 from rcm_mc.data.parent_resolution import (
     MAX_HOPS, NS_CCN, NS_CHAIN, NS_NPI, NS_ORG, NS_PECOS, NS_SYSTEM,
-    DISAGREEMENT_COLUMNS, RESOLUTION_COLUMNS, TIER_AFFILIATION,
+    DISAGREEMENT_COLUMNS, PARENT_COLUMNS, RESOLUTION_COLUMNS,
+    TIER_AFFILIATION,
     TIER_CCN_CHAIN, TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE,
     TIER_NAME_SYSTEM, TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP,
-    TIER_RANK, ParentGraph, build_parent_graph, edges_from_affiliations,
-    edges_from_crosswalk, edges_from_npi_frame, load_affiliations, node_key,
-    ownership_disagreements, resolve_identifiers,
+    TIER_RANK, ParentGraph, attach_parents, build_parent_graph,
+    edges_from_affiliations, edges_from_crosswalk, edges_from_npi_frame,
+    load_affiliations, node_key, ownership_disagreements,
+    resolve_identifiers,
 )
 
 
@@ -314,6 +316,69 @@ class AffiliationTierTests(unittest.TestCase):
         self.assertTrue(frame.empty)
         self.assertEqual(build_parent_graph(affiliations=frame).nodes,
                          frozenset())
+
+
+class AttachParentsTests(unittest.TestCase):
+    """Widening a frame of CCNs with where each one's owner ends up."""
+
+    def _frame(self) -> pd.DataFrame:
+        return pd.DataFrame([
+            {"ccn": "012501", "parent_ccn": "", "parent_ccn_source": "",
+             "chain_name": "DAVITA", "system_id": "", "system_match": "",
+             "system_name": "", "npi": "", "npi_source": "", "state": "AL"},
+            {"ccn": "010001", "parent_ccn": "", "parent_ccn_source": "",
+             "chain_name": "", "system_id": "", "system_match": "",
+             "system_name": "", "npi": "", "npi_source": "", "state": "AL"},
+        ])
+
+    def test_the_declared_columns_are_all_added(self):
+        widened = attach_parents(self._frame())
+        for column in PARENT_COLUMNS:
+            self.assertIn(column, widened.columns)
+
+    def test_the_original_columns_survive_untouched(self):
+        original = self._frame()
+        widened = attach_parents(original)
+        for column in original.columns:
+            self.assertIn(column, widened.columns)
+            self.assertEqual(list(widened[column]), list(original[column]))
+
+    def test_a_resolved_row_carries_a_readable_name_not_just_a_key(self):
+        row = attach_parents(self._frame()).iloc[0]
+        self.assertEqual(row["final_parent"], node_key(NS_SYSTEM, "davita"))
+        self.assertEqual(row["final_parent_name"], "DaVita Kidney Care")
+        self.assertIn("012501", row["parent_basis"])
+
+    def test_an_unresolved_row_is_blank_text_and_zero_counts(self):
+        """Mixing "" into the count columns makes them object-typed, and
+        every downstream `parent_hops > 1` then raises rather than
+        filtering."""
+        widened = attach_parents(self._frame())
+        row = widened[widened["ccn"] == "010001"].iloc[0]
+        self.assertEqual(row["final_parent"], "")
+        self.assertEqual(row["parent_hops"], 0)
+        self.assertEqual(row["parent_contested"], 0)
+        self.assertEqual(widened["parent_hops"].dtype.kind, "i")
+
+    def test_an_empty_frame_is_still_widened(self):
+        widened = attach_parents(pd.DataFrame(columns=["ccn"]))
+        for column in PARENT_COLUMNS:
+            self.assertIn(column, widened.columns)
+
+    def test_a_frame_without_the_key_column_is_not_an_error(self):
+        widened = attach_parents(pd.DataFrame([{"something": "else"}]))
+        self.assertEqual(list(widened["final_parent"]), [""])
+
+    def test_a_supplied_graph_is_used_rather_than_rebuilt(self):
+        """A parent is a fact about the whole graph. Resolving inside a
+        filtered slice would drop every parent outside it."""
+        graph = build_parent_graph(crosswalk=self._frame())
+        one_row = self._frame().iloc[[1]]          # the unresolved CCN
+        graph.add_edge(node_key(NS_CCN, "010001"),
+                       node_key(NS_SYSTEM, "ascension"), TIER_CCN_SYSTEM)
+        widened = attach_parents(one_row, graph=graph)
+        self.assertEqual(widened.iloc[0]["final_parent"],
+                         node_key(NS_SYSTEM, "ascension"))
 
 
 class DisagreementFrameTests(unittest.TestCase):
