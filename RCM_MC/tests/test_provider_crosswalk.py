@@ -132,6 +132,62 @@ class TaxonomyTests(unittest.TestCase):
         xw = get_crosswalk()
         self.assertTrue(xw["taxonomy_code"].ne("").all())
 
+    def test_the_ccn_classifier_agrees_with_cms_on_every_row(self) -> None:
+        """CMS publishes its own hospital_type for 5,085 facilities. That
+        is an independent check on the CCN-range classifier, and it should
+        be exact — this assertion is what caught the 0880-0899 bucket
+        falling through to "other" and then being asserted to be a chronic
+        disease hospital."""
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        both = xw[xw["cms_hospital_type"].ne("") & xw["facility_type"].ne("")]
+        self.assertGreater(len(both), 5000)
+        expected = {
+            "general": "Acute Care Hospitals",
+            "critical_access": "Critical Access Hospitals",
+            "psychiatric": "Psychiatric",
+            "children": "Childrens",
+            "ltach": "Long-term",
+        }
+        disagreements = [
+            (row["ccn"], row["name"], row["facility_type"],
+             row["cms_hospital_type"])
+            for row in both.to_dict("records")
+            if expected.get(row["facility_type"]) != row["cms_hospital_type"]
+        ]
+        self.assertEqual(disagreements, [],
+                         f"CCN range disagrees with CMS: {disagreements[:5]}")
+
+    def test_the_religious_nonmedical_series_is_typed_as_itself(self) -> None:
+        """CCN sequence 1990-1999 is the RNHCI series — Christian Science
+        sanatoria, which file no hospital quality data and appear nowhere
+        in Care Compare. They were previously typed "other" and emitted
+        as chronic disease hospitals."""
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        rnhci = xw[xw["facility_type"].eq("rnhci")]
+        self.assertGreaterEqual(len(rnhci), 10)
+        self.assertEqual(set(rnhci["taxonomy_code"]), {"282J00000X"})
+        self.assertTrue(rnhci["cms_hospital_type"].eq("").all())
+        sequences = {int(c[-4:]) for c in rnhci["ccn"]}
+        self.assertTrue(all(1990 <= s <= 1999 for s in sequences), sequences)
+
+    def test_unclassified_emits_no_taxonomy_rather_than_a_guess(self) -> None:
+        """A NUCC code is a clinical assertion. Emitting one for a
+        facility whose type we could not determine is a fabricated fact
+        that reads exactly like a derived one."""
+        self.assertEqual(facility_taxonomy("other"), ("", ""))
+        self.assertEqual(facility_taxonomy("nonsense"), ("", ""))
+        # Nothing falls through today, so fill is still complete.
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        self.assertEqual(int(xw["facility_type"].eq("other").sum()), 0)
+        self.assertTrue(xw["taxonomy_code"].ne("").all())
+
+    def test_the_physician_owned_texas_hospitals_type_as_acute(self) -> None:
+        from rcm_mc.data.hcris import classify_hospital_type
+
+        for ccn in ("450880", "450890", "450893"):
+            self.assertEqual(classify_hospital_type(ccn), "general", ccn)
+        self.assertEqual(classify_hospital_type("051993"), "rnhci")
+
     def test_post_acute_classes_map_to_their_own_vocabulary(self) -> None:
         """CMS states the provider class outright in the Compare files —
         re-deriving it from a CCN range would only add a way to be
@@ -146,7 +202,11 @@ class TaxonomyTests(unittest.TestCase):
         # alphanumerics of classification + specialization, then a
         # trailing X. 282N00000X carries one classification letter,
         # 282NC0060X (Critical Access) two, 314000000X (SNF) none.
-        for code, desc in NUCC_BY_FACILITY_TYPE.values():
+        for facility_type, (code, desc) in NUCC_BY_FACILITY_TYPE.items():
+            if facility_type == "other":
+                # The one deliberate sentinel: unclassified emits nothing.
+                self.assertEqual((code, desc), ("", ""))
+                continue
             self.assertRegex(code, r"^\d{3}[0-9A-Z]{6}X$")
             self.assertEqual(len(code), 10, code)
             self.assertTrue(desc)

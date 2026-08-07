@@ -106,7 +106,14 @@ NUCC_BY_FACILITY_TYPE: Dict[str, Tuple[str, str]] = {
     "rehab": ("283X00000X", "Rehabilitation Hospital"),
     "ltach": ("282E00000X", "Long Term Care Hospital"),
     "children": ("282NC2000X", "Children's Hospital"),
-    "other": ("281P00000X", "Chronic Disease Hospital"),
+    "rnhci": ("282J00000X", "Religious Nonmedical Health Care Institution"),
+    # Unclassified means unclassified. This used to emit 281P00000X
+    # ("Chronic Disease Hospital"), which is a clinical assertion about
+    # a facility whose type we could not determine — and every row it
+    # ever reached was in fact an acute hospital or an RNHCI, both of
+    # which are now typed by their CCN range. Nothing lands here today,
+    # and if something does, the honest answer is silence.
+    "other": ("", ""),
     # Post-acute and outpatient classes. The key here is CMS's own
     # provider class rather than a CCN range, because the Compare files
     # state the class outright and re-deriving it would only add a way

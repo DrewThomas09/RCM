@@ -112,7 +112,7 @@ FOCUS_EMS = "Emergency Medical"
 # Facility-type labels as emitted by ``hcris._classify_series``.
 TYPE_LABELS: Tuple[str, ...] = (
     "general", "critical_access", "psychiatric", "rehab",
-    "ltach", "children", "other",
+    "ltach", "children", "rnhci", "other",
 )
 
 # Partner-facing names for those labels — the table headers.
@@ -123,6 +123,7 @@ TYPE_DISPLAY: Dict[str, str] = {
     "rehab": "Rehab",
     "ltach": "LTACH",
     "children": "Children's",
+    "rnhci": "Religious Nonmedical",
     "other": "Other",
 }
 
