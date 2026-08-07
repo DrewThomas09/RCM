@@ -736,7 +736,9 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "uh_ohio", "University Hospitals (Ohio)", KIND_ACADEMIC, FOCUS_ACUTE, "OH",
-        patterns=("^UH ",),
+        # Scoped to Ohio: University Hospital in Newark NJ files as
+        # "UH - UNIVERSITY HOSPITAL" and is a different organization.
+        patterns=("^UH ", "^UNIVERSITY HOSPITALS"),
         states=("OH",),
     ),
     SystemDef(
@@ -1600,6 +1602,60 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "la_extended", "LA Extended Care Hospitals", KIND_FOR_PROFIT, FOCUS_LTACH, "LA",
         patterns=("LA:^LA EXTENDED CARE",),
+    ),
+
+    # ── From the candidate-cluster backlog ─────────────────────────
+    #
+    # Multi-hospital name families the scan surfaced that resolve to one
+    # operator. What the scan leaves behind at this depth — MEMORIAL
+    # HOSPITAL, COMMUNITY HOSPITAL, SAINT MARY, GOOD SAMARITAN, DOCTORS
+    # HOSPITAL — are shared names whose members have different owners,
+    # and no amount of further passes will change that.
+    SystemDef(
+        "penn_highlands", "Penn Highlands Healthcare", KIND_NONPROFIT,
+        FOCUS_ACUTE, "PA",
+        patterns=("PA:^PENN HIGHLANDS",),
+    ),
+    SystemDef(
+        "mcleod", "McLeod Health", KIND_NONPROFIT, FOCUS_ACUTE, "SC",
+        patterns=("SC:^MCLEOD",),
+    ),
+    SystemDef(
+        "west_tennessee", "West Tennessee Healthcare", KIND_GOVERNMENT,
+        FOCUS_ACUTE, "TN",
+        patterns=("TN:^WEST TENNESSEE HEALTHCARE",),
+    ),
+    SystemDef(
+        "st_margarets_il", "St. Margaret's Health", KIND_NONPROFIT,
+        FOCUS_ACUTE, "IL",
+        patterns=("IL:^SAINT MARGARETS",),
+    ),
+    SystemDef(
+        "whittier_ma", "Whittier Health Network", KIND_FOR_PROFIT,
+        FOCUS_LTACH, "MA",
+        # Massachusetts only: Whittier Hospital Medical Center in
+        # Whittier CA is an unrelated acute hospital.
+        patterns=("MA:^WHITTIER",),
+    ),
+    SystemDef(
+        "kpc_promise", "KPC Promise Healthcare", KIND_FOR_PROFIT,
+        FOCUS_LTACH, "CA",
+        patterns=("^KPC PROMISE",),
+    ),
+    SystemDef(
+        "sage_la", "Sage Rehabilitation", KIND_FOR_PROFIT, FOCUS_REHAB, "LA",
+        # Louisiana only: Sage Memorial (AZ) and Sage West (WY) are
+        # unrelated hospitals that happen to start with the word.
+        patterns=("LA:^SAGE SPECIALTY", "LA:^SAGE REHAB"),
+    ),
+    SystemDef(
+        "wellbridge", "Wellbridge Healthcare", KIND_FOR_PROFIT,
+        FOCUS_BEHAVIORAL, "TX",
+        patterns=("^WELLBRIDGE",),
+    ),
+    SystemDef(
+        "vista_health_ar", "Vista Health", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "AR",
+        patterns=("AR:^VISTA HEALTH",),
     ),
 )
 

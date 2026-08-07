@@ -244,6 +244,27 @@ class MatcherPrecisionTests(unittest.TestCase):
                 (expected[0].system_id if expected[0] else None, expected[1]),
                 f"{name} ({state})")
 
+    def test_a_state_scope_keeps_two_uh_apart(self) -> None:
+        """University Hospitals of Cleveland files eleven hospitals as
+        "UH <place>". University Hospital in Newark files as
+        "UH - UNIVERSITY HOSPITAL" and is a different organization."""
+        self.assertEqual(match_system("UH CLEVELAND MEDICAL CENTER", "OH")[0]
+                         .system_id, "uh_ohio")
+        self.assertEqual(match_system("UNIVERSITY HOSPITALS AVON REHAB", "OH")[0]
+                         .system_id, "uh_ohio")
+        self.assertIsNone(match_system("UH - UNIVERSITY HOSPITAL", "NJ")[0])
+
+    def test_a_brand_that_is_also_a_place_name_stays_scoped(self) -> None:
+        """Whittier CA and Whittier MA; Sage Memorial AZ and Sage Rehab LA.
+        A national pattern would merge four unrelated hospitals."""
+        self.assertEqual(match_system("WHITTIER HOSPITAL BRADFORD", "MA")[0]
+                         .system_id, "whittier_ma")
+        self.assertIsNone(match_system("WHITTIER HOSPITAL MEDICAL CENTER", "CA")[0])
+        self.assertEqual(match_system("SAGE REHAB HOSPITAL", "LA")[0]
+                         .system_id, "sage_la")
+        self.assertIsNone(match_system("SAGE MEMORIAL HOSPITAL", "AZ")[0])
+        self.assertIsNone(match_system("SAGE WEST HEALTH CARE", "WY")[0])
+
     def test_dead_pattern_scan_finds_typos(self) -> None:
         """The scan is the maintenance loop for the registry: patterns
         that match nothing are usually typos. Some are deliberate — house
