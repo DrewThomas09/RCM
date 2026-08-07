@@ -104,6 +104,10 @@ FOCUS_DIALYSIS = "Dialysis"
 FOCUS_HOME_HEALTH = "Home Health"
 FOCUS_HOSPICE = "Hospice"
 FOCUS_SNF = "Skilled Nursing"
+# Ambulance and air-medical operators hold NPIs, not CCNs. They are
+# reachable only through the NPI registry, and the footprint guard has
+# to know not to demand a CCN footprint of them.
+FOCUS_EMS = "Emergency Medical"
 
 # Facility-type labels as emitted by ``hcris._classify_series``.
 TYPE_LABELS: Tuple[str, ...] = (
@@ -1877,7 +1881,52 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
 )
 
 
-SYSTEM_REGISTRY: Tuple[SystemDef, ...] = ACUTE_REGISTRY + POST_ACUTE_REGISTRY
+# ── Ambulance and air-medical operators ────────────────────────────
+#
+# These hold NPIs and no CCNs, so they are invisible to every facility
+# file and reachable only through the NPI registry. They earn a place
+# for the same reason DaVita does: a national operator running the same
+# service under one owner in thirty states is exactly what a rollup is
+# supposed to see.
+#
+# The consolidation is severe and the brands do not advertise it, which
+# is why these are worth writing down. Global Medical Response operates
+# as AMR on the ground and as Air Evac, Med-Trans, Guardian Flight,
+# REACH and EagleMed in the air; Air Methods files as Rocky Mountain
+# Holdings, LifeNet and Mercy Air Service. The CMS PECOS Associate
+# Control ID is what makes this checkable rather than asserted — those
+# NPIs share an enrolment.
+#
+# Deliberately absent: Lifeguard Ambulance Service (30 NPIs, 12 states).
+# It is plainly one operator, but this data does not say which, and
+# naming the wrong parent is the failure mode that matters.
+
+EMS_REGISTRY: Tuple[SystemDef, ...] = (
+    SystemDef(
+        "global_medical_response", "Global Medical Response",
+        KIND_FOR_PROFIT, FOCUS_EMS, "CO",
+        patterns=("^AMERICAN MEDICAL RESPONSE", "^AMR ", "^RURAL METRO",
+                  "^AIR EVAC", "^MED TRANS", "^GUARDIAN FLIGHT",
+                  "^REACH AIR MEDICAL", "^EAGLEMED"),
+    ),
+    SystemDef(
+        "air_methods", "Air Methods", KIND_FOR_PROFIT, FOCUS_EMS, "CO",
+        patterns=("^ROCKY MOUNTAIN HOLDINGS", "^AIR METHODS",
+                  "^LIFENET INC", "^MERCY AIR SERVICE"),
+    ),
+    SystemDef(
+        "phi_health", "PHI Health", KIND_FOR_PROFIT, FOCUS_EMS, "LA",
+        patterns=("^PHI HEALTH", "^PHI AIR MEDICAL"),
+    ),
+    SystemDef(
+        "falck", "Falck", KIND_FOR_PROFIT, FOCUS_EMS, "CA",
+        patterns=("^FALCK",),
+    ),
+)
+
+
+SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
+    ACUTE_REGISTRY + POST_ACUTE_REGISTRY + EMS_REGISTRY)
 
 
 # ── Published parent chains ────────────────────────────────────────
@@ -3209,6 +3258,24 @@ def leading_states(system_id: str) -> Tuple[str, ...]:
     return _leader_map().get(str(system_id or ""), ())
 
 
+@lru_cache(maxsize=1)
+def _npi_names() -> Tuple[Tuple[str, str], ...]:
+    """(normalized name, state) for every cached organization NPI.
+
+    Both the legal name and every d/b/a, because a pattern that only
+    ever matches a d/b/a is alive, not dead.
+    """
+    from .npi_registry import load_npi_registry
+
+    out: List[Tuple[str, str]] = []
+    for rec in load_npi_registry().values():
+        state = rec.state.upper()
+        for name in (rec.legal_name, *rec.dbas):
+            if name:
+                out.append((normalize_name(name), state))
+    return tuple(out)
+
+
 def dead_patterns(df: Optional[pd.DataFrame] = None) -> List[Tuple[str, str]]:
     """Registry patterns that match no facility, as ``(system_id, pattern)``.
 
@@ -3220,14 +3287,17 @@ def dead_patterns(df: Optional[pd.DataFrame] = None) -> List[Tuple[str, str]]:
     ``^BRIGHAM AND WOMEN`` failing the trailing boundary against
     BRIGHAM AND WOMENS.
 
-    Scans the full universe — hospital and post-acute — because the
-    registry now spans both. Scanning hospitals alone would report all
-    fifty post-acute operators as dead patterns and drown the signal
-    the scan exists to produce.
+    Scans everything the registry can reach — hospital, post-acute and
+    the NPI roster — because the registry now spans all three. Scanning
+    hospitals alone would report fifty post-acute operators and four
+    ambulance operators as dead and drown the signal the scan exists to
+    produce.
     """
     assigned = assign_all() if df is None else assign_systems(df)
     seen = [(normalize_name(n), str(st).upper())
             for n, st in zip(assigned["name"], assigned["state"], strict=True)]
+    if df is None:
+        seen.extend(_npi_names())
     out: List[Tuple[str, str]] = []
     for sysdef in SYSTEM_REGISTRY:
         for pattern in sysdef.patterns:
@@ -3246,5 +3316,6 @@ def _clear_cache() -> None:
     _leader_map.cache_clear()
     _assigned_cached.cache_clear()
     _post_acute_assigned_cached.cache_clear()
+    _npi_names.cache_clear()
     _cached_map.cache_clear()
     _last_active_year_by_ccn.cache_clear()

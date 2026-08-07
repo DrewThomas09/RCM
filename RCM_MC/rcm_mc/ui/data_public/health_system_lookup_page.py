@@ -708,6 +708,62 @@ def _provider_class_panel() -> str:
         '<code>&amp;class=snf</code>.</div>')
 
 
+def _npi_panel(limit: int = 10) -> str:
+    """Organization NPIs from the bundled NPPES extracts.
+
+    Scoped to an ambulance / EMS slice and labelled as such. The panel
+    earns its place because it is the only place the d/b/a match and
+    CMS's own PECOS enrolment grouping are visible — and because that
+    grouping surfaces operators no facility file can see. Global
+    Medical Response runs 648 of these NPIs across the country and does
+    not use its own name on one of them.
+    """
+    from rcm_mc.data.npi_registry import (
+        assign_npi_registry, npi_registry_coverage, pecos_groups)
+
+    stats = npi_registry_coverage()
+    if not stats:
+        return ""
+    bars = "".join(
+        ck_bar_row(name, f"{resolved:,} / {total:,} ({resolved / total * 100:.1f}%)",
+                   resolved / total * 100,
+                   tone=("positive" if resolved / total >= 0.9 else
+                         "teal" if resolved / total >= 0.5 else "warning"))
+        for name, resolved, total in stats if total)
+
+    frame = assign_npi_registry()
+    mapped = frame[frame["system_id"] != "_unmapped"]
+    operators = (mapped.groupby("system_name")
+                 .agg(npis=("npi", "size"), states=("state", "nunique"))
+                 .sort_values("npis", ascending=False).head(limit))
+    cols = [("Operator", "left"), ("NPIs", "right"), ("States", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for name, rec in operators.iterrows():
+        trs.append('<tr>' + ck_data_cell(_esc(name), weight=600)
+                   + ck_data_cell(_fmt_int(rec["npis"]), align="right",
+                                  mono=True, weight=700, tone="acc")
+                   + ck_data_cell(_fmt_int(rec["states"]), align="right",
+                                  mono=True, tone="dim") + '</tr>')
+    groups = pecos_groups(min_size=2)
+    return (
+        bars
+        + '<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="hsl-legend">{len(frame):,} organization NPIs from the '
+        'bundled NPPES extracts — an <strong>ambulance and air-medical '
+        'slice, not all of NPPES</strong>. The full dissemination file is '
+        '~8M NPIs and ~9GB; the streaming ingest for it lives in '
+        '<code>nppes_ingest</code> and needs network access this build does '
+        f'not have. {len(groups):,} PECOS enrolment groups here hold more '
+        'than one NPI — that is CMS\'s own grouping of NPIs under one '
+        'enrolled organization, and it is what shows Global Medical '
+        'Response operating as AMR, Air Evac, Med-Trans, Guardian Flight, '
+        'REACH and EagleMed at once. Matching is guarded twice: a civil '
+        'body that merely shares a place name is rejected, and so is a '
+        'match in a state where the system operates nothing.</div>')
+
+
 def _markets_panel(limit: int = 15) -> str:
     """Facilities and beds by CBSA — the unit an operator competes in.
 
@@ -959,6 +1015,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     inactive = _inactive_panel(status)
     coverage = _crosswalk_coverage_panel()
     provider_classes = _provider_class_panel()
+    npis = _npi_panel()
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
                      if state
@@ -1028,6 +1085,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Full Provider Universe — Every Certified CCN</div>
     {provider_classes}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Organization NPIs — Bundled NPPES Extracts</div>
+    {npis}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>

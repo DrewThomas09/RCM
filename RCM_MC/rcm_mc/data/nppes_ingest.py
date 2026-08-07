@@ -52,8 +52,10 @@ Public API::
 """
 from __future__ import annotations
 
+import re
 import sqlite3
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
@@ -160,10 +162,49 @@ def ensure_table(con: sqlite3.Connection) -> None:
     con.commit()
 
 
+# A civil body whose place name happens to be a health-system brand.
+# The registry's patterns were tuned against 6,123 hospitals, where
+# "^JEFFERSON" and "^AURORA" are unambiguous. Against a national NPI
+# roster they also reach Jefferson Township Volunteer Ambulance, Aurora
+# Township Fire Protection District and Grady County Board of
+# Commissioners — municipalities, not subsidiaries. There is no
+# plausible reading in which a fire district is part of a health system
+# because it shares a town name.
+_CIVIL_BODY_RE = re.compile(
+    r"(?:BOARD OF (?:COMMISSIONERS|SUPERVISORS)|COUNTY OF |CITY OF "
+    r"|TOWN OF |VILLAGE OF |TOWNSHIP|BOROUGH OF "
+    r"|FIRE (?:DEPARTMENT|DEPT|DISTRICT|COMPANY|PROTECTION)"
+    r"|VOLUNTEER|VOL FIRE|RESCUE SQUAD|SCHOOL DISTRICT)"
+)
+
+
+@lru_cache(maxsize=1)
+def _system_footprints() -> Dict[str, frozenset]:
+    """system_id -> the states where it demonstrably operates a facility.
+
+    Derived from the certified universe, not asserted. A name match
+    outside that footprint is the single most common way this matcher
+    goes wrong: eight independent ambulance companies are called
+    MedStar, in eight states MedStar Health has never operated, and
+    ``^MEDSTAR`` reaches every one of them.
+    """
+    from .health_systems import UNMAPPED_ID, assign_all
+
+    universe = assign_all()
+    out: Dict[str, set] = {}
+    for system_id, state in zip(universe["system_id"], universe["state"],
+                                strict=True):
+        if system_id and system_id != UNMAPPED_ID:
+            out.setdefault(system_id, set()).add(str(state).upper().strip())
+    return {k: frozenset(v) for k, v in out.items()}
+
+
 def match_organization(
     legal_name: Any,
     dba: Any,
     state: Any,
+    *,
+    require_footprint: bool = True,
 ) -> Tuple[str, str]:
     """Resolve an organization NPI to a health system.
 
@@ -173,16 +214,38 @@ def match_organization(
     but plenty of systems file a holding-company legal name and put the
     recognisable brand in the d/b/a, so a legal-name-only match drops
     them. Returns ``("", "")`` when neither carries a brand.
+
+    Two guards sit on top of the name match, because NPPES is a far
+    harsher test of a pattern than HCRIS is. A match is rejected when
+    the organization is a municipal body that merely shares a place
+    name, and — unless ``require_footprint=False`` — when it sits in a
+    state where the system operates nothing. On a 20,401-NPI ambulance
+    roster the two guards together reject 56 of 423 raw matches, and
+    every one of the 56 is wrong: MedStar Ambulance in eight states,
+    Kindred Area Ambulance in Kindred ND, Aurora Township Fire
+    Protection District.
+
+    The cost is real and worth paying: a handful of true matches go
+    with them, mostly air-ambulance subsidiaries based outside their
+    parent's hospital footprint. A wrong parent is worse than a missing
+    one, because nobody audits a mapping that looks complete.
     """
     st = str(state or "").upper().strip()
 
-    sysdef, pattern = match_system(legal_name, st)
-    if sysdef is not None:
-        return sysdef.system_id, f"legal name: {pattern}"
-
-    sysdef, pattern = match_system(dba, st)
-    if sysdef is not None:
-        return sysdef.system_id, f"dba: {pattern}"
+    for candidate, label in ((legal_name, "legal name"), (dba, "dba")):
+        sysdef, pattern = match_system(candidate, st)
+        if sysdef is None:
+            continue
+        if _CIVIL_BODY_RE.search(normalize_name(candidate)):
+            continue
+        # An operator with no CCN anywhere — an ambulance or air-medical
+        # company — has no footprint for the guard to check. Absence of
+        # evidence is not a veto: the guard exists to reject a match
+        # OUTSIDE a known footprint, not to demand that one exist.
+        footprint = _system_footprints().get(sysdef.system_id)
+        if require_footprint and footprint and st not in footprint:
+            continue
+        return sysdef.system_id, f"{label}: {pattern}"
 
     return "", ""
 

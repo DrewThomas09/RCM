@@ -5153,6 +5153,25 @@ class RCMHandler(BaseHTTPRequestHandler):
                 _frame = _frame[_frame["system_id"].astype(str) == _sys]
             return self._send_csv_df(
                 _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
+        if path == "/npi-registry.csv":
+            # Organization NPIs from the bundled NPPES extracts, each
+            # with its d/b/a, PECOS enrolment group, taxonomy, county
+            # and CBSA. An ambulance/EMS slice, not all of NPPES.
+            from .data.npi_registry import assign_npi_registry
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _frame = assign_npi_registry()
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _sys = str(_qp.get("system", "")).strip()[:40]
+            if _sys:
+                _frame = _frame[_frame["system_id"].astype(str) == _sys]
+            _grp = str(_qp.get("pecos_group", "")).strip()[:20]
+            if _grp:
+                _frame = _frame[_frame["pecos_group"].astype(str) == _grp]
+            return self._send_csv_df(
+                _frame, f"npi-registry{('-' + _st) if _st else ''}.csv")
         if path == "/health-system-lookup.csv":
             # Filter-aware export of the hospital ↔ system mapping, one row
             # per facility keyed on CCN so it joins against a target list.

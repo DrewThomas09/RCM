@@ -258,12 +258,16 @@ class MatcherPrecisionTests(unittest.TestCase):
             self.assertNotIn(must_match, dead, f"{must_match} matches nothing")
 
     def test_every_registry_entry_is_reachable(self) -> None:
-        """No dead entries: each system matches at least one real facility.
+        """No dead entries: each system matches at least one real provider.
 
-        Scoped to the full universe, not the hospital rollup. DaVita
-        holds 2,800 CCNs and not one hospital; measuring reachability
-        against hospitals alone would call it dead."""
-        live = set(assign_all()["system_id"])
+        Scoped to everything the registry can reach, not the hospital
+        rollup. DaVita holds 2,800 CCNs and not one hospital; Global
+        Medical Response holds 648 NPIs and not one CCN. Measuring
+        reachability against hospitals alone would call both dead."""
+        from rcm_mc.data.npi_registry import assign_npi_registry
+
+        live = set(assign_all()["system_id"]) | set(
+            assign_npi_registry()["system_id"])
         dead = sorted(s.system_id for s in SYSTEM_REGISTRY if s.system_id not in live)
         self.assertEqual(dead, [], f"registry entries that match nothing: {dead}")
 
@@ -1057,6 +1061,15 @@ class PageTests(unittest.TestCase):
         total = int(classes["facilities"].sum())
         self.assertIn(f"{total:,} CCNs", html)
         self.assertIn("/provider-crosswalk.csv?scope=all", html)
+
+    def test_the_npi_panel_says_what_slice_it_is(self) -> None:
+        """20,401 ambulance NPIs is not NPPES, and a coverage bar that
+        does not say so invites reading 6.6% as national."""
+        html = render_health_system_lookup({})
+        self.assertIn("Organization NPIs", html)
+        self.assertIn("Global Medical Response", html)
+        self.assertIn("not all of NPPES", html)
+        self.assertIn("PECOS", html)
 
 
 class CsvRouteTests(unittest.TestCase):

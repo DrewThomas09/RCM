@@ -1,11 +1,11 @@
 {
   "summary": {
-    "pages": 194,
-    "with_disclosure": 177,
-    "with_real_loader": 53,
+    "pages": 195,
+    "with_disclosure": 178,
+    "with_real_loader": 54,
     "flagged_no_disclosure": 1,
     "by_tier": {
-      "green": 48,
+      "green": 49,
       "navy": 73,
       "yellow": 37,
       "red": 0
@@ -836,6 +836,16 @@
       "route": "/health-equity",
       "file": "health_equity_page.py",
       "tier": "navy",
+      "has_disclosure": true,
+      "imports_real_loader": true,
+      "uses_seed_corpus": true,
+      "renders_data": true,
+      "flag": ""
+    },
+    {
+      "route": "/health-system-lookup",
+      "file": "health_system_lookup_page.py",
+      "tier": "green",
       "has_disclosure": true,
       "imports_real_loader": true,
       "uses_seed_corpus": true,
