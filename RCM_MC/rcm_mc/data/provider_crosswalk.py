@@ -39,12 +39,14 @@ The chain, and what each link is worth over the full universe:
      │        The last exists because home health is the one class
      │        CMS publishes with no county column at all.
      │
-     ├──►  CBSA / MSA              41,937 of 48,510 (86.5%)
-     │        county FIPS -> OMB 2023 delineation. A facility with a
-     │        FIPS and no CBSA is NOT a gap: rural counties sit outside
-     │        every metro and micro area by definition, and calling
-     │        that "missing" would invent a data-quality problem where
-     │        there is geography.
+     ├──►  CBSA / MSA              42,225 of 48,510 (87.0%)
+     │        county FIPS -> OMB 2023 delineation, plus a Connecticut
+     │        layer: CT replaced counties with planning regions in 2022
+     │        and the two bundled files disagree on the vintage, so all
+     │        385 CT facilities used to read as rural. cbsa_source says
+     │        which path produced the answer, or why there is none —
+     │        "outside any cbsa" (real geography) and "no county" (a
+     │        real gap) used to look identical.
      │
      ├──►  NUCC taxonomy           every facility
      │        provider class -> the standard code a claim actually
@@ -73,11 +75,13 @@ Public API::
     crosswalk_by_cbsa(df=None, *, scope=...) -> the market rollup
     facility_taxonomy(facility_type) -> (code, description)
     cbsa_for_county(county_fips) -> dict | None
+    cbsa_for_row(county_fips, state, city) -> (dict, source)
     county_fips_for(ccn, state, county_name, zip_code) -> (fips, source)
 """
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -166,6 +170,127 @@ def cbsa_for_county(county_fips: Any) -> Optional[Dict[str, str]]:
     every metro and micro area — which is a real answer, not a miss."""
     fips = str(county_fips or "").strip().zfill(5)
     return _cbsa_by_county().get(fips) if fips and fips != "00000" else None
+
+
+# ── Connecticut: a county-vintage break, not rural geography ───────
+#
+# Connecticut replaced its eight counties with nine councils of
+# governments as its statistical geography in 2022. The OMB-2023
+# delineation bundled here keys exclusively on the planning regions
+# (09110-09190); ``county_demographics.csv``, which is where every
+# county FIPS on this crosswalk is minted, still carries the legacy
+# counties (09001-09015). The two key sets share nothing at all, so
+# every Connecticut facility failed the county -> CBSA join and was
+# reported as sitting outside every metro area.
+#
+# That is 385 facilities, 276 of them with a resolved county, and it
+# removed 7,554 operating hospital beds and $14.87B of net patient
+# revenue from the market view — Yale New Haven (1,306 beds), Hartford
+# Hospital (711), Saint Francis, Bridgeport, Danbury, Stamford. Every
+# one of those metros is LISTED IN THE SAME FILE that failed to match
+# them.
+#
+# The break is Connecticut's alone. Comparing the two files' FIPS key
+# sets state by state, CT is the only state where the intersection is
+# empty; every other state's unmatched county is genuinely absent from
+# the delineation because it is in no CBSA. (Puerto Rico is a different
+# gap: county_demographics carries no PR rows at all, and PR facilities
+# therefore never resolve a county to begin with.)
+#
+# Two tiers resolve it, strongest first:
+#
+#   1. **Principal city.** The delineation file's own CBSA titles name
+#      thirteen Connecticut towns. A facility in Waterbury or Shelton
+#      is in Waterbury-Shelton by the file's own words — no judgement,
+#      no external table. This tier is what puts Waterbury Hospital and
+#      St. Mary's in 47930 rather than in New Haven.
+#   2. **Legacy county, dominant region.** Five of the eight legacy
+#      counties sit inside one planning region. Three genuinely span
+#      two, and for those the dominant region is used and the exception
+#      is written down below rather than left for a reader to discover.
+#
+# What this does NOT do is invent a town-level table. The obvious
+# source — the county text the facilities themselves file — turns out
+# to be provider-typed and unreliable: eleven towns' filed regions
+# disagree with their actual one, and Meriden's own filings disagree
+# with each other (six rows say Lower CT River Valley, one says
+# Capitol; neither is right). Closing the last twelve rows needs a real
+# CT council-of-governments town roster, which this repository does not
+# have.
+
+#: Towns the delineation file's own CBSA titles name.
+_CT_PRINCIPAL_CITY_CBSA: Dict[str, str] = {
+    "BRIDGEPORT": "14860", "STAMFORD": "14860", "DANBURY": "14860",
+    "HARTFORD": "25540", "WEST HARTFORD": "25540", "EAST HARTFORD": "25540",
+    "NEW HAVEN": "35300",
+    "NORWICH": "35980", "NEW LONDON": "35980", "WILLIMANTIC": "35980",
+    "PUTNAM": "39480",
+    "TORRINGTON": "45860",
+    "WATERBURY": "47930", "SHELTON": "47930",
+}
+
+#: Legacy county FIPS -> the CBSA covering most of it. The three that
+#: span two planning regions carry the facilities the rule misfiles, so
+#: the cost is stated rather than hidden:
+#:   09001 Fairfield  -> 14860, except SHELTON (caught by tier 1)
+#:   09003 Hartford   -> 25540, except BRISTOL (8 facilities, 47930)
+#:   09009 New Haven  -> 35300, except WATERBURY (tier 1), MIDDLEBURY
+#:                       (3) and DERBY (1), which are 47930
+#: Twelve of 276 county-resolved Connecticut rows land in an adjacent
+#: metro. The alternative was 385 rows reported as rural.
+_CT_LEGACY_COUNTY_CBSA: Dict[str, str] = {
+    "09001": "14860",   # Fairfield
+    "09003": "25540",   # Hartford
+    "09005": "45860",   # Litchfield
+    "09007": "25540",   # Middlesex — Lower CT River Valley folds into Hartford
+    "09009": "35300",   # New Haven
+    "09011": "35980",   # New London
+    "09013": "25540",   # Tolland
+    "09015": "39480",   # Windham — no dominant region; Putnam by facility count
+}
+
+#: Where a CBSA came from, or why there isn't one. A blank cbsa_code
+#: meant three different things and said none of them.
+CBSA_SOURCE_OMB = "omb 2023"
+CBSA_SOURCE_CT_CITY = "ct principal city"
+CBSA_SOURCE_CT_COUNTY = "ct legacy county"
+CBSA_SOURCE_OUTSIDE = "outside any cbsa"
+CBSA_SOURCE_NO_COUNTY = "no county"
+
+
+def _norm_city(value: Any) -> str:
+    """City as the delineation titles spell it.
+
+    HCRIS types a city three ways — "STAMFORD  CT 06904", "GREENWICH,
+    CT", "STAMFORD". Strip the trailing state and ZIP so all three key
+    the same.
+    """
+    text = re.sub(r"[^A-Z ]", " ", str(value or "").upper())
+    text = re.sub(r"\s+", " ", text).strip()
+    return re.sub(r"\s+CT$", "", text).strip()
+
+
+def cbsa_for_row(county_fips: Any, state: Any = "",
+                 city: Any = "") -> Tuple[Dict[str, str], str]:
+    """CBSA record plus the source that produced it, or the reason there
+    is none. Never returns a bare blank — see :data:`CBSA_SOURCE_OMB`."""
+    fips = str(county_fips or "").strip().zfill(5)
+    record = _cbsa_by_county().get(fips) if fips and fips != "00000" else None
+    if record:
+        return record, CBSA_SOURCE_OMB
+
+    if str(state or "").upper().strip() == "CT":
+        by_code = {r["cbsa_code"]: r for r in _cbsa_by_county().values()}
+        code = _CT_PRINCIPAL_CITY_CBSA.get(_norm_city(city))
+        if code and code in by_code:
+            return by_code[code], CBSA_SOURCE_CT_CITY
+        code = _CT_LEGACY_COUNTY_CBSA.get(fips)
+        if code and code in by_code:
+            return by_code[code], CBSA_SOURCE_CT_COUNTY
+
+    if not fips or fips == "00000":
+        return {}, CBSA_SOURCE_NO_COUNTY
+    return {}, CBSA_SOURCE_OUTSIDE
 
 
 @lru_cache(maxsize=None)
@@ -292,6 +417,7 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "npi_taxonomy",
     "county", "county_fips", "county_fips_source",
     "cbsa_code", "cbsa_title", "cbsa_type", "cbsa_central_outlying",
+    "cbsa_source",
     "lat", "lon", "geo_match_quality",
     "npi", "npi_source",
     "beds", "net_patient_revenue",
@@ -399,7 +525,7 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare,
     zip5 = str(rec.get("zip", "") or "").strip().rstrip("-")
     fips, fips_source = county_fips_for(
         ccn, rec.get("state"), rec.get("county"), zip5)
-    cbsa = cbsa_for_county(fips) or {}
+    cbsa, cbsa_source = cbsa_for_row(fips, rec.get("state"), rec.get("city"))
     code, desc = facility_taxonomy(rec.get("facility_type"))
     npi, npi_source, npi_taxonomy = _npi_for(rec, zip5, npi_index, code)
     return {
@@ -441,6 +567,7 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare,
         "cbsa_title": cbsa.get("cbsa_title", ""),
         "cbsa_type": cbsa.get("cbsa_type", ""),
         "cbsa_central_outlying": cbsa.get("cbsa_central_outlying", ""),
+        "cbsa_source": cbsa_source,
         "lat": coord.lat if coord else None,
         "lon": coord.lon if coord else None,
         "geo_match_quality": coord.match_quality if coord else "",
@@ -580,8 +707,9 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                      "geocode file, then the filed county, then Care "
                      "Compare, then an unambiguous ZIP"),
         CoverageStat("CBSA / MSA", filled("cbsa_code"), total,
-                     "counties outside every metro and micro area have none "
-                     "by definition — not a gap"),
+                     "read cbsa_source before calling a blank a gap: "
+                     "'outside any cbsa' is real rural geography, "
+                     "'no county' is a genuine miss"),
         CoverageStat("NUCC taxonomy", filled("taxonomy_code"), total,
                      "derived from the CCN range"),
         CoverageStat("Lat / lon", int(xw["lat"].notna().sum()), total,

@@ -38,8 +38,15 @@ from rcm_mc.data.nppes_ingest import (
 from rcm_mc.data.provider_crosswalk import (
     CROSSWALK_COLUMNS,
     NUCC_BY_FACILITY_TYPE,
+    CBSA_SOURCE_CT_CITY,
+    CBSA_SOURCE_CT_COUNTY,
+    CBSA_SOURCE_NO_COUNTY,
+    CBSA_SOURCE_OMB,
+    CBSA_SOURCE_OUTSIDE,
     SCOPE_ALL,
+    _cbsa_by_county,
     _county_by_zip,
+    _norm_city,
     _resolve_npi_collisions,
     _same_taxonomy_family,
     build_crosswalk,
@@ -104,6 +111,116 @@ class CountyAndCbsaTests(unittest.TestCase):
         self.assertGreater(int(no_cbsa.sum()), 500)
         # Those rows resolved a county — the chain worked, the answer is "none".
         self.assertTrue(xw.loc[no_cbsa, "county_fips"].ne("").all())
+        self.assertEqual(set(xw.loc[no_cbsa, "cbsa_source"]),
+                         {CBSA_SOURCE_OUTSIDE})
+
+    def test_every_row_says_where_its_cbsa_came_from_or_why_not(self) -> None:
+        """A blank cbsa_code meant three different things and said none
+        of them: rural geography, an unresolved county, and — for all
+        385 Connecticut facilities — a county-vintage break."""
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        self.assertTrue(xw["cbsa_source"].ne("").all())
+        for row in xw.to_dict("records"):
+            if row["cbsa_code"]:
+                self.assertIn(row["cbsa_source"],
+                              (CBSA_SOURCE_OMB, CBSA_SOURCE_CT_CITY,
+                               CBSA_SOURCE_CT_COUNTY), row["ccn"])
+            else:
+                self.assertIn(row["cbsa_source"],
+                              (CBSA_SOURCE_OUTSIDE, CBSA_SOURCE_NO_COUNTY),
+                              row["ccn"])
+        # A row with no county normally has no CBSA either — except in
+        # Connecticut, where the principal-city tier reaches rows the
+        # county chain never resolved at all.
+        blank_county = xw["county_fips"].eq("")
+        self.assertEqual(set(xw.loc[blank_county, "cbsa_source"]),
+                         {CBSA_SOURCE_NO_COUNTY, CBSA_SOURCE_CT_CITY})
+        outside_ct = blank_county & xw["state"].ne("CT")
+        self.assertEqual(set(xw.loc[outside_ct, "cbsa_source"]),
+                         {CBSA_SOURCE_NO_COUNTY})
+
+
+class ConnecticutVintageTests(unittest.TestCase):
+    """Connecticut swapped counties for planning regions in 2022.
+
+    The bundled demographics file still mints legacy county FIPS
+    (09001-09015); the bundled OMB-2023 delineation keys on planning
+    regions (09110-09190). The two sets share nothing, so every
+    Connecticut facility failed the county to CBSA join and was
+    reported as sitting outside every metro area — 7,554 hospital beds
+    and $14.87B of net patient revenue missing from the market view,
+    in metros the delineation file itself lists.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.xw = get_crosswalk(scope=SCOPE_ALL)
+        cls.ct = cls.xw[cls.xw["state"].eq("CT")]
+
+    def test_the_vintage_break_is_real_and_is_connecticut_alone(self) -> None:
+        """Derived, not asserted: compare the two files' key sets state
+        by state. Only one state's intersection is empty."""
+        import collections
+
+        cbsa_keys = collections.defaultdict(set)
+        for fips in _cbsa_by_county():
+            cbsa_keys[fips[:2]].add(fips)
+        demo_keys = collections.defaultdict(set)
+        with (Path("rcm_mc/data/vendor/county_demographics")
+              / "county_demographics.csv").open() as fh:
+            for row in csv.DictReader(fh):
+                fips = row["county_fips"].zfill(5)
+                demo_keys[fips[:2]].add(fips)
+        disjoint = sorted(
+            prefix for prefix in set(cbsa_keys) & set(demo_keys)
+            if cbsa_keys[prefix] and demo_keys[prefix]
+            and not (cbsa_keys[prefix] & demo_keys[prefix]))
+        self.assertEqual(disjoint, ["09"])
+
+    def test_connecticut_facilities_are_no_longer_reported_as_rural(self) -> None:
+        self.assertGreater(len(self.ct), 350)
+        self.assertGreater(int(self.ct["cbsa_code"].ne("").sum()), 250)
+        # Not one CT row may claim to be outside every metro area: the
+        # state has no county that is.
+        self.assertNotIn(CBSA_SOURCE_OUTSIDE, set(self.ct["cbsa_source"]))
+
+    def test_the_principal_city_tier_beats_the_county_tier(self) -> None:
+        """Waterbury and Shelton are named in the Waterbury-Shelton
+        title. A county rule would file Waterbury under New Haven and
+        Shelton under Bridgeport — both wrong, and both large."""
+        waterbury = self.ct[self.ct["city"].str.upper().str.strip().eq("WATERBURY")]
+        self.assertGreater(len(waterbury), 5)
+        self.assertEqual(set(waterbury["cbsa_code"]), {"47930"})
+        self.assertEqual(set(waterbury["cbsa_source"]), {CBSA_SOURCE_CT_CITY})
+
+    def test_the_big_connecticut_hospitals_land_in_the_right_metro(self) -> None:
+        by_ccn = self.xw.set_index("ccn")
+        for ccn, cbsa in (("070022", "35300"),    # Yale New Haven
+                          ("070025", "25540"),    # Hartford Hospital
+                          ("070010", "14860"),    # Bridgeport Hospital
+                          ("070006", "14860"),    # Stamford
+                          ("070007", "35980"),    # Lawrence & Memorial
+                          ("070005", "47930"),    # Waterbury Hospital
+                          ("070016", "47930")):   # St. Mary's Waterbury
+            self.assertEqual(by_ccn.loc[ccn, "cbsa_code"], cbsa, ccn)
+
+    def test_connecticut_markets_reach_the_rollup(self) -> None:
+        markets = crosswalk_by_cbsa()
+        ct_markets = markets[markets["cbsa_title"].str.endswith(", CT")]
+        self.assertEqual(len(ct_markets), 7)
+        self.assertGreater(int(ct_markets["beds"].sum()), 7000)
+
+    def test_a_city_is_normalised_before_it_is_matched(self) -> None:
+        """HCRIS types a city three ways and all three must key alike."""
+        self.assertEqual(_norm_city("STAMFORD  CT 06904"), "STAMFORD")
+        self.assertEqual(_norm_city("GREENWICH, CT"), "GREENWICH")
+        self.assertEqual(_norm_city("west hartford"), "WEST HARTFORD")
+        self.assertEqual(_norm_city(None), "")
+
+    def test_a_non_connecticut_row_never_takes_the_ct_path(self) -> None:
+        rest = self.xw[self.xw["state"].ne("CT")]
+        self.assertNotIn(CBSA_SOURCE_CT_CITY, set(rest["cbsa_source"]))
+        self.assertNotIn(CBSA_SOURCE_CT_COUNTY, set(rest["cbsa_source"]))
 
     def test_cbsa_lookup_is_exact(self) -> None:
         # Salt Lake County, UT.
