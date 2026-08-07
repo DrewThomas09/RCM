@@ -23,9 +23,11 @@ import time
 import unittest
 import urllib.request
 from contextlib import closing
+from pathlib import Path
 
 import pandas as pd
 
+from rcm_mc.data.cms_facility_names import cms_name, load_cms_facilities
 from rcm_mc.data.health_systems import (
     CCN_OVERRIDES,
     STATUS_ACTIVE,
@@ -283,6 +285,90 @@ class CcnOverrideTests(unittest.TestCase):
         self.assertIsNone(match_system("HOSPITAL OF THE UNIV OF PENNA", "PA")[0])
         assigned = assign_systems().set_index("ccn")
         self.assertEqual(assigned.loc["390111", "system_id"], "penn_medicine")
+
+
+class CmsNameTierTests(unittest.TestCase):
+    """The second name: Care Compare's, when the cost report's is too short.
+
+    HCRIS truncates at ~36 characters and abbreviates on top of that.
+    No registry pattern written from a real brand can reach
+    "BHMC-CONWAY" or "PROV. KODIAK ISLAND MEDICAL CENT". Care Compare
+    publishes the untruncated name for the same CCN, so the matcher
+    gets a second attempt before a facility is called unmapped.
+    """
+
+    def test_the_snapshot_loaded(self) -> None:
+        facilities = load_cms_facilities()
+        self.assertGreater(len(facilities), 5000)
+        # Every key is a CCN and every row keeps a name to match on.
+        self.assertTrue(all(k and k == k.strip() for k in facilities))
+        self.assertGreater(sum(1 for f in facilities.values() if f.name),
+                           len(facilities) - 10)
+
+    def test_a_truncated_cost_report_name_resolves_on_the_cms_name(self) -> None:
+        """Providence Kodiak Island: the cost report ran out of characters
+        mid-word, so the brand is only legible in the CMS name."""
+        self.assertIsNone(match_system("PROV. KODIAK ISLAND MEDICAL CENT", "AK")[0])
+        self.assertIn("PROVIDENCE", cms_name("021306").upper())
+        assigned = assign_systems().set_index("ccn")
+        self.assertEqual(assigned.loc["021306", "system_id"], "providence")
+
+    def test_the_second_name_is_visible_as_its_own_match_basis(self) -> None:
+        """A row matched on a different string than the one displayed has
+        to say so, or the roster looks like it matched on nothing."""
+        assigned = assign_systems()
+        via_cms = assigned[assigned["system_match"].astype(str)
+                           .str.startswith("cms name: ")]
+        self.assertGreater(len(via_cms), 300)
+        for basis in via_cms["system_match"].unique():
+            self.assertTrue(basis[len("cms name: "):].strip(), basis)
+
+    def test_the_tier_only_fires_where_the_cost_report_name_failed(self) -> None:
+        """Second chance, not second opinion — a facility the cost-report
+        name already resolved must never be re-decided by CMS's string."""
+        assigned = assign_systems()
+        via_cms = assigned[assigned["system_match"].astype(str)
+                           .str.startswith("cms name: ")]
+        for name, state in zip(via_cms["name"], via_cms["state"], strict=True):
+            self.assertIsNone(match_system(str(name), str(state))[0],
+                              f"{name} ({state}) already matched on its own name")
+
+    def test_an_override_still_outranks_the_cms_name(self) -> None:
+        """Overrides exist because a name — either name — is unusable."""
+        assigned = assign_systems().set_index("ccn")
+        for ccn in CCN_OVERRIDES:
+            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+
+    def test_the_tier_pays_for_itself_in_coverage(self) -> None:
+        assigned = assign_systems()
+        operating = assigned[assigned["is_operating"]]
+        mapped = int((operating["system_id"] != UNMAPPED_ID).sum())
+        # 1,987 operating facilities mapped on the cost-report name alone.
+        self.assertGreater(mapped, 2300)
+
+    def test_a_missing_snapshot_does_not_take_the_mapping_down(self) -> None:
+        """An optional reference file must degrade, never raise."""
+        import rcm_mc.data.cms_facility_names as cfn
+
+        original = cfn._CACHE
+        try:
+            cfn._CACHE = Path(tempfile.gettempdir()) / "definitely-not-here.json.gz"
+            cfn._clear_cache()
+            self.assertEqual(cfn.load_cms_facilities(), {})
+            self.assertEqual(cfn.cms_name("021306"), "")
+            self.assertIsNone(cfn.cms_facility("021306"))
+        finally:
+            cfn._CACHE = original
+            cfn._clear_cache()
+
+    def test_ownership_flags_partition_the_classes(self) -> None:
+        facilities = load_cms_facilities()
+        flagged = [f for f in facilities.values() if f.ownership]
+        self.assertGreater(len(flagged), 5000)
+        for facility in flagged:
+            classes = (facility.is_government, facility.is_for_profit,
+                       facility.is_nonprofit)
+            self.assertLessEqual(sum(classes), 1, facility.ownership)
 
 
 class FacilityStatusTests(unittest.TestCase):

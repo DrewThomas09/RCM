@@ -75,6 +75,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from .cms_facility_names import load_cms_facilities
 from .hcris import _classify_series, _get_latest_per_ccn
 
 # ── Vocabulary ─────────────────────────────────────────────────────
@@ -1978,17 +1979,34 @@ def _assign_universe(df: pd.DataFrame) -> pd.DataFrame:
     ccns = out["ccn"] if "ccn" in out.columns else pd.Series([""] * len(out), index=out.index)
 
     matches = [match_system(n, s) for n, s in zip(names, states, strict=True)]
-    # A CCN override wins over the name match — it exists precisely
+    # Second name, second chance. HCRIS truncates at ~36 characters and
+    # abbreviates — "BHMC-CONWAY" is Baptist Health Medical Center
+    # Conway, and no pattern written from the brand can reach it. CMS
+    # Care Compare carries the untruncated name for the same CCN, and
+    # trying it recovers ~380 facilities the cost report spelled too
+    # short to see.
+    care_compare = load_cms_facilities()
+
+    # A CCN override wins over both name matches — it exists precisely
     # because the name is wrong or unusable for this facility.
     resolved, bases = [], []
-    for ccn, (sysdef, pattern) in zip(ccns.astype(str), matches, strict=True):
+    for ccn, state, (sysdef, pattern) in zip(
+            ccns.astype(str), states, matches, strict=True):
         override = CCN_OVERRIDES.get(ccn)
         if override and override in _SYSTEM_BY_ID:
             resolved.append(_SYSTEM_BY_ID[override])
             bases.append(f"ccn override {ccn}")
-        else:
-            resolved.append(sysdef)
-            bases.append(pattern)
+            continue
+        if sysdef is None:
+            alt = care_compare.get(ccn)
+            if alt is not None and alt.name:
+                alt_def, alt_pattern = match_system(alt.name, state)
+                if alt_def is not None:
+                    resolved.append(alt_def)
+                    bases.append(f"cms name: {alt_pattern}")
+                    continue
+        resolved.append(sysdef)
+        bases.append(pattern)
     out["system_id"] = [d.system_id if d else UNMAPPED_ID for d in resolved]
     out["system_name"] = [d.name if d else UNMAPPED_NAME for d in resolved]
     out["system_kind"] = [d.kind if d else "" for d in resolved]

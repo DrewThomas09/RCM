@@ -139,6 +139,48 @@ class TaxonomyTests(unittest.TestCase):
             self.assertTrue(desc)
 
 
+class CareCompareTests(unittest.TestCase):
+    """Care Compare's view of the same CCN, carried alongside HCRIS's."""
+
+    def setUp(self) -> None:
+        self.xw = get_crosswalk()
+
+    def test_the_untruncated_name_is_carried_next_to_the_filed_one(self) -> None:
+        """Both names are on the row on purpose: the filed one is what the
+        matcher saw, the CMS one is what the facility is actually called."""
+        both = self.xw[self.xw["cms_name"].ne("")]
+        self.assertGreater(len(both), 5000)
+        differ = both[both["cms_name"].str.upper() != both["name"].str.upper()]
+        self.assertGreater(len(differ), 2000)
+
+    def test_observed_ownership_is_the_only_signal_an_unmapped_row_has(self) -> None:
+        """`system_kind` is a judgement about a system. A facility with no
+        system has none — CMS's own class is what is left."""
+        unmapped = self.xw[self.xw["system_id"].eq("_unmapped")]
+        self.assertGreater(int(unmapped["cms_ownership"].ne("").sum()),
+                           len(unmapped) * 0.6)
+        self.assertIn("Proprietary", set(self.xw["cms_ownership"]))
+        self.assertTrue(any(v.startswith("Government")
+                            for v in set(self.xw["cms_ownership"])))
+
+    def test_care_compare_county_is_a_third_source_not_a_replacement(self) -> None:
+        """It only runs where the geocode file and the cost report both
+        came up empty, so it must be the smallest of the three."""
+        sources = self.xw[self.xw["county_fips"].ne("")]["county_fips_source"]
+        counts = sources.value_counts()
+        self.assertGreater(counts.get("care compare", 0), 0)
+        self.assertLess(counts.get("care compare", 0), counts.get("cost report", 0))
+
+    def test_ownership_and_type_are_blank_rather_than_guessed(self) -> None:
+        """A facility Care Compare never listed gets an empty string, not
+        an inferred class."""
+        absent = self.xw[self.xw["cms_name"].eq("")]
+        self.assertGreater(len(absent), 0)
+        self.assertTrue(absent["cms_ownership"].eq("").all())
+        self.assertTrue(absent["cms_hospital_type"].eq("").all())
+        self.assertTrue(absent["emergency_services"].eq("").all())
+
+
 class CoverageTests(unittest.TestCase):
     def test_coverage_is_reported_worst_first(self) -> None:
         stats = crosswalk_coverage()
@@ -151,6 +193,11 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(by_id["CCN"].pct, 100.0)
         self.assertEqual(by_id["NPI"].resolved, 0)
         self.assertIn("NPPES", by_id["NPI"].note)
+
+    def test_observed_ownership_is_reported_as_its_own_identifier(self) -> None:
+        by_id = {s.identifier: s for s in crosswalk_coverage()}
+        self.assertIn("CMS ownership", by_id)
+        self.assertGreater(by_id["CMS ownership"].pct, 80.0)
 
 
 class MarketRollupTests(unittest.TestCase):

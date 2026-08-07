@@ -59,6 +59,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from .cms_facility_names import cms_facility, load_cms_facilities
 from .health_systems import assign_systems
 
 _CBSA_CSV = (Path(__file__).resolve().parent / "vendor" / "cbsa_crosswalk"
@@ -157,6 +158,14 @@ def county_fips_for(
         if row:
             return str(row.get("county_fips", "")).zfill(5), "cost report"
 
+    # Third source: Care Compare's own county, which fills rows where the
+    # cost report left the field blank entirely.
+    cms = cms_facility(ccn)
+    if cms is not None and cms.county and cms.state:
+        row = index.get((cms.state, _norm_county(cms.county)))
+        if row:
+            return str(row.get("county_fips", "")).zfill(5), "care compare"
+
     return "", ""
 
 
@@ -171,6 +180,7 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "facility_status", "is_operating", "reports_no_activity",
     "facility_type", "facility_type_label", "taxonomy_code", "taxonomy_desc",
     "is_behavioral",
+    "cms_name", "cms_ownership", "cms_hospital_type", "emergency_services",
     "county", "county_fips", "county_fips_source",
     "cbsa_code", "cbsa_title", "cbsa_type", "cbsa_central_outlying",
     "lat", "lon", "geo_match_quality",
@@ -188,10 +198,12 @@ def build_crosswalk(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
         return pd.DataFrame(columns=list(CROSSWALK_COLUMNS))
 
     coords = load_hospital_coords()
+    care_compare = load_cms_facilities()
     rows: List[Dict[str, Any]] = []
     for rec in assigned.to_dict("records"):
         ccn = str(rec.get("ccn", ""))
         coord = coords.get(ccn)
+        cms = care_compare.get(ccn)
         fips, fips_source = county_fips_for(ccn, rec.get("state"), rec.get("county"))
         cbsa = cbsa_for_county(fips) or {}
         code, desc = facility_taxonomy(rec.get("facility_type"))
@@ -215,6 +227,13 @@ def build_crosswalk(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
             "taxonomy_code": code,
             "taxonomy_desc": desc,
             "is_behavioral": bool(rec.get("is_behavioral")),
+            # Care Compare's own view of the same facility: the
+            # untruncated name, and the ownership class CMS observes
+            # rather than the one the registry infers.
+            "cms_name": cms.name if cms else "",
+            "cms_ownership": cms.ownership if cms else "",
+            "cms_hospital_type": cms.hospital_type if cms else "",
+            "emergency_services": cms.emergency_services if cms else "",
             "county": rec.get("county", "") if isinstance(rec.get("county"), str) else "",
             "county_fips": fips,
             "county_fips_source": fips_source,
@@ -295,6 +314,9 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None) -> List[CoverageStat]:
         CoverageStat("Lat / lon", int(xw["lat"].notna().sum()), total,
                      "Census geocoder against CMS addresses"),
         CoverageStat("ZIP", filled("zip"), total, "from the cost report"),
+        CoverageStat("CMS ownership", filled("cms_ownership"), total,
+                     "observed ownership class from Care Compare — the only "
+                     "ownership signal an unmapped facility has"),
         CoverageStat("NPI", filled("npi"), total,
                      "requires an NPPES extract — see nppes_ingest"),
     ]
