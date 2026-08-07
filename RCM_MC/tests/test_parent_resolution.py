@@ -20,10 +20,11 @@ import pandas as pd
 from rcm_mc.data.health_systems import UNMAPPED_ID
 from rcm_mc.data.parent_resolution import (
     MAX_HOPS, NS_CCN, NS_CHAIN, NS_NPI, NS_ORG, NS_PECOS, NS_SYSTEM,
-    RESOLUTION_COLUMNS, TIER_CCN_CHAIN, TIER_CCN_PARENT, TIER_CCN_SYSTEM,
-    TIER_CONFIDENCE, TIER_NAME_SYSTEM, TIER_NPI_CCN, TIER_NPPES_SUBPART,
-    TIER_PECOS_GROUP, TIER_RANK, ParentGraph, build_parent_graph,
-    edges_from_crosswalk, edges_from_npi_frame, node_key,
+    DISAGREEMENT_COLUMNS, RESOLUTION_COLUMNS, TIER_CCN_CHAIN,
+    TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE, TIER_NAME_SYSTEM,
+    TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP, TIER_RANK,
+    ParentGraph, build_parent_graph, edges_from_crosswalk,
+    edges_from_npi_frame, node_key, ownership_disagreements,
     resolve_identifiers,
 )
 
@@ -174,6 +175,107 @@ class ContestedTests(unittest.TestCase):
         self.assertIn("ccn:1", contested)
         self.assertEqual(contested["ccn:1"],
                          ("chain:INNOVATIVE DIALYSIS", "sys:us_renal_care"))
+
+
+class NamedOwnerPreferenceTests(unittest.TestCase):
+    """A stronger tier that names nobody must not bury a weaker tier that
+    names someone."""
+
+    def test_a_dead_end_on_another_facility_loses_to_a_named_system(self):
+        # Five hospital-based units hit this on the real data: the unit
+        # knew it was UCHealth, its parent hospital's filed name carried
+        # no brand, and ccn_parent (0.90) buried the answer under a bare
+        # ccn: node.
+        g = ParentGraph()
+        g.add_edge("ccn:06T022", "ccn:060022", TIER_CCN_PARENT)
+        g.add_edge("ccn:06T022", "sys:uchealth", TIER_CCN_SYSTEM)
+        res = g.resolve("ccn:06T022")
+        self.assertEqual(res.final_parent, "sys:uchealth")
+
+    def test_the_stronger_tier_still_wins_when_both_name_an_owner(self):
+        g = ParentGraph()
+        g.add_edge("ccn:01T011", "ccn:010011", TIER_CCN_PARENT)
+        g.add_edge("ccn:010011", "sys:ascension", TIER_CCN_SYSTEM)
+        g.add_edge("ccn:01T011", "sys:other", TIER_CCN_SYSTEM)
+        self.assertEqual(g.resolve("ccn:01T011").final_parent, "sys:ascension")
+
+    def test_a_facility_root_is_still_the_answer_when_it_is_the_only_one(self):
+        """"Inside hospital X, owner unknown" beats no answer at all."""
+        g = ParentGraph()
+        g.add_edge("ccn:06T022", "ccn:060022", TIER_CCN_PARENT)
+        self.assertEqual(g.resolve("ccn:06T022").final_parent, "ccn:060022")
+
+    def test_a_dead_end_claim_is_not_counted_as_a_disagreement(self):
+        g = ParentGraph()
+        g.add_edge("ccn:06T022", "ccn:060022", TIER_CCN_PARENT)
+        g.add_edge("ccn:06T022", "sys:uchealth", TIER_CCN_SYSTEM)
+        self.assertEqual(g.contested(), {})
+
+
+class ChainAliasTests(unittest.TestCase):
+    """CMS's chain strings have a curated mapping in the registry, and the
+    regex patterns are a second route for names it does not cover."""
+
+    def _frame(self, chain: str, system_id: str, state: str = "NY"):
+        return pd.DataFrame([{
+            "ccn": "332514", "parent_ccn": "", "parent_ccn_source": "",
+            "chain_name": chain, "system_id": system_id, "system_match": "",
+            "system_name": "", "npi": "", "npi_source": "", "state": state}])
+
+    def test_a_chain_alias_reaches_the_system_its_pattern_cannot(self):
+        # atlantic_dms's pattern is "NY:^ATLANTIC DMS"; CMS files the
+        # chain as "ATLANTIC DIALYSIS MANAGEMENT SERVICES". Same
+        # operator, two spellings — and without the alias table they
+        # showed up as an ownership disagreement with each other.
+        graph = build_parent_graph(
+            crosswalk=self._frame("ATLANTIC DIALYSIS MANAGEMENT SERVICES",
+                                  "atlantic_dms"))
+        self.assertEqual(graph.resolve(node_key(NS_CCN, "332514")).final_parent,
+                         node_key(NS_SYSTEM, "atlantic_dms"))
+        self.assertEqual(graph.contested(), {})
+
+    def test_a_state_scoped_pattern_fires_using_its_facilities_states(self):
+        """The node key is a normalised name that has thrown the state
+        away, so the lift has to be told where the facilities are."""
+        graph = build_parent_graph(
+            crosswalk=self._frame("NORTHWEST KIDNEY CENTERS",
+                                  "northwest_kidney", state="WA"))
+        self.assertEqual(graph.resolve(node_key(NS_CCN, "332514")).final_parent,
+                         node_key(NS_SYSTEM, "northwest_kidney"))
+
+
+class DisagreementFrameTests(unittest.TestCase):
+    def _graph(self) -> ParentGraph:
+        g = ParentGraph()
+        g.add_edge("ccn:052583", "chain:INNOVATIVE DIALYSIS SYSTEMS",
+                   TIER_CCN_CHAIN, "Innovative Dialysis Systems")
+        g.add_edge("ccn:052583", "sys:us_renal_care", TIER_CCN_SYSTEM,
+                   "^USRC ")
+        return g
+
+    def test_the_frame_has_the_declared_columns(self):
+        frame = ownership_disagreements(self._graph())
+        self.assertEqual(list(frame.columns), list(DISAGREEMENT_COLUMNS))
+
+    def test_both_candidates_and_the_evidence_for_each_are_carried(self):
+        """A work queue is useless if a reviewer has to go and find the
+        two answers themselves."""
+        row = ownership_disagreements(self._graph()).iloc[0]
+        self.assertEqual(row["identifier"], "052583")
+        self.assertEqual(row["resolved_parent"],
+                         "chain:INNOVATIVE DIALYSIS SYSTEMS")
+        self.assertEqual(row["rival_parent"], "sys:us_renal_care")
+        self.assertIn("Innovative Dialysis Systems", row["evidence"])
+        self.assertIn("^USRC", row["evidence"])
+
+    def test_an_agreeing_graph_produces_an_empty_typed_frame(self):
+        g = ParentGraph()
+        g.add_edge("ccn:1", "chain:DAVITA", TIER_CCN_CHAIN)
+        g.add_edge("ccn:1", "sys:davita", TIER_CCN_SYSTEM)
+        g.add_edge("chain:DAVITA", "sys:davita", TIER_NAME_SYSTEM)
+        frame = ownership_disagreements(g)
+        self.assertTrue(frame.empty)
+        self.assertEqual(list(frame.columns), list(DISAGREEMENT_COLUMNS))
 
 
 class CrosswalkEdgeTests(unittest.TestCase):

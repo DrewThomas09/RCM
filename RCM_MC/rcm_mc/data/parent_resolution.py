@@ -60,7 +60,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 
-from .health_systems import UNMAPPED_ID, match_system, normalize_name
+from .health_systems import (
+    CHAIN_ALIASES, UNMAPPED_ID, match_system, normalize_name,
+)
 
 # ── Tiers, strongest first ─────────────────────────────────────────
 #
@@ -116,6 +118,10 @@ NS_SYSTEM = "sys"
 NS_CHAIN = "chain"
 NS_PECOS = "pecos"
 NS_ORG = "org"
+
+#: Namespaces that identify a *facility*, not an owner. Landing on one
+#: means the walk ran out of ownership data, not that it found a parent.
+_FACILITY_NAMESPACES = frozenset({NS_CCN, NS_NPI})
 
 
 def node_key(namespace: str, value: Any) -> str:
@@ -274,8 +280,15 @@ class ParentGraph:
         for child, claims in self._claims.items():
             if len({c.parent for c in claims}) < 2:
                 continue
-            finals = sorted({self.resolve(c.parent).final_parent
-                             for c in claims})
+            # A claim that dead-ends on another facility named no owner,
+            # so it cannot disagree with one. Comparing it anyway flagged
+            # every hospital-based unit whose parent hospital happens to
+            # be unmapped — five in this data, all of which resolve
+            # correctly through the unit's own system.
+            finals = sorted({
+                final for final in (self.resolve(c.parent).final_parent
+                                    for c in claims)
+                if final.partition(":")[0] not in _FACILITY_NAMESPACES})
             if len(finals) > 1:
                 out[child] = tuple(finals)
         return out
@@ -311,8 +324,21 @@ class ParentGraph:
         deeper = _stack + (node,)
         upstream = {edge: self.resolve(edge.parent, deeper) for edge in claims}
 
-        # Where the node lands: the strongest tier decides.
-        anchor = min(claims, key=lambda e: (e.rank, e.parent))
+        # Where the node lands: the strongest tier decides — but only
+        # among claims that actually name an owner.
+        #
+        # A route ending on ``ccn:`` or ``npi:`` has not answered the
+        # ownership question; it has walked to another facility whose
+        # owner is unknown. That happened on five hospital-based units
+        # whose parent CCN outranked their own system: the unit knew it
+        # was UCHealth, its parent hospital's filed name carried no
+        # brand, and the stronger tier buried the better answer under
+        # ``ccn:060022``. Both statements are true and one of them is
+        # useless.
+        named = [e for e in claims
+                 if upstream[e].final_parent.partition(":")[0]
+                 not in _FACILITY_NAMESPACES]
+        anchor = min(named or claims, key=lambda e: (e.rank, e.parent))
         target = upstream[anchor].final_parent
 
         # How sure we are: the best-supported route to that same place.
@@ -365,19 +391,41 @@ class ParentGraph:
 # ── building the graph from the sources we have ────────────────────
 
 def _system_edges_for_name(graph: ParentGraph, node: str, name: Any,
-                           state: Any = "") -> bool:
+                           states: Iterable[str] = ()) -> bool:
     """Point a chain or parent-organization name at a registry system.
 
     This is what turns a *local* parent into a *final* one. Without it
     a dialysis clinic stops at ``chain:FRESENIUS MEDICAL CARE`` and a
     subpart stops at ``org:ASCENSION HEALTH``, both of which are the
     right answer one hop too early.
+
+    ``states`` matters more than it looks. Many registry patterns are
+    state-scoped, because MERCY and BAPTIST and CENTRAL FLORIDA KIDNEY
+    name several unrelated organizations. Matching a chain name with no
+    state skips every one of those patterns, so the chain stayed its own
+    root while the facilities under it resolved to the very system the
+    chain *is* — and the two then showed up as an ownership
+    disagreement with itself. The states of the node's own children are
+    the right ones to try.
     """
-    sysdef, pattern = match_system(name, str(state or "").upper())
-    if sysdef is None:
-        return False
-    return graph.add_edge(node, node_key(NS_SYSTEM, sysdef.system_id),
-                          TIER_NAME_SYSTEM, f"name: {pattern}")
+    # CMS's own chain strings already have a curated mapping in the
+    # registry; the regex patterns are a *second* route for names it
+    # does not cover. Skipping the table meant "ATLANTIC DIALYSIS
+    # MANAGEMENT SERVICES" never reached atlantic_dms, whose pattern is
+    # "^ATLANTIC DMS" — the same operator under two spellings, showing
+    # up as an ownership disagreement with itself.
+    alias = CHAIN_ALIASES.get(str(name or "").strip().upper())
+    if alias:
+        return graph.add_edge(node, node_key(NS_SYSTEM, alias),
+                              TIER_NAME_SYSTEM, "CMS chain alias")
+
+    candidates = [s for s in dict.fromkeys(states) if s] or [""]
+    for state in candidates:
+        sysdef, pattern = match_system(name, str(state).upper())
+        if sysdef is not None:
+            return graph.add_edge(node, node_key(NS_SYSTEM, sysdef.system_id),
+                                  TIER_NAME_SYSTEM, f"name: {pattern}")
+    return False
 
 
 def edges_from_crosswalk(frame: pd.DataFrame) -> List[ParentEdge]:
@@ -485,18 +533,38 @@ def build_parent_graph(
     not. Turn it off to see the raw one-hop structure.
     """
     graph = ParentGraph()
+    states: Dict[str, List[str]] = {}
     if crosswalk is not None and not crosswalk.empty:
         graph.add_edges(edges_from_crosswalk(crosswalk))
+        _collect_states(states, crosswalk, NS_CHAIN, "chain_name")
     if npi_frame is not None and not npi_frame.empty:
         graph.add_edges(edges_from_npi_frame(npi_frame))
+        _collect_states(states, npi_frame, NS_ORG, "parent_org_lbn")
 
     if lift_names_to_systems:
         for node in sorted(graph.nodes):
             namespace, _, value = node.partition(":")
             if namespace in (NS_CHAIN, NS_ORG):
-                _system_edges_for_name(graph, node, value)
+                _system_edges_for_name(graph, node, value,
+                                       states.get(node, ()))
         _lift_groups_to_systems(graph)
     return graph
+
+
+def _collect_states(into: Dict[str, List[str]], frame: pd.DataFrame,
+                    namespace: str, name_column: str) -> None:
+    """Remember which states a named parent's facilities sit in.
+
+    State-scoped registry patterns cannot fire without one, and the
+    node key is a normalised name that has thrown the state away.
+    """
+    if name_column not in frame.columns or "state" not in frame.columns:
+        return
+    for name, state in zip(frame[name_column], frame["state"], strict=True):
+        node = node_key(namespace, name)
+        code = str(state or "").strip().upper()
+        if node and code and code not in into.setdefault(node, []):
+            into[node].append(code)
 
 
 def _lift_groups_to_systems(graph: ParentGraph) -> int:
@@ -537,6 +605,72 @@ RESOLUTION_COLUMNS: Tuple[str, ...] = (
     "final_parent_namespace", "final_parent_identifier",
     "tier", "confidence", "hops", "cycle", "truncated", "provenance",
 )
+
+
+DISAGREEMENT_COLUMNS: Tuple[str, ...] = (
+    "node", "namespace", "identifier", "resolved_parent", "resolved_tier",
+    "resolved_confidence", "rival_parent", "rival_tier", "rival_confidence",
+    "candidates", "evidence",
+)
+
+
+def ownership_disagreements(graph: ParentGraph) -> pd.DataFrame:
+    """Facilities whose sources name different owners — the closest thing
+    to an acquisition list this data supports.
+
+    CMS publishes change-of-ownership only as state-by-year counts; there
+    is no facility-level CHOW file, so an acquisition roster cannot be
+    read off anything here. What *can* be read is disagreement. When an
+    operator-published chain name and the resolved health system point at
+    two different parents, one of them is usually stale, and stale
+    usually means the facility changed hands: clinics still filing under
+    Innovative Dialysis Systems that resolve to US Renal Care, under
+    Diversified Specialty Institutes that resolve to DSI Renal.
+
+    This is a work queue, not a transaction log. Every row is a question
+    with both answers and the evidence for each, ordered so the ones a
+    reviewer can settle fastest come first. Calling it an acquisition
+    list would be claiming a fact; calling it a disagreement is the fact.
+    """
+    rows: List[Dict[str, Any]] = []
+    for node, finals in sorted(graph.contested().items()):
+        namespace, _, identifier = node.partition(":")
+        claims = sorted(graph.claims_for(node), key=lambda e: (e.rank, e.parent))
+        if not claims:
+            continue
+        winner = claims[0]
+        resolved = graph.resolve(node)
+        rival = next(
+            (c for c in claims[1:]
+             if graph.resolve(c.parent).final_parent != resolved.final_parent),
+            None)
+        rival_res = graph.resolve(rival.parent) if rival is not None else None
+        rows.append({
+            "node": node,
+            "namespace": namespace,
+            "identifier": identifier,
+            "resolved_parent": resolved.final_parent,
+            "resolved_tier": winner.tier,
+            "resolved_confidence": resolved.confidence,
+            "rival_parent": rival_res.final_parent if rival_res else "",
+            "rival_tier": rival.tier if rival is not None else "",
+            # The rival's score is the score of *taking that route*, not
+            # the score of the node it happens to end on. A rival system
+            # is always a root, and a root is always 1.0 — reporting
+            # that made every rival look like the certain answer.
+            "rival_confidence": (min(rival.confidence, rival_res.confidence)
+                                 if rival_res is not None else ""),
+            "candidates": " | ".join(finals),
+            "evidence": " | ".join(
+                f"{c.tier}: {c.evidence or c.parent}" for c in claims),
+        })
+    if not rows:
+        return pd.DataFrame(columns=list(DISAGREEMENT_COLUMNS))
+    frame = pd.DataFrame(rows, columns=list(DISAGREEMENT_COLUMNS))
+    # Highest-confidence disagreements first: those are the ones where
+    # both sources are strong and one of them is genuinely wrong.
+    return frame.sort_values(["resolved_confidence", "node"],
+                             ascending=[False, True]).reset_index(drop=True)
 
 
 def resolve_identifiers(graph: ParentGraph, *,

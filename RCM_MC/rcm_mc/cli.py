@@ -1238,6 +1238,9 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                     help="Rows read per pass when streaming from --npi-db")
     mf.add_argument("--gzip", action="store_true",
                     help="Compress the CSV as it is written")
+    mf.add_argument("--disagreements-out", default="",
+                    help="Write the ownership-disagreement work queue here "
+                         "(facilities whose sources name different owners)")
     mf.add_argument("--json", action="store_true", help="Emit JSON")
 
     # Two-source market structure: NPPES provider supply x Census CBP
@@ -1462,6 +1465,19 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         else:
             report = master_file_coverage(build_master_file(db_path=db))
 
+        if args.disagreements_out:
+            from .data.parent_resolution import (
+                build_parent_graph, ownership_disagreements,
+            )
+            from .data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+            queue = ownership_disagreements(
+                build_parent_graph(crosswalk=get_crosswalk(scope=SCOPE_ALL)))
+            queue.to_csv(args.disagreements_out, index=False)
+            report = dict(report)
+            report["disagreements"] = len(queue)
+            report["disagreements_path"] = args.disagreements_out
+
         if args.json:
             sys.stdout.write(json.dumps(report, indent=2, default=int) + "\n")
             return 0
@@ -1469,7 +1485,8 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         sys.stdout.write("Master NPI crosswalk\n")
         for key in ("path", "npis", "rows", "organizations", "individuals",
                     "organizations_with_a_parent", "with_parent",
-                    "linked_to_ccn", "with_ccn", "contested"):
+                    "linked_to_ccn", "with_ccn", "contested",
+                    "disagreements", "disagreements_path"):
             if key in report:
                 value = report[key]
                 pretty = f"{value:,}" if isinstance(value, int) else value

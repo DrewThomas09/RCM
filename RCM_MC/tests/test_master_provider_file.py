@@ -441,6 +441,26 @@ class CliTests(unittest.TestCase):
             header = next(csv.reader(fh))
         self.assertEqual(header, list(MASTER_COLUMNS))
 
+    def test_the_disagreement_queue_is_written_and_counted(self):
+        """CMS publishes change-of-ownership only as state-by-year counts,
+        so the closest thing to an acquisition list this data supports is
+        the set of facilities whose sources name different owners."""
+        target = Path(self.tmp.name) / "disagreements.csv"
+        code, out = self._run(["master-file", "--disagreements-out",
+                               str(target)])
+        self.assertEqual(code, 0)
+        self.assertIn("disagreements", out)
+        rows = list(csv.DictReader(target.open()))
+        self.assertTrue(rows)
+        for row in rows:
+            with self.subTest(node=row["node"]):
+                # Both answers and the evidence for each, or it is not a
+                # queue anyone can work.
+                self.assertTrue(row["resolved_parent"])
+                self.assertTrue(row["rival_parent"])
+                self.assertNotEqual(row["resolved_parent"], row["rival_parent"])
+                self.assertIn(":", row["evidence"])
+
     def test_gzip_is_a_flag(self):
         target = Path(self.tmp.name) / "master.csv.gz"
         code, _ = self._run(["master-file", "--out", str(target), "--gzip"])
