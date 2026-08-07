@@ -40,9 +40,17 @@ from urllib.request import Request, urlopen
 NPPES_BASE = "https://npiregistry.cms.hhs.gov/api/"
 _DEFAULT_VERSION = "2.1"
 _MAX_LIMIT = 200  # NPPES hard cap per request
+# ASCII only, and deliberately so. HTTP header values are encoded
+# latin-1 by ``http.client.putheader``, which raises UnicodeEncodeError
+# on anything above U+00FF — before a socket is even opened. This
+# string carried an em dash, so every live NPPES call raised, and
+# ``capiq._default_npi_fetch`` caught it under a bare ``except
+# Exception: return []`` and reported UNMATCHED. A transport bug that
+# presents as "no such provider" is the worst kind, because the answer
+# looks like data.
 _DEFAULT_USER_AGENT = (
     "rcm-mc/data-public-nppes (github.com/DrewThomas09/RCM_MC; "
-    "commercial-diligence research — contact: research@example.com)"
+    "commercial-diligence research - contact: research@example.com)"
 )
 
 

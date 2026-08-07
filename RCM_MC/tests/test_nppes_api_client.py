@@ -16,6 +16,7 @@ from urllib.error import HTTPError, URLError
 from rcm_mc.data_public.nppes_api_client import (
     NppesApiError,
     NppesProvider,
+    _DEFAULT_USER_AGENT,
     _parse_record,
     _parse_results,
     fetch_by_npi,
@@ -150,6 +151,46 @@ class ParserTests(unittest.TestCase):
 
 
 # ── HTTP transport tests ──────────────────────────────────────────
+
+class HeaderEncodingTests(unittest.TestCase):
+    """HTTP header values are latin-1, and the failure is invisible.
+
+    ``http.client.putheader`` encodes every header value latin-1 and
+    raises ``UnicodeEncodeError`` before a socket is opened. The default
+    User-Agent here once carried an em dash, so every live NPPES call
+    raised — and ``capiq._default_npi_fetch`` swallows the exception
+    under a bare ``except Exception: return []`` and reports UNMATCHED.
+    A transport bug that presents as "no such provider" is the worst
+    kind, because the answer looks like data.
+
+    Every other test in this file patches ``urlopen``, which is exactly
+    why this survived: the header never reached the encoder.
+    """
+
+    def test_the_default_user_agent_survives_the_header_encoder(self):
+        _DEFAULT_USER_AGENT.encode("latin-1")   # raises if it regresses
+
+    def test_a_real_putheader_accepts_the_default_user_agent(self):
+        """Exercise the actual encoder rather than asserting about it."""
+        import http.client
+        from io import BytesIO
+
+        conn = http.client.HTTPConnection("example.invalid")
+        conn.sock = BytesIO()   # buffered, never sent
+        conn.putrequest("GET", "/", skip_host=True, skip_accept_encoding=True)
+        conn.putheader("User-Agent", _DEFAULT_USER_AGENT)
+
+    def test_the_encoder_really_does_reject_non_latin1(self):
+        """Pin the mechanism, so the test above cannot pass vacuously."""
+        import http.client
+        from io import BytesIO
+
+        conn = http.client.HTTPConnection("example.invalid")
+        conn.sock = BytesIO()
+        conn.putrequest("GET", "/", skip_host=True, skip_accept_encoding=True)
+        with self.assertRaises(UnicodeEncodeError):
+            conn.putheader("User-Agent", "research — contact")
+
 
 class TransportTests(unittest.TestCase):
     def test_search_by_organization_happy_path(self):
