@@ -18,17 +18,30 @@ import pandas as pd
 from rcm_mc.data.nppes_ingest import (
     COL_ADDR,
     COL_CITY,
+    COL_CREDENTIAL,
     COL_DBA,
     COL_DEACTIVATION,
+    COL_EIN,
     COL_ENTITY,
+    COL_ENUMERATION,
     COL_FIRST,
     COL_LAST,
+    COL_LAST_UPDATE,
     COL_LEGAL_NAME,
     COL_NPI,
+    COL_PARENT_LBN,
+    COL_PARENT_TIN,
     COL_REACTIVATION,
+    COL_SOLE_PROPRIETOR,
     COL_STATE,
+    COL_SUBPART,
     COL_TAXONOMY,
     COL_ZIP,
+    STATUS_ACTIVE,
+    STATUS_DEACTIVATED,
+    STATUS_REACTIVATED,
+    USE_COLUMNS,
+    ingest_deactivations,
     ingest_nppes,
     link_npis_to_ccns,
     match_organization,
@@ -843,12 +856,29 @@ def _nppes_fixture(path: Path) -> None:
          COL_CITY: "BIRMINGHAM", COL_ZIP: "35243",
          COL_DEACTIVATION: "01/05/2020", COL_REACTIVATION: "03/09/2021",
          COL_TAXONOMY: "283X00000X"},
+        # A subpart naming its parent, with the primary taxonomy in slot 2
+        # rather than slot 1 — both are ordinary in the real file and both
+        # were invisible to the reader before.
+        {COL_NPI: "7777777777", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "ASCENSION SAINT THOMAS HOME CARE", COL_STATE: "TN",
+         COL_CITY: "NASHVILLE", COL_ZIP: "37205",
+         COL_TAXONOMY: "332B00000X",
+         "Healthcare Provider Primary Taxonomy Switch_1": "N",
+         "Healthcare Provider Taxonomy Code_2": "251E00000X",
+         "Healthcare Provider Primary Taxonomy Switch_2": "Y",
+         COL_SUBPART: "Y", COL_PARENT_LBN: "ASCENSION HEALTH",
+         COL_PARENT_TIN: "999999999", COL_EIN: "123456789",
+         COL_ENUMERATION: "05/23/2006", COL_LAST_UPDATE: "01/02/2024"},
+        # A sole proprietor with a credential — an individual NPI that is
+        # also, legally, the business.
+        {COL_NPI: "8888888888", COL_ENTITY: "1", COL_FIRST: "SAM",
+         COL_LAST: "ROE", COL_STATE: "TX", COL_CITY: "AUSTIN",
+         COL_ZIP: "78701", COL_TAXONOMY: "207Q00000X",
+         COL_CREDENTIAL: "M.D.", COL_SOLE_PROPRIETOR: "Y"},
     ]
-    cols = [COL_NPI, COL_ENTITY, COL_LEGAL_NAME, COL_DBA, COL_LAST, COL_FIRST,
-            COL_ADDR, COL_CITY, COL_STATE, COL_ZIP, COL_TAXONOMY,
-            COL_DEACTIVATION, COL_REACTIVATION,
-            # CMS adds columns between releases; the reader must tolerate it.
-            "Some Column CMS Added Later"]
+    cols = list(USE_COLUMNS) + [
+        # CMS adds columns between releases; the reader must tolerate it.
+        "Some Column CMS Added Later"]
     with path.open("w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=cols)
         writer.writeheader()
@@ -966,13 +996,13 @@ class NppesIngestTests(unittest.TestCase):
     def test_streams_in_chunks_without_reading_the_whole_file(self) -> None:
         """The real file is ~9 GB; peak memory must be one chunk."""
         report = ingest_nppes(self.csv, self.db, chunk_size=2)
-        self.assertEqual(report.chunks, 3)
-        self.assertEqual(report.rows_read, 6)
+        self.assertEqual(report.chunks, 4)
+        self.assertEqual(report.rows_read, 8)
 
     def test_a_dba_carries_the_brand_when_the_legal_name_is_a_holdco(self) -> None:
         report = ingest_nppes(self.csv, self.db, chunk_size=2)
         self.assertEqual(report.matched_by_dba, 1)
-        self.assertEqual(report.matched_by_legal_name, 2)
+        self.assertEqual(report.matched_by_legal_name, 3)
         rows = {r["npi"]: r for r in npi_rows(self.db, limit=50)}
         self.assertEqual(rows["2222222222"]["system_id"], "oceans")
         self.assertTrue(rows["2222222222"]["match_basis"].startswith("dba"))
@@ -985,12 +1015,70 @@ class NppesIngestTests(unittest.TestCase):
         self.assertEqual(rows["4444444444"]["entity_type"], "1")
         self.assertEqual(rows["4444444444"]["system_id"], "")
 
-    def test_reactivated_npis_survive_and_dead_ones_do_not(self) -> None:
+    def test_a_dead_npi_is_recorded_not_forgotten(self) -> None:
+        """A crosswalk exists to resolve identifiers found in other data,
+        and old claims are full of NPIs NPPES has since retired. Dropping
+        them makes a retired identifier indistinguishable from a typo."""
         report = ingest_nppes(self.csv, self.db, chunk_size=2)
+        self.assertEqual(report.deactivated_skipped, 0)
+        self.assertEqual(report.deactivated_kept, 1)
+        self.assertEqual(report.reactivated, 1)
+        rows = {r["npi"]: r for r in npi_rows(self.db, limit=50)}
+        self.assertEqual(rows["5555555555"]["status"], STATUS_DEACTIVATED)
+        self.assertEqual(rows["5555555555"]["deactivation_date"], "01/05/2020")
+        # Reactivated is its own state: it bills today but has a gap, and
+        # a claim from inside that gap is a different question.
+        self.assertEqual(rows["6666666666"]["status"], STATUS_REACTIVATED)
+        self.assertEqual(rows["6666666666"]["reactivation_date"], "03/09/2021")
+        self.assertEqual(rows["1111111111"]["status"], STATUS_ACTIVE)
+
+    def test_active_only_still_available_for_callers_that_want_it(self) -> None:
+        report = ingest_nppes(self.csv, self.db, chunk_size=2, active_only=True)
         self.assertEqual(report.deactivated_skipped, 1)
+        self.assertEqual(report.deactivated_kept, 0)
         npis = {r["npi"] for r in npi_rows(self.db, limit=50)}
-        self.assertNotIn("5555555555", npis)   # deactivated, never came back
-        self.assertIn("6666666666", npis)      # deactivated then reactivated
+        self.assertNotIn("5555555555", npis)
+        self.assertIn("6666666666", npis)
+
+    def test_the_primary_taxonomy_is_the_switched_one_not_the_first(self) -> None:
+        """Providers reorder their taxonomy slots between updates, so slot
+        1 is not reliably the primary. Reading it as if it were turns a
+        home-health agency into a DME supplier."""
+        ingest_nppes(self.csv, self.db, chunk_size=4)
+        row = {r["npi"]: r for r in npi_rows(self.db, limit=50)}["7777777777"]
+        self.assertEqual(row["taxonomy_code"], "251E00000X")
+        self.assertEqual(row["taxonomy_category"], "home_health")
+        # …and the other enrolment is not lost, just not primary.
+        self.assertEqual(row["taxonomy_codes"], "332B00000X|251E00000X")
+
+    def test_subpart_and_parent_organization_survive_the_ingest(self) -> None:
+        """NPPES's own statement of who owns whom. It is the first tier of
+        parent resolution, and it was being read past."""
+        report = ingest_nppes(self.csv, self.db, chunk_size=4)
+        self.assertEqual(report.subparts, 1)
+        self.assertEqual(report.with_parent_org, 1)
+        row = {r["npi"]: r for r in npi_rows(self.db, limit=50)}["7777777777"]
+        self.assertEqual(row["is_subpart"], "Y")
+        self.assertEqual(row["parent_org_lbn"], "ASCENSION HEALTH")
+        self.assertEqual(row["ein"], "123456789")
+
+    def test_taxonomy_classification_lands_on_every_row(self) -> None:
+        ingest_nppes(self.csv, self.db, chunk_size=4)
+        rows = {r["npi"]: r for r in npi_rows(self.db, limit=50)}
+        self.assertEqual(rows["1111111111"]["taxonomy_category"], "hospital")
+        self.assertEqual(rows["1111111111"]["taxonomy_level_i"], "Hospitals")
+        self.assertEqual(rows["8888888888"]["taxonomy_category"], "physician")
+        # A row with no taxonomy at all gets blanks, never a guess.
+        self.assertEqual(rows["5555555555"]["taxonomy_category"], "")
+
+    def test_coverage_reports_the_status_and_category_mix(self) -> None:
+        ingest_nppes(self.csv, self.db, chunk_size=4)
+        cov = npi_coverage(self.db)
+        self.assertEqual(cov["by_status"][STATUS_DEACTIVATED], 1)
+        self.assertEqual(cov["by_status"][STATUS_REACTIVATED], 1)
+        self.assertEqual(cov["by_category"]["hospital"], 4)
+        self.assertEqual(cov["subparts"], 1)
+        self.assertEqual(cov["naming_a_parent_organization"], 1)
 
     def test_rerunning_upserts_rather_than_duplicating(self) -> None:
         """A 9 GB ingest will get interrupted; resuming has to be safe."""
@@ -1002,7 +1090,7 @@ class NppesIngestTests(unittest.TestCase):
     def test_organizations_only_skips_the_individual_bulk(self) -> None:
         report = ingest_nppes(self.csv, self.db, chunk_size=3,
                               organizations_only=True)
-        self.assertEqual(report.individuals, 1)
+        self.assertEqual(report.individuals, 2)
         self.assertNotIn("4444444444", {r["npi"] for r in npi_rows(self.db, limit=50)})
 
     def test_a_file_that_is_not_nppes_is_rejected(self) -> None:
@@ -1014,15 +1102,109 @@ class NppesIngestTests(unittest.TestCase):
     def test_coverage_counts_what_was_written(self) -> None:
         ingest_nppes(self.csv, self.db, chunk_size=2)
         cov = npi_coverage(self.db)
-        self.assertEqual(cov["npis"], 5)
-        self.assertEqual(cov["organizations"], 4)
-        self.assertEqual(cov["individuals"], 1)
-        self.assertEqual(cov["system_matched"], 3)
+        self.assertEqual(cov["npis"], 8)
+        self.assertEqual(cov["organizations"], 6)
+        self.assertEqual(cov["individuals"], 2)
+        self.assertEqual(cov["system_matched"], 4)
 
     def test_rows_are_filterable_by_system_and_state(self) -> None:
         ingest_nppes(self.csv, self.db, chunk_size=6)
         self.assertEqual(len(npi_rows(self.db, system_id="oceans")), 1)
-        self.assertEqual(len(npi_rows(self.db, state="TN")), 2)
+        self.assertEqual(len(npi_rows(self.db, state="TN")), 4)
+        self.assertEqual(len(npi_rows(self.db, status=STATUS_DEACTIVATED)), 1)
+        self.assertEqual(len(npi_rows(self.db, category="home_health")), 1)
+
+
+class DeactivationFileTests(unittest.TestCase):
+    """CMS's monthly deactivation file is the only source for NPIs that
+    have dropped out of the dissemination snapshot entirely."""
+
+    #: A real CMS-derived extract already vendored in this repository —
+    #: 4,000 NPIs with their deactivation dates.
+    SEED = (Path(__file__).resolve().parents[1] / "rcm_mc" / "npi_cleaner"
+            / "vendor_v49" / "npi_recovery" / "reference"
+            / "nppes_deactivated_seed.csv")
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.csv = Path(self.tmp.name) / "npidata_pfile_sample.csv"
+        self.db = Path(self.tmp.name) / "npi.db"
+        _nppes_fixture(self.csv)
+        ingest_nppes(self.csv, self.db, chunk_size=4)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def _write(self, rows: list) -> Path:
+        path = Path(self.tmp.name) / "deact.csv"
+        with path.open("w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=["NPI",
+                                                    "NPPES Deactivation Date"])
+            writer.writeheader()
+            writer.writerows(rows)
+        return path
+
+    def test_an_unknown_npi_becomes_a_tombstone_not_a_silence(self) -> None:
+        """"Retired in 2019" and "no such NPI" are different answers, and
+        only one of them is useful to whoever is holding the number."""
+        path = self._write([{"NPI": "9999999999",
+                             "NPPES Deactivation Date": "08/12/2019"}])
+        stats = ingest_deactivations(path, self.db)
+        self.assertEqual(stats["tombstoned"], 1)
+        rows = {r["npi"]: r for r in npi_rows(self.db, limit=50)}
+        self.assertIn("9999999999", rows)
+        self.assertEqual(rows["9999999999"]["status"], STATUS_DEACTIVATED)
+        self.assertEqual(rows["9999999999"]["deactivation_date"], "08/12/2019")
+        # A tombstone claims nothing it does not know.
+        self.assertEqual(rows["9999999999"]["legal_name"], None)
+        self.assertEqual(rows["9999999999"]["taxonomy_category"], None)
+
+    def test_a_known_active_npi_is_moved_to_deactivated(self) -> None:
+        path = self._write([{"NPI": "1111111111",
+                             "NPPES Deactivation Date": "01/01/2026"}])
+        stats = ingest_deactivations(path, self.db)
+        self.assertEqual(stats["updated"], 1)
+        self.assertEqual(stats["tombstoned"], 0)
+        row = {r["npi"]: r for r in npi_rows(self.db, limit=50)}["1111111111"]
+        self.assertEqual(row["status"], STATUS_DEACTIVATED)
+
+    def test_a_reactivated_npi_is_not_re_killed(self) -> None:
+        """The deactivation file records a moment, not the current state.
+        6666666666 was deactivated in 2020 and came back in 2021."""
+        path = self._write([{"NPI": "6666666666",
+                             "NPPES Deactivation Date": "01/05/2020"}])
+        stats = ingest_deactivations(path, self.db)
+        self.assertEqual(stats["kept_reactivated"], 1)
+        self.assertEqual(stats["updated"], 0)
+        row = {r["npi"]: r for r in npi_rows(self.db, limit=50)}["6666666666"]
+        self.assertEqual(row["status"], STATUS_REACTIVATED)
+
+    def test_a_tombstone_does_not_overwrite_a_later_full_ingest(self) -> None:
+        path = self._write([{"NPI": "1234567890",
+                             "NPPES Deactivation Date": "08/12/2019"}])
+        ingest_deactivations(path, self.db)
+        before = npi_coverage(self.db)["npis"]
+        ingest_deactivations(path, self.db)
+        self.assertEqual(npi_coverage(self.db)["npis"], before)
+
+    def test_the_vendored_cms_extract_ingests_as_shipped(self) -> None:
+        """The repo already carries a real 4,000-row CMS deactivation
+        extract under a different header. Reading it must not require
+        anyone to reshape a CMS file by hand."""
+        self.assertTrue(self.SEED.exists())
+        stats = ingest_deactivations(self.SEED, self.db)
+        self.assertGreater(stats["read"], 3_000)
+        self.assertEqual(stats["read"], stats["tombstoned"] + stats["updated"]
+                         + stats["kept_reactivated"])
+        cov = npi_coverage(self.db)
+        self.assertEqual(cov["by_status"][STATUS_DEACTIVATED],
+                         stats["tombstoned"] + 1)
+
+    def test_a_file_that_is_not_a_deactivation_list_is_rejected(self) -> None:
+        bogus = Path(self.tmp.name) / "nope.csv"
+        bogus.write_text("a,b\n1,2\n", encoding="utf-8")
+        with self.assertRaises(ValueError):
+            ingest_deactivations(bogus, self.db)
 
 
 class OrganizationMatchTests(unittest.TestCase):
