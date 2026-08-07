@@ -498,6 +498,22 @@ def export_master_file(
 
 
 @lru_cache(maxsize=1)
+def master_graph() -> ParentGraph:
+    """The ownership graph over every identifier this build can see.
+
+    Wider than :func:`parent_resolution.crosswalk_graph`, which stops at
+    the certified universe. This one adds the NPI sources, so PECOS
+    enrolment groups and NPPES subparts are in the graph too — which is
+    what makes an ownership disagreement visible on the NPI side rather
+    than only between a CCN's chain and its system.
+    """
+    from .provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+    xw = get_crosswalk(scope=SCOPE_ALL)
+    return build_parent_graph(crosswalk=xw, npi_frame=_sources(None, xw, None))
+
+
+@lru_cache(maxsize=1)
 def _cached_master_file() -> pd.DataFrame:
     return build_master_file()
 
@@ -547,3 +563,4 @@ def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
 def _clear_cache() -> None:
     """Test hook."""
     _cached_master_file.cache_clear()
+    master_graph.cache_clear()

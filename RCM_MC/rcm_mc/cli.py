@@ -1471,13 +1471,14 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
                 build_master_file(db_path=db, affiliation_db=affil))
 
         if args.disagreements_out:
-            from .data.parent_resolution import (
-                build_parent_graph, ownership_disagreements,
-            )
-            from .data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+            from .data.master_provider_file import master_graph
+            from .data.parent_resolution import ownership_disagreements
 
-            queue = ownership_disagreements(
-                build_parent_graph(crosswalk=get_crosswalk(scope=SCOPE_ALL)))
+            # The WIDE graph, not the crosswalk-only one: a PECOS group
+            # that disagrees with a name match is the same kind of
+            # finding as a chain that disagrees with a system, and it is
+            # invisible if the NPI sources are left out.
+            queue = ownership_disagreements(master_graph())
             queue.to_csv(args.disagreements_out, index=False)
             report = dict(report)
             report["disagreements"] = len(queue)

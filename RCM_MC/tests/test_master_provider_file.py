@@ -451,6 +451,56 @@ class BundledBuildTests(unittest.TestCase):
         json.loads(json.dumps(self.cov, default=int))
 
 
+class MasterGraphTests(unittest.TestCase):
+    """The disagreement queue has to see both sides of the crosswalk."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.master_provider_file import master_graph
+        from rcm_mc.data.parent_resolution import crosswalk_graph
+
+        cls.wide = master_graph().stats()
+        cls.narrow = crosswalk_graph().stats()
+
+    def test_the_wide_graph_carries_the_npi_tiers_too(self):
+        """A PECOS group disagreeing with a name match is the same kind
+        of finding as a chain disagreeing with a system, and it is
+        invisible if the NPI sources are left out of the graph."""
+        wide_tiers = set(self.wide["claims_by_tier"])
+        narrow_tiers = set(self.narrow["claims_by_tier"])
+        self.assertIn("pecos_group", wide_tiers)
+        self.assertNotIn("pecos_group", narrow_tiers)
+        self.assertTrue(narrow_tiers <= wide_tiers)
+
+    def test_widening_adds_identifiers_rather_than_replacing_them(self):
+        self.assertGreater(self.wide["nodes"], self.narrow["nodes"])
+        self.assertGreaterEqual(self.wide["claims"], self.narrow["claims"])
+
+    def test_the_wide_graph_is_still_acyclic(self):
+        self.assertEqual(self.wide["cycles"], 0)
+        self.assertEqual(self.wide["truncated"], 0)
+
+    def test_no_pecos_group_is_split_across_two_systems(self):
+        """A group whose members name different systems is left as its
+        own root by the unanimity rule, which would hide a real conflict.
+        There are none in this data — pinned so a future one surfaces
+        rather than being silently absorbed."""
+        from rcm_mc.data.master_provider_file import master_graph
+        from rcm_mc.data.parent_resolution import NS_PECOS, TIER_NAME_SYSTEM
+
+        graph = master_graph()
+        split = []
+        for node in graph.nodes:
+            if not node.startswith(f"{NS_PECOS}:"):
+                continue
+            systems = {c.parent for child in graph.children_of(node)
+                       for c in graph.claims_for(child)
+                       if c.tier == TIER_NAME_SYSTEM}
+            if len(systems) > 1:
+                split.append((node, sorted(systems)))
+        self.assertEqual(split, [])
+
+
 class RouteTests(unittest.TestCase):
     """Served over real HTTP, on a live server, like every other export."""
 
