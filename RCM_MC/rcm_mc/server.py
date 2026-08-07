@@ -5122,6 +5122,25 @@ class RCMHandler(BaseHTTPRequestHandler):
             from .ui.data_public.health_system_lookup_page import (
                 render_health_system_lookup)
             return self._send_html(render_health_system_lookup(_qp))
+        if path == "/provider-crosswalk.csv":
+            # The full identifier crosswalk: one row per CCN carrying
+            # system, county FIPS, CBSA/MSA, NUCC taxonomy, geo and NPI,
+            # each with the source that produced it.
+            from .data.provider_crosswalk import get_crosswalk
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _frame = get_crosswalk()
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _cbsa = str(_qp.get("cbsa", "")).strip()[:5]
+            if _cbsa:
+                _frame = _frame[_frame["cbsa_code"].astype(str) == _cbsa]
+            _sys = str(_qp.get("system", "")).strip()[:40]
+            if _sys:
+                _frame = _frame[_frame["system_id"].astype(str) == _sys]
+            return self._send_csv_df(
+                _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
         if path == "/health-system-lookup.csv":
             # Filter-aware export of the hospital ↔ system mapping, one row
             # per facility keyed on CCN so it joins against a target list.

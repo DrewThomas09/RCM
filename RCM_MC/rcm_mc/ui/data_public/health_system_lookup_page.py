@@ -629,6 +629,73 @@ def _concentration_ranking_panel() -> str:
             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>')
 
 
+def _crosswalk_coverage_panel() -> str:
+    """Fill rate per identifier — the scoreboard for the crosswalk.
+
+    Ordered worst-covered first: the point is to show where the
+    crosswalk still cannot answer, not to flatter the columns that are
+    already complete.
+    """
+    from rcm_mc.data.provider_crosswalk import crosswalk_coverage
+
+    stats = crosswalk_coverage()
+    if not stats:
+        return ""
+    bars = []
+    for stat in stats:
+        tone = ("positive" if stat.pct >= 90 else
+                "teal" if stat.pct >= 60 else
+                "warning" if stat.pct > 0 else "negative")
+        bars.append(ck_bar_row(
+            stat.identifier,
+            f"{stat.resolved:,} / {stat.total:,} ({stat.pct:.1f}%)",
+            stat.pct,
+            tone=tone,
+        ))
+    notes = "".join(
+        f'<div class="hsl-legend"><strong>{_esc(s.identifier)}</strong> — '
+        f'{_esc(s.note)}</div>' for s in stats if s.note)
+    return "".join(bars) + notes
+
+
+def _markets_panel(limit: int = 15) -> str:
+    """Facilities and beds by CBSA — the unit an operator competes in.
+
+    A state total smears four unrelated markets together; "Dallas-Fort
+    Worth" is the thing a deal team actually sizes.
+    """
+    from rcm_mc.data.provider_crosswalk import crosswalk_by_cbsa
+
+    markets = crosswalk_by_cbsa()
+    if markets.empty:
+        return ""
+    cols = [("CBSA", "left"), ("Market", "left"), ("Type", "left"),
+            ("Facilities", "right"), ("Beds", "right"),
+            ("Mapped Systems", "right"), ("States", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for rec in markets.head(limit).to_dict("records"):
+        cells = [
+            ck_data_cell(_esc(rec["cbsa_code"]), mono=True, tone="dim"),
+            ck_data_cell(_esc(rec["cbsa_title"]), weight=600),
+            ck_data_cell(_esc(rec["cbsa_type"]), tone="dim"),
+            ck_data_cell(_fmt_int(rec["facilities"]), align="right", mono=True,
+                         weight=700, tone="acc"),
+            ck_data_cell(_fmt_int(rec["beds"]), align="right", mono=True),
+            ck_data_cell(_fmt_int(rec["systems"]), align="right", mono=True),
+            ck_data_cell(_fmt_int(rec["states"]), align="right", mono=True,
+                         tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (
+        '<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="hsl-legend">{len(markets):,} CBSAs carry at least one '
+        'operating facility. "Mapped Systems" counts distinct health systems '
+        'with a facility in the market — the rest of the market is facilities '
+        'whose HCRIS name carries no system brand.</div>')
+
+
 def _inactive_panel(status_filter: str = "") -> str:
     """Every facility excluded from the operating counts, by name.
 
@@ -840,6 +907,8 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     roster = _roster_panel(system_id, m.systems) if system_id else ""
     lookup = _hospital_lookup_panel(hospital_q)
     inactive = _inactive_panel(status)
+    coverage = _crosswalk_coverage_panel()
+    markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
                      if state
                      else (_concentration_map() + _concentration_ranking_panel()))
@@ -894,6 +963,18 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">{concentration_title}</div>
     {concentration}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Identifier Crosswalk — Coverage</div>
+    {coverage}
+    <div class="hsl-legend">Every facility resolves to a county FIPS and a NUCC
+    taxonomy code, which is what lets this join to census, claims and payer
+    data. Download the full crosswalk at
+    <a class="ck-link" href="/provider-crosswalk.csv">/provider-crosswalk.csv</a>.</div>
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Largest Markets — Facilities by CBSA</div>
+    {markets}
   </div>
   <div style="{cell}">
     <div style="{h3}">Facility-Type Mix — Whole Universe</div>
