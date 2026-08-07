@@ -14,6 +14,7 @@ both shipped in the first cut of the matcher:
 from __future__ import annotations
 
 import csv
+import html as _html
 import io
 import os
 import socket
@@ -1117,6 +1118,58 @@ class PageTests(unittest.TestCase):
         self.assertIn("Global Medical Response", html)
         self.assertIn("not all of NPPES", html)
         self.assertIn("PECOS", html)
+
+
+class OwnershipPanelTests(unittest.TestCase):
+    """The ownership graph on the page — how the answers were reached,
+    and the ones the sources cannot agree on."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = render_health_system_lookup({})
+
+    def test_the_panel_renders_with_its_tier_mix(self) -> None:
+        """A coverage number cannot be read without knowing which tiers
+        produced it: a facility reaching a system on the registry's
+        say-so is a different claim from one reaching it through the
+        operator's own chain filing."""
+        self.assertIn("Ownership Graph", self.html)
+        for tier in ("ccn system", "ccn chain", "ccn parent"):
+            self.assertIn(tier, self.html)
+
+    def test_the_disagreement_table_shows_both_answers(self) -> None:
+        from rcm_mc.data.parent_resolution import (
+            crosswalk_graph, ownership_disagreements,
+        )
+
+        queue = ownership_disagreements(crosswalk_graph())
+        self.assertFalse(queue.empty)
+        self.assertIn("Resolved parent", self.html)
+        self.assertIn("Rival parent", self.html)
+        # Every disagreement on the page names the facility and both
+        # candidates — a queue with one side missing is not workable.
+        for rec in queue.head(12).to_dict("records"):
+            with self.subTest(ccn=rec["identifier"]):
+                self.assertIn(rec["identifier"], self.html)
+                self.assertIn(_html.escape(rec["rival_parent"]), self.html)
+
+    def test_the_panel_says_what_it_is_and_is_not(self) -> None:
+        """CMS publishes change-of-ownership only as state-by-year
+        counts. Calling this an acquisition list without that caveat
+        would be claiming a fact."""
+        self.assertIn("acquisition list", self.html)
+        self.assertIn("state-by-year", self.html)
+        self.assertIn("registry edit", self.html)
+
+    def test_the_panel_links_to_the_exports_that_carry_the_answer(self) -> None:
+        self.assertIn("/provider-crosswalk.csv?scope=all&amp;parents=1",
+                      self.html)
+        self.assertIn("master-file", self.html)
+
+    def test_cycles_are_reported_rather_than_left_implicit(self) -> None:
+        """A graph with no cycles is a finding, not an absence — the page
+        states the count so a future non-zero one is visible."""
+        self.assertIn("Cycles are flagged", self.html)
 
 
 class CsvRouteTests(unittest.TestCase):

@@ -769,6 +769,87 @@ def _npi_panel(limit: int = 10) -> str:
         'match in a state where the system operates nothing.</div>')
 
 
+def _ownership_panel(limit: int = 12) -> str:
+    """Where the ownership graph gets each facility to, and what it can't
+    settle.
+
+    The two halves are the point. The tier mix says how the answers were
+    reached, which is the only way to read a coverage number honestly —
+    14,441 facilities reaching a named system on the registry's say-so is
+    a different claim from the same number reached through operators'
+    own chain filings. The disagreement table is the other half: eight
+    facilities where two CMS-derived sources name different owners, which
+    is the closest thing this data supports to an acquisition list,
+    because CMS publishes change-of-ownership only as state-by-year
+    counts.
+    """
+    from rcm_mc.data.parent_resolution import (
+        crosswalk_graph, ownership_disagreements,
+    )
+
+    graph = crosswalk_graph()
+    stats = graph.stats()
+    claims = stats.get("claims_by_tier") or {}
+    if not claims:
+        return ""
+
+    total_claims = sum(claims.values())
+    bars = "".join(
+        ck_bar_row(tier.replace("_", " "), f"{count:,}",
+                   count / total_claims * 100,
+                   tone=("positive" if tier.startswith("nppes") or
+                         tier.startswith("pecos") else
+                         "teal" if tier.startswith("ccn") else "warning"))
+        for tier, count in sorted(claims.items(), key=lambda kv: -kv[1]))
+
+    queue = ownership_disagreements(graph)
+    cols = [("CCN", "left"), ("Resolved parent", "left"), ("Via", "left"),
+            ("Rival parent", "left"), ("Via", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for rec in queue.head(limit).to_dict("records"):
+        cells = [
+            ck_data_cell(_esc(rec["identifier"]), mono=True, tone="dim"),
+            ck_data_cell(_esc(rec["resolved_parent"]), weight=600),
+            ck_data_cell(_esc(rec["resolved_tier"]).replace("_", " "),
+                         tone="dim"),
+            ck_data_cell(_esc(rec["rival_parent"]), weight=600, tone="acc"),
+            ck_data_cell(_esc(rec["rival_tier"]).replace("_", " "), tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = (
+        '<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table>'
+        '</div>') if trs else ck_empty_state(
+            "No facility has two sources naming different owners.")
+
+    return (
+        bars
+        + f'<div class="hsl-legend" style="margin-bottom:12px">'
+        f'{stats["resolved_to_a_parent"]:,} of {stats["nodes"]:,} identifiers '
+        f'reach a parent across {total_claims:,} ownership claims, in at most '
+        f'{stats["max_hops"]} hops. Each claim is kept with the tier that '
+        'produced it, and the strongest tier decides where a facility lands '
+        '— but the best-supported route to that same place sets the '
+        'confidence, so a clinic naming both its chain and its system scores '
+        'higher than one naming only its chain. Cycles are flagged rather '
+        f'than followed; there are {stats["cycles"]} in this data.</div>'
+        + table
+        + f'<div class="hsl-legend">{len(queue):,} facilities have two '
+        'sources naming <strong>different</strong> owners — compared at the '
+        'final parent, not the next hop, because most multi-claim rows are '
+        'two roads to the same place. CMS publishes change-of-ownership only '
+        'as state-by-year counts, so this is the closest thing the data '
+        'supports to an acquisition list: clinics still filing under a brand '
+        'that has been bought, units whose parent hospital belongs to one '
+        'system while their own name carries another. Each row is a registry '
+        'edit, not a defect. Download the resolved parents with '
+        '<a class="ck-link" href="/provider-crosswalk.csv?scope=all&amp;'
+        'parents=1">/provider-crosswalk.csv?scope=all&amp;parents=1</a>, or '
+        'the NPI-keyed master file with '
+        '<code>rcm-mc data master-file --out master.csv</code>.</div>')
+
+
 def _markets_panel(limit: int = 15) -> str:
     """Facilities and beds by CBSA — the unit an operator competes in.
 
@@ -1021,6 +1102,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     coverage = _crosswalk_coverage_panel()
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
+    ownership = _ownership_panel()
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
                      if state
@@ -1094,6 +1176,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Organization NPIs — Bundled NPPES Extracts</div>
     {npis}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Ownership Graph — Final Parents and What They Disagree On</div>
+    {ownership}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>
