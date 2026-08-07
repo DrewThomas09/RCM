@@ -52,6 +52,38 @@ queried through the same uniform surface. See the live list with
 `python -m connectors.cli datasets` (the counts above are pinned to the
 live registry by `connectors/tests/test_estate_invariants.py`).
 
+### Finding a dataset in those catalogs
+
+The registered datasets are the *curated* slice — the ones promoted to
+first-class typed tables. The synced catalogs are everything the upstream
+publishers list, and any of those is pullable through its connector's
+generic fetched-rows slot — but only once you know its identifier. One
+keyword search spans **every** catalog at once:
+
+```bash
+python -m connectors.cli catalog-search "medicare advantage" --db var/connectors
+curl 'localhost:8100/v1/catalog/search?q=medicare+advantage&limit=20'
+```
+
+Both fan out over the seven catalogs and merge the hits into one uniform
+row shape — `connector, dataset_id, title, description, modified, url` —
+ordered by connector registration order then title, so results are stable
+across runs and a hit's provenance is obvious. Two independent limits:
+`--per-connector-limit` bounds what each catalog contributes (so
+healthdata.gov's ~23k datasets cannot crowd out the rest) and `--limit`
+bounds the merged total; the response reports `total_before_limit`
+alongside `count`, so a truncated answer is visibly truncated. Connectors
+without a catalog (openFDA, ICD-10, HCPCS, QPP, RxNorm, NPI Registry, …)
+are skipped silently.
+
+The per-catalog column mapping lives in one declarative table
+(`CATALOG_SPECS` in `connectors/_spi.py` — the one module that already
+reaches across connectors), because the catalogs are the same idea under
+different names: DKAN says `title`/`identifier`, Socrata says
+`name`/`dataset_uid`. `connectors/tests/test_catalog_search.py` asserts
+every declared column is a real column of a real table, so a renamed
+upstream field fails loudly instead of silently returning zero hits.
+
 ## The uniform contract
 
 Because every connector exposes the same shapes, one thin adapter

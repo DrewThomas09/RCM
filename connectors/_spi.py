@@ -81,6 +81,66 @@ SUBCMD_DB_STYLE_CLIS: Tuple[str, ...] = ("cms_open_data", "open_payments")
 MANUAL_INGEST_CLIS: Tuple[str, ...] = ("openfda", "npi_registry", "icd10",
                                        "rxnorm")
 
+# ── open-data catalog columns per catalog-syncing connector ───────────
+# Seven connectors sync a whole upstream open-data catalog into a table
+# (data.cms.gov 158 datasets, Provider Data Catalog 234, Open Payments 74,
+# data.medicaid.gov 541, Healthcare.gov 337, data.cdc.gov ~1,500,
+# healthdata.gov 23,080). Every one of those is pullable on demand through
+# its connector's generic fetched-rows slot — but only if you already know
+# its identifier, which made "everything CMS publishes" reachable in
+# principle and undiscoverable in practice.
+#
+# The catalogs are the same IDEA with different column names (DKAN says
+# ``title``/``identifier``, Socrata says ``name``/``dataset_uid``), so the
+# mapping is declared here — the one module that already reaches across
+# connectors and already carries this kind of cross-connector metadata —
+# rather than reimplemented seven times. A connector absent from this map
+# simply has no catalog (openFDA, ICD-10, HCPCS, QPP, RxNorm, NPI Registry,
+# …) and is skipped by every catalog-search surface.
+#
+# Field meanings: (table, id column, title column, description column,
+# last-modified column, resource-URL column). Every value is a real column
+# of that table — pinned by connectors/tests/test_catalog_search.py, so a
+# renamed column fails loudly instead of silently returning nothing.
+CATALOG_SPECS: Dict[str, Dict[str, str]] = {
+    "cms_open_data": {
+        "table": "cms_open_data_catalog", "id": "dataset_key",
+        "title": "title", "description": "description",
+        "modified": "modified", "url": "api_url"},
+    "provider_data": {
+        "table": "provider_data_catalog", "id": "identifier",
+        "title": "title", "description": "description",
+        "modified": "modified", "url": "csv_url"},
+    "open_payments": {
+        "table": "open_payments_catalog", "id": "identifier",
+        "title": "title", "description": "description",
+        "modified": "modified", "url": "api_url"},
+    "medicaid_data": {
+        "table": "medicaid_data_catalog", "id": "identifier",
+        "title": "title", "description": "description",
+        "modified": "modified", "url": "api_url"},
+    "healthcare_gov": {
+        "table": "healthcare_gov_catalog", "id": "identifier",
+        "title": "title", "description": "description",
+        "modified": "modified", "url": "download_url"},
+    "cdc_data": {
+        "table": "cdc_data_catalog", "id": "dataset_uid",
+        "title": "name", "description": "description",
+        "modified": "data_updated_at", "url": "data_uri"},
+    "healthdata_gov": {
+        "table": "healthdata_gov_catalog", "id": "dataset_uid",
+        "title": "name", "description": "description",
+        "modified": "data_updated_at", "url": "data_uri"},
+}
+
+CATALOG_CONNECTORS: Tuple[str, ...] = tuple(
+    n for n in CONNECTOR_NAMES if n in CATALOG_SPECS)
+
+# The uniform result row every catalog search returns, whichever connector
+# answered. Callers join/merge on these names and nothing else.
+CATALOG_ROW_FIELDS: Tuple[str, ...] = (
+    "connector", "dataset_id", "title", "description", "modified", "url")
+
 
 def storage_argv(name: str, db_dir: str) -> List[str]:
     """The argv fragment pointing *name*'s CLI at ``{db_dir}/{name}.db``.
@@ -180,6 +240,75 @@ class Adapter:
     # ── lookups ───────────────────────────────────────────────────────
     def lookup_handlers(self, store: Any) -> Dict[str, Callable[..., Any]]:
         return self.lookup_mod.v1_handlers(store)
+
+    # ── open-data catalog search ──────────────────────────────────────
+    @property
+    def has_catalog(self) -> bool:
+        """Whether this connector syncs a searchable upstream catalog."""
+        return self.name in CATALOG_SPECS
+
+    def catalog_search(self, store: Any, q: str, *, limit: int = 50
+                       ) -> List[Dict[str, Any]]:
+        """Keyword search over this connector's synced catalog.
+
+        Returns uniform :data:`CATALOG_ROW_FIELDS` rows (``[]`` for a
+        connector with no catalog, so a caller can fan out over the whole
+        estate without special-casing). Matching is a case-insensitive
+        substring over the catalog's title OR description — the two fields
+        every upstream catalog carries under one name or another.
+
+        Safety: the only interpolated identifiers are the table and column
+        names from :data:`CATALOG_SPECS`, which are module constants; the
+        search term and limit are bound parameters. ``limit`` is clamped
+        the same way the per-connector query engines clamp theirs.
+        """
+        spec = CATALOG_SPECS.get(self.name)
+        if spec is None:
+            return []
+        term = str(q or "").strip()
+        if not term:
+            return []
+        n = _clamp_limit(limit)
+        # SQLite's LIKE is already case-insensitive for ASCII; the explicit
+        # LOWER() pair keeps that true regardless of the connection's
+        # case_sensitive_like pragma.
+        sql = (
+            f"SELECT {spec['id']} AS dataset_id, {spec['title']} AS title, "
+            f"{spec['description']} AS description, "
+            f"{spec['modified']} AS modified, {spec['url']} AS url "
+            f"FROM {spec['table']} "
+            f"WHERE LOWER({spec['title']}) LIKE ? "
+            f"OR LOWER({spec['description']}) LIKE ? "
+            f"ORDER BY {spec['title']} LIMIT ?"
+        )
+        like = f"%{term.lower()}%"
+        rows = store.fetchall(sql, (like, like, n))
+        return [self._catalog_row(r) for r in rows]
+
+    def _catalog_row(self, row: Any) -> Dict[str, Any]:
+        """One raw catalog hit → the uniform row (absent values become '')."""
+        d = dict(row)
+        out: Dict[str, Any] = {"connector": self.name}
+        for field in CATALOG_ROW_FIELDS:
+            if field == "connector":
+                continue
+            value = d.get(field)
+            out[field] = "" if value is None else str(value)
+        return out
+
+
+_CATALOG_LIMIT_DEFAULT = 50
+_CATALOG_LIMIT_MAX = 1000
+
+
+def _clamp_limit(limit: Any, default: int = _CATALOG_LIMIT_DEFAULT,
+                 lo: int = 1, hi: int = _CATALOG_LIMIT_MAX) -> int:
+    """Clamp a caller-supplied limit; junk falls back to the default."""
+    try:
+        n = int(limit)
+    except (TypeError, ValueError):
+        return default
+    return max(lo, min(n, hi))
 
 
 def load_all() -> Dict[str, Adapter]:

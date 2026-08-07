@@ -21,7 +21,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from ._spi import CONNECTOR_NAMES, Adapter, load_all
+from ._spi import (
+    CATALOG_CONNECTORS, CATALOG_ROW_FIELDS, CONNECTOR_NAMES, Adapter,
+    _clamp_limit, load_all,
+)
 
 # Loaded once at import; the per-connector registries are pure/declarative.
 _ADAPTERS: Dict[str, Adapter] = load_all()
@@ -91,4 +94,78 @@ def catalog() -> Dict[str, Any]:
         "n_datasets": len(rows),
         "connectors": connectors_summary(),
         "datasets": rows,
+    }
+
+
+def catalog_connectors() -> List[str]:
+    """The connectors that sync a searchable upstream open-data catalog."""
+    return list(CATALOG_CONNECTORS)
+
+
+def catalog_search_all(
+    stores: Dict[str, Any],
+    q: str,
+    *,
+    limit: int = 50,
+    per_connector_limit: int = 50,
+    connectors: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Keyword-search every synced open-data catalog at once.
+
+    The registered datasets (:func:`all_dataset_ids`) are the slice of the
+    upstream catalogs someone curated into first-class typed tables. The
+    catalogs themselves are far larger — tens of thousands of datasets
+    across data.cms.gov, the Provider Data Catalog, Open Payments,
+    data.medicaid.gov, Healthcare.gov, data.cdc.gov and healthdata.gov —
+    and every one of them is already pullable through its connector's
+    generic fetched-rows slot. What was missing was *finding* one: you
+    had to know its identifier first. This is that missing half.
+
+    Two limits, deliberately separate:
+
+    ``per_connector_limit``
+        how many hits each catalog contributes, so one huge catalog
+        (healthdata.gov carries ~23k datasets) cannot crowd out the
+        others;
+    ``limit``
+        how many merged rows come back overall.
+
+    Both are clamped. ``connectors`` narrows the fan-out to a subset;
+    unknown names are ignored rather than raising, so a caller can pass a
+    speculative list. Connectors with no catalog are skipped silently —
+    that is the normal case (openFDA, ICD-10, HCPCS, QPP, RxNorm, …).
+
+    Ordering is deterministic: connector registration order, then title,
+    which keeps the merged result stable across runs and makes the
+    provenance of a hit obvious from its position.
+
+    ``stores`` is the same ``{connector: store}`` mapping the unified
+    server's ``open_stores()`` builds; a connector missing from it is
+    skipped, so a partially-ingested estate still answers.
+    """
+    term = str(q or "").strip()
+    wanted = [n for n in CATALOG_CONNECTORS
+              if connectors is None or n in set(connectors)]
+    overall = _clamp_limit(limit)
+    searched: List[str] = []
+    results: List[Dict[str, Any]] = []
+    if term:
+        per = _clamp_limit(per_connector_limit)
+        for name in wanted:
+            store = stores.get(name)
+            if store is None:
+                continue
+            searched.append(name)
+            results.extend(
+                _ADAPTERS[name].catalog_search(store, term, limit=per))
+    merged = results[:overall]
+    return {
+        "q": term,
+        "fields": list(CATALOG_ROW_FIELDS),
+        "connectors_searched": searched,
+        # count is what came back; total_before_limit is what was found, so a
+        # truncated answer is visibly truncated instead of reading as complete.
+        "count": len(merged),
+        "total_before_limit": len(results),
+        "results": merged,
     }
