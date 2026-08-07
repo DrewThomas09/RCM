@@ -30,6 +30,7 @@ from rcm_mc.data.nppes_ingest import (
     COL_TAXONOMY,
     COL_ZIP,
     ingest_nppes,
+    link_npis_to_ccns,
     match_organization,
     npi_coverage,
     npi_rows,
@@ -39,6 +40,7 @@ from rcm_mc.data.provider_crosswalk import (
     NUCC_BY_FACILITY_TYPE,
     SCOPE_ALL,
     _county_by_zip,
+    _resolve_npi_collisions,
     _same_taxonomy_family,
     build_crosswalk,
     cbsa_for_county,
@@ -347,12 +349,62 @@ class NpiLinkTests(unittest.TestCase):
         self.assertTrue(self.linked["npi_source"].ne("").all())
 
     def test_one_npi_per_ccn_and_one_ccn_per_npi(self) -> None:
-        """A hospital and its own rehab unit file the same name at the
-        same address under two CCNs, so both match the hospital's NPI.
-        An NPI on the wrong row is worse than an absent one — a claims
-        join would attribute the unit's volume to the hospital."""
+        """The invariant that matters, however it is achieved.
+
+        On the bundled data the taxonomy-family gate is what delivers
+        this — a hospital and its own rehab unit file the same name at
+        the same address, and the unit is rejected for being typed 283X
+        against a 282N NPI. The collision resolver is tested separately
+        and directly, because here it would pass vacuously."""
         self.assertEqual(len(self.linked), self.linked["npi"].nunique())
         self.assertEqual(len(self.linked), self.linked["ccn"].nunique())
+
+    def test_the_taxonomy_gate_is_what_separates_a_unit_from_its_parent(self) -> None:
+        """Name the mechanism, so the invariant above cannot quietly
+        start depending on something else. Riverside Medical Center is
+        CCN 140186 and 14T186 at one address under one name."""
+        pair = self.xw[self.xw["ccn"].isin(["140186", "14T186"])].set_index("ccn")
+        self.assertEqual(len(pair), 2)
+        self.assertNotEqual(pair.loc["140186", "npi"], "")
+        self.assertEqual(pair.loc["14T186", "npi"], "")
+        self.assertEqual(pair.loc["140186", "name"], pair.loc["14T186", "name"])
+        self.assertEqual(pair.loc["140186", "zip"], pair.loc["14T186", "zip"])
+
+    def test_the_collision_resolver_breaks_a_tie_it_can_break(self) -> None:
+        """Exercised directly: nothing in the bundled universe reaches
+        it, because the taxonomy gate rejects the mismatched claimant
+        first. What is left for it is two rows of the SAME type sharing
+        a name and ZIP, which does not occur today but would be a real
+        error if it did."""
+        rows = [
+            {"ccn": "111111", "npi": "1234567893", "npi_source": "nppes name",
+             "npi_taxonomy": "282N00000X", "taxonomy_code": "282N00000X"},
+            {"ccn": "222222", "npi": "1234567893", "npi_source": "nppes name",
+             "npi_taxonomy": "282N00000X", "taxonomy_code": "283X00000X"},
+        ]
+        _resolve_npi_collisions(rows)
+        self.assertEqual(rows[0]["npi"], "1234567893")
+        self.assertEqual(rows[1]["npi"], "")
+        self.assertEqual(rows[1]["npi_source"], "")
+        self.assertEqual(rows[1]["npi_taxonomy"], "")
+
+    def test_an_unbreakable_tie_costs_every_claimant_the_npi(self) -> None:
+        """Two rows of the same type with equal claim. Guessing between
+        them would put an NPI on the wrong row half the time."""
+        rows = [
+            {"ccn": "111111", "npi": "1234567893", "npi_source": "nppes name",
+             "npi_taxonomy": "282N00000X", "taxonomy_code": "282N00000X"},
+            {"ccn": "222222", "npi": "1234567893", "npi_source": "nppes name",
+             "npi_taxonomy": "282N00000X", "taxonomy_code": "282N00000X"},
+        ]
+        _resolve_npi_collisions(rows)
+        self.assertEqual([r["npi"] for r in rows], ["", ""])
+
+    def test_a_lone_claimant_is_left_alone(self) -> None:
+        rows = [{"ccn": "111111", "npi": "1234567893", "npi_source": "nppes name",
+                 "npi_taxonomy": "282N00000X", "taxonomy_code": "283X00000X"}]
+        _resolve_npi_collisions(rows)
+        self.assertEqual(rows[0]["npi"], "1234567893")
 
     def test_the_npi_describes_the_same_kind_of_provider_as_the_row(self) -> None:
         """A hospital's ambulance service, its rehab unit and its
@@ -525,6 +577,103 @@ def _nppes_fixture(path: Path) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow({c: row.get(c, "") for c in cols})
+
+
+def _link_fixture(path: Path) -> None:
+    """Three NPIs claiming one CCN, one clean pair, one many-CCN key."""
+    rows = [
+        # Same name, state and ZIP on three NPIs — a hospital and two of
+        # its own subparts is exactly how this happens in NPPES.
+        {COL_NPI: "1000000001", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "CONTESTED REGIONAL HOSPITAL", COL_STATE: "TX",
+         COL_CITY: "ANYTOWN", COL_ZIP: "70001", COL_TAXONOMY: "282N00000X"},
+        {COL_NPI: "1000000002", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "CONTESTED REGIONAL HOSPITAL", COL_STATE: "TX",
+         COL_CITY: "ANYTOWN", COL_ZIP: "70001", COL_TAXONOMY: "282N00000X"},
+        {COL_NPI: "1000000003", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "CONTESTED REGIONAL HOSPITAL", COL_STATE: "TX",
+         COL_CITY: "ANYTOWN", COL_ZIP: "70001", COL_TAXONOMY: "282N00000X"},
+        # One NPI, one CCN, nothing else in the way.
+        {COL_NPI: "1000000005", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "CLEAN PAIR HOSPITAL", COL_STATE: "TX",
+         COL_CITY: "ELSEWHERE", COL_ZIP: "70003", COL_TAXONOMY: "282N00000X"},
+        # Its key matches two CCNs — the direction that was always caught.
+        {COL_NPI: "1000000004", COL_ENTITY: "2",
+         COL_LEGAL_NAME: "TWIN CAMPUS HOSPITAL", COL_STATE: "TX",
+         COL_CITY: "TWINSVILLE", COL_ZIP: "70002", COL_TAXONOMY: "282N00000X"},
+    ]
+    cols = [COL_NPI, COL_ENTITY, COL_LEGAL_NAME, COL_DBA, COL_LAST, COL_FIRST,
+            COL_ADDR, COL_CITY, COL_STATE, COL_ZIP, COL_TAXONOMY,
+            COL_DEACTIVATION, COL_REACTIVATION]
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=cols)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({c: row.get(c, "") for c in cols})
+
+
+class NpiToCcnLinkTests(unittest.TestCase):
+    """Ambiguity runs both ways, and only one way used to be visible."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.csv = Path(self.tmp.name) / "npidata.csv"
+        self.db = Path(self.tmp.name) / "npi.db"
+        _link_fixture(self.csv)
+        ingest_nppes(self.csv, self.db, chunk_size=10)
+        self.crosswalk = pd.DataFrame([
+            {"ccn": "333333", "name": "CONTESTED REGIONAL HOSPITAL",
+             "state": "TX", "zip": "70001"},
+            {"ccn": "444444", "name": "TWIN CAMPUS HOSPITAL",
+             "state": "TX", "zip": "70002"},
+            {"ccn": "444445", "name": "TWIN CAMPUS HOSPITAL",
+             "state": "TX", "zip": "70002"},
+            {"ccn": "555555", "name": "CLEAN PAIR HOSPITAL",
+             "state": "TX", "zip": "70003"},
+        ])
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def _linked(self):
+        import sqlite3
+
+        con = sqlite3.connect(str(self.db))
+        try:
+            return dict(con.execute(
+                "SELECT npi, ccn FROM npi_crosswalk WHERE ccn IS NOT NULL"))
+        finally:
+            con.close()
+
+    def test_a_ccn_several_npis_claim_is_left_unlinked(self) -> None:
+        """This is the direction that was invisible. Each of the three
+        NPIs saw a single-element candidate list, so all three linked and
+        `ambiguous` stayed at zero while CCN 333333 quietly acquired
+        three NPIs."""
+        stats = link_npis_to_ccns(self.db, crosswalk=self.crosswalk)
+        self.assertEqual(stats["ccn_contested"], 1)
+        linked = self._linked()
+        self.assertNotIn("1000000001", linked)
+        self.assertNotIn("1000000002", linked)
+        self.assertNotIn("1000000003", linked)
+        self.assertNotIn("333333", set(linked.values()))
+
+    def test_an_npi_matching_two_ccns_is_still_caught(self) -> None:
+        stats = link_npis_to_ccns(self.db, crosswalk=self.crosswalk)
+        self.assertEqual(stats["ambiguous"], 1)
+        self.assertNotIn("1000000004", self._linked())
+
+    def test_the_unambiguous_pair_still_links(self) -> None:
+        """The guards must not swallow the case they exist to protect."""
+        stats = link_npis_to_ccns(self.db, crosswalk=self.crosswalk)
+        self.assertEqual(stats["linked"], 1)
+        self.assertEqual(self._linked(), {"1000000005": "555555"})
+        self.assertEqual(stats["considered"], 5)
+
+    def test_linking_is_idempotent(self) -> None:
+        first = link_npis_to_ccns(self.db, crosswalk=self.crosswalk)
+        second = link_npis_to_ccns(self.db, crosswalk=self.crosswalk)
+        self.assertEqual(first, second)
 
 
 class NppesIngestTests(unittest.TestCase):

@@ -486,16 +486,21 @@ def _resolve_npi_collisions(rows: List[Dict[str, Any]]) -> None:
     a hospital and its own hospital-based rehab unit file the SAME name
     at the SAME address under two CCNs, so both match the hospital's
     NPI. Riverside Medical Center IL is 140186 and 14T186; Poudre Valley
-    is 060010 and 06T010. Eight pairs behave this way.
+    is 060010 and 06T010.
 
-    The NPI's own taxonomy settles it. NPI 1184891343 is 282N00000X, a
-    General Acute Care Hospital — so it belongs to the acute row, not to
-    the rehab unit that shares its front door. Where exactly one
-    claimant's taxonomy matches the NPI's, that row keeps it and the
-    others are cleared; where the tie does not break, every claimant
-    loses it. An NPI on the wrong row is worse than an absent one,
-    because a claims join would silently attribute the unit's volume to
-    the hospital.
+    **On the bundled data this function removes nothing**, and that is
+    worth stating rather than leaving a reader to assume it is load
+    bearing. Those eight pairs never reach it: the rehab rows are typed
+    283X and the NPI is 282N, so ``_same_taxonomy_family`` rejects them
+    upstream. What is left here is the case the family check cannot
+    see — two rows of the SAME type, at the same name and ZIP, under
+    two CCNs. None exist today. The guard stays because an NPI on the
+    wrong row is worse than an absent one: a claims join would silently
+    attribute one facility's volume to another.
+
+    Where exactly one claimant's own taxonomy matches the NPI's, that
+    row keeps it; where the tie does not break, every claimant loses it.
+    Exercised directly by its unit test rather than by the universe.
     """
     by_npi: Dict[str, List[Dict[str, Any]]] = {}
     for row in rows:

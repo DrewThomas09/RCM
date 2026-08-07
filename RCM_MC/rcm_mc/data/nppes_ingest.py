@@ -398,8 +398,21 @@ def link_npis_to_ccns(db_path: Any, *, crosswalk: Optional[pd.DataFrame] = None
     alone collides ("MEMORIAL HOSPITAL") and ZIP alone puts a physician
     group in the same bucket as the hospital across the street.
 
-    Returns counts, and leaves anything ambiguous unlinked: a CCN that
-    two NPIs both match is a question, not a link.
+    Ambiguity runs in BOTH directions, and only one of them is obvious.
+    One NPI matching two CCNs is a question, not a link — that check was
+    always here. Two NPIs matching one CCN is the same question wearing
+    a different hat, and it was invisible: each NPI saw a single-element
+    candidate list, so all of them linked and ``ambiguous`` stayed at
+    zero while the CCN quietly acquired several NPIs. On a synthetic
+    full-universe run that silently multiply-claimed 24 CCNs, one of
+    them by 13 NPIs.
+
+    So candidates are gathered first and committed second. A CCN
+    claimed by more than one NPI is dropped from every claimant and
+    counted once in ``ccn_contested``.
+
+    Returns ``considered``, ``linked``, ``ambiguous`` (an NPI whose key
+    hit several CCNs) and ``ccn_contested`` (a CCN several NPIs hit).
     """
     from .provider_crosswalk import get_crosswalk
 
@@ -413,29 +426,42 @@ def link_npis_to_ccns(db_path: Any, *, crosswalk: Optional[pd.DataFrame] = None
             keyed.setdefault(key, []).append(str(rec.get("ccn")))
 
     con = sqlite3.connect(str(db_path))
-    stats = {"considered": 0, "linked": 0, "ambiguous": 0}
+    stats = {"considered": 0, "linked": 0, "ambiguous": 0, "ccn_contested": 0}
     try:
         ensure_table(con)
-        con.execute(f"ALTER TABLE {_TABLE} ADD COLUMN ccn TEXT"
-                    ) if not _has_column(con, "ccn") else None
+        if not _has_column(con, "ccn"):
+            con.execute(f"ALTER TABLE {_TABLE} ADD COLUMN ccn TEXT")
         rows = con.execute(
             f"SELECT npi, legal_name, dba_name, state, zip FROM {_TABLE} "
             f"WHERE entity_type = ?", (ENTITY_ORGANIZATION,)).fetchall()
-        updates: List[Tuple[str, str]] = []
+
+        candidates: List[Tuple[str, str]] = []       # (ccn, npi)
         for npi, legal, dba, state, zip5 in rows:
             stats["considered"] += 1
             st = str(state or "").upper()
             z = str(zip5 or "")[:5]
             for name in (legal, dba):
-                ccns = keyed.get((normalize_name(name), st, z)) if name else None
+                if not name:
+                    continue
+                ccns = keyed.get((normalize_name(name), st, z))
                 if not ccns:
+                    # Not a match on this name — try the d/b/a rather
+                    # than giving up on the NPI.
                     continue
                 if len(ccns) > 1:
                     stats["ambiguous"] += 1
                     break
-                updates.append((ccns[0], npi))
-                stats["linked"] += 1
+                candidates.append((ccns[0], npi))
                 break
+
+        claimants: Dict[str, List[str]] = {}
+        for ccn, npi in candidates:
+            claimants.setdefault(ccn, []).append(npi)
+        contested = {ccn for ccn, npis in claimants.items() if len(npis) > 1}
+        stats["ccn_contested"] = len(contested)
+
+        updates = [(ccn, npi) for ccn, npi in candidates if ccn not in contested]
+        stats["linked"] = len(updates)
         if updates:
             con.executemany(f"UPDATE {_TABLE} SET ccn = ? WHERE npi = ?", updates)
             con.commit()
