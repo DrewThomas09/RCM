@@ -451,6 +451,80 @@ class BundledBuildTests(unittest.TestCase):
         json.loads(json.dumps(self.cov, default=int))
 
 
+class RouteTests(unittest.TestCase):
+    """Served over real HTTP, on a live server, like every other export."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import os
+        import socket
+        import threading
+        import time
+        from contextlib import closing
+
+        from rcm_mc.server import build_server
+
+        cls._tmp = tempfile.TemporaryDirectory()
+        with closing(socket.socket()) as sock:
+            sock.bind(("127.0.0.1", 0))
+            cls._port = sock.getsockname()[1]
+        srv, _ = build_server(port=cls._port, host="127.0.0.1",
+                              db_path=os.path.join(cls._tmp.name, "m.db"))
+        cls._srv = srv
+        cls._thread = threading.Thread(target=srv.serve_forever, daemon=True)
+        cls._thread.start()
+        time.sleep(0.2)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._srv.shutdown()
+        cls._srv.server_close()
+        cls._thread.join(timeout=5)
+        cls._tmp.cleanup()
+
+    def _rows(self, route: str):
+        import io
+        import urllib.request
+
+        resp = urllib.request.urlopen(
+            f"http://127.0.0.1:{self._port}{route}", timeout=180)
+        self.assertEqual(resp.status, 200)
+        self.assertIn("text/csv", resp.headers.get("Content-Type", ""))
+        return list(csv.DictReader(io.StringIO(resp.read().decode("utf-8"))))
+
+    def test_the_route_serves_the_whole_file(self) -> None:
+        rows = self._rows("/master-npi-file.csv")
+        self.assertGreater(len(rows), 20_000)
+        self.assertEqual(list(rows[0]), list(MASTER_COLUMNS))
+
+    def test_filters_narrow_without_changing_the_shape(self) -> None:
+        rows = self._rows("/master-npi-file.csv?state=TX")
+        self.assertTrue(rows)
+        self.assertEqual({r["state"] for r in rows}, {"TX"})
+        self.assertEqual(list(rows[0]), list(MASTER_COLUMNS))
+
+    def test_category_filter_uses_the_taxonomy_vocabulary(self) -> None:
+        rows = self._rows("/master-npi-file.csv?category=ambulance")
+        self.assertGreater(len(rows), 10_000)
+        self.assertEqual({r["taxonomy_category"] for r in rows}, {"ambulance"})
+
+    def test_parented_is_opt_in_because_omission_flatters(self) -> None:
+        """A crosswalk that silently drops the unresolved looks far more
+        complete than it is."""
+        everything = self._rows("/master-npi-file.csv?state=TX")
+        parented = self._rows("/master-npi-file.csv?state=TX&parented=1")
+        self.assertLess(len(parented), len(everything))
+        self.assertTrue(all(r["final_parent"] for r in parented))
+        self.assertTrue(any(not r["final_parent"] for r in everything))
+
+    def test_a_filtered_request_does_not_corrupt_the_next_one(self) -> None:
+        """The frame is cached across requests; a handler filtering it in
+        place would shrink it for everyone after."""
+        first = len(self._rows("/master-npi-file.csv"))
+        self._rows("/master-npi-file.csv?state=TX")
+        self.assertEqual(len(self._rows("/master-npi-file.csv")), first)
+
+
 class CliTests(unittest.TestCase):
     """``rcm-mc data master-file`` is how this gets run outside a notebook."""
 

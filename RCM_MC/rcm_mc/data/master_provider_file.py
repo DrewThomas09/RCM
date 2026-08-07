@@ -63,6 +63,7 @@ from __future__ import annotations
 import csv
 import gzip as _gzip
 import sqlite3
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
@@ -496,6 +497,22 @@ def export_master_file(
     return stats
 
 
+@lru_cache(maxsize=1)
+def _cached_master_file() -> pd.DataFrame:
+    return build_master_file()
+
+
+def cached_master_file() -> pd.DataFrame:
+    """The bundled-source master file, built once per process.
+
+    A copy on every call. The frame is expensive to build (~9 s, most of
+    it the ownership graph) and a route handler that filters it in place
+    would corrupt the cache for the next request — which is exactly the
+    bug the crosswalk's own cache-copy test was written for.
+    """
+    return _cached_master_file().copy()
+
+
 def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
     """What the built file actually covers — measured, never estimated."""
     if frame.empty:
@@ -525,3 +542,8 @@ def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
         "by_category": frame["taxonomy_category"].value_counts().head(15).to_dict(),
         "by_parent_tier": frame["parent_tier"].value_counts().to_dict(),
     }
+
+
+def _clear_cache() -> None:
+    """Test hook."""
+    _cached_master_file.cache_clear()

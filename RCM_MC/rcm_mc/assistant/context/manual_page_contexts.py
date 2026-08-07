@@ -8210,6 +8210,79 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
+    _ctx(
+        "/master-npi-file.csv", "Master NPI File — CSV",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="One row per NPI carrying identity, status "
+        "history, taxonomy and PE category, geography, the CCN it bills "
+        "under, and the final parent it resolves to with the evidence.",
+        primary_purpose="Be the crosswalk spine: hand it an NPI from a "
+        "claim extract, a roster or a data room and get back who that is, "
+        "what they do, where they are, and who owns them.",
+        common_questions=[
+            "Who owns this NPI?",
+            "Why does this NPI resolve to that parent?",
+            "Is this NPI still active, or when was it deactivated?",
+            "What kind of provider is this — hospital, infusion, ambulance?",
+            "Which NPIs belong to this health system?",
+            "Why does this physician have no parent?",
+        ],
+        inputs=["state, category, status, parent and parented filters."],
+        outputs=["45 columns: identity and credential, status with "
+                 "deactivation and reactivation dates, all taxonomy codes "
+                 "with the derived NUCC grouping and PE category, address "
+                 "through CBSA, the certified CCN and its class, NPPES's "
+                 "own subpart and parent-organization fields, and the "
+                 "resolved final parent with its tier, confidence, hop "
+                 "count and full provenance chain."],
+        key_metrics=["20,401 NPIs from the bundled extracts; 99.97% carry a "
+                     "provider category; 55.4% of organizations reach a "
+                     "named parent."],
+        data_sources=["Bundled NPPES extracts and the certified-facility "
+                      "crosswalk; the full dissemination file when an "
+                      "ingest database is supplied."],
+        model_logic_summary="Ownership hops from six sources are composed "
+        "into a graph and walked to a fixed point. NPPES's own subpart "
+        "filing outranks CMS's PECOS enrolment group, which outranks a "
+        "hospital-based unit's parent CCN, the NPI-to-CCN address match, "
+        "the operator-published chain, the registry's system, and last a "
+        "bare name match. The strongest tier decides where a row lands; "
+        "the best-supported route to that same destination sets the "
+        "confidence.",
+        why_it_matters="CMS issues CCNs and NPIs from different systems and "
+        "publishes no mapping between them and no parent-system field at "
+        "all. Without this, a target's estate has to be reassembled by hand "
+        "from names.",
+        diligence_use_cases=[
+            "Resolving a claims extract's billing NPIs to their operator.",
+            "Building a target's full identifier estate before an LOI.",
+            "Checking whether a roster's NPIs are still active.",
+            "Screening a vertical — infusion, ambulance, dialysis — "
+            "nationally by taxonomy category.",
+        ],
+        interpretation_guidance=[
+            "An individual NPI has no parent unless an affiliation source "
+            "supplied one. NPPES carries no employer field, and two "
+            "physicians sharing a building are not colleagues.",
+            "A blank final parent means no source named an owner, not that "
+            "the provider is independent. parent_basis says which.",
+            "parent_confidence is the weakest hop in the chain, so read it "
+            "with parent_basis rather than on its own.",
+        ],
+        limitations=[
+            "Built from the bundled NPPES extracts unless an ingest "
+            "database is supplied — an ambulance and EMS slice plus the "
+            "CCN-linked crosswalk NPIs, not the national register.",
+            "The full dissemination file (~8M NPIs, ~9GB) needs network "
+            "access this build does not have.",
+        ],
+        related_routes=["/provider-crosswalk.csv", "/npi-registry.csv",
+                        "/health-system-lookup"],
+        data_source_ids=["npi_registry_api", "cms_hcris",
+                         "cms_provider_data_catalog"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page

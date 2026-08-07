@@ -5167,6 +5167,37 @@ class RCMHandler(BaseHTTPRequestHandler):
                 _frame = attach_parents(_frame, graph=crosswalk_graph(_scope))
             return self._send_csv_df(
                 _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
+        if path == "/master-npi-file.csv":
+            # The NPI-keyed spine: identity, status history, taxonomy and
+            # category, geography, the CCN it bills under, and the final
+            # parent with the evidence for it. Built from whatever NPPES
+            # data this deployment has — the bundled extracts by default,
+            # the full register when an ingest DB is supplied to the CLI.
+            from .data.master_provider_file import cached_master_file
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _frame = cached_master_file()
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st:
+                _frame = _frame[_frame["state"].astype(str).str.upper() == _st]
+            _cat = str(_qp.get("category", "")).strip().lower()[:40]
+            if _cat:
+                _frame = _frame[
+                    _frame["taxonomy_category"].astype(str) == _cat]
+            _sta = str(_qp.get("status", "")).strip().lower()[:20]
+            if _sta:
+                _frame = _frame[_frame["status"].astype(str) == _sta]
+            _par = str(_qp.get("parent", "")).strip()[:60]
+            if _par:
+                _frame = _frame[_frame["final_parent"].astype(str) == _par]
+            # parented=1 drops the rows with no owner, which is what a
+            # caller building a portfolio roster actually wants. It is
+            # opt-in because a crosswalk that silently omits the
+            # unresolved looks far more complete than it is.
+            if str(_qp.get("parented", "")).strip().lower() in ("1", "true"):
+                _frame = _frame[_frame["final_parent"].astype(str).ne("")]
+            return self._send_csv_df(
+                _frame, f"master-npi-file{('-' + _st) if _st else ''}.csv")
         if path == "/npi-registry.csv":
             # Organization NPIs from the bundled NPPES extracts, each
             # with its d/b/a, PECOS enrolment group, taxonomy, county

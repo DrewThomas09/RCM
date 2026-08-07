@@ -846,8 +846,13 @@ def _ownership_panel(limit: int = 12) -> str:
         'edit, not a defect. Download the resolved parents with '
         '<a class="ck-link" href="/provider-crosswalk.csv?scope=all&amp;'
         'parents=1">/provider-crosswalk.csv?scope=all&amp;parents=1</a>, or '
-        'the NPI-keyed master file with '
-        '<code>rcm-mc data master-file --out master.csv</code>.</div>')
+        'the NPI-keyed spine at <a class="ck-link" '
+        'href="/master-npi-file.csv">/master-npi-file.csv</a> — 45 columns '
+        'of identity, status history, taxonomy, geography and resolved '
+        'parent, filterable by <code>state</code>, <code>category</code>, '
+        '<code>status</code> and <code>parent</code>. '
+        '<code>rcm-mc data master-file --npi-db npi.db --out national.csv</code> '
+        'builds the same file from a full NPPES ingest.</div>')
 
 
 def _markets_panel(limit: int = 15) -> str:
