@@ -134,8 +134,12 @@ class CmsCoveragePlanTests(unittest.TestCase):
             self.assertEqual(argv[3:5], ["--root", "var/t"])
             self.assertEqual(argv[5], "fetch")
 
-    def test_manual_only_trio_still_unplanned(self):
-        for name in ("openfda", "npi_registry", "icd10"):
+    def test_roster_driven_connectors_stay_unplanned(self):
+        # These ingest verbs need domain arguments the sweep cannot invent
+        # (openFDA search windows, NPI lists, ICD-10 code seeds, RxNav
+        # NDC/name rosters), so refresh must skip them entirely rather
+        # than spawn a step that is guaranteed to fail.
+        for name in ("openfda", "npi_registry", "icd10", "rxnorm"):
             self.assertIn(name, refresh_mod.UNPLANNED)
 
 
