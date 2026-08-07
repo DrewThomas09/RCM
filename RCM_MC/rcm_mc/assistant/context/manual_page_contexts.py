@@ -7955,6 +7955,261 @@ _MANUAL: List[PageContext] = [
         source_confidence=SourceConfidence.DOCUMENTED,
         data_confidence=DataConfidence.DEMO_OR_FIXTURE,
     ),
+    # ── Health System Lookup + the identifier crosswalk under it ────
+    _ctx(
+        "/health-system-lookup", "Health System Lookup",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="The master mapping: every health system, the "
+        "hospitals it currently operates, the 48,510 Medicare-certified CCNs "
+        "across all seven provider classes, and who controls the beds in each "
+        "market.",
+        primary_purpose="Answer ownership in both directions — which system "
+        "runs this facility, and what does this system actually operate — "
+        "because CMS publishes no parent-system field and the raw universe "
+        "reads as tens of thousands of unrelated providers.",
+        common_questions=[
+            "Which health system owns this hospital?",
+            "How many hospitals does this system operate, and where?",
+            "Which systems are behavioral-health platforms?",
+            "Who is the largest operator in this state?",
+            "Which hospitals are closed and excluded from the counts?",
+            "How many nursing homes / home-health agencies / dialysis "
+            "facilities does a system hold?",
+        ],
+        inputs=["Free-text search over system or facility name; a CCN; "
+                "state, ownership, focus and facility-type filters; a "
+                "minimum-hospital threshold; a sort column."],
+        outputs=["One row per health system with operating hospital count, "
+                 "beds, states, facility-type mix, behavioral count and "
+                 "states led; a per-system facility roster showing the "
+                 "pattern that matched each CCN; a not-operating list; "
+                 "state HHI concentration with a cartogram; per-class "
+                 "coverage across the full certified universe; and CSV "
+                 "exports."],
+        key_metrics=["Operating hospitals", "Beds", "States", "Behavioral "
+                     "facilities", "HHI", "Top-firm bed share", "Mapping "
+                     "coverage %"],
+        data_sources=["CMS HCRIS cost reports (latest filing per CCN); CMS "
+                      "Care Compare hospital file; the six CMS Compare "
+                      "provider files (nursing home, home health, hospice, "
+                      "dialysis, IRF, LTCH); OMB CBSA delineation; Census "
+                      "county geocodes; bundled NPPES extracts."],
+        model_logic_summary="A curated system registry of name patterns is "
+        "matched against each facility's name, scoped by state where a brand "
+        "names more than one organization. Facilities resolve through four "
+        "tiers in confidence order — CCN override, CMS-published parent "
+        "chain, the filed name, then Care Compare's untruncated name — and "
+        "the tier that fired is recorded on every row. Facility status comes "
+        "from cost-report filing recency measured against the corpus's own "
+        "latest year, not the wall clock.",
+        why_it_matters="Sizing a target, its competitors and a market "
+        "requires knowing which facilities roll up to the same owner. "
+        "Without it, a system with eight hospitals and two dozen post-acute "
+        "CCNs reads as thirty independent providers.",
+        diligence_use_cases=[
+            "Building a competitor set for a hospital or post-acute target.",
+            "Sizing an acquirer's real footprint before an add-on.",
+            "Screening behavioral-health platforms by scale.",
+            "Assessing antitrust exposure from state-level bed concentration.",
+            "Joining a target list to census, claims or payer data through "
+            "county FIPS, CBSA and NUCC taxonomy.",
+        ],
+        interpretation_guidance=[
+            "Coverage under-claims on purpose. 'Independent / Unmapped' "
+            "means the name carries no system brand, NOT that the facility "
+            "is independently owned — Community Health Systems, Tenet and "
+            "Steward keep acquired local names almost everywhere.",
+            "Every HHI is a floor: real concentration is at least this high "
+            "and higher wherever an unmapped facility is quietly part of a "
+            "system.",
+            "Mapping strength varies enormously by provider class. Nine in "
+            "ten dialysis facilities resolve because CMS publishes a parent "
+            "chain; fewer than one in ten nursing homes do.",
+            "'Stopped filing' is not proof of closure — a CCN can go quiet "
+            "because it was absorbed into a parent's cost report.",
+        ],
+        limitations=[
+            "CMS publishes no parent-system field; the registry is curated "
+            "and cannot see a system whose facilities all carry local names.",
+            "Post-acute rows carry no filing history, so their status says "
+            "only that CMS still lists them.",
+            "NPI coverage is a bundled ambulance/EMS slice, not all of "
+            "NPPES.",
+        ],
+        related_routes=["/cms-sources", "/hospital-anchor", "/market-map",
+                        "/concentration-risk"],
+        data_source_ids=["cms_hcris", "cms_care_compare",
+                         "cms_provider_data_catalog",
+                         "cms_home_health_provider_data",
+                         "cms_hospice_provider_data", "cbsa_crosswalk",
+                         "npi_registry_api"],
+        metric_ids=["bed_count", "hhi"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/health-system-lookup.csv", "Health System Lookup — CSV Export",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Filter-aware CSV of the hospital-to-system "
+        "mapping, one row per facility keyed on CCN.",
+        primary_purpose="Let a deal team take the mapping into a model or "
+        "join it against their own target list without retyping it.",
+        common_questions=[
+            "How do I export the hospital-to-system mapping?",
+            "Can I export only one state, or only behavioral facilities?",
+            "Does the export include closed hospitals?",
+            "Which column do I join on?",
+            "Why does my row count differ from the page's hospital count?",
+        ],
+        inputs=["The same query parameters the page uses — state, kind, "
+                "focus, type, system, q, status."],
+        outputs=["CSV keyed on CCN carrying system, facility type, status, "
+                 "reports_no_activity and both fiscal-year columns, so it "
+                 "reconciles line-for-line against the page."],
+        key_metrics=["Not applicable — this is an export, not an analysis."],
+        data_sources=["The same HCRIS-derived mapping the page renders."],
+        model_logic_summary="Applies the page's filters server-side and "
+        "streams the result; values are defanged against spreadsheet "
+        "formula injection.",
+        why_it_matters="A mapping that cannot leave the screen cannot be "
+        "reconciled or used in a model.",
+        diligence_use_cases=["Joining a target list to system ownership.",
+                             "Auditing which facilities a count included."],
+        interpretation_guidance=[
+            "Unfiltered, the export covers the whole universe including "
+            "not-operating facilities; pass status=operating to match the "
+            "page's headline hospital counts.",
+        ],
+        limitations=["Inherits every limitation of the mapping itself."],
+        related_routes=["/health-system-lookup", "/provider-crosswalk.csv"],
+        data_source_ids=["cms_hcris", "cms_care_compare"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/provider-crosswalk.csv", "Provider Identifier Crosswalk — CSV",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="One row per CCN carrying health system, county "
+        "FIPS, CBSA/MSA, NUCC taxonomy, geocode and NPI — each alongside the "
+        "source that produced it.",
+        primary_purpose="Give every Medicare-certified provider a stable set "
+        "of join keys, so a facility list can be joined to census, claims, "
+        "payer and market data.",
+        common_questions=[
+            "How do I get the CBSA or county for a list of CCNs?",
+            "What NUCC taxonomy code corresponds to a facility type?",
+            "Can I export nursing homes / home health / dialysis, not just "
+            "hospitals?",
+            "Where did a county FIPS on this row come from?",
+            "Why is the CBSA blank on some rows?",
+            "Why is the NPI column empty?",
+        ],
+        inputs=["scope=all widens from the 6,123 HCRIS hospitals to all "
+                "48,510 certified CCNs; class= narrows to one provider "
+                "class; state, cbsa and system filters."],
+        outputs=["A 40-column CSV: identifiers, system attribution and the "
+                 "pattern that produced it, facility status, taxonomy, CMS "
+                 "ownership, county FIPS with its source, CBSA, lat/lon, "
+                 "beds and revenue where a cost report exists."],
+        key_metrics=["Coverage per identifier — CCN 100%, county FIPS 95.9%, "
+                     "CBSA 86.5%, health system 27.9%."],
+        data_sources=["CMS HCRIS; CMS Care Compare; the six CMS Compare "
+                      "provider files; OMB CBSA delineation; Census "
+                      "geocoder; NUCC taxonomy."],
+        model_logic_summary="County FIPS resolves through four sources in "
+        "confidence order — Census geocode, the county the facility filed, "
+        "Care Compare's county, then an unambiguous ZIP — and the source is "
+        "written on the row. CBSA is looked up from county FIPS against the "
+        "OMB delineation.",
+        why_it_matters="Most healthcare datasets key on something different: "
+        "claims on NPI, cost reports on CCN, demographics on FIPS, market "
+        "data on CBSA. Without a crosswalk they cannot be joined at all.",
+        diligence_use_cases=[
+            "Sizing a target's markets by MSA rather than by state.",
+            "Joining facility lists to county demographics or payer mix.",
+            "Building a taxonomy-consistent provider universe.",
+        ],
+        interpretation_guidance=[
+            "A county outside every metro and micro area has no CBSA by "
+            "definition — a blank CBSA on a rural facility is geography, not "
+            "a failed lookup.",
+            "Beds and revenue exist only on hospital rows; a dialysis "
+            "station or home-health agency files no cost report.",
+            "Read county_fips_source before weighting a row: a geocoded "
+            "county is stronger evidence than a ZIP-inferred one.",
+        ],
+        limitations=[
+            "NPI is blank on CCN rows — it requires the full NPPES "
+            "dissemination file, which needs network access.",
+            "Lat/lon exists only for hospitals in the bundled geocode file.",
+        ],
+        related_routes=["/health-system-lookup", "/npi-registry.csv",
+                        "/cms-sources"],
+        data_source_ids=["cms_hcris", "cms_care_compare",
+                         "cms_provider_data_catalog", "cbsa_crosswalk"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
+        "/npi-registry.csv", "Organization NPI Registry — CSV",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Organization NPIs from the bundled NPPES "
+        "extracts, each with its d/b/a names, CMS PECOS enrolment group, "
+        "taxonomy, county and CBSA.",
+        primary_purpose="Resolve organization NPIs to an operator and a "
+        "market, and expose CMS's own grouping of NPIs under one enrolled "
+        "organization.",
+        common_questions=[
+            "Which operator is behind this NPI?",
+            "What other NPIs share this organization's enrolment?",
+            "What d/b/a names does this organization use?",
+            "Which MSA is this NPI in?",
+            "Why do so few NPIs resolve to a system?",
+            "Is this the whole NPPES file?",
+        ],
+        inputs=["state, system and pecos_group filters."],
+        outputs=["One row per NPI: legal name, first d/b/a and d/b/a count, "
+                 "location, taxonomy, PECOS Associate Control ID, provider "
+                 "type, mapped system with the tier that matched, county "
+                 "FIPS and CBSA."],
+        key_metrics=["20,401 NPIs; 28.7% carry a d/b/a; 49.8% carry a PECOS "
+                     "group; 6.6% resolve to an operator."],
+        data_sources=["Bundled NPPES ambulance roster and enrichment "
+                      "extracts; CMS PECOS ambulance registry."],
+        model_logic_summary="Legal name is matched against the system "
+        "registry first, then each d/b/a. Two guards reject a match: a "
+        "civil body whose place name merely collides with a brand, and a "
+        "match in a state where the system operates no facility. County "
+        "comes from a ZIP-to-county mapping learned from the certified "
+        "universe, since NPPES publishes no county.",
+        why_it_matters="The PECOS group is the only ownership link in this "
+        "data that CMS asserts rather than we infer, and it exposes national "
+        "operators no facility file can see — Global Medical Response runs "
+        "648 of these NPIs and uses its own name on none of them.",
+        diligence_use_cases=[
+            "Identifying the real parent behind a set of ambulance NPIs.",
+            "Sizing a national EMS operator's footprint by state.",
+            "Testing d/b/a-based attribution before a full NPPES ingest.",
+        ],
+        interpretation_guidance=[
+            "This is an ambulance and air-medical slice of NPPES, not all of "
+            "NPPES. Do not read its percentages as national NPI coverage.",
+            "An unmapped NPI means the name carries no recognised brand, not "
+            "that the organization is independent.",
+        ],
+        limitations=[
+            "The full NPPES dissemination file (~8M NPIs, ~9GB) is not "
+            "ingested here; the streaming pipeline for it exists but needs "
+            "network access.",
+            "Individual (NPI-1) records are out of scope — organizations "
+            "only.",
+        ],
+        related_routes=["/provider-crosswalk.csv", "/health-system-lookup",
+                        "/cms-sources"],
+        data_source_ids=["npi_registry_api", "cms_ffs_provider_enrollment"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
 ]
 
 # ── DATA REQUIRED pages: DOCUMENTED Guide contexts (table-driven). Each page
@@ -14303,6 +14558,69 @@ _IFT_LIMITS = [
     "Figures captured from search excerpts rather than fetched primary "
     "text carry a re-verification flag until the primary source is pulled.",
 ]
+# The IFT service-level reference shipped without a Guide context.
+# It lives here, after its siblings, because the related-route fix pass
+# above only knows the routes defined before it.
+_MANUAL.extend([
+    # Shipped in the IFT estate without a Guide context; filled here so no
+    # live /tools card is Guide-blind.
+    _ctx(
+        "/in-depth-ift-bls-als1-als2-cct",
+        "In-Depth IFT — BLS · ALS1 · ALS2 · CCT",
+        category=PageContextCategory.RESEARCH_BACKTESTING,
+        short_description="How the four interfacility-transport service "
+        "levels — Basic Life Support, ALS Level 1, ALS Level 2 and "
+        "Specialty/Critical Care Transport — differ in care delivered, "
+        "patients served, staffing, equipment, operating complexity and "
+        "reimbursement.",
+        primary_purpose="Give a deal team the service-level vocabulary an "
+        "ambulance or IFT target's payer mix and margin structure is "
+        "actually built on, with every claim carried back to its source.",
+        common_questions=[
+            "What is the difference between BLS, ALS1, ALS2 and CCT?",
+            "What staffing and equipment does each level require?",
+            "How does reimbursement differ across the four levels?",
+            "Which level applies to a given interfacility transport?",
+            "Where do the edge cases sit between ALS2 and CCT?",
+        ],
+        inputs=["None — a reference page; it takes no user parameters."],
+        outputs=["A four-column comparison of definition, typical clinical "
+                 "needs, typical operational needs and reimbursement "
+                 "differences, plus edge-case discussion, each fact tagged "
+                 "with its basis and linked to its source."],
+        key_metrics=["Not applicable — this is a definitional reference, "
+                     "not a computed analysis."],
+        data_sources=["CMS ambulance fee schedule and regulatory text; "
+                      "academic and trade literature on transport service "
+                      "levels."],
+        model_logic_summary="No model. Every statement renders with a basis "
+        "chip (GOV / ACADEMIC / SOURCED / DERIVED / FRAMEWORK) and its "
+        "source link; regulatory language is quoted verbatim.",
+        why_it_matters="Service-level mix drives an ambulance operator's "
+        "revenue per transport more than volume does. Reading a target's "
+        "book without the vocabulary invites mistaking mix shift for growth.",
+        diligence_use_cases=[
+            "Interpreting an IFT target's transport mix and rate card.",
+            "Sizing the margin difference between BLS-heavy and CCT-heavy "
+            "books.",
+            "Testing management claims about upcoding or level creep.",
+        ],
+        interpretation_guidance=[
+            "The page carries zero illustrative figures by contract — every "
+            "number on it is sourced.",
+            "Level definitions are federal; state and payer rules can be "
+            "narrower, so verify against the target's own contracts.",
+        ],
+        limitations=["Definitional reference only — it holds no target data "
+                     "and computes nothing."],
+        related_routes=["/ift", "/ift-clinical", "/ift-markets",
+                        "/ift-research"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+])
+
+
 _MANUAL.extend([
     _ctx("/ift", "IFT — The Study (hub)",
          category=PageContextCategory.RESEARCH_BACKTESTING,
