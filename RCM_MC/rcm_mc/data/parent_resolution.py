@@ -805,19 +805,21 @@ def attach_parents(frame: pd.DataFrame, *,
     return widened
 
 
-@lru_cache(maxsize=4)
-def crosswalk_graph(scope: str = "") -> ParentGraph:
-    """The ownership graph over the certified universe, built once.
+@lru_cache(maxsize=1)
+def crosswalk_graph() -> ParentGraph:
+    """The ownership graph over the whole certified universe, built once.
 
-    Memoised because a graph is a property of the whole universe, not of
-    whatever slice a request asked for. Resolving inside a one-state
-    filter would silently drop every parent that sits across a state
-    line, and rebuilding per request would pay two seconds for an answer
-    that does not change between them.
+    Takes no scope, deliberately. A parent is a property of the graph,
+    not of whatever slice a request asked for: resolving inside a filter
+    would silently drop every parent sitting outside it. Building it
+    per-scope was self-consistent on today's data — hospital rows resolve
+    identically either way — but it left two graphs able to disagree
+    about the same CCN, which is the kind of thing that stays true right
+    up until it doesn't.
     """
     from .provider_crosswalk import SCOPE_ALL, get_crosswalk
 
-    return build_parent_graph(crosswalk=get_crosswalk(scope=scope or SCOPE_ALL))
+    return build_parent_graph(crosswalk=get_crosswalk(scope=SCOPE_ALL))
 
 
 DISAGREEMENT_COLUMNS: Tuple[str, ...] = (

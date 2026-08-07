@@ -5164,7 +5164,7 @@ class RCMHandler(BaseHTTPRequestHandler):
                 # one-state slice would silently drop every parent that
                 # happens to sit across a state line.
                 from .data.parent_resolution import crosswalk_graph
-                _frame = attach_parents(_frame, graph=crosswalk_graph(_scope))
+                _frame = attach_parents(_frame, graph=crosswalk_graph())
             return self._send_csv_df(
                 _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
         if path == "/master-npi-file.csv":

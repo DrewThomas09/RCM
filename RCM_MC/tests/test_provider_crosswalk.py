@@ -1347,6 +1347,18 @@ class CrosswalkRouteTests(unittest.TestCase):
             with self.subTest(ccn=row["ccn"]):
                 self.assertEqual(row["final_parent"], national[row["ccn"]])
 
+    def test_the_hospital_scope_gets_the_same_parents_as_the_full_one(self) -> None:
+        """One graph, not one per scope. Two graphs able to disagree about
+        the same CCN is the kind of thing that stays fine right up until
+        it doesn't."""
+        national = {r["ccn"]: r["final_parent"] for r in
+                    self._rows("/provider-crosswalk.csv?scope=all&parents=1")}
+        hospitals = self._rows("/provider-crosswalk.csv?parents=1")
+        self.assertGreater(len(hospitals), 6_000)
+        for row in hospitals:
+            with self.subTest(ccn=row["ccn"]):
+                self.assertEqual(row["final_parent"], national[row["ccn"]])
+
 
 if __name__ == "__main__":
     unittest.main()
