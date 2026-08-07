@@ -284,6 +284,31 @@ class CoverageTests(unittest.TestCase):
         self.assertIn("CMS ownership", by_id)
         self.assertGreater(by_id["CMS ownership"].pct, 80.0)
 
+    def test_ownership_survives_the_widening_to_every_class(self) -> None:
+        """CMS publishes an ownership class for all seven provider
+        classes. Carrying it for hospitals only would report 10% where
+        the data supports 96%."""
+        by_id = {s.identifier: s
+                 for s in crosswalk_coverage(scope=SCOPE_ALL)}
+        self.assertGreater(by_id["CMS ownership"].pct, 90.0)
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        # Hospice is the weakest class at ~89%; CMS simply leaves the
+        # field blank on some agencies.
+        for provider_class in ("snf", "hha", "hospice", "dialysis"):
+            rows = xw[xw["provider_class"].eq(provider_class)]
+            self.assertGreater(rows["cms_ownership"].ne("").mean(), 0.85,
+                               provider_class)
+
+    def test_certification_dates_ride_along_and_stay_sortable(self) -> None:
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        dates = xw["certification_date"]
+        present = dates[dates.ne("")]
+        self.assertGreater(len(present), 40000)
+        self.assertTrue(present.str.fullmatch(r"\d{4}-\d{2}-\d{2}").all())
+        # Hospitals file no certification date in HCRIS.
+        hospitals = xw[xw["provider_class"].eq("hospital")]
+        self.assertTrue(hospitals["certification_date"].eq("").all())
+
 
 class MarketRollupTests(unittest.TestCase):
     def test_cbsa_rollup_is_the_market_unit(self) -> None:

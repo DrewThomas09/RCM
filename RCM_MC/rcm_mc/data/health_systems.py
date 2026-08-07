@@ -2793,11 +2793,15 @@ def _post_acute_assigned_cached() -> pd.DataFrame:
 #: Columns shared by the hospital and post-acute frames — the ones a
 #: union can carry without inventing values for either side.
 UNION_COLUMNS: Tuple[str, ...] = (
-    "ccn", "name", "city", "state", "zip", "county",
+    "ccn", "name", "street", "city", "state", "zip", "county",
     "provider_class", "provider_class_label",
     "system_id", "system_name", "system_kind", "system_focus", "system_match",
     "facility_type", "facility_type_label", "is_behavioral",
     "facility_status", "is_operating", "beds", "chain_name",
+    # Published by the Compare files for all 42,387 post-acute providers
+    # and by nothing else. Dropping them here would leave the crosswalk
+    # reporting ownership for hospitals only.
+    "cms_ownership", "certification_date",
 )
 
 

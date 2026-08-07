@@ -15,39 +15,61 @@ has a ``*_source`` sibling; a partner can always see whether a county
 came from the geocode file or from the cost report, and whether a CBSA
 is real or absent because the county genuinely sits outside one.
 
-The chain, and what each link is worth on the bundled data:
+Two scopes
+----------
+``scope="hospital"`` is the 6,123-facility HCRIS universe — the only
+one with beds, revenue and filing recency on it. ``scope="all"`` adds
+the 42,387 nursing homes, home-health agencies, hospices, dialysis
+facilities, IRFs and LTCHs from the CMS Compare files, for 48,510 CCNs.
+The default stays hospital-only because a caller who did not ask for
+eight times the rows should not silently get them.
 
-    CCN  ──►  health system        1,987 of 6,001 operating (33%)
-     │        (health_systems.py registry)
+The chain, and what each link is worth over the full universe:
+
+    CCN  ──►  health system        14,261 of 48,510 (29.4%)
+     │        (health_systems.py registry). The average hides an
+     │        enormous spread — 89% of dialysis, 8.5% of nursing
+     │        homes — so crosswalk_by_class() reports it per class.
      │
-     ├──►  county FIPS             5,831 of 6,123 (95.2%)
-     │        geocode file first (4,325), cost-report county
-     │        second (1,506) — two independent sources of the same
-     │        fact, and the second is what lifts this from 71% to 95%
+     ├──►  county FIPS             46,499 of 48,510 (95.9%)
+     │        four independent sources of the same fact, tried in
+     │        confidence order and named on the row: Census geocode
+     │        (4,325), the county the facility filed (30,836), Care
+     │        Compare's county (66), and an unambiguous ZIP (11,272).
+     │        The last exists because home health is the one class
+     │        CMS publishes with no county column at all.
      │
-     ├──►  CBSA / MSA              4,720 of 6,123 (77.1%)
-     │        county FIPS -> OMB 2023 delineation. The 1,111
-     │        facilities with a FIPS but no CBSA are NOT a gap: rural
-     │        counties sit outside every metro and micro area by
-     │        definition, and calling that "missing" would invent a
-     │        data-quality problem where there is geography.
+     ├──►  CBSA / MSA              41,937 of 48,510 (86.5%)
+     │        county FIPS -> OMB 2023 delineation. A facility with a
+     │        FIPS and no CBSA is NOT a gap: rural counties sit outside
+     │        every metro and micro area by definition, and calling
+     │        that "missing" would invent a data-quality problem where
+     │        there is geography.
      │
      ├──►  NUCC taxonomy           every facility
-     │        CCN-range facility type -> the standard code a claim
-     │        actually carries (282N00000X and friends)
+     │        provider class -> the standard code a claim actually
+     │        carries (282N00000X and friends)
+     │
+     ├──►  CMS ownership           46,707 of 48,510 (96.3%)
+     │        CMS's observed class, published for every provider
+     │        class. Where a facility maps to no system, this is the
+     │        only ownership signal there is.
      │
      └──►  NPI                     0 until an NPPES file is present
               see nppes_ingest.py — the linkage is built, the bulk
               source is a 9GB monthly file this environment cannot
-              currently reach.
+              currently reach. npi_registry.py covers the NPPES
+              extracts that ARE bundled.
 
 Public API::
 
-    build_crosswalk(df=None)  -> DataFrame, one row per CCN
-    crosswalk_coverage(df=None) -> {identifier: CoverageStat}
+    build_crosswalk(df=None, *, scope=...) -> DataFrame, one row per CCN
+    crosswalk_coverage(df=None, *, scope=...) -> [CoverageStat]
+    crosswalk_by_class(df=None) -> per-provider-class coverage
+    crosswalk_by_cbsa(df=None, *, scope=...) -> the market rollup
     facility_taxonomy(facility_type) -> (code, description)
     cbsa_for_county(county_fips) -> dict | None
-    county_fips_for(ccn, state, county_name) -> (fips, source)
+    county_fips_for(ccn, state, county_name, zip_code) -> (fips, source)
 """
 from __future__ import annotations
 
@@ -254,6 +276,7 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "facility_type", "facility_type_label", "taxonomy_code", "taxonomy_desc",
     "is_behavioral",
     "cms_name", "cms_ownership", "cms_hospital_type", "emergency_services",
+    "certification_date",
     "county", "county_fips", "county_fips_source",
     "cbsa_code", "cbsa_title", "cbsa_type", "cbsa_central_outlying",
     "lat", "lon", "geo_match_quality",
@@ -277,7 +300,7 @@ _SOURCE_COLUMNS: Tuple[str, ...] = (
     "system_id", "system_name", "system_kind", "system_focus", "system_match",
     "chain_name", "facility_status", "is_operating", "reports_no_activity",
     "facility_type", "facility_type_label", "is_behavioral", "cms_ownership",
-    "county", "beds", "net_patient_revenue",
+    "certification_date", "county", "beds", "net_patient_revenue",
 )
 
 
@@ -337,6 +360,7 @@ def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
         "cms_ownership": cms.ownership if cms else (rec.get("cms_ownership", "") or ""),
         "cms_hospital_type": cms.hospital_type if cms else "",
         "emergency_services": cms.emergency_services if cms else "",
+        "certification_date": rec.get("certification_date", "") or "",
         "county": rec.get("county", "") if isinstance(rec.get("county"), str) else "",
         "county_fips": fips,
         "county_fips_source": fips_source,
@@ -448,8 +472,9 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                      "Census geocoder against CMS addresses"),
         CoverageStat("ZIP", filled("zip"), total, "from the cost report"),
         CoverageStat("CMS ownership", filled("cms_ownership"), total,
-                     "observed ownership class from Care Compare — the only "
-                     "ownership signal an unmapped facility has"),
+                     "observed ownership class, published by CMS for every "
+                     "provider class — the only ownership signal an "
+                     "unmapped facility has"),
         CoverageStat("NPI", filled("npi"), total,
                      "requires an NPPES extract — see nppes_ingest"),
     ]
