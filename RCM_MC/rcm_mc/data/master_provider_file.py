@@ -74,8 +74,7 @@ from .nppes_ingest import (
 )
 from .nucc_categories import classify_taxonomy
 from .parent_resolution import (
-    NS_CCN, NS_NPI, ParentGraph, build_parent_graph, load_affiliations,
-    node_key,
+    NS_NPI, ParentGraph, build_parent_graph, load_affiliations, node_key,
 )
 
 MASTER_COLUMNS: Tuple[str, ...] = (
