@@ -494,6 +494,32 @@ class PostAcuteUniverseTests(unittest.TestCase):
             self.assertEqual(chain, normalize_name(chain),
                              "alias keys are matched post-normalization")
 
+    def test_an_acquired_brand_rolls_up_to_its_acquirer(self) -> None:
+        """A rollup that lists an acquirer's brands as separate operators
+        is not a rollup. Amedisys still runs Beacon Hospice and AseraCare
+        under their own signage; Compassus files half its agencies as
+        "Hospice Compassus"."""
+        for name, state, system_id in (
+            ("BEACON HOSPICE", "MA", "amedisys"),
+            ("ASERACARE HOSPICE", "AL", "amedisys"),
+            ("HOSPICE COMPASSUS OF NASHVILLE", "TN", "compassus"),
+            ("NHC HOMECARE KNOXVILLE", "TN", "national_healthcare"),
+        ):
+            matched = match_system(name, state)[0]
+            self.assertIsNotNone(matched, name)
+            self.assertEqual(matched.system_id, system_id, name)
+
+    def test_descriptions_and_place_names_are_left_unmapped(self) -> None:
+        """The largest remaining clusters are the ones that must NOT
+        become registry entries. "HOSPICE OF" spans 206 facilities in 40
+        states and names no company."""
+        for name, state in (("HOSPICE OF THE VALLEY", "AZ"),
+                            ("COMMUNITY HOME HEALTH CARE", "NY"),
+                            ("MOUNTAIN VIEW HEALTH AND REHABILITATION", "TN"),
+                            ("VALLEY VIEW NURSING CENTER", "PA"),
+                            ("ADVANCED HOME HEALTH SERVICES", "TX")):
+            self.assertIsNone(match_system(name, state)[0], name)
+
     def test_three_brands_are_withheld_because_they_hit_a_hospital(self) -> None:
         """Genesis, Brookdale and Arbor read as national post-acute
         operators, and each collides with an unrelated acute hospital. A

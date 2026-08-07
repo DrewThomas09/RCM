@@ -1660,11 +1660,15 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
         "american_renal", "Innovative Renal Care (American Renal)",
         KIND_FOR_PROFIT, FOCUS_DIALYSIS, "MA",
         patterns=("^AMERICAN RENAL", "^INNOVATIVE RENAL"),
+        note="The American Renal name is gone from the current snapshot "
+             "and carried anyway — the rebrand to Innovative Renal Care "
+             "is recent enough that an older extract still uses it.",
     ),
     SystemDef(
         "satellite_healthcare", "Satellite Healthcare", KIND_NONPROFIT,
         FOCUS_DIALYSIS, "CA",
         patterns=("^SATELLITE DIALYSIS", "^SATELLITE HEALTHCARE"),
+        note="Both banners are in use; the chain column reaches the rest.",
     ),
     SystemDef(
         "northwest_kidney", "Northwest Kidney Centers", KIND_NONPROFIT,
@@ -1698,7 +1702,9 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "amedisys", "Amedisys", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "LA",
-        patterns=("^AMEDISYS", "^COMPASSIONATE CARE HOSPICE"),
+        patterns=("^AMEDISYS", "^COMPASSIONATE CARE HOSPICE",
+                  # Acquired brands kept in the market.
+                  "^BEACON HOSPICE", "^ASERACARE"),
     ),
     SystemDef(
         "gentiva", "Gentiva", KIND_FOR_PROFIT, FOCUS_HOSPICE, "GA",
@@ -1762,7 +1768,7 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "compassus", "Compassus", KIND_FOR_PROFIT, FOCUS_HOSPICE, "TN",
-        patterns=("^COMPASSUS",),
+        patterns=("^COMPASSUS", "^HOSPICE COMPASSUS"),
     ),
     SystemDef(
         "bristol_hospice", "Bristol Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "UT",
@@ -1826,7 +1832,7 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "national_healthcare", "National HealthCare Corporation (NHC)",
         KIND_FOR_PROFIT, FOCUS_SNF, "TN",
-        patterns=("^NHC HEALTHCARE",),
+        patterns=("^NHC HEALTHCARE", "^NHC HOMECARE"),
     ),
     SystemDef(
         "signature_snf", "Signature HealthCARE", KIND_FOR_PROFIT, FOCUS_SNF, "KY",
@@ -1877,6 +1883,163 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
         "autumn_corp", "Autumn Corporation", KIND_FOR_PROFIT, FOCUS_SNF, "NC",
         patterns=("^AUTUMN CARE OF",),
         states=("NC", "VA"),
+    ),
+
+    # ── Second pass ────────────────────────────────────────────────
+    #
+    # A re-clustering of what the first pass left unmapped, down to a
+    # 12-facility floor. The same rule applies: a cluster earns an entry
+    # only when it names an operator. "HOSPICE OF" (206 facilities, 40
+    # states), "HOME HEALTH", "COMMUNITY HOME HEALTH", "MOUNTAIN VIEW"
+    # and "VALLEY VIEW" are all larger than anything below and all
+    # absent, because they are descriptions and place names shared by
+    # organizations with nothing to do with each other.
+    #
+    # Several of these are acquisitions that kept the acquired brand,
+    # and they are folded into the acquirer rather than given their own
+    # row: Beacon Hospice and AseraCare are Amedisys, Hospice Compassus
+    # is Compassus, NHC Homecare is National HealthCare. A rollup that
+    # lists an acquirer's brands as separate operators is not a rollup.
+    SystemDef(
+        "brighton_hospice", "Brighton Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "MN",
+        patterns=("^BRIGHTON HOSPICE",),
+    ),
+    SystemDef(
+        "three_oaks_hospice", "Three Oaks Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOSPICE, "TX",
+        patterns=("^THREE OAKS HOSPICE",),
+    ),
+    SystemDef(
+        "agape_care", "Agape Care Group", KIND_FOR_PROFIT, FOCUS_HOSPICE, "SC",
+        patterns=("^ACG HOSPICE",),
+    ),
+    SystemDef(
+        "legacy_hospice", "Legacy Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "OK",
+        patterns=("^LEGACY HOSPICE",),
+    ),
+    SystemDef(
+        "moments_hospice", "Moments Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "MN",
+        patterns=("^MOMENTS HOSPICE",),
+    ),
+    SystemDef(
+        "serenity_hospice", "Serenity Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "MO",
+        patterns=("^SERENITY HOSPICE",),
+    ),
+    SystemDef(
+        "eden_hospice", "Eden Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "MO",
+        patterns=("^EDEN HOSPICE",),
+    ),
+    SystemDef(
+        "affinity_care", "Affinity Care", KIND_FOR_PROFIT, FOCUS_HOSPICE, "AL",
+        patterns=("^AFFINITY CARE OF", "^AFFINITY HOSPICE"),
+    ),
+    SystemDef(
+        "st_joseph_hospice", "St. Joseph Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOSPICE, "LA",
+        patterns=("^SAINT JOSEPH HOSPICE",),
+    ),
+    SystemDef(
+        "elite_home_health", "Elite Home Health & Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "TX",
+        patterns=("^ELITE HOME HEALTH", "^ELITE HOSPICE"),
+    ),
+    SystemDef(
+        "concierge_home_care", "Concierge Home Care", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "FL",
+        patterns=("^CONCIERGE HOME CARE",),
+    ),
+    SystemDef(
+        "mederi_caretenders", "Mederi Caretenders", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "FL",
+        patterns=("^MEDERI CARETENDERS",),
+    ),
+    SystemDef(
+        "pinnacle_home_care", "Pinnacle Home Care", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "FL",
+        patterns=("FL:^PINNACLE HOME CARE",),
+    ),
+    SystemDef(
+        "assured_home_health", "Assured Home Health", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "WA",
+        patterns=("^ASSURED HOME HEALTH",),
+    ),
+    SystemDef(
+        "aperion_care", "Aperion Care", KIND_FOR_PROFIT, FOCUS_SNF, "IL",
+        patterns=("^APERION CARE",),
+    ),
+    SystemDef(
+        "brickyard_healthcare", "Brickyard Healthcare", KIND_FOR_PROFIT,
+        FOCUS_SNF, "IN",
+        patterns=("IN:^BRICKYARD",),
+    ),
+    SystemDef(
+        "solaris_healthcare", "Solaris Healthcare", KIND_FOR_PROFIT, FOCUS_SNF, "FL",
+        patterns=("FL:^SOLARIS HEALTHCARE",),
+    ),
+    SystemDef(
+        "careone", "CareOne", KIND_FOR_PROFIT, FOCUS_SNF, "NJ",
+        patterns=("^CAREONE AT",),
+    ),
+    SystemDef(
+        "mission_point_snf", "Mission Point Healthcare Services",
+        KIND_FOR_PROFIT, FOCUS_SNF, "MI",
+        patterns=("MI:^MISSION POINT",),
+    ),
+    SystemDef(
+        "apple_rehab", "Apple Rehab", KIND_FOR_PROFIT, FOCUS_SNF, "CT",
+        patterns=("^APPLE REHAB",),
+        states=("CT", "RI"),
+    ),
+    SystemDef(
+        "heritage_hall", "Heritage Hall", KIND_FOR_PROFIT, FOCUS_SNF, "VA",
+        patterns=("^HERITAGE HALL",),
+        states=("VA", "WV"),
+    ),
+    SystemDef(
+        "advanced_health_care", "Advanced Health Care", KIND_FOR_PROFIT,
+        FOCUS_SNF, "UT",
+        patterns=("^ADVANCED HEALTH CARE OF",),
+    ),
+    SystemDef(
+        "aspire_senior_living", "Aspire Senior Living", KIND_FOR_PROFIT,
+        FOCUS_SNF, "MO",
+        patterns=("MO:^ASPIRE SENIOR LIVING",),
+    ),
+    SystemDef(
+        "dialyze_direct", "Dialyze Direct", KIND_FOR_PROFIT, FOCUS_DIALYSIS, "NJ",
+        patterns=("^DIALYZE DIRECT",),
+    ),
+    SystemDef(
+        "dialysis_care_center", "Dialysis Care Center", KIND_FOR_PROFIT,
+        FOCUS_DIALYSIS, "IL",
+        patterns=("^DIALYSIS CARE CENTER",),
+    ),
+    # Reached through the published chain column rather than a name.
+    SystemDef(
+        "atlantis_healthcare", "Atlantis Healthcare Group", KIND_FOR_PROFIT,
+        FOCUS_DIALYSIS, "PR",
+        patterns=("PR:^ATLANTIS",),
+    ),
+    SystemDef(
+        "greenfield_health", "Greenfield Health Systems", KIND_NONPROFIT,
+        FOCUS_DIALYSIS, "MI",
+        patterns=("^GREENFIELD HEALTH",),
+    ),
+    SystemDef(
+        "atlantic_dms", "Atlantic Dialysis Management Services",
+        KIND_FOR_PROFIT, FOCUS_DIALYSIS, "NY",
+        patterns=("NY:^ATLANTIC DMS",),
+    ),
+    SystemDef(
+        "dsi_renal", "Diversified Specialty Institutes (DSI)", KIND_FOR_PROFIT,
+        FOCUS_DIALYSIS, "TN",
+        patterns=("^DSI RENAL",),
+        note="Chain-column only — the facilities file under local names.",
+    ),
+    SystemDef(
+        "central_florida_kidney", "Central Florida Kidney Centers",
+        KIND_FOR_PROFIT, FOCUS_DIALYSIS, "FL",
+        patterns=("FL:^CENTRAL FLORIDA KIDNEY",),
     ),
 )
 
@@ -1954,10 +2117,21 @@ CHAIN_ALIASES: Dict[str, str] = {
     "NORTHWEST KIDNEY CENTERS": "northwest_kidney",
     "CENTERS FOR DIALYSIS CARE": "cdc_cleveland",
     "PUGET SOUND KIDNEY CENTERS": "puget_sound_kidney",
+    "ATLANTIS HEALTHCARE GROUP": "atlantis_healthcare",
+    "GREENFIELD HEALTH SYSTEMS": "greenfield_health",
+    "ATLANTIC DIALYSIS MANAGEMENT SERVICES": "atlantic_dms",
+    "DIVERSIFIED SPECIALTY INSTITUTES DSI": "dsi_renal",
+    "CENTRAL FLORIDA KIDNEY CENTERS": "central_florida_kidney",
+    # Health systems that run their own dialysis under the parent brand.
+    # The chain column reaches these without a single extra pattern.
     "KAISER PERMANENTE": "kaiser",
     "SANFORD HEALTH": "sanford",
     "INTERMOUNTAIN HEALTHCARE": "intermountain",
     "MAYO CLINIC DIALYSIS": "mayo",
+    "GUNDERSEN LUTHERAN": "gundersen",
+    "UPMC HEALTH SYSTEM": "upmc",
+    "MEMORIAL HERMANN HEALTHCARE SYSTEM": "memorial_hermann",
+    "SCOTT AND WHITE MEMORIAL HOSPITAL": "baylor",
 }
 
 
