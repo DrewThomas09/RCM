@@ -35,6 +35,11 @@ from rcm_mc.data.nppes_ingest import (
     npi_coverage,
     npi_rows,
 )
+from rcm_mc.data.county_demographics import (
+    _county_by_name,
+    _norm_county,
+    _norm_county_for,
+)
 from rcm_mc.data.provider_crosswalk import (
     CROSSWALK_COLUMNS,
     NUCC_BY_FACILITY_TYPE,
@@ -138,6 +143,71 @@ class CountyAndCbsaTests(unittest.TestCase):
         outside_ct = blank_county & xw["state"].ne("CT")
         self.assertEqual(set(xw.loc[outside_ct, "cbsa_source"]),
                          {CBSA_SOURCE_NO_COUNTY})
+
+
+class CountyNameNormalizationTests(unittest.TestCase):
+    """The county label differs from the ACS label by punctuation alone.
+
+    O'Brien IA, Prince George's MD, E. Baton Rouge LA, St. Lucie FL —
+    each failed an exact-match join over an apostrophe, a period or an
+    abbreviation, and each is a real county with real demographics
+    sitting on the other side.
+    """
+
+    def test_the_rules_do_what_they_claim(self) -> None:
+        for raw, expected in (("O'BRIEN", "OBRIEN"),
+                              ("Prince George's", "PRINCEGEORGES"),
+                              ("St. Louis", "SAINTLOUIS"),
+                              ("ST LUCIE", "SAINTLUCIE"),
+                              ("E. Baton Rouge", "EASTBATONROUGE"),
+                              ("W. Feliciana", "WESTFELICIANA"),
+                              ("Houston County", "HOUSTON"),
+                              ("De Kalb", "DEKALB")):
+            self.assertEqual(_norm_county(raw), expected, raw)
+
+    def test_saint_expansion_is_bounded(self) -> None:
+        """ST -> SAINT must be a word, or STERLING becomes SAINTERLING."""
+        self.assertEqual(_norm_county("STERLING"), "STERLING")
+        self.assertEqual(_norm_county("STARK"), "STARK")
+        self.assertEqual(_norm_county("STONE"), "STONE")
+
+    def test_an_independent_city_never_merges_with_its_county(self) -> None:
+        """Thirty-six facilities sit in a city sharing a name with the
+        surrounding county, and the FIPS carry wildly different
+        demographics — St. Louis County has 990,414 people, St. Louis
+        city 286,578. Stripping a trailing ' CITY' would relocate large
+        urban academic centers."""
+        index = _county_by_name()
+        for state, county, city, county_fips, city_fips in (
+            ("MD", "Baltimore County", "Baltimore city", "24005", "24510"),
+            ("MO", "St. Louis County", "St. Louis city", "29189", "29510"),
+            ("VA", "Fairfax County", "Fairfax city", "51059", "51600"),
+            ("VA", "Richmond County", "Richmond city", "51159", "51760"),
+        ):
+            self.assertEqual(
+                index[(state, _norm_county(county))]["county_fips"], county_fips)
+            self.assertEqual(
+                index[(state, _norm_county(city))]["county_fips"], city_fips)
+
+    def test_normalization_introduces_no_ambiguity(self) -> None:
+        """The index must stay collision-free: 3,143 counties, 3,143
+        keys. A widened normalizer can only add hits, never a choice."""
+        index = _county_by_name()
+        with (Path("rcm_mc/data/vendor/county_demographics")
+              / "county_demographics.csv").open() as fh:
+            source_rows = sum(1 for _ in csv.DictReader(fh))
+        self.assertEqual(len(index), source_rows)
+
+    def test_the_district_of_columbia_answers_to_its_short_names(self) -> None:
+        self.assertEqual(_norm_county_for("DC", "DC"), "DISTRICTOFCOLUMBIA")
+        self.assertEqual(_norm_county_for("DC", "The District"),
+                         "DISTRICTOFCOLUMBIA")
+        # The alias is state-scoped: Washington County MD is not DC.
+        self.assertEqual(_norm_county_for("MD", "Washington"), "WASHINGTON")
+
+    def test_county_coverage_moved(self) -> None:
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        self.assertGreater(int(xw["county_fips"].ne("").sum()), 46600)
 
 
 class ConnecticutVintageTests(unittest.TestCase):

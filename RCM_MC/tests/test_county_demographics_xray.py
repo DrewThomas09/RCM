@@ -30,7 +30,14 @@ class ResolverTests(unittest.TestCase):
     def test_norm_county_bridges_label_gaps(self):
         self.assertEqual(_norm_county("DeKalb County"), _norm_county("DE KALB"))
         self.assertEqual(_norm_county("Harris County"), "HARRIS")
-        self.assertEqual(_norm_county("St. Louis City"), "ST.LOUISCITY")
+        # SAINT and ST are the same saint, and the two spellings of the
+        # same place must collide.
+        self.assertEqual(_norm_county("St. Louis City"), "SAINTLOUISCITY")
+        self.assertEqual(_norm_county("St. Louis City"),
+                         _norm_county("Saint Louis city"))
+        # …but the city and the county around it must NOT.
+        self.assertNotEqual(_norm_county("St. Louis City"),
+                            _norm_county("St. Louis County"))
 
 
 class XrayPanelTests(unittest.TestCase):

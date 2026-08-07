@@ -295,9 +295,9 @@ def cbsa_for_row(county_fips: Any, state: Any = "",
 
 @lru_cache(maxsize=None)
 def _fips_lookup(state: str, county_name: str) -> str:
-    from .county_demographics import _county_by_name, _norm_county
+    from .county_demographics import _county_by_name, _norm_county_for
 
-    row = _county_by_name().get((state, _norm_county(county_name)))
+    row = _county_by_name().get((state, _norm_county_for(state, county_name)))
     return str(row.get("county_fips", "")).zfill(5) if row else ""
 
 
