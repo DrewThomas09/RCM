@@ -169,14 +169,14 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
             # Divisions that never carry the HCA name.
             "VA:^LEWISGALE", "TX:^CORPUS CHRISTI MEDICAL", "TX:^RIO GRANDE REGIONAL",
             "TX:^ROUND ROCK MEDICAL", "CO:^THE MEDICAL CENTER OF AURORA",
-            "CO:^MEDICAL CENTER OF AURORA",
+            "CO:^MEDICAL CENTER OF AURORA", "NC:^MISSION HOSPITAL",
         ),
         note="Largest US for-profit operator; many facilities rebranded "
              "to the HCA / Medical City / TriStar house brands.",
     ),
     SystemDef(
         "tenet", "Tenet Healthcare", KIND_FOR_PROFIT, FOCUS_ACUTE, "TX",
-        patterns=("^THE HOSPITALS OF PROVIDENCE", "^HOSPITALS OF PROVIDENCE",
+        patterns=("^HOSPITALS OF PROVIDENCE",
                   "MI:^DETROIT RECEIVING", "MI:^HARPER UNIVERSITY",
                   "MI:^SINAI GRACE", "MI:^DETROIT MEDICAL CENTER",
                   "AZ:^CARONDELET", "TX:^VALLEY BAPTIST", "TN:^SAINT FRANCIS"),
@@ -405,13 +405,30 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "houston_methodist", "Houston Methodist", KIND_NONPROFIT, FOCUS_ACUTE, "TX",
-        patterns=("^HOUSTON METHODIST",),
+        patterns=("^HOUSTON METHODIST", "TX:^METHODIST SUGAR LAND",
+                  "TX:^METHODIST WILLOWBROOK", "TX:^METHODIST WEST HOUSTON",
+                  "TX:^SAN JACINTO METHODIST", "TX:^METHODIST BAYTOWN"),
     ),
     SystemDef(
         "methodist_dallas", "Methodist Health System (Dallas)", KIND_NONPROFIT, FOCUS_ACUTE, "TX",
-        patterns=("^METHODIST ",),
-        states=("TX",),
-        exclude=("HOUSTON METHODIST",),
+        patterns=("TX:^METHODIST DALLAS", "TX:^METHODIST CHARLTON",
+                  "TX:^METHODIST RICHARDSON", "TX:^METHODIST MANSFIELD",
+                  "TX:^METHODIST MIDLOTHIAN", "TX:^METHODIST SOUTHLAKE",
+                  "TX:^METHODIST MCKINNEY", "TX:^METHODIST HOSPITAL FOR SURGERY",
+                  "TX:^METHODIST REHABILITATION HOSPITAL"),
+        note="A bare '^METHODIST' scoped to Texas was swallowing three "
+             "unrelated Methodist organizations — Dallas, Houston and San "
+             "Antonio each run facilities named METHODIST <something>. Each "
+             "now claims only its own.",
+    ),
+    SystemDef(
+        "methodist_san_antonio", "Methodist Healthcare (San Antonio)",
+        KIND_FOR_PROFIT, FOCUS_ACUTE, "TX",
+        patterns=("TX:^METHODIST HOSPITAL SOUTH", "TX:^METHODIST STONE OAK",
+                  "TX:^METHODIST AMBULATORY", "TX:^METHODIST TEXSAN",
+                  "TX:^METHODIST SPECIALTY"),
+        note="HCA joint venture with Methodist Healthcare Ministries — a "
+             "different organization from both Dallas and Houston Methodist.",
     ),
     SystemDef(
         "methodist_lebonheur", "Methodist Le Bonheur Healthcare", KIND_NONPROFIT, FOCUS_ACUTE, "TN",
@@ -494,7 +511,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "novant", "Novant Health", KIND_NONPROFIT, FOCUS_ACUTE, "NC",
-        patterns=("^NOVANT", "NC:^PRESBYTERIAN HOSPITAL", "NC:^FORSYTH MEDICAL"),
+        patterns=("^NOVANT", "NC:^PRESBYTERIAN HOSPITAL", "NC:^FORSYTH MEMORIAL"),
     ),
     SystemDef(
         "unc", "UNC Health", KIND_ACADEMIC, FOCUS_ACUTE, "NC",
@@ -560,7 +577,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "mount_sinai", "Mount Sinai Health System", KIND_ACADEMIC, FOCUS_ACUTE, "NY",
         patterns=("^MOUNT SINAI", "NY:^NEW YORK EYE AND EAR",
-                  "NY:^THE NEW YORK GRACIE SQUARE", "NY:^NEW YORK GRACIE SQUARE"),
+                  "NY:^NEW YORK GRACIE SQUARE"),
         states=("NY",),
     ),
     SystemDef(
@@ -947,7 +964,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "musc", "MUSC Health", KIND_ACADEMIC, FOCUS_ACUTE, "SC",
-        patterns=("^MUSC",),
+        patterns=("^MUSC", "^MEDICAL UNIVERSITY OF SOUTH CAROLINA"),
     ),
     SystemDef(
         "unm", "UNM Health", KIND_ACADEMIC, FOCUS_ACUTE, "NM",
@@ -960,7 +977,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "ut_system", "UT Health (Texas)", KIND_ACADEMIC, FOCUS_ACUTE, "TX",
-        patterns=("^UT ",),
+        patterns=("^UT ", "TX:^UNIVERSITY OF TEXAS"),
         states=("TX",),
     ),
     SystemDef(
@@ -1033,7 +1050,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "queens", "The Queen's Health System", KIND_NONPROFIT, FOCUS_ACUTE, "HI",
-        patterns=("^QUEENS MEDICAL", "^THE QUEENS"),
+        patterns=("^QUEENS MEDICAL", "^QUEENS HEALTH"),
         states=("HI",),
     ),
     SystemDef(
@@ -1127,7 +1144,7 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "med_center_health", "Med Center Health", KIND_NONPROFIT, FOCUS_ACUTE, "KY",
-        patterns=("KY:^THE MEDICAL CENTER",),
+        patterns=("KY:^MEDICAL CENTER",),
     ),
     SystemDef(
         "saint_francis_ok", "Saint Francis Health System", KIND_CATHOLIC, FOCUS_ACUTE, "OK",
@@ -1258,7 +1275,8 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "steward", "Steward Health Care", KIND_FOR_PROFIT, FOCUS_ACUTE, "MA",
         patterns=("^STEWARD", "UT:^SALT LAKE REGIONAL", "UT:^JORDAN VALLEY MEDICAL",
-                  "UT:^DAVIS HOSPITAL", "UT:^MOUNTAIN POINT MEDICAL"),
+                  "UT:^DAVIS HOSPITAL", "UT:^MOUNTAIN POINT MEDICAL",
+                  "FL:^NORTH SHORE MEDICAL CENTER"),
     ),
     SystemDef(
         "chs", "Community Health Systems", KIND_FOR_PROFIT, FOCUS_ACUTE, "TN",
@@ -1480,6 +1498,75 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
         patterns=("^HOSPITAL METROPOLITANO",),
     ),
     SystemDef(
+        "parkland", "Parkland Health", KIND_GOVERNMENT, FOCUS_ACUTE, "TX",
+        patterns=("TX:^PARKLAND", "TX:^DALLAS CO"),
+        note="Files as the hospital district, not the hospital name.",
+    ),
+    SystemDef(
+        "urmc", "University of Rochester Medical Center",
+        KIND_ACADEMIC, FOCUS_ACUTE, "NY",
+        patterns=("NY:^STRONG MEMORIAL", "NY:^HIGHLAND HOSPITAL",
+                  "NY:^THOMPSON HEALTH"),
+    ),
+    SystemDef(
+        "lakeland_regional", "Lakeland Regional Health", KIND_NONPROFIT, FOCUS_ACUTE, "FL",
+        patterns=("FL:^LAKELAND REGIONAL",),
+    ),
+    SystemDef(
+        "community_fresno", "Community Health System (Fresno)",
+        KIND_NONPROFIT, FOCUS_ACUTE, "CA",
+        patterns=("CA:^COMMUNITY REGIONAL", "CA:^CLOVIS COMMUNITY",
+                  "CA:^COMMUNITY BEHAVIORAL HEALTH CENTER"),
+    ),
+    SystemDef(
+        "michigan_medicine", "Michigan Medicine", KIND_ACADEMIC, FOCUS_ACUTE, "MI",
+        patterns=("^UNIVERSITY OF MICHIGAN", "^MICHIGAN MEDICINE", "MI:^UNIV OF MI"),
+    ),
+    SystemDef(
+        "huntsville", "Huntsville Hospital Health System",
+        KIND_GOVERNMENT, FOCUS_ACUTE, "AL",
+        patterns=("AL:^HUNTSVILLE HOSPITAL", "AL:^MADISON HOSPITAL",
+                  "AL:^HELEN KELLER"),
+    ),
+    SystemDef(
+        "texas_childrens", "Texas Children's Hospital",
+        KIND_NONPROFIT, FOCUS_CHILDRENS, "TX",
+        patterns=("TX:^TEXAS CHILDRENS",),
+    ),
+    SystemDef(
+        "camc", "CAMC Health System", KIND_NONPROFIT, FOCUS_ACUTE, "WV",
+        patterns=("WV:^CHARLESTON AREA MEDICAL",),
+    ),
+    SystemDef(
+        "ou_health", "OU Health", KIND_ACADEMIC, FOCUS_ACUTE, "OK",
+        patterns=("OK:^OU MEDICAL", "OK:^OU HEALTH", "OK:^OKLAHOMA CHILDRENS"),
+    ),
+    SystemDef(
+        "santa_clara_county", "Santa Clara Valley Healthcare",
+        KIND_GOVERNMENT, FOCUS_ACUTE, "CA",
+        patterns=("CA:^SANTA CLARA VALLEY", "CA:^OCONNOR HOSPITAL",
+                  "CA:^SAINT LOUISE REGIONAL"),
+    ),
+    SystemDef(
+        "osu_wexner", "Ohio State Wexner Medical Center", KIND_ACADEMIC, FOCUS_ACUTE, "OH",
+        patterns=("^OHIO STATE UNIVERSITY", "OH:^JAMES CANCER"),
+    ),
+    SystemDef(
+        "uk_healthcare", "UK HealthCare", KIND_ACADEMIC, FOCUS_ACUTE, "KY",
+        patterns=("^UNIVERSITY OF KENTUCKY", "KY:^UNIVERSITY HOSPITAL"),
+    ),
+    SystemDef(
+        "kaleida", "Kaleida Health", KIND_NONPROFIT, FOCUS_ACUTE, "NY",
+        patterns=("^KALEIDA", "NY:^BUFFALO GENERAL", "NY:^MILLARD FILLMORE"),
+    ),
+    SystemDef(
+        "ca_state_hospitals", "California Dept of State Hospitals",
+        KIND_GOVERNMENT, FOCUS_BEHAVIORAL, "CA",
+        patterns=("CA:^METROPOLITAN STATE HOSPITAL", "CA:^NAPA STATE HOSPITAL",
+                  "CA:^PATTON STATE HOSPITAL", "CA:^ATASCADERO STATE",
+                  "CA:^COALINGA STATE HOSPITAL"),
+    ),
+    SystemDef(
         "sih", "Southern Illinois Healthcare", KIND_NONPROFIT, FOCUS_ACUTE, "IL",
         patterns=("IL:^MEMORIAL HOSPITAL OF CARBONDALE", "IL:^HERRIN HOSPITAL",
                   "IL:^SAINT JOSEPH MEMORIAL"),
@@ -1500,6 +1587,39 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
 )
 
 
+# ── CCN overrides ──────────────────────────────────────────────────
+#
+# The escape hatch for facilities a name can never resolve. Two cases
+# recur, and both are visible in the Texas Methodist estate:
+#
+#   1. Two unrelated organizations file identical names. Houston
+#      Methodist's flagship is "THE METHODIST HOSPITAL" and Methodist
+#      Healthcare San Antonio's is "METHODIST HOSPITAL" — the same
+#      string once normalized, in the same state, 200 miles apart.
+#   2. HCRIS truncates at ~36 characters and abbreviates, so
+#      "Hospital of the University of Pennsylvania" files as
+#      "HOSPITAL OF THE UNIV OF PENNA" and no pattern written from the
+#      real name can reach it.
+#
+# Every entry is one named facility, verified individually, and shows
+# on the page as its own match basis — a reader can see the assignment
+# was asserted rather than derived. Reach for a pattern first; an
+# override is for when the name genuinely cannot carry the answer.
+
+CCN_OVERRIDES: Dict[str, str] = {
+    # Identical names, different organizations (see case 1).
+    "450358": "houston_methodist",       # THE METHODIST HOSPITAL, Houston
+    "450388": "methodist_san_antonio",   # METHODIST HOSPITAL, San Antonio
+    # Truncated / abbreviated beyond pattern reach (see case 2).
+    "390111": "penn_medicine",           # HOSPITAL OF THE UNIV OF PENNA
+    "010033": "uab",                     # UNIVERSITY OF ALABAMA HOSPITAL
+    "340113": "advocate",                # CAROLINAS MEDICAL CENTER (Atrium)
+    "340040": "ecu_health",              # PITT COUNTY MEMORIAL (Vidant flagship)
+    "100075": "baycare",                 # SAINT JOSEPHS HOSPITAL, Tampa
+    "450058": "tenet",                   # BAPTIST HEALTH SYSTEM, San Antonio
+}
+
+
 # ── Name normalization + matching ──────────────────────────────────
 
 _PUNCT_RE = re.compile(r"[^A-Z0-9]+")
@@ -1513,6 +1633,12 @@ _SPACE_RE = re.compile(r"\s+")
 # defeats every anchored pattern: HCA's Lakeview and Centerpoint were
 # both unmapped purely because of the prefix.
 _AMEND_RE = re.compile(r"(?:^|\s)AMEND(?:MENT)?\s*#?\s*\d*(?=\s|$)")
+
+# A leading "THE" is noise for matching: HCRIS carries both "THE JOHNS
+# HOPKINS HOSPITAL" and "JOHNS HOPKINS BAYVIEW", and an anchored pattern
+# can only catch one of them. Dropping it cost nothing and recovered
+# Hopkins' flagship, Ohio State's and Houston Methodist's.
+_LEADING_THE_RE = re.compile(r"^THE\s+")
 
 
 def normalize_name(raw: Any) -> str:
@@ -1529,27 +1655,37 @@ def normalize_name(raw: Any) -> str:
     s = s.replace("'", "").replace("\u2019", "")
     s = _AMEND_RE.sub(" ", s)
     s = _PUNCT_RE.sub(" ", s)
+    s = _LEADING_THE_RE.sub("", s.strip())
     s = _SAINT_RE.sub("SAINT", s)
     s = _SPACE_RE.sub(" ", s).strip()
     return s
 
 
-def _compile_pattern(pattern: str) -> "re.Pattern[str]":
-    """Compile one registry pattern into a word-bounded regex.
+#: Pattern length at or above which the trailing word boundary is
+#: dropped. Short abbreviations (CHI, UH, UT, UM, PAM, SSH) are only
+#: safe bounded — unbounded, "CHI" swallowed CHINLE, CHINESE HOSPITAL,
+#: CHINO VALLEY and five children's hospitals. But the same boundary
+#: silently killed "^BRIGHAM AND WOMEN", because the real facility is
+#: BRIGHAM AND WOMENS and the S is a word character: Mass General
+#: Brigham's second-largest hospital sat unmapped over an apostrophe.
+#: A brand string this long is distinctive enough to match as a prefix.
+_UNBOUNDED_PATTERN_LEN = 10
 
-    ``^`` anchors to the start of the name. **Both ends of every pattern
-    are word-bounded.** The first cut of this matcher compared with
-    ``str.startswith`` and pulled CHINLE, CHINESE HOSPITAL, CHINO VALLEY
-    and five children's hospitals into CommonSpirit off the ``CHI``
-    brand — short brand abbreviations (CHI, UH, UT, UM, PAM, SSH) are
-    only safe with a trailing boundary.
+
+def _compile_pattern(pattern: str) -> "re.Pattern[str]":
+    """Compile one registry pattern into a regex.
+
+    ``^`` anchors to the start of the name. Short patterns are bounded
+    at both ends; long ones match as prefixes — see
+    :data:`_UNBOUNDED_PATTERN_LEN` for why the rule is length-dependent.
     """
     body = pattern.lstrip("^").strip()
     if not body:
         # Never-matching pattern — cheaper than special-casing at call sites.
         return re.compile(r"(?!)")
     prefix = "^" if pattern.startswith("^") else r"(?<![A-Z0-9])"
-    return re.compile(prefix + re.escape(body) + r"(?![A-Z0-9])")
+    suffix = "" if len(body) >= _UNBOUNDED_PATTERN_LEN else r"(?![A-Z0-9])"
+    return re.compile(prefix + re.escape(body) + suffix)
 
 
 def _pattern_hits(norm: str, pattern: str) -> bool:
@@ -1842,11 +1978,22 @@ def _assign_universe(df: pd.DataFrame) -> pd.DataFrame:
     ccns = out["ccn"] if "ccn" in out.columns else pd.Series([""] * len(out), index=out.index)
 
     matches = [match_system(n, s) for n, s in zip(names, states, strict=True)]
-    out["system_id"] = [m[0].system_id if m[0] else UNMAPPED_ID for m in matches]
-    out["system_name"] = [m[0].name if m[0] else UNMAPPED_NAME for m in matches]
-    out["system_kind"] = [m[0].kind if m[0] else "" for m in matches]
-    out["system_focus"] = [m[0].focus if m[0] else "" for m in matches]
-    out["system_match"] = [m[1] for m in matches]
+    # A CCN override wins over the name match — it exists precisely
+    # because the name is wrong or unusable for this facility.
+    resolved, bases = [], []
+    for ccn, (sysdef, pattern) in zip(ccns.astype(str), matches, strict=True):
+        override = CCN_OVERRIDES.get(ccn)
+        if override and override in _SYSTEM_BY_ID:
+            resolved.append(_SYSTEM_BY_ID[override])
+            bases.append(f"ccn override {ccn}")
+        else:
+            resolved.append(sysdef)
+            bases.append(pattern)
+    out["system_id"] = [d.system_id if d else UNMAPPED_ID for d in resolved]
+    out["system_name"] = [d.name if d else UNMAPPED_NAME for d in resolved]
+    out["system_kind"] = [d.kind if d else "" for d in resolved]
+    out["system_focus"] = [d.focus if d else "" for d in resolved]
+    out["system_match"] = bases
 
     types = _classify_series(ccns, names)
     out["facility_type"] = types
@@ -2533,6 +2680,32 @@ def _leader_map() -> Dict[str, Tuple[str, ...]]:
 def leading_states(system_id: str) -> Tuple[str, ...]:
     """States where this system holds the largest bed share."""
     return _leader_map().get(str(system_id or ""), ())
+
+
+def dead_patterns(df: Optional[pd.DataFrame] = None) -> List[Tuple[str, str]]:
+    """Registry patterns that match no facility, as ``(system_id, pattern)``.
+
+    A maintenance scan, not an error list. Some dead patterns are
+    deliberate — house brands that will appear after a data refresh
+    (``^COMMONSPIRIT``, ``^SCIONHEALTH``) are worth carrying early. But
+    the scan is how typos surface: it is what caught ``^FORSYTH MEDICAL``
+    against a facility actually named FORSYTH MEMORIAL, and
+    ``^BRIGHAM AND WOMEN`` failing the trailing boundary against
+    BRIGHAM AND WOMENS.
+    """
+    assigned = assign_systems(df)
+    seen = [(normalize_name(n), str(st).upper())
+            for n, st in zip(assigned["name"], assigned["state"], strict=True)]
+    out: List[Tuple[str, str]] = []
+    for sysdef in SYSTEM_REGISTRY:
+        for pattern in sysdef.patterns:
+            scope, body = _split_pattern(pattern)
+            scope = scope or sysdef.states
+            regex = _compile_pattern(body)
+            if not any(regex.search(nm) and (not scope or st in scope)
+                       for nm, st in seen):
+                out.append((sysdef.system_id, pattern))
+    return out
 
 
 def _clear_cache() -> None:

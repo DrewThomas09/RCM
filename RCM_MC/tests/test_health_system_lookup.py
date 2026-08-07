@@ -27,6 +27,7 @@ from contextlib import closing
 import pandas as pd
 
 from rcm_mc.data.health_systems import (
+    CCN_OVERRIDES,
     STATUS_ACTIVE,
     STATUS_DORMANT,
     STATUS_STOPPED,
@@ -36,6 +37,7 @@ from rcm_mc.data.health_systems import (
     build_system_map,
     candidate_clusters,
     concentration_ranking,
+    dead_patterns,
     get_system,
     get_system_map,
     export_mapping,
@@ -148,6 +150,64 @@ class MatcherPrecisionTests(unittest.TestCase):
     def test_unbranded_name_is_unmapped(self) -> None:
         self.assertIsNone(match_system("CRENSHAW COMMUNITY HOSPITAL", "AL")[0])
 
+    def test_leading_article_does_not_hide_a_brand(self) -> None:
+        """HCRIS carries both "THE JOHNS HOPKINS HOSPITAL" and "JOHNS
+        HOPKINS BAYVIEW"; an anchored pattern can only catch one unless
+        the article is dropped."""
+        self.assertEqual(normalize_name("THE JOHNS HOPKINS HOSPITAL"),
+                         "JOHNS HOPKINS HOSPITAL")
+        self.assertEqual(
+            match_system("THE JOHNS HOPKINS HOSPITAL", "MD")[0].system_id, "hopkins")
+        # "THE" inside the name is left alone.
+        self.assertEqual(normalize_name("HOUSTON METHODIST THE WOODLANDS"),
+                         "HOUSTON METHODIST THE WOODLANDS")
+
+    def test_three_methodists_do_not_share_an_estate(self) -> None:
+        """Regression: '^METHODIST' scoped to Texas swallowed Dallas,
+        Houston and San Antonio — three unrelated organizations."""
+        cases = {
+            "METHODIST DALLAS MEDICAL CENTER": "methodist_dallas",
+            "METHODIST CHARLTON MEDICAL CENTER": "methodist_dallas",
+            "METHODIST SUGAR LAND HOSPITAL": "houston_methodist",
+            "METHODIST WEST HOUSTON HOSPITAL": "houston_methodist",
+            "SAN JACINTO METHODIST HOSPITAL": "houston_methodist",
+            "METHODIST STONE OAK HOSPITAL": "methodist_san_antonio",
+            "METHODIST HOSPITAL SOUTH": "methodist_san_antonio",
+        }
+        for name, expected in cases.items():
+            sysdef, _ = match_system(name, "TX")
+            self.assertIsNotNone(sysdef, name)
+            self.assertEqual(sysdef.system_id, expected, name)
+
+    def test_long_patterns_match_as_prefixes(self) -> None:
+        """Regression: the trailing word boundary that stops CHI->CHINLE
+        also killed '^BRIGHAM AND WOMEN' against BRIGHAM AND WOMENS —
+        Mass General Brigham's second-largest hospital sat unmapped over
+        an apostrophe. Long brand strings match as prefixes."""
+        self.assertEqual(
+            match_system("BRIGHAM AND WOMENS HOSPITAL", "MA")[0].system_id,
+            "mass_general_brigham")
+
+    def test_short_patterns_keep_their_boundary(self) -> None:
+        """The relaxation must not reopen the CHI leak."""
+        self.assertNotEqual(
+            (match_system("CHINLE COMPREHENSIVE CARE FACILITY", "AZ")[0] or
+             get_system("hca")).system_id, "commonspirit")
+        self.assertIsNone(match_system("CHINESE HOSPITAL", "CA")[0])
+
+    def test_dead_pattern_scan_finds_typos(self) -> None:
+        """The scan is the maintenance loop for the registry: patterns
+        that match nothing are usually typos. Some are deliberate — house
+        brands carried early for a future refresh — so this pins the
+        specific ones that must stay alive rather than demanding zero."""
+        dead = set(dead_patterns())
+        for must_match in (("novant", "NC:^FORSYTH MEMORIAL"),
+                           ("mass_general_brigham", "^BRIGHAM AND WOMEN"),
+                           ("hopkins", "^JOHNS HOPKINS"),
+                           ("intermountain", "UT:^UTAH VALLEY HOSPITAL"),
+                           ("oceans", "^OCEANS")):
+            self.assertNotIn(must_match, dead, f"{must_match} matches nothing")
+
     def test_every_registry_entry_is_reachable(self) -> None:
         """No dead entries: each system matches at least one real facility."""
         live = {r.system_id for r in get_system_map().systems}
@@ -189,6 +249,40 @@ class AssignmentTests(unittest.TestCase):
         first.loc[first.index[0], "system_name"] = "MUTATED"
         second = assign_systems()
         self.assertNotEqual(second["system_name"].iloc[0], "MUTATED")
+
+
+class CcnOverrideTests(unittest.TestCase):
+    """The escape hatch for facilities a name can never resolve."""
+
+    def test_overrides_point_at_real_systems_and_real_facilities(self) -> None:
+        assigned = assign_systems()
+        universe = set(assigned["ccn"].astype(str))
+        for ccn, system_id in CCN_OVERRIDES.items():
+            self.assertIsNotNone(get_system(system_id), f"{ccn} -> {system_id}")
+            self.assertIn(ccn, universe, f"{ccn} is not in the universe")
+
+    def test_override_wins_over_the_name_match(self) -> None:
+        """Houston Methodist's flagship files as "THE METHODIST HOSPITAL"
+        and San Antonio's as "METHODIST HOSPITAL" — the same string once
+        normalized, in the same state."""
+        assigned = assign_systems().set_index("ccn")
+        self.assertEqual(assigned.loc["450358", "system_id"], "houston_methodist")
+        self.assertEqual(assigned.loc["450388", "system_id"], "methodist_san_antonio")
+        self.assertEqual(normalize_name("THE METHODIST HOSPITAL"),
+                         normalize_name("METHODIST HOSPITAL"))
+
+    def test_override_is_visible_as_its_own_match_basis(self) -> None:
+        """An asserted assignment must not read like a derived one."""
+        assigned = assign_systems().set_index("ccn")
+        for ccn in CCN_OVERRIDES:
+            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+
+    def test_truncated_names_are_reachable_only_by_override(self) -> None:
+        """HCRIS cuts at ~36 chars: 'Hospital of the University of
+        Pennsylvania' files as 'HOSPITAL OF THE UNIV OF PENNA'."""
+        self.assertIsNone(match_system("HOSPITAL OF THE UNIV OF PENNA", "PA")[0])
+        assigned = assign_systems().set_index("ccn")
+        self.assertEqual(assigned.loc["390111", "system_id"], "penn_medicine")
 
 
 class FacilityStatusTests(unittest.TestCase):
