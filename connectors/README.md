@@ -25,6 +25,7 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | CMS Coverage | `connectors/cms_coverage` | Medicare Coverage Database — NCD/NCA/CAL/MEDCAC/TA, LCD/Proposed-LCD/Article, MAC contractors | `api.coverage.cms.gov` | 9 |
 | NPI Registry | `connectors/npi_registry` | NPPES v2.1 — provider search/lookup, taxonomies, addresses, NPI validation | `npiregistry.cms.hhs.gov/api` | 3 |
 | ICD-10 | `connectors/icd10` | ICD-10-CM diagnoses + ICD-10-PCS procedures (NLM Clinical Tables) | `clinicaltables.nlm.nih.gov/api` | 2 |
+| RxNorm | `connectors/rxnorm` | NLM RxNav — NDC / drug-name → RxCUI → ingredient → ATC & DailyMed class; the drug-identity join for NADAC, SDUD, Part B/D spending and the openFDA NDC directory | `rxnav.nlm.nih.gov/REST` | 3 |
 | HCPCS | `connectors/hcpcs` | CMS HCPCS Level II — DME/drug/ambulance/orthotic billing codes (NLM Clinical Tables), joins data.cms.gov `hcpcs_cd` fact tables | `clinicaltables.nlm.nih.gov/api` | 1 |
 | QPP | `connectors/qpp` | CMS Quality Payment Program (MACRA MIPS/APM) — clinician eligibility + practice orgs by NPI x year, public quality-measure benchmarks | `qpp.cms.gov/api` | 3 |
 | CMS Open Data | `connectors/cms_open_data` | data.cms.gov data-api — full DCAT catalog (158 datasets) + 53 curated: Medicare utilization & payment (physician/Part D/inpatient/outpatient/DMEPOS), drug spending, geographic variation, market saturation, enrollment, HCRIS cost reports, PECOS ownership, PBJ staffing, telehealth, post-acute, ACOs, Provider-of-Services facility universe (QIES + iQIES + clinical labs), dialysis facilities, ESRD models, home infusion, PSPS, RBCS crosswalk | `data.cms.gov` | 55 |
@@ -40,7 +41,7 @@ endpoints ─▶ transport ─▶ connector.discover()/fetch() ─▶ raw pages
 | BLS QCEW | `connectors/bls_qcew` | Quarterly Census of Employment & Wages — healthcare employment, wages, location quotients by county/MSA x NAICS | `data.bls.gov/cew` | 2 |
 | healthdata.gov | `connectors/healthdata_gov` | HHS-wide Socrata meta-catalog (23,080 datasets, native-vs-mirror discriminated) + HHS Protect hospital capacity (facility 1.05M rows + state daily), PCR testing, county community profiles, therapeutics locator, HHS-ID↔CCN crosswalk, school modalities, policy orders | `healthdata.gov` | 10 |
 
-**208 registered datasets across 18 connectors** — plus seven full open-data
+**211 registered datasets across 19 connectors** — plus seven full open-data
 catalogs synced as first-class tables (data.cms.gov 158, Provider Data
 Catalog 234, Open Payments 74, data.medicaid.gov 541, Healthcare.gov 337,
 data.cdc.gov ~1,500, healthdata.gov 23,080), each with a generic

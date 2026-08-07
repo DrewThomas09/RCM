@@ -30,7 +30,7 @@ CONNECTOR_NAMES: Tuple[str, ...] = (
     "openfda", "cms_coverage", "npi_registry", "icd10",
     "cms_open_data", "provider_data", "open_payments", "medicaid_data",
     "healthcare_gov", "cdc_data", "hrsa_data", "nih_reporter", "census_acs",
-    "oig_leie", "bls_qcew", "healthdata_gov", "hcpcs", "qpp",
+    "oig_leie", "bls_qcew", "healthdata_gov", "hcpcs", "qpp", "rxnorm",
 )
 
 # Human labels for the estate view. Descriptive only.
@@ -53,6 +53,7 @@ CONNECTOR_LABELS: Dict[str, str] = {
     "healthdata_gov": "healthdata.gov (HHS-wide meta-catalog)",
     "hcpcs": "HCPCS Level II (NLM Clinical Tables)",
     "qpp": "CMS Quality Payment Program (MIPS/APM)",
+    "rxnorm": "RxNorm drug identity (NLM RxNav)",
 }
 
 # Query-string key aliases: a lookup handler parameter name that is exposed
@@ -70,14 +71,15 @@ _QS_ALIASES: Dict[str, str] = {"code_type": "type"}
 # on the same mapping instead of re-deriving it.
 ROOT_STYLE_CLIS: Tuple[str, ...] = (
     "openfda", "cms_coverage", "npi_registry", "icd10", "hrsa_data", "hcpcs",
-    "qpp")
+    "qpp", "rxnorm")
 SUBCMD_DB_STYLE_CLIS: Tuple[str, ...] = ("cms_open_data", "open_payments")
 
 # Connectors the estate-level ``refresh`` sweep cannot ingest unattended:
 # their ingest verbs need domain arguments (openFDA search windows, NPI
 # lists, ICD-10 code seeds). Surfaces that tell a user how to populate a
 # connector must not point these at ``refresh`` — it skips them entirely.
-MANUAL_INGEST_CLIS: Tuple[str, ...] = ("openfda", "npi_registry", "icd10")
+MANUAL_INGEST_CLIS: Tuple[str, ...] = ("openfda", "npi_registry", "icd10",
+                                       "rxnorm")
 
 
 def storage_argv(name: str, db_dir: str) -> List[str]:

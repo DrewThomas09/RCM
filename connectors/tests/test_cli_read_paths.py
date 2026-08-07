@@ -20,6 +20,7 @@ from ..icd10 import cli as icd10_cli
 from ..npi_registry import cli as npi_cli
 from ..openfda import cli as openfda_cli
 from ..qpp import cli as qpp_cli
+from ..rxnorm import cli as rxnorm_cli
 
 # (cli module, sample read-verb argvs) per root-style connector. Every
 # argv runs against a --root that does not exist and must leave zero
@@ -56,6 +57,12 @@ _CASES = [
         ["query", "qpp_benchmarks", "--limit", "1"],
         ["lookup-clinician", "1234567893"],
         ["lookup-benchmarks", "001"],
+    ]),
+    (rxnorm_cli, [
+        ["query", "rxnorm_ndc", "--limit", "1"],
+        ["lookup-ndc", "00006-3026-02"],
+        ["lookup-concept", "1547220"],
+        ["lookup-name", "KEYTRUDA"],
     ]),
 ]
 
