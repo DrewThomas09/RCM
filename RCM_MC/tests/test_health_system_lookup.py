@@ -29,12 +29,18 @@ import pandas as pd
 
 from rcm_mc.data.cms_facility_names import cms_name, load_cms_facilities
 from rcm_mc.data.health_systems import (
+    ACUTE_REGISTRY,
     CCN_OVERRIDES,
+    CHAIN_ALIASES,
+    POST_ACUTE_REGISTRY,
     STATUS_ACTIVE,
+    STATUS_CERTIFIED,
     STATUS_DORMANT,
     STATUS_STOPPED,
     SYSTEM_REGISTRY,
     UNMAPPED_ID,
+    assign_all,
+    assign_post_acute,
     assign_systems,
     build_system_map,
     candidate_clusters,
@@ -197,6 +203,47 @@ class MatcherPrecisionTests(unittest.TestCase):
              get_system("hca")).system_id, "commonspirit")
         self.assertIsNone(match_system("CHINESE HOSPITAL", "CA")[0])
 
+    def test_the_prefix_index_finds_what_a_brute_force_scan_finds(self) -> None:
+        """The index skips patterns that cannot match a name's first two
+        characters. That is only safe because an anchored pattern
+        compiles to ``^`` plus an escaped literal — if that ever stops
+        being true, the index silently starts losing matches, and this is
+        what catches it."""
+        from rcm_mc.data.health_systems import (
+            _EXCLUDE_INDEX, _STATE_PATTERNS, _UNSCOPED_PATTERNS, _Bucket)
+
+        def brute(norm: str, state: str):
+            scoped = _STATE_PATTERNS.get(state, _Bucket({}, ()))
+            every = (tuple(e for v in scoped.by_prefix.values() for e in v)
+                     + scoped.floating
+                     + tuple(e for v in _UNSCOPED_PATTERNS.by_prefix.values() for e in v)
+                     + _UNSCOPED_PATTERNS.floating)
+            best, best_pattern, best_key = None, "", (-1, -1)
+            for entry in every:
+                key = (entry.specificity, 1 if entry.scope else 0)
+                if key <= best_key or not entry.regex.search(norm):
+                    continue
+                excludes = _EXCLUDE_INDEX.get(entry.sysdef.system_id)
+                if excludes and any(x.search(norm) for x in excludes):
+                    continue
+                best, best_pattern, best_key = entry.sysdef, entry.raw, key
+            return best, best_pattern
+
+        universe = assign_all()
+        sample = universe.iloc[::37]  # ~1,300 rows spanning every class
+        self.assertGreater(len(sample), 1000)
+        for name, state in zip(sample["name"], sample["state"], strict=True):
+            norm = normalize_name(name)
+            if not norm:
+                continue
+            st = str(state).upper().strip()
+            indexed = match_system(name, state)
+            expected = brute(norm, st)
+            self.assertEqual(
+                (indexed[0].system_id if indexed[0] else None, indexed[1]),
+                (expected[0].system_id if expected[0] else None, expected[1]),
+                f"{name} ({state})")
+
     def test_dead_pattern_scan_finds_typos(self) -> None:
         """The scan is the maintenance loop for the registry: patterns
         that match nothing are usually typos. Some are deliberate — house
@@ -211,10 +258,21 @@ class MatcherPrecisionTests(unittest.TestCase):
             self.assertNotIn(must_match, dead, f"{must_match} matches nothing")
 
     def test_every_registry_entry_is_reachable(self) -> None:
-        """No dead entries: each system matches at least one real facility."""
-        live = {r.system_id for r in get_system_map().systems}
+        """No dead entries: each system matches at least one real facility.
+
+        Scoped to the full universe, not the hospital rollup. DaVita
+        holds 2,800 CCNs and not one hospital; measuring reachability
+        against hospitals alone would call it dead."""
+        live = set(assign_all()["system_id"])
         dead = sorted(s.system_id for s in SYSTEM_REGISTRY if s.system_id not in live)
         self.assertEqual(dead, [], f"registry entries that match nothing: {dead}")
+
+    def test_the_acute_registry_stays_reachable_from_hospitals_alone(self) -> None:
+        """The post-acute entries must not paper over an acute one going
+        dead. Every entry written for HCRIS still has to match in HCRIS."""
+        live = {r.system_id for r in get_system_map().systems}
+        dead = sorted(s.system_id for s in ACUTE_REGISTRY if s.system_id not in live)
+        self.assertEqual(dead, [], f"acute entries that match no hospital: {dead}")
 
 
 class AssignmentTests(unittest.TestCase):
@@ -369,6 +427,102 @@ class CmsNameTierTests(unittest.TestCase):
             classes = (facility.is_government, facility.is_for_profit,
                        facility.is_nonprofit)
             self.assertLessEqual(sum(classes), 1, facility.ownership)
+
+
+class PostAcuteUniverseTests(unittest.TestCase):
+    """The 42,387 CCNs that are not hospitals.
+
+    A hospital-only mapping undercounts a health system twice: it misses
+    the dialysis stations, nursing homes, agencies and hospices a system
+    holds, and it misses the operators whose entire estate is those CCNs.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.post_acute = assign_post_acute()
+        cls.everything = assign_all()
+
+    def test_the_post_acute_universe_dwarfs_the_hospital_one(self) -> None:
+        self.assertGreater(len(self.post_acute), 40000)
+        self.assertGreater(len(self.everything), 48000)
+        self.assertEqual(len(self.everything),
+                         self.everything["ccn"].nunique())
+
+    def test_hospital_ccns_are_not_double_counted(self) -> None:
+        """An IRF or LTCH that files its own cost report is in both files.
+        The HCRIS row wins — it carries beds, revenue and a filing
+        history the Compare files have no equivalent for."""
+        hospital_ccns = set(assign_systems()["ccn"].astype(str))
+        overlap = hospital_ccns & set(self.post_acute["ccn"].astype(str))
+        self.assertEqual(overlap, set())
+        classes = set(self.everything["provider_class"])
+        self.assertEqual(classes,
+                         {"hospital", "snf", "hha", "hospice", "dialysis",
+                          "irf", "ltch"})
+
+    def test_the_published_chain_outranks_the_name_match(self) -> None:
+        """CMS names the parent for 6,699 dialysis facilities. That is the
+        operator's own answer; our reading of their signage is not."""
+        via_chain = self.post_acute[
+            self.post_acute["system_match"].astype(str).str.startswith("chain: ")]
+        self.assertGreater(len(via_chain), 6000)
+        self.assertTrue((via_chain["provider_class"] == "dialysis").all())
+        self.assertTrue((via_chain["system_id"] != UNMAPPED_ID).all())
+
+    def test_the_chain_column_reaches_facilities_no_name_could(self) -> None:
+        """Northwest Kidney Centers files eleven facilities under place
+        names. Only the chain column connects them."""
+        nwk = self.post_acute[self.post_acute["system_id"] == "northwest_kidney"]
+        self.assertGreater(len(nwk), 10)
+        self.assertTrue(nwk["system_match"].str.startswith("chain: ").all())
+
+    def test_the_big_post_acute_operators_land(self) -> None:
+        counts = (self.everything[self.everything["system_id"] != UNMAPPED_ID]
+                  .groupby("system_id").size())
+        for system_id, floor in (("davita", 2500), ("fresenius", 2500),
+                                 ("centerwell", 200), ("amedisys", 200),
+                                 ("life_care_centers", 100)):
+            self.assertGreater(int(counts.get(system_id, 0)), floor, system_id)
+
+    def test_every_chain_alias_points_at_a_real_system(self) -> None:
+        for chain, system_id in CHAIN_ALIASES.items():
+            self.assertIsNotNone(get_system(system_id), f"{chain} -> {system_id}")
+            self.assertEqual(chain, normalize_name(chain),
+                             "alias keys are matched post-normalization")
+
+    def test_three_brands_are_withheld_because_they_hit_a_hospital(self) -> None:
+        """Genesis, Brookdale and Arbor read as national post-acute
+        operators, and each collides with an unrelated acute hospital. A
+        wrong parent is worse than no parent — nobody audits a mapping
+        that looks complete."""
+        for name, state in (("GENESIS HEALTHCARE SYSTEM", "OH"),
+                            ("BROOKDALE HOSPITAL MEDICAL CENTER", "NY"),
+                            ("ARBOR HEALTH MORTON HOSPITAL", "WA")):
+            self.assertIsNone(match_system(name, state)[0], name)
+
+    def test_post_acute_status_does_not_claim_a_check_that_never_ran(self) -> None:
+        """The Compare files carry no termination date, so filing recency
+        cannot be computed. Reusing "Active" would assert otherwise."""
+        self.assertEqual(set(self.post_acute["facility_status"]), {STATUS_CERTIFIED})
+        self.assertTrue(self.post_acute["is_operating"].all())
+        self.assertNotIn(STATUS_ACTIVE, set(self.post_acute["facility_status"]))
+
+    def test_post_acute_entries_do_not_leak_into_the_hospital_estate(self) -> None:
+        """Adding fifty post-acute operators must not move one hospital."""
+        hospitals = assign_systems()
+        post_acute_ids = {s.system_id for s in POST_ACUTE_REGISTRY}
+        # Encompass / Kindred / Select are acute entries that also reach
+        # post-acute CCNs; nothing written FOR post-acute may claim a bed.
+        claimed = hospitals[hospitals["system_id"].isin(post_acute_ids)]
+        self.assertEqual(len(claimed), 0,
+                         f"post-acute entries claimed hospitals: "
+                         f"{list(claimed['name'])[:5]}")
+
+    def test_empty_frame_is_tolerated(self) -> None:
+        out = assign_post_acute(pd.DataFrame(
+            columns=["ccn", "name", "state", "provider_class", "chain_name"]))
+        self.assertTrue(out.empty)
+        self.assertIn("system_id", out.columns)
 
 
 class FacilityStatusTests(unittest.TestCase):
@@ -888,6 +1042,21 @@ class PageTests(unittest.TestCase):
         self.assertTrue(sysdef.note)
         html = render_health_system_lookup({"system": "trinity"})
         self.assertIn("UnityPoint", html)
+
+    def test_the_page_shows_the_whole_certified_universe(self) -> None:
+        """The hospital count is not the CCN count, and a page that only
+        shows the first invites a partner to size a system by its
+        hospitals when most of its CCNs are somewhere else."""
+        from rcm_mc.data.provider_crosswalk import crosswalk_by_class
+
+        html = render_health_system_lookup({})
+        self.assertIn("Full Provider Universe", html)
+        classes = crosswalk_by_class()
+        for label in classes["provider_class_label"]:
+            self.assertIn(label, html)
+        total = int(classes["facilities"].sum())
+        self.assertIn(f"{total:,} CCNs", html)
+        self.assertIn("/provider-crosswalk.csv?scope=all", html)
 
 
 class CsvRouteTests(unittest.TestCase):

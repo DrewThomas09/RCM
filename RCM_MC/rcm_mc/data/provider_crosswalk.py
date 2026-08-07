@@ -85,6 +85,16 @@ NUCC_BY_FACILITY_TYPE: Dict[str, Tuple[str, str]] = {
     "ltach": ("282E00000X", "Long Term Care Hospital"),
     "children": ("282NC2000X", "Children's Hospital"),
     "other": ("281P00000X", "Chronic Disease Hospital"),
+    # Post-acute and outpatient classes. The key here is CMS's own
+    # provider class rather than a CCN range, because the Compare files
+    # state the class outright and re-deriving it would only add a way
+    # to be wrong.
+    "snf": ("314000000X", "Skilled Nursing Facility"),
+    "hha": ("251E00000X", "Home Health Agency"),
+    "hospice": ("251G00000X", "Hospice Care, Community Based"),
+    "dialysis": ("261QE0700X", "Clinic/Center — End-Stage Renal Disease"),
+    "irf": ("283X00000X", "Rehabilitation Hospital"),
+    "ltch": ("282E00000X", "Long Term Care Hospital"),
 }
 
 
@@ -124,47 +134,108 @@ def cbsa_for_county(county_fips: Any) -> Optional[Dict[str, str]]:
     return _cbsa_by_county().get(fips) if fips and fips != "00000" else None
 
 
+@lru_cache(maxsize=None)
+def _fips_lookup(state: str, county_name: str) -> str:
+    from .county_demographics import _county_by_name, _norm_county
+
+    row = _county_by_name().get((state, _norm_county(county_name)))
+    return str(row.get("county_fips", "")).zfill(5) if row else ""
+
+
+def _fips_from_county_name(state: Any, county_name: Any) -> str:
+    """County FIPS for a (state, county name) pair, or empty.
+
+    Memoized: the universe is 48,510 facilities across ~3,100 counties,
+    so all but the first few thousand calls are repeats.
+    """
+    st = str(state or "").upper().strip()
+    name = str(county_name or "").strip()
+    if not st or not name or name.lower() == "nan":
+        return ""
+    return _fips_lookup(st, name)
+
+
+@lru_cache(maxsize=1)
+def _county_by_zip() -> Dict[str, str]:
+    """ZIP5 -> county FIPS, learned from the rows that carry both.
+
+    Home-health agencies are the one provider class CMS publishes with
+    no county field at all — 12,392 facilities that would otherwise
+    have no geography beyond a state. Every other class carries both a
+    ZIP and a county, which is 36,000-odd observations of the same
+    mapping.
+
+    Only unambiguous ZIPs are kept. A ZIP that straddles a county line
+    appears here with two different FIPS and is dropped outright: an
+    inferred county that is right most of the time is worse than an
+    absent one, because nothing downstream can tell which rows to
+    distrust.
+    """
+    from .health_systems import assign_all
+
+    seen: Dict[str, set] = {}
+    frame = assign_all()
+    for zip_code, state, county in zip(frame["zip"], frame["state"],
+                                       frame["county"], strict=True):
+        zip5 = str(zip_code or "").strip()[:5]
+        if len(zip5) != 5 or not zip5.isdigit():
+            continue
+        fips = _fips_from_county_name(state, county)
+        if fips:
+            seen.setdefault(zip5, set()).add(fips)
+    return {z: next(iter(f)) for z, f in seen.items() if len(f) == 1}
+
+
 def county_fips_for(
     ccn: Any,
     state: Any = "",
     county_name: Any = "",
+    zip_code: Any = "",
 ) -> Tuple[str, str]:
     """Resolve a facility to a county FIPS. Returns ``(fips, source)``.
 
-    Two independent sources for the same fact, tried in confidence
-    order. The geocode file is preferred — its county came from the
-    Census geocoder against a street address. The cost report's own
-    county field is the fallback, and it is not a rounding error: it
-    carries 1,506 facilities the geocode file never had, lifting county
-    coverage from 71% to 95%. ``("", "")`` when neither resolves, which
-    is mostly Puerto Rico municipios, Alaska's renamed boroughs, and
-    cost reports that left the county blank.
-    """
-    from .county_demographics import _county_by_name, _norm_county
-    from .hospital_coords import load_hospital_coords
+    Four independent sources for the same fact, tried in confidence
+    order, and the source is returned alongside the answer so a caller
+    can weight it:
 
-    index = _county_by_name()
+    1. **geocode** — the Census geocoder run against a street address.
+       Strongest, but hospital-only.
+    2. **cost report** / **provider file** — the county the facility
+       itself filed. Not a rounding error: it carries 1,506 hospitals
+       the geocode file never had, lifting hospital county coverage
+       from 71% to 95%.
+    3. **care compare** — CMS's county for the same CCN, which fills
+       rows where the filed county was blank.
+    4. **zip inferred** — only for the home-health file, which publishes
+       no county at all. Learned from the 36,000 rows that carry both a
+       ZIP and a county, and only where the ZIP is unambiguous.
+
+    ``("", "")`` when none resolve — mostly Puerto Rico municipios and
+    Alaska's renamed boroughs.
+    """
+    from .hospital_coords import load_hospital_coords
 
     coord = load_hospital_coords().get(str(ccn or ""))
     if coord is not None and coord.county and coord.state:
-        row = index.get((str(coord.state).upper(), _norm_county(coord.county)))
-        if row:
-            return str(row.get("county_fips", "")).zfill(5), "geocode"
+        fips = _fips_from_county_name(coord.state, coord.county)
+        if fips:
+            return fips, "geocode"
 
-    st = str(state or "").upper().strip()
-    name = str(county_name or "").strip()
-    if st and name and name.lower() != "nan":
-        row = index.get((st, _norm_county(name)))
-        if row:
-            return str(row.get("county_fips", "")).zfill(5), "cost report"
+    fips = _fips_from_county_name(state, county_name)
+    if fips:
+        return fips, "cost report"
 
-    # Third source: Care Compare's own county, which fills rows where the
-    # cost report left the field blank entirely.
     cms = cms_facility(ccn)
-    if cms is not None and cms.county and cms.state:
-        row = index.get((cms.state, _norm_county(cms.county)))
-        if row:
-            return str(row.get("county_fips", "")).zfill(5), "care compare"
+    if cms is not None:
+        fips = _fips_from_county_name(cms.state, cms.county)
+        if fips:
+            return fips, "care compare"
+
+    zip5 = str(zip_code or "").strip()[:5]
+    if len(zip5) == 5 and zip5.isdigit():
+        fips = _county_by_zip().get(zip5, "")
+        if fips:
+            return fips, "zip inferred"
 
     return "", ""
 
@@ -176,7 +247,9 @@ def county_fips_for(
 #: provenance is invisible is a row nobody can check.
 CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "ccn", "name", "street", "city", "state", "zip",
+    "provider_class", "provider_class_label",
     "system_id", "system_name", "system_kind", "system_focus", "system_match",
+    "chain_name",
     "facility_status", "is_operating", "reports_no_activity",
     "facility_type", "facility_type_label", "taxonomy_code", "taxonomy_desc",
     "is_behavioral",
@@ -188,80 +261,138 @@ CROSSWALK_COLUMNS: Tuple[str, ...] = (
     "beds", "net_patient_revenue",
 )
 
+#: ``scope="hospital"`` is the 6,123-facility HCRIS universe — the one
+#: with beds, revenue and filing recency. ``scope="all"`` adds the
+#: 42,387 post-acute and outpatient CCNs, which have none of those and
+#: are most of what a health system actually holds.
+SCOPE_HOSPITAL = "hospital"
+SCOPE_ALL = "all"
+CROSSWALK_SCOPES: Tuple[str, ...] = (SCOPE_HOSPITAL, SCOPE_ALL)
 
-def build_crosswalk(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
-    """One row per CCN with every identifier we can resolve attached."""
+
+#: Columns ``_crosswalk_row`` reads off the assigned frame.
+_SOURCE_COLUMNS: Tuple[str, ...] = (
+    "ccn", "name", "street", "city", "state", "zip",
+    "provider_class", "provider_class_label",
+    "system_id", "system_name", "system_kind", "system_focus", "system_match",
+    "chain_name", "facility_status", "is_operating", "reports_no_activity",
+    "facility_type", "facility_type_label", "is_behavioral", "cms_ownership",
+    "county", "beds", "net_patient_revenue",
+)
+
+
+def _records(assigned: pd.DataFrame) -> List[Dict[str, Any]]:
+    """Plain dicts, one per facility, without pandas scalar boxing.
+
+    ``DataFrame.to_dict("records")`` boxes every cell through
+    ``maybe_box_native`` — tolerable at 6,123 rows, two seconds of pure
+    overhead at 48,510. Pulling each column to a list once and zipping
+    is the same result for a fraction of the work.
+    """
+    blank = [""] * len(assigned)
+    columns = {c: (assigned[c].tolist() if c in assigned.columns else blank)
+               for c in _SOURCE_COLUMNS}
+    keys = list(columns)
+    return [dict(zip(keys, values, strict=True))
+            for values in zip(*columns.values(), strict=True)]
+
+
+def _crosswalk_row(rec: Dict[str, Any], coords, care_compare) -> Dict[str, Any]:
+    """Flatten one assigned facility onto the crosswalk shape."""
+    ccn = str(rec.get("ccn", ""))
+    coord = coords.get(ccn)
+    cms = care_compare.get(ccn)
+    zip5 = str(rec.get("zip", "") or "").strip().rstrip("-")
+    fips, fips_source = county_fips_for(
+        ccn, rec.get("state"), rec.get("county"), zip5)
+    cbsa = cbsa_for_county(fips) or {}
+    code, desc = facility_taxonomy(rec.get("facility_type"))
+    return {
+        "ccn": ccn,
+        "name": rec.get("name", ""),
+        "street": rec.get("street", "") or (coord.address if coord else ""),
+        "city": rec.get("city", ""),
+        "state": rec.get("state", ""),
+        "zip": zip5,
+        "provider_class": rec.get("provider_class", "") or SCOPE_HOSPITAL,
+        "provider_class_label": rec.get("provider_class_label", "") or "Hospital",
+        "system_id": rec.get("system_id", ""),
+        "system_name": rec.get("system_name", ""),
+        "system_kind": rec.get("system_kind", ""),
+        "system_focus": rec.get("system_focus", ""),
+        "system_match": rec.get("system_match", ""),
+        "chain_name": rec.get("chain_name", "") or "",
+        "facility_status": rec.get("facility_status", ""),
+        "is_operating": bool(rec.get("is_operating")),
+        "reports_no_activity": bool(rec.get("reports_no_activity")),
+        "facility_type": rec.get("facility_type", ""),
+        "facility_type_label": rec.get("facility_type_label", ""),
+        "taxonomy_code": code,
+        "taxonomy_desc": desc,
+        "is_behavioral": bool(rec.get("is_behavioral")),
+        # Care Compare's own view of the same facility: the untruncated
+        # name, and the ownership class CMS observes rather than the one
+        # the registry infers.
+        "cms_name": cms.name if cms else "",
+        "cms_ownership": cms.ownership if cms else (rec.get("cms_ownership", "") or ""),
+        "cms_hospital_type": cms.hospital_type if cms else "",
+        "emergency_services": cms.emergency_services if cms else "",
+        "county": rec.get("county", "") if isinstance(rec.get("county"), str) else "",
+        "county_fips": fips,
+        "county_fips_source": fips_source,
+        "cbsa_code": cbsa.get("cbsa_code", ""),
+        "cbsa_title": cbsa.get("cbsa_title", ""),
+        "cbsa_type": cbsa.get("cbsa_type", ""),
+        "cbsa_central_outlying": cbsa.get("cbsa_central_outlying", ""),
+        "lat": coord.lat if coord else None,
+        "lon": coord.lon if coord else None,
+        "geo_match_quality": coord.match_quality if coord else "",
+        # Populated by nppes_ingest when an NPPES extract is present.
+        "npi": "",
+        "npi_source": "",
+        "beds": rec.get("beds"),
+        "net_patient_revenue": rec.get("net_patient_revenue"),
+    }
+
+
+def build_crosswalk(df: Optional[pd.DataFrame] = None, *,
+                    scope: str = SCOPE_HOSPITAL) -> pd.DataFrame:
+    """One row per CCN with every identifier we can resolve attached.
+
+    Passing ``df`` always builds over that frame as a hospital universe;
+    ``scope`` only applies to the bundled build.
+    """
+    from .health_systems import assign_all
     from .hospital_coords import load_hospital_coords
 
-    assigned = assign_systems(df)
+    if df is None and scope == SCOPE_ALL:
+        assigned = assign_all()
+    else:
+        assigned = assign_systems(df)
     if assigned.empty:
         return pd.DataFrame(columns=list(CROSSWALK_COLUMNS))
 
     coords = load_hospital_coords()
     care_compare = load_cms_facilities()
-    rows: List[Dict[str, Any]] = []
-    for rec in assigned.to_dict("records"):
-        ccn = str(rec.get("ccn", ""))
-        coord = coords.get(ccn)
-        cms = care_compare.get(ccn)
-        fips, fips_source = county_fips_for(ccn, rec.get("state"), rec.get("county"))
-        cbsa = cbsa_for_county(fips) or {}
-        code, desc = facility_taxonomy(rec.get("facility_type"))
-        rows.append({
-            "ccn": ccn,
-            "name": rec.get("name", ""),
-            "street": rec.get("street", "") or (coord.address if coord else ""),
-            "city": rec.get("city", ""),
-            "state": rec.get("state", ""),
-            "zip": (rec.get("zip", "") or "").strip().rstrip("-"),
-            "system_id": rec.get("system_id", ""),
-            "system_name": rec.get("system_name", ""),
-            "system_kind": rec.get("system_kind", ""),
-            "system_focus": rec.get("system_focus", ""),
-            "system_match": rec.get("system_match", ""),
-            "facility_status": rec.get("facility_status", ""),
-            "is_operating": bool(rec.get("is_operating")),
-            "reports_no_activity": bool(rec.get("reports_no_activity")),
-            "facility_type": rec.get("facility_type", ""),
-            "facility_type_label": rec.get("facility_type_label", ""),
-            "taxonomy_code": code,
-            "taxonomy_desc": desc,
-            "is_behavioral": bool(rec.get("is_behavioral")),
-            # Care Compare's own view of the same facility: the
-            # untruncated name, and the ownership class CMS observes
-            # rather than the one the registry infers.
-            "cms_name": cms.name if cms else "",
-            "cms_ownership": cms.ownership if cms else "",
-            "cms_hospital_type": cms.hospital_type if cms else "",
-            "emergency_services": cms.emergency_services if cms else "",
-            "county": rec.get("county", "") if isinstance(rec.get("county"), str) else "",
-            "county_fips": fips,
-            "county_fips_source": fips_source,
-            "cbsa_code": cbsa.get("cbsa_code", ""),
-            "cbsa_title": cbsa.get("cbsa_title", ""),
-            "cbsa_type": cbsa.get("cbsa_type", ""),
-            "cbsa_central_outlying": cbsa.get("cbsa_central_outlying", ""),
-            "lat": coord.lat if coord else None,
-            "lon": coord.lon if coord else None,
-            "geo_match_quality": coord.match_quality if coord else "",
-            # Populated by nppes_ingest when an NPPES extract is present.
-            "npi": "",
-            "npi_source": "",
-            "beds": rec.get("beds"),
-            "net_patient_revenue": rec.get("net_patient_revenue"),
-        })
+    rows: List[Dict[str, Any]] = [
+        _crosswalk_row(rec, coords, care_compare)
+        for rec in _records(assigned)
+    ]
     return pd.DataFrame(rows, columns=list(CROSSWALK_COLUMNS))
 
 
-@lru_cache(maxsize=1)
-def _cached_crosswalk() -> pd.DataFrame:
-    return build_crosswalk(None)
+@lru_cache(maxsize=len(CROSSWALK_SCOPES))
+def _cached_crosswalk(scope: str) -> pd.DataFrame:
+    return build_crosswalk(None, scope=scope)
 
 
-def get_crosswalk(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+def get_crosswalk(df: Optional[pd.DataFrame] = None, *,
+                  scope: str = SCOPE_HOSPITAL) -> pd.DataFrame:
     """Crosswalk over the bundled universe, memoized; a copy every time."""
+    if scope not in CROSSWALK_SCOPES:
+        raise ValueError(f"scope must be one of {CROSSWALK_SCOPES}, got {scope!r}")
     if df is None:
-        return _cached_crosswalk().copy()
+        return _cached_crosswalk(scope).copy()
     return build_crosswalk(df)
 
 
@@ -282,14 +413,15 @@ class CoverageStat:
         return (self.resolved / self.total * 100.0) if self.total else 0.0
 
 
-def crosswalk_coverage(df: Optional[pd.DataFrame] = None) -> List[CoverageStat]:
+def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
+                       scope: str = SCOPE_HOSPITAL) -> List[CoverageStat]:
     """Fill rate per identifier — the honest scoreboard for this build.
 
     Ordered worst-covered first, because the point of the scoreboard is
     to show where the crosswalk still can't answer, not to flatter the
     columns that are already complete.
     """
-    xw = get_crosswalk(df)
+    xw = get_crosswalk(df, scope=scope)
     total = len(xw)
     if not total:
         return []
@@ -305,7 +437,8 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None) -> List[CoverageStat]:
         CoverageStat("Health system", int((xw["system_id"] != "_unmapped").sum()),
                      total, "name-matched against the curated registry"),
         CoverageStat("County FIPS", filled("county_fips"), total,
-                     "geocode file, then the cost report's own county"),
+                     "geocode file, then the filed county, then Care "
+                     "Compare, then an unambiguous ZIP"),
         CoverageStat("CBSA / MSA", filled("cbsa_code"), total,
                      "counties outside every metro and micro area have none "
                      "by definition — not a gap"),
@@ -324,23 +457,36 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None) -> List[CoverageStat]:
     return stats
 
 
-def crosswalk_by_cbsa(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+_CBSA_ROLLUP_COLUMNS = ["cbsa_code", "cbsa_title", "cbsa_type",
+                        "facilities", "hospitals", "beds", "systems", "states"]
+
+
+def crosswalk_by_cbsa(df: Optional[pd.DataFrame] = None, *,
+                      scope: str = SCOPE_HOSPITAL) -> pd.DataFrame:
     """Facilities and beds rolled up to CBSA — the market view.
 
     A deal team sizes a market by MSA, not by state: "Dallas-Fort
     Worth" is the unit an operator competes in, and a state total
     smears four unrelated markets together.
+
+    ``hospitals`` is counted separately from ``facilities`` because
+    beds only exist on the hospital rows. A market's facility count and
+    its bed count answer different questions once dialysis stations and
+    home-health agencies are in the frame, and collapsing them would
+    make bed-per-facility read as a tenth of its real value.
     """
-    xw = get_crosswalk(df)
+    xw = get_crosswalk(df, scope=scope)
     live = xw[xw["is_operating"] & xw["cbsa_code"].astype(str).str.strip().ne("")]
     if live.empty:
-        return pd.DataFrame(columns=["cbsa_code", "cbsa_title", "cbsa_type",
-                                     "facilities", "beds", "systems", "states"])
+        return pd.DataFrame(columns=_CBSA_ROLLUP_COLUMNS)
     beds = pd.to_numeric(live["beds"], errors="coerce").fillna(0)
-    grouped = live.assign(_beds=beds).groupby(
+    is_hospital = live["provider_class"].astype(str).eq(SCOPE_HOSPITAL)
+    grouped = live.assign(_beds=beds.where(is_hospital, 0),
+                          _hosp=is_hospital.astype(int)).groupby(
         ["cbsa_code", "cbsa_title", "cbsa_type"], sort=False)
     out = grouped.agg(
         facilities=("ccn", "count"),
+        hospitals=("_hosp", "sum"),
         beds=("_beds", "sum"),
         systems=("system_id", lambda s: int(pd.Series(
             [x for x in s if x and x != "_unmapped"]).nunique())),
@@ -349,7 +495,41 @@ def crosswalk_by_cbsa(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     return out.sort_values(["beds", "facilities"], ascending=False)
 
 
+def crosswalk_by_class(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """Coverage per provider class — where the mapping is strong and weak.
+
+    The single "health system" coverage number hides an enormous
+    spread: 89% of dialysis facilities resolve to a parent because CMS
+    publishes one, against 9% of nursing homes, whose names are local
+    and whose operators change hands constantly. One average across
+    both would describe neither.
+    """
+    xw = get_crosswalk(df, scope=SCOPE_ALL)
+    if xw.empty:
+        return pd.DataFrame(columns=["provider_class", "provider_class_label",
+                                     "facilities", "mapped", "mapped_pct",
+                                     "with_cbsa", "with_county"])
+    frame = xw.assign(
+        _mapped=xw["system_id"].ne("_unmapped").astype(int),
+        _cbsa=xw["cbsa_code"].astype(str).str.strip().ne("").astype(int),
+        _county=xw["county_fips"].astype(str).str.strip().ne("").astype(int),
+    )
+    out = frame.groupby(["provider_class", "provider_class_label"],
+                        as_index=False).agg(
+        facilities=("ccn", "count"),
+        mapped=("_mapped", "sum"),
+        with_cbsa=("_cbsa", "sum"),
+        with_county=("_county", "sum"),
+    )
+    out["mapped_pct"] = out["mapped"] / out["facilities"] * 100.0
+    out = out[["provider_class", "provider_class_label", "facilities",
+               "mapped", "mapped_pct", "with_cbsa", "with_county"]]
+    return out.sort_values("facilities", ascending=False).reset_index(drop=True)
+
+
 def _clear_cache() -> None:
     """Test hook — drop the memoized crosswalk."""
     _cached_crosswalk.cache_clear()
     _cbsa_by_county.cache_clear()
+    _county_by_zip.cache_clear()
+    _fips_lookup.cache_clear()

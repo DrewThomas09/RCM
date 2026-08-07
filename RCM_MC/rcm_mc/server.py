@@ -5126,10 +5126,22 @@ class RCMHandler(BaseHTTPRequestHandler):
             # The full identifier crosswalk: one row per CCN carrying
             # system, county FIPS, CBSA/MSA, NUCC taxonomy, geo and NPI,
             # each with the source that produced it.
-            from .data.provider_crosswalk import get_crosswalk
+            #
+            # scope=all widens from the 6,123 HCRIS hospitals to all
+            # 48,510 Medicare-certified CCNs — nursing homes, home
+            # health, hospice, dialysis, IRF and LTCH included. Default
+            # stays hospital-only because that is the frame with beds
+            # and revenue on it.
+            from .data.provider_crosswalk import (
+                SCOPE_ALL, SCOPE_HOSPITAL, get_crosswalk)
             _qs = urllib.parse.parse_qs(parsed.query)
             _qp = {k: v[0] for k, v in _qs.items() if v}
-            _frame = get_crosswalk()
+            _scope = (SCOPE_ALL if str(_qp.get("scope", "")).strip().lower()
+                      in ("all", "1", "true") else SCOPE_HOSPITAL)
+            _frame = get_crosswalk(scope=_scope)
+            _cls = str(_qp.get("class", "")).strip().lower()[:12]
+            if _cls:
+                _frame = _frame[_frame["provider_class"].astype(str) == _cls]
             _st = str(_qp.get("state", "")).strip().upper()[:2]
             if _st:
                 _frame = _frame[_frame["state"].astype(str).str.upper() == _st]

@@ -97,6 +97,13 @@ FOCUS_REHAB = "Rehab"
 FOCUS_LTACH = "LTACH"
 FOCUS_CHILDRENS = "Children's"
 FOCUS_MIXED = "Mixed"
+# Post-acute and outpatient focuses. These operators hold thousands of
+# CCNs between them and not one acute hospital, so a registry that stops
+# at FOCUS_ACUTE cannot see them at all.
+FOCUS_DIALYSIS = "Dialysis"
+FOCUS_HOME_HEALTH = "Home Health"
+FOCUS_HOSPICE = "Hospice"
+FOCUS_SNF = "Skilled Nursing"
 
 # Facility-type labels as emitted by ``hcris._classify_series``.
 TYPE_LABELS: Tuple[str, ...] = (
@@ -151,8 +158,13 @@ class SystemDef:
 # be mapped from this data source and is deliberately absent rather than
 # guessed at. Adding one is a one-line append — the rollup, the page and
 # the coverage numbers all derive from this tuple.
+#
+# This first tuple is the acute estate: brands that appear in HCRIS.
+# ``POST_ACUTE_REGISTRY`` below covers operators that live almost
+# entirely outside it, and the two are concatenated into
+# :data:`SYSTEM_REGISTRY`.
 
-SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
+ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     # ── National for-profit acute chains ───────────────────────────
     SystemDef(
         "hca", "HCA Healthcare", KIND_FOR_PROFIT, FOCUS_ACUTE, "TN",
@@ -1588,6 +1600,318 @@ SYSTEM_REGISTRY: Tuple[SystemDef, ...] = (
 )
 
 
+# ── The post-acute and outpatient registry ─────────────────────────
+#
+# A hospital-only registry undercounts a health system twice over.
+# It misses the 42,387 dialysis stations, nursing homes, home-health
+# agencies and hospices that hold their own CCNs, and it misses the
+# operators whose entire estate is those CCNs — DaVita has no hospital,
+# and neither does Amedisys or Life Care Centers of America.
+#
+# Every entry below was derived by clustering the unmapped names in the
+# six CMS Compare files and keeping the clusters that name an operator
+# rather than a service line. "HOSPICE OF …" (208 facilities, 40
+# states) is a description, not a company, and is deliberately absent;
+# "^CENTERWELL" (226 agencies) is a company.
+#
+# Three brands that read as national operators are also deliberately
+# absent, because the pattern that would catch them catches an
+# unrelated hospital: ^GENESIS HEALTHCARE hits Genesis Healthcare
+# System in Zanesville OH, ^BROOKDALE hits Brookdale Hospital Medical
+# Center in Brooklyn, and ^ARBOR hits Arbor Health Morton Hospital in
+# Washington. Precision beats reach — a wrong parent is worse than no
+# parent, because nobody audits a mapping that looks complete.
+#
+# Encompass Health, Kindred, Select Medical and Ernest Health are NOT
+# repeated here. They already sit in the acute registry and their
+# patterns reach their post-acute CCNs unchanged.
+
+POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
+    # ── Dialysis ───────────────────────────────────────────────────
+    #
+    # The dialysis file is the only Compare file that publishes a
+    # parent chain, so these entries are reached two ways: by name, and
+    # by CHAIN_ALIASES below. Fresenius is the reason both are needed —
+    # it operates under five distinct banners (FMC, Fresenius Kidney
+    # Care, Bio-Medical Applications, Liberty Dialysis, Renal Care
+    # Group), all of which CMS files under one chain string.
+    SystemDef(
+        "fresenius", "Fresenius Medical Care", KIND_FOR_PROFIT, FOCUS_DIALYSIS, "MA",
+        patterns=("^FRESENIUS", "^FMC ", "^BIO MEDICAL APPLICATIONS",
+                  "^BMA OF", "^LIBERTY DIALYSIS", "^RENAL CARE GROUP"),
+    ),
+    SystemDef(
+        "davita", "DaVita Kidney Care", KIND_FOR_PROFIT, FOCUS_DIALYSIS, "CO",
+        patterns=("^DAVITA",),
+    ),
+    SystemDef(
+        "us_renal_care", "U.S. Renal Care", KIND_FOR_PROFIT, FOCUS_DIALYSIS, "TX",
+        patterns=("^US RENAL CARE", "^USRC "),
+    ),
+    SystemDef(
+        "dci", "Dialysis Clinic, Inc.", KIND_NONPROFIT, FOCUS_DIALYSIS, "TN",
+        patterns=("^DIALYSIS CLINIC INC", "^DCI "),
+    ),
+    SystemDef(
+        "american_renal", "Innovative Renal Care (American Renal)",
+        KIND_FOR_PROFIT, FOCUS_DIALYSIS, "MA",
+        patterns=("^AMERICAN RENAL", "^INNOVATIVE RENAL"),
+    ),
+    SystemDef(
+        "satellite_healthcare", "Satellite Healthcare", KIND_NONPROFIT,
+        FOCUS_DIALYSIS, "CA",
+        patterns=("^SATELLITE DIALYSIS", "^SATELLITE HEALTHCARE"),
+    ),
+    SystemDef(
+        "northwest_kidney", "Northwest Kidney Centers", KIND_NONPROFIT,
+        FOCUS_DIALYSIS, "WA",
+        patterns=("WA:^NORTHWEST KIDNEY",),
+        note="Reached mainly through the published chain column — the "
+             "facility names are place names, not the brand.",
+    ),
+    SystemDef(
+        "cdc_cleveland", "Centers for Dialysis Care", KIND_NONPROFIT,
+        FOCUS_DIALYSIS, "OH",
+        patterns=("OH:^CENTERS FOR DIALYSIS CARE",),
+        note="Chain-column only in the current snapshot.",
+    ),
+    SystemDef(
+        "puget_sound_kidney", "Puget Sound Kidney Centers", KIND_NONPROFIT,
+        FOCUS_DIALYSIS, "WA",
+        patterns=("WA:^PUGET SOUND KIDNEY",),
+    ),
+
+    # ── Home health and hospice ────────────────────────────────────
+    SystemDef(
+        "centerwell", "CenterWell Home Health (Humana)", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "KY",
+        patterns=("^CENTERWELL",),
+    ),
+    SystemDef(
+        "enhabit", "Enhabit Home Health & Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "TX",
+        patterns=("^ENHABIT",),
+    ),
+    SystemDef(
+        "amedisys", "Amedisys", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "LA",
+        patterns=("^AMEDISYS", "^COMPASSIONATE CARE HOSPICE"),
+    ),
+    SystemDef(
+        "gentiva", "Gentiva", KIND_FOR_PROFIT, FOCUS_HOSPICE, "GA",
+        patterns=("^GENTIVA",),
+    ),
+    SystemDef(
+        "bayada", "BAYADA Home Health Care", KIND_NONPROFIT,
+        FOCUS_HOME_HEALTH, "NJ",
+        patterns=("^BAYADA",),
+    ),
+    SystemDef(
+        "elara_caring", "Elara Caring", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=("^ELARA CARING",),
+    ),
+    SystemDef(
+        "aveanna", "Aveanna Healthcare", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "GA",
+        patterns=("^AVEANNA",),
+    ),
+    SystemDef(
+        "interim_healthcare", "Interim HealthCare", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "FL",
+        patterns=("^INTERIM HEALTHCARE",),
+    ),
+    SystemDef(
+        "accentcare", "AccentCare", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=("^ACCENTCARE",),
+    ),
+    SystemDef(
+        "adoration_health", "Adoration Home Health & Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "TN",
+        patterns=("^ADORATION",),
+    ),
+    SystemDef(
+        "maxim_healthcare", "Maxim Healthcare Services", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "MD",
+        patterns=("^MAXIM HEALTHCARE",),
+    ),
+    SystemDef(
+        "angels_care", "Angels Care Home Health", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "TX",
+        patterns=("^ANGELS CARE HOME",),
+    ),
+    SystemDef(
+        "vitalcaring", "VitalCaring Group", KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=("^VITALCARING",),
+    ),
+    SystemDef(
+        "suncrest", "Suncrest Home Health & Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOME_HEALTH, "TN",
+        # NOT bare ^SUNCREST: "SUNCREST HEALTHCARE CENTER" is an
+        # unrelated nursing home.
+        patterns=("^SUNCREST HOME", "^SUNCREST HOSPICE"),
+    ),
+    SystemDef(
+        "traditions_health", "Traditions Health", KIND_FOR_PROFIT, FOCUS_HOSPICE, "TX",
+        patterns=("^TRADITIONS HEALTH",),
+    ),
+    SystemDef(
+        "vitas", "VITAS Healthcare (Chemed)", KIND_FOR_PROFIT, FOCUS_HOSPICE, "OH",
+        patterns=("^VITAS",),
+    ),
+    SystemDef(
+        "compassus", "Compassus", KIND_FOR_PROFIT, FOCUS_HOSPICE, "TN",
+        patterns=("^COMPASSUS",),
+    ),
+    SystemDef(
+        "bristol_hospice", "Bristol Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "UT",
+        patterns=("^BRISTOL HOSPICE",),
+    ),
+    SystemDef(
+        "st_croix_hospice", "St. Croix Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "MN",
+        patterns=("^SAINT CROIX HOSPICE",),
+    ),
+    SystemDef(
+        "heart_to_heart_hospice", "Heart to Heart Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOSPICE, "TX",
+        patterns=("^HEART TO HEART HOSPICE",),
+    ),
+    SystemDef(
+        "heartland_care", "Heartland Home Health & Hospice", KIND_FOR_PROFIT,
+        FOCUS_HOSPICE, "OH",
+        patterns=("^HEARTLAND HOSPICE", "^HEARTLAND HOME"),
+    ),
+    SystemDef(
+        "harbor_hospice", "Harbor Hospice", KIND_FOR_PROFIT, FOCUS_HOSPICE, "TX",
+        # Scoped: a separate, unrelated Harbor Hospice operates in
+        # Muskegon MI.
+        patterns=("^HARBOR HOSPICE",),
+        states=("TX", "LA", "OK", "MO", "KS"),
+    ),
+
+    # ── Skilled nursing ────────────────────────────────────────────
+    SystemDef(
+        "life_care_centers", "Life Care Centers of America", KIND_FOR_PROFIT,
+        FOCUS_SNF, "TN",
+        patterns=("^LIFE CARE CENTER",),
+    ),
+    SystemDef(
+        "good_samaritan_society", "Good Samaritan Society (Sanford Health)",
+        KIND_NONPROFIT, FOCUS_SNF, "SD",
+        # NOT bare ^GOOD SAMARITAN: a dozen unrelated Good Samaritan
+        # hospitals carry that name. "SOCIETY" is the discriminator.
+        patterns=("^GOOD SAMARITAN SOCIETY",),
+    ),
+    SystemDef(
+        "pruitthealth", "PruittHealth", KIND_FOR_PROFIT, FOCUS_SNF, "GA",
+        patterns=("^PRUITTHEALTH",),
+    ),
+    SystemDef(
+        "complete_care", "Complete Care", KIND_FOR_PROFIT, FOCUS_SNF, "NJ",
+        patterns=("^COMPLETE CARE AT",),
+    ),
+    SystemDef(
+        "avir_healthcare", "Avir Healthcare", KIND_FOR_PROFIT, FOCUS_SNF, "TX",
+        patterns=("TX:^AVIR AT",),
+    ),
+    SystemDef(
+        "aviata_health", "Aviata Health", KIND_FOR_PROFIT, FOCUS_SNF, "FL",
+        patterns=("FL:^AVIATA AT",),
+    ),
+    SystemDef(
+        "autumn_lake", "Autumn Lake Healthcare", KIND_FOR_PROFIT, FOCUS_SNF, "MD",
+        patterns=("^AUTUMN LAKE",),
+    ),
+    SystemDef(
+        "national_healthcare", "National HealthCare Corporation (NHC)",
+        KIND_FOR_PROFIT, FOCUS_SNF, "TN",
+        patterns=("^NHC HEALTHCARE",),
+    ),
+    SystemDef(
+        "signature_snf", "Signature HealthCARE", KIND_FOR_PROFIT, FOCUS_SNF, "KY",
+        # NOT bare ^SIGNATURE HEALTHCARE: Signature Healthcare Brockton
+        # Hospital in Massachusetts is an unrelated acute system.
+        patterns=("^SIGNATURE HEALTHCARE OF", "^SIGNATURE HEALTHCARE AT"),
+    ),
+    SystemDef(
+        "medilodge", "MediLodge", KIND_FOR_PROFIT, FOCUS_SNF, "MI",
+        patterns=("MI:^MEDILODGE",),
+    ),
+    SystemDef(
+        "laurel_health_care", "Laurel Health Care", KIND_FOR_PROFIT, FOCUS_SNF, "OH",
+        patterns=("^LAURELS OF",),
+    ),
+    SystemDef(
+        "waters_senior_living", "The Waters", KIND_FOR_PROFIT, FOCUS_SNF, "IN",
+        patterns=("^WATERS OF",),
+        states=("IN", "TN"),
+    ),
+    SystemDef(
+        "diversicare", "Diversicare Healthcare Services", KIND_FOR_PROFIT,
+        FOCUS_SNF, "TN",
+        patterns=("^DIVERSICARE",),
+    ),
+    SystemDef(
+        "majestic_care", "Majestic Care", KIND_FOR_PROFIT, FOCUS_SNF, "IN",
+        patterns=("^MAJESTIC CARE",),
+    ),
+    SystemDef(
+        "accura_healthcare", "Accura Healthcare", KIND_FOR_PROFIT, FOCUS_SNF, "IA",
+        patterns=("^ACCURA HEALTHCARE",),
+    ),
+    SystemDef(
+        "ignite_medical", "Ignite Medical Resorts", KIND_FOR_PROFIT, FOCUS_SNF, "IL",
+        patterns=("^IGNITE MEDICAL",),
+    ),
+    SystemDef(
+        "focused_care", "Focused Care", KIND_FOR_PROFIT, FOCUS_SNF, "TX",
+        patterns=("TX:^FOCUSED CARE",),
+    ),
+    SystemDef(
+        "optalis_health", "Optalis Health & Rehabilitation", KIND_FOR_PROFIT,
+        FOCUS_SNF, "MI",
+        patterns=("MI:^OPTALIS",),
+    ),
+    SystemDef(
+        "autumn_corp", "Autumn Corporation", KIND_FOR_PROFIT, FOCUS_SNF, "NC",
+        patterns=("^AUTUMN CARE OF",),
+        states=("NC", "VA"),
+    ),
+)
+
+
+SYSTEM_REGISTRY: Tuple[SystemDef, ...] = ACUTE_REGISTRY + POST_ACUTE_REGISTRY
+
+
+# ── Published parent chains ────────────────────────────────────────
+#
+# CMS's dialysis file names a parent for 6,699 of 7,557 facilities.
+# That column outranks anything the matcher can infer from a facility
+# name, because it is the operator's own answer rather than our reading
+# of their signage — and it reaches facilities whose names never carry
+# the brand at all (Northwest Kidney Centers files eleven facilities as
+# place names).
+#
+# Keys are matched after :func:`normalize_name`. A chain string with no
+# entry here is still carried on the row as ``chain_name``: knowing a
+# facility belongs to "Atlantis Healthcare Group" is worth more than
+# calling it independent, even when no registry entry exists yet.
+
+CHAIN_ALIASES: Dict[str, str] = {
+    "DAVITA": "davita",
+    "FRESENIUS MEDICAL CARE": "fresenius",
+    "US RENAL CARE INC": "us_renal_care",
+    "DIALYSIS CLINIC INC": "dci",
+    "AMERICAN RENAL ASSOCIATES": "american_renal",
+    "SATELLITE HEALTHCARE": "satellite_healthcare",
+    "SATELLITE DIALYSIS": "satellite_healthcare",
+    "NORTHWEST KIDNEY CENTERS": "northwest_kidney",
+    "CENTERS FOR DIALYSIS CARE": "cdc_cleveland",
+    "PUGET SOUND KIDNEY CENTERS": "puget_sound_kidney",
+    "KAISER PERMANENTE": "kaiser",
+    "SANFORD HEALTH": "sanford",
+    "INTERMOUNTAIN HEALTHCARE": "intermountain",
+    "MAYO CLINIC DIALYSIS": "mayo",
+}
+
+
 # ── CCN overrides ──────────────────────────────────────────────────
 #
 # The escape hatch for facilities a name can never resolve. Two cases
@@ -1721,16 +2045,62 @@ class _Compiled:
     regex: Any
     scope: Tuple[str, ...]
     specificity: int
+    #: Whether the pattern is ``^``-anchored, and its literal body — the
+    #: two facts the prefix index needs.
+    anchored: bool = False
+    body: str = ""
 
 
-def _build_index() -> Tuple[Tuple[_Compiled, ...], Dict[str, Tuple[_Compiled, ...]]]:
-    """Precompile every pattern once, bucketed by state.
+#: How many leading characters of an anchored pattern are indexed.
+#: Two is enough to cut the candidate set by ~50x and short enough that
+#: the buckets stay well populated.
+_PREFIX_LEN = 2
 
-    Matching is O(rows x patterns) — 6,123 facilities against ~600
-    patterns. Compiling inside the loop leaned on ``re``'s 512-entry
+
+@dataclass(frozen=True)
+class _Bucket:
+    """Patterns for one scope, split so a lookup skips the impossible ones.
+
+    A ``^``-anchored pattern compiles to ``^`` + an escaped literal, so
+    it can only match a name that starts with that literal. Indexing
+    those by their first two characters means a name beginning "SA"
+    never tests the 300-odd patterns that begin with anything else.
+    Unanchored patterns match mid-string and have to be tried every
+    time; there are only a handful.
+    """
+
+    by_prefix: Dict[str, Tuple[_Compiled, ...]]
+    floating: Tuple[_Compiled, ...]
+
+    def candidates(self, norm: str) -> Tuple[_Compiled, ...]:
+        return self.by_prefix.get(norm[:_PREFIX_LEN], ()) + self.floating
+
+
+_EMPTY_BUCKET = _Bucket({}, ())
+
+
+def _to_bucket(entries: List[_Compiled]) -> _Bucket:
+    by_prefix: Dict[str, List[_Compiled]] = {}
+    floating: List[_Compiled] = []
+    for entry in entries:
+        body = entry.body
+        if entry.anchored and len(body) >= _PREFIX_LEN:
+            by_prefix.setdefault(body[:_PREFIX_LEN], []).append(entry)
+        else:
+            floating.append(entry)
+    return _Bucket({k: tuple(v) for k, v in by_prefix.items()}, tuple(floating))
+
+
+def _build_index() -> Tuple[_Bucket, Dict[str, _Bucket]]:
+    """Precompile every pattern once, bucketed by state then by prefix.
+
+    Matching is O(rows x patterns), and the row count is no longer
+    6,123: the post-acute universe puts 42,387 more names through the
+    same loop. Compiling inside the loop leaned on ``re``'s 512-entry
     cache, which thrashes at this pattern count and cost ~8s per cold
-    page render; precompiling and pre-bucketing by state brings it under
-    a second.
+    page render. Precompiling fixed that; the prefix index is what keeps
+    it flat as the universe grows, taking the full-universe assignment
+    from 8.4s to well under a second.
     """
     unscoped: List[_Compiled] = []
     by_state: Dict[str, List[_Compiled]] = {}
@@ -1743,13 +2113,16 @@ def _build_index() -> Tuple[Tuple[_Compiled, ...], Dict[str, Tuple[_Compiled, ..
                 regex=_compile_pattern(body),
                 scope=scope or sysdef.states,
                 specificity=len(body.lstrip("^")),
+                anchored=body.startswith("^"),
+                body=body.lstrip("^").strip(),
             )
             if entry.scope:
                 for st in entry.scope:
                     by_state.setdefault(st, []).append(entry)
             else:
                 unscoped.append(entry)
-    return tuple(unscoped), {k: tuple(v) for k, v in by_state.items()}
+    return (_to_bucket(unscoped),
+            {k: _to_bucket(v) for k, v in by_state.items()})
 
 
 _UNSCOPED_PATTERNS, _STATE_PATTERNS = _build_index()
@@ -1777,7 +2150,8 @@ def match_system(name: Any, state: Any = None) -> Tuple[Optional[SystemDef], str
     best: Optional[SystemDef] = None
     best_pattern = ""
     best_key: Tuple[int, int] = (-1, -1)
-    for entry in _STATE_PATTERNS.get(st, ()) + _UNSCOPED_PATTERNS:
+    scoped = _STATE_PATTERNS.get(st, _EMPTY_BUCKET)
+    for entry in scoped.candidates(norm) + _UNSCOPED_PATTERNS.candidates(norm):
         key = (entry.specificity, 1 if entry.scope else 0)
         if key <= best_key:
             continue
@@ -1852,11 +2226,18 @@ STATUS_ACTIVE = "Active"
 STATUS_DORMANT = "Dormant — last filed prior year"
 STATUS_STOPPED = "Stopped filing — closed, merged or converted"
 
-#: Statuses that count toward a system's operating hospital estate.
-OPERATING_STATUSES: Tuple[str, ...] = (STATUS_ACTIVE,)
+# Post-acute providers carry no cost report and so no filing recency.
+# The Compare files publish a certification date and no termination
+# date, which supports exactly one honest statement: CMS still lists
+# it. Reusing STATUS_ACTIVE would claim a recency check that never ran.
+STATUS_CERTIFIED = "Certified — CMS listing, no filing history"
+
+#: Statuses that count toward a system's operating estate.
+OPERATING_STATUSES: Tuple[str, ...] = (STATUS_ACTIVE, STATUS_CERTIFIED)
 
 #: Every status, in the order the page should list them.
-STATUS_ORDER: Tuple[str, ...] = (STATUS_ACTIVE, STATUS_DORMANT, STATUS_STOPPED)
+STATUS_ORDER: Tuple[str, ...] = (STATUS_ACTIVE, STATUS_CERTIFIED,
+                                 STATUS_DORMANT, STATUS_STOPPED)
 
 
 def _numeric(df: pd.DataFrame, col: str) -> pd.Series:
@@ -2040,6 +2421,134 @@ def _assigned_cached() -> pd.DataFrame:
     refresh, so recomputing per request was pure waste.
     """
     return _assign_universe(_get_latest_per_ccn())
+
+
+# ── Post-acute assignment ──────────────────────────────────────────
+#
+# Same registry, different ordering. On a hospital the name is all we
+# have, so the matcher runs first. On a dialysis facility CMS publishes
+# the parent chain outright, and an operator's own answer outranks our
+# reading of their signage — so the chain column runs first there.
+#
+# The tier that fired is recorded in ``system_match`` either way
+# ("chain: DaVita" vs "^DAVITA"), because a mapping nobody can audit is
+# a mapping nobody should trust.
+
+#: Provider classes, in the order the page should list them.
+PROVIDER_CLASS_HOSPITAL = "hospital"
+
+
+def _post_acute_frame() -> pd.DataFrame:
+    """The six Compare files, minus CCNs the hospital universe already has."""
+    from .provider_universe import load_post_acute_universe
+
+    hospital_ccns = frozenset(_assigned_cached()["ccn"].astype(str))
+    return load_post_acute_universe(hospital_ccns)
+
+
+def assign_post_acute(df: Optional[pd.DataFrame] = None) -> pd.DataFrame:
+    """Attach system columns to the post-acute / outpatient universe.
+
+    Accepts (and returns) the shape produced by
+    :func:`provider_universe.load_post_acute_universe`. Passing
+    ``df=None`` reads the bundled files through the process cache.
+    """
+    out = (_post_acute_assigned_cached().copy() if df is None
+           else _assign_post_acute_universe(df))
+    return out
+
+
+def _assign_post_acute_universe(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if out.empty:
+        for col in ("system_id", "system_name", "system_kind", "system_focus",
+                    "system_match", "facility_type", "facility_type_label",
+                    "facility_status"):
+            out[col] = pd.Series(dtype=object)
+        for col in ("is_behavioral", "is_operating"):
+            out[col] = pd.Series(dtype=bool)
+        return out
+
+    def _col(name: str) -> pd.Series:
+        if name in out.columns:
+            return out[name].fillna("").astype(str)
+        return pd.Series([""] * len(out), index=out.index, dtype=object)
+
+    names, states, chains = _col("name"), _col("state"), _col("chain_name")
+
+    resolved: List[Optional[SystemDef]] = []
+    bases: List[str] = []
+    for name, state, chain in zip(names, states, chains, strict=True):
+        alias = CHAIN_ALIASES.get(normalize_name(chain)) if chain else None
+        sysdef = _SYSTEM_BY_ID.get(alias) if alias else None
+        if sysdef is not None:
+            resolved.append(sysdef)
+            bases.append(f"chain: {chain}")
+            continue
+        sysdef, pattern = match_system(name, state)
+        resolved.append(sysdef)
+        bases.append(pattern)
+
+    out["system_id"] = [d.system_id if d else UNMAPPED_ID for d in resolved]
+    out["system_name"] = [d.name if d else UNMAPPED_NAME for d in resolved]
+    out["system_kind"] = [d.kind if d else "" for d in resolved]
+    out["system_focus"] = [d.focus if d else "" for d in resolved]
+    out["system_match"] = bases
+
+    # The provider class already IS the facility type here — a CCN-range
+    # classifier would only re-derive what CMS told us outright.
+    out["facility_type"] = _col("provider_class")
+    out["facility_type_label"] = _col("provider_class_label")
+    out["is_behavioral"] = names.map(normalize_name).str.contains(
+        _BEHAVIORAL_NAME_RE, na=False)
+    out["facility_status"] = STATUS_CERTIFIED
+    out["is_operating"] = True
+    return out
+
+
+@lru_cache(maxsize=1)
+def _post_acute_assigned_cached() -> pd.DataFrame:
+    return _assign_post_acute_universe(_post_acute_frame())
+
+
+#: Columns shared by the hospital and post-acute frames — the ones a
+#: union can carry without inventing values for either side.
+UNION_COLUMNS: Tuple[str, ...] = (
+    "ccn", "name", "city", "state", "zip", "county",
+    "provider_class", "provider_class_label",
+    "system_id", "system_name", "system_kind", "system_focus", "system_match",
+    "facility_type", "facility_type_label", "is_behavioral",
+    "facility_status", "is_operating", "beds", "chain_name",
+)
+
+
+def assign_all() -> pd.DataFrame:
+    """Every Medicare-certified CCN we hold, hospital and post-acute alike.
+
+    ~48,500 rows against the hospital universe's 6,123. Financial
+    columns are dropped: only hospitals file a cost report, and carrying
+    a revenue column that is null for 87% of the frame invites exactly
+    the kind of averaging that produces a wrong number.
+    """
+    hospitals = assign_systems()
+    if not hospitals.empty:
+        hospitals = hospitals.assign(
+            provider_class=PROVIDER_CLASS_HOSPITAL,
+            provider_class_label="Hospital",
+            chain_name="",
+        )
+    post_acute = assign_post_acute()
+    frames = []
+    for frame in (hospitals, post_acute):
+        if frame.empty:
+            continue
+        missing = [c for c in UNION_COLUMNS if c not in frame.columns]
+        for col in missing:
+            frame = frame.assign(**{col: ""})
+        frames.append(frame[list(UNION_COLUMNS)])
+    if not frames:
+        return pd.DataFrame(columns=list(UNION_COLUMNS))
+    return pd.concat(frames, ignore_index=True)
 
 
 # ── Rollup ─────────────────────────────────────────────────────────
@@ -2710,8 +3219,13 @@ def dead_patterns(df: Optional[pd.DataFrame] = None) -> List[Tuple[str, str]]:
     against a facility actually named FORSYTH MEMORIAL, and
     ``^BRIGHAM AND WOMEN`` failing the trailing boundary against
     BRIGHAM AND WOMENS.
+
+    Scans the full universe — hospital and post-acute — because the
+    registry now spans both. Scanning hospitals alone would report all
+    fifty post-acute operators as dead patterns and drown the signal
+    the scan exists to produce.
     """
-    assigned = assign_systems(df)
+    assigned = assign_all() if df is None else assign_systems(df)
     seen = [(normalize_name(n), str(st).upper())
             for n, st in zip(assigned["name"], assigned["state"], strict=True)]
     out: List[Tuple[str, str]] = []
@@ -2731,5 +3245,6 @@ def _clear_cache() -> None:
     _all_state_concentration.cache_clear()
     _leader_map.cache_clear()
     _assigned_cached.cache_clear()
+    _post_acute_assigned_cached.cache_clear()
     _cached_map.cache_clear()
     _last_active_year_by_ccn.cache_clear()

@@ -37,10 +37,13 @@ from rcm_mc.data.nppes_ingest import (
 from rcm_mc.data.provider_crosswalk import (
     CROSSWALK_COLUMNS,
     NUCC_BY_FACILITY_TYPE,
+    SCOPE_ALL,
+    _county_by_zip,
     build_crosswalk,
     cbsa_for_county,
     county_fips_for,
     crosswalk_by_cbsa,
+    crosswalk_by_class,
     crosswalk_coverage,
     facility_taxonomy,
     get_crosswalk,
@@ -129,12 +132,22 @@ class TaxonomyTests(unittest.TestCase):
         xw = get_crosswalk()
         self.assertTrue(xw["taxonomy_code"].ne("").all())
 
+    def test_post_acute_classes_map_to_their_own_vocabulary(self) -> None:
+        """CMS states the provider class outright in the Compare files —
+        re-deriving it from a CCN range would only add a way to be
+        wrong."""
+        self.assertEqual(facility_taxonomy("snf")[0], "314000000X")
+        self.assertEqual(facility_taxonomy("hha")[0], "251E00000X")
+        self.assertEqual(facility_taxonomy("hospice")[0], "251G00000X")
+        self.assertEqual(facility_taxonomy("dialysis")[0], "261QE0700X")
+
     def test_codes_are_well_formed_nucc(self) -> None:
-        # NUCC codes are 10 characters: a 3-digit grouping, a 1-2 letter
-        # classification, digits, and a trailing X — 282N00000X carries one
-        # letter, 282NC0060X (Critical Access) carries two.
+        # NUCC codes are 10 characters: a 3-digit grouping, then six
+        # alphanumerics of classification + specialization, then a
+        # trailing X. 282N00000X carries one classification letter,
+        # 282NC0060X (Critical Access) two, 314000000X (SNF) none.
         for code, desc in NUCC_BY_FACILITY_TYPE.values():
-            self.assertRegex(code, r"^\d{3}[A-Z]{1,2}\d{4,5}X$")
+            self.assertRegex(code, r"^\d{3}[0-9A-Z]{6}X$")
             self.assertEqual(len(code), 10, code)
             self.assertTrue(desc)
 
@@ -179,6 +192,78 @@ class CareCompareTests(unittest.TestCase):
         self.assertTrue(absent["cms_ownership"].eq("").all())
         self.assertTrue(absent["cms_hospital_type"].eq("").all())
         self.assertTrue(absent["emergency_services"].eq("").all())
+
+
+class FullScopeTests(unittest.TestCase):
+    """``scope="all"`` — every Medicare-certified CCN, not just hospitals."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.xw = get_crosswalk(scope=SCOPE_ALL)
+
+    def test_the_full_scope_is_eight_times_the_hospital_one(self) -> None:
+        self.assertGreater(len(self.xw), 48000)
+        self.assertGreater(len(self.xw), len(get_crosswalk()) * 7)
+        self.assertEqual(len(self.xw), self.xw["ccn"].nunique())
+        self.assertEqual(list(self.xw.columns), list(CROSSWALK_COLUMNS))
+
+    def test_the_hospital_scope_is_a_strict_subset(self) -> None:
+        hospitals = get_crosswalk()
+        self.assertTrue(set(hospitals["ccn"]).issubset(set(self.xw["ccn"])))
+        self.assertEqual(
+            int(self.xw["provider_class"].eq("hospital").sum()), len(hospitals))
+
+    def test_an_unknown_scope_is_refused_rather_than_guessed(self) -> None:
+        with self.assertRaises(ValueError):
+            get_crosswalk(scope="everything")
+
+    def test_every_class_is_geocoded_to_a_county(self) -> None:
+        by_class = crosswalk_by_class().set_index("provider_class")
+        for provider_class in ("snf", "hha", "hospice", "dialysis"):
+            row = by_class.loc[provider_class]
+            self.assertGreater(row["with_county"] / row["facilities"], 0.85,
+                               provider_class)
+
+    def test_mapping_strength_varies_enormously_by_class(self) -> None:
+        """One average across dialysis and nursing homes describes
+        neither: CMS publishes a parent chain for dialysis and nothing
+        for SNFs, whose names are local and whose operators churn."""
+        by_class = crosswalk_by_class().set_index("provider_class")
+        self.assertGreater(by_class.loc["dialysis", "mapped_pct"], 80.0)
+        self.assertLess(by_class.loc["snf", "mapped_pct"], 25.0)
+
+    def test_beds_stay_on_the_hospital_rows(self) -> None:
+        """A dialysis station has no beds. Letting the market rollup
+        count facilities and beds off the same rows would make
+        beds-per-facility read as a tenth of its real value."""
+        non_hospital = self.xw[self.xw["provider_class"].ne("hospital")]
+        beds = pd.to_numeric(non_hospital["net_patient_revenue"], errors="coerce")
+        self.assertTrue(beds.isna().all())
+        markets = crosswalk_by_cbsa(scope=SCOPE_ALL).set_index("cbsa_code")
+        ny = markets.loc["35620"]
+        self.assertGreater(ny["facilities"], ny["hospitals"] * 3)
+        self.assertGreater(ny["beds"], 30000)
+
+    def test_a_zip_resolves_the_county_the_home_health_file_omits(self) -> None:
+        """Home health is the one class CMS publishes with no county
+        column. The ZIP-learned mapping is what gives those 12,392
+        agencies any geography at all."""
+        sources = self.xw["county_fips_source"].value_counts()
+        self.assertGreater(sources.get("zip inferred", 0), 5000)
+        hha = self.xw[self.xw["provider_class"].eq("hha")]
+        inferred = hha[hha["county_fips_source"].eq("zip inferred")]
+        self.assertGreater(len(inferred) / len(hha), 0.8)
+
+    def test_an_ambiguous_zip_is_dropped_not_guessed(self) -> None:
+        """A ZIP that straddles a county line resolves to two FIPS in the
+        observed data. An inferred county that is right most of the time
+        is worse than an absent one — nothing downstream can tell which
+        rows to distrust."""
+        learned = _county_by_zip()
+        self.assertGreater(len(learned), 10000)
+        self.assertTrue(all(len(v) == 5 and v.isdigit() for v in learned.values()))
+        # Every learned ZIP maps to exactly one county by construction.
+        self.assertEqual(len(set(learned)), len(learned))
 
 
 class CoverageTests(unittest.TestCase):
@@ -422,6 +507,25 @@ class CrosswalkRouteTests(unittest.TestCase):
         rows = self._rows("/provider-crosswalk.csv?system=oceans")
         self.assertTrue(rows)
         self.assertEqual({r["system_id"] for r in rows}, {"oceans"})
+
+    def test_scope_all_widens_to_every_certified_ccn(self) -> None:
+        rows = self._rows("/provider-crosswalk.csv?scope=all")
+        self.assertEqual(len(rows), len(get_crosswalk(scope=SCOPE_ALL)))
+        self.assertGreater(len(rows), 48000)
+        self.assertIn("dialysis", {r["provider_class"] for r in rows})
+
+    def test_scope_defaults_to_hospitals_rather_than_everything(self) -> None:
+        """The default frame is the one with beds and revenue on it. A
+        caller who did not ask for 48,510 rows should not get them."""
+        rows = self._rows("/provider-crosswalk.csv?scope=nonsense")
+        self.assertEqual(len(rows), len(get_crosswalk()))
+        self.assertEqual({r["provider_class"] for r in rows}, {"hospital"})
+
+    def test_class_filter_narrows_to_one_provider_class(self) -> None:
+        rows = self._rows("/provider-crosswalk.csv?scope=all&class=snf")
+        self.assertGreater(len(rows), 14000)
+        self.assertEqual({r["provider_class"] for r in rows}, {"snf"})
+        self.assertEqual({r["taxonomy_code"] for r in rows}, {"314000000X"})
 
 
 if __name__ == "__main__":

@@ -658,6 +658,56 @@ def _crosswalk_coverage_panel() -> str:
     return "".join(bars) + notes
 
 
+def _provider_class_panel() -> str:
+    """Every Medicare-certified CCN, by provider class.
+
+    The hospital universe is 6,123 rows. The certified universe is
+    48,510, and the difference is where most of a health system's
+    post-acute estate lives. Reporting one mapping percentage across
+    both would describe neither: CMS publishes a parent chain for
+    dialysis and nothing at all for nursing homes.
+    """
+    from rcm_mc.data.provider_crosswalk import crosswalk_by_class
+
+    classes = crosswalk_by_class()
+    if classes.empty:
+        return ""
+    total = int(classes["facilities"].sum())
+    mapped = int(classes["mapped"].sum())
+    cols = [("Class", "left"), ("CCNs", "right"), ("Mapped to a System", "right"),
+            ("Mapped %", "right"), ("County FIPS", "right"), ("CBSA", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for rec in classes.to_dict("records"):
+        pct = float(rec["mapped_pct"])
+        tone = "positive" if pct >= 60 else ("warning" if pct >= 25 else "negative")
+        cells = [
+            ck_data_cell(_esc(rec["provider_class_label"]), weight=600),
+            ck_data_cell(_fmt_int(rec["facilities"]), align="right", mono=True,
+                         weight=700, tone="acc"),
+            ck_data_cell(_fmt_int(rec["mapped"]), align="right", mono=True),
+            ck_data_cell(f"{pct:.1f}%", align="right", mono=True, tone=tone),
+            ck_data_cell(_fmt_int(rec["with_county"]), align="right", mono=True,
+                         tone="dim"),
+            ck_data_cell(_fmt_int(rec["with_cbsa"]), align="right", mono=True,
+                         tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    return (
+        '<div class="ck-data-table-scroll"><table class="ck-data-table">'
+        f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody></table></div>'
+        f'<div class="hsl-legend"><strong>{total:,} CCNs</strong> across seven '
+        f'provider classes, {mapped:,} of them resolved to a health system. '
+        'The spread is the story: CMS publishes a parent chain for dialysis, '
+        'so nine in ten resolve, while nursing-home names are local and their '
+        'operators churn, so fewer than one in ten do. An IRF or LTCH that '
+        'files its own cost report is counted as a hospital, not twice. '
+        'Download the full crosswalk at <a class="ck-link" '
+        'href="/provider-crosswalk.csv?scope=all">'
+        '/provider-crosswalk.csv?scope=all</a>, or one class at a time with '
+        '<code>&amp;class=snf</code>.</div>')
+
+
 def _markets_panel(limit: int = 15) -> str:
     """Facilities and beds by CBSA — the unit an operator competes in.
 
@@ -908,6 +958,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     lookup = _hospital_lookup_panel(hospital_q)
     inactive = _inactive_panel(status)
     coverage = _crosswalk_coverage_panel()
+    provider_classes = _provider_class_panel()
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
                      if state
@@ -965,12 +1016,18 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     {concentration}
   </div>
   <div style="{cell}">
-    <div style="{h3}">Identifier Crosswalk — Coverage</div>
+    <div style="{h3}">Identifier Crosswalk — Hospital Coverage</div>
     {coverage}
     <div class="hsl-legend">Every facility resolves to a county FIPS and a NUCC
     taxonomy code, which is what lets this join to census, claims and payer
-    data. Download the full crosswalk at
+    data. These rates are over the {m.total_hospitals + m.inactive_hospitals:,}
+    HCRIS hospitals; the panel below widens to every certified CCN. Download the
+    crosswalk at
     <a class="ck-link" href="/provider-crosswalk.csv">/provider-crosswalk.csv</a>.</div>
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Full Provider Universe — Every Certified CCN</div>
+    {provider_classes}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>
