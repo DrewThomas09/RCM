@@ -24,10 +24,11 @@ from rcm_mc.data.parent_resolution import (
     TIER_AFFILIATION,
     TIER_CCN_CHAIN, TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE,
     TIER_NAME_SYSTEM, TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP,
-    TIER_RANK, ParentGraph, attach_parents, build_parent_graph,
-    edges_from_affiliations, edges_from_crosswalk, edges_from_npi_frame,
-    load_affiliations, node_key, ownership_disagreements,
-    resolve_identifiers,
+    TIER_RANK, TIER_SHARED_OFFICIAL, NS_EIN, NS_OFFICIAL, ParentGraph,
+    attach_parents, build_parent_graph, edges_from_affiliations,
+    edges_from_crosswalk, edges_from_eins, edges_from_npi_frame,
+    edges_from_officials, load_affiliations, node_key,
+    ownership_disagreements, resolve_identifiers,
 )
 
 
@@ -617,3 +618,131 @@ class RealGraphTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SharedOfficialTests(unittest.TestCase):
+    """The signal that reaches subsidiaries nothing else does, and the
+    guards that stop it inventing a conglomerate."""
+
+    def _frame(self, rows):
+        return pd.DataFrame([
+            {"npi": npi, "legal_name": name, "auth_official": official,
+             "system_id": ""}
+            for npi, name, official in rows])
+
+    def test_a_corporate_officer_clusters_their_subsidiaries(self):
+        """GMR's officer connects Eagle Air Med, Air Evac and Gold Cross —
+        three names with no shared token, address or chain field.
+
+        The fixture repeats names on purpose: that IS the shape of
+        corporate control, one company holding many entities under a
+        handful of banners. Real GMR is 123 NPIs across 21 names."""
+        edges = edges_from_officials(self._frame([
+            ("1111111111", "EAGLE AIR MED CORPORATION", "Eric Thomas"),
+            ("2222222222", "EAGLE AIR MED CORPORATION", "Eric Thomas"),
+            ("3333333333", "AIR EVAC EMS, INC.", "Eric Thomas"),
+            ("4444444444", "AIR EVAC EMS INC.", "Eric Thomas"),
+            ("5555555555", "AIR EVAC EMS INC", "Eric Thomas"),
+            ("6666666666", "GOLD CROSS AMBULANCE SERVICES", "Eric Thomas"),
+        ]))
+        self.assertEqual(len(edges), 6)
+        self.assertEqual({e.tier for e in edges}, {TIER_SHARED_OFFICIAL})
+        self.assertEqual({e.parent for e in edges},
+                         {node_key(NS_OFFICIAL, "ERIC THOMAS")})
+
+    def test_a_billing_agent_is_refused(self):
+        """The identical shape with every NPI under a different name is
+        an agent or a county coordinator, not an owner. Taking it would
+        merge unrelated town services into one imaginary operator."""
+        edges = edges_from_officials(self._frame([
+            ("1111111111", "HAMLET RESCUE & EMERGENCY MEDICAL", "Mary Gentile"),
+            ("2222222222", "TOWN OF TOLLAND", "Mary Gentile"),
+            ("3333333333", "QUEENS VILLAGE VOLUNTEER AMBULANCE", "Mary Gentile"),
+            ("4444444444", "AMERICAN LEGION AMBULANCE FUND INC", "Mary Gentile"),
+        ]))
+        self.assertEqual(edges, [])
+
+    def test_a_municipal_cluster_is_refused_even_at_a_low_ratio(self):
+        """Towns do not own each other. The civil-body guard fires
+        independently of the name-diversity one."""
+        edges = edges_from_officials(self._frame([
+            ("1111111111", "HEBRON VOLUNTEER FIRE DEPARTMENT", "Cathy Carter"),
+            ("2222222222", "HEBRON VOLUNTEER FIRE DEPARTMENT", "Cathy Carter"),
+            ("3333333333", "OLDTOWN VOLUNTEER FIRE COMPANY", "Cathy Carter"),
+            ("4444444444", "FLINTSTONE VOLUNTEER FIRE COMPANY", "Cathy Carter"),
+        ]))
+        self.assertEqual(edges, [])
+
+    def test_a_lone_official_is_not_a_cluster(self):
+        self.assertEqual(edges_from_officials(self._frame([
+            ("1111111111", "SOME AMBULANCE CO", "Jane Roe")])), [])
+
+    def test_a_one_word_official_is_not_a_person(self):
+        """Clustering on "ADMINISTRATOR" would merge a thousand
+        unrelated organizations in a single edge."""
+        self.assertEqual(edges_from_officials(self._frame([
+            ("1111111111", "A AMBULANCE CO", "ADMINISTRATOR"),
+            ("2222222222", "A AMBULANCE CO", "ADMINISTRATOR"),
+        ])), [])
+
+    def test_the_tier_sits_below_every_filing_based_one(self):
+        """It is an inference about corporate control, not a filing."""
+        self.assertGreater(TIER_RANK[TIER_SHARED_OFFICIAL],
+                           TIER_RANK[TIER_PECOS_GROUP])
+        self.assertLess(TIER_RANK[TIER_SHARED_OFFICIAL],
+                        TIER_RANK[TIER_NAME_SYSTEM])
+
+    def test_an_enrolment_stacks_under_its_officer_rather_than_rivalling_it(self):
+        """A PECOS ID identifies one enrolment; the officer identifies the
+        company holding it. Left competing they read as spurious
+        disagreements — on the real data, 114 of them."""
+        frame = self._frame([
+            ("1111111111", "METRO AMBULANCE SERVICES INC", "Timothy Dorn"),
+            ("2222222222", "METRO AMBULANCE SERVICES INC", "Timothy Dorn"),
+            ("3333333333", "AMR OF COLORADO INC", "Timothy Dorn"),
+        ])
+        frame["pecos_group"] = "555"
+        graph = build_parent_graph(npi_frame=frame)
+        res = graph.resolve(node_key(NS_NPI, "1111111111"))
+        self.assertEqual(res.final_parent, node_key(NS_OFFICIAL, "TIMOTHY DORN"))
+        self.assertEqual(res.hops, 2)          # npi -> pecos -> official
+        self.assertIn(node_key(NS_PECOS, "555"), res.path)
+        self.assertEqual(graph.contested(), {})
+
+    def test_a_split_enrolment_is_not_stacked(self):
+        frame = self._frame([
+            ("1111111111", "METRO AMBULANCE SERVICES INC", "Timothy Dorn"),
+            ("2222222222", "METRO AMBULANCE SERVICES INC", "Timothy Dorn"),
+            ("3333333333", "BROWARD AMBULANCE INC", "Brian Tierney"),
+            ("4444444444", "BROWARD AMBULANCE INC", "Brian Tierney"),
+        ])
+        frame["pecos_group"] = "555"
+        graph = build_parent_graph(npi_frame=frame)
+        self.assertTrue(graph.resolve(node_key(NS_PECOS, "555")).is_root)
+
+
+class SharedEinTests(unittest.TestCase):
+    def test_a_shared_ein_is_one_taxpayer(self):
+        """The strongest signal NPPES carries and the simplest: an EIN is
+        one legal entity, not merely a related one."""
+        edges = edges_from_eins(pd.DataFrame([
+            {"npi": "1111111111", "ein": "123456789"},
+            {"npi": "2222222222", "ein": "123456789"},
+        ]))
+        self.assertEqual({e.parent for e in edges},
+                         {node_key(NS_EIN, "123456789")})
+        self.assertEqual({e.tier for e in edges}, {TIER_NPPES_SUBPART})
+
+    def test_withheld_eins_are_not_a_grouping_key(self):
+        """NPPES writes <UNAVAIL> and zero-fills where an EIN is withheld.
+        Clustering on those would merge every provider that declined."""
+        self.assertEqual(edges_from_eins(pd.DataFrame([
+            {"npi": "1111111111", "ein": "<UNAVAIL>"},
+            {"npi": "2222222222", "ein": "<UNAVAIL>"},
+            {"npi": "3333333333", "ein": "000000000"},
+            {"npi": "4444444444", "ein": "000000000"},
+            {"npi": "5555555555", "ein": ""},
+        ])), [])
+
+    def test_a_frame_without_eins_contributes_nothing(self):
+        self.assertEqual(edges_from_eins(pd.DataFrame([{"npi": "1"}])), [])

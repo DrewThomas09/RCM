@@ -64,6 +64,7 @@ import pandas as pd
 from .health_systems import (
     CHAIN_ALIASES, UNMAPPED_ID, get_system, match_system, normalize_name,
 )
+from .nppes_ingest import _CIVIL_BODY_RE
 
 # ── Tiers, strongest first ─────────────────────────────────────────
 #
@@ -89,6 +90,13 @@ TIER_CCN_CHAIN = "ccn_chain"
 TIER_CCN_SYSTEM = "ccn_system"
 #: A name matched against the brand registry, with no CCN behind it.
 TIER_NAME_SYSTEM = "name_system"
+#: Organizations naming the same NPPES authorised official. A corporate
+#: officer signs for every entity their company owns, so this reaches
+#: subsidiaries no name or address match can — but the same shape is
+#: produced by a billing agent or a county EMS coordinator signing for
+#: dozens of unrelated clients, so it is heavily guarded. See
+#: :func:`edges_from_officials`.
+TIER_SHARED_OFFICIAL = "shared_official"
 #: An individual linked to an organization by the derived affiliation
 #: bridge — co-located AND sharing a name token. The weakest tier here,
 #: deliberately: it is the only one that is an inference about a person
@@ -103,6 +111,7 @@ TIER_CONFIDENCE: Dict[str, float] = {
     TIER_NPI_CCN: 0.85,
     TIER_CCN_CHAIN: 0.80,
     TIER_CCN_SYSTEM: 0.75,
+    TIER_SHARED_OFFICIAL: 0.70,
     TIER_NAME_SYSTEM: 0.60,
     TIER_AFFILIATION: 0.50,
 }
@@ -111,8 +120,8 @@ TIER_CONFIDENCE: Dict[str, float] = {
 TIER_RANK: Dict[str, int] = {
     tier: i for i, tier in enumerate((
         TIER_NPPES_SUBPART, TIER_PECOS_GROUP, TIER_CCN_PARENT,
-        TIER_NPI_CCN, TIER_CCN_CHAIN, TIER_CCN_SYSTEM, TIER_NAME_SYSTEM,
-        TIER_AFFILIATION))
+        TIER_NPI_CCN, TIER_CCN_CHAIN, TIER_CCN_SYSTEM, TIER_SHARED_OFFICIAL,
+        TIER_NAME_SYSTEM, TIER_AFFILIATION))
 }
 
 #: The affiliation bridge emits two methods. Only one of them is an
@@ -138,6 +147,8 @@ NS_SYSTEM = "sys"
 NS_CHAIN = "chain"
 NS_PECOS = "pecos"
 NS_ORG = "org"
+NS_OFFICIAL = "official"
+NS_EIN = "ein"
 
 #: Namespaces that identify a *facility*, not an owner. Landing on one
 #: means the walk ran out of ownership data, not that it found a parent.
@@ -590,6 +601,144 @@ def edges_from_affiliations(
     return edges
 
 
+#: A cluster whose distinct legal names divided by its NPIs exceeds this
+#: is not an owner. The ratio is the whole discriminator, and it is
+#: sharp: Global Medical Response's officer signs for 123 NPIs under 21
+#: names (0.17) because one company holds many entities under repeated
+#: names, while a billing agent signs for 98 NPIs under 98 names (1.00)
+#: because every client is a different organization.
+OFFICIAL_MAX_NAME_RATIO = 0.70
+#: …and a cluster that is mostly municipalities is a county or state EMS
+#: coordinator, not an owner. Towns do not own each other.
+OFFICIAL_MAX_CIVIL_SHARE = 0.34
+
+#: Tokens that say nothing about who owns a provider. Stripped before
+#: asking whether a cluster's members share a brand.
+_OFFICIAL_STOP = frozenset({
+    "AMBULANCE", "SERVICE", "SERVICES", "INC", "LLC", "EMS", "MEDICAL",
+    "INCORPORATED", "CORPORATION", "CORP", "COMPANY", "THE", "OF", "AND",
+    "VOLUNTEER", "FIRE", "DEPARTMENT", "DISTRICT", "COUNTY", "CITY", "TOWN",
+    "RESCUE", "SQUAD", "LTD", "EMERGENCY", "HEALTH", "CARE", "CENTER",
+})
+
+
+def _official_key(name: Any) -> str:
+    """A person's name, normalised enough to cluster on.
+
+    Two words minimum. A single token is a title or a placeholder, and
+    clustering on "ADMINISTRATOR" would merge a thousand unrelated
+    organizations in one edge.
+    """
+    text = "".join(c if c.isalpha() or c.isspace() else " "
+                   for c in str(name or "").upper())
+    parts = [p for p in text.split() if len(p) > 1]
+    return " ".join(parts) if len(parts) >= 2 else ""
+
+
+def edges_from_officials(
+    frame: pd.DataFrame,
+    *,
+    max_name_ratio: float = OFFICIAL_MAX_NAME_RATIO,
+    max_civil_share: float = OFFICIAL_MAX_CIVIL_SHARE,
+) -> List[ParentEdge]:
+    """Organizations sharing an NPPES authorised official.
+
+    This is the signal that reaches subsidiaries nothing else does. A
+    corporate officer signs the filing for every entity their company
+    owns, so Global Medical Response's officer connects Eagle Air Med,
+    Air Evac EMS and Gold Cross Ambulance — three names with no shared
+    token, no shared address, and no shared chain field.
+
+    It is also the signal most likely to invent a conglomerate, because
+    the identical shape is produced by someone who is not an owner at
+    all: a billing agent, or a county EMS coordinator listed as
+    authorised official for every volunteer squad in the county. Taking
+    the whole cluster would merge 98 unrelated town ambulance services
+    into one imaginary operator.
+
+    Two guards separate them, and on this data they agree on every
+    cluster:
+
+    **Name diversity.** Distinct legal names divided by NPIs. One
+    company holding many entities repeats its names — GMR's officer,
+    123 NPIs across 21 names, scores 0.17. An agent's clients are all
+    different organizations, so the ratio pins at 1.00. Above
+    ``max_name_ratio`` the cluster is rejected.
+
+    **Civil bodies.** A cluster that is mostly towns, counties and
+    volunteer fire departments is a public-sector coordinator.
+    Municipalities do not own each other, and the existing civil-body
+    pattern already recognises them.
+
+    Both are deliberately strict. They reject some genuine clusters —
+    an officer at 0.89 with no civil bodies is probably real — and that
+    is the trade this crosswalk makes everywhere: a wrong parent is
+    worse than a missing one, because nobody audits a mapping that
+    looks complete.
+    """
+    if frame.empty or "auth_official" not in frame.columns:
+        return []
+    name_column = "legal_name" if "legal_name" in frame.columns else "name"
+    if name_column not in frame.columns:
+        return []
+
+    clusters: Dict[str, List[Tuple[str, str]]] = {}
+    for npi, official, legal in zip(
+            frame["npi"], frame["auth_official"], frame[name_column],
+            strict=True):
+        key = _official_key(official)
+        node = node_key(NS_NPI, npi)
+        if key and node:
+            clusters.setdefault(key, []).append((node, str(legal or "")))
+
+    edges: List[ParentEdge] = []
+    for key, members in clusters.items():
+        if len(members) < 2:
+            continue
+        names = {normalize_name(name) for _, name in members if name}
+        if not names:
+            continue
+        ratio = len(names) / len(members)
+        civil = sum(bool(_CIVIL_BODY_RE.search(n)) for n in names) / len(names)
+        if ratio > max_name_ratio or civil > max_civil_share:
+            continue
+        parent = node_key(NS_OFFICIAL, key)
+        evidence = (f"authorised official {key}: {len(members)} NPIs under "
+                    f"{len(names)} names")
+        for node, _name in members:
+            edges.append(ParentEdge(node, parent, TIER_SHARED_OFFICIAL,
+                                    evidence))
+    return edges
+
+
+def edges_from_eins(frame: pd.DataFrame) -> List[ParentEdge]:
+    """Organizations sharing an Employer Identification Number.
+
+    The strongest ownership signal NPPES carries and the simplest: an
+    EIN is one taxpayer. Two NPIs filing under the same EIN are the same
+    legal entity, not merely related ones — no inference involved.
+
+    Empty in this build, because EIN reaches us only through the full
+    dissemination file, which the ingest reads and the network does not
+    reach. Wired anyway: it costs nothing and it is the first thing that
+    should fire the day the real file lands.
+    """
+    if frame.empty or "ein" not in frame.columns:
+        return []
+    edges: List[ParentEdge] = []
+    for npi, ein in zip(frame["npi"], frame["ein"], strict=True):
+        node = node_key(NS_NPI, npi)
+        # NPPES writes <UNAVAIL> and zero-fills where an EIN is withheld.
+        text = str(ein or "").strip()
+        if not node or not text or set(text) <= {"0"} or "UNAVAIL" in text.upper():
+            continue
+        parent = node_key(NS_EIN, text)
+        if parent:
+            edges.append(ParentEdge(node, parent, TIER_NPPES_SUBPART,
+                                    f"shared EIN {text}"))
+    return edges
+
+
 def load_affiliations(db_path: Any) -> pd.DataFrame:
     """Read ``bridge_provider_affiliation`` from an NPPES connector store.
 
@@ -645,6 +794,8 @@ def build_parent_graph(
         _collect_states(states, crosswalk, NS_CHAIN, "chain_name")
     if npi_frame is not None and not npi_frame.empty:
         graph.add_edges(edges_from_npi_frame(npi_frame))
+        graph.add_edges(edges_from_officials(npi_frame))
+        graph.add_edges(edges_from_eins(npi_frame))
         _collect_states(states, npi_frame, NS_ORG, "parent_org_lbn")
     if affiliations is not None and not affiliations.empty:
         graph.add_edges(edges_from_affiliations(affiliations))
@@ -676,7 +827,13 @@ def _collect_states(into: Dict[str, List[str]], frame: pd.DataFrame,
 
 
 def _lift_groups_to_systems(graph: ParentGraph) -> int:
-    """Give a PECOS group the brand its own members carry.
+    """Give a grouping node the brand its own members carry.
+
+    Runs over every grouping namespace — PECOS enrolments, shared
+    authorised officials, shared EINs. This is where the cluster
+    signals pay off: an unbranded subsidiary that shares an officer
+    with a branded sibling reaches the parent through the cluster,
+    which no name or address match could have done for it.
 
     A PECOS Associate Control ID outranks a name match, so an NPI that
     could be recognised by name stops at ``pecos:12345`` instead — CMS's
@@ -692,8 +849,9 @@ def _lift_groups_to_systems(graph: ParentGraph) -> int:
     up in ``contested`` if anything else disagrees.
     """
     lifted = 0
+    prefixes = tuple(f"{ns}:" for ns in (NS_PECOS, NS_OFFICIAL, NS_EIN))
     for node in sorted(graph.nodes):
-        if not node.startswith(f"{NS_PECOS}:"):
+        if not node.startswith(prefixes):
             continue
         systems = set()
         evidence = ""
@@ -705,7 +863,44 @@ def _lift_groups_to_systems(graph: ParentGraph) -> int:
         if len(systems) == 1:
             lifted += graph.add_edge(node, systems.pop(), TIER_NAME_SYSTEM,
                                      f"group member {evidence}".strip())
+    lifted += _stack_enrolments_under_officials(graph)
     return lifted
+
+
+def _stack_enrolments_under_officials(graph: ParentGraph) -> int:
+    """Put a PECOS enrolment *under* its corporate officer, not beside it.
+
+    Both signals fire on the same NPIs and they are not rivals: a PECOS
+    Associate Control ID identifies one enrolment, while the officer who
+    signs for it identifies the company that holds it. An operator with
+    forty enrolments has forty PECOS IDs and one officer.
+
+    Left as competing claims on each NPI, that read as 114 ownership
+    disagreements on this data — every one of them spurious, because
+    both answers were right about different levels. Linking the
+    enrolment node to the official node makes it the hierarchy it
+    actually is: ``npi → pecos:3476565987 → official:BRIAN TIERNEY``.
+    The enrolment stays visible as an intermediate rather than being
+    flattened away, which is what makes the chain auditable.
+
+    Unanimity again: an enrolment whose members name two officers is
+    not stacked, because the thing that would be stacked is ambiguous.
+    """
+    stacked = 0
+    for node in sorted(graph.nodes):
+        if not node.startswith(f"{NS_PECOS}:"):
+            continue
+        officials = {
+            claim.parent
+            for child in graph.children_of(node)
+            for claim in graph.claims_for(child)
+            if claim.tier == TIER_SHARED_OFFICIAL
+        }
+        if len(officials) == 1:
+            stacked += graph.add_edge(
+                node, officials.pop(), TIER_SHARED_OFFICIAL,
+                "every NPI in this enrolment names the same official")
+    return stacked
 
 
 RESOLUTION_COLUMNS: Tuple[str, ...] = (
