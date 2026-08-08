@@ -192,6 +192,11 @@ def _bundled_npi_frame() -> pd.DataFrame:
         "cbsa_type": frame["cbsa_type"].astype(str),
         "pecos_group": frame["pecos_group"].astype(str),
         "system_id": frame["system_id"].astype(str),
+        # Carried for the ownership graph, not for the master file's
+        # columns: the authorised official is how an unbranded
+        # subsidiary reaches the parent its sibling is branded with.
+        "auth_official": frame.get(
+            "auth_official", pd.Series([""] * len(frame))).astype(str),
     })
     for missing in (c for c in _DB_COLUMNS if c not in out.columns):
         out[missing] = ""

@@ -90,6 +90,16 @@ class NpiRecord:
     #: enrolled organization. Empty when the NPI is not in the PECOS file.
     pecos_group: str
     provider_type: str
+    #: The person NPPES lists as authorised to file for the
+    #: organization. Two organizations naming the same official are
+    #: often commonly controlled — and often not, so see
+    #: :func:`parent_resolution.edges_from_officials` for the guards.
+    auth_official: str = ""
+    auth_official_title: str = ""
+    #: Corporate mailing address. Distinct from the practice location:
+    #: care happens at one, the corporate mail goes to the other.
+    mailing_city: str = ""
+    mailing_state: str = ""
 
     @property
     def dba(self) -> str:
@@ -160,6 +170,11 @@ def load_npi_registry() -> Dict[str, NpiRecord]:
             status=str(extra.get("status") or "").strip(),
             pecos_group=str(enrolled.get("PECOS_ASCT_CNTL_ID") or "").strip(),
             provider_type=str(enrolled.get("PROVIDER_TYPE_DESC") or "").strip(),
+            auth_official=str(extra.get("auth_official") or "").strip(),
+            auth_official_title=str(
+                extra.get("auth_official_title") or "").strip(),
+            mailing_city=str(extra.get("mailing_city") or "").strip(),
+            mailing_state=str(extra.get("mailing_state") or "").strip().upper(),
         )
     return out
 
@@ -168,6 +183,7 @@ NPI_COLUMNS: Tuple[str, ...] = (
     "npi", "legal_name", "dba", "dba_count", "city", "state", "zip5",
     "taxonomy_code", "enumeration_date", "status",
     "pecos_group", "provider_type",
+    "auth_official", "auth_official_title", "mailing_city", "mailing_state",
     "system_id", "system_name", "system_match",
     "county_fips", "cbsa_code", "cbsa_title", "cbsa_type",
 )
@@ -209,6 +225,10 @@ def _assign() -> pd.DataFrame:
             "status": rec.status,
             "pecos_group": rec.pecos_group,
             "provider_type": rec.provider_type,
+            "auth_official": rec.auth_official,
+            "auth_official_title": rec.auth_official_title,
+            "mailing_city": rec.mailing_city,
+            "mailing_state": rec.mailing_state,
             "system_id": sysdef.system_id if sysdef else UNMAPPED_ID,
             "system_name": sysdef.name if sysdef else UNMAPPED_NAME,
             "system_match": basis if sysdef else "",
