@@ -917,6 +917,97 @@ PARENT_COLUMNS: Tuple[str, ...] = (
 )
 
 
+#: A grouping node is labelled from its members' most common name. Below
+#: this share the plurality is too thin to stand as the cluster's name —
+#: one officer's 66 NPIs have a top name appearing 7 times, and calling
+#: that cluster "American Medical Response" would be asserting a parent
+#: the data does not support.
+CLUSTER_LABEL_MIN_SUPPORT = 0.40
+
+
+@dataclass(frozen=True)
+class ClusterLabel:
+    """What a grouping node should be called, and how sure that is."""
+
+    node: str
+    label: str
+    support: float
+    members: int
+    distinct_names: int
+
+    @property
+    def is_confident(self) -> bool:
+        return bool(self.label) and self.support >= CLUSTER_LABEL_MIN_SUPPORT
+
+
+def cluster_labels(graph: ParentGraph, names: Dict[str, str],
+                   *, namespaces: Iterable[str] = (NS_PECOS, NS_OFFICIAL,
+                                                   NS_EIN),
+                   ) -> Dict[str, ClusterLabel]:
+    """Name each grouping node from the organizations inside it.
+
+    Nine in ten resolved NPIs in this build land on a node with no
+    readable name — ``pecos:2264404516``, ``official:ERIC THOMAS``. Both
+    are correct answers to "which cluster" and useless answers to "who
+    owns this", which is the question being asked.
+
+    The members know. A PECOS enrolment holding 123 ambulance NPIs has a
+    dominant filed name, and that name is what a partner recognises.
+    So the label is the most common normalised legal name among the
+    cluster's members, carried with the share of members that
+    filed it.
+
+    That share is not decoration. It is the difference between a cluster
+    whose members overwhelmingly file one name — a real operator — and
+    one whose top name appears in a tenth of them, where naming the
+    cluster after it would invent a parent. Below
+    ``CLUSTER_LABEL_MIN_SUPPORT`` the label is still returned but
+    ``is_confident`` is False, and callers render the identifier
+    instead.
+
+    The label is the dominant *brand*, not necessarily the corporate
+    parent: Eric Thomas's cluster labels as AIR EVAC EMS at 75 of 123,
+    while the entity above it is Global Medical Response. That is the
+    honest ceiling of what members can tell you about themselves, and it
+    is a great deal more use than a person's name.
+
+    Members are the whole subtree, not the direct children. An officer
+    node sits above PECOS enrolments rather than above NPIs, so counting
+    only its immediate children would leave every stacked officer
+    cluster — the ones most in need of a name — unnamed.
+    """
+    wanted = frozenset(namespaces)
+    out: Dict[str, ClusterLabel] = {}
+    for node in graph.nodes:
+        if node.partition(":")[0] not in wanted:
+            continue
+        counts: Dict[str, int] = {}
+        total = 0
+        # Iterative, with a seen set: the graph tolerates cycles and a
+        # recursive walk down one would not come back.
+        seen = {node}
+        stack = [node]
+        while stack:
+            for child in graph.children_of(stack.pop()):
+                if child in seen:
+                    continue
+                seen.add(child)
+                stack.append(child)
+                filed = normalize_name(names.get(child, ""))
+                if not filed:
+                    continue
+                counts[filed] = counts.get(filed, 0) + 1
+                total += 1
+        if not total:
+            continue
+        # Ties break on the name so a rebuild does not rename a cluster.
+        top = min(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+        out[node] = ClusterLabel(
+            node=node, label=top[0], support=top[1] / total,
+            members=total, distinct_names=len(counts))
+    return out
+
+
 def _parent_display_name(final_parent: str) -> str:
     """A partner-readable name for a resolved parent.
 

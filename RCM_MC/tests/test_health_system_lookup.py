@@ -1207,6 +1207,61 @@ class NpiLookupPanelTests(unittest.TestCase):
         html = render_health_system_lookup({"npi": "ACADIAN"})
         self.assertIn("no employer field", html)
 
+    def test_a_cluster_parent_is_shown_by_name_not_only_by_number(self) -> None:
+        """``pecos:2264404516`` is the honest answer to "which cluster"
+        and a useless one to "who owns this", which is what the partner
+        typed the NPI to find out."""
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("ACADIAN AMBULANCE SERVICE", html)
+        self.assertIn("of members", html)
+
+    def test_the_identifier_stays_under_the_name(self) -> None:
+        """A label is a plurality of member filings; the identifier is
+        what was actually resolved. Replacing one with the other would
+        make an inference look like a lookup."""
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("pecos:", html)
+        self.assertIn('class="hsl-sub"', html)
+
+    def test_the_legend_says_what_the_share_means(self) -> None:
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("how many members filed that name", html)
+
+
+class ParentCellTests(unittest.TestCase):
+    """The cell that renders a resolved parent."""
+
+    @staticmethod
+    def _cell(*args):
+        from rcm_mc.ui.data_public.health_system_lookup_page import (
+            _parent_cell)
+        return _parent_cell(*args)
+
+    def test_no_parent_renders_as_a_dash_not_an_empty_cell(self) -> None:
+        self.assertEqual(self._cell("", "", ""), "—")
+
+    def test_an_unlabelled_parent_still_shows_its_identifier(self) -> None:
+        """The abstaining clusters are the ones where members file too
+        many names to pick one. They must not render blank — the parent
+        was resolved, only the name was withheld."""
+        self.assertEqual(self._cell("official:BRIAN TIERNEY", "", ""),
+                         "official:BRIAN TIERNEY")
+
+    def test_a_labelled_parent_leads_with_the_name(self) -> None:
+        out = self._cell("pecos:555", "METRO AMBULANCE SERVICES INC", 1.0)
+        self.assertTrue(out.startswith("METRO AMBULANCE SERVICES INC"))
+        self.assertIn("pecos:555", out)
+        self.assertIn("100% of members", out)
+
+    def test_an_unreadable_support_drops_the_share_not_the_name(self) -> None:
+        out = self._cell("pecos:555", "METRO AMBULANCE INC", "")
+        self.assertIn("METRO AMBULANCE INC", out)
+        self.assertNotIn("of members", out)
+
+    def test_a_hostile_label_cannot_close_the_cell(self) -> None:
+        out = self._cell("pecos:555", '<script>alert(1)</script>', 1.0)
+        self.assertNotIn("<script>", out)
+
 
 class OwnershipPanelTests(unittest.TestCase):
     """The ownership graph on the page — how the answers were reached,

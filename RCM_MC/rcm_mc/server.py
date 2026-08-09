@@ -5190,6 +5190,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             _par = str(_qp.get("parent", "")).strip()[:60]
             if _par:
                 _frame = _frame[_frame["final_parent"].astype(str) == _par]
+            # Most parents are a cluster identifier CMS never named, so a
+            # caller who knows the operator by name has nothing to put in
+            # `parent=`. This filters on the name the cluster's own
+            # members file — a substring, because the filed name carries
+            # suffixes ("INC", "LLC") nobody types.
+            _pnm = str(_qp.get("parent_name", "")).strip()[:80]
+            if _pnm:
+                _frame = _frame[
+                    _frame["final_parent_label"].astype(str).str.contains(
+                        _pnm, case=False, regex=False)]
             # parented=1 drops the rows with no owner, which is what a
             # caller building a portfolio roster actually wants. It is
             # opt-in because a crosswalk that silently omits the

@@ -8227,14 +8227,16 @@ _MANUAL: List[PageContext] = [
             "Which NPIs belong to this health system?",
             "Why does this physician have no parent?",
         ],
-        inputs=["state, category, status, parent and parented filters."],
-        outputs=["45 columns: identity and credential, status with "
+        inputs=["state, category, status, parent, parent_name and "
+                "parented filters."],
+        outputs=["47 columns: identity and credential, status with "
                  "deactivation and reactivation dates, all taxonomy codes "
                  "with the derived NUCC grouping and PE category, address "
                  "through CBSA, the certified CCN and its class, NPPES's "
                  "own subpart and parent-organization fields, and the "
-                 "resolved final parent with its tier, confidence, hop "
-                 "count and full provenance chain."],
+                 "resolved final parent with its readable name and the "
+                 "share of cluster members that filed it, its tier, "
+                 "confidence, hop count and full provenance chain."],
         key_metrics=["20,401 NPIs from the bundled extracts; 99.97% carry a "
                      "provider category; 55.4% of organizations reach a "
                      "named parent."],

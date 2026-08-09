@@ -861,6 +861,32 @@ def _npi_panel(limit: int = 10) -> str:
         'match in a state where the system operates nothing.</div>')
 
 
+def _parent_cell(parent: str, label: str, support: Any) -> str:
+    """The parent's name over the identifier that proves it.
+
+    ``pecos:2264404516`` is the honest answer to "which cluster" and a
+    useless one to "who owns this" — and nine in ten resolved rows land
+    on a cluster identifier rather than a registry system. So the name
+    the cluster's own members file leads, and the identifier stays
+    underneath because it is the key a reviewer joins on.
+
+    The identifier is never dropped in favour of the name. A label is a
+    plurality of member filings; the identifier is the thing that was
+    actually resolved, and hiding it would make an inference look like
+    a lookup.
+    """
+    if not parent:
+        return "—"
+    if not label:
+        return _esc(parent)
+    try:
+        share = f" · {float(support):.0%} of members"
+    except (TypeError, ValueError):
+        share = ""
+    return (f'{_esc(label)}<div class="hsl-sub">{_esc(parent)}'
+            f'{_esc(share)}</div>')
+
+
 def _npi_lookup_panel(query: str) -> str:
     """An NPI in, its owner and the chain of reasoning out.
 
@@ -916,6 +942,9 @@ def _npi_lookup_panel(query: str) -> str:
         parent = str(row.get("final_parent") or "")
         conf = row.get("parent_confidence")
         status = str(row.get("status") or "")
+        parent_cell = _parent_cell(
+            parent, str(row.get("final_parent_label") or ""),
+            row.get("final_parent_label_support"))
         cells = [
             ck_data_cell(_esc(row.get("npi")), mono=True, tone="dim"),
             ck_data_cell(_esc(row.get("legal_name")), weight=600),
@@ -924,7 +953,7 @@ def _npi_lookup_panel(query: str) -> str:
             ck_data_cell(_esc(status), align="center", tone=(
                 "dim" if status == "active" else "acc")),
             ck_data_cell(_esc(row.get("ccn")) or "—", mono=True, tone="dim"),
-            ck_data_cell(_esc(parent) or "—", weight=600 if parent else None,
+            ck_data_cell(parent_cell, weight=600 if parent else None,
                          tone=None if parent else "dim"),
             ck_data_cell(f"{float(conf):.2f}" if conf not in ("", None) else "—",
                          align="right", mono=True),
@@ -936,7 +965,16 @@ def _npi_lookup_panel(query: str) -> str:
              '</table></div>')
     return (header + table +
             f'<div class="hsl-legend">{len(hits):,} NPIs match '
-            f'“{_esc(query)}”. The <strong>Why</strong> column is the whole '
+            f'“{_esc(query)}”. Most parents are a cluster CMS groups but '
+            'does not name — a PECOS enrolment, an authorised official — '
+            'so the <strong>Final parent</strong> column leads with the '
+            'name the cluster&rsquo;s own members file, and keeps the '
+            'identifier underneath because that is the key you join on. '
+            'The share beside it is how many members filed that name: a '
+            'cluster where they overwhelmingly agree is an operator, one '
+            'where they do not is an enrolment, and below 40% the name is '
+            'withheld rather than asserted. The <strong>Why</strong> '
+            'column is the whole '
             'chain, hop by hop, with the tier that produced each one — a '
             'parent nobody can audit is a parent nobody should trust. A '
             'blank parent on an individual is not a gap: NPPES carries no '
@@ -1023,10 +1061,13 @@ def _ownership_panel(limit: int = 12) -> str:
         '<a class="ck-link" href="/provider-crosswalk.csv?scope=all&amp;'
         'parents=1">/provider-crosswalk.csv?scope=all&amp;parents=1</a>, or '
         'the NPI-keyed spine at <a class="ck-link" '
-        'href="/master-npi-file.csv">/master-npi-file.csv</a> — 45 columns '
+        'href="/master-npi-file.csv">/master-npi-file.csv</a> — 47 columns '
         'of identity, status history, taxonomy, geography and resolved '
-        'parent, filterable by <code>state</code>, <code>category</code>, '
-        '<code>status</code> and <code>parent</code>. '
+        'parent — with the name its members file, so '
+        '<code>?parent_name=Acadian</code> works for the nine parents in '
+        'ten that CMS groups but never names. Filterable by '
+        '<code>state</code>, <code>category</code>, <code>status</code>, '
+        '<code>parent</code> and <code>parent_name</code>. '
         '<code>rcm-mc data master-file --npi-db npi.db --out national.csv</code> '
         'builds the same file from a full NPPES ingest.</div>')
 
@@ -1196,6 +1237,8 @@ _PAGE_CSS = """
 .hsl-chip-on{background:var(--sc-teal,#155752);color:#fff}
 .hsl-legend{font-family:JetBrains Mono,monospace;font-size:10px;
   color:var(--sc-text-faint,#7d7566);margin-top:6px;line-height:1.5}
+.hsl-sub{font-family:JetBrains Mono,monospace;font-size:9px;font-weight:400;
+  color:var(--sc-text-faint,#7d7566);margin-top:2px}
 .hsl-roster{background:var(--sc-panel,#faf7f1);border:1px solid var(--sc-border,#ded6c8);
   border-left:3px solid var(--sc-teal,#155752);padding:14px 16px;margin-bottom:16px}
 .hsl-roster-head{display:flex;justify-content:space-between;align-items:flex-start;
