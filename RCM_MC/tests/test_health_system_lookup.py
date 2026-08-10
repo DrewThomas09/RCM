@@ -1504,6 +1504,59 @@ class RegistryPrecisionTests(unittest.TestCase):
             with self.subTest(system=system_id):
                 self.assertEqual(get_system(system_id).states, expected)
 
+    def test_two_systems_sharing_a_name_in_one_state_are_kept_apart(self):
+        """Missouri has two unrelated Saint Luke's and Florida has three
+        unrelated Baptists. A state scope cannot separate them, so the
+        overrides do — and the check is that each estate is in its own
+        metro rather than that the counts happen to be right."""
+        stl = self.mapped[self.mapped["system_id"].astype(str) == "st_lukes_stl"]
+        self.assertEqual(set(stl["city"].astype(str).str.upper()),
+                         {"CHESTERFIELD", "ST. LOUIS"})
+        kc = self.mapped[self.mapped["system_id"].astype(str) == "st_lukes_kc"]
+        self.assertNotIn("CHESTERFIELD", set(kc["city"].astype(str).str.upper()))
+
+        jax = self.mapped[self.mapped["system_id"].astype(str) == "baptist_jax"]
+        self.assertTrue(all(c.upper().startswith(("JACKSONVILLE", "FERNANDINA"))
+                            for c in jax["city"].astype(str)))
+        pens = self.mapped[self.mapped["system_id"].astype(str)
+                           == "baptist_pensacola"]
+        self.assertEqual(set(pens["city"].astype(str).str.upper()), {"PENSACOLA"})
+        miami = self.mapped[self.mapped["system_id"].astype(str) == "baptist_fl"]
+        self.assertEqual(set(miami["city"].astype(str).str.upper()), {"MIAMI"})
+
+    def test_a_unit_and_its_parent_hospital_agree(self):
+        """A T in the third position of a CCN is CMS stating that this
+        unit is part of that hospital. Two different owners on the two
+        ends is the register contradicting itself, and in every case it
+        was ownership staleness: one of the two names had not caught up
+        with an acquisition.
+
+        Five existed. Each was read individually rather than fixed by a
+        blanket "unit inherits parent" rule, because the stale name is
+        sometimes on the unit — MERCY HOSPITAL PITTSBURG under a parent
+        already reading ASCENSION VIA CHRISTI — and sometimes on the
+        parent, where MERCY REGIONAL HEALTH CENTER sits above a unit
+        already reading VIA CHRISTI MANHATTAN. A blanket rule would have
+        fixed four and broken the fifth.
+        """
+        from rcm_mc.data.health_systems import UNMAPPED_ID
+
+        indexed = self.mapped.set_index(self.mapped["ccn"].astype(str))
+        by_ccn = indexed["system_id"].astype(str)
+        split = {}
+        for ccn, parent in zip(self.mapped["ccn"].astype(str),
+                               self.mapped["parent_ccn"].astype(str)):
+            if not parent or parent not in by_ccn.index:
+                continue
+            unit_system, parent_system = by_ccn.loc[ccn], by_ccn.loc[parent]
+            if UNMAPPED_ID in (unit_system, parent_system):
+                continue
+            if unit_system != parent_system:
+                split[ccn] = (unit_system, parent, parent_system)
+        self.assertEqual(split, {},
+                         f"Unit and parent hospital owned by different "
+                         f"systems: {split}")
+
     def test_a_real_out_of_state_facility_is_kept(self):
         """Marshfield genuinely runs Dickinson in Iron Mountain,
         Michigan. The scope had to admit MI while dropping a nursing

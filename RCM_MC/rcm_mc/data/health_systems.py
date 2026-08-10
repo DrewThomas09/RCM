@@ -885,8 +885,22 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "st_lukes_kc", "Saint Luke's Health System (Kansas City)", KIND_NONPROFIT, FOCUS_ACUTE, "MO",
+        # Missouri has two unrelated Saint Luke's and the state scope
+        # cannot separate them — Kansas City's and the independent one
+        # in Chesterfield, three hundred miles east. The St. Louis
+        # estate goes through CCN_OVERRIDES below.
         patterns=("^SAINT LUKES",),
         states=("MO", "KS"),
+    ),
+    SystemDef(
+        "st_lukes_stl", "St. Luke's Hospital (St. Louis)", KIND_NONPROFIT,
+        FOCUS_ACUTE, "MO",
+        # Unreachable by pattern: its flagship files as "ST. LUKES
+        # HOSPITAL" and Kansas City's as "SAINT LUKES HOSPITAL OF
+        # KANSAS CITY", which normalize to the same prefix in the same
+        # state.
+        patterns=(),
+        states=("MO",),
     ),
     SystemDef(
         "bjc", "BJC HealthCare", KIND_ACADEMIC, FOCUS_ACUTE, "MO",
@@ -2269,6 +2283,30 @@ CHAIN_ALIASES: Dict[str, str] = {
 
 CCN_OVERRIDES: Dict[str, str] = {
     # Identical names, different organizations (see case 1).
+    # Two unrelated Saint Luke's in Missouri. These five are the
+    # independent St. Louis system — Chesterfield and Des Peres are
+    # St. Louis suburbs, not Kansas City ones.
+    "260179": "st_lukes_stl",            # ST. LUKES HOSPITAL, Chesterfield
+    "263030": "st_lukes_stl",            # ST. LUKES REHAB HOSPITAL
+    "267561": "st_lukes_stl",            # ST LUKE'S HOME HEALTH SERVICES
+    "261627": "st_lukes_stl",            # ST LUKE'S HOSPICE SERVICES
+    "260176": "st_lukes_stl",            # ST. LUKES DES PERES HOSPITAL
+    # A hospital and its own rehab unit, booked to two different
+    # companies. A T in the third position of a CCN is CMS saying this
+    # unit is part of that hospital, so a disagreement here is the
+    # register contradicting itself and one of the two names is simply
+    # out of date. Each was read individually — the stale name is
+    # sometimes on the unit and sometimes on the parent.
+    "17T006": "ascension",               # unit still says MERCY; parent is
+                                         # ASCENSION VIA CHRISTI PITTSBURG
+    "170142": "ascension",               # parent still says MERCY REGIONAL;
+                                         # its unit is VIA CHRISTI MANHATTAN
+    "36T070": "cleveland_clinic",        # parent is CCF MERCY MEDICAL CENTER
+    "44T152": "regional_one",            # parent is REGIONAL ONE HEALTH, and
+                                         # the unit is Government-owned while
+                                         # Ernest Health is for-profit
+    "45T002": "tenet",                   # parent is THE HOSPITALS OF
+                                         # PROVIDENCE, Tenet's El Paso brand
     "100093": "baptist_pensacola",       # BAPTIST HOSPITAL, Pensacola
     "107006": "baptist_pensacola",       # BAPTIST HOME HEALTH CARE, Pensacola
     "450358": "houston_methodist",       # THE METHODIST HOSPITAL, Houston
