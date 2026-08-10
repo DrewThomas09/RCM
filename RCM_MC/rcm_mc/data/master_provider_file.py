@@ -609,6 +609,27 @@ def find_npis(query: Any, *, limit: int = 40,
     return hits.head(max(1, int(limit)))
 
 
+def _rollup_split(frame: pd.DataFrame) -> Dict[str, Any]:
+    """Resolved-but-alone against genuinely aggregated.
+
+    Split out rather than folded in, because "11,477 of 20,401 resolve"
+    reads as a roll-up and is not one. A reader sizing an operator wants
+    the second number.
+    """
+    resolved = frame[frame["final_parent"].astype(str).ne("")]
+    if resolved.empty:
+        return {"npis_sharing_a_parent": 0, "npis_alone_under_a_parent": 0,
+                "parents_holding_more_than_one_npi": 0}
+    sizes = resolved.groupby("final_parent").size()
+    shared = sizes[sizes > 1]
+    together = int(shared.sum())
+    return {
+        "npis_sharing_a_parent": together,
+        "npis_alone_under_a_parent": len(resolved) - together,
+        "parents_holding_more_than_one_npi": int(len(shared)),
+    }
+
+
 def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
     """What the built file actually covers — measured, never estimated."""
     if frame.empty:
@@ -629,6 +650,14 @@ def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
         "organizations_with_a_parent": len(with_parent),
         "organization_parent_pct": (len(with_parent) / len(orgs) * 100.0
                                     if len(orgs) else 0.0),
+        # The number above says "resolved". It does not say "rolled up",
+        # and the gap between them is the whole story: 9,915 of the
+        # 11,477 resolved NPIs are alone under a node that exists only
+        # for them — a PECOS enrolment with one member, an EIN nobody
+        # else shares. That is a correct resolution and it aggregates
+        # nothing. Only 1,562 sit under a parent another NPI also
+        # reaches, which is what a partner means by a roll-up.
+        **_rollup_split(frame),
         "linked_to_ccn": int(frame["ccn"].astype(str).ne("").sum()),
         "with_a_category": int(frame["taxonomy_category"].astype(str).ne("").sum()),
         "with_a_cbsa": int(frame["cbsa_code"].astype(str).ne("").sum()),

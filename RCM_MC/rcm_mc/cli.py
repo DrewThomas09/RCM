@@ -1491,6 +1491,12 @@ def data_main(argv: list, prog: str = "rcm-mc data") -> int:
         sys.stdout.write("Master NPI crosswalk\n")
         for key in ("path", "npis", "rows", "organizations", "individuals",
                     "organizations_with_a_parent", "with_parent",
+                    # Printed right beside the line above, because that
+                    # one says "resolved" and reads as "rolled up". Most
+                    # resolved NPIs sit alone under a node minted for
+                    # them; the shared count is the aggregation.
+                    "npis_sharing_a_parent", "npis_alone_under_a_parent",
+                    "parents_holding_more_than_one_npi",
                     "linked_to_ccn", "with_ccn", "contested",
                     "disagreements", "disagreements_path"):
             if key in report:

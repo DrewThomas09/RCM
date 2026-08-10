@@ -778,3 +778,60 @@ class RealParentLabelTests(unittest.TestCase):
             self.resolved["final_parent_label"].astype(str) == ""]
         self.assertLess(len(blank), len(self.resolved) * 0.01)
         self.assertEqual(set(blank["final_parent_type"]) - {"official"}, set())
+
+
+class RollupHonestyTests(unittest.TestCase):
+    """"Resolved" and "rolled up" are different claims, and the file was
+    only reporting the first."""
+
+    def test_a_singleton_parent_is_not_a_rollup(self):
+        """A PECOS enrolment with one member resolves that NPI correctly
+        and aggregates nothing. Counting it as coverage is how 11,477
+        came to stand for a roll-up that is really 1,562."""
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_pecos_frame())
+        cov = master_file_coverage(frame)
+        self.assertEqual(cov["npis_sharing_a_parent"]
+                         + cov["npis_alone_under_a_parent"],
+                         cov["organizations_with_a_parent"])
+        self.assertGreater(cov["parents_holding_more_than_one_npi"], 0)
+
+    def test_the_two_numbers_are_reported_side_by_side(self):
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_npi_frame())
+        cov = master_file_coverage(frame)
+        for key in ("organizations_with_a_parent", "npis_sharing_a_parent",
+                    "npis_alone_under_a_parent",
+                    "parents_holding_more_than_one_npi"):
+            self.assertIn(key, cov)
+
+    def test_an_empty_frame_reports_zeros_not_an_exception(self):
+        cov = master_file_coverage(pd.DataFrame(columns=list(MASTER_COLUMNS)))
+        self.assertEqual(cov, {"npis": 0})
+
+
+class RealRollupTests(unittest.TestCase):
+    """Against the bundled build."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.cov = master_file_coverage(build_master_file())
+
+    def test_most_resolved_npis_are_alone_under_their_parent(self):
+        """The finding this reporting exists for. 9,915 of the 11,477
+        resolved sit under a node minted for them alone — a PECOS
+        enrolment with one member, an EIN nobody else shares. Correct
+        resolutions that aggregate nothing."""
+        self.assertGreater(self.cov["npis_alone_under_a_parent"],
+                           self.cov["npis_sharing_a_parent"] * 4)
+
+    def test_the_rollup_number_is_the_smaller_one(self):
+        self.assertLess(self.cov["npis_sharing_a_parent"],
+                        self.cov["organizations_with_a_parent"])
+        self.assertGreater(self.cov["npis_sharing_a_parent"], 1_000)
+
+    def test_the_parts_reconcile_to_the_whole(self):
+        self.assertEqual(
+            self.cov["npis_sharing_a_parent"]
+            + self.cov["npis_alone_under_a_parent"],
+            self.cov["organizations_with_a_parent"])
