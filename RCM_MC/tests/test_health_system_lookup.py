@@ -341,8 +341,16 @@ class CcnOverrideTests(unittest.TestCase):
     """The escape hatch for facilities a name can never resolve."""
 
     def test_overrides_point_at_real_systems_and_real_facilities(self) -> None:
-        assigned = assign_systems()
-        universe = set(assigned["ccn"].astype(str))
+        """Checked against the whole register, not the hospital slice.
+
+        Overrides used to be honoured only in the acute universe, so a
+        hand assignment on a home health agency silently did nothing.
+        Now that both universes consult the table, an entry is valid if
+        the CCN exists anywhere in the register.
+        """
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        universe = set(get_crosswalk(scope=SCOPE_ALL)["ccn"].astype(str))
         for ccn, system_id in CCN_OVERRIDES.items():
             self.assertIsNotNone(get_system(system_id), f"{ccn} -> {system_id}")
             self.assertIn(ccn, universe, f"{ccn} is not in the universe")
@@ -359,9 +367,26 @@ class CcnOverrideTests(unittest.TestCase):
 
     def test_override_is_visible_as_its_own_match_basis(self) -> None:
         """An asserted assignment must not read like a derived one."""
-        assigned = assign_systems().set_index("ccn")
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        assigned = get_crosswalk(scope=SCOPE_ALL).set_index(
+            get_crosswalk(scope=SCOPE_ALL)["ccn"].astype(str))
         for ccn in CCN_OVERRIDES:
-            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+            self.assertEqual(assigned.loc[ccn, "system_match"],
+                             f"ccn override {ccn}")
+
+    def test_an_override_reaches_a_post_acute_facility(self) -> None:
+        """Baptist Home Health Care in Pensacola belongs to Baptist
+        Health Care, not to Baptist Health South Florida three hundred
+        miles away. Before the post-acute path consulted the table, the
+        override for it did nothing at all."""
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        register = get_crosswalk(scope=SCOPE_ALL)
+        row = register[register["ccn"].astype(str) == "107006"].iloc[0]
+        self.assertEqual(row["provider_class"], "hha")
+        self.assertEqual(row["system_id"], "baptist_pensacola")
+        self.assertEqual(row["system_match"], "ccn override 107006")
 
     def test_truncated_names_are_reachable_only_by_override(self) -> None:
         """HCRIS cuts at ~36 chars: 'Hospital of the University of
@@ -421,7 +446,10 @@ class CmsNameTierTests(unittest.TestCase):
         """Overrides exist because a name — either name — is unusable."""
         assigned = assign_systems().set_index("ccn")
         for ccn in CCN_OVERRIDES:
-            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+            if ccn not in assigned.index:
+                continue          # post-acute; covered in CcnOverrideTests
+            self.assertEqual(assigned.loc[ccn, "system_match"],
+                             f"ccn override {ccn}")
 
     def test_the_tier_pays_for_itself_in_coverage(self) -> None:
         assigned = assign_systems()

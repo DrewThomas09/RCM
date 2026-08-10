@@ -454,7 +454,13 @@ def _system_edges_for_name(graph: ParentGraph, node: str, name: Any,
     # MANAGEMENT SERVICES" never reached atlantic_dms, whose pattern is
     # "^ATLANTIC DMS" — the same operator under two spellings, showing
     # up as an ownership disagreement with itself.
-    alias = CHAIN_ALIASES.get(str(name or "").strip().upper())
+    # normalize_name, not .upper(): the table is keyed in normalized form
+    # ("US RENAL CARE INC") while CMS files the chain with its punctuation
+    # ("US Renal Care, Inc."). Upper-casing alone leaves the comma and the
+    # period in, so four of the largest chains missed the table and this
+    # module disagreed with provider_crosswalk about 658 CCNs — US Renal
+    # Care 404, Dialysis Clinic 242, DSI 8, Scott & White 4.
+    alias = CHAIN_ALIASES.get(normalize_name(name))
     if alias:
         return graph.add_edge(node, node_key(NS_SYSTEM, alias),
                               TIER_NAME_SYSTEM, "CMS chain alias")

@@ -914,7 +914,31 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "baptist_fl", "Baptist Health South Florida", KIND_NONPROFIT, FOCUS_ACUTE, "FL",
+        # Florida has three unrelated Baptist systems and a bare
+        # ^BAPTIST gave all of them to Miami — including Jacksonville's
+        # 980-bed flagship. The other two are registry entries below;
+        # this pattern now only reaches what they do not claim.
         patterns=("^BAPTIST",),
+        states=("FL",),
+    ),
+    SystemDef(
+        "baptist_jax", "Baptist Health (Jacksonville)", KIND_NONPROFIT,
+        FOCUS_ACUTE, "FL",
+        # Wins on specificity over baptist_fl's bare ^BAPTIST. Its
+        # Pensacola namesakes are identical strings and go through
+        # CCN_OVERRIDES instead.
+        patterns=("FL:^BAPTIST MEDICAL CENTER",
+                  "FL:^BAPTIST MEDICAL CTR",
+                  "FL:^BAPTIST HOME HEALTH CARE BY BAYADA"),
+        states=("FL",),
+    ),
+    SystemDef(
+        "baptist_pensacola", "Baptist Health Care (Pensacola)", KIND_NONPROFIT,
+        FOCUS_ACUTE, "FL",
+        # No pattern can reach these: BAPTIST HOSPITAL in Pensacola and
+        # BAPTIST HOSPITAL in Miami are the same string in the same
+        # state, belonging to two different companies.
+        patterns=(),
         states=("FL",),
     ),
     SystemDef(
@@ -1106,7 +1130,14 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "dignity_ca", "Dignity Health (CommonSpirit CA)", KIND_CATHOLIC, FOCUS_ACUTE, "CA",
-        patterns=("^DIGNITY", "^MERCY GENERAL", "^MERCY SAN JUAN", "^SAINT JOSEPHS MEDICAL CENTER"),
+        # No bare ^DIGNITY. Every one of the eight facilities it matched
+        # was an unrelated agency using the English word — DIGNITY HOME
+        # HEALTH, DIGNITY HOSPICE CARE, DIGNITY CARE HOSPICE — and
+        # CommonSpirit's own ^DIGNITY HEALTH already reaches the real
+        # ones. A brand that is also a common word needs the whole
+        # brand, which is the same lesson as ^TRINITY.
+        patterns=("^MERCY GENERAL", "^MERCY SAN JUAN",
+                  "^SAINT JOSEPHS MEDICAL CENTER"),
         states=("CA", "NV"),
     ),
     SystemDef(
@@ -2238,6 +2269,8 @@ CHAIN_ALIASES: Dict[str, str] = {
 
 CCN_OVERRIDES: Dict[str, str] = {
     # Identical names, different organizations (see case 1).
+    "100093": "baptist_pensacola",       # BAPTIST HOSPITAL, Pensacola
+    "107006": "baptist_pensacola",       # BAPTIST HOME HEALTH CARE, Pensacola
     "450358": "houston_methodist",       # THE METHODIST HOSPITAL, Houston
     "450388": "methodist_san_antonio",   # METHODIST HOSPITAL, San Antonio
     # Truncated / abbreviated beyond pattern reach (see case 2).
@@ -2780,10 +2813,22 @@ def _assign_post_acute_universe(df: pd.DataFrame) -> pd.DataFrame:
         return pd.Series([""] * len(out), index=out.index, dtype=object)
 
     names, states, chains = _col("name"), _col("state"), _col("chain_name")
+    ccns = _col("ccn")
 
     resolved: List[Optional[SystemDef]] = []
     bases: List[str] = []
-    for name, state, chain in zip(names, states, chains, strict=True):
+    for ccn, name, state, chain in zip(ccns, names, states, chains,
+                                       strict=True):
+        # An override outranks everything here, as it does in the acute
+        # universe. It was missing from this path, so a hand assignment
+        # on a home health agency or nursing home silently did nothing —
+        # Baptist Home Health Care in Pensacola stayed booked to Baptist
+        # Health South Florida however many times you wrote it down.
+        override = CCN_OVERRIDES.get(ccn)
+        if override and override in _SYSTEM_BY_ID:
+            resolved.append(_SYSTEM_BY_ID[override])
+            bases.append(f"ccn override {ccn}")
+            continue
         alias = CHAIN_ALIASES.get(normalize_name(chain)) if chain else None
         sysdef = _SYSTEM_BY_ID.get(alias) if alias else None
         if sysdef is not None:
