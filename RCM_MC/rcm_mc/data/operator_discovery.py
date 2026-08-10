@@ -31,52 +31,72 @@ trimmed. It is the strictest key available, it costs recall (a chain
 that renames a branch splits in two), and after the prefix-matching
 incidents that is the trade worth making.
 
-Why ownership type is the discriminator
----------------------------------------
-Exact names alone are still not proof. Eight hospitals named MEMORIAL
-HOSPITAL across seven states are eight unrelated hospitals; twenty
-agencies named CARETENDERS across seven states are one company.
+What ownership type does, and what it does not
+----------------------------------------------
+Exact names alone are not proof. Eight hospitals named MEMORIAL HOSPITAL
+across seven states are eight unrelated hospitals; twenty agencies named
+CARETENDERS across seven states are one company.
 
-The thing that separates them is not linguistic, it is structural: **a
-real operator files one ownership structure, because it is one.** Its
-facilities are all proprietary, or all for-profit corporations — the
-same answer everywhere, because the same entity is answering.
-Facilities that merely share a name each file whatever they
-independently are.
+Ownership type separates *those* two, structurally rather than
+linguistically: a real operator files one ownership structure because it
+is one, while facilities that merely share a name each file whatever
+they independently are. MEMORIAL HOSPITAL spans four ownership families
+and is refused; CARETENDERS is unanimously proprietary and is not.
 
-That is exactly what the data shows:
+**But the test is necessary, not sufficient, and the first cut of this
+module claimed otherwise.** It said every classic collision family falls
+out. That is false, and the counter-examples are the same family the
+claim was about:
 
-======================================  =====  ==================
-group                                       n  ownership families
-======================================  =====  ==================
-CARETENDERS                                20  1 (all proprietary)
-CARIS HEALTHCARE                            9  1 (all for-profit)
-CHOICE HEALTH AT HOME                      17  1 (all for-profit)
-GOOD SAMARITAN HOSPITAL                     8  5
-SAINT JOSEPH MEDICAL CENTER                10  7
-MEMORIAL HOSPITAL                           8  4
-======================================  =====  ==================
+===============================  ===  ======  ==========  ============
+group                              n  states  agreement   verdict
+===============================  ===  ======  ==========  ============
+SAINT FRANCIS HOSPITAL             7       7       1.00   accepted
+SAINT MARY MEDICAL CENTER          6       4       1.00   accepted
+SAINT LUKES HOSPITAL               4       4       1.00   accepted
+MERCY HOSPITAL                     4       4       1.00   accepted
+WASHINGTON COUNTY HOSPITAL         4       4       1.00   accepted
+===============================  ===  ======  ==========  ============
 
-So a group is confident when its facilities agree on an ownership
-family, and abstains when they do not. Every one of the classic
-name-collision families falls out on that test, and every one of the
-large post-acute platforms survives it.
+Every Catholic hospital files "Voluntary non-profit - Church" and every
+county hospital files "Government - Local", so agreement is unanimous
+and carries no information whatsoever. SAINT LUKES HOSPITAL spanning
+MN/NC/ND/OH is literally the UnityPoint collision from the second
+shipped incident. The original test passed only because it asserted the
+four families that had already been eyeballed — which is how a test
+confirms the belief that produced it instead of checking it.
+
+So the grade is separate from the filter
+----------------------------------------
+``is_confident`` answers "could these be one company at all" and rests
+on ownership agreement. ``evidence_grade`` answers "does anything argue
+against it", and only two things measurably do:
+
+* the registry already maps this exact key to more than one system —
+  ground truth on disk, and it refutes nine groups outright;
+* the group is multi-state and acute-class — the naming tradition
+  above, which the ownership test cannot see. All 43 such groups in
+  this data are collisions on inspection, and not one is a real chain.
+
+``distinct_sites`` is reported beside them, because 152 "two-facility"
+groups are one address holding a home-health and a hospice licence.
+That is one company — the grade is right — but it is one office, not a
+two-site chain, and a reader sizing it needs to see which.
+
+Name distinctiveness is reported and never enforced. A name whose
+rarest token is common across the register (``AT HOME HEALTHCARE``) is
+likelier a description than a brand — but ``PATIENT CARE`` is a real
+company, and silently dropping it would hide a true operator to avoid
+an obvious-on-inspection false one. The reviewer weighs it.
 
 This is a queue, not a mapping
 ------------------------------
-Nothing here writes ``system_id``. A confident group is a *candidate* —
-strong evidence that some operator exists, no evidence of what it is
-called on a cap table or who owns it. Promoting one into
-:data:`health_systems.SYSTEM_REGISTRY` is a human edit, the same way
+Nothing here writes ``system_id``. A strong group is a *candidate* —
+evidence that some operator exists, none of what it is called on a cap
+table. Promoting one into :data:`health_systems.SYSTEM_REGISTRY` is a
+human edit, the same way
 :func:`parent_resolution.ownership_disagreements` produces registry
 edits rather than corrections applied in place.
-
-Name distinctiveness is reported alongside, never enforced. A name whose
-rarest token is common across the whole register (``AT HOME
-HEALTHCARE``) is likelier to be a description than a brand — but
-``PATIENT CARE`` is a real company, and silently dropping it would hide
-a true operator to avoid an obvious-on-inspection false one. Both
-signals are on the row; the reviewer weighs them.
 """
 from __future__ import annotations
 
@@ -101,9 +121,10 @@ MIN_OWNERSHIP_AGREEMENT = 0.80
 MIN_FACILITIES = 2
 
 OPERATOR_COLUMNS: Tuple[str, ...] = (
-    "operator_name", "facilities", "states", "state_list", "classes",
-    "class_list", "ownership_family", "ownership_agreement",
-    "name_distinctiveness", "is_confident", "ccns",
+    "operator_name", "facilities", "distinct_sites", "states", "state_list",
+    "classes", "class_list", "ownership_family", "ownership_agreement",
+    "name_distinctiveness", "is_confident", "evidence_grade", "weak_reason",
+    "ccns",
 )
 
 #: CMS spells ownership differently in every file it publishes —
@@ -202,11 +223,39 @@ class DiscoveredOperator:
     ownership_agreement: float
     name_distinctiveness: float
     ccns: Tuple[str, ...]
+    #: Distinct street addresses among the members. A "12-facility"
+    #: group at one address is one office holding twelve certifications,
+    #: not a twelve-site chain, and a reader sizing an acquisition needs
+    #: to see which they are looking at.
+    distinct_sites: int = 0
+    #: Empty when nothing argues against the group. Set to the reason
+    #: when something does — see :func:`_weak_reason`.
+    weak_reason: str = ""
 
     @property
     def is_confident(self) -> bool:
+        """Could these facilities be one company at all.
+
+        Ownership agreement is a *necessary* test, not a sufficient one:
+        it removes groups that provably cannot be one company, and says
+        nothing about whether the rest are. See ``evidence_grade`` for
+        the part that carries confidence.
+
+        A single-state group is exempt. CMS publishes home health,
+        hospice and SNF ownership in separate files that disagree about
+        the same building — Weirton Medical Center's hospital, IRF and
+        SNF file three different structures — so within one state an
+        exact shared name outweighs a filing artefact.
+        """
+        if len(self.states) <= 1:
+            return True
         return bool(self.ownership_family) and (
             self.ownership_agreement >= MIN_OWNERSHIP_AGREEMENT)
+
+    @property
+    def evidence_grade(self) -> str:
+        """``strong`` unless something concrete argues against it."""
+        return "weak" if self.weak_reason else "strong"
 
     @property
     def is_multi_state(self) -> bool:
@@ -217,6 +266,10 @@ class DiscoveredOperator:
         seven-state agencies.
         """
         return len(self.states) > 1
+
+    @property
+    def is_multi_site(self) -> bool:
+        return self.distinct_sites > 1
 
 
 def _document_frequency(names: List[str]) -> Dict[str, float]:
@@ -246,6 +299,85 @@ def _distinctiveness(name: str, frequency: Dict[str, float]) -> float:
     if not tokens:
         return 1.0
     return min(frequency.get(t, 0.0) for t in tokens)
+
+
+#: Classes where a shared name is weak evidence of shared ownership.
+#: American hospitals are named for patron saints, benefactors and
+#: counties, and always have been — SAINT FRANCIS HOSPITAL exists in
+#: seven states and WASHINGTON COUNTY HOSPITAL in four, none of them
+#: related. Post-acute agencies are named by marketing departments.
+_ACUTE_CLASSES = frozenset({"hospital", "irf", "ltch"})
+
+
+def _site_key(record: Dict[str, Any]) -> Tuple[str, str]:
+    """Street and city, flattened enough to tell two sites apart.
+
+    Not an address normaliser and not trying to be — it only has to
+    answer "is this the same building", so punctuation and case go and
+    nothing else does. Under-merging here costs a group one apparent
+    site; over-merging would claim a chain is one office.
+    """
+    def flatten(value: Any) -> str:
+        return "".join(c for c in str(value or "").upper()
+                       if c.isalnum() or c == " ").strip()
+
+    return flatten(record.get("street")), flatten(record.get("city"))
+
+
+def _registered_owners(crosswalk: pd.DataFrame) -> Dict[str, set]:
+    """Operator key -> the registered systems that already hold it.
+
+    The one piece of ground truth on disk. If a key is carried by
+    facilities the registry has already mapped to *two different*
+    systems, then that key is provably not one owner, whatever the
+    unmapped facilities under it agree about.
+    """
+    owners: Dict[str, set] = {}
+    if crosswalk.empty or not {"system_id", "name"} <= set(crosswalk.columns):
+        # Both columns or nothing: zipping a present column against a
+        # missing one's empty default yields no pairs at all, and the
+        # probe would silently find no contrary evidence anywhere.
+        return owners
+    for name, system in zip(crosswalk["name"], crosswalk["system_id"],
+                            strict=True):
+        text = str(system or "")
+        if not text or text == UNMAPPED_ID:
+            continue
+        key = operator_key(name)
+        if key:
+            owners.setdefault(key, set()).add(text)
+    return owners
+
+
+def _weak_reason(name: str, states: Tuple[str, ...], classes: Tuple[str, ...],
+                 owners: Dict[str, set]) -> str:
+    """What argues against this group being one company. "" if nothing.
+
+    Two things do, and only two, because these are the two that could be
+    measured rather than asserted.
+
+    The first is contrary evidence: the registry itself already maps
+    this exact key to more than one system. SAINT MARYS HOSPITAL is
+    carried by Bon Secours, CommonSpirit, Mayo, MedStar and SSM, so the
+    unmapped SAINT MARYS HOSPITALs are not a discovery, they are five
+    more of the same collision. Nine groups are refuted this way.
+
+    The second is the shape of that collision generalised. Hospitals
+    sharing a name across state lines are the family this repo has
+    twice shipped a bad matcher into, and the ownership test does not
+    catch them: every Catholic hospital files "Voluntary non-profit -
+    Church" and every county hospital files "Government - Local", so
+    agreement is unanimous and carries no information at all. All 43
+    multi-state acute-class groups in this data are collisions on
+    inspection; not one is a real chain.
+    """
+    if len(owners.get(name, ())) > 1:
+        return (f"the registry already maps this name to "
+                f"{len(owners[name])} different systems")
+    if len(states) > 1 and (set(classes) & _ACUTE_CLASSES):
+        return ("hospitals in more than one state share a name far more "
+                "often than an owner")
+    return ""
 
 
 def _unmapped_operating(crosswalk: pd.DataFrame) -> pd.DataFrame:
@@ -318,6 +450,7 @@ def _discover(crosswalk: pd.DataFrame,
     frequency = _document_frequency(
         [operator_key(n) for n in crosswalk.get(
             "name", pd.Series(dtype=str)).astype(str)])
+    owners = _registered_owners(crosswalk)
 
     rows = _unmapped_operating(crosswalk)
     if rows.empty:
@@ -345,18 +478,22 @@ def _discover(crosswalk: pd.DataFrame,
             family, agreement = top[0], top[1] / len(families)
         else:
             family, agreement = "", 0.0
+        states = tuple(sorted({str(m.get("state") or "") for m in members}
+                              - {""}))
+        classes = tuple(sorted({str(m.get("provider_class") or "")
+                                for m in members} - {""}))
         operator = DiscoveredOperator(
             name=name,
             facilities=len(members),
-            states=tuple(sorted({str(m.get("state") or "") for m in members}
-                                - {""})),
-            classes=tuple(sorted({str(m.get("provider_class") or "")
-                                  for m in members} - {""})),
+            states=states,
+            classes=classes,
             ownership_family=family,
             ownership_agreement=agreement,
             name_distinctiveness=_distinctiveness(name, frequency),
             ccns=tuple(sorted({str(m.get("ccn") or "") for m in members}
                               - {""})),
+            distinct_sites=len({_site_key(m) for m in members}),
+            weak_reason=_weak_reason(name, states, classes, owners),
         )
         out.append(operator)
     out.sort(key=lambda o: (-o.facilities, -o.ownership_agreement, o.name))
@@ -377,6 +514,7 @@ def discovered_operator_frame(
     return pd.DataFrame([{
         "operator_name": o.name,
         "facilities": o.facilities,
+        "distinct_sites": o.distinct_sites,
         "states": len(o.states),
         "state_list": "|".join(o.states),
         "classes": len(o.classes),
@@ -385,6 +523,8 @@ def discovered_operator_frame(
         "ownership_agreement": round(o.ownership_agreement, 4),
         "name_distinctiveness": round(o.name_distinctiveness, 6),
         "is_confident": 1 if o.is_confident else 0,
+        "evidence_grade": o.evidence_grade,
+        "weak_reason": o.weak_reason,
         "ccns": "|".join(o.ccns),
     } for o in operators], columns=list(OPERATOR_COLUMNS))
 
@@ -395,21 +535,33 @@ def discovery_coverage(
 ) -> Dict[str, Any]:
     """What the discovery pass found, and against what denominator.
 
-    The denominator is the point. "1,544 operators discovered" without
-    "out of 33,998 unmapped facilities, of which 3,915 are now in a
-    named group" reads like the gap is closed when 88% of it is not.
+    The denominator is the point twice over. "1,576 operators
+    discovered" without "out of 33,998 unmapped facilities, of which
+    3,981 are now in a named group" reads like the gap is closed when
+    88% of it is not — and reporting the confident count without the
+    strong one hides the 43 groups the evidence argues against.
     """
     if crosswalk is None:
         crosswalk = _register()
     rows = _unmapped_operating(crosswalk)
     if operators is None:
         operators = discover_operators(crosswalk)
+    strong = [o for o in operators if o.is_confident
+              and o.evidence_grade == "strong"]
     confident = [o for o in operators if o.is_confident]
     return {
         "unmapped_operating": len(rows),
         "candidate_groups": len(operators),
         "confident_groups": len(confident),
         "facilities_in_confident_groups": sum(o.facilities for o in confident),
+        # The headline pair. Confident means "could be one company";
+        # strong means "and nothing on disk argues against it". Reporting
+        # only the first is how the patron-saint groups got counted as
+        # discoveries in the first place.
+        "strong_groups": len(strong),
+        "facilities_in_strong_groups": sum(o.facilities for o in strong),
+        "held_back_groups": len(confident) - len(strong),
+        "multi_site_strong": sum(1 for o in strong if o.is_multi_site),
         "multi_state_confident": sum(1 for o in confident if o.is_multi_state),
         "largest": confident[0].name if confident else "",
         "by_class": _class_mix(confident),

@@ -5183,6 +5183,13 @@ class RCMHandler(BaseHTTPRequestHandler):
                 "1", "true")
             _frame = discovered_operator_frame(min_facilities=_min,
                                                confident_only=_conf)
+            # grade=strong drops the groups something argues against —
+            # a name the registry already maps to several systems, or
+            # the multi-state hospital shape that the ownership test
+            # cannot see. Opt-in, so the refuted rows stay downloadable.
+            _gr = str(_qp.get("grade", "")).strip().lower()[:8]
+            if _gr in ("strong", "weak") and not _frame.empty:
+                _frame = _frame[_frame["evidence_grade"].astype(str) == _gr]
             _st = str(_qp.get("state", "")).strip().upper()[:2]
             if _st and not _frame.empty:
                 # A group is multi-state, so this asks "does it operate

@@ -266,9 +266,9 @@ class RealRegisterTests(unittest.TestCase):
         mix = self.cov["by_class"]
         self.assertGreater(mix.get("hha", 0), mix.get("hospital", 0))
 
-    def test_the_classic_name_collisions_are_all_refused(self) -> None:
-        """These are the families that produced the CHI and TRINITY
-        incidents. Every one of them must fail the ownership test."""
+    def test_the_mixed_ownership_collisions_are_refused(self) -> None:
+        """These four span several ownership structures, so the filter
+        catches them. It is the easy half of the problem."""
         confident = {o.name for o in self.operators}
         for collision in ("MEMORIAL HOSPITAL", "COMMUNITY MEMORIAL HOSPITAL",
                           "GOOD SAMARITAN HOSPITAL",
@@ -276,18 +276,90 @@ class RealRegisterTests(unittest.TestCase):
             with self.subTest(name=collision):
                 self.assertNotIn(collision, confident)
 
+    def test_the_unanimous_collisions_pass_the_filter_and_are_graded_weak(
+            self) -> None:
+        """The hard half, and the reason evidence_grade exists.
+
+        Every Catholic hospital files "Voluntary non-profit - Church" and
+        every county hospital files "Government - Local", so these agree
+        unanimously while being unrelated facilities. The first cut of
+        this module claimed the ownership test caught every collision
+        family; it does not, and asserting only the four families that
+        had already been eyeballed is what hid that.
+        """
+        graded = {o.name: o for o in discover_operators()}
+        for collision in ("SAINT FRANCIS HOSPITAL", "SAINT LUKES HOSPITAL",
+                          "SAINT MARYS HOSPITAL", "MERCY HOSPITAL",
+                          "WASHINGTON COUNTY HOSPITAL"):
+            with self.subTest(name=collision):
+                operator = graded[collision]
+                # It really does pass the ownership filter …
+                self.assertTrue(operator.is_confident)
+                self.assertGreaterEqual(operator.ownership_agreement,
+                                        MIN_OWNERSHIP_AGREEMENT)
+                # … and the grade is what actually stops it.
+                self.assertEqual(operator.evidence_grade, "weak")
+                self.assertTrue(operator.weak_reason)
+
+    def test_no_group_the_registry_refutes_is_graded_strong(self) -> None:
+        """Ground truth on disk: if the registry already maps this exact
+        name to two different systems, the name is not one owner and no
+        amount of ownership agreement makes it one."""
+        from rcm_mc.data.health_systems import UNMAPPED_ID
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        crosswalk = get_crosswalk(scope=SCOPE_ALL)
+        owners: dict = {}
+        for name, system in zip(crosswalk["name"], crosswalk["system_id"]):
+            text = str(system or "")
+            if text and text != UNMAPPED_ID:
+                owners.setdefault(operator_key(name), set()).add(text)
+        refuted = {k for k, v in owners.items() if len(v) > 1}
+        strong = {o.name for o in discover_operators()
+                  if o.evidence_grade == "strong"}
+        self.assertEqual(strong & refuted, set())
+
+    def test_the_flagship_operator_is_not_caught_by_any_guard(self) -> None:
+        """Caretenders is one distinctive coined word across seven states
+        and twenty separate addresses. A guard that demotes it is
+        measuring name length instead of evidence."""
+        caretenders = {o.name: o for o in discover_operators()}["CARETENDERS"]
+        self.assertEqual(caretenders.evidence_grade, "strong")
+        self.assertEqual(caretenders.weak_reason, "")
+        self.assertEqual(caretenders.distinct_sites, 20)
+
     def test_a_known_multi_state_agency_is_found(self) -> None:
         found = {o.name: o for o in self.operators}
         self.assertIn("CARETENDERS", found)
         self.assertGreater(found["CARETENDERS"].facilities, 10)
         self.assertGreater(len(found["CARETENDERS"].states), 3)
 
-    def test_every_confident_group_agrees_on_one_structure(self) -> None:
+    def test_every_multi_state_confident_group_agrees_on_one_structure(
+            self) -> None:
+        """Across state lines a shared name is weak, so the ownership
+        filter is the whole of the evidence and must hold."""
         for operator in self.operators:
+            if not operator.is_multi_state:
+                continue
             with self.subTest(name=operator.name):
                 self.assertTrue(operator.ownership_family)
                 self.assertGreaterEqual(operator.ownership_agreement,
                                         MIN_OWNERSHIP_AGREEMENT)
+
+    def test_single_state_groups_are_exempt_from_the_ownership_filter(
+            self) -> None:
+        """CMS publishes home health, hospice and SNF ownership in
+        separate files that disagree about the same building. Weirton
+        Medical Center's hospital, IRF and SNF file three structures
+        between them; within one state an exact shared name outweighs
+        that filing artefact."""
+        admitted = [o for o in self.operators
+                    if not o.is_multi_state
+                    and o.ownership_agreement < MIN_OWNERSHIP_AGREEMENT]
+        self.assertGreater(len(admitted), 40)
+        self.assertIn("AFFINIS HOSPICE", {o.name for o in admitted})
+        # …and the exemption is strictly single-state.
+        self.assertTrue(all(len(o.states) == 1 for o in admitted))
 
     def test_the_coverage_report_is_json_serialisable(self) -> None:
         import json
@@ -296,6 +368,53 @@ class RealRegisterTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DistinctSitesTests(unittest.TestCase):
+    """A "12-facility" group at one address is one office holding twelve
+    certifications. That is still one company — but it is not a chain,
+    and a reader sizing an acquisition needs to see which."""
+
+    def test_a_dual_certified_office_counts_as_one_site(self) -> None:
+        frame = pd.DataFrame([
+            _facility("1", "A Hug Away Healthcare", "TX", "PROPRIETARY",
+                      provider_class="hha"),
+            _facility("2", "A Hug Away Healthcare", "TX", "PROPRIETARY",
+                      provider_class="hospice"),
+        ])
+        for row in frame.index:
+            frame.loc[row, "street"] = "1203 Avenue D, Suite A"
+            frame.loc[row, "city"] = "Katy"
+        operator = discover_operators(frame)[0]
+        self.assertEqual(operator.facilities, 2)
+        self.assertEqual(operator.distinct_sites, 1)
+        self.assertFalse(operator.is_multi_site)
+        # …and it is still a confident, strong group: one company.
+        self.assertTrue(operator.is_confident)
+        self.assertEqual(operator.evidence_grade, "strong")
+
+    def test_punctuation_does_not_invent_a_second_site(self) -> None:
+        frame = pd.DataFrame([
+            _facility("1", "Alpine Care", "AZ", "PROPRIETARY"),
+            _facility("2", "Alpine Care", "AZ", "PROPRIETARY"),
+        ])
+        frame.loc[0, "street"] = "6301 4th St. N.W."
+        frame.loc[1, "street"] = "6301 4TH ST NW"
+        frame.loc[:, "city"] = "Albuquerque"
+        self.assertEqual(discover_operators(frame)[0].distinct_sites, 1)
+
+    def test_separate_addresses_count_separately(self) -> None:
+        frame = pd.DataFrame([
+            _facility("1", "Alpine Care", "AZ", "PROPRIETARY"),
+            _facility("2", "Alpine Care", "NV", "PROPRIETARY"),
+        ])
+        frame.loc[0, "street"] = "1 First St"
+        frame.loc[0, "city"] = "Phoenix"
+        frame.loc[1, "street"] = "2 Second Ave"
+        frame.loc[1, "city"] = "Reno"
+        operator = discover_operators(frame)[0]
+        self.assertEqual(operator.distinct_sites, 2)
+        self.assertTrue(operator.is_multi_site)
 
 
 class CacheTests(unittest.TestCase):
@@ -348,14 +467,22 @@ class PagePanelTests(unittest.TestCase):
         self.assertIn("the registry does not map", self.html)
         self.assertIn("closes part of the gap and not most of it", self.html)
 
-    def test_the_page_names_the_families_it_refuses(self) -> None:
-        """The refusals are the credibility of the list. A reader who
-        cannot see that SAINT JOSEPH was considered and rejected has no
-        reason to believe CARETENDERS was tested at all."""
-        for collision in ("MEMORIAL HOSPITAL", "GOOD SAMARITAN HOSPITAL",
-                          "SAINT JOSEPH MEDICAL CENTER"):
+    def test_the_page_names_the_families_it_holds_back(self) -> None:
+        """The refusals are the credibility of the list, and the page has
+        to name both kinds: the one the ownership filter catches, and the
+        ones that pass it unanimously and are held back by the grade."""
+        for collision in ("MEMORIAL HOSPITAL", "SAINT LUKES HOSPITAL",
+                          "WASHINGTON COUNTY HOSPITAL"):
             with self.subTest(name=collision):
                 self.assertIn(collision, self.html)
+
+    def test_the_page_does_not_claim_the_filter_catches_everything(
+            self) -> None:
+        """The first cut said the ownership test kept the patron-saint
+        families off the list. It does not, and a page that says so
+        while listing SAINT LUKES HOSPITAL is worse than one that says
+        nothing."""
+        self.assertIn("necessary test and not a sufficient one", self.html)
 
     def test_the_page_says_it_is_a_queue_not_a_mapping(self) -> None:
         self.assertIn("system_id", self.html)
@@ -433,6 +560,24 @@ class RouteTests(unittest.TestCase):
         self.assertTrue(rows)
         self.assertTrue(all(int(r["facilities"]) >= 8 for r in rows))
         self.assertEqual(list(rows[0]), list(OPERATOR_COLUMNS))
+
+    def test_the_grade_filter_separates_the_held_back_rows(self) -> None:
+        strong = self._rows("/discovered-operators.csv?grade=strong")
+        weak = self._rows("/discovered-operators.csv?grade=weak")
+        self.assertTrue(strong and weak)
+        self.assertTrue(all(r["evidence_grade"] == "strong" for r in strong))
+        self.assertTrue(all(r["evidence_grade"] == "weak" for r in weak))
+        self.assertTrue(all(r["weak_reason"] for r in weak))
+
+    def test_the_held_back_rows_still_ship_by_default(self) -> None:
+        """A queue that silently drops what it refused looks more certain
+        than it is, and the refusals are how a reader checks the rest."""
+        every = self._rows("/discovered-operators.csv")
+        self.assertTrue(any(r["evidence_grade"] == "weak" for r in every))
+
+    def test_a_junk_grade_is_ignored_rather_than_emptying_the_file(self) -> None:
+        rows = self._rows("/discovered-operators.csv?grade=banana")
+        self.assertGreater(len(rows), 500)
 
     def test_a_junk_size_falls_back_rather_than_raising(self) -> None:
         rows = self._rows("/discovered-operators.csv?min_facilities=abc")

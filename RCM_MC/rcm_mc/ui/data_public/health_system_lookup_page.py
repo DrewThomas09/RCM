@@ -1101,13 +1101,15 @@ def _discovered_operators_panel(limit: int = 15) -> str:
     # groupings for one panel.
     groups = discover_operators()
     coverage = discovery_coverage(operators=groups)
-    operators = [o for o in groups if o.is_confident]
+    confident = [o for o in groups if o.is_confident]
+    operators = [o for o in confident if o.evidence_grade == "strong"]
+    weak = [o for o in confident if o.evidence_grade == "weak"]
     if not operators:
         return ""
 
     cols = [("Candidate operator", "left"), ("Facilities", "right"),
-            ("States", "right"), ("Type", "left"), ("Ownership", "left"),
-            ("Agree", "right"), ("Where", "left")]
+            ("Sites", "right"), ("States", "right"), ("Type", "left"),
+            ("Ownership", "left"), ("Agree", "right"), ("Where", "left")]
     ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
     trs = []
     for operator in operators[:limit]:
@@ -1117,6 +1119,9 @@ def _discovered_operators_panel(limit: int = 15) -> str:
         cells = [
             ck_data_cell(_esc(operator.name), weight=600),
             ck_data_cell(f"{operator.facilities:,}", align="right", mono=True),
+            ck_data_cell(f"{operator.distinct_sites:,}", align="right",
+                         mono=True,
+                         tone="dim" if operator.is_multi_site else "acc"),
             ck_data_cell(f"{len(operator.states)}", align="right", mono=True),
             ck_data_cell(_esc(", ".join(operator.classes)), tone="dim"),
             ck_data_cell(_esc(operator.ownership_family), tone="dim"),
@@ -1132,28 +1137,37 @@ def _discovered_operators_panel(limit: int = 15) -> str:
     mix = " · ".join(f"{k} {v:,}" for k, v in
                      list(coverage["by_class"].items())[:5])
     return (table + f'<div class="hsl-legend">'
-            f'{coverage["confident_groups"]:,} candidate operators covering '
-            f'{coverage["facilities_in_confident_groups"]:,} facilities '
+            f'{coverage["strong_groups"]:,} candidate operators covering '
+            f'{coverage["facilities_in_strong_groups"]:,} facilities '
             f'&mdash; out of {coverage["unmapped_operating"]:,} operating '
             'facilities the registry does not map, so this closes part of '
             'the gap and not most of it. '
-            f'{coverage["multi_state_confident"]:,} of them run in more than '
-            f'one state. By class: {_esc(mix)}. '
+            f'{coverage["multi_site_strong"]:,} of them run more than one '
+            f'site. By class: {_esc(mix)}. '
             '<br><br>A group qualifies when its facilities file the '
             '<strong>same ownership structure</strong>, because a real '
             'operator has one and facilities that merely share a name each '
-            'file whatever they independently are. That test is what keeps '
-            'MEMORIAL HOSPITAL, GOOD SAMARITAN HOSPITAL and SAINT JOSEPH '
-            'MEDICAL CENTER off this list &mdash; the patron-saint families '
-            'that a name match alone turns into fictitious systems. '
-            'Groups that fail it are kept, not deleted: a large group '
-            'spanning several ownership types is either a collision or a '
-            'chain part-way through a sale, and only a reader can tell '
-            'which. Nothing here is written to <code>system_id</code>; each '
-            'row is a registry edit for a human to make. Download the full '
-            'queue, including the groups that failed, at <a class="ck-link" '
-            'href="/discovered-operators.csv">/discovered-operators.csv</a>.'
-            '</div>')
+            'file whatever they independently are. That refuses MEMORIAL '
+            'HOSPITAL, which spans four structures across seven states. '
+            'It is a necessary test and not a sufficient one: every '
+            'Catholic hospital files &ldquo;non-profit &ndash; church&rdquo; '
+            'and every county hospital files &ldquo;government &ndash; '
+            'local&rdquo;, so SAINT LUKES HOSPITAL and WASHINGTON COUNTY '
+            'HOSPITAL agree unanimously while being four unrelated '
+            'facilities apiece. Those are graded <strong>weak</strong> and '
+            f'held back from this table &mdash; {len(weak):,} groups, on '
+            'two pieces of evidence: the registry already maps the name to '
+            'more than one system, or hospitals in different states share '
+            'it, which in American naming they usually do. '
+            '<br><br><strong>Sites</strong> is distinct street addresses. A '
+            'two-facility group at one address is a single office holding a '
+            'home-health and a hospice licence &mdash; one company, but not '
+            'a two-site chain, and worth seeing before you size it. '
+            'Nothing here is written to <code>system_id</code>; each row is '
+            'a registry edit for a human to make. Download everything, '
+            'including the weak and the refused, at <a class="ck-link" '
+            'href="/discovered-operators.csv">/discovered-operators.csv</a> '
+            '(<code>?grade=strong</code> for this table).</div>')
 
 
 def _markets_panel(limit: int = 15) -> str:
