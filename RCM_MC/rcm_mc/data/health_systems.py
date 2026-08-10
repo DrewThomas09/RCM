@@ -478,7 +478,9 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "cedars", "Cedars-Sinai", KIND_NONPROFIT, FOCUS_ACUTE, "CA",
-        patterns=("^CEDARS",),
+        # Unscoped, ^CEDARS took eight unrelated nursing homes called
+        # "The Cedars" in CO, IN, KS, ME, MS, NC, OH and VA.
+        patterns=("^CEDARS",), states=("CA",),
     ),
     SystemDef(
         "memorialcare", "MemorialCare", KIND_NONPROFIT, FOCUS_ACUTE, "CA",
@@ -859,7 +861,10 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "marshfield", "Marshfield Clinic Health System", KIND_NONPROFIT, FOCUS_ACUTE, "WI",
-        patterns=("^MARSHFIELD",),
+        # MI is real — Marshfield runs Dickinson in Iron Mountain. The
+        # scope exists to drop MARSHFIELD CARE CENTER in Marshfield,
+        # Missouri, which is a town rather than this system.
+        patterns=("^MARSHFIELD",), states=("WI", "MI"),
     ),
     SystemDef(
         "gundersen", "Emplify Health (Gundersen · Bellin)", KIND_NONPROFIT, FOCUS_ACUTE, "WI",
@@ -1040,7 +1045,12 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "uw_medicine", "UW Medicine", KIND_ACADEMIC, FOCUS_ACUTE, "WA",
+        # ^HARBORVIEW unscoped claimed fourteen Southeast nursing homes
+        # — a Harborview SNF chain in GA, FL, PA, NC and TN — for a
+        # Seattle academic centre. The worst single defect the audit
+        # found: 14 of this system's 16 facilities were wrong.
         patterns=("^UNIVERSITY OF WASHINGTON", "^UW MEDICINE", "^HARBORVIEW"),
+        states=("WA",),
     ),
     SystemDef(
         "peacehealth", "PeaceHealth", KIND_CATHOLIC, FOCUS_ACUTE, "WA",
@@ -1125,7 +1135,11 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "monument", "Monument Health", KIND_NONPROFIT, FOCUS_ACUTE, "SD",
-        patterns=("^MONUMENT HEALTH",),
+        # "Monument Healthcare" is a twelve-home Utah nursing chain and
+        # a different company. The pattern is ten characters, so it
+        # matches as a bare prefix and HEALTH runs straight into
+        # HEALTHCARE; only the footprint separates them.
+        patterns=("^MONUMENT HEALTH",), states=("SD", "WY"),
     ),
     SystemDef(
         "broward", "Broward Health", KIND_GOVERNMENT, FOCUS_ACUTE, "FL",
@@ -1266,7 +1280,10 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "emory", "Emory Healthcare", KIND_ACADEMIC, FOCUS_ACUTE, "GA",
+        # EMORY L BENNETT MEMORIAL VETERANS NURSING HOME in Florida is
+        # named for a Medal of Honor recipient, not the university.
         patterns=("^EMORY", "GA:^SAINT JOSEPHS OF ATLANTA"),
+        states=("GA",),
     ),
     SystemDef(
         "grady", "Grady Health System", KIND_GOVERNMENT, FOCUS_ACUTE, "GA",
@@ -1367,7 +1384,8 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "bayhealth", "Bayhealth", KIND_NONPROFIT, FOCUS_ACUTE, "DE",
-        patterns=("^BAYHEALTH",),
+        # Two California home-health agencies also file as Bayhealth.
+        patterns=("^BAYHEALTH",), states=("DE",),
     ),
     SystemDef(
         "palomar", "Palomar Health", KIND_GOVERNMENT, FOCUS_ACUTE, "CA",
@@ -1432,7 +1450,9 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     # Post-acute / rehab platforms.
     SystemDef(
         "madonna", "Madonna Rehabilitation Hospitals", KIND_NONPROFIT, FOCUS_REHAB, "NE",
-        patterns=("^MADONNA",),
+        # Madonna Manor and Madonna Towers are Catholic nursing homes in
+        # KY, MA and MN, sharing a devotional name and nothing else.
+        patterns=("^MADONNA",), states=("NE",),
     ),
     SystemDef(
         "sheltering_arms", "Sheltering Arms Institute", KIND_NONPROFIT, FOCUS_REHAB, "VA",
@@ -1476,7 +1496,9 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     ),
     SystemDef(
         "four_winds", "Four Winds Hospitals", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "NY",
-        patterns=("^FOUR WINDS",),
+        # FOUR WINDS NURSING FACILITY (OH) and FOUR WINDS MANOR (WI) are
+        # nursing homes with a pleasant name.
+        patterns=("^FOUR WINDS",), states=("NY",),
     ),
     SystemDef(
         "college_health", "College Health Enterprises",
@@ -1652,7 +1674,10 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "wellbridge", "Wellbridge Healthcare", KIND_FOR_PROFIT,
         FOCUS_BEHAVIORAL, "TX",
-        patterns=("^WELLBRIDGE",),
+        # Two companies, one brand: this is the Texas behavioral
+        # operator, and "WellBridge of <town>" is eight Michigan
+        # nursing homes belonging to someone else.
+        patterns=("^WELLBRIDGE",), states=("TX",),
     ),
     SystemDef(
         "vista_health_ar", "Vista Health", KIND_FOR_PROFIT, FOCUS_BEHAVIORAL, "AR",

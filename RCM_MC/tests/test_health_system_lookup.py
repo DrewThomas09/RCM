@@ -1375,3 +1375,114 @@ class CsvRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegistryPrecisionTests(unittest.TestCase):
+    """Precision of what is already mapped, not recall of what is not.
+
+    Every previous test here asks whether the matcher finds enough. None
+    asked whether what it found is right. An audit of the 14,425 mapped
+    facilities turned up 53 that were wrong — fourteen Southeast nursing
+    homes called Harborview assigned to UW Medicine in Seattle, twelve
+    Utah nursing homes called Monument Healthcare assigned to Monument
+    Health in South Dakota, eight nursing homes called The Cedars
+    assigned to Cedars-Sinai — and the whole suite passed while they
+    were there.
+
+    So these are structural invariants over the real register rather
+    than assertions about the systems that happened to be wrong. A
+    pinned list of nine catches those nine; an invariant catches the
+    tenth.
+    """
+
+    ACUTE = frozenset({"hospital", "irf", "ltch"})
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.health_systems import UNMAPPED_ID
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        crosswalk = get_crosswalk(scope=SCOPE_ALL)
+        system = crosswalk["system_id"].astype(str)
+        cls.mapped = crosswalk[system.ne("") & system.ne(UNMAPPED_ID)]
+
+    def test_a_single_market_system_does_not_reach_across_the_country(self):
+        """The failure shape, stated once.
+
+        A system whose hospitals sit in exactly one state has a
+        single-market brand, and post-acute facilities carrying that
+        brand in other states are almost always a different company
+        using the same word. Nine systems were doing this; the rule is
+        what stops the tenth.
+        """
+        from rcm_mc.data.health_systems import SYSTEM_REGISTRY
+
+        unscoped = {s.system_id for s in SYSTEM_REGISTRY if not s.states}
+        offenders = {}
+        for system_id, group in self.mapped.groupby(
+                self.mapped["system_id"].astype(str)):
+            if system_id not in unscoped:
+                continue
+            acute = {str(state) for state, klass
+                     in zip(group["state"], group["provider_class"])
+                     if str(klass) in self.ACUTE}
+            if len(acute) != 1:
+                continue
+            home = next(iter(acute))
+            away = group[group["state"].astype(str) != home]
+            if len(away) > 1:
+                offenders[system_id] = sorted(set(away["state"].astype(str)))
+        self.assertEqual(
+            offenders, {},
+            "Single-market systems reaching outside their acute state — "
+            "give each a states=() footprint or an exclude: "
+            f"{offenders}")
+
+    def test_no_two_systems_claim_the_same_facility_name_in_one_town(self):
+        """One name, one town, one owner.
+
+        Keyed on city and not merely state, because the first cut of
+        this test keyed on state and flagged Houston Methodist against
+        Methodist Hospital San Antonio — two genuinely different Texas
+        systems, both assigned by hand CCN override, both correct. Two
+        facilities sharing a name across a state is normal; sharing one
+        within a town means a pattern has reached into another system's
+        estate.
+        """
+        from rcm_mc.data.health_systems import normalize_name
+
+        claims = {}
+        for name, state, city, system_id in zip(
+                self.mapped["name"], self.mapped["state"],
+                self.mapped["city"], self.mapped["system_id"]):
+            key = (normalize_name(name), str(state), str(city).upper().strip())
+            claims.setdefault(key, set()).add(str(system_id))
+        split = {k: sorted(v) for k, v in claims.items() if len(v) > 1}
+        self.assertEqual(split, {}, f"Same name, same town, two systems: {split}")
+
+    def test_the_registry_states_its_own_rule_and_follows_it(self):
+        """SystemDef's docstring says a footprint is required for every
+        brand naming more than one unrelated organization. These nine
+        were the standing violations."""
+        from rcm_mc.data.health_systems import get_system
+
+        for system_id, expected in (("uw_medicine", ("WA",)),
+                                    ("cedars", ("CA",)),
+                                    ("wellbridge", ("TX",)),
+                                    ("madonna", ("NE",)),
+                                    ("emory", ("GA",)),
+                                    ("four_winds", ("NY",)),
+                                    ("bayhealth", ("DE",))):
+            with self.subTest(system=system_id):
+                self.assertEqual(get_system(system_id).states, expected)
+
+    def test_a_real_out_of_state_facility_is_kept(self):
+        """Marshfield genuinely runs Dickinson in Iron Mountain,
+        Michigan. The scope had to admit MI while dropping a nursing
+        home in Marshfield, Missouri — a town, not this system."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertEqual(get_system("marshfield").states, ("WI", "MI"))
+        names = set(self.mapped[self.mapped["system_id"].astype(str)
+                                == "marshfield"]["state"].astype(str))
+        self.assertEqual(names, {"WI", "MI"})
