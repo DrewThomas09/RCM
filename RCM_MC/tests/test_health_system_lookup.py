@@ -1707,3 +1707,71 @@ class ChangedHandsPanelTests(unittest.TestCase):
 
     def test_it_explains_why_this_is_the_only_chow_signal(self) -> None:
         self.assertIn("state-by-year counts", self.html)
+
+
+class ChainVersusNameTests(unittest.TestCase):
+    """CMS's chain column and the facility's own name disagree 55 times.
+
+    The chain column is a third party's statement and it goes stale; the
+    name is the facility's own. So the name wins, and chain_name stays
+    on the row for the cases where both are true.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        cls.register = get_crosswalk(scope=SCOPE_ALL)
+        cls.flipped = cls.register[
+            cls.register["system_match"].astype(str).str.startswith(
+                "name over chain")]
+
+    def _row(self, ccn: str):
+        return self.register[
+            self.register["ccn"].astype(str) == ccn].iloc[0]
+
+    def test_a_retired_chain_brand_does_not_hold_its_buyer_s_clinics(self):
+        """US Renal Care bought DSI in 2016. Eight clinics named
+        "USRC …" were still filed under the retired brand, and the
+        registry had an entry existing only to hold them."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertIsNone(get_system("dsi_renal"))
+        for ccn in ("032583", "032608", "372598"):
+            with self.subTest(ccn=ccn):
+                row = self._row(ccn)
+                self.assertTrue(row["name"].upper().startswith("USRC"))
+                self.assertEqual(row["system_id"], "us_renal_care")
+
+    def test_one_operator_is_not_split_down_the_middle(self):
+        """33 clinics named "SHC …" sat under US Renal Care while 44
+        identically-named ones sat under Satellite, decided by the chain
+        column alone. SHC is Satellite's own abbreviation, and it files
+        its own chain string in Tennessee and Texas."""
+        shc = self.register[
+            self.register["name"].astype(str).str.upper().str.startswith("SHC ")]
+        self.assertGreater(len(shc), 70)
+        self.assertEqual(set(shc["system_id"].astype(str)),
+                         {"satellite_healthcare"})
+
+    def test_a_joint_venture_keeps_both_answers(self):
+        """Billings Clinic Dialysis is Billings Clinic's, operated by
+        DCI. Both are true and the row carries both — the system is the
+        brand on the door, the operator stays in chain_name."""
+        row = self._row("272510")
+        self.assertEqual(row["system_id"], "billings")
+        self.assertEqual(row["chain_name"], "Dialysis Clinic, Inc.")
+
+    def test_the_override_is_visible_as_its_own_basis(self):
+        """A reader must be able to see that the chain column was
+        consulted and overruled, not that it was never read."""
+        self.assertGreater(len(self.flipped), 40)
+        for basis in set(self.flipped["system_match"].astype(str)):
+            self.assertTrue(basis.startswith("name over chain: "))
+
+    def test_an_agreeing_chain_filing_is_left_alone(self):
+        """Only disagreements change. The other 6,600 chain-filed
+        facilities keep their basis."""
+        chain_filed = self.register[
+            self.register["system_match"].astype(str).str.startswith("chain:")]
+        self.assertGreater(len(chain_filed), 6_000)

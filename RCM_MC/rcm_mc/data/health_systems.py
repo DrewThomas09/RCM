@@ -1807,7 +1807,14 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
     SystemDef(
         "satellite_healthcare", "Satellite Healthcare", KIND_NONPROFIT,
         FOCUS_DIALYSIS, "CA",
-        patterns=("^SATELLITE DIALYSIS", "^SATELLITE HEALTHCARE"),
+        # SHC is Satellite's own abbreviation and WB is WellBound, its
+        # home-dialysis brand. Without these the chain column alone
+        # decided, and it split one operator down the middle: 33 "SHC …"
+        # clinics sat under US Renal Care while 44 identically-named
+        # ones sat here. Satellite files its own chain string in TN and
+        # TX too, so the pattern is not California-scoped.
+        patterns=("^SATELLITE DIALYSIS", "^SATELLITE HEALTHCARE",
+                  "^SHC ", "^SCH "),
         note="Both banners are in use; the chain column reaches the rest.",
     ),
     SystemDef(
@@ -2171,12 +2178,6 @@ POST_ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
         patterns=("NY:^ATLANTIC DMS",),
     ),
     SystemDef(
-        "dsi_renal", "Diversified Specialty Institutes (DSI)", KIND_FOR_PROFIT,
-        FOCUS_DIALYSIS, "TN",
-        patterns=("^DSI RENAL",),
-        note="Chain-column only — the facilities file under local names.",
-    ),
-    SystemDef(
         "central_florida_kidney", "Central Florida Kidney Centers",
         KIND_FOR_PROFIT, FOCUS_DIALYSIS, "FL",
         patterns=("FL:^CENTRAL FLORIDA KIDNEY",),
@@ -2260,7 +2261,11 @@ CHAIN_ALIASES: Dict[str, str] = {
     "ATLANTIS HEALTHCARE GROUP": "atlantis_healthcare",
     "GREENFIELD HEALTH SYSTEMS": "greenfield_health",
     "ATLANTIC DIALYSIS MANAGEMENT SERVICES": "atlantic_dms",
-    "DIVERSIFIED SPECIALTY INSTITUTES DSI": "dsi_renal",
+    # US Renal Care bought DSI in 2016 and the brand is retired. Every
+    # facility CMS still files under the DSI chain string is named
+    # "USRC …" on its own certification, so the alias points where the
+    # facilities say they already are.
+    "DIVERSIFIED SPECIALTY INSTITUTES DSI": "us_renal_care",
     "CENTRAL FLORIDA KIDNEY CENTERS": "central_florida_kidney",
     # Health systems that run their own dialysis under the parent brand.
     # The chain column reaches these without a single extra pattern.
@@ -2913,12 +2918,28 @@ def _assign_post_acute_universe(df: pd.DataFrame) -> pd.DataFrame:
             bases.append(f"ccn override {ccn}")
             continue
         alias = CHAIN_ALIASES.get(normalize_name(chain)) if chain else None
-        sysdef = _SYSTEM_BY_ID.get(alias) if alias else None
-        if sysdef is not None:
-            resolved.append(sysdef)
+        chain_def = _SYSTEM_BY_ID.get(alias) if alias else None
+        sysdef, pattern = match_system(name, state)
+        if chain_def is not None and (sysdef is None
+                                      or sysdef.system_id == chain_def.system_id):
+            resolved.append(chain_def)
             bases.append(f"chain: {chain}")
             continue
-        sysdef, pattern = match_system(name, state)
+        if chain_def is not None and sysdef is not None:
+            # The two disagree. The facility's own name wins, because
+            # it is the facility's statement about itself while
+            # chain_org is a third party's — and it goes stale: eight
+            # clinics named "USRC …" were still filed under DSI, a
+            # brand US Renal Care retired, and four more under
+            # Fresenius. The chain string stays on the row in
+            # chain_name, which matters for the six that are not
+            # staleness at all but joint ventures, where chain_org
+            # names the operator and the name names the system whose
+            # brand the clinic carries — Billings Clinic Dialysis is
+            # Billings Clinic's, run by DCI, and both facts are true.
+            resolved.append(sysdef)
+            bases.append(f"name over chain: {pattern}")
+            continue
         resolved.append(sysdef)
         bases.append(pattern)
 
