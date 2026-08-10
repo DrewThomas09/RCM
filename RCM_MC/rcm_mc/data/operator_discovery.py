@@ -81,6 +81,7 @@ signals are on the row; the reviewer weighs them.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -140,6 +141,19 @@ _LEGAL_FORMS = frozenset({
     "INC", "INCORPORATED", "LLC", "LLP", "LP", "LTD", "CORP",
     "CORPORATION", "COMPANY", "PLLC", "PC", "PLC",
 })
+
+
+def _register() -> pd.DataFrame:
+    """The whole certified register, from the memoized accessor.
+
+    ``get_crosswalk`` rather than ``build_crosswalk``: the uncached build
+    is 1.5 seconds over 48,510 rows, and the page panel asks for the
+    register twice. Two rebuilds per render is three seconds of a
+    partner's page load spent recomputing a frame that has not changed.
+    """
+    from .provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+    return get_crosswalk(scope=SCOPE_ALL)
 
 
 def operator_key(name: Any) -> str:
@@ -270,12 +284,37 @@ def discover_operators(
     that fail are the ones worth reading, because a large group with
     four ownership families is either a name collision or a chain in the
     middle of being sold, and only a human can tell which.
+
+    Against the bundled register the answer is memoized. The pass is
+    seven seconds over 48,510 rows — normalising every name twice and
+    grouping 33,998 records — and the page panel and the CSV route both
+    ask for it on every request. Passing an explicit ``crosswalk``
+    bypasses the cache, because then the input is the caller's and not
+    the fixed one on disk.
     """
     if crosswalk is None:
-        from .provider_crosswalk import SCOPE_ALL, build_crosswalk
+        groups = list(_cached_discovery(min_facilities))
+    else:
+        groups = _discover(crosswalk, min_facilities)
+    if confident_only:
+        return [o for o in groups if o.is_confident]
+    return groups
 
-        crosswalk = build_crosswalk(scope=SCOPE_ALL)
 
+@lru_cache(maxsize=4)
+def _cached_discovery(min_facilities: int) -> Tuple[DiscoveredOperator, ...]:
+    """Memoized over the bundled register, keyed on the size floor.
+
+    A tuple of frozen dataclasses rather than a list, so a caller that
+    mutates what it gets back cannot corrupt the cache for the next
+    request.
+    """
+    return tuple(_discover(_register(), min_facilities))
+
+
+def _discover(crosswalk: pd.DataFrame,
+              min_facilities: int) -> List[DiscoveredOperator]:
+    """The pass itself, over whichever register it is handed."""
     frequency = _document_frequency(
         [operator_key(n) for n in crosswalk.get(
             "name", pd.Series(dtype=str)).astype(str)])
@@ -319,8 +358,6 @@ def discover_operators(
             ccns=tuple(sorted({str(m.get("ccn") or "") for m in members}
                               - {""})),
         )
-        if confident_only and not operator.is_confident:
-            continue
         out.append(operator)
     out.sort(key=lambda o: (-o.facilities, -o.ownership_agreement, o.name))
     return out
@@ -353,7 +390,9 @@ def discovered_operator_frame(
 
 
 def discovery_coverage(
-    crosswalk: Optional[pd.DataFrame] = None) -> Dict[str, Any]:
+    crosswalk: Optional[pd.DataFrame] = None, *,
+    operators: Optional[List[DiscoveredOperator]] = None,
+) -> Dict[str, Any]:
     """What the discovery pass found, and against what denominator.
 
     The denominator is the point. "1,544 operators discovered" without
@@ -361,11 +400,10 @@ def discovery_coverage(
     named group" reads like the gap is closed when 88% of it is not.
     """
     if crosswalk is None:
-        from .provider_crosswalk import SCOPE_ALL, build_crosswalk
-
-        crosswalk = build_crosswalk(scope=SCOPE_ALL)
+        crosswalk = _register()
     rows = _unmapped_operating(crosswalk)
-    operators = discover_operators(crosswalk)
+    if operators is None:
+        operators = discover_operators(crosswalk)
     confident = [o for o in operators if o.is_confident]
     return {
         "unmapped_operating": len(rows),

@@ -298,6 +298,37 @@ if __name__ == "__main__":
     unittest.main()
 
 
+class CacheTests(unittest.TestCase):
+    """The pass is seven seconds over the bundled register and both the
+    page and the route ask for it per request."""
+
+    def test_an_explicit_register_bypasses_the_cache(self) -> None:
+        """The cache is keyed on the size floor alone, so a caller's own
+        frame must never be served from it — or answered into it."""
+        mine = discover_operators(_chain())
+        theirs = discover_operators()
+        self.assertEqual({o.name for o in mine},
+                         {"CARETENDERS", "MEMORIAL HOSPITAL"})
+        self.assertGreater(len(theirs), 500)
+        self.assertEqual({o.name for o in discover_operators(_chain())},
+                         {"CARETENDERS", "MEMORIAL HOSPITAL"})
+
+    def test_mutating_the_result_does_not_corrupt_the_next_caller(self) -> None:
+        first = discover_operators()
+        count = len(first)
+        first.clear()
+        self.assertEqual(len(discover_operators()), count)
+
+    def test_the_size_floor_is_part_of_the_key(self) -> None:
+        """Two floors are two different answers. Sharing one cache slot
+        between them would serve whichever ran first."""
+        everything = discover_operators()
+        big = discover_operators(min_facilities=8)
+        self.assertLess(len(big), len(everything))
+        self.assertTrue(all(o.facilities >= 8 for o in big))
+        self.assertEqual(len(discover_operators()), len(everything))
+
+
 class PagePanelTests(unittest.TestCase):
     """The queue on /health-system-lookup."""
 

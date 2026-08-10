@@ -1096,8 +1096,12 @@ def _discovered_operators_panel(limit: int = 15) -> str:
         discover_operators, discovery_coverage,
     )
 
-    coverage = discovery_coverage()
-    operators = discover_operators(confident_only=True)
+    # One pass over the register, reused for both the table and the
+    # denominator. Asking each of them separately meant two 48,510-row
+    # groupings for one panel.
+    groups = discover_operators()
+    coverage = discovery_coverage(operators=groups)
+    operators = [o for o in groups if o.is_confident]
     if not operators:
         return ""
 
