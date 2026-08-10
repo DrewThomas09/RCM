@@ -1072,6 +1072,86 @@ def _ownership_panel(limit: int = 12) -> str:
         'builds the same file from a full NPPES ingest.</div>')
 
 
+def _discovered_operators_panel(limit: int = 15) -> str:
+    """Operators the registry does not carry, found in the register itself.
+
+    The registry maps 14,425 of 48,510 certified facilities. The 33,998
+    operating facilities it misses are 86% post-acute, and the ownership
+    graph cannot reach them — it resolves NPIs, and only 60 of those
+    facilities carry one in the bundled extracts.
+
+    What they do carry is a name and a CMS ownership type, which is
+    enough to find the chains: twenty agencies filing CARETENDERS across
+    seven states, all proprietary, are one company. Eight hospitals
+    filing MEMORIAL HOSPITAL across seven states, between them a local
+    government, a private non-profit, a proprietary corporation and a
+    physician group, are eight hospitals.
+
+    Shown as a queue rather than applied as a mapping. A confident group
+    is evidence that an operator exists, not evidence of what it is
+    called on a cap table — the same standing as the ownership
+    disagreements above it, and the same disposition: a registry edit.
+    """
+    from rcm_mc.data.operator_discovery import (
+        discover_operators, discovery_coverage,
+    )
+
+    coverage = discovery_coverage()
+    operators = discover_operators(confident_only=True)
+    if not operators:
+        return ""
+
+    cols = [("Candidate operator", "left"), ("Facilities", "right"),
+            ("States", "right"), ("Type", "left"), ("Ownership", "left"),
+            ("Agree", "right"), ("Where", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for operator in operators[:limit]:
+        states = ", ".join(operator.states[:6])
+        if len(operator.states) > 6:
+            states += f" +{len(operator.states) - 6}"
+        cells = [
+            ck_data_cell(_esc(operator.name), weight=600),
+            ck_data_cell(f"{operator.facilities:,}", align="right", mono=True),
+            ck_data_cell(f"{len(operator.states)}", align="right", mono=True),
+            ck_data_cell(_esc(", ".join(operator.classes)), tone="dim"),
+            ck_data_cell(_esc(operator.ownership_family), tone="dim"),
+            ck_data_cell(f"{operator.ownership_agreement:.0%}", align="right",
+                         mono=True),
+            ck_data_cell(_esc(states), tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+
+    mix = " · ".join(f"{k} {v:,}" for k, v in
+                     list(coverage["by_class"].items())[:5])
+    return (table + f'<div class="hsl-legend">'
+            f'{coverage["confident_groups"]:,} candidate operators covering '
+            f'{coverage["facilities_in_confident_groups"]:,} facilities '
+            f'&mdash; out of {coverage["unmapped_operating"]:,} operating '
+            'facilities the registry does not map, so this closes part of '
+            'the gap and not most of it. '
+            f'{coverage["multi_state_confident"]:,} of them run in more than '
+            f'one state. By class: {_esc(mix)}. '
+            '<br><br>A group qualifies when its facilities file the '
+            '<strong>same ownership structure</strong>, because a real '
+            'operator has one and facilities that merely share a name each '
+            'file whatever they independently are. That test is what keeps '
+            'MEMORIAL HOSPITAL, GOOD SAMARITAN HOSPITAL and SAINT JOSEPH '
+            'MEDICAL CENTER off this list &mdash; the patron-saint families '
+            'that a name match alone turns into fictitious systems. '
+            'Groups that fail it are kept, not deleted: a large group '
+            'spanning several ownership types is either a collision or a '
+            'chain part-way through a sale, and only a reader can tell '
+            'which. Nothing here is written to <code>system_id</code>; each '
+            'row is a registry edit for a human to make. Download the full '
+            'queue, including the groups that failed, at <a class="ck-link" '
+            'href="/discovered-operators.csv">/discovered-operators.csv</a>.'
+            '</div>')
+
+
 def _markets_panel(limit: int = 15) -> str:
     """Facilities and beds by CBSA — the unit an operator competes in.
 
@@ -1328,6 +1408,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
     ownership = _ownership_panel()
+    discovered = _discovered_operators_panel()
     npi_lookup = _npi_lookup_panel(npi_q)
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
@@ -1410,6 +1491,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Ownership Graph — Final Parents and What They Disagree On</div>
     {ownership}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Discovered Operators — Chains the Registry Does Not Carry</div>
+    {discovered}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>
