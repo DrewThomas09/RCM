@@ -1567,3 +1567,143 @@ class RegistryPrecisionTests(unittest.TestCase):
         names = set(self.mapped[self.mapped["system_id"].astype(str)
                                 == "marshfield"]["state"].astype(str))
         self.assertEqual(names, {"WI", "MI"})
+
+
+class NameDisagreementTests(unittest.TestCase):
+    """CMS publishes two names per facility on two clocks. When a
+    hospital changes hands one of them moves first, so a disagreement is
+    the register reporting a transaction — the only way this data ever
+    does, since CMS publishes change-of-ownership as state-by-year counts
+    and nothing else."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.health_systems import name_disagreements
+
+        cls.queue = name_disagreements()
+
+    def test_neither_name_is_automatically_the_fresher_one(self):
+        """The reason this reports instead of resolving.
+
+        Twelve of the seventeen had the newer name on Care Compare — the
+        Centura hospitals that went to AdventHealth, Ascension's two
+        Michigan hospitals that went to Henry Ford. Three had it on the
+        cost report instead: CCF MERCY, UVA HEALTH PRINCE WILLIAM and
+        VIA CHRISTI PITTSBURG were already updated there while Care
+        Compare still carried the seller. "Always prefer the CMS name"
+        would have fixed twelve and broken three.
+        """
+        from rcm_mc.data.health_systems import CCN_OVERRIDES
+
+        # The three where the cost report is fresher must NOT be
+        # overridden towards Care Compare.
+        for ccn, keeps in (("360070", "cleveland_clinic"),
+                           ("490045", "uva"),
+                           ("170006", "ascension")):
+            with self.subTest(ccn=ccn):
+                self.assertNotIn(ccn, CCN_OVERRIDES)
+                row = self.mapped_row(ccn)
+                self.assertEqual(row["system_id"], keeps)
+
+    @staticmethod
+    def mapped_row(ccn: str):
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        register = get_crosswalk(scope=SCOPE_ALL)
+        return register[register["ccn"].astype(str) == ccn].iloc[0]
+
+    def test_the_settled_transactions_moved(self):
+        """The twelve that were adjudicated are no longer in the queue,
+        and their facilities sit with the buyer."""
+        for ccn, buyer in (("230165", "henry_ford"),
+                           ("230195", "henry_ford"),
+                           ("060064", "adventhealth"),
+                           ("060125", "adventhealth"),
+                           ("050152", "uc_health"),
+                           ("440034", "covenant_tn"),
+                           ("150146", "parkview")):
+            with self.subTest(ccn=ccn):
+                self.assertEqual(self.mapped_row(ccn)["system_id"], buyer)
+        settled = {d.ccn for d in self.queue}
+        self.assertEqual(settled & {"230165", "060064", "050152"}, set())
+
+    def test_a_chain_filing_is_never_in_the_queue(self):
+        """It never consulted a name, so it cannot disagree with one."""
+        for entry in self.queue:
+            with self.subTest(ccn=entry.ccn):
+                self.assertFalse(
+                    self.mapped_row(entry.ccn)["system_match"].startswith(
+                        ("chain:", "ccn override")))
+
+    def test_what_is_left_is_genuinely_undecidable(self):
+        """Baylor St Luke's is a real CommonSpirit/Baylor joint venture
+        and either name is defensible. A queue that emptied itself would
+        mean it had started guessing."""
+        self.assertLessEqual(len(self.queue), 8)
+        self.assertIn("450193", {d.ccn for d in self.queue})
+
+
+class SplitSystemIdentityTests(unittest.TestCase):
+    """One id held two companies and called itself a third thing."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        cls.register = get_crosswalk(scope=SCOPE_ALL)
+
+    def test_hoag_is_its_own_system(self):
+        """Hoag separated from Providence in 2022. It was sitting inside
+        an entry whose id was "cedars_marina" and whose display name was
+        "Providence Southern California" — an id from one era, a name
+        from another, and two companies inside."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertIsNone(get_system("cedars_marina"))
+        self.assertIsNotNone(get_system("hoag"))
+        hoag = self.register[self.register["system_id"].astype(str) == "hoag"]
+        self.assertEqual(len(hoag), 5)
+        self.assertTrue(all("HOAG" in n.upper() or "FUDGE" in n.upper()
+                            for n in hoag["name"].astype(str)))
+
+    def test_mission_hospital_went_to_providence(self):
+        for ccn in ("050567", "05T567"):
+            with self.subTest(ccn=ccn):
+                row = self.register[
+                    self.register["ccn"].astype(str) == ccn].iloc[0]
+                self.assertEqual(row["system_id"], "providence")
+
+    def test_no_two_ids_hold_the_same_company(self):
+        """The old entry also carried ^SAINT JOSEPH HOSPITAL ORANGE,
+        which `providence` already reaches, so one company sat under two
+        ids and every system-level rollup counted it twice."""
+        from rcm_mc.data.health_systems import SYSTEM_REGISTRY
+
+        names = [s.name.strip().lower() for s in SYSTEM_REGISTRY]
+        duplicates = {n for n in names if names.count(n) > 1}
+        self.assertEqual(duplicates, set())
+
+
+class ChangedHandsPanelTests(unittest.TestCase):
+    """The queue on /health-system-lookup."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = render_health_system_lookup({})
+
+    def test_the_panel_is_on_the_page(self) -> None:
+        self.assertIn("Changed Hands", self.html)
+        self.assertIn("450193", self.html)
+
+    def test_it_says_why_it_does_not_just_pick_one(self) -> None:
+        """A reader who cannot see that preferring either source would
+        be wrong a fifth of the time has no reason to accept a queue
+        instead of an answer."""
+        self.assertIn("Neither name is reliably the fresher one", self.html)
+
+    def test_it_names_the_transactions_already_settled(self) -> None:
+        self.assertIn("Centura", self.html)
+        self.assertIn("Henry Ford", self.html)
+
+    def test_it_explains_why_this_is_the_only_chow_signal(self) -> None:
+        self.assertIn("state-by-year counts", self.html)

@@ -943,6 +943,10 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
         # CCN_OVERRIDES instead.
         patterns=("FL:^BAPTIST MEDICAL CENTER",
                   "FL:^BAPTIST MEDICAL CTR",
+                  # Care Compare spells the same hospital "BAPTIST HEALTH
+                  # MEDICAL CENTER - JACKSONVILLE"; without this the two
+                  # published names disagree about their own facility.
+                  "FL:^BAPTIST HEALTH MEDICAL CENTER",
                   "FL:^BAPTIST HOME HEALTH CARE BY BAYADA"),
         states=("FL",),
     ),
@@ -1154,10 +1158,19 @@ ACUTE_REGISTRY: Tuple[SystemDef, ...] = (
                   "^SAINT JOSEPHS MEDICAL CENTER"),
         states=("CA", "NV"),
     ),
+    # One entry used to hold all of this under the id "cedars_marina"
+    # and the display name "Providence Southern California" — an id from
+    # a Cedars-Sinai era, a name from a Providence one, and two
+    # different companies inside it. Hoag separated from Providence in
+    # 2022 and is independent; Mission Hospital is Providence's. The
+    # entry also carried ^SAINT JOSEPH HOSPITAL ORANGE, which the
+    # `providence` entry below already reaches, so the same company was
+    # held under two system ids and any system-level rollup double
+    # counted it.
     SystemDef(
-        "cedars_marina", "Providence Southern California", KIND_CATHOLIC, FOCUS_ACUTE, "CA",
-        patterns=("^SAINT JOSEPH HOSPITAL ORANGE", "^HOAG", "^MISSION HOSPITAL"),
-        states=("CA",),
+        "hoag", "Hoag Memorial Hospital Presbyterian", KIND_NONPROFIT,
+        FOCUS_ACUTE, "CA",
+        patterns=("^HOAG",), states=("CA",),
     ),
     SystemDef(
         "pih", "PIH Health", KIND_NONPROFIT, FOCUS_ACUTE, "CA",
@@ -2283,6 +2296,38 @@ CHAIN_ALIASES: Dict[str, str] = {
 
 CCN_OVERRIDES: Dict[str, str] = {
     # Identical names, different organizations (see case 1).
+    # Mission Hospital and its rehab unit are Providence's; only the
+    # name cannot say so, because ^MISSION HOSPITAL is a descriptor
+    # rather than a brand and nothing else in the register should
+    # inherit it.
+    "050567": "providence",              # MISSION HOSPITAL REG MEDICAL CTR
+    "05T567": "providence",              # its rehab unit
+    # Hoag's rehab unit follows its hospital.
+    "05T224": "hoag",                    # THE FUDGE FAMILY ACUTE REHAB
+    # Ownership that has moved on, corroborated by CMS's own second
+    # name for the same CCN. The cost report carries the seller's name
+    # and Care Compare carries the buyer's; each was read individually,
+    # because the stale side is not always the same one — CCF MERCY,
+    # UVA PRINCE WILLIAM and VIA CHRISTI PITTSBURG are all cases where
+    # the cost report is the fresher of the two and no change is due.
+    "230165": "henry_ford",              # ASCENSION ST JOHN -> Henry Ford
+    "23T165": "henry_ford",              # its rehab unit
+    "230195": "henry_ford",              # ASCENSION MACOMB-OAKLAND -> Warren
+    "23T195": "henry_ford",              # its rehab unit
+    "060064": "adventhealth",            # the five Centura Adventist hospitals
+    "06T064": "adventhealth",            # Colorado's Centura split in 2023;
+    "060103": "adventhealth",            # AdventHealth took the Adventist
+    "060113": "adventhealth",            # side and CommonSpirit the rest
+    "060114": "adventhealth",
+    "060125": "adventhealth",
+    "100077": "adventhealth",            # BAYFRONT PORT CHARLOTTE
+    "050152": "uc_health",               # SAINT FRANCIS MEMORIAL -> UCSF
+    "05T152": "uc_health",               # its rehab unit, caught by the
+                                         # unit/parent invariant
+    "440034": "covenant_tn",             # METHODIST MEDICAL CENTER OF OAK
+                                         # RIDGE, held by Memphis on a bare
+                                         # TN-scoped ^METHODIST
+    "150146": "parkview",                # COMMUNITY HOSPITAL OF NOBLE CTY
     # Two unrelated Saint Luke's in Missouri. These five are the
     # independent St. Louis system — Chesterfield and Des Peres are
     # St. Louis suburbs, not Kansas City ones.
@@ -3108,6 +3153,78 @@ def _rollup_group(
 _STOP_STEM_WORDS = frozenset({
     "THE", "OF", "AND", "AT", "FOR", "A", "AN",
 })
+
+
+@dataclass(frozen=True)
+class NameDisagreement:
+    """One CCN whose two published names name two different owners."""
+
+    ccn: str
+    state: str
+    filed_name: str
+    filed_system: str
+    cms_name: str
+    cms_system: str
+    beds: float
+
+
+def name_disagreements(
+    df: Optional[pd.DataFrame] = None) -> List[NameDisagreement]:
+    """CCNs where the cost report and Care Compare name different owners.
+
+    CMS publishes two names for the same facility and they are updated
+    on different clocks, so when a hospital changes hands one of them
+    moves first. A disagreement is therefore not noise — it is the
+    register telling you a transaction happened, which is otherwise
+    unobservable here, because CMS publishes change-of-ownership only as
+    state-by-year counts.
+
+    Neither side is automatically right, which is why this reports
+    rather than resolves. Of the seventeen found on this data twelve had
+    the fresher name on Care Compare — the five Centura hospitals that
+    went to AdventHealth in the 2023 Colorado split, Ascension's St John
+    and Macomb-Oakland going to Henry Ford — and three had it on the
+    cost report: CCF MERCY MEDICAL CENTER, UVA HEALTH PRINCE WILLIAM and
+    VIA CHRISTI HOSPITAL PITTSBURG were all already updated there while
+    Care Compare still carried the seller. An "always prefer the CMS
+    name" rule would have fixed twelve and broken three.
+
+    The twelve are settled in :data:`CCN_OVERRIDES`. What remains is
+    genuinely undecidable from disk — Baylor St Luke's is a real joint
+    venture between CommonSpirit and Baylor, and either name is
+    defensible — so it stays a queue for a human.
+    """
+    from .provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+    rows = get_crosswalk(scope=SCOPE_ALL) if df is None else df
+    if rows.empty or "ccn" not in rows.columns:
+        return []
+    care_compare = load_cms_facilities()
+    out: List[NameDisagreement] = []
+    for ccn, name, state, system_id, basis, beds in zip(
+            rows["ccn"].astype(str), rows["name"].astype(str),
+            rows["state"].astype(str), rows["system_id"].astype(str),
+            rows["system_match"].astype(str),
+            pd.to_numeric(rows.get("beds"), errors="coerce")
+            if "beds" in rows.columns else [float("nan")] * len(rows)):
+        if system_id in ("", UNMAPPED_ID):
+            continue
+        # An override is a human's answer and settles the question; a
+        # chain filing never consulted a name in the first place.
+        if basis.startswith(("chain:", "ccn override")):
+            continue
+        alt = care_compare.get(ccn)
+        if alt is None or not alt.name:
+            continue
+        alt_def, _ = match_system(alt.name, state)
+        if alt_def is None or alt_def.system_id == system_id:
+            continue
+        out.append(NameDisagreement(
+            ccn=ccn, state=state, filed_name=name, filed_system=system_id,
+            cms_name=alt.name, cms_system=alt_def.system_id,
+            beds=float(beds) if beds == beds else 0.0))
+    out.sort(key=lambda d: (-d.beds, d.ccn))
+    return out
 
 
 def candidate_clusters(

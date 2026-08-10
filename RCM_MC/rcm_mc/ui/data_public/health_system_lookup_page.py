@@ -1072,6 +1072,70 @@ def _ownership_panel(limit: int = 12) -> str:
         'builds the same file from a full NPPES ingest.</div>')
 
 
+def _name_disagreement_panel() -> str:
+    """Where CMS's two names for one hospital name two different owners.
+
+    CMS publishes the cost-report name and the Care Compare name on
+    different clocks, so when a hospital changes hands one of them moves
+    first. That makes a disagreement the only observable trace of a
+    transaction in this data — CMS publishes change-of-ownership as
+    state-by-year counts and nothing that names a facility.
+
+    Reported rather than resolved, because neither side is reliably the
+    fresher one. Twelve of the seventeen found had the newer name on
+    Care Compare; three had it on the cost report.
+    """
+    from rcm_mc.data.health_systems import get_system, name_disagreements
+
+    queue = name_disagreements()
+    if not queue:
+        return ""
+
+    def label(system_id: str) -> str:
+        sysdef = get_system(system_id)
+        return sysdef.name if sysdef is not None else system_id
+
+    cols = [("CCN", "left"), ("State", "center"), ("Beds", "right"),
+            ("Cost report says", "left"), ("Care Compare says", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for entry in queue:
+        cells = [
+            ck_data_cell(_esc(entry.ccn), mono=True, tone="dim"),
+            ck_data_cell(_esc(entry.state), align="center", mono=True),
+            ck_data_cell(f"{entry.beds:,.0f}" if entry.beds else "—",
+                         align="right", mono=True),
+            ck_data_cell(f'{_esc(entry.filed_name)}<div class="hsl-sub">'
+                         f'{_esc(label(entry.filed_system))}</div>'),
+            ck_data_cell(f'{_esc(entry.cms_name)}<div class="hsl-sub">'
+                         f'{_esc(label(entry.cms_system))}</div>', tone="acc"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+    beds = sum(e.beds for e in queue)
+    return (table + f'<div class="hsl-legend">{len(queue):,} facilities '
+            f'carrying {beds:,.0f} beds where CMS&rsquo;s two published '
+            'names resolve to two different owners. This is the closest '
+            'thing the data has to a change-of-ownership feed: CMS '
+            'publishes CHOW only as state-by-year counts, so a hospital '
+            'changing hands is visible here and almost nowhere else. '
+            '<br><br>Neither name is reliably the fresher one, which is '
+            'why these are reported rather than resolved. Twelve '
+            'transactions have already been settled off this queue and '
+            'written into the registry &mdash; the five Centura '
+            'hospitals that went to AdventHealth in the 2023 Colorado '
+            'split, Ascension&rsquo;s St John and Macomb-Oakland going '
+            'to Henry Ford, Saint Francis Memorial to UCSF. In three '
+            'others the cost report was the fresher name and Care '
+            'Compare still carried the seller, so a rule preferring '
+            'either source would have been wrong a fifth of the time. '
+            'What is left is genuinely undecidable from this data: '
+            'Baylor St Luke&rsquo;s is a real joint venture and both '
+            'names are defensible.</div>')
+
+
 def _discovered_operators_panel(limit: int = 15) -> str:
     """Operators the registry does not carry, found in the register itself.
 
@@ -1427,6 +1491,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     npis = _npi_panel()
     ownership = _ownership_panel()
     discovered = _discovered_operators_panel()
+    disagreements = _name_disagreement_panel()
     npi_lookup = _npi_lookup_panel(npi_q)
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
@@ -1513,6 +1578,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Discovered Operators — Chains the Registry Does Not Carry</div>
     {discovered}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Changed Hands — Where CMS's Two Names Disagree</div>
+    {disagreements}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>
