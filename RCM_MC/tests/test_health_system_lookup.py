@@ -1808,6 +1808,14 @@ class NpiBridgePanelTests(unittest.TestCase):
     def test_it_says_post_acute_is_unharvested_not_broken(self) -> None:
         self.assertIn("not harvested yet", self.html)
 
+    def test_it_separates_the_harvest_record_from_what_lands(self) -> None:
+        """Reporting only the file's row count would overstate the join
+        by however many rows the taxonomy-family guard turns away. The
+        harvest record and the crosswalk are different numbers and the
+        panel has to show both."""
+        self.assertIn("reach the crosswalk", self.html)
+        self.assertIn("turned away", self.html)
+
     def test_it_bounds_what_a_ptan_actually_proves(self) -> None:
         """A PTAN proves the CCN was enumerated under that NPI, not that
         the enumeration is current. After a change of ownership the PTAN

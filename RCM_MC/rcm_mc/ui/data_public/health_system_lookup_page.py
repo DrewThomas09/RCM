@@ -1091,13 +1091,22 @@ def _npi_bridge_panel() -> str:
     should not be trusted the way a row the provider's own Medicare
     number confirms should be.
     """
-    from rcm_mc.data.ccn_npi_bridge import bridge_summary, load_bridge
+    from rcm_mc.data.ccn_npi_bridge import (
+        BRIDGE_SOURCE, bridge_summary, load_bridge,
+    )
+    from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
 
     rows = load_bridge()
     if not rows:
         return ""
     summary = bridge_summary()
     basis = Counter(r.match_basis or "unstated" for r in rows.values())
+    # The file is the harvest record; the crosswalk is what a partner
+    # downloads. They differ, and reporting only the first would
+    # overstate the join by however many rows the taxonomy-family guard
+    # turns away.
+    landed = int(get_crosswalk(scope=SCOPE_ALL)["npi_source"]
+                 .astype(str).str.startswith(BRIDGE_SOURCE).sum())
 
     cols = [("Evidence", "left"), ("CCNs", "right"), ("Share", "right")]
     ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
@@ -1125,6 +1134,14 @@ def _npi_bridge_panel() -> str:
             f'{summary["distinct_npis"]:,} distinct NPIs across '
             f'{summary["states"]} state codes, '
             f'{summary["high_confidence"]:,} at high confidence. '
+            f'<strong>{landed:,} of them reach the crosswalk</strong> — the '
+            f'remaining {summary["ccns_resolved"] - landed:,} are turned away '
+            'by a second guard that compares the NUCC classification family, '
+            'because keying on the CCN settles which <em>facility</em> and '
+            'not which of that facility&rsquo;s enumerations: a hospital&rsquo;s '
+            'rehab unit, its nursing home and its ambulance service all file '
+            'at the hospital&rsquo;s address. The counts here are the harvest '
+            'record; the crosswalk is what downloads. '
             'Harvested hospitals first, because they carry the beds and the '
             'revenue, so a low post-acute rate here reads as '
             '<em>not harvested yet</em> and not as a broken join. '
