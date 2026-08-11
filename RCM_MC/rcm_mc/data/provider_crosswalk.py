@@ -106,6 +106,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from .ccn_npi_bridge import BRIDGE_SOURCE, load_bridge
 from .cms_facility_names import cms_facility, load_cms_facilities
 from .health_systems import assign_systems, normalize_name
 from .npi_registry import organization_index
@@ -495,11 +496,21 @@ def _same_taxonomy_family(left: Any, right: Any) -> bool:
 
 def _npi_for(rec: Dict[str, Any], zip5: str, index,
              row_taxonomy: str) -> Tuple[str, str, str]:
-    """(npi, source, taxonomy) from the bundled NPPES roster, or blanks.
+    """(npi, source, taxonomy) from the harvested bridge or the roster.
 
-    Matched on (normalized name, state, ZIP5) against both the legal
-    name and every d/b/a. Two rules make the result trustworthy rather
-    than merely large:
+    The **bridge is consulted first**, because it is keyed on the CCN
+    and therefore does no name matching at all. That is the whole
+    point of it: a hospital enumerates under the authority that holds
+    its licence, so CCN 010039 HUNTSVILLE HOSPITAL is NPI 1447221056
+    THE HEALTH CARE AUTHORITY OF THE CITY OF HUNTSVILLE — same
+    building, no shared words. See :mod:`ccn_npi_bridge`. The bridge
+    row still has to pass the taxonomy-family test below; being keyed
+    on the CCN removes the ambiguity about *which facility*, not the
+    one about *which of that facility's enumerations*.
+
+    The roster fallback is matched on (normalized name, state, ZIP5)
+    against both the legal name and every d/b/a. Two rules make that
+    result trustworthy rather than merely large:
 
     1. **Exactly one NPI must claim the key.** Handled in
        :func:`npi_registry.organization_index`.
@@ -517,6 +528,13 @@ def _npi_for(rec: Dict[str, Any], zip5: str, index,
     ``npi_taxonomy`` rides along on the row so the claim stays
     checkable rather than having to be trusted.
     """
+    bridged = load_bridge().get(str(rec.get("ccn", "") or "").strip().upper())
+    if bridged is not None and _same_taxonomy_family(
+            bridged.taxonomy_code, row_taxonomy):
+        return (bridged.npi,
+                f"{BRIDGE_SOURCE} ({bridged.confidence})",
+                bridged.taxonomy_code)
+
     name = str(rec.get("name", "") or "")
     state = str(rec.get("state", "") or "").upper().strip()
     # HCRIS spells ZIPs three ways — "35957", "35957-", "372051609". The
