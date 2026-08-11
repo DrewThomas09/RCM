@@ -67,16 +67,38 @@ institutional provider *is* the CCN with a hyphen in it::
                                                              └ CCN 020001
 
 That is not evidence to weigh, it is the provider's own enumeration
-naming the CCN, and it is the strongest link this file can carry.
-Where a harvested row has one, ``match_basis`` is ``ptan`` and the
-loader *enforces* it: a PTAN that normalises to a different CCN than
-the row claims drops the row rather than trusting the address, and
-the drop is reported through :func:`ptan_contradictions`. A row can
-be wrong about an address; it cannot be wrong about this and still be
-worth keeping.
+naming the CCN. Where a harvested row has one, ``match_basis`` is
+``ptan`` and the loader *enforces* it: a PTAN that normalises to a
+different CCN than the row claims drops the row rather than trusting
+the address, and the drop is reported through
+:func:`ptan_contradictions`. A row can be wrong about an address; it
+cannot be wrong about this and still be worth keeping.
 
 Most rows do not have one — Huntsville's does not — which is why
 address and taxonomy remain the working rule rather than a fallback.
+
+**What a PTAN proves is narrower than it first looks.** It proves the
+CCN was enumerated under that NPI. It does not prove the enumeration
+is current, and after a change of ownership the two come apart::
+
+    CCN 440065  TRISTAR NORTHCREST MEDICAL CENTER
+      NPI 1669567897  NORTHCREST MEDICAL CENTER      PTAN 440065
+                      last certified 2019
+      NPI 1093397184  SPRINGFIELD HEALTH SERVICES LLC   (HCA)
+                      d/b/a NORTHCREST MEDICAL CENTER, certified 2025
+
+The PTAN sits on the predecessor. The d/b/a matching the *current*
+cost-report name sits on the successor, which is the NPI a claim will
+be billed under today. Maui Memorial splits the same way, HHSC against
+Maui Health.
+
+This file keeps the PTAN-confirmed row, because "which NPI holds this
+CCN" is the question it is answering and the provider answered it.
+But a caller who needs the currently-billing NPI should treat a
+PTAN-confirmed row whose d/b/a disagrees with the cost-report name as
+a flag rather than an answer — and note that the disagreement is
+itself a change-of-ownership signal, of the same kind the *Changed
+Hands* queue is built from.
 
 What the file does not claim
 ----------------------------

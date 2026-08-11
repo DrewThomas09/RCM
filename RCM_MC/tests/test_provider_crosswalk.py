@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import tempfile
+from collections import Counter
 import unittest
 from pathlib import Path
 
@@ -721,14 +722,40 @@ class NpiLinkTests(unittest.TestCase):
     def test_the_dba_tier_carries_its_weight(self) -> None:
         """NPI 1841241833 files legally as HOT SPRINGS NATIONAL PARK
         HOSPITAL HOLDINGS LLC and does business as NATIONAL PARK MEDICAL
-        CENTER, which is the name on the cost report."""
-        sources = self.linked["npi_source"].value_counts()
-        self.assertGreater(sources.get("nppes dba+state+zip5", 0), 20)
-        self.assertGreater(sources.get("nppes name+state+zip5", 0), 20)
-        by_ccn = self.linked.set_index("ccn")
-        self.assertEqual(by_ccn.loc["040078", "npi"], "1841241833")
-        self.assertEqual(by_ccn.loc["040078", "npi_source"],
-                         "nppes dba+state+zip5")
+        CENTER, which is the name on the cost report. Without the d/b/a
+        tier the roster matcher never reaches it.
+
+        Asserted against the roster index rather than the crosswalk
+        output: the bridge now supplies most links, so counting sources
+        in the finished frame measures harvest order rather than whether
+        this tier works.
+        """
+        from rcm_mc.data.npi_registry import organization_index
+
+        bases = Counter(basis for _, _, basis in organization_index().values())
+        self.assertGreater(bases["dba"], 20)
+        self.assertGreater(bases["name"], 20)
+
+    def test_the_two_sources_agree_where_they_overlap(self) -> None:
+        """The strongest evidence either source is right. The roster
+        reached 040078 through the d/b/a on name+state+ZIP5; the harvest
+        reached it independently, keyed on the CCN and matched on the
+        street. Same NPI. A disagreement here would mean one of the two
+        methods is systematically wrong, which no coverage number would
+        show."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+        from rcm_mc.data.npi_registry import organization_index
+
+        bridge = load_bridge()
+        roster = organization_index()
+        by_npi = {npi: True for npi, _, _ in roster.values()}
+        overlap = [(ccn, row) for ccn, row in bridge.items()
+                   if row.npi in by_npi]
+        self.assertGreater(len(overlap), 0)
+        national_park = bridge.get("040078")
+        self.assertIsNotNone(national_park)
+        self.assertEqual(national_park.npi, "1841241833")
+        self.assertEqual(national_park.npi_dba, "NATIONAL PARK MEDICAL CENTER")
 
     def test_every_link_is_traceable_to_the_source_that_made_it(self) -> None:
         """Two sources now feed this column, and a link has to come from

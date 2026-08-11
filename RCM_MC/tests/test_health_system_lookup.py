@@ -1808,6 +1808,15 @@ class NpiBridgePanelTests(unittest.TestCase):
     def test_it_says_post_acute_is_unharvested_not_broken(self) -> None:
         self.assertIn("not harvested yet", self.html)
 
+    def test_it_bounds_what_a_ptan_actually_proves(self) -> None:
+        """A PTAN proves the CCN was enumerated under that NPI, not that
+        the enumeration is current. After a change of ownership the PTAN
+        sits on the predecessor while the successor holds the d/b/a and
+        the billing. Presenting PTAN as unqualified proof would send a
+        partner to the wrong NPI on exactly the deals they care about."""
+        self.assertIn("does not prove the enumeration is current", self.html)
+        self.assertIn("change-of-ownership flag", self.html)
+
 
 class NpiBridgeReachesTheCrosswalkTests(unittest.TestCase):
     def test_every_bridge_row_that_survives_lands_on_its_ccn(self) -> None:
