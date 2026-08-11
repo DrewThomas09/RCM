@@ -18,7 +18,14 @@ is real or absent because the county genuinely sits outside one.
 Two scopes
 ----------
 ``scope="hospital"`` is the 6,123-facility HCRIS universe — the only
-one with beds, revenue and filing recency on it. ``scope="all"`` adds
+one with revenue and filing recency on it. Beds are *not* exclusive to
+it: 28,274 rows carry a bed count at ``scope="all"``, 22,255 of them
+non-hospital, and the units differ — staffed beds for a hospital,
+certified beds for a nursing home, stations for a dialysis clinic. Do
+not sum the column across classes and call the total beds.
+``net_patient_revenue`` is on the column contract and is populated only
+under ``scope="hospital"``; at ``scope="all"`` it is blank on all 48,510
+rows. ``scope="all"`` adds
 the 42,387 nursing homes, home-health agencies, hospices, dialysis
 facilities, IRFs and LTCHs from the CMS Compare files, for 48,510 CCNs.
 The default stays hospital-only because a caller who did not ask for
@@ -26,10 +33,16 @@ eight times the rows should not silently get them.
 
 The chain, and what each link is worth over the full universe:
 
-    CCN  ──►  health system        14,425 of 48,510 (29.7%)
-     │        (health_systems.py registry). The average hides an
-     │        enormous spread — 89% of dialysis, 8.5% of nursing
-     │        homes — so crosswalk_by_class() reports it per class.
+    CCN  ──►  health system        14,364 of 48,510 (29.6%)
+     │        Read it before quoting it. Fewer than half those links
+     │        are the registry's own work: 6,663 (46%) are the
+     │        operator's chain filing copied out of the dialysis file,
+     │        and every one of them is a dialysis clinic. The curated
+     │        name patterns reach 7,137 CCNs, 14.7% of the register.
+     │        The average also hides an enormous spread — 90% of
+     │        dialysis against 10% of nursing homes — so
+     │        crosswalk_by_class() reports it per class rather than
+     │        letting one vertical stand for the whole file.
      │
      ├──►  county FIPS             46,633 of 48,510 (96.1%)
      │        four independent sources of the same fact, tried in
@@ -797,7 +810,13 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
     stats = [
         CoverageStat("CCN", total, total, "the key — every row has one"),
         CoverageStat("Health system", int((xw["system_id"] != "_unmapped").sum()),
-                     total, "name-matched against the curated registry"),
+                     total,
+                     # Not "name-matched against the curated registry":
+                     # 46% of these links are the operator's own chain
+                     # filing and were never matched against anything.
+                     "the operator's own chain filing where CMS carries "
+                     "one, else matched against the curated registry — "
+                     "read system_match for which"),
         CoverageStat("County FIPS", filled("county_fips"), total,
                      "geocode file, then the filed county, then Care "
                      "Compare, then an unambiguous ZIP"),

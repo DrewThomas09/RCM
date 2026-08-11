@@ -341,8 +341,16 @@ class CcnOverrideTests(unittest.TestCase):
     """The escape hatch for facilities a name can never resolve."""
 
     def test_overrides_point_at_real_systems_and_real_facilities(self) -> None:
-        assigned = assign_systems()
-        universe = set(assigned["ccn"].astype(str))
+        """Checked against the whole register, not the hospital slice.
+
+        Overrides used to be honoured only in the acute universe, so a
+        hand assignment on a home health agency silently did nothing.
+        Now that both universes consult the table, an entry is valid if
+        the CCN exists anywhere in the register.
+        """
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        universe = set(get_crosswalk(scope=SCOPE_ALL)["ccn"].astype(str))
         for ccn, system_id in CCN_OVERRIDES.items():
             self.assertIsNotNone(get_system(system_id), f"{ccn} -> {system_id}")
             self.assertIn(ccn, universe, f"{ccn} is not in the universe")
@@ -359,9 +367,26 @@ class CcnOverrideTests(unittest.TestCase):
 
     def test_override_is_visible_as_its_own_match_basis(self) -> None:
         """An asserted assignment must not read like a derived one."""
-        assigned = assign_systems().set_index("ccn")
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        assigned = get_crosswalk(scope=SCOPE_ALL).set_index(
+            get_crosswalk(scope=SCOPE_ALL)["ccn"].astype(str))
         for ccn in CCN_OVERRIDES:
-            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+            self.assertEqual(assigned.loc[ccn, "system_match"],
+                             f"ccn override {ccn}")
+
+    def test_an_override_reaches_a_post_acute_facility(self) -> None:
+        """Baptist Home Health Care in Pensacola belongs to Baptist
+        Health Care, not to Baptist Health South Florida three hundred
+        miles away. Before the post-acute path consulted the table, the
+        override for it did nothing at all."""
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        register = get_crosswalk(scope=SCOPE_ALL)
+        row = register[register["ccn"].astype(str) == "107006"].iloc[0]
+        self.assertEqual(row["provider_class"], "hha")
+        self.assertEqual(row["system_id"], "baptist_pensacola")
+        self.assertEqual(row["system_match"], "ccn override 107006")
 
     def test_truncated_names_are_reachable_only_by_override(self) -> None:
         """HCRIS cuts at ~36 chars: 'Hospital of the University of
@@ -421,7 +446,10 @@ class CmsNameTierTests(unittest.TestCase):
         """Overrides exist because a name — either name — is unusable."""
         assigned = assign_systems().set_index("ccn")
         for ccn in CCN_OVERRIDES:
-            self.assertEqual(assigned.loc[ccn, "system_match"], f"ccn override {ccn}")
+            if ccn not in assigned.index:
+                continue          # post-acute; covered in CcnOverrideTests
+            self.assertEqual(assigned.loc[ccn, "system_match"],
+                             f"ccn override {ccn}")
 
     def test_the_tier_pays_for_itself_in_coverage(self) -> None:
         assigned = assign_systems()
@@ -1207,6 +1235,61 @@ class NpiLookupPanelTests(unittest.TestCase):
         html = render_health_system_lookup({"npi": "ACADIAN"})
         self.assertIn("no employer field", html)
 
+    def test_a_cluster_parent_is_shown_by_name_not_only_by_number(self) -> None:
+        """``pecos:2264404516`` is the honest answer to "which cluster"
+        and a useless one to "who owns this", which is what the partner
+        typed the NPI to find out."""
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("ACADIAN AMBULANCE SERVICE", html)
+        self.assertIn("of members", html)
+
+    def test_the_identifier_stays_under_the_name(self) -> None:
+        """A label is a plurality of member filings; the identifier is
+        what was actually resolved. Replacing one with the other would
+        make an inference look like a lookup."""
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("pecos:", html)
+        self.assertIn('class="hsl-sub"', html)
+
+    def test_the_legend_says_what_the_share_means(self) -> None:
+        html = render_health_system_lookup({"npi": "ACADIAN"})
+        self.assertIn("how many members filed that name", html)
+
+
+class ParentCellTests(unittest.TestCase):
+    """The cell that renders a resolved parent."""
+
+    @staticmethod
+    def _cell(*args):
+        from rcm_mc.ui.data_public.health_system_lookup_page import (
+            _parent_cell)
+        return _parent_cell(*args)
+
+    def test_no_parent_renders_as_a_dash_not_an_empty_cell(self) -> None:
+        self.assertEqual(self._cell("", "", ""), "—")
+
+    def test_an_unlabelled_parent_still_shows_its_identifier(self) -> None:
+        """The abstaining clusters are the ones where members file too
+        many names to pick one. They must not render blank — the parent
+        was resolved, only the name was withheld."""
+        self.assertEqual(self._cell("official:BRIAN TIERNEY", "", ""),
+                         "official:BRIAN TIERNEY")
+
+    def test_a_labelled_parent_leads_with_the_name(self) -> None:
+        out = self._cell("pecos:555", "METRO AMBULANCE SERVICES INC", 1.0)
+        self.assertTrue(out.startswith("METRO AMBULANCE SERVICES INC"))
+        self.assertIn("pecos:555", out)
+        self.assertIn("100% of members", out)
+
+    def test_an_unreadable_support_drops_the_share_not_the_name(self) -> None:
+        out = self._cell("pecos:555", "METRO AMBULANCE INC", "")
+        self.assertIn("METRO AMBULANCE INC", out)
+        self.assertNotIn("of members", out)
+
+    def test_a_hostile_label_cannot_close_the_cell(self) -> None:
+        out = self._cell("pecos:555", '<script>alert(1)</script>', 1.0)
+        self.assertNotIn("<script>", out)
+
 
 class OwnershipPanelTests(unittest.TestCase):
     """The ownership graph on the page — how the answers were reached,
@@ -1320,3 +1403,375 @@ class CsvRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegistryPrecisionTests(unittest.TestCase):
+    """Precision of what is already mapped, not recall of what is not.
+
+    Every previous test here asks whether the matcher finds enough. None
+    asked whether what it found is right. An audit of the 14,425 mapped
+    facilities turned up 53 that were wrong — fourteen Southeast nursing
+    homes called Harborview assigned to UW Medicine in Seattle, twelve
+    Utah nursing homes called Monument Healthcare assigned to Monument
+    Health in South Dakota, eight nursing homes called The Cedars
+    assigned to Cedars-Sinai — and the whole suite passed while they
+    were there.
+
+    So these are structural invariants over the real register rather
+    than assertions about the systems that happened to be wrong. A
+    pinned list of nine catches those nine; an invariant catches the
+    tenth.
+    """
+
+    ACUTE = frozenset({"hospital", "irf", "ltch"})
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.health_systems import UNMAPPED_ID
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        crosswalk = get_crosswalk(scope=SCOPE_ALL)
+        system = crosswalk["system_id"].astype(str)
+        cls.mapped = crosswalk[system.ne("") & system.ne(UNMAPPED_ID)]
+
+    def test_a_single_market_system_does_not_reach_across_the_country(self):
+        """The failure shape, stated once.
+
+        A system whose hospitals sit in exactly one state has a
+        single-market brand, and post-acute facilities carrying that
+        brand in other states are almost always a different company
+        using the same word. Nine systems were doing this; the rule is
+        what stops the tenth.
+        """
+        from rcm_mc.data.health_systems import SYSTEM_REGISTRY
+
+        unscoped = {s.system_id for s in SYSTEM_REGISTRY if not s.states}
+        offenders = {}
+        for system_id, group in self.mapped.groupby(
+                self.mapped["system_id"].astype(str)):
+            if system_id not in unscoped:
+                continue
+            acute = {str(state) for state, klass
+                     in zip(group["state"], group["provider_class"])
+                     if str(klass) in self.ACUTE}
+            if len(acute) != 1:
+                continue
+            home = next(iter(acute))
+            away = group[group["state"].astype(str) != home]
+            if len(away) > 1:
+                offenders[system_id] = sorted(set(away["state"].astype(str)))
+        self.assertEqual(
+            offenders, {},
+            "Single-market systems reaching outside their acute state — "
+            "give each a states=() footprint or an exclude: "
+            f"{offenders}")
+
+    def test_no_two_systems_claim_the_same_facility_name_in_one_town(self):
+        """One name, one town, one owner.
+
+        Keyed on city and not merely state, because the first cut of
+        this test keyed on state and flagged Houston Methodist against
+        Methodist Hospital San Antonio — two genuinely different Texas
+        systems, both assigned by hand CCN override, both correct. Two
+        facilities sharing a name across a state is normal; sharing one
+        within a town means a pattern has reached into another system's
+        estate.
+        """
+        from rcm_mc.data.health_systems import normalize_name
+
+        claims = {}
+        for name, state, city, system_id in zip(
+                self.mapped["name"], self.mapped["state"],
+                self.mapped["city"], self.mapped["system_id"]):
+            key = (normalize_name(name), str(state), str(city).upper().strip())
+            claims.setdefault(key, set()).add(str(system_id))
+        split = {k: sorted(v) for k, v in claims.items() if len(v) > 1}
+        self.assertEqual(split, {}, f"Same name, same town, two systems: {split}")
+
+    def test_the_registry_states_its_own_rule_and_follows_it(self):
+        """SystemDef's docstring says a footprint is required for every
+        brand naming more than one unrelated organization. These nine
+        were the standing violations."""
+        from rcm_mc.data.health_systems import get_system
+
+        for system_id, expected in (("uw_medicine", ("WA",)),
+                                    ("cedars", ("CA",)),
+                                    ("wellbridge", ("TX",)),
+                                    ("madonna", ("NE",)),
+                                    ("emory", ("GA",)),
+                                    ("four_winds", ("NY",)),
+                                    ("bayhealth", ("DE",))):
+            with self.subTest(system=system_id):
+                self.assertEqual(get_system(system_id).states, expected)
+
+    def test_two_systems_sharing_a_name_in_one_state_are_kept_apart(self):
+        """Missouri has two unrelated Saint Luke's and Florida has three
+        unrelated Baptists. A state scope cannot separate them, so the
+        overrides do — and the check is that each estate is in its own
+        metro rather than that the counts happen to be right."""
+        stl = self.mapped[self.mapped["system_id"].astype(str) == "st_lukes_stl"]
+        self.assertEqual(set(stl["city"].astype(str).str.upper()),
+                         {"CHESTERFIELD", "ST. LOUIS"})
+        kc = self.mapped[self.mapped["system_id"].astype(str) == "st_lukes_kc"]
+        self.assertNotIn("CHESTERFIELD", set(kc["city"].astype(str).str.upper()))
+
+        jax = self.mapped[self.mapped["system_id"].astype(str) == "baptist_jax"]
+        self.assertTrue(all(c.upper().startswith(("JACKSONVILLE", "FERNANDINA"))
+                            for c in jax["city"].astype(str)))
+        pens = self.mapped[self.mapped["system_id"].astype(str)
+                           == "baptist_pensacola"]
+        self.assertEqual(set(pens["city"].astype(str).str.upper()), {"PENSACOLA"})
+        miami = self.mapped[self.mapped["system_id"].astype(str) == "baptist_fl"]
+        self.assertEqual(set(miami["city"].astype(str).str.upper()), {"MIAMI"})
+
+    def test_a_unit_and_its_parent_hospital_agree(self):
+        """A T in the third position of a CCN is CMS stating that this
+        unit is part of that hospital. Two different owners on the two
+        ends is the register contradicting itself, and in every case it
+        was ownership staleness: one of the two names had not caught up
+        with an acquisition.
+
+        Five existed. Each was read individually rather than fixed by a
+        blanket "unit inherits parent" rule, because the stale name is
+        sometimes on the unit — MERCY HOSPITAL PITTSBURG under a parent
+        already reading ASCENSION VIA CHRISTI — and sometimes on the
+        parent, where MERCY REGIONAL HEALTH CENTER sits above a unit
+        already reading VIA CHRISTI MANHATTAN. A blanket rule would have
+        fixed four and broken the fifth.
+        """
+        from rcm_mc.data.health_systems import UNMAPPED_ID
+
+        indexed = self.mapped.set_index(self.mapped["ccn"].astype(str))
+        by_ccn = indexed["system_id"].astype(str)
+        split = {}
+        for ccn, parent in zip(self.mapped["ccn"].astype(str),
+                               self.mapped["parent_ccn"].astype(str)):
+            if not parent or parent not in by_ccn.index:
+                continue
+            unit_system, parent_system = by_ccn.loc[ccn], by_ccn.loc[parent]
+            if UNMAPPED_ID in (unit_system, parent_system):
+                continue
+            if unit_system != parent_system:
+                split[ccn] = (unit_system, parent, parent_system)
+        self.assertEqual(split, {},
+                         f"Unit and parent hospital owned by different "
+                         f"systems: {split}")
+
+    def test_a_real_out_of_state_facility_is_kept(self):
+        """Marshfield genuinely runs Dickinson in Iron Mountain,
+        Michigan. The scope had to admit MI while dropping a nursing
+        home in Marshfield, Missouri — a town, not this system."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertEqual(get_system("marshfield").states, ("WI", "MI"))
+        names = set(self.mapped[self.mapped["system_id"].astype(str)
+                                == "marshfield"]["state"].astype(str))
+        self.assertEqual(names, {"WI", "MI"})
+
+
+class NameDisagreementTests(unittest.TestCase):
+    """CMS publishes two names per facility on two clocks. When a
+    hospital changes hands one of them moves first, so a disagreement is
+    the register reporting a transaction — the only way this data ever
+    does, since CMS publishes change-of-ownership as state-by-year counts
+    and nothing else."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.health_systems import name_disagreements
+
+        cls.queue = name_disagreements()
+
+    def test_neither_name_is_automatically_the_fresher_one(self):
+        """The reason this reports instead of resolving.
+
+        Twelve of the seventeen had the newer name on Care Compare — the
+        Centura hospitals that went to AdventHealth, Ascension's two
+        Michigan hospitals that went to Henry Ford. Three had it on the
+        cost report instead: CCF MERCY, UVA HEALTH PRINCE WILLIAM and
+        VIA CHRISTI PITTSBURG were already updated there while Care
+        Compare still carried the seller. "Always prefer the CMS name"
+        would have fixed twelve and broken three.
+        """
+        from rcm_mc.data.health_systems import CCN_OVERRIDES
+
+        # The three where the cost report is fresher must NOT be
+        # overridden towards Care Compare.
+        for ccn, keeps in (("360070", "cleveland_clinic"),
+                           ("490045", "uva"),
+                           ("170006", "ascension")):
+            with self.subTest(ccn=ccn):
+                self.assertNotIn(ccn, CCN_OVERRIDES)
+                row = self.mapped_row(ccn)
+                self.assertEqual(row["system_id"], keeps)
+
+    @staticmethod
+    def mapped_row(ccn: str):
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        register = get_crosswalk(scope=SCOPE_ALL)
+        return register[register["ccn"].astype(str) == ccn].iloc[0]
+
+    def test_the_settled_transactions_moved(self):
+        """The twelve that were adjudicated are no longer in the queue,
+        and their facilities sit with the buyer."""
+        for ccn, buyer in (("230165", "henry_ford"),
+                           ("230195", "henry_ford"),
+                           ("060064", "adventhealth"),
+                           ("060125", "adventhealth"),
+                           ("050152", "uc_health"),
+                           ("440034", "covenant_tn"),
+                           ("150146", "parkview")):
+            with self.subTest(ccn=ccn):
+                self.assertEqual(self.mapped_row(ccn)["system_id"], buyer)
+        settled = {d.ccn for d in self.queue}
+        self.assertEqual(settled & {"230165", "060064", "050152"}, set())
+
+    def test_a_chain_filing_is_never_in_the_queue(self):
+        """It never consulted a name, so it cannot disagree with one."""
+        for entry in self.queue:
+            with self.subTest(ccn=entry.ccn):
+                self.assertFalse(
+                    self.mapped_row(entry.ccn)["system_match"].startswith(
+                        ("chain:", "ccn override")))
+
+    def test_what_is_left_is_genuinely_undecidable(self):
+        """Baylor St Luke's is a real CommonSpirit/Baylor joint venture
+        and either name is defensible. A queue that emptied itself would
+        mean it had started guessing."""
+        self.assertLessEqual(len(self.queue), 8)
+        self.assertIn("450193", {d.ccn for d in self.queue})
+
+
+class SplitSystemIdentityTests(unittest.TestCase):
+    """One id held two companies and called itself a third thing."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        cls.register = get_crosswalk(scope=SCOPE_ALL)
+
+    def test_hoag_is_its_own_system(self):
+        """Hoag separated from Providence in 2022. It was sitting inside
+        an entry whose id was "cedars_marina" and whose display name was
+        "Providence Southern California" — an id from one era, a name
+        from another, and two companies inside."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertIsNone(get_system("cedars_marina"))
+        self.assertIsNotNone(get_system("hoag"))
+        hoag = self.register[self.register["system_id"].astype(str) == "hoag"]
+        self.assertEqual(len(hoag), 5)
+        self.assertTrue(all("HOAG" in n.upper() or "FUDGE" in n.upper()
+                            for n in hoag["name"].astype(str)))
+
+    def test_mission_hospital_went_to_providence(self):
+        for ccn in ("050567", "05T567"):
+            with self.subTest(ccn=ccn):
+                row = self.register[
+                    self.register["ccn"].astype(str) == ccn].iloc[0]
+                self.assertEqual(row["system_id"], "providence")
+
+    def test_no_two_ids_hold_the_same_company(self):
+        """The old entry also carried ^SAINT JOSEPH HOSPITAL ORANGE,
+        which `providence` already reaches, so one company sat under two
+        ids and every system-level rollup counted it twice."""
+        from rcm_mc.data.health_systems import SYSTEM_REGISTRY
+
+        names = [s.name.strip().lower() for s in SYSTEM_REGISTRY]
+        duplicates = {n for n in names if names.count(n) > 1}
+        self.assertEqual(duplicates, set())
+
+
+class ChangedHandsPanelTests(unittest.TestCase):
+    """The queue on /health-system-lookup."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = render_health_system_lookup({})
+
+    def test_the_panel_is_on_the_page(self) -> None:
+        self.assertIn("Changed Hands", self.html)
+        self.assertIn("450193", self.html)
+
+    def test_it_says_why_it_does_not_just_pick_one(self) -> None:
+        """A reader who cannot see that preferring either source would
+        be wrong a fifth of the time has no reason to accept a queue
+        instead of an answer."""
+        self.assertIn("Neither name is reliably the fresher one", self.html)
+
+    def test_it_names_the_transactions_already_settled(self) -> None:
+        self.assertIn("Centura", self.html)
+        self.assertIn("Henry Ford", self.html)
+
+    def test_it_explains_why_this_is_the_only_chow_signal(self) -> None:
+        self.assertIn("state-by-year counts", self.html)
+
+
+class ChainVersusNameTests(unittest.TestCase):
+    """CMS's chain column and the facility's own name disagree 55 times.
+
+    The chain column is a third party's statement and it goes stale; the
+    name is the facility's own. So the name wins, and chain_name stays
+    on the row for the cases where both are true.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        cls.register = get_crosswalk(scope=SCOPE_ALL)
+        cls.flipped = cls.register[
+            cls.register["system_match"].astype(str).str.startswith(
+                "name over chain")]
+
+    def _row(self, ccn: str):
+        return self.register[
+            self.register["ccn"].astype(str) == ccn].iloc[0]
+
+    def test_a_retired_chain_brand_does_not_hold_its_buyer_s_clinics(self):
+        """US Renal Care bought DSI in 2016. Eight clinics named
+        "USRC …" were still filed under the retired brand, and the
+        registry had an entry existing only to hold them."""
+        from rcm_mc.data.health_systems import get_system
+
+        self.assertIsNone(get_system("dsi_renal"))
+        for ccn in ("032583", "032608", "372598"):
+            with self.subTest(ccn=ccn):
+                row = self._row(ccn)
+                self.assertTrue(row["name"].upper().startswith("USRC"))
+                self.assertEqual(row["system_id"], "us_renal_care")
+
+    def test_one_operator_is_not_split_down_the_middle(self):
+        """33 clinics named "SHC …" sat under US Renal Care while 44
+        identically-named ones sat under Satellite, decided by the chain
+        column alone. SHC is Satellite's own abbreviation, and it files
+        its own chain string in Tennessee and Texas."""
+        shc = self.register[
+            self.register["name"].astype(str).str.upper().str.startswith("SHC ")]
+        self.assertGreater(len(shc), 70)
+        self.assertEqual(set(shc["system_id"].astype(str)),
+                         {"satellite_healthcare"})
+
+    def test_a_joint_venture_keeps_both_answers(self):
+        """Billings Clinic Dialysis is Billings Clinic's, operated by
+        DCI. Both are true and the row carries both — the system is the
+        brand on the door, the operator stays in chain_name."""
+        row = self._row("272510")
+        self.assertEqual(row["system_id"], "billings")
+        self.assertEqual(row["chain_name"], "Dialysis Clinic, Inc.")
+
+    def test_the_override_is_visible_as_its_own_basis(self):
+        """A reader must be able to see that the chain column was
+        consulted and overruled, not that it was never read."""
+        self.assertGreater(len(self.flipped), 40)
+        for basis in set(self.flipped["system_match"].astype(str)):
+            self.assertTrue(basis.startswith("name over chain: "))
+
+    def test_an_agreeing_chain_filing_is_left_alone(self):
+        """Only disagreements change. The other 6,600 chain-filed
+        facilities keep their basis."""
+        chain_filed = self.register[
+            self.register["system_match"].astype(str).str.startswith("chain:")]
+        self.assertGreater(len(chain_filed), 6_000)

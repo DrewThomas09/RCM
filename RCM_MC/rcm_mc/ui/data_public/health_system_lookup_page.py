@@ -861,6 +861,32 @@ def _npi_panel(limit: int = 10) -> str:
         'match in a state where the system operates nothing.</div>')
 
 
+def _parent_cell(parent: str, label: str, support: Any) -> str:
+    """The parent's name over the identifier that proves it.
+
+    ``pecos:2264404516`` is the honest answer to "which cluster" and a
+    useless one to "who owns this" — and nine in ten resolved rows land
+    on a cluster identifier rather than a registry system. So the name
+    the cluster's own members file leads, and the identifier stays
+    underneath because it is the key a reviewer joins on.
+
+    The identifier is never dropped in favour of the name. A label is a
+    plurality of member filings; the identifier is the thing that was
+    actually resolved, and hiding it would make an inference look like
+    a lookup.
+    """
+    if not parent:
+        return "—"
+    if not label:
+        return _esc(parent)
+    try:
+        share = f" · {float(support):.0%} of members"
+    except (TypeError, ValueError):
+        share = ""
+    return (f'{_esc(label)}<div class="hsl-sub">{_esc(parent)}'
+            f'{_esc(share)}</div>')
+
+
 def _npi_lookup_panel(query: str) -> str:
     """An NPI in, its owner and the chain of reasoning out.
 
@@ -916,6 +942,9 @@ def _npi_lookup_panel(query: str) -> str:
         parent = str(row.get("final_parent") or "")
         conf = row.get("parent_confidence")
         status = str(row.get("status") or "")
+        parent_cell = _parent_cell(
+            parent, str(row.get("final_parent_label") or ""),
+            row.get("final_parent_label_support"))
         cells = [
             ck_data_cell(_esc(row.get("npi")), mono=True, tone="dim"),
             ck_data_cell(_esc(row.get("legal_name")), weight=600),
@@ -924,7 +953,7 @@ def _npi_lookup_panel(query: str) -> str:
             ck_data_cell(_esc(status), align="center", tone=(
                 "dim" if status == "active" else "acc")),
             ck_data_cell(_esc(row.get("ccn")) or "—", mono=True, tone="dim"),
-            ck_data_cell(_esc(parent) or "—", weight=600 if parent else None,
+            ck_data_cell(parent_cell, weight=600 if parent else None,
                          tone=None if parent else "dim"),
             ck_data_cell(f"{float(conf):.2f}" if conf not in ("", None) else "—",
                          align="right", mono=True),
@@ -936,7 +965,16 @@ def _npi_lookup_panel(query: str) -> str:
              '</table></div>')
     return (header + table +
             f'<div class="hsl-legend">{len(hits):,} NPIs match '
-            f'“{_esc(query)}”. The <strong>Why</strong> column is the whole '
+            f'“{_esc(query)}”. Most parents are a cluster CMS groups but '
+            'does not name — a PECOS enrolment, an authorised official — '
+            'so the <strong>Final parent</strong> column leads with the '
+            'name the cluster&rsquo;s own members file, and keeps the '
+            'identifier underneath because that is the key you join on. '
+            'The share beside it is how many members filed that name: a '
+            'cluster where they overwhelmingly agree is an operator, one '
+            'where they do not is an enrolment, and below 40% the name is '
+            'withheld rather than asserted. The <strong>Why</strong> '
+            'column is the whole '
             'chain, hop by hop, with the tier that produced each one — a '
             'parent nobody can audit is a parent nobody should trust. A '
             'blank parent on an individual is not a gap: NPPES carries no '
@@ -1023,12 +1061,177 @@ def _ownership_panel(limit: int = 12) -> str:
         '<a class="ck-link" href="/provider-crosswalk.csv?scope=all&amp;'
         'parents=1">/provider-crosswalk.csv?scope=all&amp;parents=1</a>, or '
         'the NPI-keyed spine at <a class="ck-link" '
-        'href="/master-npi-file.csv">/master-npi-file.csv</a> — 45 columns '
+        'href="/master-npi-file.csv">/master-npi-file.csv</a> — 47 columns '
         'of identity, status history, taxonomy, geography and resolved '
-        'parent, filterable by <code>state</code>, <code>category</code>, '
-        '<code>status</code> and <code>parent</code>. '
+        'parent — with the name its members file, so '
+        '<code>?parent_name=Acadian</code> works for the nine parents in '
+        'ten that CMS groups but never names. Filterable by '
+        '<code>state</code>, <code>category</code>, <code>status</code>, '
+        '<code>parent</code> and <code>parent_name</code>. '
         '<code>rcm-mc data master-file --npi-db npi.db --out national.csv</code> '
         'builds the same file from a full NPPES ingest.</div>')
+
+
+def _name_disagreement_panel() -> str:
+    """Where CMS's two names for one hospital name two different owners.
+
+    CMS publishes the cost-report name and the Care Compare name on
+    different clocks, so when a hospital changes hands one of them moves
+    first. That makes a disagreement the only observable trace of a
+    transaction in this data — CMS publishes change-of-ownership as
+    state-by-year counts and nothing that names a facility.
+
+    Reported rather than resolved, because neither side is reliably the
+    fresher one. Twelve of the seventeen found had the newer name on
+    Care Compare; three had it on the cost report.
+    """
+    from rcm_mc.data.health_systems import get_system, name_disagreements
+
+    queue = name_disagreements()
+    if not queue:
+        return ""
+
+    def label(system_id: str) -> str:
+        sysdef = get_system(system_id)
+        return sysdef.name if sysdef is not None else system_id
+
+    cols = [("CCN", "left"), ("State", "center"), ("Beds", "right"),
+            ("Cost report says", "left"), ("Care Compare says", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for entry in queue:
+        cells = [
+            ck_data_cell(_esc(entry.ccn), mono=True, tone="dim"),
+            ck_data_cell(_esc(entry.state), align="center", mono=True),
+            ck_data_cell(f"{entry.beds:,.0f}" if entry.beds else "—",
+                         align="right", mono=True),
+            ck_data_cell(f'{_esc(entry.filed_name)}<div class="hsl-sub">'
+                         f'{_esc(label(entry.filed_system))}</div>'),
+            ck_data_cell(f'{_esc(entry.cms_name)}<div class="hsl-sub">'
+                         f'{_esc(label(entry.cms_system))}</div>', tone="acc"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+    beds = sum(e.beds for e in queue)
+    return (table + f'<div class="hsl-legend">{len(queue):,} facilities '
+            f'carrying {beds:,.0f} beds where CMS&rsquo;s two published '
+            'names resolve to two different owners. This is the closest '
+            'thing the data has to a change-of-ownership feed: CMS '
+            'publishes CHOW only as state-by-year counts, so a hospital '
+            'changing hands is visible here and almost nowhere else. '
+            '<br><br>Neither name is reliably the fresher one, which is '
+            'why these are reported rather than resolved. Twelve '
+            'transactions have already been settled off this queue and '
+            'written into the registry &mdash; the five Centura '
+            'hospitals that went to AdventHealth in the 2023 Colorado '
+            'split, Ascension&rsquo;s St John and Macomb-Oakland going '
+            'to Henry Ford, Saint Francis Memorial to UCSF. In three '
+            'others the cost report was the fresher name and Care '
+            'Compare still carried the seller, so a rule preferring '
+            'either source would have been wrong a fifth of the time. '
+            'What is left is genuinely undecidable from this data: '
+            'Baylor St Luke&rsquo;s is a real joint venture and both '
+            'names are defensible.</div>')
+
+
+def _discovered_operators_panel(limit: int = 15) -> str:
+    """Operators the registry does not carry, found in the register itself.
+
+    The registry maps 14,425 of 48,510 certified facilities. The 33,998
+    operating facilities it misses are 86% post-acute, and the ownership
+    graph cannot reach them — it resolves NPIs, and only 60 of those
+    facilities carry one in the bundled extracts.
+
+    What they do carry is a name and a CMS ownership type, which is
+    enough to find the chains: twenty agencies filing CARETENDERS across
+    seven states, all proprietary, are one company. Eight hospitals
+    filing MEMORIAL HOSPITAL across seven states, between them a local
+    government, a private non-profit, a proprietary corporation and a
+    physician group, are eight hospitals.
+
+    Shown as a queue rather than applied as a mapping. A confident group
+    is evidence that an operator exists, not evidence of what it is
+    called on a cap table — the same standing as the ownership
+    disagreements above it, and the same disposition: a registry edit.
+    """
+    from rcm_mc.data.operator_discovery import (
+        discover_operators, discovery_coverage,
+    )
+
+    # One pass over the register, reused for both the table and the
+    # denominator. Asking each of them separately meant two 48,510-row
+    # groupings for one panel.
+    groups = discover_operators()
+    coverage = discovery_coverage(operators=groups)
+    confident = [o for o in groups if o.is_confident]
+    operators = [o for o in confident if o.evidence_grade == "strong"]
+    weak = [o for o in confident if o.evidence_grade == "weak"]
+    if not operators:
+        return ""
+
+    cols = [("Candidate operator", "left"), ("Facilities", "right"),
+            ("Sites", "right"), ("States", "right"), ("Type", "left"),
+            ("Ownership", "left"), ("Agree", "right"), ("Where", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for operator in operators[:limit]:
+        states = ", ".join(operator.states[:6])
+        if len(operator.states) > 6:
+            states += f" +{len(operator.states) - 6}"
+        cells = [
+            ck_data_cell(_esc(operator.name), weight=600),
+            ck_data_cell(f"{operator.facilities:,}", align="right", mono=True),
+            ck_data_cell(f"{operator.distinct_sites:,}", align="right",
+                         mono=True,
+                         tone="dim" if operator.is_multi_site else "acc"),
+            ck_data_cell(f"{len(operator.states)}", align="right", mono=True),
+            ck_data_cell(_esc(", ".join(operator.classes)), tone="dim"),
+            ck_data_cell(_esc(operator.ownership_family), tone="dim"),
+            ck_data_cell(f"{operator.ownership_agreement:.0%}", align="right",
+                         mono=True),
+            ck_data_cell(_esc(states), tone="dim"),
+        ]
+        trs.append(f'<tr>{"".join(cells)}</tr>')
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+
+    mix = " · ".join(f"{k} {v:,}" for k, v in
+                     list(coverage["by_class"].items())[:5])
+    return (table + f'<div class="hsl-legend">'
+            f'{coverage["strong_groups"]:,} candidate operators covering '
+            f'{coverage["facilities_in_strong_groups"]:,} facilities '
+            f'&mdash; out of {coverage["unmapped_operating"]:,} operating '
+            'facilities the registry does not map, so this closes part of '
+            'the gap and not most of it. '
+            f'{coverage["multi_site_strong"]:,} of them run more than one '
+            f'site. By class: {_esc(mix)}. '
+            '<br><br>A group qualifies when its facilities file the '
+            '<strong>same ownership structure</strong>, because a real '
+            'operator has one and facilities that merely share a name each '
+            'file whatever they independently are. That refuses MEMORIAL '
+            'HOSPITAL, which spans four structures across seven states. '
+            'It is a necessary test and not a sufficient one: every '
+            'Catholic hospital files &ldquo;non-profit &ndash; church&rdquo; '
+            'and every county hospital files &ldquo;government &ndash; '
+            'local&rdquo;, so SAINT LUKES HOSPITAL and WASHINGTON COUNTY '
+            'HOSPITAL agree unanimously while being four unrelated '
+            'facilities apiece. Those are graded <strong>weak</strong> and '
+            f'held back from this table &mdash; {len(weak):,} groups, on '
+            'two pieces of evidence: the registry already maps the name to '
+            'more than one system, or hospitals in different states share '
+            'it, which in American naming they usually do. '
+            '<br><br><strong>Sites</strong> is distinct street addresses. A '
+            'two-facility group at one address is a single office holding a '
+            'home-health and a hospice licence &mdash; one company, but not '
+            'a two-site chain, and worth seeing before you size it. '
+            'Nothing here is written to <code>system_id</code>; each row is '
+            'a registry edit for a human to make. Download everything, '
+            'including the weak and the refused, at <a class="ck-link" '
+            'href="/discovered-operators.csv">/discovered-operators.csv</a> '
+            '(<code>?grade=strong</code> for this table).</div>')
 
 
 def _markets_panel(limit: int = 15) -> str:
@@ -1196,6 +1399,8 @@ _PAGE_CSS = """
 .hsl-chip-on{background:var(--sc-teal,#155752);color:#fff}
 .hsl-legend{font-family:JetBrains Mono,monospace;font-size:10px;
   color:var(--sc-text-faint,#7d7566);margin-top:6px;line-height:1.5}
+.hsl-sub{font-family:JetBrains Mono,monospace;font-size:9px;font-weight:400;
+  color:var(--sc-text-faint,#7d7566);margin-top:2px}
 .hsl-roster{background:var(--sc-panel,#faf7f1);border:1px solid var(--sc-border,#ded6c8);
   border-left:3px solid var(--sc-teal,#155752);padding:14px 16px;margin-bottom:16px}
 .hsl-roster-head{display:flex;justify-content:space-between;align-items:flex-start;
@@ -1285,6 +1490,8 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
     ownership = _ownership_panel()
+    discovered = _discovered_operators_panel()
+    disagreements = _name_disagreement_panel()
     npi_lookup = _npi_lookup_panel(npi_q)
     markets = _markets_panel()
     concentration = ((_concentration_panel(state) + _concentration_map(state))
@@ -1367,6 +1574,14 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Ownership Graph — Final Parents and What They Disagree On</div>
     {ownership}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Discovered Operators — Chains the Registry Does Not Carry</div>
+    {discovered}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Changed Hands — Where CMS's Two Names Disagree</div>
+    {disagreements}
   </div>
   <div style="{cell}">
     <div style="{h3}">Largest Markets — Facilities by CBSA</div>

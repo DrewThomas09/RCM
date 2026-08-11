@@ -8211,6 +8211,94 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/discovered-operators.csv", "Discovered Operators — CSV",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Multi-facility operators the health-system "
+        "registry does not carry, found by grouping unmapped certified "
+        "facilities on name and testing whether they file one ownership "
+        "structure.",
+        primary_purpose="Surface the post-acute roll-ups that no curated "
+        "registry lists, as a queue a human promotes — never as a mapping "
+        "applied on its own authority.",
+        common_questions=[
+            "Which chains operate in this state that we do not track?",
+            "How many facilities does this operator actually run?",
+            "Is this one company or several that share a name?",
+            "Why was this group held back?",
+            "How much of the unmapped register is in a named group?",
+        ],
+        inputs=["state, min_facilities, confident and grade filters."],
+        outputs=["One row per candidate operator: facilities, distinct "
+                 "sites, states and provider classes, the ownership family "
+                 "and the share agreeing on it, name distinctiveness, the "
+                 "evidence grade with its reason, and every member CCN."],
+        key_metrics=["1,576 strong groups covering 3,981 facilities, 1,409 "
+                     "of them multi-site, out of 33,998 unmapped operating "
+                     "facilities — 12% of the gap, not most of it."],
+        data_sources=["The certified-facility crosswalk: CMS provider-of-"
+                      "services names and ownership types across the SNF, "
+                      "home health, hospice, hospital, IRF and dialysis "
+                      "files."],
+        model_logic_summary="Facilities that share a normalised name less "
+        "its legal form are grouped, then filtered on whether they agree "
+        "about their ownership structure — a real operator files one "
+        "because it is one. That filter is necessary and not sufficient: "
+        "every Catholic hospital files non-profit church and every county "
+        "hospital files government local, so a separate grade holds back "
+        "groups the registry already maps to several systems, and "
+        "multi-state hospital names, which in American naming collide far "
+        "more often than they share an owner.",
+        why_it_matters="Post-acute is where sponsor money has gone for a "
+        "decade, and 86% of the facilities no registry maps are SNFs, home "
+        "health agencies and hospices. Commercial databases sell this list; "
+        "CMS publishes the ingredients and no one assembles them.",
+        diligence_use_cases=[
+            "Sourcing post-acute roll-up targets by state and class.",
+            "Sizing an operator before its name is in any database.",
+            "Feeding the health-system registry a reviewed backlog.",
+        ],
+        interpretation_guidance=[
+            "A strong group is evidence that an operator exists, not "
+            "evidence of what it is called on a cap table. Nothing here "
+            "is written to system_id.",
+            "Read distinct sites beside facilities: a two-facility group "
+            "at one address is one office holding a home-health and a "
+            "hospice licence, which is one company but not a two-site "
+            "chain.",
+            "Weak rows are shipped, not deleted. A large group spanning "
+            "several ownership structures is either a name collision or a "
+            "chain part-way through a sale, and only a reader can tell.",
+            "Ownership agreement near 1.00 is the norm rather than a "
+            "distinction — most unmapped post-acute facilities are "
+            "for-profit — so weigh it with name distinctiveness and the "
+            "state and site spread.",
+        ],
+        limitations=[
+            "Grouping is on the exact normalised name less its legal "
+            "form, so a chain that renames a branch splits into two "
+            "groups. Recall is deliberately traded for precision after "
+            "two prior incidents where prefix matching invented systems.",
+            "Ownership agreement is near-degenerate on nonprofit and "
+            "government facilities: every Catholic hospital files "
+            "non-profit church and every county hospital files government "
+            "local, so unanimity there means nothing. The evidence grade "
+            "exists because of this, and it is a heuristic, not a proof.",
+            "Only 12% of the 33,998 unmapped operating facilities land in "
+            "any group. The other 88% share their name with nothing.",
+            "Group names are the name CMS certified, which may be a "
+            "brand, a subsidiary or a d/b/a rather than the corporate "
+            "parent. No cap-table source is on disk to check it against.",
+            "Single-state groups are exempt from the ownership filter "
+            "because CMS's own files disagree about one building, so "
+            "their only evidence is the shared name and the state.",
+        ],
+        related_routes=["/health-system-lookup", "/provider-crosswalk.csv",
+                        "/master-npi-file.csv"],
+        data_source_ids=["cms_ffs_provider_enrollment"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/master-npi-file.csv", "Master NPI File — CSV",
         category=PageContextCategory.LIBRARY_REFERENCE,
         short_description="One row per NPI carrying identity, status "
@@ -8227,14 +8315,16 @@ _MANUAL: List[PageContext] = [
             "Which NPIs belong to this health system?",
             "Why does this physician have no parent?",
         ],
-        inputs=["state, category, status, parent and parented filters."],
-        outputs=["45 columns: identity and credential, status with "
+        inputs=["state, category, status, parent, parent_name and "
+                "parented filters."],
+        outputs=["47 columns: identity and credential, status with "
                  "deactivation and reactivation dates, all taxonomy codes "
                  "with the derived NUCC grouping and PE category, address "
                  "through CBSA, the certified CCN and its class, NPPES's "
                  "own subpart and parent-organization fields, and the "
-                 "resolved final parent with its tier, confidence, hop "
-                 "count and full provenance chain."],
+                 "resolved final parent with its readable name and the "
+                 "share of cluster members that filed it, its tier, "
+                 "confidence, hop count and full provenance chain."],
         key_metrics=["20,401 NPIs from the bundled extracts; 99.97% carry a "
                      "provider category; 55.4% of organizations reach a "
                      "named parent."],

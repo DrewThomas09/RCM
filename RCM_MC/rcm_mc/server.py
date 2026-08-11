@@ -5167,6 +5167,36 @@ class RCMHandler(BaseHTTPRequestHandler):
                 _frame = attach_parents(_frame, graph=crosswalk_graph())
             return self._send_csv_df(
                 _frame, f"provider-crosswalk{('-' + _st) if _st else ''}.csv")
+        if path == "/discovered-operators.csv":
+            # Multi-facility operators the system registry does not
+            # carry, found by grouping unmapped certified facilities on
+            # name and testing whether they file one ownership
+            # structure. A queue for registry edits, not a mapping —
+            # confident=0 rows ship too, because a large group spanning
+            # several ownership types is the most informative row here.
+            from .data.operator_discovery import discovered_operator_frame
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _min = self._clamp_int(_qp.get("min_facilities", "2"),
+                                   default=2, min_v=2, max_v=500)
+            _conf = str(_qp.get("confident", "")).strip().lower() in (
+                "1", "true")
+            _frame = discovered_operator_frame(min_facilities=_min,
+                                               confident_only=_conf)
+            # grade=strong drops the groups something argues against —
+            # a name the registry already maps to several systems, or
+            # the multi-state hospital shape that the ownership test
+            # cannot see. Opt-in, so the refuted rows stay downloadable.
+            _gr = str(_qp.get("grade", "")).strip().lower()[:8]
+            if _gr in ("strong", "weak") and not _frame.empty:
+                _frame = _frame[_frame["evidence_grade"].astype(str) == _gr]
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st and not _frame.empty:
+                # A group is multi-state, so this asks "does it operate
+                # here", not "is it headquartered here".
+                _frame = _frame[_frame["state_list"].astype(str).str.split(
+                    "|").apply(lambda states: _st in states)]
+            return self._send_csv_df(_frame, "discovered-operators.csv")
         if path == "/master-npi-file.csv":
             # The NPI-keyed spine: identity, status history, taxonomy and
             # category, geography, the CCN it bills under, and the final
@@ -5190,6 +5220,16 @@ class RCMHandler(BaseHTTPRequestHandler):
             _par = str(_qp.get("parent", "")).strip()[:60]
             if _par:
                 _frame = _frame[_frame["final_parent"].astype(str) == _par]
+            # Most parents are a cluster identifier CMS never named, so a
+            # caller who knows the operator by name has nothing to put in
+            # `parent=`. This filters on the name the cluster's own
+            # members file — a substring, because the filed name carries
+            # suffixes ("INC", "LLC") nobody types.
+            _pnm = str(_qp.get("parent_name", "")).strip()[:80]
+            if _pnm:
+                _frame = _frame[
+                    _frame["final_parent_label"].astype(str).str.contains(
+                        _pnm, case=False, regex=False)]
             # parented=1 drops the rows with no owner, which is what a
             # caller building a portfolio roster actually wants. It is
             # opt-in because a crosswalk that silently omits the

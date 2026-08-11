@@ -24,8 +24,10 @@ from rcm_mc.data.parent_resolution import (
     TIER_AFFILIATION,
     TIER_CCN_CHAIN, TIER_CCN_PARENT, TIER_CCN_SYSTEM, TIER_CONFIDENCE,
     TIER_NAME_SYSTEM, TIER_NPI_CCN, TIER_NPPES_SUBPART, TIER_PECOS_GROUP,
-    TIER_RANK, TIER_SHARED_OFFICIAL, NS_EIN, NS_OFFICIAL, ParentGraph,
-    attach_parents, build_parent_graph, edges_from_affiliations,
+    TIER_RANK, TIER_SHARED_OFFICIAL, NS_EIN, NS_OFFICIAL,
+    CLUSTER_LABEL_MIN_SUPPORT, ParentGraph,
+    attach_parents, build_parent_graph, cluster_labels,
+    edges_from_affiliations,
     edges_from_crosswalk, edges_from_eins, edges_from_npi_frame,
     edges_from_officials, load_affiliations, node_key,
     ownership_disagreements, resolve_identifiers,
@@ -746,3 +748,174 @@ class SharedEinTests(unittest.TestCase):
 
     def test_a_frame_without_eins_contributes_nothing(self):
         self.assertEqual(edges_from_eins(pd.DataFrame([{"npi": "1"}])), [])
+
+
+class ClusterLabelTests(unittest.TestCase):
+    """A grouping node is an identifier. Nine in ten resolved NPIs land
+    on one, so a file that stops there answers "which cluster" and never
+    answers "who owns this"."""
+
+    @staticmethod
+    def _cluster(parent: str, names: dict) -> tuple:
+        graph = ParentGraph()
+        member_names = {}
+        for npi, name in names.items():
+            graph.add_edge(node_key(NS_NPI, npi), parent, TIER_PECOS_GROUP)
+            member_names[node_key(NS_NPI, npi)] = name
+        return graph, member_names
+
+    def test_a_unanimous_cluster_takes_its_members_name(self):
+        graph, names = self._cluster(node_key(NS_PECOS, "555"), {
+            "1111111111": "Metro Ambulance Services Inc",
+            "2222222222": "Metro Ambulance Services, Inc.",
+        })
+        label = cluster_labels(graph, names)[node_key(NS_PECOS, "555")]
+        self.assertEqual(label.label, "METRO AMBULANCE SERVICES INC")
+        self.assertEqual(label.support, 1.0)
+        self.assertEqual(label.members, 2)
+        self.assertEqual(label.distinct_names, 1)
+        self.assertTrue(label.is_confident)
+
+    def test_a_strong_plurality_still_names_the_cluster(self):
+        """Eric Thomas's cluster is a fifty-fifty split between two Global
+        Medical Response brands. Naming it after the larger one is what a
+        reader wants; refusing to name it is not."""
+        members = {f"{n:010d}": "Air Evac EMS Inc" for n in range(1, 7)}
+        members.update({f"{n:010d}": "Med-Trans Corporation"
+                        for n in range(7, 11)})
+        graph, names = self._cluster(node_key(NS_OFFICIAL, "ERIC THOMAS"),
+                                     members)
+        label = cluster_labels(graph, names)[node_key(NS_OFFICIAL,
+                                                      "ERIC THOMAS")]
+        self.assertEqual(label.label, "AIR EVAC EMS INC")
+        self.assertAlmostEqual(label.support, 0.6)
+        self.assertTrue(label.is_confident)
+
+    def test_a_thin_plurality_abstains_rather_than_inventing_a_parent(self):
+        """The real case: Brian Tierney holds 66 NPIs across 43 filed
+        names, the top one appearing 7 times. Calling that cluster
+        "American Medical Response" asserts an owner the data does not
+        support, so the label comes back but is_confident does not."""
+        members = {f"{n:010d}": f"Ambulance Operator {n} Inc"
+                   for n in range(1, 10)}
+        members["0000000010"] = "American Medical Response Inc"
+        members["0000000011"] = "American Medical Response, Inc"
+        graph, names = self._cluster(node_key(NS_OFFICIAL, "BRIAN TIERNEY"),
+                                     members)
+        label = cluster_labels(graph, names)[node_key(NS_OFFICIAL,
+                                                      "BRIAN TIERNEY")]
+        self.assertEqual(label.label, "AMERICAN MEDICAL RESPONSE INC")
+        self.assertLess(label.support, CLUSTER_LABEL_MIN_SUPPORT)
+        self.assertFalse(label.is_confident)
+        self.assertEqual(label.distinct_names, 10)
+
+    def test_a_tie_breaks_on_the_name_so_a_rebuild_does_not_rename(self):
+        """Iteration order over a dict is stable within a process and not
+        across a schema change. A cluster that renames itself between
+        builds breaks every crosswalk keyed on the old label."""
+        graph, names = self._cluster(node_key(NS_PECOS, "555"), {
+            "1111111111": "Zenith Ambulance Inc",
+            "2222222222": "Apex Ambulance Inc",
+        })
+        first = cluster_labels(graph, names)[node_key(NS_PECOS, "555")]
+        self.assertEqual(first.label, "APEX AMBULANCE INC")
+
+        reversed_graph = ParentGraph()
+        for npi in ("2222222222", "1111111111"):
+            reversed_graph.add_edge(node_key(NS_NPI, npi),
+                                    node_key(NS_PECOS, "555"),
+                                    TIER_PECOS_GROUP)
+        second = cluster_labels(reversed_graph,
+                                names)[node_key(NS_PECOS, "555")]
+        self.assertEqual(first.label, second.label)
+
+    def test_a_cluster_whose_members_filed_no_name_is_skipped(self):
+        """An entry with an empty label is worse than no entry: callers
+        check is_confident, and a blank confident label renders as a
+        parent with no name at all."""
+        graph, names = self._cluster(node_key(NS_PECOS, "555"), {
+            "1111111111": "", "2222222222": "",
+        })
+        self.assertEqual(cluster_labels(graph, names), {})
+
+    def test_members_are_the_whole_subtree_not_the_direct_children(self):
+        """An officer sits above PECOS enrolments, not above NPIs. Reading
+        only the immediate children left every stacked officer cluster —
+        the ones most in need of a name — anonymous."""
+        graph = ParentGraph()
+        official = node_key(NS_OFFICIAL, "TIMOTHY DORN")
+        names = {}
+        for group, npis in (("555", ("1111111111", "2222222222")),
+                            ("666", ("3333333333",))):
+            graph.add_edge(node_key(NS_PECOS, group), official,
+                           TIER_SHARED_OFFICIAL)
+            for npi in npis:
+                graph.add_edge(node_key(NS_NPI, npi),
+                               node_key(NS_PECOS, group), TIER_PECOS_GROUP)
+                names[node_key(NS_NPI, npi)] = "Metro Ambulance Services Inc"
+        labels = cluster_labels(graph, names)
+        self.assertEqual(labels[official].members, 3)
+        self.assertEqual(labels[official].label,
+                         "METRO AMBULANCE SERVICES INC")
+        # …and each enrolment underneath is named in its own right.
+        self.assertEqual(labels[node_key(NS_PECOS, "555")].members, 2)
+
+    def test_a_cycle_does_not_hang_the_walk(self):
+        """build_parent_graph tolerates cycles rather than rejecting the
+        whole graph, so the labeller has to as well."""
+        graph = ParentGraph()
+        graph.add_edge(node_key(NS_PECOS, "555"), node_key(NS_PECOS, "666"),
+                       TIER_PECOS_GROUP)
+        graph.add_edge(node_key(NS_PECOS, "666"), node_key(NS_PECOS, "555"),
+                       TIER_PECOS_GROUP)
+        graph.add_edge(node_key(NS_NPI, "1111111111"),
+                       node_key(NS_PECOS, "555"), TIER_PECOS_GROUP)
+        labels = cluster_labels(
+            graph, {node_key(NS_NPI, "1111111111"): "Metro Ambulance Inc"})
+        self.assertEqual(labels[node_key(NS_PECOS, "555")].members, 1)
+
+    def test_only_the_anonymous_namespaces_are_labelled(self):
+        """A sys: node already has a registry name and a ccn: node has a
+        published one. Overwriting either with a plurality of members
+        would replace a fact with an inference."""
+        graph = ParentGraph()
+        graph.add_edge(node_key(NS_NPI, "1111111111"),
+                       node_key(NS_SYSTEM, "ascension"), TIER_CCN_SYSTEM)
+        labels = cluster_labels(
+            graph, {node_key(NS_NPI, "1111111111"): "St Vincents Birmingham"})
+        self.assertEqual(labels, {})
+
+    def test_an_empty_graph_labels_nothing(self):
+        self.assertEqual(cluster_labels(ParentGraph(), {}), {})
+
+
+class RealClusterLabelTests(unittest.TestCase):
+    """Against the graph built from bundled data, not a fixture."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.master_provider_file import (
+            _bundled_npi_frame, _crosswalk_npi_frame, _member_names)
+        from rcm_mc.data.provider_crosswalk import build_crosswalk
+        crosswalk = build_crosswalk()
+        frame = pd.concat(
+            [_bundled_npi_frame(), _crosswalk_npi_frame(crosswalk)],
+            ignore_index=True).drop_duplicates(subset=["npi"])
+        graph = build_parent_graph(crosswalk=crosswalk, npi_frame=frame)
+        cls.labels = cluster_labels(graph, _member_names(frame))
+
+    def test_nearly_every_cluster_can_name_itself(self):
+        self.assertGreater(len(self.labels), 5_000)
+        confident = [x for x in self.labels.values() if x.is_confident]
+        self.assertGreater(len(confident) / len(self.labels), 0.99)
+
+    def test_no_confident_label_is_blank(self):
+        self.assertEqual(
+            [x.node for x in self.labels.values()
+             if x.is_confident and not x.label.strip()], [])
+
+    def test_support_is_a_share_not_a_count(self):
+        for label in self.labels.values():
+            self.assertGreater(label.support, 0.0)
+            self.assertLessEqual(label.support, 1.0)
+            self.assertLessEqual(label.distinct_names, label.members)

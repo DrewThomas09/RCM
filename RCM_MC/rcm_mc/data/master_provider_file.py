@@ -69,12 +69,14 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 
 import pandas as pd
 
+from .health_systems import get_system
 from .nppes_ingest import (
     ENTITY_ORGANIZATION, STATUS_ACTIVE, STATUS_DEACTIVATED,
 )
 from .nucc_categories import classify_taxonomy
 from .parent_resolution import (
-    NS_NPI, ParentGraph, build_parent_graph, load_affiliations, node_key,
+    NS_NPI, ClusterLabel, ParentGraph, build_parent_graph, cluster_labels,
+    load_affiliations, node_key,
 )
 
 MASTER_COLUMNS: Tuple[str, ...] = (
@@ -96,6 +98,7 @@ MASTER_COLUMNS: Tuple[str, ...] = (
     "is_subpart", "parent_org_lbn", "parent_org_tin", "ein", "pecos_group",
     # Who owns them, resolved
     "final_parent", "final_parent_type", "final_parent_id",
+    "final_parent_label", "final_parent_label_support",
     "parent_tier", "parent_confidence", "parent_hops", "parent_basis",
     "parent_contested",
     # Where the row came from
@@ -232,6 +235,23 @@ def _crosswalk_npi_frame(crosswalk: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _member_names(frame: pd.DataFrame) -> Dict[str, str]:
+    """node key -> the legal name that NPI filed.
+
+    Built once and handed to the labeller, because asking the frame for
+    a name per cluster member is a linear scan per lookup and there are
+    ten thousand clusters.
+    """
+    if frame.empty or "npi" not in frame.columns:
+        return {}
+    name_column = "legal_name" if "legal_name" in frame.columns else "name"
+    if name_column not in frame.columns:
+        return {}
+    return {node_key(NS_NPI, npi): str(name or "")
+            for npi, name in zip(frame["npi"], frame[name_column],
+                                 strict=True)}
+
+
 def _facility_index(crosswalk: pd.DataFrame) -> Dict[str, Dict[str, str]]:
     """CCN -> the facility attributes an NPI inherits from its CCN.
 
@@ -240,9 +260,9 @@ def _facility_index(crosswalk: pd.DataFrame) -> Dict[str, Dict[str, str]]:
     crosswalk has already done that work — including the Connecticut
     planning-region vintage break that a naive ZIP join gets wrong.
     """
-    wanted = ("county", "county_fips", "cbsa_code", "cbsa_title", "cbsa_type",
-              "provider_class", "facility_type", "facility_status",
-              "certification_date")
+    wanted = ("name", "county", "county_fips", "cbsa_code", "cbsa_title",
+              "cbsa_type", "provider_class", "facility_type",
+              "facility_status", "certification_date")
     index: Dict[str, Dict[str, str]] = {}
     for rec in crosswalk.to_dict("records"):
         ccn = str(rec.get("ccn") or "").strip()
@@ -267,7 +287,9 @@ def _entity_label(entity_type: Any, is_org: bool) -> str:
 
 def _enrich_chunk(chunk: pd.DataFrame, graph: ParentGraph,
                   facilities: Dict[str, Dict[str, str]],
-                  contested: Dict[str, Any]) -> List[Dict[str, Any]]:
+                  contested: Dict[str, Any],
+                  labels: Optional[Dict[str, ClusterLabel]] = None,
+                  ) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for rec in chunk.to_dict("records"):
         npi = str(rec.get("npi") or "").strip()
@@ -305,6 +327,23 @@ def _enrich_chunk(chunk: pd.DataFrame, graph: ParentGraph,
             hops = res.hops
             basis = res.provenance
         parent_ns, _, parent_id = final_parent.partition(":")
+        # A cluster root is an identifier, not a name. Its members'
+        # dominant filed name is what a reader recognises, and the
+        # support fraction is what stops it overclaiming.
+        label_obj = (labels or {}).get(final_parent)
+        if label_obj is not None and label_obj.is_confident:
+            parent_label, label_support = label_obj.label, label_obj.support
+        elif parent_ns == "sys":
+            sysdef = get_system(parent_id)
+            parent_label = sysdef.name if sysdef is not None else ""
+            label_support = 1.0 if sysdef is not None else ""
+        elif parent_ns == "ccn":
+            # A CCN's registered facility name is published, not
+            # inferred, so it needs no plurality behind it.
+            parent_label = facilities.get(parent_id, {}).get("name", "")
+            label_support = 1.0 if parent_label else ""
+        else:
+            parent_label, label_support = "", ""
 
         rows.append({
             "npi": npi,
@@ -351,6 +390,8 @@ def _enrich_chunk(chunk: pd.DataFrame, graph: ParentGraph,
             "final_parent": final_parent,
             "final_parent_type": parent_ns,
             "final_parent_id": parent_id,
+            "final_parent_label": parent_label,
+            "final_parent_label_support": label_support,
             "parent_tier": tier,
             "parent_confidence": confidence,
             "parent_hops": hops,
@@ -410,8 +451,9 @@ def build_master_file(
     if graph is None:
         graph = build_parent_graph(crosswalk=xw, npi_frame=frame,
                                    affiliations=affiliations)
+    labels = cluster_labels(graph, _member_names(frame))
     rows = _enrich_chunk(frame, graph, _facility_index(xw),
-                         graph.contested())
+                         graph.contested(), labels)
     if not rows:
         return pd.DataFrame(columns=list(MASTER_COLUMNS))
     return pd.DataFrame(rows, columns=list(MASTER_COLUMNS))
@@ -462,6 +504,7 @@ def export_master_file(
     graph = build_parent_graph(crosswalk=xw, npi_frame=graph_source,
                                affiliations=affiliations)
     contested = graph.contested()
+    labels = cluster_labels(graph, _member_names(graph_source))
 
     path = Path(path)
     opener = (_gzip.open(path, "wt", newline="", encoding="utf-8")
@@ -475,7 +518,8 @@ def export_master_file(
         writer = csv.DictWriter(handle, fieldnames=list(MASTER_COLUMNS))
         writer.writeheader()
         for chunk in chunks:
-            rows = _enrich_chunk(chunk, graph, facilities, contested)
+            rows = _enrich_chunk(chunk, graph, facilities, contested,
+                                 labels)
             writer.writerows(rows)
             for row in rows:
                 stats["rows"] += 1
@@ -565,6 +609,27 @@ def find_npis(query: Any, *, limit: int = 40,
     return hits.head(max(1, int(limit)))
 
 
+def _rollup_split(frame: pd.DataFrame) -> Dict[str, Any]:
+    """Resolved-but-alone against genuinely aggregated.
+
+    Split out rather than folded in, because "11,477 of 20,401 resolve"
+    reads as a roll-up and is not one. A reader sizing an operator wants
+    the second number.
+    """
+    resolved = frame[frame["final_parent"].astype(str).ne("")]
+    if resolved.empty:
+        return {"npis_sharing_a_parent": 0, "npis_alone_under_a_parent": 0,
+                "parents_holding_more_than_one_npi": 0}
+    sizes = resolved.groupby("final_parent").size()
+    shared = sizes[sizes > 1]
+    together = int(shared.sum())
+    return {
+        "npis_sharing_a_parent": together,
+        "npis_alone_under_a_parent": len(resolved) - together,
+        "parents_holding_more_than_one_npi": int(len(shared)),
+    }
+
+
 def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
     """What the built file actually covers — measured, never estimated."""
     if frame.empty:
@@ -585,6 +650,14 @@ def master_file_coverage(frame: pd.DataFrame) -> Dict[str, Any]:
         "organizations_with_a_parent": len(with_parent),
         "organization_parent_pct": (len(with_parent) / len(orgs) * 100.0
                                     if len(orgs) else 0.0),
+        # The number above says "resolved". It does not say "rolled up",
+        # and the gap between them is the whole story: 9,915 of the
+        # 11,477 resolved NPIs are alone under a node that exists only
+        # for them — a PECOS enrolment with one member, an EIN nobody
+        # else shares. That is a correct resolution and it aggregates
+        # nothing. Only 1,562 sit under a parent another NPI also
+        # reaches, which is what a partner means by a roll-up.
+        **_rollup_split(frame),
         "linked_to_ccn": int(frame["ccn"].astype(str).ne("").sum()),
         "with_a_category": int(frame["taxonomy_category"].astype(str).ne("").sum()),
         "with_a_cbsa": int(frame["cbsa_code"].astype(str).ne("").sum()),

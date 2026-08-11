@@ -567,6 +567,28 @@ class RouteTests(unittest.TestCase):
         self.assertTrue(all(r["final_parent"] for r in parented))
         self.assertTrue(any(not r["final_parent"] for r in everything))
 
+    def test_the_parent_name_filter_takes_the_name_not_the_key(self) -> None:
+        """Nobody holding a CIM knows ``pecos:2264404516``. They know
+        "Acadian", which until now matched nothing on this route."""
+        rows = self._rows("/master-npi-file.csv?parent_name=ACADIAN")
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertIn("ACADIAN", row["final_parent_label"].upper())
+
+    def test_the_parent_name_filter_is_a_substring_not_an_equality(self) -> None:
+        """Filed names carry suffixes — "ACADIAN AMBULANCE SERVICE INC" —
+        that nobody types."""
+        rows = self._rows("/master-npi-file.csv?parent_name=acadian%20ambulance")
+        self.assertTrue(rows)
+        self.assertNotIn("acadian ambulance",
+                         {r["final_parent_label"] for r in rows})
+
+    def test_a_regex_in_the_parent_name_matches_nothing_rather_than_raising(
+            self) -> None:
+        """The value goes into a pandas string match. Treated as a
+        pattern, ``(`` is an unbalanced-parenthesis error and a 500."""
+        self.assertEqual(self._rows("/master-npi-file.csv?parent_name=(("), [])
+
     def test_a_filtered_request_does_not_corrupt_the_next_one(self) -> None:
         """The frame is cached across requests; a handler filtering it in
         place would shrink it for everyone after."""
@@ -647,3 +669,169 @@ class CliTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _pecos_frame() -> pd.DataFrame:
+    """One PECOS enrolment holding five ambulance NPIs under one brand,
+    plus a second holding five that agree on nothing."""
+    rows = []
+    for n in range(1, 6):
+        rows.append({"npi": f"10000000{n:02d}", "entity_type": ENTITY_ORGANIZATION,
+                     "legal_name": "METRO AMBULANCE SERVICES INC", "ccn": "",
+                     "pecos_group": "555", "taxonomy_code": "341600000X",
+                     "state": "AL", "city": "MOBILE", "zip": "36601",
+                     "status": STATUS_ACTIVE})
+    for n in range(1, 6):
+        rows.append({"npi": f"20000000{n:02d}", "entity_type": ENTITY_ORGANIZATION,
+                     "legal_name": f"COUNTY {n} EMERGENCY SERVICE INC",
+                     "ccn": "", "pecos_group": "666",
+                     "taxonomy_code": "341600000X", "state": "TX",
+                     "city": "AUSTIN", "zip": "78701", "status": STATUS_ACTIVE})
+    return pd.DataFrame(rows)
+
+
+class ParentLabelTests(unittest.TestCase):
+    """A final parent nobody can read is a final parent nobody can use.
+    Nine in ten resolved rows in the bundled build land on a cluster
+    identifier — ``pecos:2264404516`` — which answers "which cluster" and
+    not "who owns this"."""
+
+    def setUp(self) -> None:
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_npi_frame())
+        self.rows = {r["npi"]: r for r in frame.to_dict("records")}
+        pecos = build_master_file(crosswalk=pd.DataFrame(),
+                                  npi_frame=_pecos_frame())
+        self.pecos = {r["npi"]: r for r in pecos.to_dict("records")}
+
+    def test_the_columns_sit_beside_the_identifier_they_explain(self):
+        self.assertEqual(
+            MASTER_COLUMNS[MASTER_COLUMNS.index("final_parent_id") + 1],
+            "final_parent_label")
+
+    def test_a_registry_system_keeps_its_registered_name(self):
+        """Not a plurality of its members — the registry name is a fact
+        and would only be degraded by an inference over it."""
+        row = self.rows["1111111111"]
+        self.assertEqual(row["final_parent"], node_key(NS_SYSTEM, "ascension"))
+        self.assertEqual(row["final_parent_label"], "Ascension")
+        self.assertEqual(row["final_parent_label_support"], 1.0)
+
+    def test_a_pecos_cluster_is_named_by_the_members_inside_it(self):
+        row = self.pecos["1000000001"]
+        self.assertEqual(row["final_parent_type"], "pecos")
+        self.assertEqual(row["final_parent_label"],
+                         "METRO AMBULANCE SERVICES INC")
+        self.assertEqual(row["final_parent_label_support"], 1.0)
+
+    def test_a_cluster_that_agrees_on_nothing_stays_unnamed(self):
+        """Five NPIs filing five different names share an enrolment, not a
+        brand. Labelling that cluster after any one of them would invent
+        an owner, so the row keeps the identifier and no name."""
+        row = self.pecos["2000000001"]
+        self.assertEqual(row["final_parent_type"], "pecos")
+        self.assertEqual(row["final_parent_label"], "")
+        self.assertEqual(row["final_parent_label_support"], "")
+
+    def test_a_row_with_no_parent_has_no_label_either(self):
+        row = self.rows["5555555555"]
+        self.assertEqual(row["final_parent"], "")
+        self.assertEqual(row["final_parent_label"], "")
+        self.assertEqual(row["final_parent_label_support"], "")
+
+    def test_the_label_survives_the_export(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "master.csv"
+            export_master_file(path, crosswalk=_crosswalk(),
+                               npi_frame=_npi_frame())
+            with path.open(newline="", encoding="utf-8") as handle:
+                rows = {r["npi"]: r for r in csv.DictReader(handle)}
+        self.assertEqual(rows["1111111111"]["final_parent_label"], "Ascension")
+
+
+class RealParentLabelTests(unittest.TestCase):
+    """Against the bundled build, where the gap was measured."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.frame = build_master_file()
+        cls.resolved = cls.frame[cls.frame["final_parent"] != ""]
+
+    def test_nearly_every_resolved_row_can_name_its_parent(self):
+        named = (self.resolved["final_parent_label"].astype(str) != "").sum()
+        self.assertGreater(named / len(self.resolved), 0.99)
+
+    def test_a_named_parent_always_carries_its_support(self):
+        named = self.resolved[
+            self.resolved["final_parent_label"].astype(str) != ""]
+        support = pd.to_numeric(named["final_parent_label_support"],
+                                errors="coerce")
+        self.assertFalse(support.isna().any())
+        self.assertTrue((support > 0).all())
+        self.assertTrue((support <= 1.0).all())
+
+    def test_an_unnamed_row_is_unnamed_because_the_data_disagrees(self):
+        """The abstentions are not gaps in coverage — they are clusters
+        whose members file too many different names to pick one. Pinned
+        so a regression that starts naming them is visible."""
+        blank = self.resolved[
+            self.resolved["final_parent_label"].astype(str) == ""]
+        self.assertLess(len(blank), len(self.resolved) * 0.01)
+        self.assertEqual(set(blank["final_parent_type"]) - {"official"}, set())
+
+
+class RollupHonestyTests(unittest.TestCase):
+    """"Resolved" and "rolled up" are different claims, and the file was
+    only reporting the first."""
+
+    def test_a_singleton_parent_is_not_a_rollup(self):
+        """A PECOS enrolment with one member resolves that NPI correctly
+        and aggregates nothing. Counting it as coverage is how 11,477
+        came to stand for a roll-up that is really 1,562."""
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_pecos_frame())
+        cov = master_file_coverage(frame)
+        self.assertEqual(cov["npis_sharing_a_parent"]
+                         + cov["npis_alone_under_a_parent"],
+                         cov["organizations_with_a_parent"])
+        self.assertGreater(cov["parents_holding_more_than_one_npi"], 0)
+
+    def test_the_two_numbers_are_reported_side_by_side(self):
+        frame = build_master_file(crosswalk=_crosswalk(),
+                                  npi_frame=_npi_frame())
+        cov = master_file_coverage(frame)
+        for key in ("organizations_with_a_parent", "npis_sharing_a_parent",
+                    "npis_alone_under_a_parent",
+                    "parents_holding_more_than_one_npi"):
+            self.assertIn(key, cov)
+
+    def test_an_empty_frame_reports_zeros_not_an_exception(self):
+        cov = master_file_coverage(pd.DataFrame(columns=list(MASTER_COLUMNS)))
+        self.assertEqual(cov, {"npis": 0})
+
+
+class RealRollupTests(unittest.TestCase):
+    """Against the bundled build."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.cov = master_file_coverage(build_master_file())
+
+    def test_most_resolved_npis_are_alone_under_their_parent(self):
+        """The finding this reporting exists for. 9,915 of the 11,477
+        resolved sit under a node minted for them alone — a PECOS
+        enrolment with one member, an EIN nobody else shares. Correct
+        resolutions that aggregate nothing."""
+        self.assertGreater(self.cov["npis_alone_under_a_parent"],
+                           self.cov["npis_sharing_a_parent"] * 4)
+
+    def test_the_rollup_number_is_the_smaller_one(self):
+        self.assertLess(self.cov["npis_sharing_a_parent"],
+                        self.cov["organizations_with_a_parent"])
+        self.assertGreater(self.cov["npis_sharing_a_parent"], 1_000)
+
+    def test_the_parts_reconcile_to_the_whole(self):
+        self.assertEqual(
+            self.cov["npis_sharing_a_parent"]
+            + self.cov["npis_alone_under_a_parent"],
+            self.cov["organizations_with_a_parent"])
