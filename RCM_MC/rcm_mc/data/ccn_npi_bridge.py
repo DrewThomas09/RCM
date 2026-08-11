@@ -25,6 +25,18 @@ appears in NPPES as a d/b/a at best. Name matching cannot recover
 that, and no amount of fuzzing makes it safe to try — the names that
 *do* look similar across a metro are usually different hospitals.
 
+The other half of that key is no better. Harvesting turned up
+certified facilities whose filed ZIP is simply wrong — CCN 050708 is
+Fresno Surgical Hospital, 6125 North Fresno Street, Fresno CA, filed
+under ZIP 96710, which is Honokaa, Hawaii — alongside PO-box ZIPs
+filed for a street address. The county and CBSA pipeline already
+recovers from these by falling back to the city, so they are
+invisible downstream; a ZIP5-keyed *match* has no such fallback and
+simply never fires. Only four crosswalk rows sit in a minority state
+for their ZIP, so the file cannot say how many of these there are —
+the detectable ones are the rare case where some other facility uses
+the same ZIP correctly. Keying on the CCN sidesteps the question.
+
 What this module is instead
 ---------------------------
 A harvested table keyed on the CCN, so no name matching happens at

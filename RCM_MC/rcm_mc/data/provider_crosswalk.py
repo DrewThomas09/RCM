@@ -74,15 +74,18 @@ The chain, and what each link is worth over the full universe:
      │        Geography is inherited, never beds or revenue, and the
      │        unit's own health system always wins over the parent's.
      │
-     └──►  NPI                     90 of 48,510 (0.2%)
-              matched against the bundled NPPES roster on
-              name+state+ZIP5, over both the legal name and every
-              d/b/a. Small because that roster is a 20,401-NPI
-              ambulance slice, not NPPES; nppes_ingest.py streams the
-              full 9GB dissemination file, which this environment
-              cannot reach. Two rules keep the 90 trustworthy: exactly
-              one NPI may claim a key, and the NPI must describe the
-              same kind of provider as the row — see _npi_for.
+     └──►  NPI                     hospitals harvested, post-acute thin
+              Two sources, bridge first. ccn_npi_bridge.csv.gz is
+              keyed on the CCN and harvested from NPPES on address
+              plus hospital taxonomy, with the provider's own PTAN
+              settling it wherever one is filed. The bundled roster
+              is the fallback, matched on name+state+ZIP5 over the
+              legal name and every d/b/a; it stays small because that
+              roster is a 20,401-NPI ambulance slice, not NPPES, and
+              nppes_ingest.py streams the full 9GB dissemination file
+              which this environment cannot reach. Both sources pass
+              the same guard: the NPI must describe the same kind of
+              provider as the row — see _npi_for.
 
 Public API::
 
@@ -852,9 +855,13 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                      "provider class — the only ownership signal an "
                      "unmapped facility has"),
         CoverageStat("NPI", filled("npi"), total,
-                     "matched against the bundled NPPES roster on "
-                     "name+state+ZIP5; a national fill needs the full "
-                     "dissemination file — see nppes_ingest"),
+                     "harvested per CCN from NPPES on address + hospital "
+                     "taxonomy, with the provider's own PTAN settling it "
+                     "where one is filed — see ccn_npi_bridge; the rest "
+                     "match the bundled roster on name+state+ZIP5. "
+                     "Hospitals first, so post-acute is still thin; a "
+                     "national fill needs the full dissemination file — "
+                     "see nppes_ingest"),
     ]
     stats.sort(key=lambda s: s.pct)
     return stats

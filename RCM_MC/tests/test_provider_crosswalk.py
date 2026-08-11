@@ -730,15 +730,37 @@ class NpiLinkTests(unittest.TestCase):
         self.assertEqual(by_ccn.loc["040078", "npi_source"],
                          "nppes dba+state+zip5")
 
-    def test_every_linked_npi_is_in_the_roster(self) -> None:
+    def test_every_link_is_traceable_to_the_source_that_made_it(self) -> None:
+        """Two sources now feed this column, and a link has to come from
+        exactly the one its npi_source names. The roster rows are still
+        matched on name+state+ZIP5 and must satisfy that key; the bridge
+        rows are keyed on the CCN and must be the NPI the bridge holds
+        for it. A row that belongs to neither is an invented link."""
+        from rcm_mc.data.ccn_npi_bridge import BRIDGE_SOURCE, load_bridge
         from rcm_mc.data.npi_registry import load_npi_registry
 
         roster = load_npi_registry()
+        bridge = load_bridge()
         for row in self.linked.to_dict("records"):
-            record = roster.get(row["npi"])
-            self.assertIsNotNone(record, row["npi"])
-            self.assertEqual(record.state, row["state"])
-            self.assertEqual(record.zip5, str(row["zip"])[:5])
+            source = str(row["npi_source"])
+            if source.startswith(BRIDGE_SOURCE):
+                held = bridge.get(str(row["ccn"]))
+                self.assertIsNotNone(held, row["ccn"])
+                self.assertEqual(held.npi, row["npi"])
+            else:
+                record = roster.get(row["npi"])
+                self.assertIsNotNone(record, row["npi"])
+                self.assertEqual(record.state, row["state"])
+                self.assertEqual(record.zip5, str(row["zip"])[:5])
+
+    def test_the_bridge_supplies_most_of_the_link_now(self) -> None:
+        """The roster could only ever reach an ambulance slice. If the
+        bridge ever stops outweighing it, the harvest has regressed."""
+        from rcm_mc.data.ccn_npi_bridge import BRIDGE_SOURCE
+
+        sources = self.linked["npi_source"].astype(str)
+        bridged = int(sources.str.startswith(BRIDGE_SOURCE).sum())
+        self.assertGreater(bridged, len(self.linked) - bridged)
 
     def test_the_index_drops_a_key_two_npis_claim(self) -> None:
         from rcm_mc.data.npi_registry import load_npi_registry, organization_index
@@ -762,16 +784,26 @@ class CoverageTests(unittest.TestCase):
         pcts = [s.pct for s in stats]
         self.assertEqual(pcts, sorted(pcts))
 
-    def test_ccn_is_complete_and_npi_is_honest_about_being_thin(self) -> None:
-        """NPI is the weakest link and the note has to say why. It is
-        thin because the only NPPES source available offline is a
-        20,401-NPI ambulance roster, not because the join is broken."""
+    def test_ccn_is_complete_and_npi_says_where_its_coverage_came_from(self):
+        """NPI is still the weakest link, and the note has to say why it
+        is uneven rather than merely thin. The harvest went at hospitals
+        first, so a partner reading a low post-acute number should read
+        it as "not harvested yet", not as "the join is broken"."""
         by_id = {s.identifier: s for s in crosswalk_coverage()}
         self.assertEqual(by_id["CCN"].pct, 100.0)
         self.assertGreater(by_id["NPI"].resolved, 0)
-        self.assertLess(by_id["NPI"].pct, 5.0)
-        self.assertIn("NPPES", by_id["NPI"].note)
-        self.assertIn("name+state+ZIP5", by_id["NPI"].note)
+        for phrase in ("PTAN", "ccn_npi_bridge", "name+state+ZIP5",
+                       "post-acute"):
+            self.assertIn(phrase, by_id["NPI"].note)
+
+    def test_the_hospital_scope_outruns_the_all_class_scope_on_npi(self):
+        """The clearest evidence that the gap is harvest order and not a
+        broken join: hospitals were done first, so scoping to hospitals
+        has to show a higher NPI rate than scoping to every class."""
+        hospitals = {s.identifier: s for s in crosswalk_coverage()}["NPI"]
+        every = {s.identifier: s
+                 for s in crosswalk_coverage(scope=SCOPE_ALL)}["NPI"]
+        self.assertGreater(hospitals.pct, every.pct)
 
     def test_observed_ownership_is_reported_as_its_own_identifier(self) -> None:
         by_id = {s.identifier: s for s in crosswalk_coverage()}
