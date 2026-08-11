@@ -1249,10 +1249,17 @@ def _name_disagreement_panel() -> str:
 def _discovered_operators_panel(limit: int = 15) -> str:
     """Operators the registry does not carry, found in the register itself.
 
-    The registry maps 14,425 of 48,510 certified facilities. The 33,998
-    operating facilities it misses are 86% post-acute, and the ownership
-    graph cannot reach them — it resolves NPIs, and only 60 of those
-    facilities carry one in the bundled extracts.
+    The facilities the registry misses are overwhelmingly post-acute,
+    and the ownership graph cannot reach them: it resolves NPIs, and
+    the NPI column is thinnest exactly there. ``ccn_npi_bridge`` has
+    since harvested thousands of hospital NPIs, which does not help
+    here — hospitals were already the well-mapped class. Until the
+    harvest reaches home health, hospice and SNF, this panel is the
+    only route to those operators.
+
+    Counts in the prose below are computed from the register at render
+    time rather than written here, because both sides of the ratio move
+    every time the registry gains an entry.
 
     What they do carry is a name and a CMS ownership type, which is
     enough to find the chains: twenty agencies filing CARETENDERS across

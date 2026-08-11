@@ -67,12 +67,28 @@ institutional provider *is* the CCN with a hyphen in it::
                                                              └ CCN 020001
 
 That is not evidence to weigh, it is the provider's own enumeration
-naming the CCN. Where a harvested row has one, ``match_basis`` is
-``ptan`` and the loader *enforces* it: a PTAN that normalises to a
-different CCN than the row claims drops the row rather than trusting
-the address, and the drop is reported through
-:func:`ptan_contradictions`. A row can be wrong about an address; it
-cannot be wrong about this and still be worth keeping.
+naming the CCN, and where a harvested row has one ``match_basis`` is
+``ptan``.
+
+Two things had to be learned before that could be enforced, and the
+first version of this module got both wrong by treating any differing
+PTAN as proof the row was fabricated.
+
+**A sub-unit number is not a different facility.** Medicare numbers a
+provider's swing beds and rural-emergency conversion by replacing the
+third character of the CCN with a letter — 18Z319 against CCN 181319,
+01U102 against 010102. Five correct rows were dropped for looking like
+contradictions. :func:`is_subunit_number` recognises the form.
+
+**A differing number is usually a predecessor, not a wrong NPI.**
+Seneca Healthcare District files 050333 against CCN 051327; Sutter
+Lakeside files 050476 against 051329. Both are the acute-care number
+the hospital held before converting to critical access, still sitting
+in an NPPES record nobody has updated since 2008. So a genuine
+mismatch now *demotes* the row — medium confidence, barred from
+claiming ``ptan`` as its basis — rather than dropping it, and is
+reported through :func:`ptan_contradictions` for someone to look at.
+Dropping meant discarding a correct link to honour a stale identifier.
 
 Most rows do not have one — Huntsville's does not — which is why
 address and taxonomy remain the working rule rather than a fallback.
@@ -166,6 +182,30 @@ CONFIDENCE_MEDIUM = "medium"
 BASIS_PTAN = "ptan"
 
 
+def is_subunit_number(ptan_ccn: str, ccn: str) -> bool:
+    """Is this PTAN the same provider's sub-unit number?
+
+    Medicare gives a provider's swing beds, rural-emergency conversion
+    and other sub-units their own provider number, formed by replacing
+    the third character of the CCN with a letter and keeping everything
+    else::
+
+        CCN 181319  BRECKINRIDGE HEALTH        PTAN 18Z319  (swing bed)
+        CCN 010102  J. PAUL JONES HOSPITAL     PTAN 01U102  (rural emergency)
+
+    Same facility, same enrolment, different line of business. Read
+    naively these look like a PTAN naming a different CCN, and the
+    first version of this module dropped five correct rows on exactly
+    that misreading. State code and sequence agreeing while the middle
+    character turns into a letter is not a contradiction, it is the
+    provider number for a unit of the same hospital.
+    """
+    if len(ptan_ccn) != 6 or len(ccn) != 6:
+        return False
+    return (ptan_ccn[:2] == ccn[:2] and ptan_ccn[3:] == ccn[3:]
+            and ptan_ccn[2].isalpha())
+
+
 def normalise_ptan(value: object) -> str:
     """A PTAN reduced to the CCN it encodes, or "" if it encodes none.
 
@@ -204,17 +244,37 @@ class BridgeRow:
 
     @property
     def is_ptan_confirmed(self) -> bool:
-        """The provider's own Medicare number names this CCN."""
-        return normalise_ptan(self.ptan) == self.ccn
+        """The provider's own Medicare number names this CCN.
+
+        A sub-unit number counts: 18Z319 is CCN 181319's swing bed, and
+        a provider filing it has still identified itself.
+        """
+        filed = normalise_ptan(self.ptan)
+        return bool(filed) and (filed == self.ccn
+                                or is_subunit_number(filed, self.ccn))
 
 
 @dataclass(frozen=True)
 class PtanContradiction:
-    """A row whose PTAN named a different CCN than the row claimed.
+    """A row whose PTAN named a genuinely different CCN.
 
-    Always a harvest error, never a judgement call: the provider filed
-    the number themselves. Dropped at load and reported here so the
-    count is visible rather than absorbed.
+    This used to drop the row. That was wrong, and the harvest proved
+    it: every case that survived the sub-unit rule turned out to be a
+    *predecessor* number rather than a different facility. Seneca
+    Healthcare District files 050333 against CCN 051327, Sutter
+    Lakeside files 050476 against 051329 — both the acute-care number
+    the hospital held before converting to critical access, still
+    sitting in an NPPES record last touched in 2008.
+
+    So the row is kept on its address evidence, demoted to medium, and
+    barred from claiming ``ptan`` as its basis. Dropping it would have
+    thrown away a correct link to honour a stale identifier, and the
+    identifier is stale precisely because NPPES records are updated
+    when the provider feels like it.
+
+    Reported rather than absorbed: a mismatch that is *not* a
+    predecessor number is a wrong NPI, and nobody can tell the two
+    apart without looking.
     """
 
     ccn: str
@@ -268,22 +328,28 @@ def _load(path: Path) -> Tuple[Dict[str, BridgeRow],
         npi = _clean(raw.get("npi"))
         if not ccn or not is_valid_npi(npi):
             continue
-        # A PTAN that names a different CCN is the provider's own
-        # filing contradicting the harvest. Drop before the row can
-        # claim the CCN and shut out a correct row behind it.
         ptan = _clean(raw.get("ptan"))
         ptan_ccn = normalise_ptan(ptan)
-        if ptan_ccn and ptan_ccn != ccn:
+        confirms = bool(ptan_ccn) and (ptan_ccn == ccn
+                                       or is_subunit_number(ptan_ccn, ccn))
+        basis = _clean(raw.get("match_basis"))
+        confidence = _clean(raw.get("confidence")).lower() or CONFIDENCE_MEDIUM
+        if ptan_ccn and not confirms:
+            # Kept, not dropped -- see PtanContradiction. Demoted so it
+            # cannot pass for evidence it does not have.
             contradicted.append(
                 PtanContradiction(ccn=ccn, npi=npi, ptan_ccn=ptan_ccn))
-            continue
+            confidence = CONFIDENCE_MEDIUM
+            if basis == BASIS_PTAN:
+                basis = "address+taxonomy"
+
         seen = rows.get(ccn)
         if seen is not None:
             if seen.npi != npi:
                 # A PTAN-confirmed row outranks whatever an address
                 # match got there first; anything else loses the race
                 # and is reported.
-                if normalise_ptan(ptan) == ccn and not seen.is_ptan_confirmed:
+                if confirms and not seen.is_ptan_confirmed:
                     contested.setdefault(ccn, []).append(seen.npi)
                 else:
                     contested.setdefault(ccn, []).append(npi)
@@ -302,8 +368,8 @@ def _load(path: Path) -> Tuple[Dict[str, BridgeRow],
             state=_clean(raw.get("npi_state")).upper(),
             zip_code=_clean(raw.get("npi_zip")),
             ptan=ptan,
-            match_basis=_clean(raw.get("match_basis")),
-            confidence=_clean(raw.get("confidence")).lower() or CONFIDENCE_MEDIUM,
+            match_basis=basis,
+            confidence=confidence,
         )
 
     conflicts = [

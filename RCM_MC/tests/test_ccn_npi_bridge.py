@@ -17,6 +17,7 @@ from rcm_mc.data.ccn_npi_bridge import (
     bridge_summary,
     cross_state_npis,
     load_bridge,
+    is_subunit_number,
     normalise_ptan,
     ptan_contradictions,
     shared_npis,
@@ -124,16 +125,41 @@ class PtanTests(BridgeFixtureCase):
         for other in ("", "1234", "ABCDEF", "1234567890", None):
             self.assertEqual(normalise_ptan(other), "")
 
-    def test_a_ptan_naming_another_ccn_drops_the_row(self):
-        # The provider filed the number themselves — this is never a
-        # judgement call.
-        self.write([_row("010039", NPI_A, ptan="45-0100"),
-                    _row("010040", NPI_B)])
-        self.assertEqual(set(load_bridge(self.path)), {"010040"})
+    def test_a_subunit_number_confirms_rather_than_contradicts(self):
+        """18Z319 is CCN 181319's swing bed, not a different facility.
+        Reading it naively dropped five correct rows."""
+        self.write([_row("181319", NPI_A, ptan="18Z319")])
+        row = load_bridge(self.path)["181319"]
+        self.assertTrue(row.is_ptan_confirmed)
+        self.assertEqual(ptan_contradictions(self.path), ())
+
+    def test_the_subunit_rule_needs_state_and_sequence_to_agree(self):
+        self.assertTrue(is_subunit_number("01U102", "010102"))
+        self.assertTrue(is_subunit_number("05Z334", "051334"))
+        # Different sequence -- a predecessor number, not a sub-unit.
+        self.assertFalse(is_subunit_number("050333", "051327"))
+        # Different state.
+        self.assertFalse(is_subunit_number("94Z060", "151327"))
+        # No letter in the middle: that is just another CCN.
+        self.assertFalse(is_subunit_number("181319", "181329"))
+
+    def test_a_ptan_naming_another_ccn_demotes_the_row_and_keeps_it(self):
+        """Every mismatch the harvest produced turned out to be the
+        acute-care number a hospital held before converting to critical
+        access, sitting in a record last touched in 2008. Dropping the
+        row would discard a correct link to honour a stale identifier."""
+        self.write([_row("051327", NPI_A, ptan="050333",
+                         match_basis="ptan", confidence="high")])
+        rows = load_bridge(self.path)
+        self.assertIn("051327", rows)
+        self.assertEqual(rows["051327"].npi, NPI_A)
+        self.assertFalse(rows["051327"].is_ptan_confirmed)
+        self.assertEqual(rows["051327"].confidence, "medium")
+        self.assertNotEqual(rows["051327"].match_basis, "ptan")
         bad = ptan_contradictions(self.path)
         self.assertEqual(len(bad), 1)
         self.assertEqual((bad[0].ccn, bad[0].npi, bad[0].ptan_ccn),
-                         ("010039", NPI_A, "450100"))
+                         ("051327", NPI_A, "050333"))
 
     def test_a_matching_ptan_marks_the_row_confirmed(self):
         self.write([_row("010039", NPI_A, ptan="01-0039", match_basis="ptan")])
@@ -235,8 +261,28 @@ class ShippedBridgeTests(unittest.TestCase):
     def test_no_shipped_npi_is_stretched_across_states(self):
         self.assertEqual(cross_state_npis(), {})
 
-    def test_no_shipped_ptan_contradicts_its_own_row(self):
-        self.assertEqual(ptan_contradictions(), ())
+    def test_every_shipped_ptan_mismatch_is_demoted_not_trusted(self):
+        """These are kept deliberately -- each observed one is a
+        predecessor CCN on the same building, and dropping them would
+        discard correct links to honour identifiers NPPES has not
+        touched since 2008. What must hold is that none of them passes
+        for evidence it does not have."""
+        rows = load_bridge()
+        for bad in ptan_contradictions():
+            row = rows.get(bad.ccn)
+            self.assertIsNotNone(row, bad.ccn)
+            self.assertFalse(row.is_ptan_confirmed, bad.ccn)
+            self.assertEqual(row.confidence, "medium", bad.ccn)
+            self.assertNotEqual(row.match_basis, "ptan", bad.ccn)
+
+    def test_ptan_mismatches_stay_rare_enough_to_read_by_hand(self):
+        """The point of keeping them is that someone looks. If this ever
+        runs into the hundreds the harvest has a systematic fault and
+        the demote-and-report policy is the wrong one for it."""
+        rows = load_bridge()
+        if not rows:
+            self.skipTest("no bridge shipped yet")
+        self.assertLess(len(ptan_contradictions()), max(25, len(rows) // 100))
 
 
 class CrosswalkJoinTests(unittest.TestCase):
