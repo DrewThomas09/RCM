@@ -1775,3 +1775,58 @@ class ChainVersusNameTests(unittest.TestCase):
         chain_filed = self.register[
             self.register["system_match"].astype(str).str.startswith("chain:")]
         self.assertGreater(len(chain_filed), 6_000)
+
+
+class NpiBridgePanelTests(unittest.TestCase):
+    """The CCN→NPI evidence panel on /health-system-lookup."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = render_health_system_lookup({})
+
+    def test_the_panel_is_on_the_page(self) -> None:
+        self.assertIn("What the Link Rests On", self.html)
+
+    def test_it_grades_the_evidence_rather_than_reporting_a_percentage(self):
+        """An NPI is the key a partner joins claims on. A row matched on
+        city alone and a row the provider's own Medicare number confirms
+        are not the same fact, and a single coverage number hides that."""
+        for phrase in ("PTAN", "Address matches and the NPI is enumerated",
+                       "City only"):
+            self.assertIn(phrase, self.html)
+
+    def test_it_shows_the_example_that_kills_name_matching(self) -> None:
+        """Without a concrete case, "names do not match" reads as a
+        tuning problem rather than a reason to key on the CCN."""
+        self.assertIn("The Health Care Authority of the City of Huntsville",
+                      self.html)
+
+    def test_it_reports_the_two_counts_that_must_be_zero(self) -> None:
+        self.assertIn("contested", self.html)
+        self.assertIn("stretched across", self.html)
+
+    def test_it_says_post_acute_is_unharvested_not_broken(self) -> None:
+        self.assertIn("not harvested yet", self.html)
+
+
+class NpiBridgeReachesTheCrosswalkTests(unittest.TestCase):
+    def test_every_bridge_row_that_survives_lands_on_its_ccn(self) -> None:
+        """The bridge is only worth shipping if it reaches the export a
+        partner downloads. Rows the taxonomy-family guard rejects are
+        expected to be absent -- being keyed on the CCN settles which
+        facility, not which of that facility's enumerations."""
+        from rcm_mc.data.ccn_npi_bridge import BRIDGE_SOURCE, load_bridge
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        bridge = load_bridge()
+        if not bridge:
+            self.skipTest("no bridge shipped yet")
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        landed = xw[xw["npi_source"].astype(str).str.startswith(BRIDGE_SOURCE)]
+        self.assertGreater(len(landed), 0)
+        by_ccn = dict(zip(landed["ccn"].astype(str),
+                          landed["npi"].astype(str)))
+        for ccn, npi in by_ccn.items():
+            self.assertEqual(npi, bridge[ccn].npi, ccn)
+        # The guard must reject some rows or it is not doing anything.
+        self.assertLess(len(landed), len(bridge))

@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import html as _html
 import urllib.parse
+from collections import Counter
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 import pandas as pd
@@ -1072,6 +1073,88 @@ def _ownership_panel(limit: int = 12) -> str:
         'builds the same file from a full NPPES ingest.</div>')
 
 
+def _npi_bridge_panel() -> str:
+    """How much of the CCN↔NPI join is harvested, and how sure each row is.
+
+    This number was 90 of 48,510 — the join was not thin, it was
+    absent, and the reason was structural rather than a coverage gap.
+    The bundled NPPES data is an ambulance slice with almost no
+    hospitals in it, and the match key was (name, state, ZIP5) against
+    a register where a hospital enumerates under whoever holds its
+    licence. Huntsville Hospital files as THE HEALTH CARE AUTHORITY OF
+    THE CITY OF HUNTSVILLE. Nothing about that key could ever have
+    worked.
+
+    Worth showing as its own panel rather than a coverage percentage
+    because a partner needs the *grade*, not the count: an NPI is the
+    key they will join claims on, and a row matched on city alone
+    should not be trusted the way a row the provider's own Medicare
+    number confirms should be.
+    """
+    from rcm_mc.data.ccn_npi_bridge import bridge_summary, load_bridge
+
+    rows = load_bridge()
+    if not rows:
+        return ""
+    summary = bridge_summary()
+    basis = Counter(r.match_basis or "unstated" for r in rows.values())
+
+    cols = [("Evidence", "left"), ("CCNs", "right"), ("Share", "right")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    labels = {
+        "ptan": "PTAN — the provider's own Medicare number names the CCN",
+        "name+address": "Name and address both match the certified facility",
+        "address+taxonomy": "Address matches and the NPI is enumerated as a hospital",
+        "city+taxonomy": "City only — no street or ZIP5 agreement",
+    }
+    trs = []
+    for key, count in basis.most_common():
+        trs.append("<tr>" + "".join([
+            ck_data_cell(_esc(labels.get(key, key)),
+                         weight=600 if key == "ptan" else 400),
+            ck_data_cell(f"{count:,}", align="right", mono=True),
+            ck_data_cell(f"{count / len(rows):.0%}", align="right", mono=True,
+                         tone="dim"),
+        ]) + "</tr>")
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+
+    return (table + '<div class="hsl-legend">'
+            f'{summary["ccns_resolved"]:,} CCNs resolved to '
+            f'{summary["distinct_npis"]:,} distinct NPIs across '
+            f'{summary["states"]} state codes, '
+            f'{summary["high_confidence"]:,} at high confidence. '
+            'Harvested hospitals first, because they carry the beds and the '
+            'revenue, so a low post-acute rate here reads as '
+            '<em>not harvested yet</em> and not as a broken join. '
+            '<br><br>Rows are keyed on the <strong>CCN</strong>, so no name '
+            'matching happens when this file is read. That matters because '
+            'the names genuinely do not match: Huntsville Hospital enumerates '
+            'as The Health Care Authority of the City of Huntsville, sharing '
+            'not one word with the name on its cost report. Address plus a '
+            'hospital taxonomy is the working evidence — a name match at a '
+            'different address is the most common way to attach the wrong '
+            'NPI, because systems enumerate their medical groups under the '
+            'flagship hospital&rsquo;s name. '
+            f'<br><br>{summary["ptan_confirmed"]:,} rows need no inference at '
+            'all: NPPES carries a PTAN, and for an institutional provider '
+            'that number <em>is</em> the CCN with a separator in it '
+            '(<code>02-0001</code>). Where one is filed it is enforced in '
+            'both directions — a PTAN naming a different CCN drops the row '
+            f'outright ({summary["ptan_contradictions"]:,} so far), and a '
+            'confirmed row displaces an address match that got there first. '
+            f'{summary["conflicting_ccns"]:,} CCNs remain contested and '
+            f'{summary["npis_spanning_states"]:,} NPIs are stretched across '
+            'state lines, which is a corporate NPI attached to a local '
+            'facility rather than a distinct-part unit. Both must be zero '
+            'in what ships. '
+            '<br><br>Download the joined file at <a class="ck-link" '
+            'href="/provider-crosswalk.csv">/provider-crosswalk.csv</a> — '
+            'the <code>npi_source</code> column names which source made '
+            'each link.</div>')
+
+
 def _name_disagreement_panel() -> str:
     """Where CMS's two names for one hospital name two different owners.
 
@@ -1489,6 +1572,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     coverage = _crosswalk_coverage_panel()
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
+    npi_bridge = _npi_bridge_panel()
     ownership = _ownership_panel()
     discovered = _discovered_operators_panel()
     disagreements = _name_disagreement_panel()
@@ -1562,6 +1646,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Full Provider Universe — Every Certified CCN</div>
     {provider_classes}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">CCN &rarr; NPI — What the Link Rests On</div>
+    {npi_bridge}
   </div>
   <div style="{cell}">
     <div style="{h3}">Organization NPIs — Bundled NPPES Extracts</div>

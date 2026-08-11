@@ -210,9 +210,22 @@ def _bundled_npi_frame() -> pd.DataFrame:
 def _crosswalk_npi_frame(crosswalk: pd.DataFrame) -> pd.DataFrame:
     """Organization NPIs that the certified-facility crosswalk resolved.
 
-    Ninety of them today — matched to a CCN on name, state and ZIP.
-    Small, and the only NPIs in this build that arrive already tied to a
-    cost-report filer, which makes them the ones worth keeping.
+    The only NPIs in this build that arrive already tied to a
+    cost-report filer, which is what makes them worth keeping — each
+    one lands with its CCN, and therefore with the health system the
+    registry assigned that CCN, before parent resolution runs at all.
+
+    They used to be ninety, matched on name+state+ZIP5 against an
+    ambulance roster. Most now come from ``ccn_npi_bridge``, harvested
+    per CCN from NPPES, and they are why the file holds hospitals at
+    all: the bundled roster is an EMS slice, so before the bridge the
+    largest parents in this file were air-ambulance operators.
+
+    ``legal_name`` is deliberately the *cost report's* name rather than
+    the NPPES legal one. NPPES files the licence holder — THE HEALTH
+    CARE AUTHORITY OF THE CITY OF HUNTSVILLE — and the registry cannot
+    match that to a system, while HUNTSVILLE HOSPITAL matches on sight.
+    The NPPES legal name is not lost; it rides on the bridge row.
     """
     linked = crosswalk[crosswalk["npi"].astype(str).str.strip().ne("")]
     if linked.empty:
