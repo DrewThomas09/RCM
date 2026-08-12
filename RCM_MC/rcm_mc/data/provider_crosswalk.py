@@ -74,15 +74,18 @@ The chain, and what each link is worth over the full universe:
      │        Geography is inherited, never beds or revenue, and the
      │        unit's own health system always wins over the parent's.
      │
-     └──►  NPI                     90 of 48,510 (0.2%)
-              matched against the bundled NPPES roster on
-              name+state+ZIP5, over both the legal name and every
-              d/b/a. Small because that roster is a 20,401-NPI
-              ambulance slice, not NPPES; nppes_ingest.py streams the
-              full 9GB dissemination file, which this environment
-              cannot reach. Two rules keep the 90 trustworthy: exactly
-              one NPI may claim a key, and the NPI must describe the
-              same kind of provider as the row — see _npi_for.
+     └──►  NPI                     hospitals harvested, post-acute thin
+              Two sources, bridge first. ccn_npi_bridge.csv.gz is
+              keyed on the CCN and harvested from NPPES on address
+              plus hospital taxonomy, with the provider's own PTAN
+              settling it wherever one is filed. The bundled roster
+              is the fallback, matched on name+state+ZIP5 over the
+              legal name and every d/b/a; it stays small because that
+              roster is a 20,401-NPI ambulance slice, not NPPES, and
+              nppes_ingest.py streams the full 9GB dissemination file
+              which this environment cannot reach. Both sources pass
+              the same guard: the NPI must describe the same kind of
+              provider as the row — see _npi_for.
 
 Public API::
 
@@ -106,6 +109,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
+from .ccn_npi_bridge import BRIDGE_SOURCE, load_bridge
 from .cms_facility_names import cms_facility, load_cms_facilities
 from .health_systems import assign_systems, normalize_name
 from .npi_registry import organization_index
@@ -495,11 +499,21 @@ def _same_taxonomy_family(left: Any, right: Any) -> bool:
 
 def _npi_for(rec: Dict[str, Any], zip5: str, index,
              row_taxonomy: str) -> Tuple[str, str, str]:
-    """(npi, source, taxonomy) from the bundled NPPES roster, or blanks.
+    """(npi, source, taxonomy) from the harvested bridge or the roster.
 
-    Matched on (normalized name, state, ZIP5) against both the legal
-    name and every d/b/a. Two rules make the result trustworthy rather
-    than merely large:
+    The **bridge is consulted first**, because it is keyed on the CCN
+    and therefore does no name matching at all. That is the whole
+    point of it: a hospital enumerates under the authority that holds
+    its licence, so CCN 010039 HUNTSVILLE HOSPITAL is NPI 1447221056
+    THE HEALTH CARE AUTHORITY OF THE CITY OF HUNTSVILLE — same
+    building, no shared words. See :mod:`ccn_npi_bridge`. The bridge
+    row still has to pass the taxonomy-family test below; being keyed
+    on the CCN removes the ambiguity about *which facility*, not the
+    one about *which of that facility's enumerations*.
+
+    The roster fallback is matched on (normalized name, state, ZIP5)
+    against both the legal name and every d/b/a. Two rules make that
+    result trustworthy rather than merely large:
 
     1. **Exactly one NPI must claim the key.** Handled in
        :func:`npi_registry.organization_index`.
@@ -517,6 +531,13 @@ def _npi_for(rec: Dict[str, Any], zip5: str, index,
     ``npi_taxonomy`` rides along on the row so the claim stays
     checkable rather than having to be trusted.
     """
+    bridged = load_bridge().get(str(rec.get("ccn", "") or "").strip().upper())
+    if bridged is not None and _same_taxonomy_family(
+            bridged.taxonomy_code, row_taxonomy):
+        return (bridged.npi,
+                f"{BRIDGE_SOURCE} ({bridged.confidence})",
+                bridged.taxonomy_code)
+
     name = str(rec.get("name", "") or "")
     state = str(rec.get("state", "") or "").upper().strip()
     # HCRIS spells ZIPs three ways — "35957", "35957-", "372051609". The
@@ -788,6 +809,99 @@ class CoverageStat:
         return (self.resolved / self.total * 100.0) if self.total else 0.0
 
 
+@dataclass(frozen=True)
+class OperatorDisagreement:
+    """A facility whose NPPES operator names a different health system.
+
+    The registry assigns a system from the name on the *cost report*.
+    The bridge carries the name and d/b/a from the same facility's
+    *NPPES enumeration*. Those are two organisations describing the same
+    building, and they are updated on different schedules by different
+    people — so when they name different systems, one of them has seen a
+    transaction the other has not.
+
+    In practice it is nearly always NPPES that is ahead, because a
+    change of ownership requires a new enumeration before it requires
+    anything of the cost report::
+
+        CCN 230019  ASCENSION PROVIDENCE HOSPITAL   registry: ascension
+                    HENRY FORD HEALTH PROVIDENCE HOSPITAL  npi: henry_ford
+
+    Four Ascension Michigan hospitals read that way at once, which is
+    the Henry Ford transaction. Steward St. Elizabeth's reads as Boston
+    Medical Center. SCL Health's Lutheran reads as Intermountain.
+
+    Two shapes in the queue are *not* transactions, which is why this
+    is a queue and not a correction:
+
+    **The NPPES record is the stale one.** CCN 360014 is O'Bleness
+    Memorial, mapped to OhioHealth, whose NPPES enumeration still reads
+    SHELTERING ARMS HOSPITAL FOUNDATION — the name it carried before
+    OhioHealth acquired it. Here the registry is ahead.
+
+    **Both are right, at different tiers.** CCN 050516 is Mercy San
+    Juan, mapped to Dignity's California estate, enumerated under the
+    legal name DIGNITY HEALTH — which the registry resolves to
+    CommonSpirit, Dignity's parent. Nothing has changed hands; the two
+    names sit at different heights in one ownership chain.
+    """
+
+    ccn: str
+    name: str
+    state: str
+    registry_system: str
+    npi_system: str
+    npi_name: str
+    npi: str
+
+
+def operator_disagreements(
+        df: Optional[pd.DataFrame] = None) -> List[OperatorDisagreement]:
+    """Facilities where the NPPES operator and the registry disagree.
+
+    A third opinion on ownership, independent of the HCRIS-versus-Care
+    Compare disagreement the *Changed Hands* queue already reports:
+    this one reads a name neither of those files carries.
+
+    Surfaced, never applied. A disagreement says the two sources
+    describe different operators, not which of them is right — the
+    registry can be stale, and so can an NPPES record nobody has
+    touched since 2008. Both cases exist in the harvest.
+    """
+    from .ccn_npi_bridge import load_bridge
+    from .health_systems import match_system
+
+    xw = get_crosswalk(scope=SCOPE_ALL) if df is None else df
+    if xw.empty:
+        return []
+    by_ccn = {str(r["ccn"]): r for r in xw.to_dict("records")}
+
+    out: List[OperatorDisagreement] = []
+    for ccn, row in load_bridge().items():
+        facility = by_ccn.get(ccn)
+        if facility is None:
+            continue
+        assigned = str(facility.get("system_id", "") or "")
+        # An unmapped facility cannot disagree with anything, and a
+        # blank NPPES name cannot either.
+        if assigned in ("", "_unmapped"):
+            continue
+        state = row.state or str(facility.get("state", "") or "")
+        for candidate in (row.npi_dba, row.npi_name):
+            found, _ = match_system(candidate, state)
+            if found is None:
+                continue
+            if found.system_id != assigned:
+                out.append(OperatorDisagreement(
+                    ccn=ccn, name=str(facility.get("name", "") or ""),
+                    state=state, registry_system=assigned,
+                    npi_system=found.system_id, npi_name=candidate,
+                    npi=row.npi))
+            break
+    out.sort(key=lambda d: (d.registry_system, d.ccn))
+    return out
+
+
 def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                        scope: str = SCOPE_HOSPITAL) -> List[CoverageStat]:
     """Fill rate per identifier — the honest scoreboard for this build.
@@ -834,9 +948,13 @@ def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                      "provider class — the only ownership signal an "
                      "unmapped facility has"),
         CoverageStat("NPI", filled("npi"), total,
-                     "matched against the bundled NPPES roster on "
-                     "name+state+ZIP5; a national fill needs the full "
-                     "dissemination file — see nppes_ingest"),
+                     "harvested per CCN from NPPES on address + hospital "
+                     "taxonomy, with the provider's own PTAN settling it "
+                     "where one is filed — see ccn_npi_bridge; the rest "
+                     "match the bundled roster on name+state+ZIP5. "
+                     "Hospitals first, so post-acute is still thin; a "
+                     "national fill needs the full dissemination file — "
+                     "see nppes_ingest"),
     ]
     stats.sort(key=lambda s: s.pct)
     return stats

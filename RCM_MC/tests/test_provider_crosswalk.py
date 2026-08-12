@@ -10,6 +10,7 @@ from __future__ import annotations
 import csv
 import io
 import tempfile
+from collections import Counter
 import unittest
 from pathlib import Path
 
@@ -721,24 +722,72 @@ class NpiLinkTests(unittest.TestCase):
     def test_the_dba_tier_carries_its_weight(self) -> None:
         """NPI 1841241833 files legally as HOT SPRINGS NATIONAL PARK
         HOSPITAL HOLDINGS LLC and does business as NATIONAL PARK MEDICAL
-        CENTER, which is the name on the cost report."""
-        sources = self.linked["npi_source"].value_counts()
-        self.assertGreater(sources.get("nppes dba+state+zip5", 0), 20)
-        self.assertGreater(sources.get("nppes name+state+zip5", 0), 20)
-        by_ccn = self.linked.set_index("ccn")
-        self.assertEqual(by_ccn.loc["040078", "npi"], "1841241833")
-        self.assertEqual(by_ccn.loc["040078", "npi_source"],
-                         "nppes dba+state+zip5")
+        CENTER, which is the name on the cost report. Without the d/b/a
+        tier the roster matcher never reaches it.
 
-    def test_every_linked_npi_is_in_the_roster(self) -> None:
+        Asserted against the roster index rather than the crosswalk
+        output: the bridge now supplies most links, so counting sources
+        in the finished frame measures harvest order rather than whether
+        this tier works.
+        """
+        from rcm_mc.data.npi_registry import organization_index
+
+        bases = Counter(basis for _, _, basis in organization_index().values())
+        self.assertGreater(bases["dba"], 20)
+        self.assertGreater(bases["name"], 20)
+
+    def test_the_two_sources_agree_where_they_overlap(self) -> None:
+        """The strongest evidence either source is right. The roster
+        reached 040078 through the d/b/a on name+state+ZIP5; the harvest
+        reached it independently, keyed on the CCN and matched on the
+        street. Same NPI. A disagreement here would mean one of the two
+        methods is systematically wrong, which no coverage number would
+        show."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+        from rcm_mc.data.npi_registry import organization_index
+
+        bridge = load_bridge()
+        roster = organization_index()
+        by_npi = {npi: True for npi, _, _ in roster.values()}
+        overlap = [(ccn, row) for ccn, row in bridge.items()
+                   if row.npi in by_npi]
+        self.assertGreater(len(overlap), 0)
+        national_park = bridge.get("040078")
+        self.assertIsNotNone(national_park)
+        self.assertEqual(national_park.npi, "1841241833")
+        self.assertEqual(national_park.npi_dba, "NATIONAL PARK MEDICAL CENTER")
+
+    def test_every_link_is_traceable_to_the_source_that_made_it(self) -> None:
+        """Two sources now feed this column, and a link has to come from
+        exactly the one its npi_source names. The roster rows are still
+        matched on name+state+ZIP5 and must satisfy that key; the bridge
+        rows are keyed on the CCN and must be the NPI the bridge holds
+        for it. A row that belongs to neither is an invented link."""
+        from rcm_mc.data.ccn_npi_bridge import BRIDGE_SOURCE, load_bridge
         from rcm_mc.data.npi_registry import load_npi_registry
 
         roster = load_npi_registry()
+        bridge = load_bridge()
         for row in self.linked.to_dict("records"):
-            record = roster.get(row["npi"])
-            self.assertIsNotNone(record, row["npi"])
-            self.assertEqual(record.state, row["state"])
-            self.assertEqual(record.zip5, str(row["zip"])[:5])
+            source = str(row["npi_source"])
+            if source.startswith(BRIDGE_SOURCE):
+                held = bridge.get(str(row["ccn"]))
+                self.assertIsNotNone(held, row["ccn"])
+                self.assertEqual(held.npi, row["npi"])
+            else:
+                record = roster.get(row["npi"])
+                self.assertIsNotNone(record, row["npi"])
+                self.assertEqual(record.state, row["state"])
+                self.assertEqual(record.zip5, str(row["zip"])[:5])
+
+    def test_the_bridge_supplies_most_of_the_link_now(self) -> None:
+        """The roster could only ever reach an ambulance slice. If the
+        bridge ever stops outweighing it, the harvest has regressed."""
+        from rcm_mc.data.ccn_npi_bridge import BRIDGE_SOURCE
+
+        sources = self.linked["npi_source"].astype(str)
+        bridged = int(sources.str.startswith(BRIDGE_SOURCE).sum())
+        self.assertGreater(bridged, len(self.linked) - bridged)
 
     def test_the_index_drops_a_key_two_npis_claim(self) -> None:
         from rcm_mc.data.npi_registry import load_npi_registry, organization_index
@@ -762,16 +811,26 @@ class CoverageTests(unittest.TestCase):
         pcts = [s.pct for s in stats]
         self.assertEqual(pcts, sorted(pcts))
 
-    def test_ccn_is_complete_and_npi_is_honest_about_being_thin(self) -> None:
-        """NPI is the weakest link and the note has to say why. It is
-        thin because the only NPPES source available offline is a
-        20,401-NPI ambulance roster, not because the join is broken."""
+    def test_ccn_is_complete_and_npi_says_where_its_coverage_came_from(self):
+        """NPI is still the weakest link, and the note has to say why it
+        is uneven rather than merely thin. The harvest went at hospitals
+        first, so a partner reading a low post-acute number should read
+        it as "not harvested yet", not as "the join is broken"."""
         by_id = {s.identifier: s for s in crosswalk_coverage()}
         self.assertEqual(by_id["CCN"].pct, 100.0)
         self.assertGreater(by_id["NPI"].resolved, 0)
-        self.assertLess(by_id["NPI"].pct, 5.0)
-        self.assertIn("NPPES", by_id["NPI"].note)
-        self.assertIn("name+state+ZIP5", by_id["NPI"].note)
+        for phrase in ("PTAN", "ccn_npi_bridge", "name+state+ZIP5",
+                       "post-acute"):
+            self.assertIn(phrase, by_id["NPI"].note)
+
+    def test_the_hospital_scope_outruns_the_all_class_scope_on_npi(self):
+        """The clearest evidence that the gap is harvest order and not a
+        broken join: hospitals were done first, so scoping to hospitals
+        has to show a higher NPI rate than scoping to every class."""
+        hospitals = {s.identifier: s for s in crosswalk_coverage()}["NPI"]
+        every = {s.identifier: s
+                 for s in crosswalk_coverage(scope=SCOPE_ALL)}["NPI"]
+        self.assertGreater(hospitals.pct, every.pct)
 
     def test_observed_ownership_is_reported_as_its_own_identifier(self) -> None:
         by_id = {s.identifier: s for s in crosswalk_coverage()}
@@ -1362,3 +1421,55 @@ class CrosswalkRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OperatorDisagreementTests(unittest.TestCase):
+    """NPPES as a third opinion on who operates a facility."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import operator_disagreements
+
+        cls.rows = operator_disagreements()
+
+    def test_the_queue_is_small_enough_to_work(self) -> None:
+        """A disagreement is a registry edit for a human to make. If
+        this ran into the hundreds it would be measuring a matching
+        artefact, not a set of transactions."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+
+        if not load_bridge():
+            self.skipTest("no bridge shipped yet")
+        self.assertLess(len(self.rows), 200)
+
+    def test_every_row_actually_names_two_different_systems(self) -> None:
+        for row in self.rows:
+            self.assertTrue(row.registry_system)
+            self.assertTrue(row.npi_system)
+            self.assertNotEqual(row.registry_system, row.npi_system, row.ccn)
+            self.assertNotEqual(row.registry_system, "_unmapped", row.ccn)
+
+    def test_it_catches_a_transaction_the_registry_has_not_taken(self) -> None:
+        """Ascension sold its Michigan hospitals to Henry Ford. The cost
+        report still says Ascension; the NPPES enumerations already read
+        Henry Ford. That is the whole point of reading a third file."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+
+        if not load_bridge():
+            self.skipTest("no bridge shipped yet")
+        moved = {r.ccn for r in self.rows
+                 if r.registry_system == "ascension"
+                 and r.npi_system == "henry_ford"}
+        self.assertGreater(len(moved), 1, "expected the Michigan estate")
+
+    def test_the_queue_is_not_applied_to_the_crosswalk(self) -> None:
+        """Surfaced, never applied — a disagreement says the sources
+        describe different operators, not which one is right. Both
+        directions of staleness are in the queue: O'Bleness is mapped to
+        OhioHealth while NPPES still reads Sheltering Arms, the name it
+        carried before OhioHealth bought it."""
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        assigned = dict(zip(xw["ccn"].astype(str),
+                            xw["system_id"].astype(str)))
+        for row in self.rows:
+            self.assertEqual(assigned[row.ccn], row.registry_system, row.ccn)
