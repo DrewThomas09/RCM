@@ -809,6 +809,99 @@ class CoverageStat:
         return (self.resolved / self.total * 100.0) if self.total else 0.0
 
 
+@dataclass(frozen=True)
+class OperatorDisagreement:
+    """A facility whose NPPES operator names a different health system.
+
+    The registry assigns a system from the name on the *cost report*.
+    The bridge carries the name and d/b/a from the same facility's
+    *NPPES enumeration*. Those are two organisations describing the same
+    building, and they are updated on different schedules by different
+    people — so when they name different systems, one of them has seen a
+    transaction the other has not.
+
+    In practice it is nearly always NPPES that is ahead, because a
+    change of ownership requires a new enumeration before it requires
+    anything of the cost report::
+
+        CCN 230019  ASCENSION PROVIDENCE HOSPITAL   registry: ascension
+                    HENRY FORD HEALTH PROVIDENCE HOSPITAL  npi: henry_ford
+
+    Four Ascension Michigan hospitals read that way at once, which is
+    the Henry Ford transaction. Steward St. Elizabeth's reads as Boston
+    Medical Center. SCL Health's Lutheran reads as Intermountain.
+
+    Two shapes in the queue are *not* transactions, which is why this
+    is a queue and not a correction:
+
+    **The NPPES record is the stale one.** CCN 360014 is O'Bleness
+    Memorial, mapped to OhioHealth, whose NPPES enumeration still reads
+    SHELTERING ARMS HOSPITAL FOUNDATION — the name it carried before
+    OhioHealth acquired it. Here the registry is ahead.
+
+    **Both are right, at different tiers.** CCN 050516 is Mercy San
+    Juan, mapped to Dignity's California estate, enumerated under the
+    legal name DIGNITY HEALTH — which the registry resolves to
+    CommonSpirit, Dignity's parent. Nothing has changed hands; the two
+    names sit at different heights in one ownership chain.
+    """
+
+    ccn: str
+    name: str
+    state: str
+    registry_system: str
+    npi_system: str
+    npi_name: str
+    npi: str
+
+
+def operator_disagreements(
+        df: Optional[pd.DataFrame] = None) -> List[OperatorDisagreement]:
+    """Facilities where the NPPES operator and the registry disagree.
+
+    A third opinion on ownership, independent of the HCRIS-versus-Care
+    Compare disagreement the *Changed Hands* queue already reports:
+    this one reads a name neither of those files carries.
+
+    Surfaced, never applied. A disagreement says the two sources
+    describe different operators, not which of them is right — the
+    registry can be stale, and so can an NPPES record nobody has
+    touched since 2008. Both cases exist in the harvest.
+    """
+    from .ccn_npi_bridge import load_bridge
+    from .health_systems import match_system
+
+    xw = get_crosswalk(scope=SCOPE_ALL) if df is None else df
+    if xw.empty:
+        return []
+    by_ccn = {str(r["ccn"]): r for r in xw.to_dict("records")}
+
+    out: List[OperatorDisagreement] = []
+    for ccn, row in load_bridge().items():
+        facility = by_ccn.get(ccn)
+        if facility is None:
+            continue
+        assigned = str(facility.get("system_id", "") or "")
+        # An unmapped facility cannot disagree with anything, and a
+        # blank NPPES name cannot either.
+        if assigned in ("", "_unmapped"):
+            continue
+        state = row.state or str(facility.get("state", "") or "")
+        for candidate in (row.npi_dba, row.npi_name):
+            found, _ = match_system(candidate, state)
+            if found is None:
+                continue
+            if found.system_id != assigned:
+                out.append(OperatorDisagreement(
+                    ccn=ccn, name=str(facility.get("name", "") or ""),
+                    state=state, registry_system=assigned,
+                    npi_system=found.system_id, npi_name=candidate,
+                    npi=row.npi))
+            break
+    out.sort(key=lambda d: (d.registry_system, d.ccn))
+    return out
+
+
 def crosswalk_coverage(df: Optional[pd.DataFrame] = None, *,
                        scope: str = SCOPE_HOSPITAL) -> List[CoverageStat]:
     """Fill rate per identifier — the honest scoreboard for this build.

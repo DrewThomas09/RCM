@@ -818,12 +818,28 @@ class RealRollupTests(unittest.TestCase):
         cls.cov = master_file_coverage(build_master_file())
 
     def test_most_resolved_npis_are_alone_under_their_parent(self):
-        """The finding this reporting exists for. 9,915 of the 11,477
-        resolved sit under a node minted for them alone — a PECOS
-        enrolment with one member, an EIN nobody else shares. Correct
-        resolutions that aggregate nothing."""
-        self.assertGreater(self.cov["npis_alone_under_a_parent"],
-                           self.cov["npis_sharing_a_parent"] * 4)
+        """The finding this reporting exists for, and it survives.
+
+        Most resolved NPIs still sit under a node minted for them alone
+        — a PECOS enrolment with one member, an EIN nobody else shares.
+        Correct resolutions that aggregate nothing, and the reason a
+        raw "resolved" count overstates how much this file rolls up.
+
+        The margin has narrowed on purpose. It was 9,915 alone against
+        1,562 sharing, better than six to one, when the only NPIs here
+        came from an ambulance roster. ccn_npi_bridge added thousands
+        of hospital NPIs that arrive already tied to a CCN and a health
+        system, and hospitals genuinely do share parents, so the ratio
+        is now about three to one. A *falling* ratio is the file
+        aggregating more, not less — which is why this asserts a
+        majority rather than the old multiple. If it ever inverts, that
+        is worth knowing too, and the assertion will say so.
+        """
+        alone = self.cov["npis_alone_under_a_parent"]
+        sharing = self.cov["npis_sharing_a_parent"]
+        self.assertGreater(alone, sharing)
+        self.assertGreater(sharing, 3_000,
+                           "the bridge should be aggregating hospitals")
 
     def test_the_rollup_number_is_the_smaller_one(self):
         self.assertLess(self.cov["npis_sharing_a_parent"],

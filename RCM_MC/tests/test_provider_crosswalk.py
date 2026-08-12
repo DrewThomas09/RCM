@@ -1421,3 +1421,55 @@ class CrosswalkRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OperatorDisagreementTests(unittest.TestCase):
+    """NPPES as a third opinion on who operates a facility."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        from rcm_mc.data.provider_crosswalk import operator_disagreements
+
+        cls.rows = operator_disagreements()
+
+    def test_the_queue_is_small_enough_to_work(self) -> None:
+        """A disagreement is a registry edit for a human to make. If
+        this ran into the hundreds it would be measuring a matching
+        artefact, not a set of transactions."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+
+        if not load_bridge():
+            self.skipTest("no bridge shipped yet")
+        self.assertLess(len(self.rows), 200)
+
+    def test_every_row_actually_names_two_different_systems(self) -> None:
+        for row in self.rows:
+            self.assertTrue(row.registry_system)
+            self.assertTrue(row.npi_system)
+            self.assertNotEqual(row.registry_system, row.npi_system, row.ccn)
+            self.assertNotEqual(row.registry_system, "_unmapped", row.ccn)
+
+    def test_it_catches_a_transaction_the_registry_has_not_taken(self) -> None:
+        """Ascension sold its Michigan hospitals to Henry Ford. The cost
+        report still says Ascension; the NPPES enumerations already read
+        Henry Ford. That is the whole point of reading a third file."""
+        from rcm_mc.data.ccn_npi_bridge import load_bridge
+
+        if not load_bridge():
+            self.skipTest("no bridge shipped yet")
+        moved = {r.ccn for r in self.rows
+                 if r.registry_system == "ascension"
+                 and r.npi_system == "henry_ford"}
+        self.assertGreater(len(moved), 1, "expected the Michigan estate")
+
+    def test_the_queue_is_not_applied_to_the_crosswalk(self) -> None:
+        """Surfaced, never applied — a disagreement says the sources
+        describe different operators, not which one is right. Both
+        directions of staleness are in the queue: O'Bleness is mapped to
+        OhioHealth while NPPES still reads Sheltering Arms, the name it
+        carried before OhioHealth bought it."""
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        assigned = dict(zip(xw["ccn"].astype(str),
+                            xw["system_id"].astype(str)))
+        for row in self.rows:
+            self.assertEqual(assigned[row.ccn], row.registry_system, row.ccn)
