@@ -110,10 +110,10 @@ _PILLARS: list[Mapping[str, object]] = [
         "slug": "market-sizing-cdd",
         "eyebrow": "SIZE THE MARKET",
         "body": (
-            "Commercial-diligence surfaces: driver-tree market "
-            "sizing, infusion-market scans and rate atlases, plus "
-            "the expert-call program and engagement scoping that "
-            "shape the CDD workplan."
+            "Commercial-diligence surfaces: the expert-call program "
+            "and the engagement scoping that shape a CDD workplan. "
+            "The single-market scans that used to lead this pillar "
+            "are engagement-specific and no longer listed."
         ),
         "links": [
             {"href": "/diligence/tam-sam",
@@ -227,14 +227,13 @@ _PILLARS: list[Mapping[str, object]] = [
         ],
     },
     {
-        "title": "PE Intelligence Toolkit",
+        "title": "Analytics & Open Questions",
         "slug": "pe-toolkit",
-        "eyebrow": "CODIFIED PARTNER JUDGMENT",
+        "eyebrow": "WHAT'S STILL UNANSWERED",
         "body": (
-            "The codified partner-judgment layer — a searchable "
-            "toolkit of analytic modules, runnable against a real "
-            "deal, plus the curated reference libraries and the "
-            "open-question ledger."
+            "The analytics marts built on top of the diligence data, "
+            "and the ledger of questions a target hasn't answered "
+            "yet."
         ),
         "links": [
             {"href": "/diligence/pe-library",
@@ -609,10 +608,31 @@ def _kpi_strip(n_surfaces: int, n_pillars: int, tiers: Counter) -> str:
     )
 
 
-def _toolbar(n_surfaces: int) -> str:
+def _visible_pillars() -> list[Mapping[str, object]]:
+    """``_PILLARS`` with every registry-hidden surface filtered out.
+
+    ``_PILLARS`` stays the complete map of served ``/diligence/*`` routes —
+    tests/test_section_catalog.py pins that, and it is genuinely the right
+    shape for the catalog's source of truth. What a reader is *offered* is
+    a narrower thing: the single-market study suites (Texas infusion, the
+    IFT/MMT transport study) and the illustrative-figure surfaces are
+    filtered here, and a pillar left with nothing visible drops rather than
+    rendering as an empty panel. Every count on the page derives from this
+    filtered list, so the masthead can't overstate the catalog.
+    """
+    from ._surface_visibility import visible_links
+    out: list[Mapping[str, object]] = []
+    for p in _PILLARS:
+        links = visible_links(p["links"])  # type: ignore[arg-type]
+        if links:
+            out.append({**p, "links": links})
+    return out
+
+
+def _toolbar(n_surfaces: int, pillars: list[Mapping[str, object]]) -> str:
     """Mono jump-row (pillar ordinals → panel anchors) + type-to-filter."""
     jumps = []
-    for i, p in enumerate(_PILLARS, start=1):
+    for i, p in enumerate(pillars, start=1):
         jumps.append(
             f'<a href="#{_html.escape(str(p["slug"]), quote=True)}">'
             f'<span class="n">{i:02d}</span>'
@@ -698,11 +718,12 @@ def render_diligence_index() -> str:
         ck_next_section,
         ck_page_actions,
     )
-    n_surfaces = sum(len(p["links"]) for p in _PILLARS)  # type: ignore[arg-type]
-    n_pillars = len(_PILLARS)
-    tiers = _tier_counts(_PILLARS)
+    pillars = _visible_pillars()
+    n_surfaces = sum(len(p["links"]) for p in pillars)  # type: ignore[arg-type]
+    n_pillars = len(pillars)
+    tiers = _tier_counts(pillars)
     panels = "".join(
-        _pillar_panel(i, p) for i, p in enumerate(_PILLARS, start=1)
+        _pillar_panel(i, p) for i, p in enumerate(pillars, start=1)
     )
     next_up = ck_next_section(
         "Open the portfolio-wide question ledger",
@@ -714,7 +735,7 @@ def render_diligence_index() -> str:
         _CSS
         + _head(n_surfaces, n_pillars, tiers)
         + _kpi_strip(n_surfaces, n_pillars, tiers)
-        + _toolbar(n_surfaces)
+        + _toolbar(n_surfaces, pillars)
         + f'<div class="dlx-catalog">{panels}</div>'
         + next_up
         + ck_page_actions()

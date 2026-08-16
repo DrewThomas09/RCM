@@ -141,6 +141,20 @@ def render_grouped_catalog(
 ) -> str:
     """Render a section landing as grouped pillars with honesty dots."""
     from ._chartis_kit import chartis_shell, ck_next_section, ck_panel
+    from ._surface_visibility import visible_links
+
+    # Apply the visibility ruling HERE rather than in each caller's curated
+    # pillar list: this renderer is the single door every section landing
+    # goes through, so filtering once means a hand-written rail can never
+    # reintroduce a hidden surface. A pillar left with no visible links is
+    # dropped entirely — an empty panel with a heading reads as a bug — and
+    # the counts + tier coverage below derive from the filtered set, so the
+    # masthead can't claim surfaces the page doesn't show.
+    pillars = [
+        {**p, "links": visible_links(p["links"])}  # type: ignore[index]
+        for p in pillars
+    ]
+    pillars = [p for p in pillars if p["links"]]
 
     pillars_html: List[str] = []
     for p in pillars:

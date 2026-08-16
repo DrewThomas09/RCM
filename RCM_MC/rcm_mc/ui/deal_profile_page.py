@@ -1203,6 +1203,20 @@ def _analytic_card(slug: str, a: Dict[str, Any]) -> str:
     )
 
 
+def _visible_analytics() -> List[Dict[str, Any]]:
+    """``_ANALYTICS`` minus the registry-hidden tools.
+
+    This list is the deal profile's own tool catalog — it drives the card
+    grid, the phase progress bar, and the "N of M analytics" pulse. All
+    three read through here so a hidden tool doesn't sit in the grid as a
+    dead card OR inflate the denominator on the pulse. Entries stay in
+    ``_ANALYTICS`` with their param-mapping intact for the day one earns
+    live wiring.
+    """
+    from ._surface_visibility import is_visible
+    return [a for a in _ANALYTICS if is_visible(a["href"])]
+
+
 def _render_analytics_grid(slug: str) -> str:
     """Phase-grouped analytic cards.  Phases render as a section
     header with subtitle + tone-colored accent bar, then a grid
@@ -1210,7 +1224,7 @@ def _render_analytics_grid(slug: str) -> str:
     through the tool."""
     # Bucket analytics by phase
     by_phase: Dict[str, List[Dict[str, Any]]] = {}
-    for a in _ANALYTICS:
+    for a in _visible_analytics():
         phase = a.get("phase", "DILIGENCE")
         by_phase.setdefault(phase, []).append(a)
 
@@ -1399,7 +1413,7 @@ def _render_lifecycle_ribbon(slug: str) -> str:
     """
     order = ("SCREENING", "DILIGENCE", "RISK", "FINANCIAL", "DELIVERY")
     per_phase: Dict[str, int] = {}
-    for a in _ANALYTICS:
+    for a in _visible_analytics():
         per_phase[a.get("phase", "DILIGENCE")] = (
             per_phase.get(a.get("phase", "DILIGENCE"), 0) + 1
         )
@@ -1513,7 +1527,7 @@ def _render_diligence_pulse(slug: str) -> str:
     href → label without a round-trip.
     """
     # Build href → label + total count from the analytics list
-    tool_labels = {a["href"]: a["label"] for a in _ANALYTICS}
+    tool_labels = {a["href"]: a["label"] for a in _visible_analytics()}
     return (
         '<section class="ck-dp-pulse" data-rcm-dp-pulse hidden>'
         '<div class="ck-dp-pulse-head">'
@@ -1524,7 +1538,7 @@ def _render_diligence_pulse(slug: str) -> str:
         '<div class="ck-dp-pulse-tile">'
         '<div class="ck-dp-pulse-val" data-rcm-pulse-count>0</div>'
         '<div class="ck-dp-pulse-lbl">Tools opened</div>'
-        f'<div class="ck-dp-pulse-sub">of {len(_ANALYTICS)} analytics</div>'
+        f'<div class="ck-dp-pulse-sub">of {len(_visible_analytics())} analytics</div>'
         '</div>'
         '<div class="ck-dp-pulse-tile">'
         '<div class="ck-dp-pulse-val ck-dp-pulse-val-serif" '
@@ -1546,7 +1560,7 @@ def _render_diligence_pulse(slug: str) -> str:
         '</section>'
         '<script>window.RCM_DP_TOOL_LABELS='
         + json.dumps(tool_labels)
-        + f';window.RCM_DP_TOOL_TOTAL={len(_ANALYTICS)};'
+        + f';window.RCM_DP_TOOL_TOTAL={len(_visible_analytics())};'
         '</script>'
     )
 
@@ -1812,21 +1826,6 @@ def _inline_js(slug: str) -> str:
     updateMarketContext(data);
     // Special-case the Run-Pipeline CTA: it wants every param the
     // pipeline accepts, so we encode the full profile.
-    var pipelineCta = document.querySelector('[data-rcm-run-pipeline]');
-    if (pipelineCta) {
-      var pipelineQs = [];
-      Object.keys(data).forEach(function(k) {
-        if (k === '__saved_at') return;
-        var v = data[k];
-        if (v == null || v === '') return;
-        // The pipeline renderer accepts both *_usd and *_year0_usd
-        // aliases; send the canonical key names.
-        pipelineQs.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
-      });
-      pipelineCta.href = pipelineQs.length
-        ? '/diligence/thesis-pipeline?' + pipelineQs.join('&')
-        : '/diligence/thesis-pipeline';
-    }
     document.querySelectorAll('[data-rcm-deal-link]').forEach(function(a) {
       var base = a.getAttribute('data-rcm-deal-href-base');
       var specJson = a.getAttribute('data-rcm-deal-params');
@@ -2573,21 +2572,11 @@ def render_deal_profile_page(
         '</details>'
         '</p>'
     )
-    # Prominent "Run Full Pipeline" CTA — the single highest-leverage
-    # button on the page.
-    pipeline_cta = ck_panel(
-        '<p class="ck-section-body">'
-        '<strong>One-button full diligence chain.</strong> '
-        'Runs bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
-        'prediction → PPAM → counterfactual → Steward → cyber → '
-        'deal autopsy → Deal MC in one step. Feeds IC Packet with '
-        'every headline number.</p>'
-        '<p class="ck-section-body">'
-        '<a data-rcm-run-pipeline href="/diligence/thesis-pipeline" '
-        'class="cad-btn cad-btn-primary">▶ Run Full Pipeline</a>'
-        '</p>',
-        title="Thesis Pipeline",
-    )
+    # The "Run Full Pipeline" CTA that used to lead this page pointed at
+    # /diligence/thesis-pipeline, which is registry-hidden — the chain it
+    # ran leaned on illustrative surfaces (PPAM, bankruptcy scan). The
+    # analytics grid below is the honest entry point: every tool on it
+    # runs on a sourced filing.
     thesis_snapshot = _render_thesis_snapshot(slug)
     market_context = _render_market_context(slug)
     lifecycle = _render_lifecycle_ribbon(slug)
@@ -2627,18 +2616,14 @@ def render_deal_profile_page(
     toc = ck_sticky_toc([
         {"id": "dp-thesis",    "title": "Investment thesis"},
         {"id": "dp-market",    "title": "Market context"},
-        {"id": "dp-pipeline",  "title": "Thesis Pipeline"},
         {"id": "dp-lifecycle", "title": "Diligence lifecycle"},
         {"id": "dp-params",    "title": "Deal parameters"},
         {"id": "dp-questions", "title": "Diligence questions"},
         {"id": "dp-analytics", "title": "Analytics"},
     ])
-    # Wrap pipeline_cta + grid_header so they pick up anchors too —
-    # they're not ck_panels but partners still expect "Thesis Pipeline"
-    # and "Analytics" to be jump targets.
-    pipeline_block = (
-        f'<section id="dp-pipeline">{pipeline_cta}</section>'
-    )
+    # Wrap grid_header so it picks up an anchor too — it's not a
+    # ck_panel but partners still expect "Analytics" to be a jump target.
+    pipeline_block = ""
     grid_block = (
         f'<section id="dp-analytics">{grid_header}{grid}</section>'
     )

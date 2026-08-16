@@ -248,9 +248,9 @@ def render_market_index() -> str:
         + intro
         + "".join(sections)
         + ck_next_section(
-            "Size any subsector in the TAM/SAM builder",
-            "/diligence/tam-sam",
-            eyebrow="Up next", italic_word="TAM/SAM")
+            "Read the market's geography in the data",
+            "/market-intel/geo",
+            eyebrow="Up next", italic_word="geography")
         + ck_page_actions()
     )
     return chartis_shell(body, "Market Reports", active_nav="/market")

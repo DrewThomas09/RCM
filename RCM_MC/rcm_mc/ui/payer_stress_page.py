@@ -837,7 +837,7 @@ def _verdict_card(report: PayerStressReport) -> str:
     # path + Copy-share-link + IC/denial drilldown cross-links.
     intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo-gen">Open IC memo →</a>'
+        '<a href="/diligence/ic-packet">Open IC packet →</a>'
         '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
     )
     intro = _ps_head(
@@ -1106,7 +1106,7 @@ def render_payer_stress_page(
     # 2026-05-28 sweep · strict 5-block head for the main intro path.
     main_intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo-gen">Open IC memo →</a>'
+        '<a href="/diligence/ic-packet">Open IC packet →</a>'
         '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
     )
     main_intro = _ps_head(
@@ -1187,10 +1187,7 @@ def render_payer_stress_page(
         '<a href="/diligence/deal-mc" class="ck-link">→ Deal MC</a> '
         'base case · feed the '
         '<a href="/diligence/bridge-audit" class="ck-link">'
-        '→ Bridge Audit</a> payer-repricing lever · appear as '
-        'evidence in the '
-        '<a href="/diligence/bear-case" class="ck-link">'
-        '→ Bear Case</a> · and stress-test the '
+        '→ Bridge Audit</a> payer-repricing lever · and stress-test the '
         '<a href="/diligence/covenant-stress" class="ck-link">'
         '→ Covenant Stress Lab</a> DSCR numerator.'
         '</p>',

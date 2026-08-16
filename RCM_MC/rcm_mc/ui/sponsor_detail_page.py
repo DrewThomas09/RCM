@@ -272,9 +272,9 @@ def render_sponsor_detail_page(qs: Dict[str, Any],
                     f'enough to gut-check whether their pitched '
                     f'base case is realistic.</p>'
                     f'<p style="margin:0;font-size:12px;color:#7a8699;">'
-                    f'For the full league table across every '
-                    f'sponsor, see <a href="/sponsor-track-record" '
-                    f'style="color:var(--sc-navy);">/sponsor-track-record</a>.'
+                    f'For every tracked acquirer, see '
+                    f'<a href="/deal-library/sponsors" '
+                    f'style="color:var(--sc-navy);">/deal-library/sponsors</a>.'
                     f'</p>'
                 )
             )

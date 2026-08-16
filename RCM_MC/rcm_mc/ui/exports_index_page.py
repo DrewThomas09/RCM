@@ -116,6 +116,14 @@ def render_exports_index(db_path: str) -> str:
         chartis_shell, ck_eyebrow, ck_fmt_num, ck_kpi_block,
         ck_next_section, ck_page_title, ck_provenance_tooltip,
     )
+    from ._surface_visibility import is_visible
+
+    # The corpus browsers are links to other pages, not download endpoints,
+    # so a registry-hidden destination would offer a dead-end browse from a
+    # page whose whole promise is "every export in one place". Filter them;
+    # the card and its KPI tile drop out entirely when nothing survives
+    # rather than rendering an empty table under a heading.
+    data_exports = [row for row in _DATA_EXPORTS if is_visible(row[1])]
 
     header = ck_page_title(
         "Downloads",
@@ -138,11 +146,11 @@ def render_exports_index(db_path: str) -> str:
         "Corpus browsers",
         _wc.sortable_table(
             ["Export", "What it contains"],
-            _export_rows(_DATA_EXPORTS),
+            _export_rows(data_exports),
             id="exports-corpus",
             filterable=True, filter_placeholder="Filter corpus browsers…",
         ),
-    )
+    ) if data_exports else ""
 
     # Cycle 47 — KPI strip with provenance.
     portfolio_value = ck_provenance_tooltip(
@@ -157,7 +165,7 @@ def render_exports_index(db_path: str) -> str:
     )
     corpus_value = ck_provenance_tooltip(
         "Corpus browsers",
-        ck_fmt_num(len(_DATA_EXPORTS)),
+        ck_fmt_num(len(data_exports)),
         explainer=(
             "Read-only exports of the realized-deal corpus + "
             "public-data inputs (HCRIS hospitals, IRS 990 "
@@ -166,8 +174,10 @@ def render_exports_index(db_path: str) -> str:
         ),
         inject_css=False,
     )
+    n_tiles = 2 if data_exports else 1
     kpi_strip = (
-        '<div class="ck-kpi-grid" style="grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;">'
+        f'<div class="ck-kpi-grid" style="grid-template-columns:'
+        f'repeat({n_tiles},1fr);gap:8px;margin-bottom:14px;">'
         + ck_kpi_block(
             "Portfolio Exports", portfolio_value, "across active deals",
             help={
@@ -180,7 +190,7 @@ def render_exports_index(db_path: str) -> str:
                 ),
             },
         )
-        + ck_kpi_block(
+        + (ck_kpi_block(
             "Corpus Browsers", corpus_value, "public-data sources",
             help={
                 "definition": (
@@ -192,7 +202,7 @@ def render_exports_index(db_path: str) -> str:
                     "workflows + audit reproducibility."
                 ),
             },
-        )
+        ) if data_exports else "")
         + '</div>'
     )
 

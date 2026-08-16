@@ -106,7 +106,11 @@ def render_quick_access() -> str:
     hunting in the header.
     """
     cards = ""
-    for kicker, label, copy, href, variant in _CARDS:
+    from .._surface_visibility import is_visible as _is_visible
+    # Quick-access is a listing: a registry-hidden destination drops
+    # out rather than leading the app home page.
+    for kicker, label, copy, href, variant in [
+            c for c in _CARDS if _is_visible(c[3])]:
         variant_cls = " app-qa-card--catalog" if variant == "catalog" else ""
         cards += (
             f'<a class="app-qa-card{variant_cls}" '

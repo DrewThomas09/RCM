@@ -103,16 +103,28 @@ class LibraryPageTests(unittest.TestCase):
         self.assertIn('path == "/diligence/pe-library"', src)
         self.assertIn("render_pe_library_page", src)
 
-    def test_classified_and_navigable(self):
+    def test_classified_and_still_served_but_no_longer_offered(self):
+        # The page is registry-hidden as of 2026-08-16 (sponsor-corpus /
+        # PE-narrative tail), so the diligence sub-nav no longer carries it
+        # and the RENDERED Cmd-K palette omits it. It keeps its
+        # surface-status tier, its palette registry entry, and its
+        # ranking-manifest entry — hiding is a browse ruling applied at
+        # render, and those registries are how a page rejoins the catalog
+        # if the ruling is ever reversed. That it still SERVES is pinned in
+        # tests/test_hidden_surfaces.py.
         from rcm_mc.diligence.surface_status import classify_surface
-        from rcm_mc.ui._chartis_kit import _SUB_NAV, _DEFAULT_PALETTE_MODULES
+        from rcm_mc.ui._chartis_kit import (
+            _SUB_NAV, _DEFAULT_PALETTE_MODULES, ck_command_palette,
+        )
         from rcm_mc.ui._surface_rankings import RANKINGS
+        from rcm_mc.ui._surface_visibility import is_hidden
         self.assertEqual(
             classify_surface("/diligence/pe-library")["tier"], "navy")
-        self.assertIn("/diligence/pe-library",
-                      {it["href"] for it in _SUB_NAV["diligence"]})
-        self.assertIn("/diligence/pe-library",
-                      {m["route"] for m in _DEFAULT_PALETTE_MODULES})
+        self.assertTrue(is_hidden("/diligence/pe-library"))
+        self.assertNotIn("/diligence/pe-library",
+                         {it["href"] for it in _SUB_NAV["diligence"]})
+        self.assertNotIn("/diligence/pe-library",
+                         ck_command_palette(_DEFAULT_PALETTE_MODULES))
         self.assertIn("/diligence/pe-library",
                       {r["route"] for r in RANKINGS.get("diligence", [])})
 

@@ -53,9 +53,16 @@ class ProfilePageTests(unittest.TestCase):
             self.assertIn(f'data-rcm-deal-field="{field}"', h,
                           msg=f"missing field {field}")
 
-    def test_renders_card_for_every_analytic(self):
+    def test_renders_card_for_every_visible_analytic(self):
+        # _ANALYTICS stays the full tool catalog with its param mapping
+        # intact; the grid renders the ones the visibility registry still
+        # offers (Thesis Pipeline, Bear Case, PPAM, Management Scorecard
+        # and the bankruptcy scan went hidden on 2026-08-16).
+        from rcm_mc.ui.deal_profile_page import _visible_analytics
         h = render_deal_profile_page(slug="aurora")
-        for a in _ANALYTICS:
+        visible = _visible_analytics()
+        self.assertTrue(visible, "every analytic was filtered away")
+        for a in visible:
             self.assertIn(a["label"], h,
                           msg=f"missing analytic card {a['label']}")
 
@@ -85,17 +92,18 @@ class ProfilePageTests(unittest.TestCase):
 
     def test_analytic_card_carries_href_template(self):
         h = render_deal_profile_page(slug="aurora")
-        # Bankruptcy-Survivor Scan uses empty params — should still
-        # render the href-base attribute.
+        # IC Packet uses empty params — should still render the href-base
+        # attribute. (This used the Bankruptcy-Survivor Scan as its
+        # empty-params example until 2026-08-16, when that surface went
+        # registry-hidden and stopped rendering a card at all.)
         self.assertIn(
-            'data-rcm-deal-href-base="/screening/bankruptcy-survivor"',
-            h,
+            'data-rcm-deal-href-base="/diligence/ic-packet"', h,
         )
         self.assertIn(
             'data-rcm-deal-href-base="/diligence/counterfactual"', h,
         )
-        self.assertIn(
-            'data-rcm-deal-href-base="/diligence/ic-packet"', h,
+        self.assertNotIn(
+            'data-rcm-deal-href-base="/screening/bankruptcy-survivor"', h,
         )
 
     def test_slug_sanitization_rejects_path_traversal(self):
@@ -265,10 +273,15 @@ class DealProfilePowerUITests(unittest.TestCase):
         self.assertIn("<kbd", h)
         self.assertIn("for shortcuts", h)
 
-    def test_run_full_pipeline_cta_present(self):
+    def test_run_full_pipeline_cta_removed(self):
+        # The CTA ran /diligence/thesis-pipeline, a chain built on
+        # illustrative surfaces (PPAM, the bankruptcy scan). Registry-hidden
+        # on 2026-08-16, so the page's lead button went with it — the
+        # analytics grid below is the entry point now, and every tool on it
+        # runs on a sourced filing.
         h = self._render()
-        self.assertIn("Run Full Pipeline", h)
-        self.assertIn("data-rcm-run-pipeline", h)
+        self.assertNotIn("Run Full Pipeline", h)
+        self.assertNotIn("data-rcm-run-pipeline", h)
 
     def test_analytic_card_hover_transitions(self):
         h = self._render()

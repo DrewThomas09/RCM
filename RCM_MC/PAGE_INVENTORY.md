@@ -1,5 +1,17 @@
 # PAGE_INVENTORY — graded 2026-06-10 (Phase 0) · Tier-1 fixes re-checked 2026-06-12 (W2-191…200)
 
+> **2026-08-16 — the Tier-2 long tail is now HIDDEN, not just chip-labelled.**
+> The grading below still describes what each page *is*; it no longer
+> describes what a reader is *offered*. Chip-labelling an illustrative page
+> "honest scaffold" was the right call while the product was a diligence
+> desk; it is the wrong call for a public-data verification surface, where a
+> page of invented numbers undercuts the whole promise however honestly it
+> is labelled. Those pages — plus the single-market study suites (TX
+> infusion, IFT/MMT) and the sponsor-corpus tail — are now off every
+> listing surface via `rcm_mc/ui/_surface_visibility`. They still SERVE:
+> routes resolve, deep links work, and a page rejoins the catalog the day
+> its live-data wiring lands (drop it from the set). Tier 1 is untouched.
+
 Evidence: scripts/route_walker.py walked 361 exact-match page routes on the
 seeded demo (5 deals, 6,123-hospital HCRIS universe): **349 render 200, 0
 tracebacks, 0 nan/None leaks**. 12 non-200s are POST-only endpoints hit with

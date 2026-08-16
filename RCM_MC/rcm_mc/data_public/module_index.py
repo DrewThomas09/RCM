@@ -169,7 +169,15 @@ def _build_modules() -> List[Module]:
         Module("Trial Site Econ", "/trial-site-econ", "Sector", "diligence", "associate",
                "Clinical trial site P&L, therapeutic area mix, phase economics, sponsors", True),
     ]
-    return m
+    # The index is the platform's map of itself, so it must map what a
+    # reader can actually browse to. Registry-hidden modules (illustrative
+    # figures, single-market studies, the sponsor-corpus tail) drop out
+    # here rather than being deleted from the list above — the entry stays
+    # accurate for the day a module earns live wiring, and every rollup
+    # below (category / phase / persona counts) derives from the filtered
+    # list, so the totals on /module-index can't overstate the catalog.
+    from rcm_mc.ui._surface_visibility import is_visible
+    return [mod for mod in m if is_visible(mod.route)]
 
 
 def _build_categories(modules: List[Module]) -> List[CategoryRollup]:

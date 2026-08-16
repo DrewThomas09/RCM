@@ -22,10 +22,23 @@ class ShowcaseTests(unittest.TestCase):
             self.assertIn(f">{label}</h2>", h)
 
     def test_shows_all_tools_in_a_section(self):
-        # Every diligence tool in the manifest is listed (not just a top-6).
+        # Every VISIBLE diligence tool in the manifest is listed (not just a
+        # top-6). The manifest still scores registry-hidden surfaces — the
+        # single-market study suites, the illustrative-figure pages — so the
+        # expectation is curate_rows' output, not the raw manifest.
+        from rcm_mc.ui._surface_visibility import curate_rows
         h = render_tools_showcase(355)
-        for r in RANKINGS.get("diligence", []):
+        for r in curate_rows(RANKINGS.get("diligence", [])):
             self.assertIn(r["route"], h)
+
+    def test_hidden_surfaces_are_absent_from_the_showcase(self):
+        # The showcase is the front view of the tool catalog: a hidden
+        # surface must not appear on it even though the ranking manifest
+        # scores it highly (TX Infusion led the diligence ranking).
+        h = render_tools_showcase(355)
+        for route in ("/diligence/texas-infusion", "/ift-mmt",
+                      "/denovo-expansion", "/pe-intelligence"):
+            self.assertNotIn(f'href="{route}"', h, route)
 
     def test_ranked_order_best_first(self):
         # Within diligence, rows appear in descending ranking order even though

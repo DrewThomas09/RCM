@@ -58,6 +58,20 @@ _CONNECTIONS: Dict[str, List] = {
     ],
 }
 
+
+def _visible_connections(slug: str) -> List:
+    """``_CONNECTIONS[slug]`` minus every registry-hidden destination.
+
+    These rows are the "read this next" bridge from a licensed industry
+    report into the platform's own public-data surfaces — a link that
+    lands on an unlisted page breaks that bridge. Read through this
+    accessor everywhere, including the connection COUNTS on the index, so
+    a card can't promise five reads and deliver two.
+    """
+    from rcm_mc.ui._surface_visibility import is_visible
+    return [row for row in _CONNECTIONS.get(slug, []) if is_visible(row[1])]
+
+
 _LICENSE_CHIP = (
     f'<span style="display:inline-block;background:{P["navy"] if "navy" in P else P["accent"]};'
     f'color:#fff;font-size:9px;font-weight:700;letter-spacing:0.08em;padding:2px 8px;'
@@ -107,7 +121,7 @@ def render_industry_index(params: dict = None) -> str:
     reports = _ii.load_industry_reports()
     rows = ""
     for r in sorted(reports, key=lambda x: x.get("naics_code", "")):
-        conns = len(_CONNECTIONS.get(r["slug"], []))
+        conns = len(_visible_connections(r["slug"]))
         rows += (
             f'<tr style="border-bottom:1px solid {P["border"]}">'
             f'<td style="padding:10px 12px"><a href="/industry/{_html.escape(r["slug"])}" '
@@ -222,7 +236,7 @@ def render_industry(slug: str, params: dict = None) -> str:
                  + '</div>')
 
     # Public data connections — the PEdesk value-add
-    conns = _CONNECTIONS.get(slug, [])
+    conns = _visible_connections(slug)
     conn_rows = "".join(
         f'<li style="margin-bottom:6px">{_tag_chip(tag)} '
         f'<a href="{href}" style="color:{P["accent"]};text-decoration:none">{_html.escape(label)}</a></li>'
@@ -306,7 +320,7 @@ def render_industry_brief(slug: str, params: dict = None) -> str:
     drivers = _ii.load_industry_drivers(iid)
     bms = _ii.load_industry_benchmarks(iid)
     qs = _ii.load_industry_questions(iid)
-    conns = _CONNECTIONS.get(slug, [])
+    conns = _visible_connections(slug)
     attribution = f'{_ii.ATTRIBUTION}, {_full_title(r["report_title"])}, {r.get("publication_date","")}.'
 
     sec = f"margin:0 0 18px"

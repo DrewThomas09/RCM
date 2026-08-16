@@ -263,8 +263,14 @@ def _pages_source(
     store: Any, query: str,
 ) -> List[SearchResult]:
     """Search the static page registry."""
+    from ._surface_visibility import is_visible
     out: List[SearchResult] = []
+    # Search is a listing surface: a hidden page must not be reachable by
+    # typing its name any more than by browsing a menu. The registry above
+    # currently holds no hidden routes — this keeps that true as it grows.
     for label, sub, url, category in PLATFORM_PAGES:
+        if not is_visible(url):
+            continue
         score = _score(query, label, sub, category)
         if score > 0:
             out.append(SearchResult(

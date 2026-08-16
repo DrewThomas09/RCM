@@ -82,7 +82,10 @@ class NoDuplicates(unittest.TestCase):
         # canonical target is the real card. (Hidden at discovery.)
         ws, _ = _data()
         az = set(_routes_in(ws))
-        for alias, canonical in (("/portfolio-analytics", "/deal-corpus-analytics"),
+        # Both canonicals must be VISIBLE surfaces — /deal-corpus-analytics
+        # (the old /portfolio-analytics target) is registry-hidden as of
+        # 2026-08-16, so this pair would have asserted a hidden card.
+        for alias, canonical in (("/deals", "/pipeline"),
                                  ("/deals-library", "/library")):
             self.assertNotIn(alias, az, f"{alias} is a redirect — should merge")
             self.assertIn(canonical, az, f"canonical {canonical} missing")

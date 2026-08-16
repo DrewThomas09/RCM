@@ -170,19 +170,17 @@ _SUB_NAV = {
         {"label": "Health System Lookup", "href": "/health-system-lookup"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Geographic Intel",    "href": "/geo-intel"},
-        {"label": "Thesis Screening",    "href": "/deal-screening"},
         {"label": "Conferences",         "href": "/conferences"},
     ],
     # Pipeline = real opportunities/deals only — the deal-workflow surfaces.
     # Market-discovery screeners live in Source (Target Screener); the
     # CMS/HCRIS screener routes (/screen, /predictive-screener) are unchanged
-    # and reached from there. PE Intelligence moved to Research.
+    # and reached from there. The scoring surfaces that used to sit here
+    # (Deal Quality / Deal Risk / Deal-Flow Heatmap) run on illustrative
+    # figures and are registry-hidden — see _surface_visibility.
     "pipeline": [
         {"label": "Deal Pipeline",       "href": "/pipeline"},
         {"label": "New Deal / Import",   "href": "/new-deal"},
-        {"label": "Deal Quality",        "href": "/deal-quality"},
-        {"label": "Deal Risk",           "href": "/deal-risk-scores"},
-        {"label": "Deal-Flow Heatmap",   "href": "/deal-flow-heatmap"},
         {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
         {"label": "Roll-Up Builder",     "href": "/pipeline/rollup"},
     ],
@@ -195,18 +193,13 @@ _SUB_NAV = {
         {"label": "Healthcare Verticals Reference","href": "/healthcare-verticals-reference"},
         {"label": "RCM Benchmarks",      "href": "/rcm-benchmarks"},
         {"label": "Data Catalog",        "href": "/data"},
-        {"label": "Comparables",         "href": "/comparables"},
-        {"label": "Market Rates",        "href": "/market-rates"},
     ],
-    # Research — 10 analytical + catalog surfaces. Mirrors the
-    # diligence trim: rendering all ten in the sub-nav strip
-    # crowded the topbar to the point of wrapping on common
-    # laptop widths. Trimmed to the five daily-driver workbench
-    # surfaces (analyst voice + the four most-read benchmarking
-    # / momentum reads) plus an "All Research →" link to the
-    # /research index, which now surfaces every dropped item
-    # (Comparable Outcomes, Bear Cases, Reg Calendar, Corpus
-    # Backtest, Backtest) alongside the original catalog.
+    # Research — the visualization + cross-cutting reads over the loaded
+    # public datasets. The rail is long; the topbar only ever front-faces
+    # the top six (see _ranked_subnav_items) and the "All Research →" link
+    # opens /research for the rest. The corpus-narrative entries that used
+    # to sit here (Bear Cases, Corpus Backtest, PE Intelligence, Sponsor
+    # Track Record, …) are registry-hidden — see _surface_visibility.
     "research": [
         {"label": "Market Reports",      "href": "/market"},
         {"label": "Industry Intelligence", "href": "/industry"},
@@ -214,13 +207,7 @@ _SUB_NAV = {
         {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
         {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
-        {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
-        {"label": "Find Comps",          "href": "/find-comps"},
-        {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
-        {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
-        {"label": "PE Intelligence",     "href": "/pe-intelligence"},
         {"label": "Notes",               "href": "/notes"},
-        {"label": "Sector Momentum",     "href": "/sector-momentum"},
         {"label": "Market Intel",        "href": "/market-intel"},
         {"label": "Visuals (Charts)",    "href": "/visuals"},
         {"label": "Further Analysis",    "href": "/further-analysis"},
@@ -270,15 +257,6 @@ _SUB_NAV = {
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
         {"label": "CIM Cross-Check",    "href": "/diligence/cim-crosscheck"},
         {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
-        {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
-        {"label": "TX Infusion Market", "href": "/diligence/texas-infusion"},
-        {"label": "TX Infusion · Workforce", "href": "/diligence/texas-infusion/workforce"},
-        {"label": "TX Infusion · Revenue", "href": "/diligence/texas-infusion/revenue"},
-        {"label": "TX Infusion · J-code Bench", "href": "/diligence/texas-infusion/jcode-benchmark"},
-        {"label": "TX Infusion · Cont.", "href": "/diligence/texas-infusion-continued"},
-        {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
-        {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
-        {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
         {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
@@ -305,12 +283,14 @@ _SECTION_FEATURE = {
                            "benchmarks, the CMS / HCRIS X-Ray, and the IC "
                            "packet.",
                   "href": "/diligence"},
-    "library": {"eyebrow": "SECTION · LIBRARY", "title": "Reference desk",
-                "blurb": "Methodology, the metric glossary, RCM benchmarks, the "
-                         "data catalog, comps, and market rates.", "href": "/library"},
-    "research": {"eyebrow": "SECTION · RESEARCH", "title": "House views",
-                 "blurb": "The analyst notebook plus sector momentum, IRR "
-                          "dispersion, hold analysis, and market intel.",
+    "library": {"eyebrow": "SECTION · LIBRARY", "title": "The datasets",
+                "blurb": "Every public CMS / Medicare / Medicaid / hospital "
+                         "dataset loaded here, what it covers, and the filing "
+                         "each figure traces back to.", "href": "/library"},
+    "research": {"eyebrow": "SECTION · RESEARCH", "title": "Visualize & compare",
+                 "blurb": "Chart any loaded dataset, read a provider universe "
+                          "end to end, and put two public sources side by "
+                          "side.",
                  "href": "/research"},
     "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
                   "blurb": "Monitor holdings by geography and risk: map, "
@@ -324,6 +304,8 @@ _SECTION_FEATURE = {
 # surfaced instead (e.g. /new-deal, not its /new-deal/manual POST target).
 _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
+    "/app/cards",         # card-layout POST target; it was front-facing the
+                          # Home bar as a "Cards" tab that 404s on click
 })
 
 # Data-honesty tiers allowed to front-face in a nav bar. Illustrative
@@ -419,7 +401,11 @@ def _ranked_subnav_items(sect: str):
     diligence crossover gap). Front-facing gate applies to every source —
     pins included: only green/navy/data-required tiers (illustrative/
     placeholder demoted to the ranked /best/<section> index, reachable via
-    "More →"), and utility renderers in _NAV_DEMOTED never front-face.
+    "More →"), utility renderers in _NAV_DEMOTED never front-face, and
+    registry-hidden surfaces (_surface_visibility.is_visible) never appear
+    at all. That last gate has to be applied HERE rather than assumed of
+    the pool: the ranking manifest still scores hidden surfaces, and TX
+    Infusion led the whole diligence ranking on renderer LOC.
     Curated labels/descriptions win where available (vetted copy); otherwise
     the manifest's derived label is used. Falls back to the curated rail if
     the manifest has no entry, so a bar is never empty.
@@ -452,7 +438,7 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
-    from ._surface_visibility import is_internal
+    from ._surface_visibility import is_visible
 
     def _resolved_label(r: dict) -> str:
         c = cur.get(r.get("route", ""), {})
@@ -483,7 +469,7 @@ def _ranked_subnav_items(sect: str):
         key = label.lower()
         if (not label or not href or key in seen or "→" in label
                 or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED
-                or is_internal(href)):
+                or not is_visible(href)):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
@@ -526,7 +512,11 @@ def _ranked_subnav_items(sect: str):
             if len(top) >= 6:
                 break
     if not top:  # manifest + curated both empty — nothing to show
-        top = [s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)][:6]
+        # Last-resort fallback still honours the visibility ruling: a bar
+        # that goes sparse is a smaller problem than a bar that front-faces
+        # a hidden surface.
+        top = [s for s in _SUB_NAV.get(sect, [])
+               if isinstance(s, dict) and is_visible(s.get("href", ""))][:6]
     has_more = len(ranked) > len(top) or len(cur) > len(top)
     return top, has_more
 
@@ -7638,6 +7628,13 @@ _DEFAULT_PALETTE_MODULES = [
 
 
 def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
+    # The palette is a listing surface, not a back door: filter it through
+    # the same visibility ruling as the nav bars and catalogs so a search
+    # for "infusion" or "sponsor" can't hand back a hidden page. Applies to
+    # caller-supplied module lists too — a page passing its own curated
+    # palette gets the ruling for free.
+    from ._surface_visibility import visible_modules
+    modules = visible_modules(list(modules))
     items = "".join(
         f'<li data-key="{_esc(m.get("id", ""))}" data-route="{_esc(m.get("route", ""))}">'
         f'<span class="cp-title">{_esc(m.get("title", ""))}</span>'

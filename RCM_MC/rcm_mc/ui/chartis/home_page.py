@@ -364,10 +364,12 @@ def _pe_highlights(store: Any, db_path: str) -> str:
             )
             + f'</div>'
         )
+    # /pe-intelligence is registry-hidden; the diligence catalog is the
+    # visible "see the whole toolkit" destination from here.
     out.append(
-        f'<div style="margin-top:8px;"><a href="/pe-intelligence" '
+        f'<div style="margin-top:8px;"><a href="/diligence" '
         f'style="color:{P["accent"]};font-family:var(--ck-mono);font-size:10px;">'
-        f'PE INTELLIGENCE BRAIN →</a></div>'
+        f'ALL DILIGENCE SURFACES →</a></div>'
     )
     return "".join(out)
 
@@ -700,13 +702,16 @@ def _new_modules_index() -> str:
         ("MARKET", "Public Market Intel", "/market-intel/public-market",
          "Public comps + PE transactions"),
     ]
+    from .._surface_visibility import is_visible as _is_visible
     cards = "".join(
         f'<a href="{_html.escape(href)}" class="module-card">'
         f'<span class="kind">{_html.escape(kind)}</span>'
         f'<div class="nm">{_html.escape(name)}</div>'
         f'<div class="sub">{_html.escape(tagline)}</div>'
         f'</a>'
-        for kind, name, href, tagline in tiles
+        # Registry-hidden modules drop out of the tile grid — see
+        # rcm_mc/ui/_surface_visibility.
+        for kind, name, href, tagline in tiles if _is_visible(href)
     )
     return (
         '<section class="module-section">'

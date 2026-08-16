@@ -22,7 +22,7 @@ Empty / sparse states:
     across deals; trailing 4Q window). Phase 3 commit 8 wired this
     against ``initiative_actuals`` via ``cross_portfolio_initiative_variance``.
   - Focused deal with zero initiatives → "No initiatives recorded yet
-    for this deal" + link to add via /diligence/thesis-pipeline.
+    for this deal" + link to add via /diligence/deal.
 """
 from __future__ import annotations
 
@@ -129,9 +129,9 @@ def _render_init_rows(rows: List[Dict[str, Any]]) -> str:
         return head + (
             '<div class="app-init-empty">'
             'No initiatives recorded yet. '
-            '<a href="/diligence/thesis-pipeline" '
+            '<a href="/initiatives" '
             'style="color:var(--teal-deep);text-decoration:underline">'
-            'Run the analysis pipeline</a> to populate.'
+            'Record initiatives</a> to populate.'
             '</div>'
         )
     body = "".join(
@@ -247,9 +247,9 @@ def _render_cross_portfolio_rows(df: pd.DataFrame) -> str:
         return head + (
             '<div class="app-init-empty">'
             'No initiative actuals recorded in the trailing 4 quarters. '
-            '<a href="/diligence/thesis-pipeline" '
+            '<a href="/initiatives" '
             'style="color:var(--teal-deep);text-decoration:underline">'
-            'Run the analysis pipeline</a> to populate.'
+            'Record initiatives</a> to populate.'
             '</div>'
         )
     body_rows: List[str] = []

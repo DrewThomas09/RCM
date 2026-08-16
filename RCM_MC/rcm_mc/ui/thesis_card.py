@@ -267,7 +267,7 @@ def render_thesis_card(
     # ── Deep dive links ──
     links = (
         f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">'
-        f'<a href="/competitive-intel/{_html.escape(ccn)}" style="font-size:10px;color:var(--cad-link);'
+        f'<a href="/diligence/hcris-xray?ccn={_html.escape(ccn)}" style="font-size:10px;color:var(--cad-link);'
         f'text-decoration:none;padding:2px 6px;border:1px solid var(--cad-border);border-radius:3px;">'
         f'Peer Analysis</a>'
         f'<a href="/ebitda-bridge/{_html.escape(ccn)}" style="font-size:10px;color:var(--cad-link);'

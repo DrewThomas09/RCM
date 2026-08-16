@@ -34,11 +34,15 @@ class CatalogRendererTests(unittest.TestCase):
     def test_meta_shows_computed_honesty_coverage(self):
         # The catalog header summarises how much of the section is live vs
         # illustrative — counted from surface_status, not hand-set.
+        # Both links must be VISIBLE surfaces — render_grouped_catalog
+        # filters registry-hidden rows and derives the coverage counts from
+        # what survives, so a hidden illustrative page (e.g.
+        # /diligence/management) would contribute nothing to count.
         h = render_grouped_catalog(
             section="diligence", title="T", eyebrow="X",
             pillars=[{"title": "G", "eyebrow": "E", "body": "b", "links": [
                 {"href": "/diligence/payer-stress", "label": "A", "blurb": "j"},
-                {"href": "/diligence/management", "label": "B", "blurb": "j"}]}],
+                {"href": "/diligence/compare", "label": "B", "blurb": "j"}]}],
             explainer_head="h", explainer_body="b", explainer_source="s",
             intro_headline="hi", intro_body="bod")
         # 2026-05-28 style-sweep · the catalog meta-line is now mono
@@ -57,10 +61,15 @@ class DiligenceLandingTests(unittest.TestCase):
         self.assertIn("sc-dot", h)                  # honesty dots
         self.assertIn("Illustrative", h)            # legend
 
-    def test_management_shows_illustrative_not_live(self):
-        # The named honesty bug: management must not read as live on /diligence.
+    def test_management_is_not_offered_at_all(self):
+        # The named honesty bug was that management READ AS LIVE on
+        # /diligence when its figures are illustrative. The ruling since
+        # went further: illustrative-figure surfaces are registry-hidden,
+        # so it isn't listed here at all. The yellow dot + legend stay —
+        # /diligence/compare is still an illustrative surface on the page —
+        # so a reader can still tell a computed row from a live one.
         h = render_diligence_index()
-        self.assertIn("/diligence/management", h)
+        self.assertNotIn('href="/diligence/management"', h)
         self.assertIn("#c9a227", h)   # an illustrative (yellow) dot is present
 
     def test_catalog_covers_every_served_diligence_route(self):

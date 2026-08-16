@@ -1,5 +1,50 @@
 # Changelog
 
+## Unreleased (2026-08-16) — surface cleanup: hide the pages that aren't public data
+
+Reframes what the platform *offers* around its actual strength: public
+CMS / Medicare / Medicaid / hospital data, verifiable to the filing and
+visualized in seconds. Pages that work against that promise are now
+hidden from every listing surface. **Nothing is deleted** — every route
+still serves, so deep links and in-page references keep working.
+
+- **The ruling now lives in one place.** `rcm_mc/ui/_surface_visibility`
+  gains `HIDDEN_ROUTES` / `HIDDEN_PREFIXES` + `is_hidden` / `is_visible`
+  / `visible_links` / `visible_modules`, alongside the existing
+  `INTERNAL_ROUTES`. Three rationales, kept as separate sets so a page's
+  reason for hiding stays legible: 172 **illustrative-figure** pages
+  (numbers from a hardcoded dataclass, not a filing), the
+  **single-study** suites (Texas infusion scan, the IFT/MMT transport
+  study — real work, legible only inside one engagement), and the
+  **sponsor-corpus / PE-narrative** tail. A hidden route hides its
+  sub-paths too. The old `server._TOOLS_ILLUSTRATIVE_ROUTES` was a
+  second copy of the first list scoped to /tools only — which is how
+  those pages stayed off the card grid while still *leading* the
+  Diligence mega-menu; it's gone, and discovery asks the registry.
+- **Applied on every listing surface**, not just /tools: the topbar
+  mega-menus and their ranked backfill, the Cmd-K palette (caller-supplied
+  module lists included), /tools, /best/<section>, every section landing,
+  /diligence, /cdd, /module-index, /research, /exports, /industry, the
+  app quick-access + deliverable widgets, the deal-profile analytics
+  grid, the editorial sidebar rail, checklist evidence links, and global
+  search. Counts derive from the filtered lists, so no masthead claims
+  surfaces its page doesn't show; a pillar left empty drops rather than
+  rendering as a bare heading.
+- **Deal trackers stay.** /deal-library, /verified-deals, /news,
+  /market-scan and /pipeline follow real, publicly-reported
+  transactions — the good version of the corpus idea — and are pinned
+  visible by test.
+- **Reframed copy** on the surfaces the cleanup emptied: Library is now
+  the dataset catalog + "trace a number back to its filing" + the deal
+  trackers; Research is now chart-it / provider-universes /
+  cross-dataset comparison. Contextual "→ next step" links that pointed
+  at newly-hidden pages were repointed at their sourced equivalents
+  (e.g. HCRIS X-Ray's "→ Bear Case" dropped; the deal profile's "Run
+  Full Pipeline" CTA removed).
+- Guarded by `tests/test_hidden_surfaces.py`, which pins both halves of
+  the ruling: nothing offers a hidden route, **and** every hidden route
+  still returns 200.
+
 ## Unreleased (2026-07-05) — UI polish loop: alert rows, chart-label fixes, dev-copy sweep
 
 Two review passes over ~60 partner-facing routes (screenshot-driven,

@@ -13,11 +13,22 @@ from rcm_mc.ui.cdd_hub_page import _MODULES, render_cdd_hub
 
 
 class CddHubTests(unittest.TestCase):
-    def test_renders_five_modules(self):
+    def test_renders_every_module_that_still_has_a_surface(self):
+        # _MODULES stays the full CDD workflow map; the hub renders the
+        # modules that still have at least one visible surface behind them
+        # (module 1, market sizing, went entirely to registry-hidden
+        # single-market scans on 2026-08-16). A module with nothing to
+        # open renders as a heading over an empty list, so it drops.
+        from rcm_mc.ui.cdd_hub_page import _visible_modules
         html = render_cdd_hub()
         self.assertIn("Commercial Due Diligence Hub", html)
+        shown = {t for t, _b, _l, _e in _visible_modules()}
+        self.assertTrue(shown, "every CDD module was filtered away")
         for title, _, _ in _MODULES:
-            self.assertIn(_html.escape(title), html)
+            if title in shown:
+                self.assertIn(_html.escape(title), html)
+            else:
+                self.assertNotIn(_html.escape(title), html)
 
     def test_every_card_href_is_a_served_route(self):
         # _discover_all_routes filters illustrative pages off the /tools

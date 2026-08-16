@@ -21994,6 +21994,7 @@ class RCMHandler(BaseHTTPRequestHandler):
             _SECTION_FEATURE, _NAV_DESC,
         )
         from .diligence.surface_status import classify_surface
+        from .ui._surface_visibility import is_hidden as _is_hidden
         from .ui.tools_index_page import TIER_TO_STATUS
         try:
             from .assistant.context.page_context_registry import (
@@ -22015,10 +22016,15 @@ class RCMHandler(BaseHTTPRequestHandler):
             r for r in dict.fromkeys(list(discovered) + list(palette_by_route))
             if "?" not in r
             and r not in cls._TOOLS_HIDDEN_ROUTES
-            # Illustrative-template pages stay off the tools card grid but
-            # remain in the Cmd-K palette (still reachable, just not the
-            # front view).
-            and r not in cls._TOOLS_ILLUSTRATIVE_ROUTES
+            # Registry-hidden surfaces (illustrative figures, single-market
+            # studies, the sponsor-corpus tail) stay off the card grid. The
+            # palette contributes routes to this union, so re-check the
+            # ruling here rather than trusting the palette list. Only the
+            # HIDDEN ruling applies: /tools has always carded the internal
+            # routes (/users, /demo, /cli-runs) as an admin escape hatch and
+            # the completeness contract counts them, so is_internal stays a
+            # catalog-card rule rather than a discovery one.
+            and not _is_hidden(r)
         ]
 
         def _pref_title(route):
@@ -22182,63 +22188,21 @@ class RCMHandler(BaseHTTPRequestHandler):
         "/tools",
     })
 
-    # Pages whose figures come from hardcoded illustrative dataclass lists
-    # (they render the ck_illustrative_note "Illustrative template — not
-    # this portfolio's live, sourced data" strip). Per product decision
-    # these are kept OUT of the /tools front view so the index surfaces
-    # only real-data + functional tools — but the routes still resolve, so
-    # they remain reachable by direct URL, in-page links, and the Cmd-K
-    # palette. Derived by scanning rendered output for `class="ck-illus-
-    # note"`; regenerate the same way if the live-data wiring lands and a
-    # page graduates off illustrative figures (drop it from this set then).
-    _TOOLS_ILLUSTRATIVE_ROUTES = frozenset({
-        "/aco-economics", "/acq-timing", "/ai-operating-model", "/antitrust-screener",
-        "/backtest", "/backtester", "/base-rates", "/biosimilars",
-        "/board-governance", "/bolton-analyzer", "/cap-structure", "/capex-budget",
-        "/capital-call", "/capital-efficiency", "/capital-pacing", "/capital-schedule",
-        "/cin-analyzer", "/clinical-ai", "/clinical-outcomes", "/cms-apm",
-        "/coinvest-pipeline", "/comparables", "/competitive-intel", "/compliance-attestation",
-        "/concentration-risk", "/continuation-vehicle", "/corpus-coverage", "/corpus-dashboard",
-        "/corpus-ic-memo", "/covenant-headroom", "/covenant-monitor", "/cyber-risk",
-        "/deal-flow-heatmap", "/deal-origination", "/deal-pipeline",
-        "/deal-postmortem", "/deal-quality", "/deal-risk-scores", "/deal-search",
-        "/deal-sourcing", "/debt-financing", "/debt-service",
-        "/demand-forecast", "/denovo-expansion", "/digital-front-door", "/diligence-vendors",
-        "/diligence/cliff-calendar", "/diligence/pe-library", "/diligence/pe-reference", "/diligence/physician-attrition",
-        "/direct-employer", "/direct-lending", "/dividend-recap", "/dpi-tracker",
-        "/drug-pricing-340b", "/drug-shortage", "/earnout", "/entry-multiple",
-        "/escrow-earnout", "/esg-dashboard", "/esg-impact", "/exit-multiple",
-        "/exit-readiness", "/exit-timing", "/find-comps", "/fraud-detection",
-        "/fund-attribution", "/fundraising", "/geo-market", "/gp-benchmarking",
-        "/gpo-supply", "/growth-runway", "/hcit-platform", "/health-equity",
-        "/hold-analysis", "/hold-optimizer", "/hospital-anchor", "/ic-memo-gen",
-        "/insurance-tracker", "/irr-dispersion", "/key-person", "/lbo-stress",
-        "/leverage-intel", "/litigation", "/locum-tracker",
-        "/lp-dashboard", "/lp-reporting", "/ma-contracts", "/ma-star",
-        "/market-rates", "/medicaid-unwinding", "/medical-realestate", "/mgmt-comp",
-        "/mgmt-fee-tracker", "/msa-concentration", "/multiple-decomp", "/nav-loan-tracker",
-        "/nsa-tracker", "/operating-partners", "/partner-economics", "/patient-experience",
-        "/payer-concentration", "/payer-contracts", "/payer-intel", "/payer-intelligence",
-        "/payer-rate-trends", "/payer-shift", "/peer-transactions", "/peer-valuation",
-        "/phys-comp-plan", "/physician-labor", "/physician-productivity", "/platform-maturity",
-        "/pmi-integration", "/pmi-playbook", "/portfolio-optimizer",
-        "/portfolio-sim", "/provider-network", "/provider-retention", "/qoe-analyzer",
-        "/quality-scorecard", "/rcm-red-flags", "/real-estate", "/redflag-scanner",
-        "/ref-pricing", "/refi-optimizer", "/regulatory-risk", "/reinvestment",
-        "/reit-analyzer", "/return-attribution", "/revenue-leakage", "/risk-adjustment",
-        "/risk-matrix", "/rollup-economics", "/rw-insurance", "/scenario-mc",
-        "/secondaries-tracker", "/sector-correlation", "/sector-intel", "/sector-momentum",
-        "/sellside-process", "/size-intel", "/specialty-benchmarks", "/sponsor-heatmap",
-        "/sponsor-league", "/sponsor-track-record", "/supply-chain", "/tax-credits",
-        "/tax-structure", "/tax-structure-analyzer", "/tech-stack", "/telehealth-econ",
-        "/tracker-340b", "/transition-services", "/treasury", "/trial-site-econ",
-        "/underwriting", "/underwriting-model", "/unit-economics", "/value-creation",
-        "/pricing-power",
-        "/value-creation-plan", "/vcp-tracker", "/vdr-tracker", "/vintage-cohorts",
-        "/vintage-perf", "/voc-survey", "/win-loss",
-        "/workforce-planning", "/workforce-retention", "/working-capital",
-        "/zbb-tracker",
-    })
+    # Pages that exist and still serve, but are never OFFERED anywhere a
+    # reader browses. The ruling lives in ONE place —
+    # ``rcm_mc.ui._surface_visibility`` — so the tools index, the topbar
+    # mega-menus, the section catalogs, the /best rails, and the Cmd-K
+    # palette can't drift from each other. Three rationales are folded in
+    # there: illustrative-figure pages (hardcoded dataclass numbers, not a
+    # filing), single-target/single-market study suites (Texas infusion,
+    # the IFT/MMT transport study), and the sponsor-corpus/PE-narrative
+    # long tail. Routes still resolve — direct URLs and in-page links keep
+    # working; they simply never appear in a listing.
+    #
+    # The old ``_TOOLS_ILLUSTRATIVE_ROUTES`` set that used to sit here was a
+    # second copy of that list scoped to /tools only, which is how the
+    # illustrative pages stayed off the card grid while still leading the
+    # Diligence mega-menu. ``_discover_all_routes`` now asks the registry.
 
     @classmethod
     def _discover_all_routes(cls) -> List[str]:
@@ -22268,14 +22232,16 @@ class RCMHandler(BaseHTTPRequestHandler):
         # /market-data/state/CA) still reach the index via the Cmd-K palette.
         exact = _re.findall(r"""path\s*==\s*['"](/[^'"]+)['"]""", src)
         routes = set(exact)
+        from .ui._surface_visibility import is_hidden as _is_hidden
         # Filter system / API / static / hidden
         keep = []
         for r in sorted(routes):
             if r in cls._TOOLS_HIDDEN_ROUTES:
                 continue
-            # Illustrative-template pages are kept off the tools front view
-            # (still reachable by direct URL / palette / in-page links).
-            if r in cls._TOOLS_ILLUSTRATIVE_ROUTES:
+            # Registry-hidden surfaces never enter the discovered set, so
+            # every downstream catalog inherits the ruling for free (still
+            # reachable by direct URL / in-page links).
+            if _is_hidden(r):
                 continue
             # "/api/" anywhere in the path — feature-scoped JSON/POST
             # endpoints (e.g. /npi-cleaner/api/*) are not pages; carding
