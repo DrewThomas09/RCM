@@ -135,10 +135,17 @@ class IndustryRouteTests(unittest.TestCase):
         self.assertIn("Licensed report derived", b)
 
     def test_primary_care_shows_real_and_connections(self):
+        # The connection rows bridge a licensed industry report into the
+        # platform's own public-data surfaces. Most of primary care's
+        # bridges (/physician-productivity, /cms-apm, /quality-scorecard,
+        # /provider-retention) render illustrative figures and went
+        # registry-hidden on 2026-08-16; geographic market intel is the
+        # sourced one that remains.
         s, b = self._get("/industry/primary-care-doctors")
         self.assertEqual(s, 200)
         self.assertIn("Public data connections", b)
-        self.assertIn("/physician-productivity", b)
+        self.assertIn("/market-intel/geo", b)
+        self.assertNotIn('href="/physician-productivity"', b)
 
     def test_unknown_slug_safe(self):
         s, b = self._get("/industry/not-an-industry")

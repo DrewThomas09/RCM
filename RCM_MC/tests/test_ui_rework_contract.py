@@ -800,8 +800,12 @@ class TestUIReworkContract(unittest.TestCase):
         """``editorial_sidebar()`` should highlight the module whose
         href is a prefix-match of ``active_path``."""
         from rcm_mc.ui._chartis_kit_editorial import editorial_sidebar
-        # Active highlighting on a deep path
-        html = editorial_sidebar("/diligence/bridge-audit")
+        # Active highlighting on a deep path. This used
+        # /diligence/bridge-audit until 2026-08-16, when that module went
+        # registry-hidden and stopped rendering in the rail at all — a
+        # module that isn't there can't be highlighted. HCRIS X-Ray is a
+        # rail module the ruling keeps.
+        html = editorial_sidebar("/diligence/hcris-xray")
         # Bridge Audit module should be active; others should not
         self.assertIn(
             'class="active"', html,

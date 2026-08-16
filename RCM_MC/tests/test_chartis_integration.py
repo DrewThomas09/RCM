@@ -342,9 +342,14 @@ class TestChartisPhase2CPortfolioRoutes(unittest.TestCase):
             self.assertIn("VALUE BRIDGE BACKTEST", body)
 
     def test_deal_screening_renders(self):
+        # expect_title was "Deal Screening" until 2026-08-16 — which is
+        # this route's Cmd-K LABEL, not its page title ("Thesis
+        # Screening"). The assertion was passing on palette chrome, and
+        # broke the moment the palette stopped carrying hidden routes.
+        # Assert the page's own title.
         self._assert_renders(
             "/deal-screening",
-            expect_title="Deal Screening",
+            expect_title="Thesis Screening",
             expect_substrings=("DECISION MIX", "Your thesis: set the thresholds"),
         )
 

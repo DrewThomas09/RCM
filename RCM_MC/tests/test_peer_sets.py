@@ -94,10 +94,15 @@ class CompareViewFlowTests(unittest.TestCase):
             {"id": 2, "name": "mixed pair", "ccns": [hosp[0], hh],
              "created_at": "2026-06-12T00:00:00+00:00"},
         ]
+        # The all-hospital basket carried a "→ roll-up" shortcut into
+        # /pipeline/rollup until 2026-08-16. Pro-forma platform modelling
+        # is deal execution and is registry-hidden, so NEITHER basket gets
+        # the link now — and, as before, neither errors.
         h = render_target_screener({"view": ["compare"]},
                                    owner="anna", peer_sets=sets)
-        self.assertIn(f'/pipeline/rollup?ccns={",".join(hosp)}', h)
+        self.assertNotIn(f'/pipeline/rollup?ccns={",".join(hosp)}', h)
         self.assertNotIn(f'/pipeline/rollup?ccns={hosp[0]},{hh}', h)
+        self.assertIn("TX hospital pair", h)   # both sets still render
 
     def test_http_save_then_load(self):
         from rcm_mc.server import build_server

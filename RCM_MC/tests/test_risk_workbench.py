@@ -41,10 +41,15 @@ class WorkbenchStewardDemoTests(unittest.TestCase):
         # somewhere in the rendered panel when all 5 factors trip.
         self.assertIn("Steward", self.html)
 
-    def test_bankruptcy_scan_drill_down_link(self):
-        self.assertIn(
+    def test_bankruptcy_scan_drill_down_link_removed(self):
+        # The scan verdict row carried an "Open full scan →" link into
+        # /screening/bankruptcy-survivor. That surface runs on the seeded
+        # corpus and is registry-hidden as of 2026-08-16; the verdict and
+        # pattern counts the workbench computes itself still render.
+        self.assertNotIn(
             'href="/screening/bankruptcy-survivor"', self.html,
         )
+        self.assertIn("Patterns hit", self.html)
 
 
 class MinimalInputTests(unittest.TestCase):

@@ -22112,6 +22112,8 @@ class RCMHandler(BaseHTTPRequestHandler):
     # once on first /tools hit and the parsed result is kept on the
     # handler class so subsequent requests are O(1).
     _CACHED_ROUTES: Optional[List[str]] = None
+    # Same parse, without the visibility filter — see _discover_all_routes.
+    _CACHED_ROUTES_ALL: Optional[List[str]] = None
 
     # Routes that exist as handlers but should be hidden from the
     # tools index: they are auth flows, form POST endpoints, deep
@@ -22205,22 +22207,36 @@ class RCMHandler(BaseHTTPRequestHandler):
     # Diligence mega-menu. ``_discover_all_routes`` now asks the registry.
 
     @classmethod
-    def _discover_all_routes(cls) -> List[str]:
+    def _discover_all_routes(cls, include_hidden: bool = False) -> List[str]:
         """Parse this module's source for every `path == "/X"` and
         `path.startswith("/X/")` literal, returning the de-duped,
         filtered list of user-facing GET routes. Cheap (~ms) and
         cached on the class after first call. The alternative
         (maintaining a separate registry) drifts; parsing the
         source keeps the catalog automatic and complete.
+
+        ``include_hidden=True`` returns registry-hidden routes as well.
+        Callers that BROWSE (the tools index, catalogs, nav) want the
+        default; callers that VERIFY want the full set. The route walker
+        is the second kind: a hidden page still serves, so it still has to
+        be walked for 500s and nan/None leaks — silently dropping ~90
+        pages out of the QA sweep because they stopped appearing in menus
+        would be a real hole.
         """
-        if cls._CACHED_ROUTES is not None:
+        if include_hidden:
+            if cls._CACHED_ROUTES_ALL is not None:
+                return cls._CACHED_ROUTES_ALL
+        elif cls._CACHED_ROUTES is not None:
             return cls._CACHED_ROUTES
         import re as _re
         try:
             with open(__file__, "r", encoding="utf-8") as f:
                 src = f.read()
         except OSError:
-            cls._CACHED_ROUTES = []
+            if include_hidden:
+                cls._CACHED_ROUTES_ALL = []
+            else:
+                cls._CACHED_ROUTES = []
             return []
         # Only EXACT `path == "/x"` handlers are real bare-GET pages. Routes
         # served solely via `path.startswith("/x/")` are parametric (they need a
@@ -22240,8 +22256,9 @@ class RCMHandler(BaseHTTPRequestHandler):
                 continue
             # Registry-hidden surfaces never enter the discovered set, so
             # every downstream catalog inherits the ruling for free (still
-            # reachable by direct URL / in-page links).
-            if _is_hidden(r):
+            # reachable by direct URL / in-page links). Verification
+            # callers pass include_hidden=True and get them back.
+            if not include_hidden and _is_hidden(r):
                 continue
             # "/api/" anywhere in the path — feature-scoped JSON/POST
             # endpoints (e.g. /npi-cleaner/api/*) are not pages; carding
@@ -22254,7 +22271,10 @@ class RCMHandler(BaseHTTPRequestHandler):
                      "/openapi.yaml", "/swagger"}:
                 continue
             keep.append(r)
-        cls._CACHED_ROUTES = keep
+        if include_hidden:
+            cls._CACHED_ROUTES_ALL = keep
+        else:
+            cls._CACHED_ROUTES = keep
         return keep
 
     @staticmethod

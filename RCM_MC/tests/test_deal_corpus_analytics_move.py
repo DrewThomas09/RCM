@@ -82,11 +82,17 @@ class DealCorpusAnalyticsMoveTests(unittest.TestCase):
         # The page title must not present as the user's portfolio.
         self.assertNotIn("PORTFOLIO ANALYTICS", html)
 
-    def test_nav_places_under_research_not_portfolio(self):
+    def test_section_resolves_to_research_though_no_longer_navigated(self):
+        # The point of this move was that a 655-deal benchmark CORPUS was
+        # mislabeled as "portfolio". That is still true, and the breadcrumb
+        # resolver still says research — but the page is registry-hidden
+        # (sponsor-corpus tail, 2026-08-16), so neither rail carries it.
         from rcm_mc.ui._chartis_kit import _SUB_NAV, _resolve_sub_section
+        from rcm_mc.ui._surface_visibility import is_hidden
         research = [i["href"] for i in _SUB_NAV["research"]]
         portfolio = [i["href"] for i in _SUB_NAV["portfolio"]]
-        self.assertIn("/deal-corpus-analytics", research)
+        self.assertTrue(is_hidden("/deal-corpus-analytics"))
+        self.assertNotIn("/deal-corpus-analytics", research)
         self.assertNotIn("/portfolio-analytics", portfolio)
         self.assertNotIn("/deal-corpus-analytics", portfolio)
         self.assertEqual(_resolve_sub_section("/deal-corpus-analytics"), "research")

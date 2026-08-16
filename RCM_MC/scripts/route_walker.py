@@ -98,7 +98,11 @@ def _discover_routes() -> list[str]:
     import os
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from rcm_mc.server import RCMHandler
-    return list(RCMHandler._discover_all_routes())
+    # include_hidden=True: the walker VERIFIES rather than browses. A
+    # registry-hidden page still serves, so it still has to be checked for
+    # 500s and nan/None leaks — the visibility ruling is about menus, not
+    # about what QA covers.
+    return list(RCMHandler._discover_all_routes(include_hidden=True))
 
 
 def main() -> int:

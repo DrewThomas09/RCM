@@ -34,10 +34,16 @@ class TestRenderExitTiming(unittest.TestCase):
         html = render_exit_timing()
         self.assertIn("Vintage", html)
 
-    def test_nav_link(self):
+    def test_page_still_renders_though_unlisted(self):
+        # /exit-timing is registry-hidden (illustrative figures). This
+        # asserted the shell nav carried a self-link; the nav no longer
+        # offers it, so assert the page itself still renders instead —
+        # hiding is a browse ruling, not a routing one.
         from rcm_mc.ui.data_public.exit_timing_page import render_exit_timing
+        from rcm_mc.ui._surface_visibility import is_hidden
         html = render_exit_timing()
-        self.assertIn("/exit-timing", html)
+        self.assertTrue(is_hidden("/exit-timing"))
+        self.assertIn("<h1", html)
 
     def test_no_light_theme(self):
         from rcm_mc.ui.data_public.exit_timing_page import render_exit_timing

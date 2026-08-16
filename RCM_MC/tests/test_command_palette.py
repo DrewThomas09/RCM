@@ -202,9 +202,12 @@ class TestDashboardWiresPaletteCommands(unittest.TestCase):
         # Navigation hops that matter for the morning flow
         self.assertIn("Active alerts", html)
         self.assertIn("Watchlist", html)
-        # Curated analyses — present as inline links on the dashboard
-        self.assertIn("Thesis Pipeline", html)
+        # Curated analyses — present as inline links on the dashboard.
+        # Thesis Pipeline was the other example here until 2026-08-16,
+        # when it went registry-hidden as deal-execution machinery and
+        # dropped off the curated list.
         self.assertIn("HCRIS Peer X-Ray", html)
+        self.assertIn("Payer Mix Stress", html)
 
 
 class TestSearchEndpointContract(unittest.TestCase):

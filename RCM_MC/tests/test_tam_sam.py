@@ -1643,10 +1643,14 @@ class SectorDeepLinkTests(unittest.TestCase):
         h = render_market_analysis_page(
             "d1", "BH Deal",
             {**base, "deal_specialty": "behavioral_health"})
-        self.assertIn("/diligence/tam-sam?template=behavioral_health", h)
-        # Unknown sector → the bare catalogue, never a guessed template.
+        # The market-analysis page used to deep-link the TAM/SAM Builder,
+        # pre-selecting the deal's vertical. /diligence/tam-sam is
+        # engagement-scoped market sizing and is registry-hidden as of
+        # 2026-08-16, so the prompt no longer renders in either direction.
+        # (template_for_sector itself is still tested below.)
+        self.assertNotIn("/diligence/tam-sam", h)
         h2 = render_market_analysis_page("d2", "X", dict(base))
-        self.assertIn('href="/diligence/tam-sam"', h2)
+        self.assertNotIn("/diligence/tam-sam", h2)
 
 
 class ReciprocalLinkTests(unittest.TestCase):
@@ -1659,10 +1663,14 @@ class ReciprocalLinkTests(unittest.TestCase):
             render_comparable_outcomes_page,
         )
         db = os.path.join(tempfile.mkdtemp(), "co.db")
+        # The reciprocal Comparable-Outcomes → TAM/SAM link is gone with
+        # the builder (registry-hidden 2026-08-16); the page's next-action
+        # points at the filings instead.
         h = render_comparable_outcomes_page(
             {"sector": "hospital", "ev_mm": "500"}, db_path=db)
-        self.assertIn("/diligence/tam-sam?template=hospitals", h)
-        self.assertIn("Size this market", h)
+        self.assertNotIn("/diligence/tam-sam", h)
+        self.assertNotIn("Size this market", h)
+        self.assertIn("/diligence/hcris-xray", h)
 
     def test_every_co_sector_maps(self):
         # All five CO dropdown sectors resolve to a real template.

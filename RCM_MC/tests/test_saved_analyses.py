@@ -175,15 +175,21 @@ class TestDashboardSurface(unittest.TestCase):
         from rcm_mc.ui.dashboard_page import (
             render_dashboard, _CURATED_ANALYSES,
         )
+        from rcm_mc.ui._surface_visibility import is_visible
         html = render_dashboard(self.db)
         # Each save form posts to /api/saved-analyses; count those.
         save_forms = html.count('action="/api/saved-analyses"')
-        # Should be at least 1 per curated analysis (only +0 because
-        # there's no other render path that posts there).
+        # One per curated analysis the registry still OFFERS — a row
+        # pointing at a hidden surface would let a partner bookmark a page
+        # the platform no longer lists, so those rows don't render and
+        # don't get a ★. Counted against the filtered list rather than
+        # len(_CURATED_ANALYSES), which is still the full catalog.
+        offered = [a for a in _CURATED_ANALYSES if is_visible(a["route"])]
+        self.assertTrue(offered, "every curated analysis was filtered away")
         self.assertGreaterEqual(
-            save_forms, len(_CURATED_ANALYSES),
-            msg=f"expected ≥{len(_CURATED_ANALYSES)} save forms "
-                f"(one per curated analysis), got {save_forms}",
+            save_forms, len(offered),
+            msg=f"expected ≥{len(offered)} save forms "
+                f"(one per offered curated analysis), got {save_forms}",
         )
         # Hint copy in the section header
         self.assertIn("click ★ to save as template", html)

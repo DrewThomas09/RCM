@@ -52,13 +52,17 @@ class TestRenderDashboardDirect(unittest.TestCase):
         self.assertIn("System status", html)
         self.assertIn("Data freshness", html)
 
-    def test_curated_analyses_include_thesis_pipeline(self):
+    def test_curated_analyses_are_the_filing_reads(self):
+        # The curated launchers led with Thesis Pipeline + Bear Case until
+        # 2026-08-16; both are registry-hidden (deal execution and
+        # illustrative figures respectively), so the list is now the CMS
+        # reads that survive the ruling.
         from rcm_mc.ui.dashboard_page import render_dashboard
         html = render_dashboard(self.db_path)
-        self.assertIn("Thesis Pipeline", html)
-        self.assertIn("/diligence/thesis-pipeline", html)
         self.assertIn("HCRIS Peer X-Ray", html)
-        self.assertIn("Bear Case Auto-Generator", html)
+        self.assertIn("/diligence/hcris-xray", html)
+        self.assertNotIn("/diligence/thesis-pipeline", html)
+        self.assertNotIn("Bear Case Auto-Generator", html)
 
     def test_uptime_shows_when_started_at_provided(self):
         from rcm_mc.ui.dashboard_page import render_dashboard

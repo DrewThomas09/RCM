@@ -27,24 +27,47 @@ def _free_port() -> int:
 
 class PipelineNavTests(unittest.TestCase):
     def test_pipeline_holds_only_deal_workflow_surfaces(self):
+        # The point of this test is the SEPARATION: Pipeline holds the
+        # deal-workflow surfaces, market discovery lives in Source. That
+        # still holds. What changed on 2026-08-16 is that the scoring
+        # trio (/deal-quality, /deal-risk-scores, /deal-flow-heatmap) runs
+        # on illustrative figures and went registry-hidden, so the rail is
+        # down to the tracking surfaces.
+        from rcm_mc.ui._surface_visibility import is_hidden
         hrefs = [i["href"] for i in _SUB_NAV["pipeline"]]
-        for real in ("/pipeline", "/new-deal", "/deal-quality",
-                     "/deal-risk-scores", "/deal-flow-heatmap", "/pipeline/bridge"):
+        for real in ("/pipeline", "/new-deal", "/pipeline/bridge"):
             self.assertIn(real, hrefs)
+        for scored in ("/deal-quality", "/deal-risk-scores",
+                       "/deal-flow-heatmap"):
+            self.assertTrue(is_hidden(scored), scored)
+            self.assertNotIn(scored, hrefs)
         # market-discovery / reference surfaces are NOT in Pipeline
         for gone in ("/screen", "/predictive-screener", "/pe-intelligence",
                      "/find-comps", "/conferences", "/source"):
             self.assertNotIn(gone, hrefs)
 
     def test_discovery_moved_to_source(self):
+        # Thesis Screening moved to Source in this pass and was hidden on
+        # 2026-08-16 (scores targets against an investment thesis — PE
+        # narrative, not a filing read). The section RESOLUTION is what
+        # this test really pins, and it is unchanged.
+        from rcm_mc.ui._surface_visibility import is_hidden
         src = [i["href"] for i in _SUB_NAV["source"]]
-        self.assertIn("/deal-screening", src)            # thesis screening
+        self.assertTrue(is_hidden("/deal-screening"))
+        self.assertNotIn("/deal-screening", src)
+        self.assertEqual(_resolve_sub_section("/deal-screening"), "source")
         self.assertEqual(_resolve_sub_section("/screen"), "source")
         self.assertEqual(_resolve_sub_section("/predictive-screener"), "source")
 
     def test_pe_intelligence_moved_to_research(self):
-        self.assertIn("/pe-intelligence",
-                      [i["href"] for i in _SUB_NAV["research"]])
+        # Same shape as the test above: the MOVE out of Pipeline is what
+        # matters and the resolver still records it. The page itself is
+        # registry-hidden (codified partner judgment, not public data), so
+        # the Research rail no longer carries it either.
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/pe-intelligence"))
+        self.assertNotIn("/pe-intelligence",
+                         [i["href"] for i in _SUB_NAV["research"]])
         self.assertEqual(_resolve_sub_section("/pe-intelligence"), "research")
 
     def test_new_deal_routes_resolve_to_pipeline(self):

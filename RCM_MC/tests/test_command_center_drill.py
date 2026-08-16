@@ -29,7 +29,11 @@ class CommandCenterDrillTests(unittest.TestCase):
             "/target-screener?vertical=hospitals",
             "/target-screener?vertical=hospitals&min_size=100",
             "/market-data",
-            "/screening/bankruptcy-survivor",
+            # The distress KPI drilled into /screening/bankruptcy-survivor
+            # until 2026-08-16; that scan runs on the seeded corpus and is
+            # registry-hidden, so the tile now opens the screening
+            # dashboard.
+            "/screening/dashboard",
             "/portfolio",
         ):
             self.assertIn(f'href="{href}"', self.html, href)

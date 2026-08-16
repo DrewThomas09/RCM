@@ -551,8 +551,11 @@ class RiskWorkbenchIntegrationTests(unittest.TestCase):
         ))
         self.assertIn("Flight-risk bands", h)
         self.assertIn("EBITDA at risk", h)
-        # Link to deep-dive page.
-        self.assertIn('href="/diligence/physician-attrition"', h)
+        # The panel used to carry a link to the PPAM deep-dive page.
+        # /diligence/physician-attrition renders illustrative flight-risk
+        # figures and is registry-hidden as of 2026-08-16, so the workbench
+        # keeps the band counts it computes itself and drops the link out.
+        self.assertNotIn('href="/diligence/physician-attrition"', h)
 
 
 class CounterfactualIntegrationTests(unittest.TestCase):
