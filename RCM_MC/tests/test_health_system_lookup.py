@@ -1847,3 +1847,57 @@ class NpiBridgeReachesTheCrosswalkTests(unittest.TestCase):
             self.assertEqual(npi, bridge[ccn].npi, ccn)
         # The guard must reject some rows or it is not doing anything.
         self.assertLess(len(landed), len(bridge))
+
+
+class OwnershipClusterPanelTests(unittest.TestCase):
+    """The ownership queue on /health-system-lookup."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.html = render_health_system_lookup({})
+
+    def test_the_panel_is_on_the_page(self) -> None:
+        self.assertIn("Ownership Beyond the Name", self.html)
+
+    def test_it_states_why_name_matching_cannot_finish_the_job(self) -> None:
+        """Without the ratio, a reader takes this for another discovery
+        heuristic rather than the only route to nine tenths of what is
+        left."""
+        self.assertIn("27,341", self.html)
+        self.assertIn("chain_name", self.html)
+
+    def test_it_names_the_evidence_rather_than_asserting_a_chain(self) -> None:
+        for phrase in ("shared back office", "same signing officer",
+                       "one legal entity"):
+            self.assertIn(phrase, self.html)
+
+    def test_it_records_the_union_find_failure(self) -> None:
+        """The 152-facility blob is why each row is one key. Losing that
+        explanation invites someone to 'improve' it back."""
+        self.assertIn("152-facility", self.html)
+
+    def test_it_says_these_rows_mostly_cannot_become_registry_entries(self):
+        """A system entry matches a name pattern; a cluster found because
+        its members share no name has no pattern to write. That is a
+        different reason from the other queues on this page."""
+        self.assertIn("has no pattern", self.html)
+        self.assertIn("CCN_OVERRIDES", self.html)
+
+
+class OwnershipClusterRouteTests(unittest.TestCase):
+    def test_the_csv_carries_the_ccns_so_a_claim_can_be_checked(self) -> None:
+        from rcm_mc.data.facility_ownership import ownership_cluster_frame
+        from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        fac = dict(zip(xw["ccn"].astype(str),
+                       zip(xw["city"].astype(str), xw["street"].astype(str))))
+        frame = ownership_cluster_frame(facilities=fac)
+        if frame.empty:
+            self.skipTest("no ownership file shipped yet")
+        for column in ("joined_by", "key", "facilities", "ccns"):
+            self.assertIn(column, frame.columns)
+        # Every row is one key, never a union of several.
+        self.assertTrue(set(frame["joined_by"]) <= {"mail", "official",
+                                                    "legal", "parent"})
+        self.assertGreater(int(frame["facilities"].max()), 1)

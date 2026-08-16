@@ -1073,6 +1073,100 @@ def _ownership_panel(limit: int = 12) -> str:
         'builds the same file from a full NPPES ingest.</div>')
 
 
+def _ownership_cluster_panel(limit: int = 14) -> str:
+    """Operators found by who signs and where the mail goes.
+
+    The registry and every discovery tool in this package group names.
+    That reaches 9% of what is left: 27,341 of the 30,092 unmapped
+    operating facilities share a name with nothing in the country, and
+    CMS's own ``chain_name`` field is blank for every SNF, home health
+    agency, hospice and hospital in the file.
+
+    NPPES carries what CMS does not — the operator's legal name, and
+    the corporate mailing address, which is the only signal here that
+    does not depend on a name at all. Nineteen Ohio nursing homes named
+    nothing alike receive their mail at one Utah office.
+
+    Shown rather than applied, and for a sharper reason than the other
+    queues on this page. These clusters *cannot* become registry
+    entries: a SystemDef matches a name pattern, and a cluster found
+    because its members share no name has no pattern to write. The
+    legal-entity ones are already mapped through CCN_OVERRIDES. The
+    mail- and officer-joined ones are the stronger evidence and supply
+    no brand, so naming them is a judgement only a human should make.
+    """
+    from rcm_mc.data.facility_ownership import (
+        ownership_cluster_frame, ownership_summary,
+    )
+    from rcm_mc.data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+
+    xw = get_crosswalk(scope=SCOPE_ALL)
+    facilities = dict(zip(xw["ccn"].astype(str),
+                          zip(xw["city"].astype(str), xw["street"].astype(str))))
+    frame = ownership_cluster_frame(facilities=facilities)
+    if frame.empty:
+        return ""
+    summary = ownership_summary(facilities=facilities)
+
+    label = {"mail": "shared back office", "official": "same signing officer",
+             "legal": "one legal entity", "parent": "declared parent"}
+    cols = [("Evidence", "left"), ("What ties them", "left"),
+            ("Facilities", "right"), ("Names differ", "left")]
+    ths = "".join(ck_data_cell(c, align=a, is_header=True) for c, a in cols)
+    trs = []
+    for row in frame.head(limit).to_dict("records"):
+        key = str(row["key"])
+        if row["joined_by"] == "mail":
+            key = ", ".join(part.title() for part in key.split("|")[:2])
+        else:
+            key = key.title()
+        trs.append("<tr>" + "".join([
+            ck_data_cell(_esc(label.get(str(row["joined_by"]),
+                                        str(row["joined_by"]))), tone="dim"),
+            ck_data_cell(_esc(key), weight=600),
+            ck_data_cell(f"{int(row['facilities']):,}", align="right", mono=True),
+            ck_data_cell("yes" if row["legal_names_differ"] else "no",
+                         tone="acc" if row["legal_names_differ"] else "dim"),
+        ]) + "</tr>")
+    table = ('<div class="ck-data-table-scroll"><table class="ck-data-table">'
+             f'<thead><tr>{ths}</tr></thead><tbody>{"".join(trs)}</tbody>'
+             '</table></div>')
+
+    by_key = summary["clusters_by_key"]
+    mix = ", ".join(f"{label.get(k, k)} {v:,}" for k, v in by_key.items())
+    return (table + '<div class="hsl-legend">'
+            f'{summary["clusters"]:,} clusters over '
+            f'{summary["facilities_harvested"]:,} harvested facilities — '
+            f'{mix}. <strong>{summary["facilities_no_name_could_group"]:,} '
+            'facilities sit in a cluster whose members do not agree on a '
+            'legal name</strong>, which is to say nothing name-based could '
+            'have found them from any field in any file. '
+            '<br><br>This exists because name matching is nearly spent: '
+            '27,341 of the 30,092 unmapped operating facilities share a name '
+            'with no other facility in the country, and CMS publishes a '
+            '<code>chain_name</code> that would settle it for every one of '
+            'them — populated for dialysis and for zero rows of SNF, home '
+            'health, hospice or hospital. What NPPES adds is the operator '
+            '(Eastview Rehabilitation files as BALL HEALTHCARE EASTVIEW INC) '
+            'and the corporate mailing address, which groups buildings whose '
+            'names have nothing in common. '
+            '<br><br>Each row is <strong>one</strong> claim. An earlier '
+            'version unioned the four keys together and produced a single '
+            '152-facility &ldquo;operator&rdquo; — union-find is transitive, '
+            'so one office plus one officer plus one licence chains four '
+            'unrelated companies into a blob nobody can check. Grouping per '
+            'key caps the largest cluster at 29 and keeps every row falsifiable. '
+            '<br><br><strong>Nothing here is written to '
+            '<code>system_id</code></strong>, and for these rows it largely '
+            'cannot be: a system entry matches a name pattern, and a cluster '
+            'found <em>because</em> its members share no name has no pattern '
+            'to write. The legal-entity rows are the exception and are '
+            'already mapped, through <code>CCN_OVERRIDES</code>. Download at '
+            '<a class="ck-link" href="/ownership-clusters.csv">'
+            '/ownership-clusters.csv</a> '
+            '(<code>?joined_by=mail</code> for the back-office rows).</div>')
+
+
 def _npi_bridge_panel() -> str:
     """How much of the CCN↔NPI join is harvested, and how sure each row is.
 
@@ -1607,6 +1701,7 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
     provider_classes = _provider_class_panel()
     npis = _npi_panel()
     npi_bridge = _npi_bridge_panel()
+    own_clusters = _ownership_cluster_panel()
     ownership = _ownership_panel()
     discovered = _discovered_operators_panel()
     disagreements = _name_disagreement_panel()
@@ -1680,6 +1775,10 @@ def render_health_system_lookup(params: Optional[Mapping[str, str]] = None) -> s
   <div style="{cell}">
     <div style="{h3}">Full Provider Universe — Every Certified CCN</div>
     {provider_classes}
+  </div>
+  <div style="{cell}">
+    <div style="{h3}">Who Operates It — Ownership Beyond the Name</div>
+    {own_clusters}
   </div>
   <div style="{cell}">
     <div style="{h3}">CCN &rarr; NPI — What the Link Rests On</div>

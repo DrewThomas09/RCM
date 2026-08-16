@@ -254,7 +254,14 @@ class OwnershipCluster:
 
     @property
     def states(self) -> Tuple[str, ...]:
-        """From the CCN's own first two characters — no join needed."""
+        """The CMS state codes the members' CCNs carry.
+
+        These are CMS codes and not postal ones — 45 is Texas, 36 is
+        Ohio — so they are safe to compare against each other and wrong
+        to show a reader as a state. Available without a join, which is
+        why the comparison uses them; anything user-facing should map
+        the CCN through the crosswalk instead.
+        """
         return tuple(sorted({c[:2] for c in self.members}))
 
     @property
@@ -432,6 +439,47 @@ def ownership_summary(path: Optional[Path] = None,
         "facilities_no_name_could_group": len({m for c in hidden for m in c.members}),
         "service_addresses_refused": len(service_addresses(path)),
     }
+
+
+def ownership_cluster_frame(
+        path: Optional[Path] = None,
+        facilities: Optional[Dict[str, Tuple[str, str]]] = None,
+        min_size: int = MIN_CLUSTER,
+) -> "pd.DataFrame":
+    """The clusters as a downloadable table, one row per cluster.
+
+    Exists because the strongest findings here are the ones the
+    registry cannot hold. A cluster joined on a back office or a signing
+    officer is better evidence of common ownership than a shared
+    licence, and it supplies no name — so it cannot become a SystemDef,
+    and a partner can only act on it if they can see it.
+    """
+    import pandas as pd
+
+    rows = []
+    for c in ownership_clusters(path, facilities):
+        if c.size < min_size:
+            continue
+        rows.append({
+            "joined_by": c.joined_by,
+            "key": c.key,
+            "facilities": c.size,
+            "ccn_state_codes": "|".join(c.states),
+            "legal_names_differ": c.names_differ,
+            "ccns": "|".join(c.members),
+            "legal_names": " | ".join(c.legal_names[:8]),
+            "officials": " | ".join(c.officials[:4]),
+            "parents": " | ".join(c.parents[:4]),
+            "mail_addresses": " | ".join(c.mail_addresses[:4]),
+        })
+    columns = ["joined_by", "key", "facilities", "ccn_state_codes",
+               "legal_names_differ", "ccns", "legal_names", "officials",
+               "parents", "mail_addresses"]
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    frame = pd.DataFrame(rows, columns=columns)
+    return frame.sort_values(["facilities", "joined_by", "key"],
+                             ascending=[False, True, True])
 
 
 def _clear_cache() -> None:

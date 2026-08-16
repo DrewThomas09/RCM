@@ -5197,6 +5197,41 @@ class RCMHandler(BaseHTTPRequestHandler):
                 _frame = _frame[_frame["state_list"].astype(str).str.split(
                     "|").apply(lambda states: _st in states)]
             return self._send_csv_df(_frame, "discovered-operators.csv")
+        if path == "/ownership-clusters.csv":
+            # Facilities grouped by who operates them rather than by
+            # what they are called. 91% of unmapped facilities share a
+            # name with nothing, so this is the only route to them —
+            # and the strongest rows here (a shared back office, a
+            # shared signing officer) supply no brand, so they cannot
+            # become registry entries and can only be acted on if a
+            # partner can see them.
+            from .data.facility_ownership import ownership_cluster_frame
+            from .data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+            _qs = urllib.parse.parse_qs(parsed.query)
+            _qp = {k: v[0] for k, v in _qs.items() if v}
+            _xw = get_crosswalk(scope=SCOPE_ALL)
+            _fac = dict(zip(_xw["ccn"].astype(str),
+                            zip(_xw["city"].astype(str),
+                                _xw["street"].astype(str))))
+            _min = self._clamp_int(_qp.get("min_facilities", "2"),
+                                   default=2, min_v=2, max_v=500)
+            _frame = ownership_cluster_frame(facilities=_fac, min_size=_min)
+            # joined_by=mail|official|parent selects the clusters the
+            # registry cannot express; joined_by=legal selects the ones
+            # it already holds through CCN_OVERRIDES.
+            _by = str(_qp.get("joined_by", "")).strip().lower()[:8]
+            if _by in ("mail", "official", "parent", "legal") and not _frame.empty:
+                _frame = _frame[_frame["joined_by"].astype(str) == _by]
+            _st = str(_qp.get("state", "")).strip().upper()[:2]
+            if _st and not _frame.empty:
+                # A CCN's first two characters are a CMS state code, not
+                # a USPS one — 45 is Texas — so the filter has to go
+                # through the crosswalk rather than read the CCN.
+                _in_state = set(_xw.loc[_xw["state"].astype(str).str.upper()
+                                        == _st, "ccn"].astype(str))
+                _frame = _frame[_frame["ccns"].astype(str).str.split(
+                    "|").apply(lambda ccns: any(c in _in_state for c in ccns))]
+            return self._send_csv_df(_frame, "ownership-clusters.csv")
         if path == "/master-npi-file.csv":
             # The NPI-keyed spine: identity, status history, taxonomy and
             # category, geography, the CCN it bills under, and the final
