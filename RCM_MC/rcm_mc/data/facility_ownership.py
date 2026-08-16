@@ -174,6 +174,20 @@ def _clean(value: object) -> str:
     return str(value or "").strip()
 
 
+def _norm_street(value: object) -> str:
+    """Uppercase and strip punctuation, without the SAINT rule.
+
+    :func:`health_systems.normalize_name` expands ``ST`` to ``SAINT``,
+    which is right for SAINT MARYS HOSPITAL and wrong for 101 W LIBERTY
+    ST. Clustering survived it because both sides were mangled the same
+    way, but the key is displayed on the page and in the CSV export, and
+    "101 W LIBERTY SAINT" is not an address anyone can look up or join
+    against.
+    """
+    text = "".join(ch if ch.isalnum() else " " for ch in str(value or "").upper())
+    return " ".join(text.split())
+
+
 def _norm_addr(street: str, city: str, state: str) -> str:
     """An address reduced to a comparison key.
 
@@ -183,8 +197,7 @@ def _norm_addr(street: str, city: str, state: str) -> str:
     unrelated companies. The service-address guard handles the tower;
     keeping the suite costs nothing.
     """
-    parts = [normalize_name(street), normalize_name(city),
-             _clean(state).upper()]
+    parts = [_norm_street(street), _norm_street(city), _clean(state).upper()]
     return "|".join(p for p in parts if p)
 
 
@@ -213,6 +226,9 @@ class OwnershipRow:
 
     @property
     def official_key(self) -> str:
+        # A person's name, so the SAINT rule is harmless here and the
+        # shared normaliser keeps officer keys consistent with the
+        # legal-name keys they are compared against.
         return normalize_name(self.official_name)
 
     @property

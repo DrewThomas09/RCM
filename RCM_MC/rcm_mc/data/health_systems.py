@@ -6049,6 +6049,67 @@ MARKET_REGISTRY: Tuple[SystemDef, ...] = (
         KIND_FOR_PROFIT, FOCUS_SNF, "TX",
         patterns=(),
     ),
+
+    SystemDef(
+        "blanchard_valley_home_care", "Blanchard Valley Home Care Services Llc",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "cfc_managed_services", "Cfc Managed Services Llc",
+        KIND_FOR_PROFIT, FOCUS_SNF, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "chs_therapy", "Chs Therapy, Llc",
+        KIND_FOR_PROFIT, FOCUS_SNF, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "city_of_wooster", "City of Wooster",
+        KIND_GOVERNMENT, FOCUS_SNF, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "community_health_professionals", "Community Health Professionals Inc",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "creative_solutions_in_healthcare", "Creative Solutions in Healthcare, Inc.",
+        KIND_FOR_PROFIT, FOCUS_SNF, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "embassy_homecare", "Embassy Homecare, Llc",
+        KIND_FOR_PROFIT, FOCUS_SNF, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "genesis_healthcare_system", "Genesis Healthcare System",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "joint_township_district_memorial", "Joint Township District Memorial Hospital",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "marshall_homecare", "Marshall Homecare, Llc",
+        KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "mcv_health_care_facilities", "Mcv Health Care Facilities, Inc.",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "st_augustine_manor", "St Augustine Manor",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
 )
 
 
@@ -6124,6 +6185,36 @@ CHAIN_ALIASES: Dict[str, str] = {
 # override is for when the name genuinely cannot carry the answer.
 
 CCN_OVERRIDES: Dict[str, str] = {
+    "361505": "blanchard_valley_home_care",
+    "367102": "blanchard_valley_home_care",
+    "365353": "cfc_managed_services",
+    "365879": "cfc_managed_services",
+    "365878": "chs_therapy",
+    "365922": "chs_therapy",
+    "366405": "city_of_wooster",
+    "367624": "city_of_wooster",
+    "361507": "community_health_professionals",
+    "367131": "community_health_professionals",
+    "455916": "creative_solutions_in_healthcare",
+    "675399": "creative_solutions_in_healthcare",
+    "675513": "creative_solutions_in_healthcare",
+    "675801": "creative_solutions_in_healthcare",
+    "365354": "embassy_homecare",
+    "365563": "embassy_homecare",
+    "365980": "embassy_homecare",
+    "366183": "embassy_homecare",
+    "361521": "genesis_healthcare_system",
+    "367114": "genesis_healthcare_system",
+    "361636": "joint_township_district_memorial",
+    "365807": "joint_township_district_memorial",
+    "457878": "marshall_homecare",
+    "458244": "marshall_homecare",
+    "671599": "marshall_homecare",
+    "361732": "mcv_health_care_facilities",
+    "365894": "mcv_health_care_facilities",
+    "361631": "st_augustine_manor",
+    "365883": "st_augustine_manor",
+    "368115": "st_augustine_manor",
     "365789": "ahf_ohio",
     "365791": "ahf_ohio",
     "365072": "anna_maria_of_aurora",
