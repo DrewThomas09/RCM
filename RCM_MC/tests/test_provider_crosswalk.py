@@ -581,10 +581,22 @@ class FullScopeTests(unittest.TestCase):
     def test_mapping_strength_varies_enormously_by_class(self) -> None:
         """One average across dialysis and nursing homes describes
         neither: CMS publishes a parent chain for dialysis and nothing
-        for SNFs, whose names are local and whose operators churn."""
+        for SNFs, whose names are local and whose operators churn.
+
+        The SNF bound was "under 25%", which held for as long as the
+        only way to map a nursing home was its name. facility_ownership
+        maps them by who signs and where the mail goes instead, so that
+        number now moves whenever the harvest widens and an upper bound
+        on it would just be a reminder to raise the bound. The gap
+        between the two classes is the durable fact and is what this
+        asserts: dialysis is mapped from a published chain field, SNF
+        from evidence assembled one facility at a time.
+        """
         by_class = crosswalk_by_class().set_index("provider_class")
-        self.assertGreater(by_class.loc["dialysis", "mapped_pct"], 80.0)
-        self.assertLess(by_class.loc["snf", "mapped_pct"], 25.0)
+        dialysis = by_class.loc["dialysis", "mapped_pct"]
+        snf = by_class.loc["snf", "mapped_pct"]
+        self.assertGreater(dialysis, 80.0)
+        self.assertGreater(dialysis, snf * 2)
 
     def test_beds_stay_on_the_hospital_rows(self) -> None:
         """A dialysis station has no beds. Letting the market rollup
