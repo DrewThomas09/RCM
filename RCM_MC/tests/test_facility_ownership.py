@@ -71,6 +71,18 @@ class LoadTests(Fixture):
         self.assertEqual(r.mail_key, "1 SOUTHERN WAY|MOBILE|AL")
         self.assertEqual(r.official_key, "SARA WALLACE")
 
+    def test_a_street_suffix_is_not_expanded_to_saint(self):
+        """normalize_name turns ST into SAINT, which is right for SAINT
+        MARYS HOSPITAL and wrong for 101 W LIBERTY ST. Clustering
+        survived it because both sides were mangled alike, but the key
+        is displayed and exported, and "101 W LIBERTY SAINT" is not an
+        address anyone can look up."""
+        self.write([_row("365001", NPIS[0], mail_street="101 W LIBERTY ST",
+                         mail_city="GIRARD", mail_state="OH")])
+        key = load_ownership(self.path)["365001"].mail_key
+        self.assertEqual(key, "101 W LIBERTY ST|GIRARD|OH")
+        self.assertNotIn("SAINT", key)
+
     def test_a_bad_check_digit_is_dropped(self):
         self.write([_row("015014", "1234567890"), _row("015015", NPIS[0])])
         self.assertEqual(set(load_ownership(self.path)), {"015015"})
