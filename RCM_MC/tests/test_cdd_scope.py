@@ -169,15 +169,19 @@ class CddScopePageTests(unittest.TestCase):
 
 
 class WiringTests(unittest.TestCase):
-    def test_palette_section_map_and_catalog(self):
-        from rcm_mc.ui._chartis_kit import (
-            _DEFAULT_PALETTE_MODULES, _SUB_SECTION_MAP)
-        self.assertIn("/diligence/cdd-scope",
-                      [m["route"] for m in _DEFAULT_PALETTE_MODULES])
+    def test_section_map_kept_but_no_longer_catalogued(self):
+        # CDD scoping is engagement workflow (how deep to run the
+        # workplan), registry-hidden as of 2026-08-16. Breadcrumbs still
+        # resolve for a direct visit; the /diligence catalog no longer
+        # offers it.
+        from rcm_mc.ui._chartis_kit import _SUB_SECTION_MAP
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/diligence/cdd-scope"))
         self.assertEqual(_SUB_SECTION_MAP.get("/diligence/cdd-scope"),
                          "diligence")
         from rcm_mc.ui.diligence_index_page import render_diligence_index
-        self.assertIn("/diligence/cdd-scope", render_diligence_index())
+        self.assertNotIn('href="/diligence/cdd-scope"',
+                         render_diligence_index())
 
     def test_guide_context_registered_with_floor(self):
         from rcm_mc.assistant.context.manual_page_contexts import (

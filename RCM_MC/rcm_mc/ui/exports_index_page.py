@@ -215,10 +215,10 @@ def render_exports_index(db_path: str) -> str:
         + corpus_card
     )
     next_up = ck_next_section(
-        "Open the LP update",
-        "/lp-update",
+        "Browse the dataset catalog behind these exports",
+        "/data",
         eyebrow="Up next",
-        italic_word="LP",
+        italic_word="catalog",
     )
     body = (
         _wc.web_styles()

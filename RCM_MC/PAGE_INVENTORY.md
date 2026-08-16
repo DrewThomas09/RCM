@@ -11,6 +11,19 @@
 > listing surface via `rcm_mc/ui/_surface_visibility`. They still SERVE:
 > routes resolve, deep links work, and a page rejoins the catalog the day
 > its live-data wiring lands (drop it from the set). Tier 1 is untouched.
+>
+> **2026-08-16b — second sweep: deal EXECUTION and single-sector studies.**
+> The product framing tightened to *healthcare-PE deal tracking on top of
+> aggregated CMS data*, with the X-rays at the centre. Two more classes went
+> Hidden: the artifacts of RUNNING a transaction (IC packet, QoE memo, CDD
+> hub + scope, expert calls, CIM cross-check, deal MC, covenant stress,
+> checklists, LP reporting) as distinct from TRACKING one, and the bespoke
+> single-sector studies (imaging atlas, the /market sector-report catalog)
+> alongside the infusion + IFT suites already hidden. Two lines get
+> re-litigated on every sweep and are pinned by name in
+> `tests/test_hidden_surfaces.py`: *breadth, not subject* (a whole CMS
+> program's Care Compare universe stays; a bespoke sector study does not)
+> and *tracking, not execution*. Visible surface: 173 → 137.
 
 Evidence: scripts/route_walker.py walked 361 exact-match page routes on the
 seeded demo (5 deals, 6,123-hospital HCRIS universe): **349 render 200, 0

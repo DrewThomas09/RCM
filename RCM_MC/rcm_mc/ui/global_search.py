@@ -631,10 +631,10 @@ def render_global_search_page(
     """
 
     body = body + ck_next_section(
-        "Open the diligence-questions ledger",
-        "/diligence/questions",
+        "Browse the dataset catalog",
+        "/data",
         eyebrow="Up next",
-        italic_word="questions",
+        italic_word="dataset",
     )
     return chartis_shell(
         body,

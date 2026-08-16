@@ -1501,14 +1501,12 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
         else:
             xray = f'/diligence/xray?ccn={ccn}&vertical={vertical}'
         insp = _href("inspector", qs).split("?")[0] + f'?view=inspector&vertical={vertical}&ccn={ccn}'
-        # Hospital rows get a one-click into CIM Cross-Check pre-scoped to
-        # this facility's state + CCN — the screener is where a partner first
-        # spots a target, so the variance check should be one click away.
-        # Only hospitals: the cross-check estimators are HCRIS-hospital-shaped.
-        _row_state = _h.escape(str(r.get("state") or ""), quote=True)
-        cim_act = (f'<a class="ts-act" href="/diligence/cim-crosscheck?'
-                   f'state={_row_state}&ccn={ccn}">CIM</a>'
-                   if vertical == "hospitals" and r.get("state") else "")
+        # The per-row CIM Cross-Check shortcut lived here; that surface
+        # checks management's claims against HCRIS during a live
+        # transaction and is registry-hidden as deal execution. Hospital
+        # rows still one-click into the HCRIS X-Ray via the row link,
+        # which is the sourced read a screener should hand off to.
+        cim_act = ""
         cmp_list = ",".join(dict.fromkeys(cur_cmp + [r["ccn"]]))  # append, de-dup
         cmp_href = f'/target-screener?view=compare&compare={cmp_list}'
         loc = _h.escape(", ".join([p for p in (r["city"], r["state"]) if p]) or "—")
@@ -2395,13 +2393,10 @@ def _peer_set_block(owner: str, cols,
         # hospitals vertical — mixed/other sets get no link, no error).
         rollup = ""
         if len(s["ccns"]) >= 2:
-            resolved = [_find_provider(c) for c in s["ccns"]]
-            if all(r and r.get("vertical") == "hospitals"
-                   for r in resolved):
-                rollup = (
-                    f' <a class="ck-link" style="font-size:10px;" '
-                    f'href="/pipeline/rollup?ccns={_h.escape(ccns)}">'
-                    f'→ roll-up</a>')
+            # The saved-screen "→ roll-up" shortcut pointed at
+            # /pipeline/rollup — pro-forma platform modelling, i.e. deal
+            # execution — which is registry-hidden.
+            rollup = ""
         items += (
             f'<li style="margin:0 0 6px;display:flex;gap:10px;'
             f'align-items:center;">'
@@ -2507,13 +2502,10 @@ def _screen_compare(qs, ck, owner: str = "",
                 f'live universe: {_h.escape(", ".join(missing))}.</p>')
     # Hand the basket straight to the Roll-Up Builder when it's all hospitals
     # — the pro-forma combine only has HCRIS math behind it for that vertical.
+    # The compare basket used to offer "Roll-up these N → pro-forma
+    # platform" (/pipeline/rollup) — deal-execution modelling, now
+    # registry-hidden. The basket stays a comp table.
     rollup_link = ""
-    hosp_ccns = [c for c, r in cols if r.get("vertical") == "hospitals"]
-    if len(hosp_ccns) >= 2:
-        rollup_link = (
-            f' <a class="ck-link" href="/pipeline/rollup?ccns='
-            f'{",".join(_h.escape(c) for c in hosp_ccns)}">'
-            f'Roll-up these {len(hosp_ccns)} → pro-forma platform</a> ·')
     # P5 exhibit chrome: the compare basket is a paste-ready comp table —
     # number it, state the units, stamp the source family.
     from ._chartis_kit import ExhibitFactory

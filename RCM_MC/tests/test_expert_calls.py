@@ -179,9 +179,16 @@ class WiringTests(unittest.TestCase):
         self.assertIn("/diligence/expert-calls",
                       [t.route for t in DISCOVERED_TOOL_ROUTES])
 
-    def test_diligence_index_links_the_page(self):
+    def test_diligence_index_no_longer_links_the_page(self):
+        # An expert-call program is engagement scaffolding for a live
+        # transaction, not a read of a CMS filing — registry-hidden as of
+        # 2026-08-16. The page still serves for anyone holding a link
+        # (pinned in tests/test_hidden_surfaces.py).
         from rcm_mc.ui.diligence_index_page import render_diligence_index
-        self.assertIn("/diligence/expert-calls", render_diligence_index())
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/diligence/expert-calls"))
+        self.assertNotIn('href="/diligence/expert-calls"',
+                         render_diligence_index())
 
 
 class WeeklyCadenceTests(unittest.TestCase):

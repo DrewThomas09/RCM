@@ -92,19 +92,23 @@ class ProfilePageTests(unittest.TestCase):
 
     def test_analytic_card_carries_href_template(self):
         h = render_deal_profile_page(slug="aurora")
-        # IC Packet uses empty params — should still render the href-base
-        # attribute. (This used the Bankruptcy-Survivor Scan as its
-        # empty-params example until 2026-08-16, when that surface went
-        # registry-hidden and stopped rendering a card at all.)
+        # The grid renders the tools the visibility registry still offers,
+        # each carrying its param-mapping href base. The examples here have
+        # been rewritten twice as the sweeps landed — Bankruptcy Scan, then
+        # IC Packet / Counterfactual — so they are now the X-rays, which
+        # are the surfaces this product is built around and the least
+        # likely to move again.
         self.assertIn(
-            'data-rcm-deal-href-base="/diligence/ic-packet"', h,
+            'data-rcm-deal-href-base="/diligence/hcris-xray"', h,
         )
         self.assertIn(
-            'data-rcm-deal-href-base="/diligence/counterfactual"', h,
+            'data-rcm-deal-href-base="/diligence/benchmarks"', h,
         )
-        self.assertNotIn(
-            'data-rcm-deal-href-base="/screening/bankruptcy-survivor"', h,
-        )
+        # Deal-execution tools are gone from the grid entirely.
+        for gone in ("/screening/bankruptcy-survivor",
+                     "/diligence/ic-packet", "/diligence/counterfactual"):
+            self.assertNotIn(
+                f'data-rcm-deal-href-base="{gone}"', h, gone)
 
     def test_slug_sanitization_rejects_path_traversal(self):
         # '..' contains no a-z/0-9/- so the sanitiser strips it and
@@ -255,8 +259,13 @@ class PhaseGroupedAnalyticsTests(unittest.TestCase):
     def test_analytics_grouped_by_phase(self):
         h = self._render()
         self.assertIn("grouped by lifecycle phase", h)
-        # The Workspace phase header contains Workspace subtitle
-        self.assertIn("one-button orchestration", h)
+        # A phase header renders with its subtitle. This asserted the
+        # Workspace phase ("one-button orchestration") until 2026-08-16 —
+        # that phase held only deal-execution tools and now has no visible
+        # members, so the phase header is gone with them. Diligence is the
+        # phase the surviving X-rays group under.
+        self.assertIn("CCD + predictive analytics", h)
+        self.assertNotIn("one-button orchestration", h)
 
 
 class DealProfilePowerUITests(unittest.TestCase):

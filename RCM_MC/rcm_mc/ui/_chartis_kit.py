@@ -170,7 +170,6 @@ _SUB_NAV = {
         {"label": "Health System Lookup", "href": "/health-system-lookup"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Geographic Intel",    "href": "/geo-intel"},
-        {"label": "Conferences",         "href": "/conferences"},
     ],
     # Pipeline = real opportunities/deals only — the deal-workflow surfaces.
     # Market-discovery screeners live in Source (Target Screener); the
@@ -182,7 +181,6 @@ _SUB_NAV = {
         {"label": "Deal Pipeline",       "href": "/pipeline"},
         {"label": "New Deal / Import",   "href": "/new-deal"},
         {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
-        {"label": "Roll-Up Builder",     "href": "/pipeline/rollup"},
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
@@ -201,9 +199,7 @@ _SUB_NAV = {
     # to sit here (Bear Cases, Corpus Backtest, PE Intelligence, Sponsor
     # Track Record, …) are registry-hidden — see _surface_visibility.
     "research": [
-        {"label": "Market Reports",      "href": "/market"},
         {"label": "Industry Intelligence", "href": "/industry"},
-        {"label": "Radiology & Imaging", "href": "/radiology-imaging"},
         {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
         {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
@@ -235,7 +231,6 @@ _SUB_NAV = {
         {"label": "Portfolio Map",       "href": "/portfolio/map"},
         {"label": "Heatmap",             "href": "/portfolio/heatmap"},
         {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
-        {"label": "LP Update",           "href": "/lp-update"},
     ],
     # Diligence — RCM analyst playbook surfaces. The full diligence
     # tab carries 25 pages spanning the four-phase flow (intake →
@@ -249,15 +244,13 @@ _SUB_NAV = {
     # MODULES) and the breadcrumb resolver (_SUB_SECTION_MAP) still
     # cover the full surface; sub-nav is only the daily-driver shortcut.
     "diligence": [
-        {"label": "Deal Profile",       "href": "/diligence/deal"},
-        {"label": "CDD Hub",            "href": "/cdd"},
-        {"label": "Ingestion",          "href": "/diligence/ingest"},
-        {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
-        {"label": "CMS X-Ray",          "href": "/diligence/xray"},
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
-        {"label": "CIM Cross-Check",    "href": "/diligence/cim-crosscheck"},
-        {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
-        {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
+        {"label": "CMS X-Ray",          "href": "/diligence/xray"},
+        {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
+        {"label": "Cost Structure",     "href": "/cost-structure"},
+        {"label": "Payer Stress",       "href": "/diligence/payer-stress"},
+        {"label": "Provider Verticals", "href": "/verticals"},
+        {"label": "Data Quality",       "href": "/data-quality"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -278,10 +271,10 @@ _SECTION_FEATURE = {
                  "blurb": "Track real opportunities once promoted from Source: "
                           "screen, score, and move deals toward IC.",
                  "href": "/pipeline"},
-    "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
-                  "blurb": "Run a live deal end to end: identity, ingestion, "
-                           "benchmarks, the CMS / HCRIS X-Ray, and the IC "
-                           "packet.",
+    "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The X-rays",
+                  "blurb": "Drill into a single provider's filings: the HCRIS "
+                           "and CMS X-Rays, cost structure, payer stress, and "
+                           "the peer bands to read them against.",
                   "href": "/diligence"},
     "library": {"eyebrow": "SECTION · LIBRARY", "title": "The datasets",
                 "blurb": "Every public CMS / Medicare / Medicaid / hospital "
@@ -331,16 +324,17 @@ _NAV_FLAGSHIPS = {
     # Target Screener is the flagship workbench and must lead Source (pinned
     # product decision); the rest of the bar stays score-ordered.
     "source": ["/target-screener"],
-    "pipeline": ["/pipeline", "/pipeline/bridge", "/pipeline/rollup"],
+    "pipeline": ["/pipeline", "/pipeline/bridge"],
     # The analyst playbook in workflow order: identity → ingest → baseline →
     # the CMS / HCRIS X-Ray drill-downs → the IC deliverable.
+    # HCRIS X-Ray leads: it is the deepest read of a real Medicare cost
+    # report in the product and the reason the section exists.
     "diligence": [
-        "/diligence/deal",
-        "/diligence/ingest",
-        "/diligence/benchmarks",
-        "/diligence/xray",
         "/diligence/hcris-xray",
-        "/diligence/ic-packet",
+        "/diligence/xray",
+        "/diligence/benchmarks",
+        "/cost-structure",
+        "/diligence/payer-stress",
     ],
     "library": ["/deal-library", "/rcm-benchmarks", "/methodology"],
     # House views lead with the analytical reads; the chart/export utilities
@@ -4934,6 +4928,19 @@ def ck_tour_overlay(volumes: List[Dict[str, Any]]) -> str:
     """
     if not volumes:
         return ""
+    # A volume's "try it" CTA lands the reader in a feature, so it is a
+    # listing surface like any other: drop the CTA when its destination is
+    # registry-hidden rather than walking a new partner into a page the
+    # product no longer offers. The volume itself still renders — the
+    # narrative is the point; the button is the affordance.
+    from ._surface_visibility import is_visible as _sv_is_visible
+    volumes = [
+        ({k: v for k, v in vol.items() if k != "try_it"}
+         if (vol.get("try_it") or {}).get("href")
+         and not _sv_is_visible(str(vol["try_it"]["href"]))
+         else vol)
+        for vol in volumes
+    ]
     volumes_json = json.dumps(volumes, ensure_ascii=False)
     total = len(volumes)
     return (
@@ -11719,14 +11726,11 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'data-mode="{_esc(current_workspace_mode())}" '
         f'title="Workspace: {_esc(_ws_mode_label)} · click to switch">'
         f'{_esc(_ws_mode_label)}</a>'
-        # Portfolio-wide diligence-questions pill. JS-hydrated from
-        # all rcm_deal_*_questions entries on DOMContentLoaded;
-        # hidden when zero open across the portfolio. Click → ledger.
-        '<a class="ck-topbar-qpill" data-ck-qpill href="/diligence/questions" '
-        'aria-label="Open diligence questions ledger" hidden>'
-        '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
-        '<span class="ck-topbar-qpill-label">open Qs</span>'
-        '</a>'
+        # The portfolio-wide diligence-questions pill used to sit here,
+        # on every page's topbar, linking to /diligence/questions. That
+        # ledger is engagement workflow rather than a data read and is
+        # registry-hidden, so the pill went with it — a hidden surface
+        # must not be reachable from global chrome.
         # Search launcher first, then Guide — matching the handoff's
         # search · Guide · +New · avatar right-zone order. Visible
         # placeholder is short so it never truncates in the 220px field;

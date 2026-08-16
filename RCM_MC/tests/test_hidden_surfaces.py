@@ -1,21 +1,33 @@
 """Hidden surfaces are listed nowhere — and deleted nowhere.
 
-The product is a public-data verification and visualization surface: load a
-CMS / Medicare / Medicaid / hospital dataset, see it charted, trace every
-figure to its filing. Three classes of page work against that promise and
-are ruled Hidden in ``rcm_mc.ui._surface_visibility``:
+The product is **healthcare-PE deal tracking on top of aggregated CMS
+data**, with the X-rays at its centre. Five classes of page work against
+that and are ruled Hidden in ``rcm_mc.ui._surface_visibility``:
 
   * illustrative-figure pages (numbers from a hardcoded dataclass, not a
     filing),
-  * single-target / single-market study suites (the Texas infusion scan,
-    the IFT/MMT transport study) — real work, but legible only inside one
-    engagement,
-  * the sponsor-corpus / PE-narrative long tail.
+  * single-target / single-sector study suites — the Texas infusion scan,
+    the IFT/MMT transport study, the imaging atlas, the /market sector
+    reports: real work, legible only inside one engagement,
+  * the sponsor-corpus / PE-narrative long tail,
+  * deal EXECUTION — the artifacts of running a transaction (IC packets,
+    QoE memos, CDD scoping, covenant stress, LP reporting) as opposed to
+    tracking one,
+  * named one-offs (/conferences).
+
+Two lines get re-litigated on every sweep, so both are pinned by name
+below:
+
+  * **breadth, not subject** — a whole CMS program's Care Compare
+    universe read nationally (/nursing-homes, /hospice, /dialysis, …)
+    stays; a bespoke single-sector study does not.
+  * **tracking, not execution** — /deal-library, /verified-deals, /news,
+    /market-scan, /pipeline follow publicly-reported transactions and
+    stay listed.
 
 Hidden is a BROWSE ruling, not a routing one. This module guards both
 halves: nothing offers a hidden surface, and every hidden surface still
-serves. The deal TRACKERS are explicitly not hidden — they track real,
-publicly-reported transactions and stay listed.
+serves.
 """
 from __future__ import annotations
 
@@ -44,18 +56,41 @@ HIDDEN_SAMPLE = (
     "/in-depth-ift-bls-als1-als2-cct",
     "/pe-intelligence",               # PE narrative
     "/bear-cases",
+    "/radiology-imaging",             # bespoke single-sector study
+    "/market",                        # sector M&A report catalog…
+    "/market/infusion",               # …and its per-sector writeups
+    "/diligence/ic-packet",           # deal EXECUTION, not tracking
+    "/diligence/qoe-memo",
+    "/diligence/physician-eu",        # "Provider Economics"
+    "/cdd",
+    "/engagements",
+    "/conferences",                   # named one-off
+    "/pipeline/rollup",
+    "/lp-update",
 )
 
 # What the cleanup must NOT touch: the public-data reads, the visualization
 # tools, and the deal trackers.
 VISIBLE_SAMPLE = (
-    "/target-screener", "/diligence/hcris-xray", "/market-data",
-    "/cms-data-browser", "/cms-sources", "/data", "/metric-glossary",
-    "/methodology", "/regulatory-calendar", "/state-compare",
-    "/county-explorer", "/geo-map", "/visuals", "/chart-builder",
+    # The X-rays — the centre of gravity, and the thing to be most
+    # careful about: every sweep so far has had to be checked against
+    # this row.
+    "/diligence/hcris-xray", "/diligence/xray", "/diligence/benchmarks",
+    "/diligence/payer-stress", "/cost-structure",
+    # CMS aggregation
+    "/target-screener", "/market-data", "/cms-data-browser", "/cms-sources",
+    "/data", "/metric-glossary", "/methodology", "/regulatory-calendar",
+    "/state-compare", "/county-explorer", "/geo-map",
+    # Whole-program Care Compare universes — sector-specific, but each is
+    # a national read of a CMS program, which is the distinction that
+    # separates them from the infusion / IFT / imaging studies.
     "/nursing-homes", "/home-health", "/hospice", "/dialysis",
-    "/deal-library", "/deal-library/sponsors", "/verified-deals",
-    "/news", "/pipeline", "/portfolio",
+    "/inpatient-rehab", "/long-term-care-hospital", "/verticals",
+    # Visualization
+    "/visuals", "/chart-builder", "/charts",
+    # Deal TRACKING
+    "/deal-library", "/deal-library/sponsors", "/deal-library/comps",
+    "/verified-deals", "/news", "/market-scan", "/pipeline", "/portfolio",
 )
 
 
@@ -105,6 +140,39 @@ class RulingTests(unittest.TestCase):
         self.assertTrue(is_hidden("/diligence/texas-infusion?metro=DFW"))
         self.assertTrue(is_hidden("/ift/"))
         self.assertFalse(is_hidden("/diligence/hcris-xray?ccn=123456"))
+
+    def test_program_universes_survive_the_sector_sweep(self):
+        # The infusion / IFT / imaging studies are hidden as bespoke
+        # single-sector work. The line is sector BREADTH, not subject:
+        # a whole CMS program's Care Compare universe read nationally is
+        # exactly the aggregation this product is for.
+        for route in ("/nursing-homes", "/home-health", "/hospice",
+                      "/dialysis", "/inpatient-rehab",
+                      "/long-term-care-hospital", "/verticals"):
+            self.assertTrue(is_visible(route), route)
+        for route in ("/radiology-imaging", "/diligence/infusion-markets",
+                      "/ift-markets", "/market/infusion"):
+            self.assertTrue(is_hidden(route), route)
+
+    def test_the_xrays_are_never_swept_up(self):
+        # Named as the thing worth keeping. Each sweep re-checks it.
+        for route in ("/diligence/hcris-xray", "/diligence/xray",
+                      "/diligence/benchmarks", "/diligence/payer-stress",
+                      "/cost-structure"):
+            self.assertNotIn(route, HIDDEN_ROUTES, route)
+            self.assertTrue(is_visible(route), route)
+
+    def test_tracking_stays_execution_goes(self):
+        # The product is deal TRACKING plus CMS aggregation. Tracking a
+        # transaction stays; the artifacts of running one do not.
+        for route in ("/deal-library", "/verified-deals", "/news",
+                      "/market-scan", "/pipeline", "/portfolio"):
+            self.assertTrue(is_visible(route), f"tracking: {route}")
+        for route in ("/diligence/ic-packet", "/diligence/qoe-memo",
+                      "/diligence/cdd-scope", "/diligence/expert-calls",
+                      "/diligence/deal-mc", "/diligence/counterfactual",
+                      "/engagements", "/lp-update"):
+            self.assertTrue(is_hidden(route), f"execution: {route}")
 
     def test_deal_trackers_are_not_swept_up(self):
         # Named carve-out: the trackers follow publicly-reported deals and

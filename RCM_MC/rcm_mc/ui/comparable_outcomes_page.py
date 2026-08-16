@@ -538,8 +538,8 @@ def render_comparable_outcomes_page(
                 universe="corpus",
                 confidence="illustrative",
                 source="Platform deal corpus — real deals with MOIC/IRR modeled where not publicly disclosed, not your fund's realized benchmark. Read the distributions as directional context.",
-                next_action="Carry the comp distribution into the IC narrative",
-                next_href="/diligence/ic-packet",
+                next_action="Check a comparable's cost report directly",
+                next_href="/diligence/hcris-xray",
             )
         )
         # ONE editorial lede under the title — this page stacked three

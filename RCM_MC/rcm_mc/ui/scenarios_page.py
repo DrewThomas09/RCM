@@ -90,23 +90,19 @@ def render_scenarios_page(presets: List[Dict[str, Any]]) -> str:
         f'<p>Each scenario applies multipliers to payer-specific initial denial rates (IDR). '
         f'An IDR multiplier of 1.20 means denials increase 20% from the baseline. '
         f'Scenarios can also shock volume, reimbursement rates, and cost structure.</p>'
-        f'<p style="margin-top:6px;">To test a scenario on a deal: go to '
-        f'<a href="/pressure" style="color:{PALETTE["text_link"]};">Pressure Test</a>, '
-        f'select your deal, and see the risk flags. Or use the '
+        f'<p style="margin-top:6px;">To test a scenario on a deal, use the '
         f'<a href="/analysis" style="color:{PALETTE["text_link"]};">Analysis Workbench</a> '
         f'Scenarios tab for custom overrides.</p>'
         f'</div></div>'
 
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/pressure" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
-        f'Pressure Test a Deal</a>'
-        f'<a href="/analysis" class="cad-btn" style="text-decoration:none;">'
+        f'<a href="/analysis" class="cad-btn cad-btn-primary" style="text-decoration:none;">'
         f'Analysis Workbench</a></div>'
         + ck_next_section(
-            "Apply a scenario to a deal",
-            "/diligence/deal",
+            "Apply a scenario in the Analysis Workbench",
+            "/analysis",
             eyebrow="Up next",
-            italic_word="deal",
+            italic_word="scenario",
         )
     )
     # 2026-05-28 batch 26 · Phase 3 · universal strict 5-block head.

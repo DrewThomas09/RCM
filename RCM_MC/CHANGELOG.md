@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased (2026-08-16b) — second sweep: deal EXECUTION and single-sector studies
+
+Sharpens the framing from "public-data platform" to what it actually is:
+**healthcare-PE deal tracking on top of aggregated CMS data**, with the
+X-rays at the centre. That sentence has a seam in it, and this sweep cuts
+along it. As before, nothing is deleted — all 137 visible routes and every
+hidden one still return 200.
+
+- **Two new rationales** in `_surface_visibility`. `_DEAL_EXECUTION_ROUTES`
+  separates *tracking* a transaction (stays: /deal-library + sponsors +
+  comps, /verified-deals, /news, /market-scan, /pipeline, /portfolio) from
+  the artifacts of *running* one (hidden: IC packets, QoE memos, CDD hub +
+  scope, expert calls, CIM cross-check, counterfactuals, covenant stress,
+  deal Monte Carlo, autopsies, checklists + question ledgers, value plans,
+  roll-up models, LP reporting, /pressure). `_NAMED_ROUTES` carries
+  /conferences — a networking planner, not a dataset.
+- **Single-sector studies** join the Texas-infusion and IFT suites:
+  /radiology-imaging (an atlas organized around named sponsor-backed
+  operators) and /market plus its ~80 `/market/<sector>` M&A writeups
+  (which include the infusion and interfacility-transport reports by
+  name). The line is sector BREADTH, not subject: /nursing-homes,
+  /home-health, /hospice, /dialysis, /inpatient-rehab and
+  /long-term-care-hospital stay, because each reads a whole CMS program's
+  Care Compare universe nationally.
+- **The X-rays stay, and now lead.** /diligence is the CMS filing-read
+  section: its bar and catalog lead with the HCRIS X-Ray, and its pillars
+  became "The X-Rays" and "Regulatory & Outcomes". A test pins the X-rays
+  against every future sweep by name.
+- Fixed the topbar's global diligence-questions pill (a hidden destination
+  reachable from chrome on every page), and repointed ~20 contextual
+  "→ next step" links at the filings.
+- Visible surface: **173 → 137**.
+
 ## Unreleased (2026-08-16) — surface cleanup: hide the pages that aren't public data
 
 Reframes what the platform *offers* around its actual strength: public

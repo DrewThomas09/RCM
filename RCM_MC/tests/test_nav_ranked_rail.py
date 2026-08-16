@@ -99,16 +99,19 @@ class RankedRailTests(unittest.TestCase):
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 1, sec)
 
-    def test_diligence_bar_leads_with_flagship_workbenches(self):
-        # The front face is the analyst playbook in workflow order — identity
-        # → ingest → baseline → X-Ray drill-downs → IC deliverable — not the
-        # LOC-score order (which front-faced the niche TX Infusion Market and
-        # buried HCRIS X-Ray at #19).
+    def test_diligence_bar_leads_with_the_xrays(self):
+        # The front face is the CMS filing reads, deepest first — not the
+        # LOC-score order (which front-faced the niche TX Infusion Market
+        # and buried HCRIS X-Ray at #19). Until 2026-08-16 this bar led
+        # with the per-deal workflow (identity → ingest → … → IC packet);
+        # that machinery is deal EXECUTION and is registry-hidden, so the
+        # X-rays lead now.
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items
         top, _ = _ranked_subnav_items("diligence")
-        self.assertEqual([s["href"] for s in top], [
-            "/diligence/deal", "/diligence/ingest", "/diligence/benchmarks",
-            "/diligence/xray", "/diligence/hcris-xray", "/diligence/ic-packet",
+        self.assertEqual([s["href"] for s in top][:5], [
+            "/diligence/hcris-xray", "/diligence/xray",
+            "/diligence/benchmarks", "/cost-structure",
+            "/diligence/payer-stress",
         ])
 
     def test_flagship_pins_lead_every_pinned_section(self):

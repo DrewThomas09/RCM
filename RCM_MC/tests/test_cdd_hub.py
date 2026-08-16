@@ -52,15 +52,24 @@ class CddHubTests(unittest.TestCase):
                     "/excel-templates"):
             self.assertIn(new, hrefs)
 
-    def test_registered_in_palette_nav_and_breadcrumbs(self):
+    def test_still_resolves_but_is_no_longer_offered(self):
+        # /cdd is commercial-diligence engagement scaffolding — the work of
+        # RUNNING a transaction, not tracking one or reading a filing — and
+        # is registry-hidden as of 2026-08-16. It keeps its breadcrumb
+        # mapping (so a direct visit still resolves its section) and its
+        # palette registry entry (the render-time filter is what drops it),
+        # but the diligence sub-nav no longer carries it.
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _SUB_NAV, _SUB_SECTION_MAP,
+            ck_command_palette,
         )
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/cdd", routes)
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/cdd"))
         self.assertEqual(_SUB_SECTION_MAP.get("/cdd"), "diligence")
-        diligence_hrefs = {e["href"] for e in _SUB_NAV["diligence"]}
-        self.assertIn("/cdd", diligence_hrefs)
+        self.assertNotIn(
+            "/cdd", {e["href"] for e in _SUB_NAV["diligence"]})
+        self.assertNotIn(
+            '"/cdd"', ck_command_palette(_DEFAULT_PALETTE_MODULES))
 
 
 if __name__ == "__main__":

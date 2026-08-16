@@ -730,10 +730,10 @@ def render_portfolio_risk_scan(db_path: str) -> str:
     )
 
     next_up = ck_next_section(
-        "Open the LP update",
-        "/lp-update",
+        "Read a flagged holding's cost report",
+        "/diligence/hcris-xray",
         eyebrow="Up next",
-        italic_word="LP",
+        italic_word="cost report",
     )
     # Drop the legacy `_wc.responsive_container` wrap (max-width
     # 1100px) — see the empty-branch comment above. The page now uses

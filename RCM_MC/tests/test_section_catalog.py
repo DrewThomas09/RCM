@@ -36,13 +36,16 @@ class CatalogRendererTests(unittest.TestCase):
         # illustrative — counted from surface_status, not hand-set.
         # Both links must be VISIBLE surfaces — render_grouped_catalog
         # filters registry-hidden rows and derives the coverage counts from
-        # what survives, so a hidden illustrative page (e.g.
-        # /diligence/management) would contribute nothing to count.
+        # what survives, so a hidden page contributes nothing to the count.
+        # /predictive-screener is the illustrative-tier surface that is
+        # still offered (real HCRIS + a labeled ridge model); the earlier
+        # picks here (/diligence/management, then /diligence/compare) were
+        # each hidden by a later sweep.
         h = render_grouped_catalog(
             section="diligence", title="T", eyebrow="X",
             pillars=[{"title": "G", "eyebrow": "E", "body": "b", "links": [
                 {"href": "/diligence/payer-stress", "label": "A", "blurb": "j"},
-                {"href": "/diligence/compare", "label": "B", "blurb": "j"}]}],
+                {"href": "/predictive-screener", "label": "B", "blurb": "j"}]}],
             explainer_head="h", explainer_body="b", explainer_source="s",
             intro_headline="hi", intro_body="bod")
         # 2026-05-28 style-sweep · the catalog meta-line is now mono
@@ -55,9 +58,13 @@ class CatalogRendererTests(unittest.TestCase):
 
 class DiligenceLandingTests(unittest.TestCase):
     def test_uses_shared_renderer_with_dots(self):
+        # Pillar titles track the 2026-08-16 reframe: /diligence is the
+        # CMS filing-read section now, so "Profile & Health" / "Audit &
+        # Stress" gave way to "The X-Rays" / "Regulatory & Outcomes". The
+        # honesty dots + legend are the durable contract.
         h = render_diligence_index()
-        self.assertIn("Profile &amp; Health", h)   # pillar
-        self.assertIn("Audit &amp; Stress", h)
+        self.assertIn("The X-Rays", h)              # pillar
+        self.assertIn("Regulatory &amp; Outcomes", h)
         self.assertIn("sc-dot", h)                  # honesty dots
         self.assertIn("Illustrative", h)            # legend
 
@@ -65,9 +72,10 @@ class DiligenceLandingTests(unittest.TestCase):
         # The named honesty bug was that management READ AS LIVE on
         # /diligence when its figures are illustrative. The ruling since
         # went further: illustrative-figure surfaces are registry-hidden,
-        # so it isn't listed here at all. The yellow dot + legend stay —
-        # /diligence/compare is still an illustrative surface on the page —
-        # so a reader can still tell a computed row from a live one.
+        # so it isn't listed here at all. The legend keeps its illustrative
+        # swatch regardless of what the page currently lists, so a reader
+        # can still tell a computed row from a live one the moment an
+        # illustrative surface earns its way back onto the catalog.
         h = render_diligence_index()
         self.assertNotIn('href="/diligence/management"', h)
         self.assertIn("#c9a227", h)   # an illustrative (yellow) dot is present

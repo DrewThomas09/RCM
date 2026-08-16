@@ -837,8 +837,7 @@ def _verdict_card(report: PayerStressReport) -> str:
     # path + Copy-share-link + IC/denial drilldown cross-links.
     intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/diligence/ic-packet">Open IC packet →</a>'
-        '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
+        '<a href="/diligence/hcris-xray">Open the cost report →</a>'
     )
     intro = _ps_head(
         eyebrow=f"Payer Stress · {verdict}",
@@ -1106,8 +1105,7 @@ def render_payer_stress_page(
     # 2026-05-28 sweep · strict 5-block head for the main intro path.
     main_intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/diligence/ic-packet">Open IC packet →</a>'
-        '<a href="/diligence/denial-prediction">Open denial drilldown →</a>'
+        '<a href="/diligence/hcris-xray">Open the cost report →</a>'
     )
     main_intro = _ps_head(
         eyebrow="Payer Mix Stress Lab",
@@ -1181,15 +1179,17 @@ def render_payer_stress_page(
         title="Sortable detail · CSV-exportable",
     )
 
+    # The cross-reference row used to hand the P10 drag on to Deal MC,
+    # Bridge Audit and the Covenant Stress Lab — all deal-execution
+    # surfaces, now registry-hidden. It points at the filings instead.
     cross_link = ck_panel(
         '<p class="ck-section-body">'
-        'The P10 EBITDA drag should subtract from '
-        '<a href="/diligence/deal-mc" class="ck-link">→ Deal MC</a> '
-        'base case · feed the '
-        '<a href="/diligence/bridge-audit" class="ck-link">'
-        '→ Bridge Audit</a> payer-repricing lever · and stress-test the '
-        '<a href="/diligence/covenant-stress" class="ck-link">'
-        '→ Covenant Stress Lab</a> DSCR numerator.'
+        'Read this concentration against what the facility actually '
+        'filed: the '
+        '<a href="/diligence/hcris-xray" class="ck-link">→ HCRIS X-Ray</a> '
+        'carries the payer-mix lines straight off the cost report, and '
+        '<a href="/diligence/benchmarks" class="ck-link">→ Benchmarks</a> '
+        'places them against the size and sector cohort.'
         '</p>',
         title="Cross-reference",
     )
@@ -1214,11 +1214,9 @@ def render_payer_stress_page(
         '<li>Recent rate-change history (last 3 renewals) and out-of-network exposure</li>'
         '</ul>'
         '<p class="ck-section-body" style="font-size:12px">'
-        'Next: subtract the P10 drag in '
-        '<a href="/diligence/deal-mc" class="ck-link">Deal MC</a>, '
-        'feed <a href="/diligence/bridge-audit" class="ck-link">Bridge Audit</a>, '
-        'and capture the questions for the '
-        '<a href="/diligence/ic-packet" class="ck-link">IC packet</a>.</p>',
+        'Next: check the filed payer-mix lines in the '
+        '<a href="/diligence/hcris-xray" class="ck-link">HCRIS X-Ray</a>.'
+        '</p>',
         title="Management questions & next actions",
         anchor_id="ps-mgmt",
     )
@@ -1244,10 +1242,10 @@ def render_payer_stress_page(
         + bookmark_hint()
         + '</div>'
         + ck_next_section(
-            "Stress-test the bridge against these payer shifts",
-            "/diligence/bridge-audit",
+            "Read the filed payer-mix lines",
+            "/diligence/hcris-xray",
             eyebrow="Up next",
-            italic_word="bridge",
+            italic_word="filed",
         )
     )
     return chartis_shell(

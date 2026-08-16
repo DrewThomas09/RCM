@@ -17,17 +17,26 @@ visibility ranks, best-first:
      links); they just never read as "a tool we're proud of".
   5. **Hidden** — off every listing surface (``HIDDEN_ROUTES`` +
      ``HIDDEN_PREFIXES`` below): pages whose figures are illustrative
-     rather than sourced, single-target/single-market study suites, and
-     the sponsor-corpus/PE-narrative long tail. The routes still resolve
-     — nothing is deleted, deep links and in-page links keep working —
-     they are simply never *offered* anywhere a reader browses.
+     rather than sourced, single-target/single-sector study suites, the
+     sponsor-corpus/PE-narrative long tail, and the deal-EXECUTION
+     machinery. The routes still resolve — nothing is deleted, deep links
+     and in-page links keep working — they are simply never *offered*
+     anywhere a reader browses.
 
-The product this registry serves is a **public-data verification and
-visualization surface**: load a public CMS / Medicare / Medicaid /
-hospital dataset, see it charted in seconds, and trace every figure back
-to its filing. A page that shows made-up numbers, or that only makes
-sense inside one 2026 deal, actively works against that promise even when
-it renders beautifully — so it goes Hidden, not Catalog.
+The product this registry serves is **healthcare-PE deal tracking on top
+of aggregated CMS data**. Two things, and the seam between them is where
+most of these rulings get made:
+
+  * **Deal tracking** — who acquired what, when, publicly reported and
+    traceable to a source. The trackers, the pipeline, the book.
+  * **CMS aggregation** — the cost-report and Care Compare universes read
+    nationally, and the X-RAYS that drill into a single filing. This is
+    the centre of gravity; when a call is close, favour the filing.
+
+A page that shows made-up numbers, that only makes sense inside one 2026
+transaction, or that is an artifact of *doing* a deal rather than
+tracking one, works against that promise even when it renders
+beautifully — so it goes Hidden, not Catalog.
 
 ``curate_rows`` applies the catalog-level rules to a ranked row list and is
 shared by every generic listing renderer (/tools showcase, the auto-built
@@ -132,12 +141,27 @@ _ILLUSTRATIVE_ROUTES = frozenset({
     "/zbb-tracker",
 })
 
-# 2) SINGLE-STUDY suites — real work, but scoped to one operator or one
-#    metro in one engagement (the Texas infusion market scan; the IFT /
-#    MMT interfacility-transport study). Browsing a national CMS dataset
-#    and landing on "TX Infusion · J-code Bench" reads as a stray page,
-#    because for every reader who is not on that deal it is one. Whole
-#    families go together — see HIDDEN_PREFIXES for the sub-routes.
+# 2) SINGLE-STUDY suites — real work, but scoped to one operator, one
+#    metro, or one narrow sector in one engagement (the Texas infusion
+#    market scan; the IFT / MMT interfacility-transport study; the
+#    radiology/imaging atlas, which is organized around named
+#    sponsor-backed operators). Browsing a national CMS dataset and
+#    landing on "TX Infusion · J-code Bench" reads as a stray page,
+#    because for every reader who is not on that deal it is one.
+#
+#    The line between this and a KEEPER is sector *breadth*, not subject
+#    matter: /nursing-homes, /home-health, /hospice, /dialysis,
+#    /inpatient-rehab and /long-term-care-hospital stay visible because
+#    each reads a whole CMS program's Care Compare universe nationally —
+#    that IS the CMS aggregation this product is for. Infusion, IFT and
+#    imaging are bespoke deal-thesis studies wearing the same clothes.
+#
+#    ``/market`` and its ~80 ``/market/<sector>`` reports go too: they are
+#    sector M&A narrative (who's rolling up what) rather than a read of a
+#    public filing, and the family includes the infusion and
+#    interfacility-transport writeups by name.
+#
+#    Whole families go together — see HIDDEN_PREFIXES for the sub-routes.
 _SINGLE_STUDY_ROUTES = frozenset({
     "/diligence/texas-infusion",
     "/diligence/texas-infusion-continued",
@@ -146,6 +170,8 @@ _SINGLE_STUDY_ROUTES = frozenset({
     "/diligence/tam-sam",
     "/ift",
     "/in-depth-ift-bls-als1-als2-cct",
+    "/radiology-imaging",
+    "/market",
 })
 
 # 3) SPONSOR-CORPUS / PE-NARRATIVE long tail — pages built on the seeded
@@ -170,8 +196,85 @@ _PE_NARRATIVE_ROUTES = frozenset({
     "/sector-intelligence",
 })
 
+# 4) DEAL EXECUTION — the machinery for *running* a deal, as distinct from
+#    *tracking* one. The product is healthcare-PE deal tracking plus CMS
+#    data aggregation; that sentence has a seam in it, and this set is
+#    everything on the far side of it.
+#
+#    TRACKING (stays visible): who bought what, when, for how much, and
+#    what the filings say about them — /deal-library + sponsors + comps,
+#    /verified-deals, /news, /market-scan, /pipeline, /portfolio and its
+#    map/heatmap/monitor/risk-scan/regression reads.
+#
+#    EXECUTION (hidden here): the artifacts of doing a transaction —
+#    IC packets, QoE memos, CDD scoping and expert-call programs, CIM
+#    cross-checks, counterfactuals, covenant stress, deal Monte Carlo,
+#    autopsies, checklists and question ledgers, value plans, roll-up
+#    models, LP reporting. None of it reads a CMS dataset; all of it
+#    presupposes you are inside a live transaction.
+#
+#    The X-RAYS are firmly on the tracking side and stay:
+#    /diligence/hcris-xray, /diligence/xray, /diligence/benchmarks,
+#    /diligence/payer-stress, /cost-structure — these are the CMS
+#    cost-report drill-downs the whole product is built around.
+_DEAL_EXECUTION_ROUTES = frozenset({
+    # Per-deal diligence workbenches
+    "/diligence/deal",
+    "/diligence/deal-autopsy",
+    "/diligence/deal-mc",
+    "/diligence/counterfactual",
+    "/diligence/covenant-stress",
+    "/diligence/bridge-audit",
+    "/diligence/cim-crosscheck",
+    "/diligence/denial-prediction",
+    "/diligence/exit-timing",
+    "/diligence/physician-eu",     # "Provider Economics" — named, and a
+                                   # DATA-REQUIRED stub besides
+    "/diligence/risk-workbench",   # data-required stub
+    "/diligence/snapshot",
+    "/diligence/value",
+    "/diligence/advanced-analytics",   # its own strip says "illustrative
+                                       # worked example"
+    # Commercial-diligence engagement scaffolding
+    "/cdd",
+    "/cdd/tools",
+    "/diligence/cdd-scope",
+    "/diligence/expert-calls",
+    "/engagements",
+    # IC / deliverable artifacts
+    "/diligence/ic-packet",
+    "/diligence/qoe-memo",
+    # Checklists + question ledgers (engagement workflow, not data)
+    "/diligence/checklist",
+    "/diligence-checklist",
+    "/diligence/questions",
+    "/diligence/ingest",
+    # Deal-vs-deal comparison — illustrative tier on both aliases
+    "/compare",
+    "/diligence/compare",
+    # Transaction modelling + stress
+    "/pipeline/rollup",
+    "/pressure",
+    "/portfolio/monte-carlo",
+    # Value-creation execution + fund administration
+    "/initiatives",
+    "/variance",
+    "/lp-update",
+})
+
+# 5) NAMED ONE-OFFS — surfaces called out directly rather than fitting a
+#    class. /conferences is a healthcare-PE conference calendar: a
+#    networking planner, not a dataset or a tracked transaction.
+_NAMED_ROUTES = frozenset({
+    "/conferences",
+})
+
 HIDDEN_ROUTES = (
-    _ILLUSTRATIVE_ROUTES | _SINGLE_STUDY_ROUTES | _PE_NARRATIVE_ROUTES
+    _ILLUSTRATIVE_ROUTES
+    | _SINGLE_STUDY_ROUTES
+    | _PE_NARRATIVE_ROUTES
+    | _DEAL_EXECUTION_ROUTES
+    | _NAMED_ROUTES
 )
 
 # Route families where every sub-route is hidden with its parent. A prefix

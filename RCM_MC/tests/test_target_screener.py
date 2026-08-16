@@ -1514,15 +1514,15 @@ class RowCimActionTests(unittest.TestCase):
         return len(re.findall(
             r'class="ts-act" href="/diligence/cim-crosscheck\?state=', html))
 
-    def test_hospital_rows_carry_scoped_cim_action(self):
-        import re
+    def test_no_row_carries_a_cim_action_any_more(self):
+        # Hospital rows used to carry a one-click into CIM Cross-Check,
+        # pre-scoped to the row's state + CCN. That surface checks
+        # management's claims during a live transaction — deal execution —
+        # and is registry-hidden as of 2026-08-16, so the screener no
+        # longer offers it from any vertical.
         from rcm_mc.ui.target_screener_page import render_target_screener
         h = render_target_screener({"vertical": ["hospitals"], "state": ["TX"]})
-        self.assertGreater(self._row_cim_links(h), 0)
-        m = re.search(
-            r'class="ts-act" href="/diligence/cim-crosscheck\?state=([A-Z]{2})&ccn=(\d+)', h)
-        self.assertIsNotNone(m)
-        self.assertEqual(m.group(1), "TX")   # carries the row's state
+        self.assertEqual(self._row_cim_links(h), 0)
 
     def test_non_hospital_vertical_has_no_row_cim_action(self):
         from rcm_mc.ui.target_screener_page import render_target_screener

@@ -70,25 +70,20 @@ _SECTIONS: Dict[str, Dict] = {
                  {"href": "/geo-metrics", "label": "Geo Metrics & Sources",
                   "blurb": "What every geo metric measures + coverage."},
              ]},
-            {"title": "Origination", "eyebrow": "FILL THE FUNNEL",
-             "body": "Where the next opportunities come from.",
-             "links": [
-                 {"href": "/conferences", "label": "Conferences",
-                  "blurb": "Healthcare-PE conference calendar + target lists."},
-             ]},
         ],
     },
     "pipeline": {
         "title": "Pipeline",
         "eyebrow": "LIVE DEALS",
-        "explainer_head": "The live-deal workspace at a glance.",
-        "explainer_body": "Track real opportunities once they're promoted from "
-        "Source: stage them toward IC, and rank the funnel by quality and risk.",
-        "intro_headline": "Move real deals toward IC.",
-        "intro_italic": "real",
-        "intro_body": "The opportunities you're actively working, with the "
-        "scoring to prioritize them.",
-        "next": {"label": "Take a live deal into the Diligence playbook", "href": "/diligence", "italic": "Diligence"},
+        "explainer_head": "The tracked-deal workspace at a glance.",
+        "explainer_body": "The transactions you're following, promoted from a "
+        "Source screen or entered by hand — each one linkable to the CMS "
+        "filings behind the target.",
+        "intro_headline": "Track the deals, then read the filings.",
+        "intro_italic": "filings",
+        "intro_body": "The transactions you're following, and the bridge from "
+        "a tracked target to its cost report.",
+        "next": {"label": "Take a tracked target into the X-Rays", "href": "/diligence", "italic": "X-Rays"},
         "pillars": [
             {"title": "Build the pipeline", "eyebrow": "TRACK LIVE DEALS",
              "body": "Every opportunity you're working, staged toward IC.",
@@ -221,8 +216,6 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "CMS Care Compare: hospice providers."},
                  {"href": "/dialysis", "label": "Dialysis",
                   "blurb": "CMS Care Compare: dialysis facilities."},
-                 {"href": "/radiology-imaging", "label": "Radiology & Imaging",
-                  "blurb": "Imaging claims, coverage, and payer mix."},
                  {"href": "/health-system-lookup", "label": "Health System Lookup",
                   "blurb": "Find a system and its member facilities."},
                  {"href": "/ma-penetration", "label": "MA Penetration",
