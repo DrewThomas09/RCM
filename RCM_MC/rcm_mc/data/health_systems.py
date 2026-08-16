@@ -6110,6 +6110,77 @@ MARKET_REGISTRY: Tuple[SystemDef, ...] = (
         KIND_NONPROFIT, FOCUS_HOSPICE, "OH",
         patterns=(),
     ),
+
+    SystemDef(
+        "andrews_county_hospital_district", "Andrews County Hospital District",
+        KIND_GOVERNMENT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "bst_health_services", "Bst Health Services Corp",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "c_c_young_memorial", "C C Young Memorial Home",
+        KIND_NONPROFIT, FOCUS_HOSPICE, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "completecare_home_health", "Completecare Home Health Llc",
+        KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "electra_hospital_district", "Electra Hospital District",
+        KIND_GOVERNMENT, FOCUS_SNF, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "hospice_care_team", "Hospice Care Team, Inc",
+        KIND_FOR_PROFIT, FOCUS_HOSPICE, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "kjc_legacy", "Kjc Legacy Llc",
+        KIND_FOR_PROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "pecos_county_memorial_hospital", "Pecos County Memorial Hospital District",
+        KIND_GOVERNMENT, FOCUS_HOSPICE, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "reeves_county_hospital_district", "Reeves County Hospital District",
+        KIND_FOR_PROFIT, FOCUS_HOSPICE, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "southern_ohio_medical_center", "Southern Ohio Medical Center",
+        KIND_FOR_PROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
+    SystemDef(
+        "sunrise_home_health_services", "Sunrise Home Health Services of America, Inc.",
+        KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "texas_total_care", "Texas Total Care,inc",
+        KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "waco_bluebonnet_holdings", "Waco Bluebonnet Holdings, Inc.",
+        KIND_FOR_PROFIT, FOCUS_HOME_HEALTH, "TX",
+        patterns=(),
+    ),
+    SystemDef(
+        "wyandot_memorial_hospital", "Wyandot Memorial Hospital",
+        KIND_FOR_PROFIT, FOCUS_HOSPICE, "OH",
+        patterns=(),
+    ),
 )
 
 
@@ -6185,6 +6256,34 @@ CHAIN_ALIASES: Dict[str, str] = {
 # override is for when the name genuinely cannot carry the answer.
 
 CCN_OVERRIDES: Dict[str, str] = {
+    "457596": "andrews_county_hospital_district",
+    "676175": "andrews_county_hospital_district",
+    "671624": "bst_health_services",
+    "676041": "bst_health_services",
+    "451790": "c_c_young_memorial",
+    "675592": "c_c_young_memorial",
+    "457901": "completecare_home_health",
+    "741504": "completecare_home_health",
+    "675021": "electra_hospital_district",
+    "677142": "electra_hospital_district",
+    "451508": "hospice_care_team",
+    "671656": "hospice_care_team",
+    "361743": "kjc_legacy",
+    "369403": "kjc_legacy",
+    "671732": "pecos_county_memorial_hospital",
+    "673107": "pecos_county_memorial_hospital",
+    "451660": "reeves_county_hospital_district",
+    "677210": "reeves_county_hospital_district",
+    "361545": "southern_ohio_medical_center",
+    "367087": "southern_ohio_medical_center",
+    "457937": "sunrise_home_health_services",
+    "459463": "sunrise_home_health_services",
+    "458025": "texas_total_care",
+    "671701": "texas_total_care",
+    "453141": "waco_bluebonnet_holdings",
+    "671532": "waco_bluebonnet_holdings",
+    "361535": "wyandot_memorial_hospital",
+    "367001": "wyandot_memorial_hospital",
     "361505": "blanchard_valley_home_care",
     "367102": "blanchard_valley_home_care",
     "365353": "cfc_managed_services",
