@@ -254,8 +254,16 @@ class RealRegisterTests(unittest.TestCase):
 
     def test_the_denominator_is_reported_beside_the_finding(self) -> None:
         """"1,185 operators discovered" without "out of 33,998 unmapped"
-        reads like the gap is closed when most of it is not."""
-        self.assertGreater(self.cov["unmapped_operating"], 30_000)
+        reads like the gap is closed when most of it is not.
+
+        The floor here used to be a literal 30,000 and the ownership
+        harvest walked the denominator through it — a test asserting
+        the gap stays large fails precisely when the gap is being
+        closed, which is backwards. What has to hold is that the
+        denominator is reported and that discovery is not mistaken for
+        having closed it.
+        """
+        self.assertGreater(self.cov["unmapped_operating"], 0)
         self.assertLess(self.cov["facilities_in_confident_groups"],
                         self.cov["unmapped_operating"] * 0.25)
 
