@@ -384,10 +384,13 @@ def render_methodology() -> str:
         '<a href="/verticals" class="cad-btn">Healthcare Verticals</a> '
         '<a href="/methodology" class="cad-btn">Reference Library</a> '
         '<a href="/cms-sources" class="cad-btn">CMS Sources</a> '
-        '<a href="/data-intelligence" class="cad-btn">Data Intelligence</a> '
-        # /model-validation is registry-hidden (model plumbing, not a
-        # provider-data read); the methodology text itself still documents it.
-        ''
+        # /data-intelligence was the third of nine competing data
+        # catalogs and went on 2026-08-17; /data-quality is the one that
+        # says how complete each source is, which is what a methodology
+        # reader is after. /model-validation is registry-hidden (model
+        # plumbing, not a provider-data read); the methodology text
+        # itself still documents it.
+        '<a href="/data-quality" class="cad-btn">Data Quality</a> '
         '</p>',
         title="Related References",
     )

@@ -598,14 +598,23 @@ class WorkbenchShellTests(unittest.TestCase):
         ])
 
     def test_next_steps_preserves_all_pre_existing_routes(self):
-        # The five cross-link routes the legacy paragraph carried
-        # must still appear so the partner doesn't lose any
-        # navigation affordance.
+        # The cross-link routes the legacy paragraph carried must still
+        # appear so the partner doesn't lose a navigation affordance.
+        # /market-intel/geo left the list on 2026-08-17 — it is licensed
+        # SimplyAnalytics material rather than a CMS read and is
+        # registry-hidden — and /state-rankings, the geography scoring
+        # the product computes from CMS, took its slot. The point of the
+        # test is that the step still offers a way to rank markets
+        # first, so it asserts the replacement is there and the hidden
+        # one is not, rather than dropping the row.
+        from rcm_mc.ui._surface_visibility import is_hidden
         h = self._render()
-        for route in ("/geo-intel", "/market-intel/geo",
+        for route in ("/geo-intel", "/state-rankings",
                       "/diligence/hcris-xray", "/diligence/xray",
                       "/pipeline"):
             self.assertIn(route, h, f"route {route} missing")
+        self.assertTrue(is_hidden("/market-intel/geo"))
+        self.assertNotIn("/market-intel/geo", h)
 
     def test_map_filter_banner_renders_when_state_selected(self):
         h = self._render(state="TX")

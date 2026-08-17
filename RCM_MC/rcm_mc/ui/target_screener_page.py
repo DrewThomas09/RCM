@@ -436,8 +436,13 @@ _LAYERS = [
     {"key": "age65", "label": "Age 65+", "live": True, "geo": "age_65_plus"},
     {"key": "income", "label": "Median HH income", "live": True, "geo": "median_income"},
     {"key": "uninsured", "label": "Uninsured %", "live": True, "geo": "uninsured_acs"},
-    {"key": "ma_penetration", "label": "MA penetration", "live": False, "href": "/geo-intel"},
-    {"key": "market_score", "label": "Market opportunity", "live": False, "href": "/market-intel/geo"},
+    # Both are "not shaded here, go read it at the source" links. MA
+    # penetration has its own national surface; market opportunity used
+    # to point at /market-intel/geo, which went on 2026-08-17 as licensed
+    # SimplyAnalytics material, so it points at the state rankings the
+    # product computes from CMS instead.
+    {"key": "ma_penetration", "label": "MA penetration", "live": False, "href": "/ma-penetration"},
+    {"key": "market_score", "label": "Market opportunity", "live": False, "href": "/state-rankings"},
 ]
 _LAYER_BY_KEY = {ly["key"]: ly for ly in _LAYERS}
 
@@ -1367,11 +1372,13 @@ def _render_table(vertical: str, qs: Dict[str, List[str]]) -> str:
            + (f"&state={state}" if state else "") + '">clear</a>'
            if refine_open else "")
         + '</form>'
-        # Predicted values aren't in this screen (it's all live CMS data) —
-        # point the partner to where modelled margins/uplift live.
+        # This pointed at /predictive-screener for "predicted margins &
+        # RCM uplift". That surface was the last visible one still tiered
+        # illustrative and went on 2026-08-17, so the honest line is that
+        # the product does not offer a predicted figure here at all.
         + (' <p class="ck-section-body" style="font-size:11px;margin:8px 0 0;">'
-           'Looking for <em>predicted</em> margins &amp; RCM uplift? → '
-           '<a class="ck-link" href="/predictive-screener">Predictive Screener</a>.'
+           'Every column here is a filed figure. Nothing on this screen '
+           'is modelled or predicted.'
            '</p>' if has_basis else "")
         + '</details>'
     )
@@ -2098,8 +2105,8 @@ def _screen_main(vertical: str, qs: Dict[str, List[str]], ck) -> str:
             '<div class="ts-next-step-how">'
             'Score the geographies before the providers: '
             '<a href="/geo-intel" class="ck-link">Geographic '
-            'Intelligence</a> or <a href="/market-intel/geo" '
-            'class="ck-link">Geographic Market Intelligence</a>.'
+            'Intelligence</a> or <a href="/state-rankings" '
+            'class="ck-link">State Rankings</a>.'
             '</div>'
             '</div>'
             '</li>'

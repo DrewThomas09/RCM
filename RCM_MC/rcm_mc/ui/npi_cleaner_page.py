@@ -671,8 +671,9 @@ def _body() -> str:
     history_link = ck_arrow_link("Run history", "/npi-cleaner/history")
     bridge_eyebrow = ck_eyebrow("NEXT STEP · ANALYSIS")
     setup_eyebrow = ck_eyebrow("CLEANER SETUP & FEEDBACK")
-    catalog_link = ck_arrow_link("Browse the full data catalog",
-                                 "/data/catalog")
+    # /data/catalog was one of nine competing data catalogs and went on
+    # 2026-08-17; /data is the canonical inventory it duplicated.
+    catalog_link = ck_arrow_link("Browse the full data catalog", "/data")
     return f"""
 {head}
 <div class="npi-wrap">

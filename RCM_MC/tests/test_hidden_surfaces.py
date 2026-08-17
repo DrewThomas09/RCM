@@ -502,6 +502,58 @@ class StillServesTests(unittest.TestCase):
         for route in HIDDEN_SAMPLE:
             self.assertEqual(self._status(route), 200, route)
 
+    def _body(self, path: str) -> str:
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{self.port}{path}", timeout=30,
+        ) as resp:
+            return resp.read().decode("utf-8", "replace")
+
+    def test_no_visible_page_offers_a_hidden_one(self):
+        """The end-to-end version of every ruling in this module.
+
+        The tests above each check one construct — a nav rail, a palette,
+        a catalog renderer — and every one of them passed while
+        /pipeline was still handing readers a PRIMARY BUTTON and an
+        empty-state CTA to /predictive-screener, /verticals four buttons
+        to /import, and /data three to a hidden state map. Construct
+        tests find what you thought to look at.
+
+        So this one walks every visible page on a live server and looks
+        at what a reader could actually click. The scope is anchors
+        carrying a card / tile / button / link CLASS — a browsable offer.
+        Prose links inside body copy are deliberately NOT caught: hidden
+        is a browse ruling, and an in-page reference to a still-serving
+        route is exactly what "nothing is deleted" is for.
+
+        /my/<owner> is exempt, as everywhere else: it is the topbar user
+        menu, which ships on every page by design.
+        """
+        card_a = re.compile(
+            r'<a[^>]*class="([^"]*(?:card|tile|link|item|row|chip|cta|btn)'
+            r'[^"]*)"[^>]*href="(/[^"#?]*)', re.I)
+        card_b = re.compile(
+            r'<a[^>]*href="(/[^"#?]*)"[^>]*class="([^"]*(?:card|tile|link'
+            r'|item|row|chip|cta|btn)[^"]*)"', re.I)
+        from rcm_mc.server import RCMHandler
+        pages = [r for r in RCMHandler._discover_all_routes(include_hidden=True)
+                 if is_visible(r)]
+        self.assertTrue(pages, "no visible pages to walk")
+        leaks = []
+        for page in pages:
+            try:
+                body = self._body(page)
+            except Exception:            # non-HTML (CSV downloads) etc.
+                continue
+            hits = ([(h, c) for c, h in card_a.findall(body)]
+                    + list(card_b.findall(body)))
+            for href, cls in hits:
+                if href.startswith("/my/") or href == "/my":
+                    continue
+                if is_hidden(href):
+                    leaks.append(f"{page} offers {href} (.{cls.strip()})")
+        self.assertEqual(sorted(set(leaks)), [],
+                         "visible pages offering hidden routes")
+
 
 if __name__ == "__main__":
     unittest.main()

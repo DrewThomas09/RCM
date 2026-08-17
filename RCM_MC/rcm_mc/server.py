@@ -16825,8 +16825,11 @@ class RCMHandler(BaseHTTPRequestHandler):
                     ),
                     eyebrow="GET STARTED",
                     icon="★",
-                    cta_label="Browse Portfolio",
-                    cta_href="/portfolio",
+                    # Was "Browse Portfolio" → /portfolio, hidden on
+                    # 2026-08-17 with the rest of own-book ops. The
+                    # deals you can star are the ones in the pipeline.
+                    cta_label="Open the Pipeline",
+                    cta_href="/pipeline",
                 )
             )
             self._send_html(shell(

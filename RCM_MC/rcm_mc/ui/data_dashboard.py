@@ -413,16 +413,19 @@ def render_data_dashboard(hcris_df: pd.DataFrame) -> str:
     )
 
     # ── Nav ──
+    # Four of this row's five destinations went with the 2026-08-17
+    # sweeps: Quant Lab and ML Insights (model plumbing and predicted
+    # KPIs), Regression (an OLS the reader has to configure) and Market
+    # Heatmap (the state-map family). From the data catalog the useful
+    # next steps are the coverage read and the surfaces that consume it.
     nav = (
         f'<div class="cad-card" style="display:flex;gap:8px;flex-wrap:wrap;">'
-        f'<a href="/quant-lab" class="cad-btn cad-btn-primary" '
-        f'style="text-decoration:none;">Quant Lab</a>'
-        f'<a href="/ml-insights" class="cad-btn" '
-        f'style="text-decoration:none;">ML Insights</a>'
-        f'<a href="/portfolio/regression" class="cad-btn" '
-        f'style="text-decoration:none;">Regression</a>'
-        f'<a href="/market-data/map" class="cad-btn" '
-        f'style="text-decoration:none;">Market Heatmap</a>'
+        f'<a href="/data-quality" class="cad-btn cad-btn-primary" '
+        f'style="text-decoration:none;">Data Quality</a>'
+        f'<a href="/cms-sources" class="cad-btn" '
+        f'style="text-decoration:none;">CMS Sources</a>'
+        f'<a href="/verticals" class="cad-btn" '
+        f'style="text-decoration:none;">Provider Verticals</a>'
         f'<a href="/screen" class="cad-btn" '
         f'style="text-decoration:none;">Screener</a>'
         f'</div>'

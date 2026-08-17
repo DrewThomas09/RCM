@@ -34,7 +34,10 @@ def render_verticals() -> str:
                        "cost to collect, payer mix, bed count, case mix index, occupancy, margins",
             "models": ["DCF", "LBO", "3-Statement", "EBITDA Bridge", "Denial Drivers",
                        "Market Moat", "Pressure Test", "Monte Carlo"],
-            "link": "/market-data/map",
+            # Was /market-data/map, hidden on 2026-08-17 with the
+            # state-map family. /screen is the HCRIS hospital filter
+            # this card's copy actually describes.
+            "link": "/screen",
         },
         {
             "name": "Ambulatory Surgery Centers (ASC)",
@@ -106,11 +109,15 @@ def render_verticals() -> str:
             f'<div style="margin-bottom:8px;">{model_badges}</div>'
             f'<div style="display:flex;gap:8px;">'
             f'<a href="{v["link"]}" class="cad-btn cad-btn-primary" style="text-decoration:none;font-size:12px;">'
-            f'{"Screen Hospitals" if v["link"] == "/market-data/map" else "View in Library"}</a>'
-            f'<a href="/screen" class="cad-btn" style="text-decoration:none;font-size:12px;">'
-            f'Hospital Screener</a>'
-            f'<a href="/import" class="cad-btn" style="text-decoration:none;font-size:12px;">'
-            f'Import Deal</a>'
+            f'{"Screen Hospitals" if v["link"] == "/screen" else "View in Library"}</a>'
+            # Was Hospital Screener → /screen (now the primary button on
+            # the hospital card) and Import Deal → /import, hidden on
+            # 2026-08-17 as a pure input form. The X-ray and the pipeline
+            # front door are where a reader goes from a vertical card.
+            f'<a href="/diligence/xray" class="cad-btn" style="text-decoration:none;font-size:12px;">'
+            f'CMS X-Ray</a>'
+            f'<a href="/new-deal" class="cad-btn" style="text-decoration:none;font-size:12px;">'
+            f'Add to Pipeline</a>'
             f'</div>'
             f'</div>'
         )
