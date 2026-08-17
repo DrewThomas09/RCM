@@ -88,13 +88,17 @@ class TestMegaMenuOrdinalsDropped(unittest.TestCase):
         text = self._nav_text()
         # Pick representative leaves we know are present in
         # _surface_rankings for each section.
+        # One representative leaf per section that still exists. "RCM
+        # Benchmarks" (Library) and "Risk Scan" (Portfolio) were the
+        # samples here until the bloat sweep hid the RCM benchmark bands
+        # and dropped the Portfolio tab; Data Catalog and Deal Library
+        # replace them.
         for label in (
             "Target Screener",   # Source dropdown
             "Deal Pipeline",     # Pipeline dropdown
             "HCRIS X-Ray",       # Diligence dropdown
-            "RCM Benchmarks",    # Library dropdown
+            "Data Catalog",      # Library dropdown
             "Regulatory Calendar",  # Research dropdown
-            "Risk Scan",         # Portfolio dropdown
         ):
             self.assertIn(label, text,
                           f"dropdown destination {label!r} missing")

@@ -250,6 +250,26 @@ class ListingSurfaceTests(unittest.TestCase):
                 self.assertFalse(is_hidden(item["href"]),
                                  f"{section} nav bar: {item}")
 
+    def test_keyboard_quick_jump_offers_nothing_hidden(self):
+        # The vim-style "g + letter" table in _SHORTCUTS_JS is chrome you
+        # cannot see: it ships on every page and navigates on a keypress.
+        # It kept `g o → /portfolio` and `g d → /diligence/deal` after
+        # both were hidden, which is an offer of the route however
+        # invisible. `g m → /my/<owner>` is exempt for the same reason the
+        # topbar user menu is — personal entry point, not a catalog entry.
+        from rcm_mc.ui._chartis_kit import _SHORTCUTS_JS, _SHORTCUTS_HTML
+        table = re.search(r"var GO_TARGETS = \{(.*?)\};", _SHORTCUTS_JS,
+                          re.S)
+        self.assertIsNotNone(table, "GO_TARGETS table not found")
+        targets = re.findall(r"'(/[^']*)'", table.group(1))
+        self.assertTrue(targets)
+        for route in targets:
+            if route.startswith("/my/"):
+                continue
+            self.assertFalse(is_hidden(route), f"g-jump offers {route}")
+        # The help dialog must not advertise a jump the table dropped.
+        self.assertNotIn("Portfolio", _SHORTCUTS_HTML)
+
     def test_command_palette_offers_nothing_hidden(self):
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, ck_command_palette,

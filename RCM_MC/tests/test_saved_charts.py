@@ -125,11 +125,19 @@ class SavedChartsPageTests(unittest.TestCase):
             _DEFAULT_PALETTE_MODULES, _SUB_NAV, _SUB_SECTION_MAP)
         from rcm_mc.assistant.context.guide_context_packet import (
             build_guide_context_packet)
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/charts", routes)
+        # /charts stores Chart Builder + Exhibit Composer configurations;
+        # both builders are registry-hidden as of the 2026-08-17 bloat
+        # sweep, so the saved-config library went with them. Guide context
+        # and breadcrumbs stay — hiding is a browse ruling, not a
+        # reclassification.
+        from rcm_mc.ui._chartis_kit import ck_command_palette
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/charts"))
         self.assertEqual(_SUB_SECTION_MAP.get("/charts"), "research")
-        self.assertIn("/charts",
-                      [e["href"] for e in _SUB_NAV["research"]])
+        self.assertNotIn("/charts",
+                         [e["href"] for e in _SUB_NAV["research"]])
+        self.assertNotIn("/charts",
+                         ck_command_palette(_DEFAULT_PALETTE_MODULES))
         self.assertIsNotNone(
             build_guide_context_packet("/charts").page_context)
 

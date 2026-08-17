@@ -10596,10 +10596,9 @@ _SHORTCUTS_HTML = """
         <dl>
           <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Home</dd>
           <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>Pipeline</dd>
-          <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Diligence (deal profile)</dd>
+          <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Diligence</dd>
           <dt><kbd>g</kbd> <kbd>l</kbd></dt><dd>Library</dd>
           <dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>Research</dd>
-          <dt><kbd>g</kbd> <kbd>o</kbd></dt><dd>Portfolio</dd>
           <dt><kbd>g</kbd> <kbd>a</kbd></dt><dd>Alerts</dd>
           <dt><kbd>g</kbd> <kbd>w</kbd></dt><dd>Watchlist</dd>
           <dt><kbd>g</kbd> <kbd>m</kbd></dt><dd>My Dashboard</dd>
@@ -10641,16 +10640,25 @@ _SHORTCUTS_JS = """
  * shortcut works without relying on e.key === '?'.
  *
  * Also implements vim/Linear-style "g + letter" jump:
- *   g h → /home          g p → /pipeline       g d → /diligence/deal
- *   g l → /library       g r → /research       g o → /portfolio
+ *   g h → /home          g p → /pipeline       g d → /diligence
+ *   g l → /library       g r → /research       g m → /my/<owner>
  *   g a → /alerts        g w → /watchlist      g k → opens palette
  */
 (function(){
   /* g+letter prefix-jump table. Keep separate from shortcut dialog
-   * so future expansion (g + I = ic packet, etc.) lives in one place. */
+   * so future expansion (g + I = ic packet, etc.) lives in one place.
+   *
+   * 2026-08-17 hide sweep: `g o → /portfolio` dropped and
+   * `g d` repointed from /diligence/deal to the /diligence catalog.
+   * Both old targets are registry-hidden, and a keyboard shortcut
+   * baked into every page is an offer of the route just as much as a
+   * nav link is — "hidden everywhere" has to include the chrome you
+   * cannot see. `g m` stays: /my/<owner> is hidden from the catalog
+   * but keeps its personal entry points, the same exemption
+   * INTERNAL_ROUTES documents for /users. */
   var GO_TARGETS = {
-    h: '/home', p: '/pipeline', d: '/diligence/deal',
-    l: '/library', r: '/research', o: '/portfolio',
+    h: '/home', p: '/pipeline', d: '/diligence',
+    l: '/library', r: '/research',
     a: '/alerts', w: '/watchlist', m: '/my/AT',
   };
   var goPending = false;

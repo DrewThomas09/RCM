@@ -131,21 +131,27 @@ class TestMegaMenuDropdownLabelsAreNonRecursive(unittest.TestCase):
         if "/library" in section or "Deal Corpus" in section:
             self.assertIn("Deal Corpus", section)
 
-    def test_portfolio_dropdown_excludes_recursive_portfolio_label(self):
+    def test_no_dropdown_repeats_its_own_section_label(self):
+        # This was written against the Portfolio dropdown, which listed a
+        # bare "Portfolio" leaf inside the "Portfolio ▾" menu. That tab was
+        # dropped in the 2026-08-17 bloat sweep, so the original case is
+        # gone — but the bug class is not, so the guard now runs over every
+        # section that still exists.
+        from rcm_mc.ui._chartis_kit import _CORPUS_NAV
         text = self._nav_text()
-        idx = text.find("Portfolio ▾")
-        self.assertGreater(idx, -1)
-        end = text.find("All Portfolio tools", idx)
-        section = text[idx:end if end > -1 else idx + 800]
-        # Recursion would be "0N. Portfolio " (no qualifier).
-        # "Portfolio Map" is a different route and stays.
-        m = re.search(r"\b0\d\. Portfolio\b(?! Map)", section)
-        self.assertIsNone(
-            m, "Portfolio dropdown still contains a 'Portfolio' item "
-               f"(recursive). Section text: {section[:300]!r}")
-        # Same conditional pin as the library twin: present ⇒ relabeled.
-        if "/portfolio" in section or "Overview" in section:
-            self.assertIn("Overview", section)
+        for entry in _CORPUS_NAV:
+            label = entry["label"]
+            if label == "Home":
+                continue
+            idx = text.find(f"{label} ▾")
+            if idx == -1:
+                continue
+            end = text.find(f"All {label} tools", idx)
+            section = text[idx:end if end > -1 else idx + 800]
+            m = re.search(rf"\b0\d\. {re.escape(label)}\b(?! \w)", section)
+            self.assertIsNone(
+                m, f"{label} dropdown contains a recursive '{label}' item. "
+                   f"Section text: {section[:300]!r}")
 
     def test_routes_still_resolve(self):
         """Relabeling must not break the routes themselves."""
