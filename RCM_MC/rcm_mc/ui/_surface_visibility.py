@@ -16,27 +16,29 @@ visibility ranks, best-first:
      remain reachable directly (and admin pages keep their user-menu
      links); they just never read as "a tool we're proud of".
   5. **Hidden** — off every listing surface (``HIDDEN_ROUTES`` +
-     ``HIDDEN_PREFIXES`` below): pages whose figures are illustrative
-     rather than sourced, single-target/single-sector study suites, the
-     sponsor-corpus/PE-narrative long tail, and the deal-EXECUTION
-     machinery. The routes still resolve — nothing is deleted, deep links
-     and in-page links keep working — they are simply never *offered*
-     anywhere a reader browses.
+     ``HIDDEN_PREFIXES`` below): illustrative-figure pages,
+     single-target/single-sector study suites, the sponsor-corpus/
+     PE-narrative long tail, the deal-EXECUTION machinery, and the bloat
+     that is simply unrelated to what this product does. The routes still
+     resolve — nothing is deleted, deep links and in-page links keep
+     working — they are simply never *offered* anywhere a reader browses.
 
-The product this registry serves is **healthcare-PE deal tracking on top
-of aggregated CMS data**. Two things, and the seam between them is where
-most of these rulings get made:
+The product this registry serves does **three** things well, and the
+rulings below all come down to whether a page is one of them:
 
-  * **Deal tracking** — who acquired what, when, publicly reported and
-    traceable to a source. The trackers, the pipeline, the book.
-  * **CMS aggregation** — the cost-report and Care Compare universes read
-    nationally, and the X-RAYS that drill into a single filing. This is
-    the centre of gravity; when a call is close, favour the filing.
+  1. **Display information about providers** — hospitals, health systems,
+     and the other outpatient services (SNF, home health, hospice,
+     dialysis, IRF, LTCH). The X-RAYS are the centre of gravity: when a
+     call is close, favour the filing.
+  2. **Scan that universe** — the screeners and lookups that find a
+     facility, a system, or a market inside it.
+  3. **Track deals in the space** — who acquired what, publicly reported
+     and traceable to a source.
 
 A page that shows made-up numbers, that only makes sense inside one 2026
-transaction, or that is an artifact of *doing* a deal rather than
-tracking one, works against that promise even when it renders
-beautifully — so it goes Hidden, not Catalog.
+transaction, that is an artifact of *doing* a deal rather than tracking
+one, or that is none of the three above, works against that promise even
+when it renders beautifully — so it goes Hidden, not Catalog.
 
 ``curate_rows`` applies the catalog-level rules to a ranked row list and is
 shared by every generic listing renderer (/tools showcase, the auto-built
@@ -269,12 +271,124 @@ _NAMED_ROUTES = frozenset({
     "/conferences",
 })
 
+# 6) BLOAT — pages unrelated to what this product is actually good at.
+#    Three things, and everything here is none of them:
+#
+#      1. Displaying information about hospitals, health systems and other
+#         outpatient services — the X-rays, the Care Compare universes,
+#         the provider-identity files, the geography.
+#      2. The scanners: searching that universe for something.
+#      3. Deal tracking in the space: who acquired what, publicly reported.
+#
+#    Two judgement calls worth recording, because the route NAME misleads
+#    in both cases and a future sweep will be tempted to redo them:
+#
+#      * ``/portfolio/regression`` STAYS. Despite the ``/portfolio/``
+#        namespace it is an interactive OLS regression over the CMS HCRIS
+#        universe — provider-data display, not portfolio ops.
+#      * ``/rate-environment`` STAYS. It reads as market fluff; it is
+#        setting-level CMS payment updates (IPPS, OPPS, PFS, ASC, SNF,
+#        HH, Hospice), which is exactly the reimbursement backdrop for
+#        the facility types above.
+_BLOAT_ROUTES = frozenset({
+    # ── Portfolio operations ────────────────────────────────────────
+    # Running your own book. Deal tracking is about the SPACE — who
+    # bought what — not about managing holdings you already own.
+    "/portfolio",
+    "/portfolio/heatmap",
+    "/portfolio/map",
+    "/portfolio/monitor",
+    "/portfolio/risk-scan",
+    "/cohorts",
+    "/owners",
+    # ── Model plumbing ─────────────────────────────────────────────
+    # The internals of the prediction stack rather than a read of the
+    # provider universe. (/predictive-screener and /ml-insights stay —
+    # both are reads OVER the public hospital universe, which is the
+    # product; these are the machinery behind them.)
+    "/quant-lab",
+    "/scenarios",
+    "/surrogate",
+    "/calibration",
+    "/model-validation",
+    "/models/importance",
+    "/models/quality",
+    # ── Deal-workflow chrome ───────────────────────────────────────
+    # Personal/portfolio task management. /alerts and /watchlist stay:
+    # watching a provider or a tracked deal is part of tracking.
+    #
+    # ``/my/<owner>`` is hidden as a CATALOG entry but keeps its link in
+    # the topbar user menu — the same exemption INTERNAL_ROUTES already
+    # documents for /users ("admin pages keep their user-menu links").
+    # Account chrome is not a browse surface; a reader is not being
+    # *offered* a destination when they open their own avatar menu.
+    "/activity",
+    "/deadlines",
+    "/escalations",
+    "/my/AT",
+    "/my",
+    "/day-one",
+    "/insights",
+    "/analysis",
+    # ── Off-pillar reference ───────────────────────────────────────
+    "/rxnorm",          # drug reference — not a provider or a deal
+    "/markets/global",  # cross-country context — not US CMS
+    "/labor-market",    # role-level wage/turnover — labor, not facilities
+    # ── Revenue-cycle benchmarks ───────────────────────────────────
+    # HFMA revenue-cycle KPI bands: the original RCM-diligence product,
+    # and the thing this platform has been moving away from for three
+    # sweeps. /diligence/benchmarks stays — that one places a FACILITY
+    # against its peer cohort, which is provider-data display.
+    "/benchmarks",
+    "/rcm-benchmarks",
+    # ── Meta / upload prompts ──────────────────────────────────────
+    "/data-activation",  # "what to upload to unlock DATA-REQUIRED pages"
+    # ── The graphics toolkit ───────────────────────────────────────
+    # /visuals is the hub for this family and describes itself as "the
+    # graphics toolkit — Chart Builder, Pie Chart, Excel Map". They are
+    # generators, not reads: each starts empty and asks you to type a
+    # label, a value and a colour, then draws a consultant chart. Nothing
+    # here displays a CMS filing, so the whole family goes together —
+    # including /charts, which only stores configurations for the two
+    # builders below it.
+    "/visuals",
+    "/chart-builder",
+    "/pie-chart",
+    "/exhibit",
+    "/charts",
+    "/excel-mapping",
+    "/excel-templates",
+    # ── Half-working regressions + model output ────────────────────
+    # /portfolio/regression is an interactive OLS the reader has to
+    # configure before it says anything, and its classical-inference
+    # output was never finished. /ml-insights is the same shape: predicted
+    # KPIs rather than filed ones. Both were kept through earlier sweeps
+    # on the grounds that they read the HCRIS universe; that is true and
+    # not sufficient — a regression you have to build yourself is not a
+    # provider report.
+    "/portfolio/regression",
+    "/ml-insights",
+    # ── State-level maps ──────────────────────────────────────────
+    # /geo-map is a US choropleth; /geo-metrics is the transparency
+    # reference for the geo suite rather than a read of it. The
+    # state-analysis TABLES (/state-compare, /state-profile,
+    # /state-peers, /state-rankings, /county-explorer, /metro-markets)
+    # are deliberately still visible — they carry real state-keyed public
+    # data rather than a map, and no instruction has ruled on them.
+    "/geo-map",
+    "/geo-metrics",
+    # ── Thin input-driven surfaces ─────────────────────────────────
+    "/query",               # "ad-hoc query tool over the app's data"
+    "/screening/dashboard",  # a deal-funnel view, not a provider read
+})
+
 HIDDEN_ROUTES = (
     _ILLUSTRATIVE_ROUTES
     | _SINGLE_STUDY_ROUTES
     | _PE_NARRATIVE_ROUTES
     | _DEAL_EXECUTION_ROUTES
     | _NAMED_ROUTES
+    | _BLOAT_ROUTES
 )
 
 # Route families where every sub-route is hidden with its parent. A prefix

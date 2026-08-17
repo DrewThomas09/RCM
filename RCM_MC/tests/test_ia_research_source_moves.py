@@ -52,10 +52,12 @@ class NavPlacementTests(unittest.TestCase):
             self.assertNotIn(gone, hrefs)
 
     def test_portfolio_loses_reference_pages(self):
-        hrefs = [i["href"] for i in _SUB_NAV["portfolio"]]
-        for gone in ("/sponsor-track-record", "/payer-intelligence",
-                     "/portfolio-analytics", "/deal-corpus-analytics"):
-            self.assertNotIn(gone, hrefs)
+        # This IA pass moved four reference pages OUT of Portfolio. The
+        # bloat sweep then removed the Portfolio section altogether —
+        # portfolio ops is neither provider data, a scanner, nor deal
+        # tracking in the space — so the strongest form of "Portfolio does
+        # not hold these" is that there is no portfolio rail at all.
+        self.assertNotIn("portfolio", _SUB_NAV)
 
 
 class SectionResolutionTests(unittest.TestCase):

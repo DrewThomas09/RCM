@@ -222,10 +222,10 @@ def render_cli_runs_page(
         + catalog_body
         + '</section>'
         + ck_next_section(
-            "Open the calibration view",
-            "/calibration",
+            "Open the run history",
+            "/runs",
             eyebrow="Up next",
-            italic_word="calibration",
+            italic_word="history",
         )
     )
 

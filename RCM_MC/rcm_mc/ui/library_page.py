@@ -251,11 +251,9 @@ def _library_section(section: Dict[str, Any]) -> str:
                 f'Open &rarr;</a>'
             )
         elif ep:
-            action_link = (
-                f'<a href="/analysis" class="cad-btn" '
-                f'style="text-decoration:none;font-size:12px;margin-top:8px;display:inline-block;">'
-                f'Select a deal to run &rarr;</a>'
-            )
+            # The per-deal analysis hub (/analysis) is registry-hidden as
+            # deal-workflow chrome, so there is no destination to offer here.
+            action_link = ""
         else:
             action_link = ""
 

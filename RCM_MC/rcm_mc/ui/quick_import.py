@@ -233,7 +233,7 @@ def render_quick_import(success_msg: str = "", error_msg: str = "",
         + '<div style="display:flex;gap:8px;padding-top:12px;'
           f'border-top:1px solid {PALETTE["border"]};">'
         + '<button type="submit" class="cad-btn cad-btn-primary">Create Deal &rarr;</button>'
-        + '<a href="/portfolio" class="cad-btn" style="text-decoration:none;">Cancel</a>'
+        + '<a href="/pipeline" class="cad-btn" style="text-decoration:none;">Cancel</a>'
         + '</div>'
         + '</form></div>'
 

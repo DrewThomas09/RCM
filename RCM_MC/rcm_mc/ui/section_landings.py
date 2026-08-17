@@ -229,8 +229,6 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "Join two public datasets on a shared key."},
                  {"href": "/further-analysis", "label": "Further Analysis",
                   "blurb": "Follow-on cuts from any loaded dataset."},
-                 {"href": "/quant-lab", "label": "Quant Lab",
-                  "blurb": "Build and test a quantitative signal."},
                  {"href": "/analysis", "label": "Analysis Workbench",
                   "blurb": "The full workbench over a loaded packet."},
                  {"href": "/comparable-outcomes", "label": "Comparable Outcomes",
@@ -252,37 +250,6 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "CMS rule cycles + rate events."},
                  {"href": "/notes", "label": "Notes",
                   "blurb": "Your research notes."},
-             ]},
-        ],
-    },
-    "portfolio": {
-        "title": "Portfolio",
-        "eyebrow": "PORTFOLIO OPS",
-        "explainer_head": "The portfolio console at a glance.",
-        "explainer_body": "Operate the book (health, alerts, covenants) and "
-        "analyze what drives outcomes across every holding.",
-        "intro_headline": "Run the book and find what drives it.",
-        "intro_italic": "drives",
-        "intro_body": "Monitoring and risk for every holding, plus the "
-        "cross-portfolio analytics.",
-        "next": {"label": "Source the next add-on acquisition", "href": "/best/source", "italic": "add-on"},
-        "pillars": [
-            {"title": "Operate the book", "eyebrow": "RUN THE PORTFOLIO",
-             "body": "Daily portfolio operations.",
-             "links": [
-                 {"href": "/portfolio", "label": "Portfolio",
-                  "blurb": "Every holding, health score, and alerts."},
-                 {"href": "/portfolio/monitor", "label": "Monitor",
-                  "blurb": "Live KPI + covenant monitoring."},
-                 {"href": "/portfolio/risk-scan", "label": "Risk Scan",
-                  "blurb": "Portfolio-wide risk flags."},
-             ]},
-            {"title": "Analyze", "eyebrow": "FIND THE SIGNAL",
-             "body": "What actually drives outcomes across the book.",
-             "links": [
-                 {"href": "/portfolio/regression", "label": "Regression",
-                  "blurb": "What drives outcomes across the book "
-                  "(multicollinearity-checked)."},
              ]},
         ],
     },

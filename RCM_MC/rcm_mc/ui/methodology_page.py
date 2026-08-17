@@ -385,7 +385,9 @@ def render_methodology() -> str:
         '<a href="/methodology" class="cad-btn">Reference Library</a> '
         '<a href="/cms-sources" class="cad-btn">CMS Sources</a> '
         '<a href="/data-intelligence" class="cad-btn">Data Intelligence</a> '
-        '<a href="/model-validation" class="cad-btn">Model Validation</a>'
+        # /model-validation is registry-hidden (model plumbing, not a
+        # provider-data read); the methodology text itself still documents it.
+        ''
         '</p>',
         title="Related References",
     )

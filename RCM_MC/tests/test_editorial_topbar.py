@@ -99,7 +99,9 @@ class EditorialTopbarTests(unittest.TestCase):
         import re
         controls = set(re.findall(r'aria-controls="(ck-mega-[a-z]+)"', self.html))
         ids = re.findall(r'id="(ck-mega-[a-z]+)"', self.html)
-        self.assertGreaterEqual(len(controls), 6)
+        # Was >=6 while there were seven tabs; the Portfolio tab was
+        # dropped in the 2026-08-17 bloat sweep, leaving six.
+        self.assertGreaterEqual(len(controls), 5)
         self.assertEqual(controls, set(ids))         # every control resolves
         self.assertEqual(len(ids), len(set(ids)))    # ids are unique
 

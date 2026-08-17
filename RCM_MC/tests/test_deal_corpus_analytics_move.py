@@ -90,11 +90,12 @@ class DealCorpusAnalyticsMoveTests(unittest.TestCase):
         from rcm_mc.ui._chartis_kit import _SUB_NAV, _resolve_sub_section
         from rcm_mc.ui._surface_visibility import is_hidden
         research = [i["href"] for i in _SUB_NAV["research"]]
-        portfolio = [i["href"] for i in _SUB_NAV["portfolio"]]
         self.assertTrue(is_hidden("/deal-corpus-analytics"))
         self.assertNotIn("/deal-corpus-analytics", research)
-        self.assertNotIn("/portfolio-analytics", portfolio)
-        self.assertNotIn("/deal-corpus-analytics", portfolio)
+        # The Portfolio rail this page was moved OUT of no longer exists —
+        # the bloat sweep dropped the whole section — so "not in portfolio"
+        # is now structural rather than a per-entry check.
+        self.assertNotIn("portfolio", _SUB_NAV)
         self.assertEqual(_resolve_sub_section("/deal-corpus-analytics"), "research")
 
 

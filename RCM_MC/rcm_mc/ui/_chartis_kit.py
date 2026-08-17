@@ -148,7 +148,6 @@ _CORPUS_NAV = [
     {"label": "Diligence", "href": "/diligence", "key": "diligence"},
     {"label": "Library",   "href": "/best/library",   "key": "library"},
     {"label": "Research",  "href": "/best/research",   "key": "research"},
-    {"label": "Portfolio", "href": "/best/portfolio", "key": "portfolio"},
 ]
 
 # Per-section sub-nav. Surfaces the most-clicked second-level pages
@@ -157,9 +156,7 @@ _CORPUS_NAV = [
 _SUB_NAV = {
     "home": [
         {"label": "Command Center",      "href": "/app"},
-        {"label": "My Dashboard",        "href": "/my/AT"},
         {"label": "Alerts",              "href": "/alerts"},
-        {"label": "Escalations",         "href": "/escalations"},
         {"label": "Watchlist",           "href": "/watchlist"},
     ],
     # Source = target/opportunity discovery (CMS/market). Deal Sourcing anchors
@@ -189,8 +186,9 @@ _SUB_NAV = {
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
         {"label": "Healthcare Verticals Reference","href": "/healthcare-verticals-reference"},
-        {"label": "RCM Benchmarks",      "href": "/rcm-benchmarks"},
         {"label": "Data Catalog",        "href": "/data"},
+        {"label": "CMS Sources",         "href": "/cms-sources"},
+        {"label": "CMS Data Browser",    "href": "/cms-data-browser"},
     ],
     # Research — the visualization + cross-cutting reads over the loaded
     # public datasets. The rail is long; the topbar only ever front-faces
@@ -205,44 +203,14 @@ _SUB_NAV = {
         {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
         {"label": "Notes",               "href": "/notes"},
         {"label": "Market Intel",        "href": "/market-intel"},
-        {"label": "Visuals (Charts)",    "href": "/visuals"},
         {"label": "Further Analysis",    "href": "/further-analysis"},
         {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
         {"label": "Public Data APIs",    "href": "/data-apis"},
         {"label": "Connector Estate",    "href": "/connector-estate"},
         {"label": "Market Scan",         "href": "/market-scan"},
-        {"label": "Drug Reference (RxNorm)", "href": "/rxnorm"},
         {"label": "Benchmark Reference", "href": "/benchmark-reference"},
-        {"label": "Excel Mapping",       "href": "/excel-mapping"},
-        {"label": "Excel Templates",     "href": "/excel-templates"},
-        {"label": "Chart Builder",       "href": "/chart-builder"},
-        {"label": "Pie Chart",           "href": "/pie-chart"},
-        {"label": "Exhibit Composer",    "href": "/exhibit"},
-        {"label": "Saved Charts",        "href": "/charts"},
         {"label": "All Research →",      "href": "/research"},
     ],
-    # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
-    # benchmark CORPUS mislabeled as portfolio — moved to Research as
-    # "Deal Corpus Analytics" (/portfolio-analytics redirects there).
-    # Portfolio = the user's actual book only. Sponsor Track Record + Payer
-    # Intelligence are reference/corpus data (not user-specific) — moved to
-    # Research. Deal Corpus Analytics moved to Research in PR C.
-    "portfolio": [
-        {"label": "Portfolio Map",       "href": "/portfolio/map"},
-        {"label": "Heatmap",             "href": "/portfolio/heatmap"},
-        {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
-    ],
-    # Diligence — RCM analyst playbook surfaces. The full diligence
-    # tab carries 25 pages spanning the four-phase flow (intake →
-    # analysis → risk → output); rendering all of them in the sub-nav
-    # strip created an unreadable wall of links that wrapped or
-    # overflowed in the topbar. Trimmed to the five highest-traffic
-    # workbench surfaces (covering identity → ingest → baseline →
-    # drill-down → deliverable) plus an "All Diligence →" link that
-    # routes to /diligence (the existing diligence_index_page which
-    # already grids every tab). The Cmd-K palette (_DEFAULT_PALETTE_
-    # MODULES) and the breadcrumb resolver (_SUB_SECTION_MAP) still
-    # cover the full surface; sub-nav is only the daily-driver shortcut.
     "diligence": [
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
@@ -285,10 +253,6 @@ _SECTION_FEATURE = {
                           "end to end, and put two public sources side by "
                           "side.",
                  "href": "/research"},
-    "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
-                  "blurb": "Monitor holdings by geography and risk: map, "
-                           "heatmap, risk scan, analytics, and LP reporting.",
-                  "href": "/portfolio"},
 }
 
 # Routes that appear in the ranking manifest but are NOT navigable bare-GET
@@ -336,7 +300,7 @@ _NAV_FLAGSHIPS = {
         "/cost-structure",
         "/diligence/payer-stress",
     ],
-    "library": ["/deal-library", "/rcm-benchmarks", "/methodology"],
+    "library": ["/deal-library", "/data", "/cms-sources", "/methodology"],
     # House views lead with the analytical reads; the chart/export utilities
     # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
     "research": [
@@ -348,7 +312,6 @@ _NAV_FLAGSHIPS = {
         "/market-intel/geo",
         "/notes",
     ],
-    "portfolio": ["/portfolio", "/portfolio/monitor", "/portfolio/risk-scan"],
 }
 
 # Utility/visual helper renderers — real pages, but tools rather than

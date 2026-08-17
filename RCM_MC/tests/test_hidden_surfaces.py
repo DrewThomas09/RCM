@@ -80,17 +80,18 @@ VISIBLE_SAMPLE = (
     # CMS aggregation
     "/target-screener", "/market-data", "/cms-data-browser", "/cms-sources",
     "/data", "/metric-glossary", "/methodology", "/regulatory-calendar",
-    "/state-compare", "/county-explorer", "/geo-map",
+    "/state-compare", "/county-explorer",
     # Whole-program Care Compare universes — sector-specific, but each is
     # a national read of a CMS program, which is the distinction that
     # separates them from the infusion / IFT / imaging studies.
     "/nursing-homes", "/home-health", "/hospice", "/dialysis",
     "/inpatient-rehab", "/long-term-care-hospital", "/verticals",
-    # Visualization
-    "/visuals", "/chart-builder", "/charts",
-    # Deal TRACKING
+    # Scanners
+    "/target-screener", "/screen", "/health-system-lookup", "/npi-cleaner",
+    # Deal TRACKING — in the SPACE. /portfolio was on this row until the
+    # bloat sweep: running your own book is not tracking the market.
     "/deal-library", "/deal-library/sponsors", "/deal-library/comps",
-    "/verified-deals", "/news", "/market-scan", "/pipeline", "/portfolio",
+    "/verified-deals", "/news", "/market-scan", "/pipeline",
 )
 
 
@@ -162,11 +163,32 @@ class RulingTests(unittest.TestCase):
             self.assertNotIn(route, HIDDEN_ROUTES, route)
             self.assertTrue(is_visible(route), route)
 
+    def test_bloat_sweep_hid_the_named_families(self):
+        # The bloat ruling, by the names it was given: portfolio ops, the
+        # graphics toolkit ("the excel image generator"), the interactive
+        # regressions, the state maps, and the thin input-only surfaces.
+        for route in ("/portfolio", "/portfolio/monitor", "/cohorts",
+                      "/visuals", "/chart-builder", "/pie-chart", "/exhibit",
+                      "/charts", "/excel-mapping", "/excel-templates",
+                      "/portfolio/regression", "/ml-insights",
+                      "/geo-map", "/geo-metrics",
+                      "/query", "/screening/dashboard",
+                      "/rcm-benchmarks", "/benchmarks", "/labor-market",
+                      "/rxnorm", "/markets/global"):
+            self.assertTrue(is_hidden(route), route)
+
+    def test_npi_cleaner_is_explicitly_kept(self):
+        # Named as a keeper while the rest of the utilities went. It is a
+        # provider-identity tool running a real claims file through the
+        # offline NPPES registry.
+        for route in ("/npi-cleaner", "/npi-cleaner/history"):
+            self.assertTrue(is_visible(route), route)
+
     def test_tracking_stays_execution_goes(self):
         # The product is deal TRACKING plus CMS aggregation. Tracking a
         # transaction stays; the artifacts of running one do not.
         for route in ("/deal-library", "/verified-deals", "/news",
-                      "/market-scan", "/pipeline", "/portfolio"):
+                      "/market-scan", "/pipeline"):
             self.assertTrue(is_visible(route), f"tracking: {route}")
         for route in ("/diligence/ic-packet", "/diligence/qoe-memo",
                       "/diligence/cdd-scope", "/diligence/expert-calls",
