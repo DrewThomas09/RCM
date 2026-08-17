@@ -67,9 +67,24 @@ refused Farmington, North Olmsted and Beachwood — the three clearest
 chains in the first harvest. What separates a back office from a law
 firm is not how many entities receive mail there but how many
 *signatories* do: Foundations Health Solutions files twenty names and
-one Sandy Muir. So the threshold is :data:`MAX_OFFICIALS_PER_ADDRESS`,
-and refusals are reported through :func:`service_addresses` rather
-than silently dropped.
+one Sandy Muir.
+
+Counting signatories against a ceiling was the second wrong answer.
+Both shapes appear in the harvest and no ceiling divides them::
+
+    4150 INTERNATIONAL PLZ, FORT WORTH TX   40 facilities   9 officers
+    6161 BUSCH BLVD, COLUMBUS OH            16 facilities  16 officers
+
+Nine officers at International Plaza sign four and five times each;
+that is Creative Solutions in Healthcare, and a ceiling of eight
+refuses it. Busch Blvd is sixteen unrelated home-health agencies in
+sixteen rented suites, one signature apiece, and no ceiling above
+sixteen catches it. The question was never *how many* signatories but
+whether **any of them signs twice** — see :func:`shares_a_signatory`.
+It needs no threshold, and on the harvested data the two shapes do not
+overlap: refusals are addresses where not one signature repeats.
+Refusals are reported through :func:`service_addresses` rather than
+silently dropped.
 
 Four join keys, not one
 -----------------------
@@ -131,11 +146,12 @@ from __future__ import annotations
 
 import csv
 import gzip
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from .health_systems import normalize_name
 from .npi_identifier import is_valid_npi
@@ -163,7 +179,16 @@ OWNERSHIP_COLUMNS: Tuple[str, ...] = (
 #: receive mail there — it is how many *signatories* do. Foundations
 #: Health Solutions files twenty names and one Sandy Muir; a corporate
 #: services provider files hundreds of names and hundreds of officers.
-MAX_OFFICIALS_PER_ADDRESS = 8
+#:
+#: Counting them against a fixed ceiling was still wrong, in both
+#: directions. Eight officers refused 4150 International Plaza, Fort
+#: Worth — forty facilities, nine officers, several of whom sign four
+#: and five times each, which is an operator by any reading. And no
+#: ceiling at all catches 6161 Busch Blvd, Columbus: sixteen agencies,
+#: sixteen suites, sixteen officers, one apiece. The statistic that
+#: separates them is not the count but whether anybody signs *twice*.
+#: See :func:`shares_a_signatory`.
+MIN_REPEAT_SIGNATURES = 2
 
 #: A cluster of one is just a facility. Two is the smallest thing that
 #: is evidence of an operator.
@@ -189,16 +214,72 @@ def _norm_street(value: object) -> str:
 
 
 def _norm_addr(street: str, city: str, state: str) -> str:
-    """An address reduced to a comparison key.
+    """An address reduced to a comparison key, suite included.
 
-    Suite numbers are deliberately **kept**. Two shells at Ste 200 and
-    Ste 600 of one building are the same operator, and dropping the
-    suite would be right there and wrong in an office tower shared by
-    unrelated companies. The service-address guard handles the tower;
-    keeping the suite costs nothing.
+    This is the address as filed, and it is what a reader is shown. It
+    is *not* what facilities are grouped on — see :func:`_norm_building`
+    for that, and the note there for why.
     """
     parts = [_norm_street(street), _norm_street(city), _clean(state).upper()]
     return "|".join(p for p in parts if p)
+
+
+#: A suite designator and everything after it. Anchored on a word
+#: boundary so ``STE`` in "1500 WATERS RIDGE DR STE 200" matches and
+#: the ``ST`` of "101 W LIBERTY ST" cannot.
+_SUITE = re.compile(
+    r"\s(?:STE|SUITE|UNIT|APT|BLDG|BUILDING|RM|ROOM|FL|FLOOR|DEPT|NO)\b.*$"
+)
+
+#: USPS standard suffix and directional abbreviations, long form to
+#: short. Providers file both spellings of one street: Creative
+#: Solutions in Healthcare writes ``4150 INTERNATIONAL PLZ`` on some
+#: records and ``4150 INTERNATIONAL PLAZA`` on others, which split its
+#: sixty-three Texas facilities into two clusters of forty and
+#: twenty-three that no reader would guess were the same address.
+#:
+#: Street tokens only. Cities are left alone deliberately — the same
+#: table would have to decide whether ``ST LOUIS`` is Saint or Street,
+#: and the cost of leaving ``FT WORTH`` separate from ``FORT WORTH`` is
+#: a handful of small clusters rather than a wrong merge.
+_SUFFIXES = {
+    "STREET": "ST", "AVENUE": "AVE", "BOULEVARD": "BLVD", "DRIVE": "DR",
+    "ROAD": "RD", "PLAZA": "PLZ", "PARKWAY": "PKWY", "LANE": "LN",
+    "COURT": "CT", "HIGHWAY": "HWY", "TRAIL": "TRL", "CIRCLE": "CIR",
+    "PLACE": "PL", "TERRACE": "TER", "SQUARE": "SQ", "EXPRESSWAY": "EXPY",
+    "FREEWAY": "FWY", "TURNPIKE": "TPKE", "NORTH": "N", "SOUTH": "S",
+    "EAST": "E", "WEST": "W",
+}
+
+
+def _norm_building(street: str, city: str, state: str) -> str:
+    """The same address with the suite removed.
+
+    Grouping on the suite was a mistake, and the reasoning that
+    produced it — that dropping the suite would over-merge an office
+    tower shared by unrelated companies — described a real hazard and
+    picked the wrong instrument against it.
+
+    It under-merged badly. Creative Solutions in Healthcare files from
+    4150 International Plaza under four different suites and one no
+    suite at all; on the suite key its forty Texas facilities land in
+    four unconnected clusters. Katrina Lanier signs for seven agencies
+    at 6760 Old Jacksonville Hwy across two suites. Ephram Lahasky,
+    six at 270 Madison Ave across two.
+
+    And it protected against the tower only by accident. 6161 Busch
+    Blvd, Columbus holds sixteen home-health agencies in sixteen
+    suites; they failed to group because their suite numbers differed,
+    not because anything established they were unrelated. The moment
+    two of them shared a suite the same key would have fused them.
+
+    So the suite comes out of the key and :func:`shares_a_signatory`
+    carries the whole burden of telling a back office from a tower —
+    which is the question it actually answers.
+    """
+    tokens = _SUITE.sub("", _norm_street(street)).split()
+    plain = " ".join(_SUFFIXES.get(t, t) for t in tokens)
+    return _norm_addr(plain, city, state)
 
 
 @dataclass(frozen=True)
@@ -222,7 +303,13 @@ class OwnershipRow:
 
     @property
     def mail_key(self) -> str:
+        """The mailing address as filed, for display and for export."""
         return _norm_addr(self.mail_street, self.mail_city, self.mail_state)
+
+    @property
+    def building_key(self) -> str:
+        """The mailing address without its suite, for grouping."""
+        return _norm_building(self.mail_street, self.mail_city, self.mail_state)
 
     @property
     def official_key(self) -> str:
@@ -270,13 +357,18 @@ class OwnershipCluster:
 
     @property
     def states(self) -> Tuple[str, ...]:
-        """The CMS state codes the members' CCNs carry.
+        """The CCN prefixes the members carry.
 
-        These are CMS codes and not postal ones — 45 is Texas, 36 is
-        Ohio — so they are safe to compare against each other and wrong
-        to show a reader as a state. Available without a join, which is
-        why the comparison uses them; anything user-facing should map
-        the CCN through the crosswalk instead.
+        Usually a CMS state code — 45 is Texas, 36 is Ohio — and never
+        a postal one, so these are safe to compare against each other
+        and wrong to show a reader as a state.
+
+        Not always a state code either. Texas exhausted the 45xxxx
+        hospice range and CMS continued the series at A91500, so 263
+        certified hospices prefix ``A9``, which encodes no geography.
+        It is still a stable token and still groups, which is all this
+        property promises; anything that needs the actual state has to
+        map the CCN through the crosswalk.
         """
         return tuple(sorted({c[:2] for c in self.members}))
 
@@ -367,25 +459,43 @@ def load_ownership(path: Optional[Path] = None) -> Dict[str, OwnershipRow]:
     return _cached(str(path or OWNERSHIP_PATH))[0]
 
 
-def service_addresses(path: Optional[Path] = None) -> Dict[str, int]:
-    """Mailing addresses signed for by too many different people.
+def shares_a_signatory(rows: Iterable[OwnershipRow]) -> bool:
+    """Does one person sign for more than one of these facilities?
 
-    Registered agents, law firms and lockboxes. Counting *signatories*
-    rather than entity names is the whole trick: a chain that
-    incorporates each building separately files many names and one
-    officer, which is the shape this module is looking for, while a
-    corporate-services provider files many names and many officers.
+    The whole test for whether an address is a back office. A company
+    running several facilities signs for several of them; each row of a
+    suite farm is signed by the tenant who rents that suite, and nobody
+    signs twice.
 
-    Reported rather than quietly skipped, because the line between a
-    very large operator and a services provider is a judgement the
-    count should let a reader make for themselves.
+    It needs no tuned threshold, which is the point — it asks whether
+    the evidence exists at all rather than how much of it there is. On
+    the harvested data it separates the two shapes exactly: every
+    refused address has one signatory per facility and not one has a
+    signature in common, so there is nothing to weigh.
     """
-    officials: Dict[str, set] = defaultdict(set)
+    counts = Counter(r.official_key for r in rows if r.official_key)
+    return any(n >= MIN_REPEAT_SIGNATURES for n in counts.values())
+
+
+def service_addresses(path: Optional[Path] = None) -> Dict[str, int]:
+    """Multi-tenant addresses, and how many facilities each holds.
+
+    Registered agents, law firms, lockboxes, and the Columbus suite
+    farms — every address holding more than one facility where no
+    signature repeats. Exactly the set :func:`ownership_clusters`
+    refuses to join on, so the number a reader sees and the number the
+    clustering acts on cannot drift apart.
+
+    Reported rather than quietly skipped, because a large operator that
+    happens to rotate its signatories looks like this too, and that is
+    a judgement the list should let a reader make for themselves.
+    """
+    at: Dict[str, List[OwnershipRow]] = defaultdict(list)
     for row in load_ownership(path).values():
-        if row.mail_key and row.official_key:
-            officials[row.mail_key].add(row.official_key)
-    return {addr: len(seen) for addr, seen in sorted(officials.items())
-            if len(seen) > MAX_OFFICIALS_PER_ADDRESS}
+        if row.building_key:
+            at[row.building_key].append(row)
+    return {addr: len(found) for addr, found in sorted(at.items())
+            if len(found) >= MIN_CLUSTER and not shares_a_signatory(found)}
 
 
 def ownership_clusters(
@@ -404,14 +514,17 @@ def ownership_clusters(
     if not rows:
         return []
     facilities = facilities or {}
+    # Whether an address is a back office is a property of everyone who
+    # files it, not of any one row, so it is settled over the whole
+    # harvest before a single facility is placed.
     skip = set(service_addresses(path))
 
     keyed: Dict[Tuple[str, str], List[str]] = defaultdict(list)
     for ccn, row in rows.items():
         city, street = facilities.get(ccn, ("", ""))
-        if (row.mail_key and row.mail_key not in skip
+        if (row.building_key and row.building_key not in skip
                 and is_remote_mailing(row, city, street)):
-            keyed[("mail", row.mail_key)].append(ccn)
+            keyed[("mail", row.building_key)].append(ccn)
         if row.official_key:
             keyed[("official", row.official_key)].append(ccn)
         if row.parent_key:
