@@ -379,11 +379,23 @@ _BLOAT_ROUTES = frozenset({
     "/labor-market",    # role-level wage/turnover — labor, not facilities
     # ── Revenue-cycle benchmarks ───────────────────────────────────
     # HFMA revenue-cycle KPI bands: the original RCM-diligence product,
-    # and the thing this platform has been moving away from for three
-    # sweeps. /diligence/benchmarks stays — that one places a FACILITY
-    # against its peer cohort, which is provider-data display.
+    # and the thing this platform has been moving away from for four
+    # sweeps.
+    #
+    # /diligence/benchmarks was carved out of this block twice, on the
+    # grounds that it "places a FACILITY against its peer cohort, which
+    # is provider-data display". Reading the renderer settles it the
+    # other way. Its eyebrow is "RCM DILIGENCE · PHASE 2 OF 4", its lede
+    # is "Five HFMA KPIs against acute-care peer bands … the Phase-2
+    # evidence base for the RCM thesis", its source note credits the same
+    # HFMA MAP Key 2021 bands as the two routes below, and the facility
+    # is a FIXTURE claims file chosen from a selector, not a filing. It
+    # is Phase 2 of a four-phase workspace whose other three phases
+    # (/diligence/snapshot, /diligence/root-cause, /diligence/qoe-memo)
+    # are already hidden — the same page family under a third URL.
     "/benchmarks",
     "/rcm-benchmarks",
+    "/diligence/benchmarks",
     # ── Meta / upload prompts ──────────────────────────────────────
     "/data-activation",  # "what to upload to unlock DATA-REQUIRED pages"
     # ── The graphics toolkit ───────────────────────────────────────

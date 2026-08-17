@@ -216,7 +216,6 @@ _SUB_NAV = {
     "diligence": [
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
-        {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
         {"label": "Provider Verticals", "href": "/verticals"},
         {"label": "Data Quality",       "href": "/data-quality"},
         {"label": "All Diligence →",    "href": "/diligence"},
@@ -297,8 +296,8 @@ _NAV_FLAGSHIPS = {
     "diligence": [
         "/diligence/hcris-xray",
         "/diligence/xray",
-        "/diligence/benchmarks",
         "/verticals",
+        "/data-quality",
     ],
     "library": ["/deal-library", "/data", "/cms-sources", "/methodology"],
     # Research is the market and regulatory backdrop to the provider

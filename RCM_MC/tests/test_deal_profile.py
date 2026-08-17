@@ -102,11 +102,18 @@ class ProfilePageTests(unittest.TestCase):
             'data-rcm-deal-href-base="/diligence/hcris-xray"', h,
         )
         self.assertIn(
-            'data-rcm-deal-href-base="/diligence/benchmarks"', h,
+            'data-rcm-deal-href-base="/diligence/regulatory-calendar"', h,
         )
         # Deal-execution tools are gone from the grid entirely.
+        # /diligence/benchmarks joined them on 2026-08-17: it is Phase 2
+        # of the RCM-diligence workspace (HFMA bands over a fixture
+        # claims file), not a filing read. The grid is down to the X-ray
+        # and the rule calendar, which is what _visible_analytics()
+        # returns — the loop above walks it rather than naming rows, so
+        # this pair is the only hand-written pin left.
         for gone in ("/screening/bankruptcy-survivor",
-                     "/diligence/ic-packet", "/diligence/counterfactual"):
+                     "/diligence/ic-packet", "/diligence/counterfactual",
+                     "/diligence/benchmarks"):
             self.assertNotIn(
                 f'data-rcm-deal-href-base="{gone}"', h, gone)
 

@@ -1740,9 +1740,40 @@ def ck_section_header(title: str, subtitle: str = "", count: Optional[int] = Non
 # ---------------------------------------------------------------------------
 
 def _nav_html(active_path: str = "") -> str:
-    parts = []
+    """The legacy dark shell's primary sidebar.
+
+    Filtered through ``_surface_visibility`` like every other listing
+    surface. This bar was missed by four hide sweeps because it lives in
+    the legacy shell rather than the editorial one, and it was offering
+    36 of its 44 items after those sweeps had ruled them hidden — the
+    whole RCM-diligence workspace, the deal-execution artifacts and the
+    corpus narratives, one click away for anyone in Chartis Consulting
+    mode. A shell a reader can still switch to (``/settings/workspace``)
+    is a place a reader browses.
+
+    Separator headings are dropped when nothing visible follows them, so
+    the bar never shows an empty section label.
+    """
+    from ._surface_visibility import is_visible
+
+    kept = []
     for item in _CORPUS_NAV:
         if item.get("separator"):
+            kept.append(item)
+            continue
+        # Strip any query string before the ruling: /x?demo=steward is
+        # the same surface as /x.
+        if is_visible(str(item.get("href", "")).split("?", 1)[0]):
+            kept.append(item)
+
+    parts = []
+    for i, item in enumerate(kept):
+        if item.get("separator"):
+            following = kept[i + 1:]
+            next_sep = next((j for j, n in enumerate(following)
+                             if n.get("separator")), len(following))
+            if not following[:next_sep]:
+                continue        # heading with nothing left under it
             parts.append(f'<div class="ck-nav-sep">{_html.escape(item["label"])}</div>')
         else:
             href = item.get("href", "#")

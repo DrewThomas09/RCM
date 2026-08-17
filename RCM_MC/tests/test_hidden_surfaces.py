@@ -85,7 +85,7 @@ VISIBLE_SAMPLE = (
     # The X-rays — the centre of gravity, and the thing to be most
     # careful about: every sweep so far has had to be checked against
     # this row.
-    "/diligence/hcris-xray", "/diligence/xray", "/diligence/benchmarks",
+    "/diligence/hcris-xray", "/diligence/xray",
     # CMS aggregation. Sweep 5 cut nine competing data catalogs down to
     # three with distinct jobs, so this row names those three by hand.
     "/target-screener", "/data", "/cms-sources", "/data-quality",
@@ -168,10 +168,24 @@ class RulingTests(unittest.TestCase):
 
     def test_the_xrays_are_never_swept_up(self):
         # Named as the thing worth keeping. Each sweep re-checks it.
-        for route in ("/diligence/hcris-xray", "/diligence/xray",
-                      "/diligence/benchmarks"):
+        for route in ("/diligence/hcris-xray", "/diligence/xray"):
             self.assertNotIn(route, HIDDEN_ROUTES, route)
             self.assertTrue(is_visible(route), route)
+
+    def test_diligence_benchmarks_is_the_rcm_product_under_a_third_url(self):
+        # Carved out of the revenue-cycle-benchmark block twice, as "it
+        # places a FACILITY against its peer cohort". The renderer says
+        # otherwise: eyebrow "RCM DILIGENCE · PHASE 2 OF 4", lede "Five
+        # HFMA KPIs against acute-care peer bands … the Phase-2 evidence
+        # base for the RCM thesis", source note crediting the same HFMA
+        # MAP Key 2021 bands as /benchmarks and /rcm-benchmarks, and a
+        # FIXTURE claims file behind a selector rather than a filing. Its
+        # three sibling phases were already hidden; a workspace cannot be
+        # three-quarters hidden.
+        for route in ("/benchmarks", "/rcm-benchmarks",
+                      "/diligence/benchmarks", "/diligence/snapshot",
+                      "/diligence/root-cause", "/diligence/qoe-memo"):
+            self.assertTrue(is_hidden(route), route)
 
     def test_the_seeded_slider_models_are_not_xrays(self):
         # /diligence/payer-stress, /payer-stress and /cost-structure rode
@@ -322,6 +336,34 @@ class ListingSurfaceTests(unittest.TestCase):
             self.assertFalse(is_hidden(route), f"g-jump offers {route}")
         # The help dialog must not advertise a jump the table dropped.
         self.assertNotIn("Portfolio", _SHORTCUTS_HTML)
+
+    def test_the_legacy_shell_sidebar_offers_nothing_hidden(self):
+        # The dark "Chartis Consulting" shell is a second, complete page
+        # chrome a reader can switch to from /settings/workspace, and its
+        # primary sidebar went untouched by four hide sweeps — it was
+        # offering 36 of its 44 items after those sweeps had ruled them
+        # hidden. A shell you can switch to is a place you browse.
+        import re as _re
+        from rcm_mc.ui._chartis_kit_legacy import chartis_shell as legacy
+        html = legacy("<p>x</p>", "T")
+        hrefs = _re.findall(r'<a href="([^"]+)" class="ck-nav-item', html)
+        self.assertTrue(hrefs, "legacy sidebar rendered no items at all")
+        for href in hrefs:
+            self.assertTrue(is_visible(href.split("?", 1)[0]),
+                            f"legacy sidebar: {href}")
+
+    def test_the_legacy_shell_drops_emptied_section_headings(self):
+        # Filtering the sidebar emptied whole sections. A heading with
+        # nothing under it reads as a broken nav, so it goes too.
+        import re as _re
+        from rcm_mc.ui._chartis_kit_legacy import chartis_shell as legacy
+        html = legacy("<p>x</p>", "T")
+        # Every rendered separator must be followed by at least one item
+        # before the next separator or the end of the nav.
+        chunks = _re.split(r'<div class="ck-nav-sep">[^<]*</div>', html)
+        for chunk in chunks[1:]:
+            self.assertIn("ck-nav-item", chunk.split("</nav>")[0],
+                          "a section heading has no items under it")
 
     def test_command_palette_offers_nothing_hidden(self):
         from rcm_mc.ui._chartis_kit import (

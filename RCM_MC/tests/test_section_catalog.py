@@ -46,7 +46,7 @@ class CatalogRendererTests(unittest.TestCase):
         # named in the meta line.
         from collections import Counter
         routes = ["/diligence/hcris-xray", "/diligence/xray",
-                  "/diligence/benchmarks"]
+                  "/verticals"]
         h = render_grouped_catalog(
             section="diligence", title="T", eyebrow="X",
             pillars=[{"title": "G", "eyebrow": "E", "body": "b", "links": [
