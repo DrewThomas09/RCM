@@ -551,12 +551,25 @@ class WiringTests(unittest.TestCase):
         self.assertIn('"/connector-estate"', src)
         self.assertIn('"/connector-estate": "research"', src)
 
-    def test_palette_and_sub_nav_entries(self):
-        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES, _SUB_NAV, _resolve_sub_section
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/connector-estate", routes)
-        research = {e["href"] for e in _SUB_NAV["research"]}
-        self.assertIn("/connector-estate", research)
+    def test_no_longer_offered_though_still_wired(self):
+        # The 2026-08-17 sweep hid /connector-estate: it inventories
+        # CONNECTORS (openFDA, CDC, HRSA, NIH, Census) rather than
+        # datasets, and none of those sources is a provider filing or a
+        # tracked deal. It came out of the research rail; its palette
+        # entry survives in _DEFAULT_PALETTE_MODULES but is filtered by
+        # ck_command_palette at render, and its breadcrumb mapping is
+        # kept so the page still renders correctly when opened directly.
+        from rcm_mc.ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, _SUB_NAV, _resolve_sub_section,
+            ck_command_palette,
+        )
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/connector-estate"))
+        self.assertNotIn("/connector-estate",
+                         {e["href"] for e in _SUB_NAV["research"]})
+        self.assertNotIn(
+            'data-route="/connector-estate"',
+            ck_command_palette(_DEFAULT_PALETTE_MODULES))
         self.assertEqual(_resolve_sub_section("/connector-estate"), "research")
 
     def test_public_api_catalog_represents_all_13_connectors(self):

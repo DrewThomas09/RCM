@@ -24,6 +24,27 @@
 > `tests/test_hidden_surfaces.py`: *breadth, not subject* (a whole CMS
 > program's Care Compare universe stays; a bespoke sector study does not)
 > and *tracking, not execution*. Visible surface: 173 → 137.
+>
+> **2026-08-17 — third and fourth sweeps: the bloat, and the duplicates.**
+> Third sweep took the named bloat: portfolio operations, the graphics
+> toolkit (/visuals, Chart Builder, Pie Chart, Exhibit, Saved Charts,
+> Excel Mapping/Templates), the interactive regressions, the state maps,
+> the model plumbing and the HFMA revenue-cycle benchmark bands. The
+> **Portfolio tab left the topbar** with them. Fourth sweep took the
+> duplicates and the near-misses: nine data catalogs down to three
+> (/data, /cms-sources, /data-quality), the build-your-own analysis pair
+> (/cross-analysis, /further-analysis), the licensed narrative reference
+> (/industry, /healthcare-verticals*, /payer-system, /benchmark-reference,
+> /market-intel*), /market-data, /module-index, /global-search, /exports,
+> /predictive-screener and /import. **Three surfaces lost their X-ray
+> status**: /payer-stress, /diligence/payer-stress and /cost-structure
+> seed a couple of real HCRIS figures and then hand the reader sliders,
+> which is a deal-economics tool rather than a filing read — a third line
+> now pinned by test, *a filing, not a model*. Eleven operator surfaces
+> (/jobs, /runs, /audit, /admin/*, /ops, /team, /guide/context-debug,
+> /settings*) moved to Internal rather than Hidden: wanted from the user
+> and admin menus, never carded in a catalog. Visible surface: 137 → 55;
+> all 378 routes still return 200 against a live server.
 
 Evidence: scripts/route_walker.py walked 361 exact-match page routes on the
 seeded demo (5 deals, 6,123-hospital HCRIS universe): **349 render 200, 0

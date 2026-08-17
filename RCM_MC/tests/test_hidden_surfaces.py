@@ -1,7 +1,7 @@
 """Hidden surfaces are listed nowhere — and deleted nowhere.
 
 The product is **healthcare-PE deal tracking on top of aggregated CMS
-data**, with the X-rays at its centre. Five classes of page work against
+data**, with the X-rays at its centre. Seven classes of page work against
 that and are ruled Hidden in ``rcm_mc.ui._surface_visibility``:
 
   * illustrative-figure pages (numbers from a hardcoded dataclass, not a
@@ -12,11 +12,16 @@ that and are ruled Hidden in ``rcm_mc.ui._surface_visibility``:
   * the sponsor-corpus / PE-narrative long tail,
   * deal EXECUTION — the artifacts of running a transaction (IC packets,
     QoE memos, CDD scoping, covenant stress, LP reporting) as opposed to
-    tracking one,
-  * named one-offs (/conferences).
+    tracking one, plus the seeded slider models (payer stress, cost
+    structure) that look like filing reads and are not,
+  * named one-offs (/conferences),
+  * the bloat: build-your-own chart and regression tools, licensed
+    narrative reference, model output dressed as a screen, portfolio ops,
+  * duplicate data catalogs — nine surfaces answered "what data do you
+    have"; three stay.
 
-Two lines get re-litigated on every sweep, so both are pinned by name
-below:
+Three lines get re-litigated on every sweep, so all three are pinned by
+name below:
 
   * **breadth, not subject** — a whole CMS program's Care Compare
     universe read nationally (/nursing-homes, /hospice, /dialysis, …)
@@ -24,6 +29,11 @@ below:
   * **tracking, not execution** — /deal-library, /verified-deals, /news,
     /market-scan, /pipeline follow publicly-reported transactions and
     stay listed.
+  * **a filing, not a model** — a page that prints what a cost report
+    says is an X-ray; a page that seeds two figures from one and then
+    hands you sliders is a deal-economics tool. The three surfaces that
+    crossed that line late (/payer-stress, /diligence/payer-stress,
+    /cost-structure) have their own case below.
 
 Hidden is a BROWSE ruling, not a routing one. This module guards both
 halves: nothing offers a hidden surface, and every hidden surface still
@@ -76,10 +86,11 @@ VISIBLE_SAMPLE = (
     # careful about: every sweep so far has had to be checked against
     # this row.
     "/diligence/hcris-xray", "/diligence/xray", "/diligence/benchmarks",
-    "/diligence/payer-stress", "/cost-structure",
-    # CMS aggregation
-    "/target-screener", "/market-data", "/cms-data-browser", "/cms-sources",
-    "/data", "/metric-glossary", "/methodology", "/regulatory-calendar",
+    # CMS aggregation. Sweep 5 cut nine competing data catalogs down to
+    # three with distinct jobs, so this row names those three by hand.
+    "/target-screener", "/data", "/cms-sources", "/data-quality",
+    "/metric-glossary", "/methodology", "/methodology/calculations",
+    "/rate-environment", "/regulatory-calendar",
     "/state-compare", "/county-explorer",
     # Whole-program Care Compare universes — sector-specific, but each is
     # a national read of a CMS program, which is the distinction that
@@ -158,10 +169,52 @@ class RulingTests(unittest.TestCase):
     def test_the_xrays_are_never_swept_up(self):
         # Named as the thing worth keeping. Each sweep re-checks it.
         for route in ("/diligence/hcris-xray", "/diligence/xray",
-                      "/diligence/benchmarks", "/diligence/payer-stress",
-                      "/cost-structure"):
+                      "/diligence/benchmarks"):
             self.assertNotIn(route, HIDDEN_ROUTES, route)
             self.assertTrue(is_visible(route), route)
+
+    def test_the_seeded_slider_models_are_not_xrays(self):
+        # /diligence/payer-stress, /payer-stress and /cost-structure rode
+        # the row above through three sweeps as X-rays. They are not: each
+        # takes a CCN, seeds two or three real HCRIS figures, and then
+        # hands the reader sliders ("what if commercial rates cut 5%").
+        # /cost-structure's own registry entry concedes its COGS / SG&A /
+        # labor split "stays illustrative-labeled". An X-ray prints what a
+        # filing says; these print what you assume. The real HCRIS opex
+        # figures underneath them are on /diligence/hcris-xray.
+        for route in ("/diligence/payer-stress", "/payer-stress",
+                      "/cost-structure"):
+            self.assertTrue(is_hidden(route), route)
+
+    def test_the_data_catalog_is_not_nine_data_catalogs(self):
+        # Sweep 5 found nine surfaces all answering "what data do you
+        # have". Three stay, with distinct jobs: the canonical inventory,
+        # the CMS-specific registry, and the surface that admits what is
+        # missing. The rest duplicated those, catalogued data the product
+        # does NOT hold (credentialed CMS microdata, free third-party
+        # APIs), or inventoried connectors rather than datasets.
+        for route in ("/data", "/cms-sources", "/data-quality"):
+            self.assertTrue(is_visible(route), f"keeper: {route}")
+        for route in ("/data/catalog", "/cms-data-browser",
+                      "/data-intelligence", "/tools/open-data",
+                      "/data-apis", "/tools/nonpublic-cms",
+                      "/connector-estate"):
+            self.assertTrue(is_hidden(route), f"duplicate: {route}")
+
+    def test_deployment_plumbing_is_internal_not_hidden(self):
+        # Operator surfaces (job queue, run history, audit chain, source
+        # health, settings) are wanted from the user and admin menus and
+        # are simply never carded in a catalog. Internal, not Hidden —
+        # the distinction matters because is_visible() gates both, but
+        # only INTERNAL_ROUTES documents "keeps its menu link".
+        from rcm_mc.ui._surface_visibility import is_internal
+        for route in ("/jobs", "/runs", "/audit", "/admin/audit-chain",
+                      "/admin/data-sources", "/ops", "/team",
+                      "/guide/context-debug", "/settings",
+                      "/settings/ai", "/settings/workspace"):
+            self.assertTrue(is_internal(route), route)
+            self.assertFalse(is_hidden(route), f"{route}: internal, not hidden")
+            self.assertFalse(is_visible(route), route)
 
     def test_bloat_sweep_hid_the_named_families(self):
         # The bloat ruling, by the names it was given: portfolio ops, the

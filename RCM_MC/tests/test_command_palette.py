@@ -203,11 +203,13 @@ class TestDashboardWiresPaletteCommands(unittest.TestCase):
         self.assertIn("Active alerts", html)
         self.assertIn("Watchlist", html)
         # Curated analyses — present as inline links on the dashboard.
-        # Thesis Pipeline was the other example here until 2026-08-16,
-        # when it went registry-hidden as deal-execution machinery and
-        # dropped off the curated list.
+        # Two of the three examples this test used to name have since
+        # gone registry-hidden and dropped off the curated list: Thesis
+        # Pipeline (deal-execution machinery, 2026-08-16) and Payer Mix
+        # Stress (a seeded slider model rather than a filing read,
+        # 2026-08-17). The X-ray is the one that was always the point.
         self.assertIn("HCRIS Peer X-Ray", html)
-        self.assertIn("Payer Mix Stress", html)
+        self.assertNotIn("Payer Mix Stress", html)
 
 
 class TestSearchEndpointContract(unittest.TestCase):

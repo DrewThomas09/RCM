@@ -18,10 +18,11 @@ visibility ranks, best-first:
   5. **Hidden** — off every listing surface (``HIDDEN_ROUTES`` +
      ``HIDDEN_PREFIXES`` below): illustrative-figure pages,
      single-target/single-sector study suites, the sponsor-corpus/
-     PE-narrative long tail, the deal-EXECUTION machinery, and the bloat
-     that is simply unrelated to what this product does. The routes still
-     resolve — nothing is deleted, deep links and in-page links keep
-     working — they are simply never *offered* anywhere a reader browses.
+     PE-narrative long tail, the deal-EXECUTION machinery, the bloat
+     that is simply unrelated to what this product does, and the
+     duplicate data catalogs. The routes still resolve — nothing is
+     deleted, deep links and in-page links keep working — they are
+     simply never *offered* anywhere a reader browses.
 
 The product this registry serves does **three** things well, and the
 rulings below all come down to whether a page is one of them:
@@ -60,6 +61,24 @@ INTERNAL_ROUTES = frozenset({
     "/demo",        # seeded demo launcher, not a partner destination
     "/users",       # admin — linked from the user-menu "Admin" item instead
     "/cli-runs",    # CLI run log, debug surface
+    # ── Deployment plumbing ────────────────────────────────────────
+    # These are operator surfaces for the person running the install,
+    # not analytic destinations. Internal rather than Hidden because
+    # they are genuinely wanted — from the user menu and the admin
+    # nav — just never carded in a catalog as "a tool we're proud of".
+    "/jobs",                 # background job queue status
+    "/runs",                 # simulation run history
+    "/audit",                # audit trail review
+    "/admin/audit-chain",    # tamper-evident audit chain
+    "/admin/data-sources",   # ingestion health for the operator
+    "/ops",                  # deployment/system status
+    "/team",                 # members, ownership, activity
+    "/guide/context-debug",  # debug view of the Guide's own context packet
+    # Preferences. Reached from the user menu; enumerated one by one
+    # because is_internal matches exactly (no prefix semantics).
+    "/settings",
+    "/settings/ai",
+    "/settings/workspace",
 })
 
 
@@ -78,9 +97,9 @@ def is_internal(route: str) -> bool:
 # Hidden surfaces — listed nowhere, deleted nowhere
 # ---------------------------------------------------------------------------
 #
-# Three rationales, kept as separate sets so a route's reason for being
+# Seven rationales, kept as separate sets so a route's reason for being
 # hidden stays legible (and so a page that later earns real wiring is
-# removed from exactly one place).
+# removed from exactly one place). Numbered comments below mark each.
 
 # 1) ILLUSTRATIVE — the figures on the page come from hardcoded dataclass
 #    lists, not from a filing. Every one of these renders the
@@ -216,9 +235,18 @@ _PE_NARRATIVE_ROUTES = frozenset({
 #    presupposes you are inside a live transaction.
 #
 #    The X-RAYS are firmly on the tracking side and stay:
-#    /diligence/hcris-xray, /diligence/xray, /diligence/benchmarks,
-#    /diligence/payer-stress, /cost-structure — these are the CMS
-#    cost-report drill-downs the whole product is built around.
+#    /diligence/hcris-xray, /diligence/xray, /diligence/benchmarks —
+#    these are the CMS cost-report drill-downs the whole product is
+#    built around. They read a filing and print what it says.
+#
+#    Sweep 5 correction: the two payer-stress aliases and /cost-structure
+#    were carried here as X-rays through three sweeps. They are not. Each
+#    one takes a CCN, seeds a couple of real HCRIS figures, and then hands
+#    the reader sliders — "what happens to EBITDA if commercial rates cut
+#    5%" — and /cost-structure's own registry entry concedes the COGS /
+#    SG&A / labor split "stays illustrative-labeled". A seeded slider
+#    model is a deal-economics tool wearing a filing's clothes; the real
+#    HCRIS opex figures underneath it are already on /diligence/hcris-xray.
 _DEAL_EXECUTION_ROUTES = frozenset({
     # Per-deal diligence workbenches
     "/diligence/deal",
@@ -258,10 +286,23 @@ _DEAL_EXECUTION_ROUTES = frozenset({
     "/pipeline/rollup",
     "/pressure",
     "/portfolio/monte-carlo",
+    "/pipeline/bridge",   # a jump-off INTO the EBITDA bridge, which is
+                          # itself hidden — a door onto a hidden room
+    # Seeded slider models (see the header note above)
+    "/payer-stress",
+    "/diligence/payer-stress",
+    "/cost-structure",
+    # Comp modelling: type a sector and an EV, get a MOIC/IRR
+    # distribution over "most-similar realized deals". The corpus itself
+    # stays browsable at /library; the model over it is underwriting.
+    "/comparable-outcomes",
     # Value-creation execution + fund administration
     "/initiatives",
     "/variance",
     "/lp-update",
+    # The output shelf for the artifacts above — LP updates and IC
+    # packets, every producer of which is hidden on this list.
+    "/exports",
 })
 
 # 5) NAMED ONE-OFFS — surfaces called out directly rather than fitting a
@@ -303,9 +344,11 @@ _BLOAT_ROUTES = frozenset({
     "/owners",
     # ── Model plumbing ─────────────────────────────────────────────
     # The internals of the prediction stack rather than a read of the
-    # provider universe. (/predictive-screener and /ml-insights stay —
-    # both are reads OVER the public hospital universe, which is the
-    # product; these are the machinery behind them.)
+    # provider universe. (This block once carved out /predictive-screener
+    # and /ml-insights on the grounds that they read the public hospital
+    # universe. Both are now hidden further down — the read is real, the
+    # thing printed on top of it is a prediction, and a prediction is not
+    # a filing.)
     "/quant-lab",
     "/scenarios",
     "/surrogate",
@@ -380,6 +423,119 @@ _BLOAT_ROUTES = frozenset({
     # ── Thin input-driven surfaces ─────────────────────────────────
     "/query",               # "ad-hoc query tool over the app's data"
     "/screening/dashboard",  # a deal-funnel view, not a provider read
+    # ── Build-your-own analysis ────────────────────────────────────
+    # The same ruling as the graphics toolkit one section up, applied
+    # to the analytic side of it. /cross-analysis asks you to pick an X
+    # measure and a Y measure and hands back a Pearson r with a
+    # least-squares trendline; /further-analysis is a "Tableau-style
+    # data explorer" over the vendored datasets. Both start empty and
+    # produce whatever you configure. That is a chart tool, and a
+    # correlation between two state aggregates is the kind of number
+    # that reads as a finding without being one. The datasets behind
+    # them stay readable at /state-compare, /state-profile and the
+    # provider universes, which print what a filing says rather than
+    # asking the reader to derive it.
+    "/cross-analysis",
+    "/further-analysis",
+    # ── Model output dressed as a screen ───────────────────────────
+    # /predictive-screener is the last surface in the whole visible set
+    # that classify_surface() still tiers YELLOW — "realistic figures
+    # built on the bundled ILLUSTRATIVE seed-deal corpus". It ranks
+    # hospitals by an estimated RCM EBITDA uplift: a prediction from the
+    # retired revenue-cycle product, presented in the same table shape
+    # as /screen and /target-screener, which rank on filed figures.
+    "/predictive-screener",
+    # ── Licensed narrative reference ───────────────────────────────
+    # Long-form sector write-ups from third-party licensed material
+    # (IBISWorld, SimplyAnalytics, the 2025-2026 payer/vertical
+    # references). They are well made and they are not CMS: nothing on
+    # them traces to a filing a reader could check, which is the whole
+    # promise. /verticals stays — that is the CMS-data-backed index of
+    # the provider universes (SNF, home health, hospice, dialysis, IRF,
+    # LTCH, hospital), and the near-identical /healthcare-verticals name
+    # sitting next to it was its own navigational bloat.
+    "/healthcare-verticals",
+    "/healthcare-verticals-reference",
+    "/healthcare-verticals/unit-economics",
+    "/industry",
+    "/payer-system",        # "the four payer-economics CDD exhibits"
+    "/market-intel/geo",    # licensed SimplyAnalytics market scores
+    # Six chart-ready reference domains (compensation surveys, procedure
+    # frequency, disease prevalence). Companion to /rcm-benchmarks,
+    # hidden one sweep earlier for the same reason.
+    "/benchmark-reference",
+    # ── Second global search ───────────────────────────────────────
+    # /search is the one the topbar field posts to. /global-search is a
+    # second results page over the same entities.
+    "/global-search",
+    # ── Market aggregation ─────────────────────────────────────────
+    # /market-data is a real HCRIS read and it is also, by its own
+    # registry line, "heatmaps, state comparisons, regression views, and
+    # hospital density maps" — three of those four are families this
+    # sweep and the last one already retired, and /market-data/map is
+    # the same renderer under a second URL. Its state roll-ups are the
+    # ones /state-rankings and /state-compare print from the same
+    # source; what is left on top is an OLS panel and a choropleth. Its
+    # "Data Sources" card credits FRED and Capital IQ, neither of which
+    # the page reads.
+    "/market-data",
+    # /market-intel reads as live market context and is a hand-edited
+    # YAML snapshot: public_comps.yaml says in as many words that "no
+    # live API call is made", it was last reviewed in April 2026, and
+    # the earnings calendar invents its dates by adding 90 days to the
+    # previous report. Transaction tracking that IS sourced stays —
+    # /verified-deals cites a URL per row, /news is the feed, and
+    # /deal-library/comps computes multiples from the licensed universe.
+    "/market-intel",
+    # ── A third route catalog ──────────────────────────────────────
+    # /module-index is a hand-maintained list of 43 Module() literals
+    # standing in for the live route registry that /tools renders from,
+    # and its featured cards carry sparklines its own docstring calls
+    # "decorative editorial flourish (illustrative fixed data)".
+    "/module-index",
+    # ── Pure input form ────────────────────────────────────────────
+    # /import is two forms and a KPI strip of hardcoded string literals
+    # ("Required Fields 2", "Bayesian Priors 12+") — it renders no
+    # analysis, and it POSTs to /quick-import rather than to itself.
+    # /new-deal is the front door for deal entry, manual or bulk.
+    "/import",
+})
+
+# 7) DUPLICATE CATALOGS — nine surfaces answered "what data do you have".
+#    Every one of them is real and honest; having nine of them is the
+#    bloat. The instruction was to document the CMS and Medicare report
+#    coverage better, and nine competing inventories is the opposite of
+#    documenting it — a reader cannot tell which one is authoritative.
+#
+#    THREE stay, with distinct jobs:
+#      * ``/data`` — the canonical inventory: every source with its URL,
+#        refresh cadence, last-loaded timestamp, row count and licence.
+#      * ``/cms-sources`` — the CMS-specific registry: dataset IDs,
+#        granularity, update cadence, key columns. This is the one the
+#        "document the CMS reports" instruction points at.
+#      * ``/data-quality`` — the verification surface: live row counts,
+#        vintages, null rates, and the known-gap register. A product
+#        whose promise is "publicly verify datasets" needs the page that
+#        admits what is missing.
+#
+#    The six below duplicate those three, document data we do not hold,
+#    or inventory infrastructure rather than datasets.
+_DUPLICATE_CATALOG_ROUTES = frozenset({
+    "/data/catalog",        # same inventory as /data, different chrome
+    "/cms-data-browser",    # same CMS list as /cms-sources, ranked by rows
+    "/data-intelligence",   # third pass at "sources wired in and what
+                            # they power"
+    "/tools/open-data",     # fourth pass, with per-source detail pages
+    # Catalogs of data we do NOT have. /data-apis lists free public APIs
+    # PEdesk "can draw on"; /tools/nonpublic-cms describes itself as an
+    # internal staging surface over the CREDENTIALED CMS microdata
+    # programs (ResDAC/CCW, LDS, RIF, CCLF) — a roadmap, not a holding.
+    "/data-apis",
+    "/tools/nonpublic-cms",
+    # An inventory of connectors (openFDA, CDC, HRSA, NIH, Census)
+    # rather than of datasets, and off-pillar besides — none of those
+    # sources is a provider filing or a tracked deal.
+    "/connector-estate",
 })
 
 HIDDEN_ROUTES = (
@@ -389,6 +545,7 @@ HIDDEN_ROUTES = (
     | _DEAL_EXECUTION_ROUTES
     | _NAMED_ROUTES
     | _BLOAT_ROUTES
+    | _DUPLICATE_CATALOG_ROUTES
 )
 
 # Route families where every sub-route is hidden with its parent. A prefix

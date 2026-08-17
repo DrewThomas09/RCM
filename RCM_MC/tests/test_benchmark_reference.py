@@ -102,13 +102,22 @@ class RenderTests(unittest.TestCase):
 
 
 class CatalogTests(unittest.TestCase):
-    def test_listed_in_all_tools_module_index(self):
-        # The page must surface in the platform's "all tools" directory
-        # (/module-index) with a public-data source badge.
+    def test_no_longer_offered_though_still_served(self):
+        # This used to assert /benchmark-reference surfaced in the
+        # "all tools" directory. The 2026-08-17 sweep hid it: the six
+        # reference domains here (compensation surveys, procedure
+        # frequency, disease prevalence) are the companion to
+        # /rcm-benchmarks, hidden one sweep earlier for the same reason —
+        # they are third-party reference tables rather than a CMS filing
+        # a reader can trace. The page still renders and still serves;
+        # it is simply not offered in a catalog. Its source badge still
+        # resolves, so the day it is unhidden the row is intact.
         from rcm_mc.data_public.module_index import compute_module_index
         from rcm_mc.ui.data_public.module_index_page import _source_badge
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/benchmark-reference"))
         routes = {m.route for m in compute_module_index().modules}
-        self.assertIn("/benchmark-reference", routes)
+        self.assertNotIn("/benchmark-reference", routes)
         self.assertIn("CMS", _source_badge("/benchmark-reference"))
 
 

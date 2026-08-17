@@ -32,11 +32,16 @@ class PipelineNavTests(unittest.TestCase):
         # still holds. What changed on 2026-08-16 is that the scoring
         # trio (/deal-quality, /deal-risk-scores, /deal-flow-heatmap) runs
         # on illustrative figures and went registry-hidden, so the rail is
-        # down to the tracking surfaces.
+        # down to the tracking surfaces. /pipeline/bridge followed on
+        # 2026-08-17: it is a jump-off INTO the EBITDA bridge, which is
+        # itself hidden as transaction modelling — a door onto a hidden
+        # room reads as a dead end.
         from rcm_mc.ui._surface_visibility import is_hidden
         hrefs = [i["href"] for i in _SUB_NAV["pipeline"]]
-        for real in ("/pipeline", "/new-deal", "/pipeline/bridge"):
+        for real in ("/pipeline", "/new-deal"):
             self.assertIn(real, hrefs)
+        self.assertTrue(is_hidden("/pipeline/bridge"))
+        self.assertNotIn("/pipeline/bridge", hrefs)
         for scored in ("/deal-quality", "/deal-risk-scores",
                        "/deal-flow-heatmap"):
             self.assertTrue(is_hidden(scored), scored)

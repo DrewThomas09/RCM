@@ -177,46 +177,46 @@ _SUB_NAV = {
     "pipeline": [
         {"label": "Deal Pipeline",       "href": "/pipeline"},
         {"label": "New Deal / Import",   "href": "/new-deal"},
-        {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
+        # Also carried by the Home rail. Duplicated deliberately: after
+        # the EBITDA Bridge left with the transaction-modelling sweep,
+        # Pipeline had two leaves, and the watchlist is the one surface
+        # that genuinely belongs to both readings — the targets you are
+        # following ARE the pipeline. _SUB_SECTION_MAP still resolves
+        # /watchlist to home, so breadcrumbs stay unambiguous.
+        {"label": "Watchlist",           "href": "/watchlist"},
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
-        {"label": "Deals Library",       "href": "/deals-library"},
+        # /deals-library is a 301 to /library; point the rail at the
+        # destination so the nav does not spend a redirect.
+        {"label": "Deals Library",       "href": "/library"},
         {"label": "Verified Deals",      "href": "/verified-deals"},
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
-        {"label": "Healthcare Verticals Reference","href": "/healthcare-verticals-reference"},
         {"label": "Data Catalog",        "href": "/data"},
         {"label": "CMS Sources",         "href": "/cms-sources"},
-        {"label": "CMS Data Browser",    "href": "/cms-data-browser"},
     ],
-    # Research — the visualization + cross-cutting reads over the loaded
-    # public datasets. The rail is long; the topbar only ever front-faces
-    # the top six (see _ranked_subnav_items) and the "All Research →" link
-    # opens /research for the rest. The corpus-narrative entries that used
-    # to sit here (Bear Cases, Corpus Backtest, PE Intelligence, Sponsor
-    # Track Record, …) are registry-hidden — see _surface_visibility.
+    # Research — the market and regulatory backdrop to the provider
+    # universes. Three families of entry used to sit here and are now
+    # registry-hidden: the corpus narratives (Bear Cases, PE
+    # Intelligence, Sponsor Track Record), the chart builders (Further
+    # Analysis, Cross-Dataset Analysis, the graphics toolkit), and the
+    # licensed sector reports (Industry Intelligence, Healthcare
+    # Verticals, Market Intel). What is left reads CMS: what Medicare is
+    # paying this cycle, what is on the regulatory calendar, and how a
+    # geography looks before you screen it.
     "research": [
-        {"label": "Industry Intelligence", "href": "/industry"},
-        {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
-        {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
-        {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
-        {"label": "Notes",               "href": "/notes"},
-        {"label": "Market Intel",        "href": "/market-intel"},
-        {"label": "Further Analysis",    "href": "/further-analysis"},
-        {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
-        {"label": "Public Data APIs",    "href": "/data-apis"},
-        {"label": "Connector Estate",    "href": "/connector-estate"},
+        {"label": "Rate Environment",    "href": "/rate-environment"},
+        {"label": "Regulatory Calendar", "href": "/regulatory-calendar"},
+        {"label": "MA Penetration",      "href": "/ma-penetration"},
         {"label": "Market Scan",         "href": "/market-scan"},
-        {"label": "Benchmark Reference", "href": "/benchmark-reference"},
+        {"label": "Notes",               "href": "/notes"},
         {"label": "All Research →",      "href": "/research"},
     ],
     "diligence": [
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
         {"label": "CMS X-Ray",          "href": "/diligence/xray"},
         {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
-        {"label": "Cost Structure",     "href": "/cost-structure"},
-        {"label": "Payer Stress",       "href": "/diligence/payer-stress"},
         {"label": "Provider Verticals", "href": "/verticals"},
         {"label": "Data Quality",       "href": "/data-quality"},
         {"label": "All Diligence →",    "href": "/diligence"},
@@ -233,25 +233,26 @@ _SECTION_FEATURE = {
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
                "blurb": "Find targets across every public CMS/provider universe: "
                         "the Target Screener workbench (map, table, compare, "
-                        "just-missed, saved screens) plus conferences.",
+                        "just-missed, saved screens) and the geography to "
+                        "decide where to hunt.",
                "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
-                 "blurb": "Track real opportunities once promoted from Source: "
-                          "screen, score, and move deals toward IC.",
+                 "blurb": "Track real opportunities once promoted from Source, "
+                          "and keep them current as the filings move.",
                  "href": "/pipeline"},
     "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The X-rays",
                   "blurb": "Drill into a single provider's filings: the HCRIS "
-                           "and CMS X-Rays, cost structure, payer stress, and "
-                           "the peer bands to read them against.",
+                           "and CMS X-Rays, and the peer bands to read them "
+                           "against.",
                   "href": "/diligence"},
     "library": {"eyebrow": "SECTION · LIBRARY", "title": "The datasets",
                 "blurb": "Every public CMS / Medicare / Medicaid / hospital "
                          "dataset loaded here, what it covers, and the filing "
                          "each figure traces back to.", "href": "/library"},
-    "research": {"eyebrow": "SECTION · RESEARCH", "title": "Visualize & compare",
-                 "blurb": "Chart any loaded dataset, read a provider universe "
-                          "end to end, and put two public sources side by "
-                          "side.",
+    "research": {"eyebrow": "SECTION · RESEARCH", "title": "Universes & context",
+                 "blurb": "Read a whole CMS provider universe end to end, then "
+                          "the payment rates and rule calendar that move it "
+                          "from one cycle to the next.",
                  "href": "/research"},
 }
 
@@ -288,7 +289,7 @@ _NAV_FLAGSHIPS = {
     # Target Screener is the flagship workbench and must lead Source (pinned
     # product decision); the rest of the bar stays score-ordered.
     "source": ["/target-screener"],
-    "pipeline": ["/pipeline", "/pipeline/bridge"],
+    "pipeline": ["/pipeline", "/new-deal"],
     # The analyst playbook in workflow order: identity → ingest → baseline →
     # the CMS / HCRIS X-Ray drill-downs → the IC deliverable.
     # HCRIS X-Ray leads: it is the deepest read of a real Medicare cost
@@ -297,19 +298,19 @@ _NAV_FLAGSHIPS = {
         "/diligence/hcris-xray",
         "/diligence/xray",
         "/diligence/benchmarks",
-        "/cost-structure",
-        "/diligence/payer-stress",
+        "/verticals",
     ],
     "library": ["/deal-library", "/data", "/cms-sources", "/methodology"],
-    # House views lead with the analytical reads; the chart/export utilities
-    # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
+    # Research is the market and regulatory backdrop to the provider
+    # universes: what CMS is paying this cycle, what is on the regulatory
+    # calendar, how MA penetration sits, and a one-input brief for a
+    # geography. The chart/export utilities and the licensed narrative
+    # reports that used to lead this bar went with the 2026-08-17 sweeps.
     "research": [
-        "/market-intel",
-        "/industry",
-        "/healthcare-verticals",
+        "/rate-environment",
         "/regulatory-calendar",
-        "/comparable-outcomes",
-        "/market-intel/geo",
+        "/ma-penetration",
+        "/market-scan",
         "/notes",
     ],
 }

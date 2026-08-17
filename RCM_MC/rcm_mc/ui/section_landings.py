@@ -90,20 +90,27 @@ _SECTIONS: Dict[str, Dict] = {
              "links": [
                  {"href": "/pipeline", "label": "Deal Pipeline",
                   "blurb": "Every live opportunity, staged toward IC."},
-                 {"href": "/new-deal/manual", "label": "New Deal",
-                  "blurb": "Create a deal by hand."},
-                 {"href": "/pipeline/bridge", "label": "EBITDA Bridge",
-                  "blurb": "Entry → exit value bridge per deal."},
+                 {"href": "/new-deal", "label": "New Deal",
+                  "blurb": "Add a target by hand, or import a batch."},
+                 {"href": "/watchlist", "label": "Watchlist",
+                  "blurb": "The targets you're keeping an eye on."},
              ]},
-            {"title": "Score & prioritize", "eyebrow": "RANK THE FUNNEL",
-             "body": "Decide what to spend diligence effort on next.",
+            # The old "Score & prioritize" pillar (Deal Quality,
+            # Deal-Flow Heatmap, Deal Risk) ran entirely on the
+            # illustrative seed corpus and is registry-hidden. What
+            # replaces it is the workflow that keeps a tracked deal
+            # current — no scoring model, just what changed and what you
+            # wrote down.
+            {"title": "Keep it current", "eyebrow": "WATCH THE TARGETS",
+             "body": "What moved on a tracked target, and what you noted.",
              "links": [
-                 {"href": "/deal-quality", "label": "Deal Quality",
-                  "blurb": "Composite quality score per deal."},
-                 {"href": "/deal-flow-heatmap", "label": "Deal-Flow Heatmap",
-                  "blurb": "Where deal flow is concentrating."},
-                 {"href": "/deal-risk-scores", "label": "Deal Risk",
-                  "blurb": "Risk flags per opportunity."},
+                 {"href": "/alerts", "label": "Alerts",
+                  "blurb": "What changed on a tracked target."},
+                 {"href": "/notes", "label": "Notes",
+                  "blurb": "Search every note written against a deal."},
+                 {"href": "/diligence/xray", "label": "CMS X-Ray",
+                  "blurb": "Resolve a tracked target across every CMS "
+                  "vertical it appears in."},
              ]},
         ],
     },
@@ -147,12 +154,41 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "What each metric on the platform means."},
                  {"href": "/methodology", "label": "Methodology",
                   "blurb": "How anything computed here is computed."},
+                 {"href": "/methodology/calculations", "label": "Calculations",
+                  "blurb": "The formula behind each derived metric."},
                  {"href": "/benchmark-reference", "label": "Benchmark Reference",
                   "blurb": "Where each benchmark band comes from."},
                  {"href": "/rcm-benchmarks", "label": "RCM Benchmarks",
                   "blurb": "RCM performance bands by segment."},
                  {"href": "/market-data/map", "label": "Market-Data Map",
                   "blurb": "Geographic coverage of the public data."},
+             ]},
+            # The identity layer under every provider surface. These are
+            # download endpoints rather than pages, but they are the
+            # files a reader would want in order to check the mapping
+            # themselves — which is the point of this section — and no
+            # catalog offered them before.
+            {"title": "Provider identity files", "eyebrow": "THE CROSSWALKS",
+             "body": "The mapping files behind every facility, system and "
+             "NPI on the platform, as CSV.",
+             "links": [
+                 {"href": "/provider-crosswalk.csv", "label": "Provider Crosswalk",
+                  "blurb": "One row per CCN with system, county FIPS, CBSA, "
+                  "taxonomy, geocode and NPI — each beside its source."},
+                 {"href": "/master-npi-file.csv", "label": "Master NPI File",
+                  "blurb": "One row per NPI: identity, status history, "
+                  "taxonomy, geography, billing CCN and resolved parent."},
+                 {"href": "/npi-registry.csv", "label": "Organization NPI Registry",
+                  "blurb": "Organization NPIs from the bundled NPPES "
+                  "extracts with d/b/a names, PECOS group and taxonomy."},
+                 {"href": "/health-system-lookup.csv", "label": "System Mapping",
+                  "blurb": "Filter-aware hospital-to-system mapping, one "
+                  "row per facility keyed on CCN."},
+                 {"href": "/ownership-clusters.csv", "label": "Ownership Clusters",
+                  "blurb": "Facilities grouped by common ownership filing."},
+                 {"href": "/discovered-operators.csv", "label": "Discovered Operators",
+                  "blurb": "Multi-facility operators the system registry "
+                  "does not carry, found by grouping unmapped facilities."},
              ]},
             {"title": "Deal trackers", "eyebrow": "PUBLICLY REPORTED DEALS",
              "body": "Transactions as they were publicly reported — sourced, "
@@ -175,34 +211,25 @@ _SECTIONS: Dict[str, Dict] = {
     },
     "research": {
         "title": "Research",
-        "eyebrow": "VISUALIZE & COMPARE",
-        "explainer_head": "Turn a public dataset into a picture.",
-        "explainer_body": "Chart any loaded dataset, cut it by provider type, "
-        "geography or payer, and put two sources side by side. This is where a "
-        "large CMS file stops being a download and starts being something you "
-        "can read.",
-        "intro_headline": "A large Medicare dataset, charted in seconds.",
+        "eyebrow": "PROVIDER UNIVERSES & CONTEXT",
+        "explainer_head": "Every CMS provider universe, already loaded.",
+        "explainer_body": "Read a whole Medicare program nationally — every "
+        "certified nursing home, home-health agency, hospice, dialysis "
+        "facility, rehab and long-term-care hospital — then the "
+        "reimbursement and regulatory backdrop that moves those numbers "
+        "from one cycle to the next.",
+        "intro_headline": "A large Medicare dataset, readable in seconds.",
         "intro_italic": "seconds",
-        "intro_body": "Chart builders and the provider-universe reads, plus "
-        "the market and regulatory context around them.",
+        "intro_body": "The provider-universe reads, plus what CMS is paying "
+        "and what is on the rule calendar around them.",
         "next": {"label": "Check where a figure came from", "href": "/best/library", "italic": "where"},
+        # The "Chart it" and "Compare & cross-cut" pillars that used to
+        # open this section were the graphics toolkit and the two
+        # build-your-own explorers (Cross-Dataset Analysis, Further
+        # Analysis). All are registry-hidden: they start empty and draw
+        # whatever the reader configures, which is a chart tool rather
+        # than a read of a filing. The universes themselves now lead.
         "pillars": [
-            {"title": "Chart it", "eyebrow": "BUILD THE VISUAL",
-             "body": "Point a chart at a loaded dataset and read it.",
-             "links": [
-                 {"href": "/visuals", "label": "Visuals",
-                  "blurb": "The chart gallery across every loaded dataset."},
-                 {"href": "/chart-builder", "label": "Chart Builder",
-                  "blurb": "Build a chart off any dataset column."},
-                 {"href": "/geo-map", "label": "Geo Map",
-                  "blurb": "US choropleth of any public state metric."},
-                 {"href": "/charts", "label": "Saved Charts",
-                  "blurb": "Charts you've built and kept."},
-                 {"href": "/exhibit", "label": "Exhibit Composer",
-                  "blurb": "Compose several charts into one exhibit."},
-                 {"href": "/pie-chart", "label": "Pie Chart",
-                  "blurb": "Quick share-of-total from a column."},
-             ]},
             {"title": "Provider universes", "eyebrow": "READ ONE SECTOR",
              "body": "Every CMS provider type, already loaded and charted.",
              "links": [
@@ -220,34 +247,28 @@ _SECTIONS: Dict[str, Dict] = {
                   "blurb": "Find a system and its member facilities."},
                  {"href": "/ma-penetration", "label": "MA Penetration",
                   "blurb": "Medicare Advantage share by county."},
+                 {"href": "/inpatient-rehab", "label": "Inpatient Rehab",
+                  "blurb": "CMS measures for the IRF universe."},
+                 {"href": "/long-term-care-hospital", "label": "Long-Term Care Hospitals",
+                  "blurb": "CMS measures for the LTCH universe."},
              ]},
-            {"title": "Compare & cross-cut", "eyebrow": "PUT TWO SOURCES TOGETHER",
-             "body": "Join across datasets, or run one question over all "
-             "of them.",
+            # "Market Intel", its geographic and public-market cuts, and
+            # Industry Intelligence all came out of hand-edited YAML or
+            # licensed third-party reports rather than a CMS file, and
+            # are registry-hidden. What is left here traces to a rule or
+            # a published CMS figure.
+            {"title": "Reimbursement & regulation", "eyebrow": "WHAT MOVES THE NUMBERS",
+             "body": "What CMS is paying this cycle, and what is coming.",
              "links": [
-                 {"href": "/cross-analysis", "label": "Cross-Dataset Analysis",
-                  "blurb": "Join two public datasets on a shared key."},
-                 {"href": "/further-analysis", "label": "Further Analysis",
-                  "blurb": "Follow-on cuts from any loaded dataset."},
-                 {"href": "/analysis", "label": "Analysis Workbench",
-                  "blurb": "The full workbench over a loaded packet."},
-                 {"href": "/comparable-outcomes", "label": "Comparable Outcomes",
-                  "blurb": "How comparable facilities actually performed."},
-             ]},
-            {"title": "Market & regulatory context", "eyebrow": "WHAT MOVES THE NUMBERS",
-             "body": "The reimbursement and market backdrop behind a "
-             "dataset's movement.",
-             "links": [
-                 {"href": "/market-intel", "label": "Market Intel",
-                  "blurb": "Demand, supply, reimbursement by market."},
-                 {"href": "/market-intel/geo", "label": "Geographic Market Intel",
-                  "blurb": "Market intel mapped to geography."},
-                 {"href": "/industry", "label": "Industry Intelligence",
-                  "blurb": "Derived facts from licensed industry reports."},
-                 {"href": "/market-intel/public-market", "label": "Public Market Intel",
-                  "blurb": "Public-market signal on healthcare names."},
+                 {"href": "/rate-environment", "label": "Rate Environment",
+                  "blurb": "Setting-level CMS payment updates (IPPS, OPPS, "
+                  "PFS, ASC, SNF, HH, Hospice, IRF, ESRD) across three "
+                  "rule cycles."},
                  {"href": "/regulatory-calendar", "label": "Regulatory Calendar",
                   "blurb": "CMS rule cycles + rate events."},
+                 {"href": "/market-scan", "label": "Market Scan",
+                  "blurb": "One state or county in, a public-data brief "
+                  "out — demand, supply, spend and shortage."},
                  {"href": "/notes", "label": "Notes",
                   "blurb": "Your research notes."},
              ]},

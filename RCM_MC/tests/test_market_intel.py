@@ -207,14 +207,20 @@ class MarketIntelPageTests(unittest.TestCase):
 
 class NavTest(unittest.TestCase):
 
-    def test_market_intel_link_in_sidebar(self):
+    def test_market_intel_is_no_longer_offered_from_the_shell(self):
         from rcm_mc.ui._chartis_kit import chartis_shell
+        from rcm_mc.ui._surface_visibility import is_hidden
+        # This used to assert the shell offered /market-intel through the
+        # Cmd+K palette. The 2026-08-17 sweep hid it: every figure on the
+        # page comes from hand-edited YAML under market_intel/content/ —
+        # public_comps.yaml says in as many words that "no live API call
+        # is made", it was last reviewed in April 2026, and the earnings
+        # calendar derives its dates by adding 90 days to the previous
+        # report. The page still serves; the shell no longer points at it.
+        self.assertTrue(is_hidden("/market-intel"))
         rendered = chartis_shell("<p>x</p>", "Test")
-        # Market Intel is reachable from chartis_shell via the Cmd+K
-        # command palette. The v3 editorial rework moved sub-routes
-        # from sidebar hrefs into the palette JSON, so the assertion
-        # checks the route path rather than a specific anchor.
-        self.assertIn("/market-intel", rendered)
+        self.assertNotIn('data-route="/market-intel"', rendered)
+        self.assertNotIn('href="/market-intel"', rendered)
 
 
 # ────────────────────────────────────────────────────────────────────

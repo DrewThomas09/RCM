@@ -112,10 +112,14 @@ class RankedRailTests(unittest.TestCase):
         # X-rays lead now.
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items
         top, _ = _ranked_subnav_items("diligence")
-        self.assertEqual([s["href"] for s in top][:5], [
+        # Cost Structure and Payer Stress rode the tail of this list
+        # until 2026-08-17, when both were ruled seeded slider models
+        # rather than filing reads and hidden. Provider Verticals — the
+        # CMS-backed index of the universes an X-ray drills into — pins
+        # the fourth slot in their place.
+        self.assertEqual([s["href"] for s in top][:4], [
             "/diligence/hcris-xray", "/diligence/xray",
-            "/diligence/benchmarks", "/cost-structure",
-            "/diligence/payer-stress",
+            "/diligence/benchmarks", "/verticals",
         ])
 
     def test_portfolio_is_no_longer_a_section(self):
