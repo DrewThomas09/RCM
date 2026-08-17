@@ -770,9 +770,22 @@ _PALETTE_ENTRIES = [
 
 
 def _palette_html() -> str:
-    """Cmd+K command palette — hidden modal rendered on every chartis page."""
+    """Cmd+K command palette — hidden modal rendered on every chartis page.
+
+    Filtered through ``_surface_visibility``, for the same reason
+    :func:`_nav_html` is: the legacy shell is a chrome a reader can
+    switch to, so its palette is a place a reader browses. It was
+    offering 33 of its 55 entries after four sweeps had ruled them
+    hidden — the portfolio ops, the corpus analytics, and the whole
+    RUN block of deal-execution tools. ``/healthz`` and ``/dashboard``
+    stay: neither is a hidden surface, they are simply not analytic.
+    """
+    from ._surface_visibility import is_visible
+
     items = []
     for cat, label, href in _PALETTE_ENTRIES:
+        if not is_visible(str(href).split("?", 1)[0]):
+            continue
         items.append(
             f'<a class="ck-palette-item" data-label="{_html.escape(label.lower())}" '
             f'href="{href}">'

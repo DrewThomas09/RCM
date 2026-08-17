@@ -337,6 +337,33 @@ class ListingSurfaceTests(unittest.TestCase):
         # The help dialog must not advertise a jump the table dropped.
         self.assertNotIn("Portfolio", _SHORTCUTS_HTML)
 
+    def test_the_editorial_shell_chrome_offers_nothing_hidden(self):
+        # The primary shell, held to the same standard as the legacy one
+        # below. Nothing HIDDEN may appear anywhere in its chrome. The
+        # INTERNAL routes it does carry are all inside the topbar user
+        # menu (/users, /audit, /settings/workspace) or the personal
+        # entry point (/my/<owner>) — the documented exemption, and the
+        # test asserts they sit in the user-dropdown markup rather than
+        # taking it on trust.
+        import re as _re
+        from rcm_mc.ui._chartis_kit import chartis_shell
+        from rcm_mc.ui._surface_visibility import is_internal
+        html = chartis_shell("<p>x</p>", "T")
+        # Case-insensitive: /my/<owner> carries an uppercase owner code.
+        hrefs = sorted(set(_re.findall(r'href="(/[A-Za-z0-9/.\-]+)', html)))
+        self.assertTrue(hrefs, "editorial shell rendered no links at all")
+        exempt = [h for h in hrefs
+                  if is_internal(h) or h == "/my" or h.startswith("/my/")]
+        self.assertEqual([h for h in hrefs
+                          if is_hidden(h) and h not in exempt], [])
+        for href in exempt:
+            in_menu = _re.search(
+                r'href="' + _re.escape(href)
+                + r'[^"]*"[^>]*class="ck-(?:user-dropdown-item|mode-chip|user-recent[a-z-]*)"',
+                html)
+            self.assertTrue(in_menu,
+                            f"{href} is internal but not in the user menu")
+
     def test_the_legacy_shell_sidebar_offers_nothing_hidden(self):
         # The dark "Chartis Consulting" shell is a second, complete page
         # chrome a reader can switch to from /settings/workspace, and its
@@ -351,6 +378,33 @@ class ListingSurfaceTests(unittest.TestCase):
         for href in hrefs:
             self.assertTrue(is_visible(href.split("?", 1)[0]),
                             f"legacy sidebar: {href}")
+
+    def test_the_legacy_shell_palette_offers_nothing_hidden(self):
+        # Same gap as the sidebar, in the same shell: the legacy Cmd+K
+        # palette was offering 33 of its 55 entries after four sweeps had
+        # hidden them, including the whole RUN block of deal-execution
+        # tools. Asserted over the shell's rendered output, so it covers
+        # the palette as a reader actually meets it.
+        import re as _re
+        from rcm_mc.ui._chartis_kit_legacy import chartis_shell as legacy
+        html = legacy("<p>x</p>", "T")
+        hrefs = _re.findall(
+            r'class="ck-palette-item"[^>]*href="([^"]+)"', html)
+        self.assertTrue(hrefs, "legacy palette rendered no items at all")
+        for href in hrefs:
+            self.assertTrue(is_visible(href.split("?", 1)[0]),
+                            f"legacy palette: {href}")
+
+    def test_the_legacy_shell_chrome_offers_nothing_hidden_anywhere(self):
+        # The catch-all for this shell: every internal href anywhere in
+        # its chrome, not just the two constructs above. Two sweeps found
+        # the sidebar and the palette by hand; this finds the third.
+        import re as _re
+        from rcm_mc.ui._chartis_kit_legacy import chartis_shell as legacy
+        html = legacy("<p>x</p>", "T")
+        hrefs = sorted(set(_re.findall(r'href="(/[a-z0-9/.\-]+)', html)))
+        leaked = [h for h in hrefs if not is_visible(h)]
+        self.assertEqual(leaked, [], f"legacy shell chrome: {leaked}")
 
     def test_the_legacy_shell_drops_emptied_section_headings(self):
         # Filtering the sidebar emptied whole sections. A heading with
