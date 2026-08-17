@@ -260,6 +260,34 @@ class ServiceAddressTests(Fixture):
         self.write(_revalidate(rows))
         self.assertEqual(service_addresses(self.path), {})
 
+    def test_one_coincidental_repeat_does_not_carry_a_whole_mill(self):
+        """14545 Friar St, Van Nuys: 32 harvested agencies, 31 different
+        signatories, a different suite each. Anna Adamyan happens to
+        sign two of them. Asking only whether *anybody* signs twice
+        declared the entire building one operator — the shape a mere
+        existence test cannot tell from a real back office."""
+        rows = [_row(f"0{58000 + i}", NPIS[i % len(NPIS)][:9] + "0",
+                     legal_name=f"{i} HOSPICE INC",
+                     official_name=f"TENANT {i}",
+                     mail_street=f"14545 FRIAR ST STE {100 + i}",
+                     mail_city="VAN NUYS", mail_state="CA") for i in range(12)]
+        rows[0]["official_name"] = rows[1]["official_name"] = "ANNA ADAMYAN"
+        self.write(_revalidate(rows))
+        self.assertIn("14545 FRIAR ST|VAN NUYS|CA", service_addresses(self.path))
+
+    def test_a_repeat_covering_most_of_the_address_is_a_back_office(self):
+        """The other side of the same line. Two signatories over six
+        facilities, each signing three, is a company — the members with
+        no repeat of their own are the ones the mail key exists to
+        reach."""
+        rows = [_row(f"0{58100 + i}", NPIS[i % len(NPIS)][:9] + "0",
+                     legal_name=f"{i} OPERATOR LLC",
+                     official_name=f"OFFICER {i % 2}",
+                     mail_street=f"1 BACK OFFICE WAY STE {i}",
+                     mail_city="TYLER", mail_state="TX") for i in range(6)]
+        self.write(_revalidate(rows))
+        self.assertEqual(service_addresses(self.path), {})
+
     def test_sixteen_tenants_signing_once_each_are_refused(self):
         """6161 Busch Blvd, Columbus: sixteen home-health agencies in
         sixteen suites, one signature apiece. No officer ceiling above

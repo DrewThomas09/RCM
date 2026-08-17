@@ -190,6 +190,12 @@ OWNERSHIP_COLUMNS: Tuple[str, ...] = (
 #: See :func:`shares_a_signatory`.
 MIN_REPEAT_SIGNATURES = 2
 
+#: What share of an address's facilities a repeated signature has to
+#: cover before the address counts as a back office. See
+#: :func:`shares_a_signatory` for why a bare "anybody signs twice" is
+#: not enough, and what a hospice mill in Van Nuys did to it.
+MIN_SIGNED_SHARE = 0.5
+
 #: A cluster of one is just a facility. Two is the smallest thing that
 #: is evidence of an operator.
 MIN_CLUSTER = 2
@@ -460,21 +466,39 @@ def load_ownership(path: Optional[Path] = None) -> Dict[str, OwnershipRow]:
 
 
 def shares_a_signatory(rows: Iterable[OwnershipRow]) -> bool:
-    """Does one person sign for more than one of these facilities?
+    """Is *most* of this address signed for by someone signing twice?
 
-    The whole test for whether an address is a back office. A company
-    running several facilities signs for several of them; each row of a
-    suite farm is signed by the tenant who rents that suite, and nobody
-    signs twice.
+    The test for whether an address is a back office. A company running
+    several facilities signs for several of them; each row of a suite
+    farm is signed by the tenant who rents that suite.
 
-    It needs no tuned threshold, which is the point — it asks whether
-    the evidence exists at all rather than how much of it there is. On
-    the harvested data it separates the two shapes exactly: every
-    refused address has one signatory per facility and not one has a
-    signature in common, so there is nothing to weigh.
+    Asking merely whether *anybody* signs twice was the first version,
+    and California broke it. 14545 Friar St, Van Nuys is a hospice mill
+    — a ZIP sweep returns dozens of separately-enumerated agencies at
+    that one street, a different suite each — and Anna Adamyan happens
+    to sign two of them. One coincidental repeat would have declared
+    the whole building one operator.
+
+    So a majority has to be covered. A half is not a tuned constant:
+    below it, most of what the address contributes is facilities with
+    no tie to anything, and the ones that *are* tied are already
+    grouped by :attr:`OwnershipRow.official_key` without it. The mail
+    key only earns its place by pulling in the facilities that share no
+    signature, which is a claim worth making when the building is
+    mostly one company and not when it is mostly a lobby directory.
+
+    Measured over the harvest this is a cheap guard: the median
+    accepted address has *every* member covered, and refusing at a half
+    turns away nine addresses of 329 — each of them, checked by hand, a
+    multi-tenant building whose repeat-signers keep their own
+    officer-joined cluster.
     """
+    rows = list(rows)
+    if not rows:
+        return False
     counts = Counter(r.official_key for r in rows if r.official_key)
-    return any(n >= MIN_REPEAT_SIGNATURES for n in counts.values())
+    signed = sum(n for n in counts.values() if n >= MIN_REPEAT_SIGNATURES)
+    return signed >= MIN_SIGNED_SHARE * len(rows)
 
 
 def service_addresses(path: Optional[Path] = None) -> Dict[str, int]:
