@@ -492,6 +492,16 @@ def shares_a_signatory(rows: Iterable[OwnershipRow]) -> bool:
     turns away nine addresses of 329 — each of them, checked by hand, a
     multi-tenant building whose repeat-signers keep their own
     officer-joined cluster.
+
+    One thing to watch. The margin narrows as a market fills in: Friar
+    St read 2/32 covered after one California round, 8/65 after two and
+    38/109 after all forty-two, because the more of a mill you harvest
+    the more of its tenants turn out to run a second agency. It is
+    still a mill — eighty-seven signatories in one building — and 35%
+    is not close to a half. But the statistic drifts toward the
+    threshold with depth rather than away from it, so a later harvest
+    that pushes a known mill past 50% is a signal the rule needs
+    revisiting, not a discovery that the building was a chain.
     """
     rows = list(rows)
     if not rows:
