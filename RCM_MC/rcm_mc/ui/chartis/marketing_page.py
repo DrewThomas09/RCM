@@ -8,27 +8,137 @@ front door stays a single clean document with no app chrome.
 Design intent (2026 refresh): calm and editorial, not a templated SaaS
 splash. Flat parchment, hairline rules, one teal accent used sparingly,
 no gradients or animation. The copy says what the product actually does
-in plain language, names the real analytic surfaces it ships, and labels
-every illustrative figure as a worked sample rather than dressing
-fabricated numbers up as "proof".
+in plain language and names the real surfaces it ships.
+
+2026-08-18 rewrite. Two things were wrong with the previous version,
+and they turned out to be the same thing.
+
+It sold the product to one audience — "healthcare deal teams" — when
+what it actually does (read what a Medicare-certified provider filed,
+against its peers) is the same work whether you are underwriting an
+acquisition, advising a health system, lending against one, regulating
+one, or checking a claim someone made about one.
+
+And it advertised eight capabilities of which FIVE no longer exist:
+Monte Carlo, EBITDA bridge, comparables, covenant stress and the
+management read were all hidden by the 2026-08 visibility sweeps as
+deal-execution machinery. A public front door promising a product the
+app no longer offers is worse than a plain one. The capability grid now
+names surfaces that are live, and every one of them is asserted against
+the visibility registry by test.
+
+Fabricated figures are gone with them. The old page ran on an invented
+deal funnel (14 sourced / $3.2B), an invented target ("Project
+Meridian", $418M revenue, 108% net retention) and an invented source
+inventory. Everything quantitative here now comes from the shipped data
+and is checked by test: 48,510 certified CCNs across seven provider
+classes, 6,123 hospital cost reports, 445 source-cited transactions.
 
 Sections, top to bottom:
   1. Top bar      brand + anchor nav + Sign in + Request access
-  2. Crumbs       Home > PE Desk
-  3. Hero         eyebrow, serif H1, lede, two CTAs, honest meta column
+  2. Crumbs       Home > the workspace
+  3. Hero         eyebrow, serif H1, lede, two CTAs, real coverage card
   4. Value trio   three plain statements of how it works
-  5. Workspace    section header + sample deal funnel (labelled sample)
-  6. Capability   what the workspace actually computes (real surfaces)
-  7. Profile      section header + sample profile catalog (labelled)
-  8. Sources      section header + the real data the workspace runs on
+  5. Coverage     section header + the real provider universe, by class
+  6. Capability   what it actually computes (live surfaces only)
+  7. Provider file section header + what a provider file holds (fields,
+                  not fabricated values)
+  8. Sources      section header + the real data it runs on
   9. CTA strip    "bring your own model, keep your own data" (flat dark)
   10. Footer
 
 All CTAs route to ``/login?next=/app``. Top-nav links smooth-scroll
-within the page. Sample figures are an illustrative worked example and
-are labelled as such; the capability and source lists are real.
+within the page.
 """
 from __future__ import annotations
+
+# ── Real figures ────────────────────────────────────────────────────
+#
+# Everything quantitative on this page is read from the shipped data at
+# import, not typed in. The previous version quoted an invented deal
+# funnel and an invented source inventory; on a page whose whole claim
+# is "every figure traces to its source", numbers we made up were the
+# one thing that could not be defended.
+#
+# Resolved once at import (the crosswalk is memoised, so this costs
+# nothing on a warm process) and behind a try/except: a marketing page
+# must render even if a data file is absent in a slim deployment. The
+# fallbacks are the counts observed on 2026-08-18, so the page degrades
+# to slightly-stale-but-true rather than to zeros.
+
+_CLASS_BLURB = {
+    "Hospital": "cost reports",
+    "Nursing home": "SNF",
+    "Home health": "HHA",
+    "Dialysis": "ESRD",
+    "Hospice": "hospice",
+    "Rehab": "IRF",
+}
+_CLASS_SOURCE = {
+    "Hospital": "HCRIS + Care Compare",
+    "Nursing home": "Care Compare",
+    "Home health": "Care Compare",
+    "Dialysis": "Care Compare",
+    "Hospice": "Care Compare",
+    "Rehab": "Care Compare",
+}
+#: Display label per crosswalk provider_class. LTCH is deliberately
+#: absent: the crosswalk currently resolves only a handful of LTCH CCNs,
+#: and a bar reading "8" next to 14,699 nursing homes would misdescribe
+#: the coverage rather than report it. The LTCH universe still has its
+#: own surface in the app.
+_CLASS_LABELS = {
+    "hospital": "Hospital", "snf": "Nursing home", "hha": "Home health",
+    "dialysis": "Dialysis", "hospice": "Hospice", "irf": "Rehab",
+}
+_FALLBACK_BY_CLASS = {
+    "Nursing home": 14699, "Home health": 12392, "Dialysis": 7557,
+    "Hospice": 6852, "Hospital": 6123, "Rehab": 879,
+}
+
+
+def _load_counts():
+    """(total CCNs, per-class counts) from the provider crosswalk."""
+    try:
+        from collections import Counter
+
+        from ...data.provider_crosswalk import SCOPE_ALL, get_crosswalk
+        xw = get_crosswalk(scope=SCOPE_ALL)
+        counts = Counter(xw["provider_class"].astype(str))
+        by_class = {
+            label: counts[key]
+            for key, label in _CLASS_LABELS.items() if counts.get(key)
+        }
+        if not by_class:
+            raise ValueError("no provider classes resolved")
+        return len(xw), dict(sorted(
+            by_class.items(), key=lambda kv: -kv[1]))
+    except Exception:                              # noqa: BLE001
+        return 48510, dict(sorted(
+            _FALLBACK_BY_CLASS.items(), key=lambda kv: -kv[1]))
+
+
+def _load_verified_deal_count() -> int:
+    try:
+        from ...data_public.verified_deals import VERIFIED_DEALS
+        return len(VERIFIED_DEALS) or 445
+    except Exception:                              # noqa: BLE001
+        return 445
+
+
+def _load_system_count() -> int:
+    try:
+        from ...data.health_systems import ACUTE_REGISTRY
+        return len(ACUTE_REGISTRY) or 298
+    except Exception:                              # noqa: BLE001
+        return 298
+
+
+_N_CCNS, _CCNS_BY_CLASS = _load_counts()
+_N_HOSPITALS = _CCNS_BY_CLASS.get("Hospital", 6123)
+_N_VERIFIED_DEALS = _load_verified_deal_count()
+_N_SYSTEMS = _load_system_count()
+
 
 # CTA target. Every "sign in" / "request access" / "open workspace"
 # affordance points here. Kept as a module constant so the route is
@@ -478,9 +588,9 @@ def _topbar() -> str:
         '<div class="brand-name">PE <em>Desk</em></div>'
         '</a>'
         '<nav class="topnav" aria-label="Primary">'
-        '<a href="#workspace">Workspace</a>'
+        '<a href="#coverage">Coverage</a>'
         '<a href="#modules">What it computes</a>'
-        '<a href="#proof">Sample profile</a>'
+        '<a href="#proof">A provider file</a>'
         '<a href="#sources">Data</a>'
         '</nav>'
         '<div class="topbar-right">'
@@ -496,7 +606,7 @@ def _crumbs() -> str:
         '<div class="crumbs">'
         '<span>Home</span>'
         '<span class="sep">&rsaquo;</span>'
-        '<span class="here">PE Desk</span>'
+        '<span class="here">The workspace</span>'
         '</div>'
     )
 
@@ -506,24 +616,25 @@ def _hero() -> str:
         '<section class="hero">'
         '<div>'
         '<div class="eyebrow">'
-        '<span>COMMERCIAL&nbsp;DILIGENCE</span>'
+        '<span>PROVIDER&nbsp;DILIGENCE</span>'
         '<span class="dot">&middot;</span>'
-        '<span>HEALTHCARE</span>'
+        '<span>US&nbsp;HEALTHCARE</span>'
         '<span class="dot">&middot;</span>'
         '<span class="slug">built on public data</span>'
         '</div>'
-        '<h1 class="title">The deal file that <br/>'
-        '<em>shows its work.</em></h1>'
+        '<h1 class="title">Every number, <br/>'
+        '<em>back to the filing.</em></h1>'
         '<p class="lede">'
-        'One workspace per target: market structure, peer benchmarks, '
-        'comparable transactions, and the signals around them. '
-        '<b>Every figure links back to the filing, cost report, or call '
-        'it came from</b> &mdash; and nothing ever leaves your '
-        'infrastructure.'
+        'Take any Medicare-certified provider apart against what it '
+        'actually filed &mdash; cost report, quality measures, ownership, '
+        'and the peers it sits among. Read a whole CMS program '
+        'nationally, or one facility line by line. '
+        '<b>Every figure traces to the public document it came from</b>, '
+        'and nothing you add ever leaves your infrastructure.'
         '</p>'
         '<div class="hero-actions">'
-        f'<a href="{_LOGIN}" class="cta-btn">Open a workspace &rarr;</a>'
-        '<a href="#workspace" class="ghost-btn">See a sample profile &darr;</a>'
+        f'<a href="{_LOGIN}" class="cta-btn">Open the workspace &rarr;</a>'
+        '<a href="#coverage" class="ghost-btn">See what it covers &darr;</a>'
         '</div>'
         '</div>'
         + _hero_art()
@@ -532,55 +643,56 @@ def _hero() -> str:
 
 
 def _hero_art() -> str:
-    """Illustrative 'sample workspace' card for the hero's right column.
+    """Coverage card for the hero's right column.
 
-    Replaces the white space left when the old meta block was removed. It is
-    decorative support for the headline ('shows its work'), not a live readout:
-    the chart is an illustrative market-activity shape, but the figures shown
-    are true and durable (1,936 deals in the library, 30+ catalogued open-data
-    sources, the product's link-to-source promise). Marked 'Sample workspace'
-    so it never reads as a live dashboard.
+    Was an illustrative "comparable transactions by year" chart with a
+    made-up shape. It is now the real certified-provider universe: one
+    bar per CMS program class, heights proportional to the actual counts
+    in the shipped provider crosswalk, and three figures underneath that
+    are read from the data rather than typed in.
     """
-    # (x, y, height) per year bar; y = 110 - height. Last year deepened to draw
-    # the eye to the most recent period.
-    bars = [
-        (16, 90, 20), (50, 82, 28), (84, 85, 25), (118, 76, 34), (152, 80, 30),
-        (186, 66, 44), (220, 58, 52), (254, 63, 47), (288, 44, 66),
-    ]
-    rects = "".join(
-        f'<rect x="{x}" y="{y}" width="22" height="{h}" rx="1" fill="var(--teal)"/>'
-        for (x, y, h) in bars
-    )
-    rects += '<rect x="322" y="30" width="22" height="80" rx="1" fill="var(--teal-deep)"/>'
-    ticks = "".join(
-        f'<text x="{cx}" y="124" text-anchor="middle" class="ha-tick">&rsquo;{yr}</text>'
-        for (cx, yr) in ((27, "15"), (129, "18"), (231, "21"), (333, "24"))
-    )
+    total = max(_CCNS_BY_CLASS.values())
+    bars, ticks, x = "", "", 16
+    for label, n in _CCNS_BY_CLASS.items():
+        h = max(6, round(80 * n / total))
+        fill = "var(--teal-deep)" if label == "Hospital" else "var(--teal)"
+        bars += (f'<rect x="{x}" y="{110 - h}" width="30" height="{h}" '
+                 f'rx="1" fill="{fill}"/>')
+        ticks += (f'<text x="{x + 15}" y="124" text-anchor="middle" '
+                  f'class="ha-tick">{label[:4]}</text>')
+        x += 48
     return (
         '<aside class="hero-art">'
         '<div class="ha-card">'
         '<div class="ha-head">'
-        '<span class="ha-eyebrow"><span class="ha-dot"></span>Sample workspace</span>'
-        '<span class="ha-chip">HEALTHCARE&nbsp;SERVICES</span>'
+        '<span class="ha-eyebrow"><span class="ha-dot"></span>'
+        'Coverage</span>'
+        '<span class="ha-chip">CERTIFIED&nbsp;PROVIDERS</span>'
         '</div>'
-        '<div class="ha-ctitle">Comparable transactions <span>by year</span></div>'
-        '<div class="ha-csub">M&amp;A activity &middot; 2015&ndash;2024</div>'
+        '<div class="ha-ctitle">Certified facilities '
+        '<span>by program</span></div>'
+        '<div class="ha-csub">Medicare-certified CCNs &middot; '
+        'seven provider classes</div>'
         '<svg class="ha-chart" role="img" '
-        'aria-label="Comparable healthcare transactions per year, trending upward '
-        'from 2015 to 2024" viewBox="0 0 360 132" preserveAspectRatio="xMidYMid meet">'
-        '<line x1="14" y1="110" x2="346" y2="110" stroke="var(--border)" stroke-width="1"/>'
-        + rects + ticks +
+        'aria-label="Medicare-certified facility counts by provider '
+        'class: skilled nursing largest, then home health, dialysis, '
+        'hospice, hospital, inpatient rehab, long-term care" '
+        'viewBox="0 0 360 132" preserveAspectRatio="xMidYMid meet">'
+        '<line x1="14" y1="110" x2="346" y2="110" '
+        'stroke="var(--border)" stroke-width="1"/>'
+        + bars + ticks +
         '</svg>'
         '<div class="ha-kpis">'
-        '<div class="ha-row"><span class="k">Comparable deals</span>'
-        '<span class="v">1,936</span></div>'
-        '<div class="ha-row"><span class="k">Open data sources</span>'
-        '<span class="v">30+</span></div>'
-        '<div class="ha-row"><span class="k">Figures linked to source</span>'
-        '<span class="v">100%</span></div>'
+        '<div class="ha-row"><span class="k">Certified CCNs</span>'
+        f'<span class="v">{_N_CCNS:,}</span></div>'
+        '<div class="ha-row"><span class="k">Hospital cost reports</span>'
+        f'<span class="v">{_N_HOSPITALS:,}</span></div>'
+        '<div class="ha-row"><span class="k">Source-cited deals</span>'
+        f'<span class="v">{_N_VERIFIED_DEALS}</span></div>'
         '</div>'
         '<div class="ha-foot"><span class="arr">&#8627;</span> '
-        'Source: CMS HCRIS &middot; SEC &middot; HCPEA</div>'
+        'Source: CMS Provider of Services &middot; HCRIS &middot; '
+        'Care Compare</div>'
         '</div>'
         '</aside>'
     )
@@ -588,18 +700,20 @@ def _hero_art() -> str:
 
 def _triplet() -> str:
     cells = [
-        ("/01", "Enter the deal <em>once</em>",
-         "Name the target, set the thesis, drop in the financials. Every "
-         "analytic downstream opens already filled in &mdash; no re-keying "
-         "the same number into five tools."),
-        ("/02", "Market and target <em>together</em>",
-         "The target sits inside its market: growth, payer mix, named "
-         "competitors, and the comparables that set the multiple. Read "
-         "across the page, not just down it."),
+        ("/01", "Start from a <em>provider</em>",
+         "Type a CCN, an NPI, or a facility name. It resolves across "
+         "every CMS program that provider bills under &mdash; so an "
+         "operator running a hospital, two home-health agencies and a "
+         "hospice reads as one operator, not four rows."),
+        ("/02", "Read the whole <em>universe</em>",
+         "Not just your target. Every certified nursing home, home-health "
+         "agency, hospice, dialysis centre, rehab and long-term-care "
+         "hospital in the country, on the measures CMS publishes for "
+         "each &mdash; so you can see where one facility actually sits."),
         ("/03", "Every figure <em>shows its source</em>",
-         "Click any number to land on the filing, cost report, or call "
-         "behind it &mdash; then hand the file to the next analyst without "
-         "losing the trail."),
+         "Each number names the cost report, Care Compare file or "
+         "ownership filing it was computed from, and the data catalog "
+         "says how fresh that file is and what is missing from it."),
     ]
     inner = "".join(
         f'<div class="trip-cell">'
@@ -624,7 +738,7 @@ def _sect(micro: str, headline: str, desc: str) -> str:
 
 
 def _funnel(stages: list, columns: int = 7) -> str:
-    """Pipeline funnel, one stage cell per tuple
+    """Horizontal stat strip, one cell per tuple
     ``(name, count, sub, bar_pct, accent)``."""
     cells = ""
     grid = (
@@ -648,58 +762,55 @@ def _funnel(stages: list, columns: int = 7) -> str:
     return f'<div class="funnel"{grid}>{cells}</div>'
 
 
-def _workspace_section() -> str:
-    funnel = _funnel([
-        ("Sourced", "14", "$3.2B", 100, ""),
-        ("Screened", "9", "$2.1B", 64, ""),
-        ("IOI", "4", "$1.4B", 29, ""),
-        ("LOI", "2", "$680M", 14, ""),
-        ("SPA", "1", "$450M", 7, ""),
-        ("Closed", "1", "$450M", 7, ""),
-        ("Hold", "3", "$1.2B", 21, "var(--green)"),
-    ])
-    rows = (
-        '<tr><td class="lbl">Sourced</td><td class="r">14</td>'
-        '<td class="r">$3.2B</td>'
-        '<td class="r" style="color:var(--faint)">&mdash;</td></tr>'
-        '<tr><td class="lbl">Screened</td><td class="r">9</td>'
-        '<td class="r">$2.1B</td>'
-        '<td class="r" style="color:var(--green)">64%</td></tr>'
-        '<tr><td class="lbl">IOI</td><td class="r">4</td>'
-        '<td class="r">$1.4B</td>'
-        '<td class="r" style="color:var(--amber)">44%</td></tr>'
-        '<tr><td class="lbl">LOI</td><td class="r">2</td>'
-        '<td class="r">$680M</td>'
-        '<td class="r" style="color:var(--amber)">50%</td></tr>'
-        '<tr><td class="lbl">SPA</td><td class="r">1</td>'
-        '<td class="r">$450M</td>'
-        '<td class="r" style="color:var(--amber)">50%</td></tr>'
-        '<tr><td class="lbl">Closed</td><td class="r">1</td>'
-        '<td class="r">$450M</td>'
-        '<td class="r" style="color:var(--green)">100%</td></tr>'
+def _coverage_section() -> str:
+    """The provider universe, by CMS program class.
+
+    Replaces a "deal funnel" (Sourced / Screened / IOI / LOI / SPA /
+    Closed / Hold, on invented counts and EVs). That funnel described
+    one audience's workflow and ran entirely on made-up numbers; this
+    describes what the product actually holds, on counts read from the
+    shipped crosswalk at import.
+    """
+    top = max(_CCNS_BY_CLASS.values())
+    strip = _funnel(
+        [(label, f"{n:,}", _CLASS_BLURB[label], round(100 * n / top),
+          "var(--teal-deep)" if label == "Hospital" else "")
+         for label, n in _CCNS_BY_CLASS.items()],
+        columns=len(_CCNS_BY_CLASS),
+    )
+    rows = "".join(
+        '<tr>'
+        f'<td class="lbl">{label}</td>'
+        f'<td class="r">{n:,}</td>'
+        f'<td class="r" style="color:var(--muted)">{_CLASS_SOURCE[label]}</td>'
+        '</tr>'
+        for label, n in _CCNS_BY_CLASS.items()
+    )
+    rows += (
         '<tr class="hot">'
-        '<td class="lbl" style="font-weight:700; color:var(--ink)">Hold</td>'
-        '<td class="r" style="font-weight:700">3</td>'
-        '<td class="r" style="font-weight:700">$1.2B</td>'
-        '<td class="r">&mdash;</td></tr>'
+        '<td class="lbl" style="font-weight:700; color:var(--ink)">'
+        'All certified CCNs</td>'
+        f'<td class="r" style="font-weight:700">{_N_CCNS:,}</td>'
+        '<td class="r" style="color:var(--muted)">'
+        'CMS Provider of Services</td></tr>'
     )
     return (
-        '<section id="workspace">'
+        '<section id="coverage">'
         + _sect(
-            "THE WORKSPACE",
-            "From scattered files <br/>to <em>one deal view.</em>",
-            "The target profile, market map, comparable set, interview log, "
-            "and diligence questions live in one place and stay tied to the "
-            "deal &mdash; so the whole team reads the same file, from "
-            "sourced to close.",
+            "THE COVERAGE",
+            "Every certified provider, <br/><em>not just yours.</em>",
+            "Seven Medicare programs, read nationally rather than one "
+            "target at a time. The point of holding the whole universe is "
+            "that a single facility&rsquo;s numbers only mean something "
+            "next to the ones it sits among.",
         )
         + '<div class="pair">'
-        f'<div class="viz">{funnel}</div>'
+        f'<div class="viz">{strip}</div>'
         '<div class="data">'
-        '<div class="data-h"><span>Deal funnel</span>'
-        '<span class="sample-tag">Sample</span></div>'
-        '<table><thead><tr><th>Stage</th><th class="r">N</th>'
-        '<th class="r">EV</th><th class="r">&rarr; prior</th></tr></thead>'
+        '<div class="data-h"><span>Certified facilities by program</span>'
+        '<span class="sample-tag">Live count</span></div>'
+        '<table><thead><tr><th>Program</th><th class="r">Facilities</th>'
+        '<th class="r">Source</th></tr></thead>'
         f'<tbody>{rows}</tbody></table>'
         '</div>'
         '</div>'
@@ -708,33 +819,40 @@ def _workspace_section() -> str:
 
 
 def _capability_section() -> str:
-    """What the workspace actually computes. These are the real analytic
-    surfaces the platform ships — not illustrative numbers."""
+    """What the workspace actually computes.
+
+    Every route named here is asserted VISIBLE by
+    ``tests/test_marketing_page.py``. The previous version advertised
+    eight capabilities of which five (Monte Carlo, EBITDA bridge,
+    comparables, covenant stress, management read) had been hidden as
+    deal-execution machinery — a front door selling a product the app
+    no longer offered.
+    """
     caps = [
-        ("Monte Carlo", "Forward EBITDA",
-         "EBITDA, MOIC and IRR distributions across thousands of trials, "
-         "with driver attribution."),
-        ("EBITDA bridge", "Value creation",
-         "Entry to exit, decomposed into the operating levers that get "
-         "you there."),
-        ("Peer X-ray", "Public data",
-         "Any hospital read against its HCRIS cost-report cohort on 15 "
-         "operating metrics."),
-        ("Comparables", "Market",
-         "Reference transactions and public comps matched to the target "
-         "by profile distance."),
-        ("Covenant stress", "Credit",
-         "Per-quarter breach probability and equity-cure sizing under "
-         "rate and EBITDA shocks."),
-        ("Regulatory calendar", "Timing",
-         "CMS, OIG and payer dates mapped to the specific thesis driver "
-         "each one moves."),
-        ("Management read", "Team",
-         "Forecast reliability, comp structure, tenure and prior-role "
-         "track record, scored."),
-        ("Source library", "Provenance",
-         "Every figure on every surface cites the public document it "
-         "was computed from."),
+        ("CMS X-Ray", "Identity", "/diligence/xray",
+         "One CCN, provider ID or name resolved across every CMS "
+         "vertical the provider appears in."),
+        ("HCRIS X-Ray", "Cost report",  "/diligence/hcris-xray",
+         "A hospital's Medicare cost report read line by line, against "
+         "peer percentiles, with the outliers flagged."),
+        ("Provider universes", "Quality", "/verticals",
+         "Care Compare for all seven programs: star ratings, staffing, "
+         "outcomes, certified beds, ownership."),
+        ("Screeners", "Search", "/target-screener",
+         "Filter any provider universe on filed figures &mdash; size, "
+         "margin, mix, geography. Nothing on the screen is modelled."),
+        ("Health system lookup", "Ownership", "/health-system-lookup",
+         "Which system operates which facility, and who actually "
+         "controls the beds in a given market."),
+        ("Identity crosswalks", "Plumbing", "/provider-crosswalk.csv",
+         "CCN to NPI to system to county to CBSA, as CSV, each mapping "
+         "beside the source that produced it."),
+        ("Deal tracking", "Market", "/verified-deals",
+         f"{_N_VERIFIED_DEALS} publicly-reported transactions, each row "
+         "carrying the citation it was read from."),
+        ("Data catalog", "Provenance", "/data",
+         "Every source with its refresh cadence and row count &mdash; "
+         "and a companion page for what is missing."),
     ]
     inner = "".join(
         f'<div class="cap">'
@@ -742,59 +860,74 @@ def _capability_section() -> str:
         f'<h3 class="cap-name">{name}</h3>'
         f'<p class="cap-d">{desc}</p>'
         f'</div>'
-        for name, tag, desc in caps
+        for name, tag, _route, desc in caps
     )
     return (
         '<section id="modules">'
         + _sect(
             "WHAT IT COMPUTES",
             "Analysis that <br/>ships <em>in the box.</em>",
-            "Every workspace carries the same analytic surfaces, run on "
-            "public data and your own inputs &mdash; no add-on modules, no "
-            "per-seat math, no waiting on a vendor.",
+            "Every one of these runs on public data the moment you sign "
+            "in &mdash; no add-on modules, no per-seat math, no waiting "
+            "on a vendor to load your file.",
         )
         + f'<div class="caps">{inner}</div>'
         + '</section>'
     )
 
 
+#: Routes named by the capability grid. Kept module-level so the test
+#: can assert every one is still a visible surface without scraping HTML.
+CAPABILITY_ROUTES = (
+    "/diligence/xray", "/diligence/hcris-xray", "/verticals",
+    "/target-screener", "/health-system-lookup", "/provider-crosswalk.csv",
+    "/verified-deals", "/data",
+)
+
+
 def _profile_section() -> str:
+    """What a provider file actually holds.
+
+    Was "Project Meridian", an invented target with invented figures
+    ($418M revenue, 108% net retention, 11.4x peer median). Naming the
+    FIELDS instead of fabricating values makes the same point — four
+    angles on one screen — without putting a made-up number on the
+    public front door of a product whose promise is traceability.
+    """
     columns = [
-        ("COMPANY", "deal", [
-            ("Revenue", "$418M", ""),
-            ("Locations", "62 sites", ""),
-            ("Ownership", "Sponsor-backed", ""),
-            ("Mgmt tenure", "4.2y avg", ""),
+        ("IDENTITY", "filed", [
+            ("CCN &amp; NPIs", "who this is"),
+            ("Programs certified", "what it bills under"),
+            ("Parent system", "who operates it"),
+            ("County &middot; CBSA", "where it sits"),
         ]),
-        ("MARKET", "market", [
-            ("TAM", "$28B", ""),
-            ("Growth (5y CAGR)", "+7.4%", "var(--green)"),
-            ("Top-3 share", "31%", "var(--amber)"),
-            ("Reg exposure", "Moderate", "var(--amber)"),
+        ("COST REPORT", "filed", [
+            ("Revenue &amp; operating margin", "HCRIS"),
+            ("Beds &middot; patient days", "HCRIS"),
+            ("Payer day mix", "HCRIS"),
+            ("Opex per bed, per day", "HCRIS"),
         ]),
-        ("COMPETITORS", "market", [
-            ("Peer count", "14", ""),
-            ("Peer median EV/EBITDA", "11.4x", ""),
-            ("Pricing position", "Premium", "var(--green)"),
-            ("Edge", "Network density", ""),
+        ("QUALITY", "public", [
+            ("Star ratings", "Care Compare"),
+            ("Staffing hours", "Care Compare"),
+            ("Outcome measures", "Care Compare"),
+            ("Inspection history", "Care Compare"),
         ]),
-        ("CUSTOMERS", "deal", [
-            ("Net retention", "108%", "var(--green)"),
-            ("Top-10 concentration", "34%", "var(--amber)"),
-            ("Referral velocity", "+12% QoQ", "var(--green)"),
-            ("Churn flags", "3", "var(--amber)"),
+        ("CONTEXT", "public", [
+            ("Peer percentile, each metric", "vs cohort"),
+            ("MA penetration", "county"),
+            ("Payment updates this cycle", "CMS rules"),
+            ("Reported transactions", "cited"),
         ]),
     ]
     cols_html = ""
     for title, level, rows in columns:
-        lvl_cls = "lvl fund" if level == "deal" else "lvl market"
-        lvl_txt = "DEAL" if level == "deal" else "MARKET"
+        lvl_cls = "lvl fund" if level == "filed" else "lvl market"
+        lvl_txt = "FILED" if level == "filed" else "PUBLIC"
         row_html = "".join(
             f'<tr><td class="lbl">{label}</td>'
-            f'<td class="r"'
-            + (f' style="color:{color}"' if color else "")
-            + f'>{value}</td></tr>'
-            for label, value, color in rows
+            f'<td class="r" style="color:var(--muted)">{src}</td></tr>'
+            for label, src in rows
         )
         cols_html += (
             '<div class="cat-col">'
@@ -806,57 +939,62 @@ def _profile_section() -> str:
     return (
         '<section id="proof">'
         + _sect(
-            "A SAMPLE PROFILE",
-            "One target, <br/>four <em>angles.</em>",
-            "Company, market, competitors, and customers on one screen "
-            "&mdash; the whole commercial picture in a sitting. Figures below "
-            "are illustrative; in the app every row links to its source.",
+            "A PROVIDER FILE",
+            "One facility, <br/>four <em>angles.</em>",
+            "Identity, cost report, quality and context on one screen. "
+            "These are the fields a provider file carries &mdash; not a "
+            "worked example. There is no sample company here, because "
+            "every value in the app is read from a filing rather than "
+            "written by us.",
         )
         + '<div class="data-h" style="border:1px solid var(--rule);'
           'border-bottom:none;background:var(--paper-pure)">'
-          '<span>Project Meridian &middot; regional services platform</span>'
-          '<span class="sample-tag">Illustrative sample</span></div>'
+          '<span>What the X-ray pulls for any certified provider</span>'
+          '<span class="sample-tag">Fields, not values</span></div>'
         + f'<div class="catalog" style="margin-top:0">{cols_html}</div>'
         + '</section>'
     )
 
 
 def _sources_section() -> str:
-    funnel = _funnel([
-        ("CMS public", "2,847", "cost reports", 100, ""),
-        ("Filings", "412", "10-K / S-1", 55, ""),
-        ("Market research", "184", "sector briefs", 70, ""),
-        ("Interviews", "26", "calls logged", 35, ""),
-        ("Your notes", "98", "engagements", 80, ""),
+    strip = _funnel([
+        ("Provider of Services", f"{_N_CCNS:,}", "certified CCNs", 100, ""),
+        ("HCRIS", f"{_N_HOSPITALS:,}", "cost reports", 62, ""),
+        ("Care Compare", "7", "program files", 40, ""),
+        ("Ownership filings", f"{_N_SYSTEMS}", "systems mapped", 34, ""),
+        ("Reported deals", f"{_N_VERIFIED_DEALS}", "with citations", 30,
+         "var(--green)"),
     ], columns=5)
     rows = (
-        '<tr><td class="lbl">CMS public data (HCRIS, MA, CMS Compare)</td>'
-        '<td class="r">2,847</td></tr>'
-        '<tr><td class="lbl">SEC filings (10-K, S-1, proxies)</td>'
-        '<td class="r">412</td></tr>'
-        '<tr><td class="lbl">Sector &amp; market research</td>'
-        '<td class="r">184</td></tr>'
-        '<tr><td class="lbl">Customer / channel / competitor calls</td>'
-        '<td class="r">26</td></tr>'
+        '<tr><td class="lbl">CMS Provider of Services '
+        '(all seven certified classes)</td>'
+        f'<td class="r">{_N_CCNS:,}</td></tr>'
+        '<tr><td class="lbl">HCRIS hospital cost reports</td>'
+        f'<td class="r">{_N_HOSPITALS:,}</td></tr>'
+        '<tr><td class="lbl">CMS Care Compare quality files</td>'
+        '<td class="r">7</td></tr>'
+        '<tr><td class="lbl">Health systems mapped to their facilities</td>'
+        f'<td class="r">{_N_SYSTEMS}</td></tr>'
         '<tr class="hot">'
         '<td class="lbl" style="font-weight:700; color:var(--ink)">'
-        'Your own engagement notes &amp; decks</td>'
-        '<td class="r" style="font-weight:700">98</td></tr>'
+        'Transactions with a citation URL</td>'
+        f'<td class="r" style="font-weight:700">{_N_VERIFIED_DEALS}</td></tr>'
     )
     return (
         '<section id="sources">'
         + _sect(
             "THE DATA",
             "Public where it can be, <br/><em>yours</em> where it counts.",
-            "It ships loaded with CMS public data and reads SEC filings out "
-            "of the box. Add your own research, interviews, and notes "
-            "alongside them &mdash; nothing you add is sent anywhere.",
+            "It ships loaded with the CMS public estate &mdash; every "
+            "certified provider, the cost reports, the quality files and "
+            "the ownership behind them. Add your own research and notes "
+            "alongside; nothing you add is sent anywhere.",
         )
         + '<div class="pair">'
-        f'<div class="viz">{funnel}</div>'
+        f'<div class="viz">{strip}</div>'
         '<div class="data">'
-        '<div class="data-h"><span>Source inventory</span>'
-        '<span class="sample-tag">Sample</span></div>'
+        '<div class="data-h"><span>What ships loaded</span>'
+        '<span class="sample-tag">Live count</span></div>'
         f'<table><tbody>{rows}</tbody></table>'
         '</div>'
         '</div>'
@@ -871,13 +1009,13 @@ def _cta_strip() -> str:
         '<div class="micro">GET ACCESS</div>'
         '<h3>Bring your own <em>model</em>. <br/>'
         'Keep your own <em>data</em>.</h3>'
-        '<p>PE Desk runs on your infrastructure with the model you choose, '
-        'local or hosted. Public sources come preloaded; connect your '
-        'research and CRM when you&rsquo;re ready. No data leaves the box, '
+        '<p>It runs on your infrastructure with the model you choose, '
+        'local or hosted. The CMS estate comes preloaded; add your own '
+        'research when you&rsquo;re ready. No data leaves the box, '
         'no SaaS lock-in.</p>'
         '</div>'
         '<div class="cta-strip-actions">'
-        f'<a href="{_LOGIN}" class="cta-light">Open a workspace &rarr;</a>'
+        f'<a href="{_LOGIN}" class="cta-light">Open the workspace &rarr;</a>'
         f'<a href="{_LOGIN}" class="cta-outline">Request access</a>'
         '</div>'
         '</section>'
@@ -887,11 +1025,11 @@ def _cta_strip() -> str:
 def _footer() -> str:
     return (
         '<footer>'
-        '<span>PE <em>Desk</em>: the diligence workspace for '
-        'healthcare deal teams</span>'
+        '<span>PE <em>Desk</em>: diligence on US healthcare providers, '
+        'from public data</span>'
         '<span class="mono" style="font-size:.75rem">'
-        'CMS public data &middot; SEC filings &middot; market research '
-        '&middot; interviews &middot; your notes</span>'
+        'CMS Provider of Services &middot; HCRIS &middot; Care Compare '
+        '&middot; ownership filings &middot; your notes</span>'
         '</footer>'
     )
 
@@ -914,13 +1052,16 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         '<meta charset="utf-8"/>'
         '<meta name="viewport" content="width=device-width, initial-scale=1"/>'
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>'
-        '<title>PE Desk: the diligence workspace for healthcare '
-        'deal teams</title>'
-        '<meta name="description" content="PE Desk gives a healthcare deal '
-        'team one workspace per target: market structure, peer benchmarks, '
-        'comparable transactions, customer and competitor signals, '
-        'interviews, and notes, with every figure cited to its source. '
-        'Built on public CMS data, run on your own infrastructure.">'
+        '<title>PE Desk: diligence on US healthcare providers, '
+        'from public data</title>'
+        '<meta name="description" content="Take any Medicare-certified '
+        'provider apart against what it filed: cost report, quality '
+        'measures, ownership, and the peers it sits among. Every '
+        'certified CCN across seven CMS programs, with each figure '
+        'traced to the public document it came from. For anyone doing '
+        'diligence on US healthcare - investors, operators, advisors, '
+        'lenders and researchers alike. Runs on your own '
+        'infrastructure.">'
         + _STYLE
         + '</head><body>'
         + _topbar()
@@ -928,7 +1069,7 @@ def render_marketing_page(basic_auth: bool = False) -> str:
         + '<div class="page">'
         + _hero()
         + _triplet()
-        + _workspace_section()
+        + _coverage_section()
         + _capability_section()
         + _profile_section()
         + _sources_section()

@@ -71,10 +71,16 @@ class HomeEmptyStateTests(unittest.TestCase):
         )
         self.assertIn("<h1>Home</h1>", self.html)
         self.assertIn('class="lede"', self.html)
+        # Was "<em>Where the partner reads the market first.</em>".
+        # The page is the same; the assumption that its reader is a
+        # partner is what went on 2026-08-18. The italic opener is the
+        # anatomy this test guards, so it still pins one — just not one
+        # that names a single audience.
         self.assertIn(
-            "<em>Where the partner reads the market first.</em>",
+            "<em>The market first, then what you are tracking.</em>",
             self.html,
         )
+        self.assertNotIn("Where the partner reads", self.html)
 
     def test_status_dot_legend(self) -> None:
         for label in ("Live data", "Computed", "Needs data", "Illustrative"):

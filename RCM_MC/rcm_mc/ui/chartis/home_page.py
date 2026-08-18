@@ -479,9 +479,11 @@ def _corpus_insights() -> str:
         f'<div style="flex:1;min-width:0;">{"".join(left)}</div>'
         f'<div style="flex:1;min-width:0;">{"".join(right)}</div>'
         f'</div>'
-        f'<div style="margin-top:8px;"><a href="/library" '
+        # /library was hidden on 2026-08-18 (its headline aggregates are
+        # labelled illustrative); /verified-deals is the source-cited cut.
+        f'<div style="margin-top:8px;"><a href="/verified-deals" '
         f'style="color:{P["accent"]};font-family:var(--ck-mono);font-size:10px;">'
-        f'BROWSE CORPUS →</a></div>'
+        f'BROWSE REPORTED DEALS →</a></div>'
     )
 
 
@@ -558,50 +560,57 @@ def _kpi_strip(store: Any, db_path: str) -> str:
 
 
 def _try_the_tool_quickstart() -> str:
-    """Empty-portfolio quick-start block — four demo fixtures with
-    one-click "Run Full Pipeline" CTAs. Rendered only when the
-    portfolio is empty (first-time visitor).
+    """First-run block — four REAL hospitals, shown when nothing is
+    tracked yet.
 
-    The natural first action for a first-time analyst isn't to
-    import their own deal (they don't have one yet) — it's to try
-    the tool against a known fixture and see what the product does.
+    The natural first action for a first-time visitor is not to add
+    their own target (they may not have one, and they may never want
+    one) — it is to point the tool at a provider they already know and
+    see what comes back.
+
+    This used to be four RCM fixture datasets behind a "Run Pipeline"
+    CTA that chained bankruptcy scan, CCD ingest, HFMA benchmarks,
+    denial prediction, physician attrition, counterfactual and Deal MC.
+    Every one of those surfaces was hidden by the 2026-08 visibility
+    sweeps, so the only call to action on the landing page led into the
+    retired product.
+
+    The four below are live rows in the shipped HCRIS universe, chosen
+    to show different SHAPES of provider rather than different stages
+    of a transaction. Nothing is seeded and nothing is simulated.
     """
     fixtures = [
-        ("hospital_01_clean_acute", "Clean acute baseline",
-         "Healthy reference hospital",
-         "Baseline profile — denial rate ~4%, A/R ~42 days. "
-         "Run this first to see a clean output.",
-         "BASELINE", "#3F7D4D"),
-        ("hospital_02_denial_heavy", "Denial-heavy outpatient",
-         "High audit-recovery opportunity",
-         "Denial rate ~20%, systematic-misses drive the bridge. "
-         "Shows denial prediction + counterfactual in action.",
-         "OPPORTUNITY", "#B7791F"),
-        ("hospital_07_waterfall_concordant", "QoR concordant",
-         "Low-divergence reference",
-         "Management revenue agrees with claims-side accrual within "
-         "IMMATERIAL threshold — clean QoE target.",
-         "CLEAN QoR", "#3F7D4D"),
-        ("hospital_08_waterfall_critical", "QoR critical divergence",
-         "7% revenue overstatement — walkaway candidate",
-         "Management revenue overstates claims-side accrual by ~7%. "
-         "Triggers CRITICAL QoR + IC walkaway memo.",
-         "CRITICAL", "#A53A2D"),
+        ("330101", "New York-Presbyterian Hospital",
+         "Large academic medical centre · NY",
+         "The largest bed count in the HCRIS universe. A good first "
+         "look at what a cost report holds, and how peer percentiles "
+         "read at the top of the distribution.",
+         "ACADEMIC", "#3F7D4D"),
+        ("100007", "AdventHealth Orlando",
+         "Multi-state system member · FL",
+         "Part of a large non-profit system. Shows one facility "
+         "resolving to the operator behind it, and the rest of the "
+         "beds that operator holds.",
+         "SYSTEM", "#3F7D4D"),
+        ("100022", "Jackson Memorial Hospital",
+         "Public safety-net hospital · FL",
+         "County-owned and safety-net. Payer day mix and operating "
+         "margin read very differently here than at a commercial "
+         "peer — which is why percentile context matters.",
+         "SAFETY NET", "#B7791F"),
+        ("450388", "Methodist Hospital",
+         "Large community hospital · TX",
+         "A big Texas community hospital. Open the CMS X-Ray to see "
+         "one operator resolved across every Medicare program it "
+         "bills under, not only the acute one.",
+         "COMMUNITY", "#3F7D4D"),
     ]
-    base_qs = (
-        "&deal_name=Demo+Target&specialty=HOSPITAL&states=TX"
-        "&landlord=Medical+Properties+Trust&lease_term_years=20"
-        "&lease_escalator_pct=0.035&ebitdar_coverage=1.3"
-        "&annual_rent_usd=30000000&revenue_year0_usd=250000000"
-        "&ebitda_year0_usd=35000000&enterprise_value_usd=350000000"
-        "&equity_check_usd=150000000&debt_usd=200000000"
-        "&entry_multiple=10.0&market_category=MULTI_SITE_ACUTE_HOSPITAL"
-        "&oon_revenue_share=0.08&ehr_vendor=EPIC&n_runs=1000"
-    )
     cards: List[str] = []
     for fx_id, name, tagline, desc, badge, color in fixtures:
-        pipeline_url = f'/diligence/thesis-pipeline?dataset={fx_id}{base_qs}'
-        bench_url = f'/diligence/benchmarks?dataset={fx_id}'
+        # Both X-rays take ?q=<ccn>, so the deep link lands on the
+        # resolved provider rather than an empty search form.
+        pipeline_url = f'/diligence/hcris-xray?q={fx_id}'
+        bench_url = f'/diligence/xray?q={fx_id}'
         cards.append(
             f'<div style="background:#FFFFFF;border:1px solid #D6CFC0;'
             f'border-radius:4px;padding:16px 18px;display:flex;'
@@ -626,12 +635,12 @@ def _try_the_tool_quickstart() -> str:
             f'style="padding:7px 14px;background:#B7791F;color:#0F1C2E;'
             f'border:0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:700;text-decoration:none;'
-            f'border-radius:3px;">▶ Run Pipeline</a>'
+            f'border-radius:3px;">Open HCRIS X-Ray</a>'
             f'<a href="{_html.escape(bench_url)}" '
             f'style="padding:7px 14px;background:transparent;color:#2C5C84;'
             f'border:1px solid #D6CFC0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:600;text-decoration:none;'
-            f'border-radius:3px;">Benchmarks Only</a>'
+            f'border-radius:3px;">CMS X-Ray</a>'
             f'</div>'
             f'</div>'
         )
@@ -644,22 +653,23 @@ def _try_the_tool_quickstart() -> str:
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:center;margin-bottom:6px;">'
         f'<div style="display:flex;align-items:center;gap:10px;">'
-        f'<h2 style="margin:0;font-size:15px;color:#0F1C2E;">Try the tool</h2>'
+        f'<h2 style="margin:0;font-size:15px;color:#0F1C2E;">Start with a real hospital</h2>'
         f'<span style="font-size:10px;letter-spacing:1.4px;'
         f'text-transform:uppercase;font-weight:700;color:#8A92A0;">QSX</span>'
         f'</div>'
         f'<span style="font-size:10.5px;letter-spacing:1px;'
         f'text-transform:uppercase;color:#8A92A0;">'
-        f'no portfolio data yet</span></div>'
+        f'nothing tracked yet</span></div>'
         f'<div style="font-size:13px;color:#5C6878;line-height:1.6;'
         f'max-width:880px;margin-bottom:14px;">'
-        f'Your portfolio is empty. Run the full diligence chain against '
-        f'one of four demo hospitals to see what the tool produces. '
-        f'<strong style="color:#0F1C2E;">▶ Run Pipeline</strong> executes '
-        f'bankruptcy scan → CCD ingest → HFMA benchmarks → denial '
-        f'prediction → physician attrition → counterfactual → Steward → '
-        f'cyber → deal autopsy → Deal MC and emits every headline '
-        f'number in ~120ms.</div>'
+        f'Nothing is tracked yet — and you do not need to add anything '
+        f'to use this. Open one of four real hospitals below and read '
+        f'what it filed. '
+        f'<strong style="color:#0F1C2E;">HCRIS X-Ray</strong> reads a '
+        f'hospital\'s Medicare cost report line by line against its peer '
+        f'cohort; <strong style="color:#0F1C2E;">CMS X-Ray</strong> '
+        f'resolves the same provider across every Medicare program it '
+        f'bills under. Both are live reads of public filings.</div>'
         f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));'
         f'gap:12px;">{"".join(cards)}</div>'
         f'</div>'
@@ -686,21 +696,28 @@ def _new_modules_index() -> str:
     Each card has a teal .kind pill, a name, and a sub-tagline —
     matching the .deliv-grid visual treatment used elsewhere.
     """
+    # Five of the seven tiles here (covenant stress, bridge auto-audit,
+    # payer stress, bear-case generation, public market intel) were
+    # hidden by the 2026-08 sweeps. The is_visible filter below dropped
+    # them silently, which left a "New Diligence Modules" grid of two.
+    # These are the surfaces that actually read a filing.
     tiles = [
-        ("HCRIS",  "Peer X-Ray",       "/diligence/hcris-xray",
-         "17,000 filed Medicare cost reports"),
+        ("HCRIS",  "HCRIS X-Ray",      "/diligence/hcris-xray",
+         "Cost reports × peer percentiles"),
+        ("CMS",    "CMS X-Ray",        "/diligence/xray",
+         "One provider across every program"),
+        ("SCAN",   "Target Screener",  "/target-screener",
+         "Filter any provider universe"),
+        ("SYS",    "Health Systems",   "/health-system-lookup",
+         "Who operates which facility"),
+        ("VERT",   "Provider Verticals", "/verticals",
+         "Seven CMS programs, read nationally"),
         ("REG",    "Reg Calendar",     "/diligence/regulatory-calendar",
-         "CMS / OIG × thesis kill-switch"),
-        ("COV",    "Covenant Stress",  "/diligence/covenant-stress",
-         "Capital stack × breach probability"),
-        ("BRIDGE", "Auto-Audit",       "/diligence/bridge-audit",
-         "Banker bridge × 21 realization priors"),
-        ("PAYER",  "Payer Stress",     "/diligence/payer-stress",
-         "19-payer rate-shock MC"),
-        ("BEAR",   "Auto-Gen",         "/diligence/bear-case",
-         "IC memo counter-narrative from 8 sources"),
-        ("MARKET", "Public Market Intel", "/market-intel/public-market",
-         "Public comps + PE transactions"),
+         "CMS / OIG dates × what each moves"),
+        ("RATE",   "Rate Environment", "/rate-environment",
+         "Setting-level CMS payment updates"),
+        ("DATA",   "Data Quality",     "/data-quality",
+         "Coverage, vintages and known gaps"),
     ]
     from .._surface_visibility import is_visible as _is_visible
     cards = "".join(
@@ -716,8 +733,8 @@ def _new_modules_index() -> str:
     return (
         '<section class="module-section">'
         '<div class="module-eyebrow">'
-        '<div class="module-eyebrow-h">New Diligence Modules · this cycle</div>'
-        '<div class="module-eyebrow-sub">Point-and-click surfaces · no setup · live data</div>'
+        '<div class="module-eyebrow-h">Diligence surfaces</div>'
+        '<div class="module-eyebrow-sub">Point-and-click · no setup · live public data</div>'
         '</div>'
         f'<div class="module-grid">{cards}</div>'
         '</section>'
@@ -732,18 +749,20 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
     # the title.
     intro = ck_page_title(
         "Home",
-        eyebrow="PARTNER LANDING",
+        eyebrow="LANDING",
         meta=(
             f"Signed in as {_html.escape(current_user)}"
-            if current_user else "Pipeline · alerts · PE brain verdicts"
+            if current_user else "Providers · pipeline · alerts"
         ),
     )
     explainer = render_page_explainer(
         what=(
             "The first thing to open in the morning: the alerts that need an "
-            "answer, the deadlines inside seven days, the deals moving through "
-            "the pipeline, and the partner-review verdicts worth acting on, "
-            "gathered so nothing waits on you unseen."
+            "answer, the deadlines inside seven days, anything moving through "
+            "the pipeline, and the diligence surfaces that read a provider's "
+            "filings — gathered so nothing waits on you unseen. Nothing here "
+            "needs a tracked deal; the X-rays work on any certified provider "
+            "in the country."
         ),
         page_key="home",
     )
@@ -761,8 +780,8 @@ def render_home(store: Any, db_path: str, current_user: Optional[str] = None) ->
         f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">'
         f'{_panel("Pipeline Funnel", _pipeline_funnel(store), code="FNL")}'
         f'{_panel("Active Alerts", _alerts(db_path), code="ALR")}'
-        f'{_panel("Portfolio Health", _health_distribution(db_path), code="HLT")}'
-        f'{_panel("Recent Deals", _recent_deals(store), code="DLS")}'
+        f'{_panel("Tracked Health", _health_distribution(db_path), code="HLT")}'
+        f'{_panel("Recent Targets", _recent_deals(store), code="DLS")}'
         f'{_panel("Upcoming Deadlines (7d)", _deadlines(db_path), code="DDL")}'
         f'{_panel("PE Intelligence Highlights", _pe_highlights(store, db_path), code="PRV")}'
         f'</div>'
