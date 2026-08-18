@@ -108,7 +108,23 @@ def is_internal(route: str) -> bool:
 #    for `class="ck-illus-note"`. A verification product cannot offer a
 #    page of invented numbers as a destination, however honest its label.
 #    Drop a route from this set the day its live-data wiring lands.
+#    2026-08-18: the scan was re-run over the surviving visible set and
+#    found exactly one page still rendering a POPULATED strip —
+#    ``/library``, whose note reads "Representative deals-corpus
+#    aggregates — built from the bundled illustrative seed deals … not
+#    this portfolio's live, sourced data". (46 other pages match the
+#    `ck-illus-note` class because the shell ships the CSS hook on every
+#    page; only a populated strip counts.) The 622 transactions behind
+#    it are real and publicly reported — HCA/KKR-Bain 2006, Vanguard/
+#    Blackstone, IASIS/TPG — but the page's headline figures are corpus
+#    aggregates it labels illustrative itself, and a product whose
+#    promise is verification cannot card a page that says its own
+#    numbers are not sourced. The tracking job stays covered:
+#    /verified-deals carries a citation URL per row, /deal-library is
+#    the licensed universe, /diligence/sponsor-detail cuts the corpus by
+#    sponsor without the aggregate framing.
 _ILLUSTRATIVE_ROUTES = frozenset({
+    "/library",
     "/aco-economics", "/acq-timing", "/ai-operating-model", "/antitrust-screener",
     "/backtest", "/backtester", "/base-rates", "/biosimilars",
     "/board-governance", "/bolton-analyzer", "/cap-structure", "/capex-budget",

@@ -187,9 +187,6 @@ _SUB_NAV = {
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
-        # /deals-library is a 301 to /library; point the rail at the
-        # destination so the nav does not spend a redirect.
-        {"label": "Deals Library",       "href": "/library"},
         {"label": "Verified Deals",      "href": "/verified-deals"},
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
@@ -250,7 +247,10 @@ _SECTION_FEATURE = {
     "library": {"eyebrow": "SECTION · LIBRARY", "title": "The datasets",
                 "blurb": "Every public CMS / Medicare / Medicaid / hospital "
                          "dataset loaded here, what it covers, and the filing "
-                         "each figure traces back to.", "href": "/library"},
+                         "each figure traces back to.",
+                # Was /library, hidden 2026-08-18 as the one visible page
+                # still rendering a populated illustrative strip.
+                "href": "/best/library"},
     "research": {"eyebrow": "SECTION · RESEARCH", "title": "Universes & context",
                  "blurb": "Read a whole CMS provider universe end to end, then "
                           "the payment rates and rule calendar that move it "
@@ -10578,7 +10578,7 @@ _SHORTCUTS_JS = """
  *
  * Also implements vim/Linear-style "g + letter" jump:
  *   g h → /home          g p → /pipeline       g d → /diligence
- *   g l → /library       g r → /best/research  g m → /my/<owner>
+ *   g l → /best/library   g r → /best/research  g m → /my/<owner>
  *   g a → /alerts        g w → /watchlist      g k → opens palette
  */
 (function(){
@@ -10595,7 +10595,7 @@ _SHORTCUTS_JS = """
    * INTERNAL_ROUTES documents for /users. */
   var GO_TARGETS = {
     h: '/home', p: '/pipeline', d: '/diligence',
-    l: '/library', r: '/best/research',
+    l: '/best/library', r: '/best/research',
     a: '/alerts', w: '/watchlist', m: '/my/AT',
   };
   var goPending = false;
