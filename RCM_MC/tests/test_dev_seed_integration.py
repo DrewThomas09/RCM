@@ -125,18 +125,41 @@ class TestSeededDashboardRendersMarqueeData(unittest.TestCase):
         )
 
     def test_focused_deal_renders_covenant_heatmap_with_real_data(self) -> None:
-        """Focusing ccf_2026 should render the covenant heatmap with
-        Net Leverage values (the wired row, per Phase 3 Q4.5)."""
-        body = self._fetch("/app?ui=v3&deal=ccf_2026")
+        """Focusing ccf_2026 renders the covenant heatmap with Net
+        Leverage values (the wired row, per Phase 3 Q4.5).
+
+        Called directly — the heatmap left /app with the 2026-08-17
+        portfolio-operations sweep. What this test is really for is the
+        seeder: that ccf_2026 comes out of the demo seed with a wired
+        covenant row. That still holds.
+        """
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.ui.chartis._app_covenant_heatmap import (
+            render_covenant_heatmap,
+        )
+        body = render_covenant_heatmap(PortfolioStore(self.db), "ccf_2026")
         self.assertIn("app-cov-heat", body, "covenant heatmap missing")
         # Net Leverage is the 1 wired row — its label must render
         self.assertIn("Net Leverage", body, "Net Leverage row missing")
+        self.assertNotIn("app-cov-heat",
+                         self._fetch("/app?ui=v3&deal=ccf_2026"),
+                         "covenant heatmap is back on the landing page")
 
     def test_initiative_tracker_fires_playbook_gap_pill(self) -> None:
-        """Cross-portfolio (no deal focused) initiative tracker must
-        fire the PLAYBOOK GAP pill for prior_auth_improvement —
-        seeded across 3 deals at -50% / -40% / -30%."""
-        body = self._fetch("/app?ui=v3")
+        """Cross-portfolio (no deal focused) initiative tracker fires
+        the PLAYBOOK GAP pill for prior_auth_improvement — seeded across
+        3 deals at -50% / -40% / -30%.
+
+        Called directly — the tracker left /app with the 2026-08-17
+        sweep (initiative variance is value-creation execution). The
+        assertion is about the SEEDER producing that cross-portfolio
+        signal, which is unaffected.
+        """
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.ui.chartis._app_initiative_tracker import (
+            render_initiative_tracker,
+        )
+        body = render_initiative_tracker(PortfolioStore(self.db), None)
         self.assertIn(
             "PLAYBOOK GAP", body,
             "PLAYBOOK GAP pill not firing — seeder didn't produce "
@@ -144,10 +167,21 @@ class TestSeededDashboardRendersMarqueeData(unittest.TestCase):
         )
 
     def test_deliverables_block_lists_seeded_export_cards(self) -> None:
-        """Deliverables block should list the 8 seeded generated_exports
-        rows when no deal is focused, OR a subset when a deal is
-        focused — either way, NOT the empty-state."""
-        body = self._fetch("/app?ui=v3&deal=ccf_2026")
+        """Deliverables block should list the seeded generated_exports
+        rows for a focused deal — never the empty-state.
+
+        Called against the seeded store directly rather than through
+        /app: the deliverables shelf left the landing page with the
+        2026-08-17 portfolio-operations sweep (it is where LP updates
+        and IC packets land, and every producer of those is hidden).
+        The renderer and the seeded data behind it are unchanged, so
+        the seeder contract this test exists for still holds — and the
+        second half asserts the block really is off /app.
+        """
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.ui.chartis._app_deliverables import render_deliverables
+        body = render_deliverables(PortfolioStore(self.db),
+                                   deal_id="ccf_2026")
         self.assertIn("app-deliv", body, "deliverables block missing")
         # ccf_2026 was seeded with 3 export rows; at least one filename
         # token should appear
@@ -158,6 +192,8 @@ class TestSeededDashboardRendersMarqueeData(unittest.TestCase):
             or "/exports/" in body,
             "no seeded export filenames or links visible",
         )
+        self.assertNotIn("app-deliv", self._fetch("/app?ui=v3&deal=ccf_2026"),
+                         "deliverables block is back on the landing page")
 
     def test_phi_banner_renders_in_disallowed_mode(self) -> None:
         body = self._fetch("/app?ui=v3")

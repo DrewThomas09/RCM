@@ -363,9 +363,16 @@ class TestUIReworkContract(unittest.TestCase):
         design-fidelity pass) with every section present.
 
         The grid reimplements KPI / funnel / deals as dossier cards (cc-*)
-        and embeds the heavier analytic blocks via their existing renderers
-        (so app-cov-heat / app-drag / app-init / app-alerts / app-deliv
-        markers carry over). The flat-scroll layout stays at ?layout=flat.
+        and embeds the surviving analytic blocks via their existing
+        renderers (so app-alerts markers carry over). The flat-scroll
+        layout stays at ?layout=flat.
+
+        The covenant-heatmap, EBITDA-drag, initiative-variance and
+        deliverables blocks left this page with the 2026-08-17
+        portfolio-operations sweep — they were that hidden family
+        rendered INLINE, on the one surface a reader meets without
+        browsing anywhere. Their renderers are untouched and each keeps
+        its own contract test below, called directly.
         """
         body = self._fetch_body("/app?ui=v3")
         self.assertIn("/static/v3/chartis.css", body,
@@ -377,18 +384,15 @@ class TestUIReworkContract(unittest.TestCase):
         self.assertIn("cc-kpi", body, "KPI cards missing")
         self.assertIn("cc-funnel", body, "pipeline funnel card missing")
         self.assertIn("cc-roster", body, "deals roster card missing")
-        # Heavier analytic blocks embedded via existing renderers.
-        self.assertIn("app-cov-heat", body, "covenant heatmap missing")
-        self.assertTrue(
-            "app-drag-empty" in body or "app-drag-bar" in body,
-            "EBITDA drag block missing in some form",
-        )
-        self.assertIn("app-init", body, "initiative tracker missing")
+        # Surviving analytic block embedded via its existing renderer.
         self.assertTrue(
             "app-alerts" in body or "app-alerts-clear" in body,
             "alerts block missing",
         )
-        self.assertIn("app-deliv", body, "deliverables missing")
+        # And the retired ones must not creep back onto the landing page.
+        for marker in ("app-cov-heat", "app-drag-bar", "app-drag-empty",
+                       "app-init", "app-deliv"):
+            self.assertNotIn(marker, body, f"retired block back: {marker}")
         # Source provenance still declared.
         self.assertIn("portfolio.db", body, "source registry missing")
 
@@ -456,17 +460,28 @@ class TestUIReworkContract(unittest.TestCase):
 
     # ── Phase 3 contract tests (commit 10) ────────────────────────
 
-    def test_v3_app_deliverables_block_renders_card_or_empty_state(self) -> None:
+    def test_deliverables_block_renders_card_or_empty_state(self) -> None:
         """Per Phase 3 commit 5 (Q3.5 canonical-path migration):
         deliverables block renders either a card (real export) or an
         explicit empty-state — never silent-empty.
 
         The block must wire to ``generated_exports`` first, falling back
         to ``analysis_runs``. We don't seed an export here, so we expect
-        the empty-state path; the test guards that the block isn't
-        silently dropped from the page.
+        the empty-state path.
+
+        Called directly rather than through /app: the block left the
+        landing page with the 2026-08-17 sweep (it is the shelf for LP
+        updates and IC packets, every producer of which is hidden), but
+        the renderer is untouched and its never-silent-empty contract
+        still holds.
         """
-        body = self._fetch_body("/app?ui=v3")
+        import tempfile as _tf
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.ui.chartis._app_deliverables import render_deliverables
+        with _tf.TemporaryDirectory() as tmp:
+            store = PortfolioStore(os.path.join(tmp, "d.db"))
+            store.init_db()
+            body = render_deliverables(store)
         self.assertIn("app-deliv", body, "deliverables block missing")
         self.assertTrue(
             "app-deliv-empty" in body
@@ -476,11 +491,16 @@ class TestUIReworkContract(unittest.TestCase):
             "deliverables block has neither card nor empty-state marker",
         )
 
-    def test_v3_app_ebitda_drag_block_renders(self) -> None:
+    def test_ebitda_drag_block_renders(self) -> None:
         """Per Phase 3 commit 6: EBITDA drag block must render an
         empty-state when no deal is focused, OR the bucket bar (with
-        the 5-component partition) when a focused deal has packet data."""
-        body = self._fetch_body("/app?ui=v3")
+        the 5-component partition) when a focused deal has packet data.
+
+        Called directly — the block left /app with the 2026-08-17 sweep;
+        the renderer and its empty-state contract did not change.
+        """
+        from rcm_mc.ui.chartis._app_ebitda_drag import render_ebitda_drag
+        body = render_ebitda_drag(None)
         self.assertTrue(
             "app-drag-empty" in body or "app-drag-bar" in body,
             "EBITDA drag block missing",
@@ -536,11 +556,24 @@ class TestUIReworkContract(unittest.TestCase):
                 f"Q4.5 expects 6/6 covenants wired post-seed; got {wired}",
             )
 
-    def test_v3_app_initiative_tracker_cross_portfolio_when_no_focus(self) -> None:
+    def test_initiative_tracker_cross_portfolio_when_no_focus(self) -> None:
         """Per Phase 3 commit 8 (Q3.4): when no deal is focused, the
         initiative tracker block renders the cross-portfolio variance
-        view with the trailing-4Q label."""
-        body = self._fetch_body("/app?ui=v3")
+        view with the trailing-4Q label.
+
+        Called directly — the block left /app with the 2026-08-17 sweep
+        (initiative variance is value-creation execution); the renderer
+        and its cross-portfolio shape did not change.
+        """
+        import tempfile as _tf
+        from rcm_mc.portfolio.store import PortfolioStore
+        from rcm_mc.ui.chartis._app_initiative_tracker import (
+            render_initiative_tracker,
+        )
+        with _tf.TemporaryDirectory() as tmp:
+            store = PortfolioStore(os.path.join(tmp, "i.db"))
+            store.init_db()
+            body = render_initiative_tracker(store, None)
         self.assertIn("app-init", body, "initiative tracker missing")
         # When no deal focused (default /app render), expect the
         # cross-portfolio label OR an empty-state (fresh DB has zero

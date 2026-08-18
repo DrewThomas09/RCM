@@ -17,12 +17,33 @@ from rcm_mc.infra.migrations import run_pending
 from rcm_mc.portfolio.store import PortfolioStore
 from rcm_mc.ui.chartis.app_page import render_app_page
 
-_CARD_LABELS = [
-    "Weighted MOIC", "Weighted IRR", "Covenants at risk", "Capital deployed",
-    "Active deals", "Covenant headroom", "Pipeline funnel", "Quick access",
-    "Covenant heatmap", "EBITDA drag", "Initiative variance", "Active alerts",
-    "Deliverables",
-]
+# The nine fund-and-covenant cards this list used to carry (weighted
+# MOIC and IRR, covenants at risk, capital deployed, covenant headroom,
+# the covenant heatmap, EBITDA drag, initiative variance, deliverables)
+# left with the 2026-08-17 portfolio-operations sweep. They were that
+# family rendered INLINE rather than behind a link, on the one page a
+# reader meets without browsing anywhere. Derived from the registry so
+# the next change to it moves this test rather than breaking it.
+# Registry label -> the title the card actually renders. The two differ
+# where the registry needs to disambiguate for the customize panel
+# ("Active deals (KPI)" vs "Active deals roster") but the card itself
+# does not. Keyed on the registry so a card added there without a
+# rendered title fails this test rather than passing silently.
+_RENDERED_TITLE = {
+    "Active deals (KPI)": "Active deals",
+    "Active deals roster": "Active deals",
+    "Pipeline funnel": "Pipeline funnel",
+    "Morning brief": "Morning brief",
+    "Quick access": "Quick access",
+    "Active alerts": "Active alerts",
+}
+
+
+def _card_labels():
+    from rcm_mc.ui.chartis._app_grid import _CARD_ORDER
+    missing = [lbl for _cid, lbl in _CARD_ORDER if lbl not in _RENDERED_TITLE]
+    assert not missing, f"no rendered title mapped for: {missing}"
+    return [_RENDERED_TITLE[lbl] for _cid, lbl in _CARD_ORDER]
 
 
 def _fresh_store():
@@ -49,13 +70,29 @@ class GridLayoutTests(unittest.TestCase):
         self.assertIn("cc-h1-em", self.html)            # green italic "center"
 
     def test_all_required_card_labels(self):
-        for label in _CARD_LABELS:
+        labels = _card_labels()
+        self.assertTrue(labels, "card registry is empty")
+        for label in labels:
             self.assertIn(label, self.html, f"card label missing: {label}")
 
+    def test_retired_portfolio_ops_cards_are_gone(self):
+        # The other half of the sweep: these must not come back by
+        # accident, on the landing page least of all.
+        for label in ("Weighted MOIC", "Weighted IRR", "Covenants at risk",
+                      "Capital deployed", "Covenant headroom",
+                      "Covenant heatmap", "EBITDA drag",
+                      "Initiative variance", "Deliverables"):
+            self.assertNotIn(label, self.html, f"retired card back: {label}")
+
     def test_source_registry_labels_present(self):
-        for src in ("portfolio.db", "deal_snapshots", "covenant_metrics",
-                    "initiative_actuals", "analysis_runs", "generated_exports"):
+        # covenant_metrics, initiative_actuals and generated_exports left
+        # with the cards that read them — a footer naming tables the page
+        # no longer queries is the same false claim the sweeps remove.
+        for src in ("portfolio.db", "deal_snapshots", "analysis_runs"):
             self.assertIn(src, self.html, f"source label missing: {src}")
+        for gone in ("covenant_metrics", "initiative_actuals",
+                     "generated_exports"):
+            self.assertNotIn(gone, self.html, f"stale source claim: {gone}")
 
     def test_honest_empty_states_no_fabricated_values(self):
         # Empty fund → KPI cards show — + "awaiting data", roster shows the

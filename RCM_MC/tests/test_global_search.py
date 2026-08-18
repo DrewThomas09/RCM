@@ -94,14 +94,28 @@ class TestSearch(unittest.TestCase):
             db = os.path.join(tmp.name, "p.db")
             store = PortfolioStore(db)
             store.init_db()
+            # Was pinned to /data/catalog, which the 2026-08-17 sweep
+            # hid as one of six duplicate data catalogs — and which
+            # exposed that PLATFORM_PAGES was a hand-typed list of seven
+            # entries, four of them by then hidden, so "hospice" and
+            # "x-ray" returned nothing at all. The list is now derived
+            # from the page-context registry, so this asserts the real
+            # contract: a subject a reader would search for reaches the
+            # surface that covers it.
             results = search(store, "catalog")
             page_results = [
                 r for r in results
                 if r.category == "page"]
             self.assertGreater(len(page_results), 0)
             self.assertTrue(any(
-                "/data/catalog" == r.url
+                "/data" == r.url
                 for r in page_results))
+            for query, expected in (("hospice", "/hospice"),
+                                    ("nursing", "/nursing-homes"),
+                                    ("x-ray", "/diligence/hcris-xray")):
+                urls = [r.url for r in search(store, query)
+                        if r.category == "page"]
+                self.assertIn(expected, urls, f"{query!r} -> {urls}")
         finally:
             tmp.cleanup()
 

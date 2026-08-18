@@ -9,12 +9,20 @@ de-risked before any default switch.
 Honest by construction: KPI/funnel/roster cards render from the real
 ``portfolio_rollup`` + ``latest_per_deal`` data with the handoff's empty
 states (``—`` + italic "awaiting data") when a metric isn't computed — no
-fabricated MOIC/IRR/deal values. The heavier analytic cards (morning brief,
-quick access, covenant heatmap, EBITDA drag, initiative variance, alerts,
-deliverables) reuse the existing ``_app_*`` block renderers verbatim inside
-scrollable card bodies, so their real data + empty states carry over with no
-duplication. No new queries (same rollup + deals_df), no persistence, no
-external calls.
+fabricated MOIC/IRR/deal values. The heavier analytic cards (morning
+brief, quick access, alerts) reuse the existing ``_app_*`` block
+renderers verbatim inside scrollable card bodies, so their real data +
+empty states carry over with no duplication. No new queries (same rollup
++ deals_df), no persistence, no external calls.
+
+The fund-and-covenant cards this grid used to carry — weighted MOIC and
+IRR, covenants at risk, capital deployed, covenant headroom, the
+covenant heatmap, EBITDA drag, initiative variance and the deliverables
+shelf — went with the 2026-08-17 portfolio-operations sweep. They were
+that family rendered INLINE rather than behind a link, which is why no
+hidden-route test caught them, and this is the landing page: hiding the
+destinations and leaving the content here would have been the worst of
+both.
 """
 from __future__ import annotations
 
@@ -24,11 +32,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 
 from ._app_alerts import render_alerts
-from ._app_covenant_heatmap import render_covenant_heatmap
 from ._app_deals_table import render_deals_table
-from ._app_deliverables import render_deliverables
-from ._app_ebitda_drag import render_ebitda_drag
-from ._app_initiative_tracker import render_initiative_tracker
 from ._app_morning_brief import render_morning_brief
 from ._app_pipeline_funnel import render_pipeline_funnel
 from ._app_quick_access import render_quick_access
@@ -303,22 +307,27 @@ def _roster_card(deals_df: pd.DataFrame, idx: int) -> str:
 # render order; the customize panel and the ck_cards_hidden cookie key off the
 # ids. Adding a card here (and building it in render_app_grid) makes it appear
 # in the customize toggles automatically.
+# 2026-08-17 sweeps. This registry held fifteen cards, nine of which were
+# fund-and-covenant reads: weighted MOIC and IRR, covenants at risk,
+# capital deployed, covenant headroom, the covenant heatmap, EBITDA drag,
+# initiative variance and the deliverables shelf. Every one of those is
+# the portfolio-operations family the sweeps hid — /portfolio, its
+# monitor and heatmap, /initiatives, /variance, /lp-update, /exports —
+# rendered inline instead of behind a link, which is why no
+# hidden-route test caught them.
+#
+# The command center is the landing page, so it is the one surface where
+# hiding the destinations and leaving the content is the worst outcome:
+# a reader who never browses anywhere still meets it. What is left is
+# the tracking read — what is in the pipeline, what moved, what you are
+# watching — which is what this product is for.
 _CARD_ORDER = [
-    ("moic", "Weighted MOIC"),
-    ("irr", "Weighted IRR"),
-    ("covenants", "Covenants at risk"),
-    ("days_cash", "Capital deployed"),
     ("active_deals", "Active deals (KPI)"),
-    ("initiatives", "Covenant headroom"),
     ("roster", "Active deals roster"),
     ("funnel", "Pipeline funnel"),
     ("morning_brief", "Morning brief"),
     ("quick_access", "Quick access"),
-    ("covenant_heatmap", "Covenant heatmap"),
-    ("ebitda_drag", "EBITDA drag"),
-    ("initiative_variance", "Initiative variance"),
     ("alerts", "Active alerts"),
-    ("deliverables", "Deliverables"),
 ]
 _CARD_IDS = frozenset(cid for cid, _ in _CARD_ORDER)
 
@@ -474,37 +483,18 @@ def render_app_grid(
     # free columns against 4+4 cards), which left dead holes under the
     # Risk card and to the right of Covenant headroom. The MOIC card
     # keeps its hero numeral via cc-kpi-hero styling instead of extra rows.
-    built["moic"] = _kpi_card(tag="Fund return", color="green", title="Weighted MOIC",
-                              em="MOIC", value=moic_v, sub="equity-weighted",
-                              span="cc-4x1", hero=True, idx=1)
-    built["irr"] = _kpi_card(tag="Return", color="ink", title="Weighted IRR",
-                             em="IRR", value=irr_v, sub="equity-weighted",
-                             span="cc-4x1", idx=2)
-    built["covenants"] = _kpi_card(tag="Risk", color="amber", title="Covenants at risk",
-                                   em="risk", value=cov_v, sub=cov_sub,
-                                   span="cc-4x1", idx=3)
-    # Capital deployed: total entry EV across sized deals (real; honest
-    # empty when no deal carries an entry EV yet).
-    built["days_cash"] = _kpi_card(
-        tag="Capital", color="ink", title="Capital deployed", em="capital",
-        value=cap_v,
-        sub=(f"entry EV · {n_sized} sized deal{'' if n_sized == 1 else 's'}"
-             if cap_v else ""),
-        span="cc-4x1", idx=4)
+    # Five of the six KPI cards here were fund-and-covenant reads —
+    # weighted MOIC, weighted IRR, covenants at risk, capital deployed
+    # and covenant headroom — and left with the portfolio-ops sweep on
+    # 2026-08-17. Their rollup figures are still computed above; the
+    # roster and funnel cards below use the same call, so nothing extra
+    # is queried for them.
     built["active_deals"] = _kpi_card(tag="Pipeline", color="ink", title="Active deals",
                                       em="deals", value=(str(dc) if dc else None),
-                                      sub="tracked", span="cc-4x1", idx=5)
-    # Covenant headroom: average turns to the leverage covenant across deals
-    # that report it (green at >= 1 turn of cushion, amber when tighter).
-    built["initiatives"] = _kpi_card(
-        tag="Credit",
-        color=("green" if (hr_avg is not None and hr_avg >= 1.0) else "amber"),
-        title="Covenant headroom", em="headroom", value=hr_v,
-        sub=(f"avg turns · {n_hr} deal{'' if n_hr == 1 else 's'}" if hr_v else ""),
-        span="cc-4x1", idx=6)
+                                      sub="tracked", span="cc-4x1", hero=True, idx=1)
     # Roster + funnel from real data.
-    built["roster"] = _roster_card(deals_df, idx=7)
-    built["funnel"] = _funnel_card(r, idx=8)
+    built["roster"] = _roster_card(deals_df, idx=2)
+    built["funnel"] = _funnel_card(r, idx=3)
 
     # Heavier analytic cards — reuse the existing real renderers (data + empty
     # states intact) inside scrollable dossier cards. Full-width by design.
@@ -513,34 +503,17 @@ def render_app_grid(
                            body=html, span=span, scroll=True, idx=idx)
 
     _embed("morning_brief", "Morning brief", "amber", "Morning brief", "brief",
-           render_morning_brief(r, deals_df), "cc-12x2", 9)
+           render_morning_brief(r, deals_df), "cc-12x2", 4)
     _embed("quick_access", "Quick access", "ink", "Quick access", "access",
-           render_quick_access(), "cc-12x3", 10)
-    # Covenant heatmap + EBITDA drag sit blank with a "select a deal" prompt
-    # until a deal is focused. Default them to the deal most worth a look so
-    # they carry real data on load; an explicit ?deal= still wins. (The other
-    # two deal-scoped panels keep their cross-portfolio None view — see
-    # _default_focus_deal.) Building the default deal's packet is ~35ms and
-    # then TTL-cached; an explicit focus already resolved focused_packet.
-    cov_deal_id = focused_deal_id or _default_focus_deal(deals_df)
-    drag_packet = focused_packet
-    if drag_packet is None and cov_deal_id and not focused_deal_id:
-        try:
-            from rcm_mc.analysis.analysis_store import get_or_build_packet
-            drag_packet = get_or_build_packet(store, cov_deal_id)
-        except Exception:  # noqa: BLE001 — packet absence is expected
-            drag_packet = None
-
-    _embed("covenant_heatmap", "Watchlist", "amber", "Covenant heatmap", "heatmap",
-           render_covenant_heatmap(store, cov_deal_id), "cc-7x3", 11)
-    _embed("ebitda_drag", "Bridge", "ink", "EBITDA drag", "drag",
-           render_ebitda_drag(drag_packet), "cc-5x3", 12)
-    _embed("initiative_variance", "Operations", "ink", "Initiative variance", "variance",
-           render_initiative_tracker(store, focused_deal_id), "cc-6x2", 13)
+           render_quick_access(), "cc-12x3", 5)
     _embed("alerts", "Alerts", "amber", "Active alerts", "alerts",
-           render_alerts(store), "cc-6x2", 14)
-    _embed("deliverables", "Deliverables", "navy", "Deliverables", "Deliverables",
-           render_deliverables(store, deal_id=focused_deal_id), "cc-12x2", 15)
+           render_alerts(store), "cc-12x2", 6)
+    # The covenant heatmap, EBITDA drag, initiative variance and
+    # deliverables cards left with the portfolio-ops sweep. Their
+    # builders are no longer called, which also drops the default-deal
+    # packet build the heatmap and drag pair used to force on every
+    # load — the one place this page spent a query outside its
+    # documented three.
 
     # Visible cards in canonical order, minus any the viewer has hidden.
     visible = [built[cid] for cid, _ in _CARD_ORDER
@@ -551,8 +524,12 @@ def render_app_grid(
 
     # Source registry footer — same labels the flat-scroll what-block shows,
     # so the page still declares where its numbers come from.
-    sources = ["portfolio.db", "deal_snapshots", "covenant_metrics",
-               "initiative_actuals", "analysis_runs", "generated_exports"]
+    # Declares what the surviving cards actually read. covenant_metrics,
+    # initiative_actuals and generated_exports left with the nine
+    # portfolio-ops cards on 2026-08-17 — a source footer that names
+    # tables the page no longer queries is the same class of claim the
+    # sweeps are removing.
+    sources = ["portfolio.db", "deal_snapshots", "analysis_runs"]
     src_footer = (
         '<div class="cc-sources">'
         '<span class="cc-sources-k">Sources</span>'

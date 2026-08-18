@@ -5200,173 +5200,107 @@ _CK_TOUR_JS = """
 # chartis_shell can inject the tour on every page without each
 # renderer authoring its own. Each volume reads as a short research
 # note rather than SaaS onboarding copy.
+# "The Atlas" — the editorial tour, opened with T from any page. It is
+# chrome that ships everywhere, so it is a listing surface, and four hide
+# sweeps left it touring a product a reader can no longer reach: seven
+# volumes, of which four (the Risk Workbench, Financial Synthesis, the
+# Portfolio, Delivery) were entirely about machinery that is now hidden,
+# and a fifth laddered through the CCD ingestion / HFMA benchmarks /
+# denial prediction / counterfactual stack.
+#
+# Dropping only the "try it" button (see ck_tour_overlay) left the prose
+# behind, which is worse than nothing: a guided tour of pages the product
+# no longer offers. The four volumes are gone and Volume II is rewritten
+# around the X-rays. What is left tours what the product IS: find a
+# target, read its filings, read the whole program it sits in.
 _TOUR_VOLUMES: List[Dict[str, Any]] = [
     {
         "eyebrow": "Volume I",
         "title": "The <em>Pipeline</em>.",
         "body": (
             "<p>Every engagement begins at the same surface: the "
-            "deal pipeline. Hospitals enter as candidates from "
-            "screening; advance through outreach, LOI, diligence, "
-            "and IC; exit either to your portfolio or to the "
-            "watchlist for next quarter.</p>"
-            "<p>Click any deal to open its <strong>profile</strong>: "
-            "the single source of truth for every analytic on "
-            "the platform. The profile carries your deal parameters "
-            "(NPR, EBITDA, specialty, state) into every downstream "
-            "tool so you never re-type them.</p>"
-            "<p>The funnel on the left of <strong>/app</strong> "
-            "shows stage counts at a glance. The activity panel on "
-            "the right shows what changed in the last seven days.</p>"
+            "deal pipeline. Providers enter as candidates from "
+            "screening and advance through outreach, LOI and "
+            "diligence, or move to the watchlist for next "
+            "quarter.</p>"
+            "<p>Targets arrive from the <strong>Target "
+            "Screener</strong>, which filters every public CMS "
+            "provider universe — hospitals from HCRIS, and the "
+            "Care Compare files for SNF, home health, hospice, "
+            "dialysis, rehab and long-term care — on filed figures "
+            "only. Nothing on that screen is modelled.</p>"
+            "<p>The funnel on <strong>/app</strong> shows stage "
+            "counts at a glance; the activity panel shows what "
+            "changed in the last seven days.</p>"
         ),
         "try_it": {"label": "Open the pipeline", "href": "/pipeline"},
     },
     {
         "eyebrow": "Volume II",
-        "title": "<em>Diligence</em>.",
+        "title": "The <em>X-rays</em>.",
         "body": (
-            "<p>The diligence layer is where the platform earns its "
-            "keep. Six analytics ladder up to a complete RCM and PE "
-            "picture:</p>"
-            "<p><strong>CCD ingestion</strong> converts the seller's "
-            "data room into structured records. <strong>HFMA "
-            "benchmarks</strong> compare every initiative to "
-            "industry priors with conformal confidence bands. "
-            "<strong>Denial prediction</strong> projects per-payer "
-            "write-off rates against the seller's actuals.</p>"
-            "<p><strong>HCRIS Peer X-Ray</strong> surfaces what "
-            "cost-report data says about competitive position. "
-            "<strong>Counterfactual analysis</strong> answers "
-            "<em>what would EBITDA have been without this "
-            "initiative</em>. The <strong>diligence checklist</strong> "
-            "gates IC approval: items must be cleared before the "
-            "deal advances.</p>"
-            "<p>Click any tool from the deal profile and your deal "
-            "parameters pre-fill. No re-typing.</p>"
+            "<p>This is where the platform earns its keep: taking "
+            "one provider apart against what it actually filed.</p>"
+            "<p>The <strong>CMS X-Ray</strong> takes a CCN, a "
+            "provider ID or a facility name and resolves it across "
+            "every live CMS vertical it appears in, so a target "
+            "that bills under four programs shows up as one "
+            "operator. The <strong>HCRIS X-Ray</strong> is the "
+            "close read of a hospital's Medicare cost report — "
+            "peer percentiles, outlier flags, and the line items "
+            "underneath them.</p>"
+            "<p>Neither asks you to assume anything. Every figure "
+            "on both is a number a hospital filed with CMS, and "
+            "every one of them traces back to the filing it came "
+            "from.</p>"
         ),
         "try_it": {
-            "label": "Open the diligence index",
-            "href": "/diligence",
+            "label": "Open the CMS X-Ray",
+            "href": "/diligence/xray",
         },
     },
     {
         "eyebrow": "Volume III",
-        "title": "The <em>Risk</em> Workbench.",
+        "title": "The <em>datasets</em>.",
         "body": (
-            "<p>The Risk Workbench groups every risk surface into "
-            "three tiers of attention.</p>"
-            "<p><strong>Tier 1</strong>: bankruptcy survival, "
-            "covenant headroom, payer concentration. Existential "
-            "risks that kill deals at IC.</p>"
-            "<p><strong>Tier 2</strong>: physician attrition, "
-            "denial rate, regulatory exposure, cyber posture. "
-            "Material risks that erode EBITDA.</p>"
-            "<p><strong>Tier 3</strong>: management bench depth, "
-            "IT modernization debt, M&amp;A integration drag. "
-            "Slow-burn risks that show up in year three.</p>"
-            "<p>Each panel cites its source (HCRIS, CMS, public "
-            "filings) so you can audit the chain from claim to "
-            "conclusion.</p>"
+            "<p>Behind every screen and every X-ray is a public "
+            "file, and the Library says which one.</p>"
+            "<p>The <strong>data catalog</strong> lists every "
+            "source with its URL, refresh cadence, last-loaded "
+            "timestamp, row count and licence. <strong>CMS "
+            "Sources</strong> is the program-by-program registry: "
+            "dataset IDs, granularity, update cadence, key "
+            "columns. <strong>Data Quality</strong> is the one "
+            "that admits what is missing — live row counts, "
+            "vintages, null rates and a register of known "
+            "gaps.</p>"
+            "<p>The <strong>metric glossary</strong> and "
+            "<strong>methodology</strong> close the loop: what a "
+            "number means, and the formula behind it when the "
+            "platform computes rather than reads.</p>"
         ),
         "try_it": {
-            "label": "Open the risk workbench",
-            "href": "/diligence/risk-workbench",
+            "label": "Open the data catalog",
+            "href": "/data",
         },
     },
     {
         "eyebrow": "Volume IV",
-        "title": "Financial <em>Synthesis</em>.",
-        "body": (
-            "<p>Once diligence is complete, the platform synthesises "
-            "a financial story:</p>"
-            "<p>The <strong>7-lever EBITDA bridge</strong> "
-            "decomposes year-0 to year-3 EBITDA into "
-            "initiative-specific contributions. The <strong>two-"
-            "source Monte Carlo</strong> runs N=1,000+ paths "
-            "combining historical claim variance and forward-looking "
-            "initiative impact, returning P10/P50/P90 EBITDA "
-            "distributions.</p>"
-            "<p><strong>Public-market overlay</strong> pulls "
-            "EV/EBITDA bands from healthcare peers and prices your "
-            "deal against the band. <strong>Covenant headroom math</strong> "
-            "projects the post-close credit stack against bank "
-            "covenants with stress paths.</p>"
-            "<p>Every number on the synthesis pages carries a "
-            "provenance tooltip showing which inputs produced it.</p>"
-        ),
-        "try_it": {
-            "label": "Open the EBITDA bridge",
-            "href": "/pipeline/bridge",
-        },
-    },
-    {
-        "eyebrow": "Volume V",
-        "title": "The <em>Portfolio</em>.",
-        "body": (
-            "<p>After close, deals move to the portfolio surface. "
-            "<strong>Alerts</strong> fire when covenant headroom "
-            "narrows, EBITDA misses plan, or initiative variance "
-            "crosses thresholds. Acknowledge them, snooze them, or "
-            "escalate to the partner.</p>"
-            "<p><strong>Watchlists</strong> slice the portfolio by "
-            "sector, vintage, owner, or arbitrary tag. The "
-            "<strong>health score</strong> is a composite 0-100 per "
-            "deal with a trend sparkline. The "
-            "<strong>/my/&lt;owner&gt;</strong> page shows your "
-            "personal queue.</p>"
-            "<p><strong>Cohorts</strong> group deals by structural "
-            "similarity so you can ask <em>how have all my friendly "
-            "PC deals performed since 2024</em> and see the answer "
-            "in one chart.</p>"
-        ),
-        "try_it": {
-            "label": "Open the portfolio",
-            "href": "/portfolio",
-        },
-    },
-    {
-        "eyebrow": "Volume VI",
-        "title": "<em>Delivery</em>.",
-        "body": (
-            "<p>Every engagement ends in deliverables. The platform "
-            "generates IC packets, exit memos, and LP digests as "
-            "editorial HTML: partner-ready, print-friendly, "
-            "share-friendly.</p>"
-            "<p><strong>IC memos</strong> pull from the analysis "
-            "packet automatically. The <strong>bear case</strong> is "
-            "generated from the risk workbench. The "
-            "<strong>LP digest</strong> aggregates portfolio-level "
-            "performance into a quarterly narrative.</p>"
-            "<p>Exports are CSV (sanitised against Excel formula "
-            "injection), HTML, JSON, or (for the IC memo and "
-            "packet) print-PDF. Every export caps the chain of "
-            "citation so the LP can audit any number back to its "
-            "source.</p>"
-        ),
-        "try_it": {
-            "label": "Open the LP digest",
-            "href": "/lp-update",
-        },
-    },
-    {
-        "eyebrow": "Volume VII",
         "title": "Settings &amp; <em>Workflow</em>.",
         "body": (
             "<p>A handful of details that compound over time:</p>"
             "<p><strong>Cmd+K</strong> opens the command palette: "
-            "every analytic surface is one keystroke away. The "
-            "<strong>deal slug</strong> (e.g. "
-            "<em>/diligence/deal/aurora</em>) is bookmarkable and "
-            "shareable; deal parameters persist in your browser "
-            "localStorage so a refresh or returning tomorrow picks "
-            "up where you left off.</p>"
+            "every surface is one keystroke away. Typing into the "
+            "topbar search reaches the same set by name. Most "
+            "pages are bookmarkable with their filters in the "
+            "URL, so a view you built is a link you can send.</p>"
             "<p>State-changing actions <strong>flash a toast</strong> "
             "so you have confirmation. The <strong>?legacy=1</strong> "
             "query parameter falls back to the legacy dashboard if "
             "you preferred it; <strong>?v2=1</strong> the older "
             "modern view.</p>"
             "<p>You can restart this tour any time from "
-            "<strong>Settings → Platform Tutorial</strong>. "
+            "<strong>Settings &rarr; Platform Tutorial</strong>. "
             "Welcome to the platform.</p>"
         ),
         "try_it": {
