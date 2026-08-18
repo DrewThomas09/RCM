@@ -8239,15 +8239,21 @@ _MANUAL: List[PageContext] = [
                  "names differ, every member CCN, and up to eight legal "
                  "names plus four officials, parents and mail addresses. "
                  "Sorted largest cluster first."],
-        key_metrics=["Over the shipped harvest of 6,035 facilities: 1,167 "
-                     "clusters covering 2,380 facilities — 623 joined on a "
-                     "signing officer, 298 on a back office, 222 on a "
-                     "legal name and 24 on a filed parent. The largest "
-                     "holds 63 facilities.",
-                     "719 of those clusters have members whose legal names "
-                     "differ, covering 1,801 facilities that no "
-                     "name-based grouping could have found.",
-                     "409 addresses were refused as multi-tenant."],
+        key_metrics=["The harvest is still being extended state by state, "
+                     "so treat the counts below as a shape rather than a "
+                     "constant — ownership_summary() recomputes them and "
+                     "is what the page itself reports.",
+                     "At 9,416 harvested facilities: 2,061 clusters "
+                     "covering 3,900 facilities — 1,211 joined on a "
+                     "signing officer, 481 on a back office, 332 on a "
+                     "legal name and 37 on a filed parent. The largest "
+                     "holds 63.",
+                     "1,404 of those clusters have members whose legal "
+                     "names differ, covering 3,197 facilities that no "
+                     "name-based grouping could have found. That ratio — "
+                     "roughly two in three clusters, and most of the "
+                     "covered facilities — is the stable finding here.",
+                     "829 addresses were refused as multi-tenant."],
         data_sources=["rcm_mc/data/facility_ownership.csv.gz — the "
                       "harvested CMS ownership filings, one row per "
                       "certified facility, joined to the provider "
