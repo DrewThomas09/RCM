@@ -548,6 +548,14 @@ _DUPLICATE_CATALOG_ROUTES = frozenset({
     # rather than of datasets, and off-pillar besides — none of those
     # sources is a provider filing or a tracked deal.
     "/connector-estate",
+    # A second research index alongside /best/research, and by the end
+    # of the sweeps 11 of its 14 curated entries were hidden — the
+    # conference roadmap, the PE Intelligence hub, bear cases, the
+    # corpus backtests, the market-intel and hold/IRR narratives. The
+    # three that survive (/methodology, /regulatory-calendar, /notes)
+    # are one click away in the same rail and carded on the section
+    # catalog. An index of three, all of them adjacent, is chrome.
+    "/research",
 })
 
 HIDDEN_ROUTES = (

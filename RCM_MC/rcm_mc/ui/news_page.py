@@ -471,11 +471,14 @@ def render_news(category: str = "all") -> str:
         + '</div>'
     )
 
+    # /research was a second research index alongside /best/research and
+    # went with the duplicate-catalog sweep. From a deal-news feed the
+    # step that matters is the sourced transaction table.
     next_up = ck_next_section(
-        "Open the research hub",
-        "/research",
+        "Check it against the verified deals",
+        "/verified-deals",
         eyebrow="Up next",
-        italic_word="research",
+        italic_word="verified",
     )
     # 2026-05-28 batch 28 · Phase 3 · universal strict 5-block head.
     from ._chartis_kit import ck_editorial_head

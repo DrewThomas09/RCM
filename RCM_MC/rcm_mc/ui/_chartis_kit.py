@@ -211,7 +211,10 @@ _SUB_NAV = {
         {"label": "MA Penetration",      "href": "/ma-penetration"},
         {"label": "Market Scan",         "href": "/market-scan"},
         {"label": "Notes",               "href": "/notes"},
-        {"label": "All Research →",      "href": "/research"},
+        # /research (the second research index) went with the
+        # duplicate-catalog sweep; the section catalog is the one
+        # index left, and it is what the topbar tab points at too.
+        {"label": "All Research →",      "href": "/best/research"},
     ],
     "diligence": [
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
@@ -252,7 +255,7 @@ _SECTION_FEATURE = {
                  "blurb": "Read a whole CMS provider universe end to end, then "
                           "the payment rates and rule calendar that move it "
                           "from one cycle to the next.",
-                 "href": "/research"},
+                 "href": "/best/research"},
 }
 
 # Routes that appear in the ranking manifest but are NOT navigable bare-GET
@@ -10575,7 +10578,7 @@ _SHORTCUTS_JS = """
  *
  * Also implements vim/Linear-style "g + letter" jump:
  *   g h → /home          g p → /pipeline       g d → /diligence
- *   g l → /library       g r → /research       g m → /my/<owner>
+ *   g l → /library       g r → /best/research  g m → /my/<owner>
  *   g a → /alerts        g w → /watchlist      g k → opens palette
  */
 (function(){
@@ -10592,7 +10595,7 @@ _SHORTCUTS_JS = """
    * INTERNAL_ROUTES documents for /users. */
   var GO_TARGETS = {
     h: '/home', p: '/pipeline', d: '/diligence',
-    l: '/library', r: '/research',
+    l: '/library', r: '/best/research',
     a: '/alerts', w: '/watchlist', m: '/my/AT',
   };
   var goPending = false;
