@@ -524,13 +524,9 @@ def render_comparable_outcomes_page(
             _ts_key = template_for_sector(target.get("sector"))
         except Exception:  # noqa: BLE001
             _ts_key = None
-        size_link = (
-            f'<p style="margin:6px 2px 0;font-size:11.5px;">'
-            f'<a href="/diligence/tam-sam?template={_ts_key}" '
-            'style="color:var(--sc-navy);font-weight:600;'
-            'text-decoration:none;">Size this market in the TAM/SAM '
-            'Builder →</a></p>' if _ts_key else ""
-        )
+        # /diligence/tam-sam is registry-hidden (engagement-scoped market
+        # sizing), so the size-this-market prompt no longer renders.
+        size_link = ""
         page_title_block = (
             ck_page_title(
             "Comparable Outcomes",
@@ -542,8 +538,8 @@ def render_comparable_outcomes_page(
                 universe="corpus",
                 confidence="illustrative",
                 source="Platform deal corpus — real deals with MOIC/IRR modeled where not publicly disclosed, not your fund's realized benchmark. Read the distributions as directional context.",
-                next_action="Carry the comp distribution into the IC narrative",
-                next_href="/diligence/ic-packet",
+                next_action="Check a comparable's cost report directly",
+                next_href="/diligence/hcris-xray",
             )
         )
         # ONE editorial lede under the title — this page stacked three
@@ -658,10 +654,10 @@ def render_comparable_outcomes_page(
             + verified_note
         )
         next_up = ck_next_section(
-            "Cross-check against named bear cases",
-            "/bear-cases",
+            "Check the filings behind these comparables",
+            "/diligence/hcris-xray",
             eyebrow="Up next",
-            italic_word="bear",
+            italic_word="filings",
         )
         body = (
             _wc.web_styles()

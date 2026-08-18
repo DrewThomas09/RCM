@@ -33,7 +33,9 @@ class RankedRailTests(unittest.TestCase):
 
     def test_every_core_section_dropdown_has_more_link(self):
         from rcm_mc.ui._chartis_kit import chartis_shell
-        for sec in ("source", "pipeline", "diligence", "portfolio",
+        # "portfolio" left this list when the Portfolio tab was dropped
+        # in the bloat sweep — see test_portfolio_is_no_longer_a_section.
+        for sec in ("source", "pipeline", "diligence",
                     "research", "library"):
             h = chartis_shell("<p>x</p>", "T", active_nav="/" + sec)
             self.assertIn(f"/best/{sec}", h, sec)
@@ -44,13 +46,15 @@ class RankedRailTests(unittest.TestCase):
         # data_required — never illustrative/synthetic) AND navigable bare-GET
         # pages (no form-POST/redirect targets). Pipeline honestly has 3 such
         # pages (a 4th would require a dead link or an illustrative page — both
-        # worse than a 3-leaf bar); portfolio has 6. So: populated (>=3),
-        # capped (<=6), all real, none in the non-navigable set.
+        # worse than a 3-leaf bar); Home is the other short one. So:
+        # populated (>=3), capped (<=6), all real, none in the
+        # non-navigable set. Portfolio was the second case here until the
+        # bloat sweep dropped that tab entirely.
         from rcm_mc.ui._chartis_kit import (
             _ranked_subnav_items, _NAV_NONNAVIGABLE,
         )
         from rcm_mc.diligence.surface_status import classify_surface
-        for sec in ("pipeline", "portfolio"):
+        for sec in ("pipeline", "home"):
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 3, f"{sec} bar too sparse: {top}")
             self.assertLessEqual(len(top), 6, sec)
@@ -99,17 +103,40 @@ class RankedRailTests(unittest.TestCase):
             top, _ = _ranked_subnav_items(sec)
             self.assertGreaterEqual(len(top), 1, sec)
 
-    def test_diligence_bar_leads_with_flagship_workbenches(self):
-        # The front face is the analyst playbook in workflow order — identity
-        # → ingest → baseline → X-Ray drill-downs → IC deliverable — not the
-        # LOC-score order (which front-faced the niche TX Infusion Market and
-        # buried HCRIS X-Ray at #19).
+    def test_diligence_bar_leads_with_the_xrays(self):
+        # The front face is the CMS filing reads, deepest first — not the
+        # LOC-score order (which front-faced the niche TX Infusion Market
+        # and buried HCRIS X-Ray at #19). Until 2026-08-16 this bar led
+        # with the per-deal workflow (identity → ingest → … → IC packet);
+        # that machinery is deal EXECUTION and is registry-hidden, so the
+        # X-rays lead now.
         from rcm_mc.ui._chartis_kit import _ranked_subnav_items
         top, _ = _ranked_subnav_items("diligence")
-        self.assertEqual([s["href"] for s in top], [
-            "/diligence/deal", "/diligence/ingest", "/diligence/benchmarks",
-            "/diligence/xray", "/diligence/hcris-xray", "/diligence/ic-packet",
+        # Three routes left the tail of this list on 2026-08-17. Cost
+        # Structure and Payer Stress were ruled seeded slider models
+        # rather than filing reads; Benchmarks turned out to be Phase 2
+        # of the RCM-diligence workspace (HFMA MAP Key bands over a
+        # fixture claims file) whose other three phases were already
+        # hidden. What pins the tail now is the CMS-backed index of the
+        # universes an X-ray drills into, and the surface that says how
+        # complete those universes are.
+        self.assertEqual([s["href"] for s in top][:4], [
+            "/diligence/hcris-xray", "/diligence/xray",
+            "/verticals", "/data-quality",
         ])
+
+    def test_portfolio_is_no_longer_a_section(self):
+        # The Portfolio tab was dropped in the bloat sweep: every surface
+        # under it was portfolio OPS (own book) rather than provider data,
+        # a scanner, or deal tracking in the space. An empty tab is worse
+        # than no tab.
+        from rcm_mc.ui._chartis_kit import (
+            _CORPUS_NAV, _SUB_NAV, _NAV_FLAGSHIPS, _SECTION_FEATURE,
+        )
+        self.assertNotIn("portfolio", [d["key"] for d in _CORPUS_NAV])
+        self.assertNotIn("portfolio", _SUB_NAV)
+        self.assertNotIn("portfolio", _NAV_FLAGSHIPS)
+        self.assertNotIn("portfolio", _SECTION_FEATURE)
 
     def test_flagship_pins_lead_every_pinned_section(self):
         # Pins that pass the tier gate render first, in pinned order.

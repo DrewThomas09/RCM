@@ -63,12 +63,21 @@ class ResearchEditorialChromeTests(unittest.TestCase):
         self.assertIn('class="ck-rail-layout"', html)
         self.assertIn('class="ck-results-header"', html)
         self.assertIn('class="ck-research-grid"', html)
+        # The count and the grid describe what the page OFFERS.
+        # RESEARCH_ENTRIES is still the full catalog; entries whose
+        # destination is registry-hidden (2026-08-16) don't render, and
+        # the count is built from the same filtered list so the header
+        # can't advertise research the grid won't show.
+        from rcm_mc.ui._surface_visibility import visible_links
+        offered = visible_links(RESEARCH_ENTRIES)
+        self.assertTrue(offered, "every research entry was filtered away")
+        self.assertLess(len(offered), len(RESEARCH_ENTRIES))
         self.assertIn(
-            f'>{len(RESEARCH_ENTRIES):,}<', html,
+            f'>{len(offered):,}<', html,
         )
-        # Every catalog entry's title appears in the grid (HTML-
-        # escaped — entries with `&` in the title render as `&amp;`).
-        for entry in RESEARCH_ENTRIES:
+        # Every OFFERED entry's title appears in the grid (HTML-escaped —
+        # entries with `&` in the title render as `&amp;`).
+        for entry in offered:
             self.assertIn(_html.escape(entry["title"]), html)
 
     def test_topic_filter_narrows_results(self) -> None:
@@ -94,12 +103,13 @@ class ResearchEditorialChromeTests(unittest.TestCase):
         self.assertNotIn("Bear Cases", grid_section)
 
     def test_keyword_search_matches_title_or_body(self) -> None:
-        html = render_research(q="conference")
-        # Conference Roadmap title contains "conference"
-        self.assertIn("Conference Roadmap", html)
-        # Empty hit on bear-cases (no "conference" substring there)
+        # Was "conference" / Conference Roadmap until that entry went
+        # registry-hidden on 2026-08-16. Same shape, kept entries: a
+        # query that hits one title and misses another.
+        html = render_research(q="regulatory")
+        self.assertIn("Regulatory Calendar", html)
         grid_section = _extract_research_grid(html)
-        self.assertNotIn("Bear Cases", grid_section)
+        self.assertNotIn("Methodology Hub", grid_section)
 
     def test_zero_match_renders_affirm_band(self) -> None:
         html = render_research(q="thiswillneverbeintheresearchcatalog")
@@ -147,8 +157,11 @@ class ResearchEditorialChromeTests(unittest.TestCase):
         self.assertIn('href="/methodology"', html)
 
     def test_label_pluralizes_with_count(self) -> None:
-        html_one = render_research(q="conference roadmap")  # likely 1 hit
-        html_many = render_research()  # 8 entries
+        # The single-hit query was "conference roadmap" until 2026-08-16,
+        # when /conferences went registry-hidden and that entry stopped
+        # rendering. "methodology hub" is a one-hit query on a kept entry.
+        html_one = render_research(q="methodology hub")   # 1 hit
+        html_many = render_research()                    # the full offer
         self.assertIn(">Note</span>", html_one)
         self.assertIn(">Notes</span>", html_many)
 

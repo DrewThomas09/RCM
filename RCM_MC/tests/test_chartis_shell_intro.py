@@ -227,19 +227,29 @@ class PaletteVisibilityPolicyTests(unittest.TestCase):
         self.assertIn("/admin/data-sources", routes)
 
     def test_palette_agrees_with_surface_visibility(self):
-        # Systemic guard: nothing classified internal by the
-        # visibility registry may appear in the palette, with the one
-        # documented exception of /users (rank-4 note: "admin pages
-        # keep their user-menu links") — pinned separately so a new
-        # internal route can't silently ship a palette entry.
-        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
-        from rcm_mc.ui._surface_visibility import is_internal
-        leaked = sorted(
-            m["route"] for m in _DEFAULT_PALETTE_MODULES
-            if is_internal(m["route"]) and m["route"] != "/users"
+        # Systemic guard: nothing the visibility registry classifies as
+        # internal or hidden may be OFFERED by the palette.
+        #
+        # Asserted against the RENDERED palette rather than the raw
+        # _DEFAULT_PALETTE_MODULES list. The list is source data that
+        # deliberately outlives a ruling — ck_command_palette filters it
+        # through visible_modules at render, so a route rejoins the
+        # palette the day it leaves the registry, with no second edit.
+        # Checking the raw list instead would force every hide to also
+        # delete a palette row, which is the drift this registry exists
+        # to prevent. /users keeps its documented user-menu exemption,
+        # and it is not in the palette either way.
+        import re
+        from rcm_mc.ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, ck_command_palette,
         )
+        from rcm_mc.ui._surface_visibility import is_visible
+        html = ck_command_palette(_DEFAULT_PALETTE_MODULES)
+        offered = [r for r in re.findall(r'data-route="([^"]*)"', html) if r]
+        self.assertTrue(offered, "palette rendered no routes at all")
+        leaked = sorted({r for r in offered if not is_visible(r)})
         self.assertEqual(leaked, [],
-                         msg=f"internal routes in palette: {leaked}")
+                         msg=f"internal/hidden routes in palette: {leaked}")
 
 
 if __name__ == "__main__":

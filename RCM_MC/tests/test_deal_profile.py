@@ -53,9 +53,16 @@ class ProfilePageTests(unittest.TestCase):
             self.assertIn(f'data-rcm-deal-field="{field}"', h,
                           msg=f"missing field {field}")
 
-    def test_renders_card_for_every_analytic(self):
+    def test_renders_card_for_every_visible_analytic(self):
+        # _ANALYTICS stays the full tool catalog with its param mapping
+        # intact; the grid renders the ones the visibility registry still
+        # offers (Thesis Pipeline, Bear Case, PPAM, Management Scorecard
+        # and the bankruptcy scan went hidden on 2026-08-16).
+        from rcm_mc.ui.deal_profile_page import _visible_analytics
         h = render_deal_profile_page(slug="aurora")
-        for a in _ANALYTICS:
+        visible = _visible_analytics()
+        self.assertTrue(visible, "every analytic was filtered away")
+        for a in visible:
             self.assertIn(a["label"], h,
                           msg=f"missing analytic card {a['label']}")
 
@@ -85,18 +92,30 @@ class ProfilePageTests(unittest.TestCase):
 
     def test_analytic_card_carries_href_template(self):
         h = render_deal_profile_page(slug="aurora")
-        # Bankruptcy-Survivor Scan uses empty params — should still
-        # render the href-base attribute.
+        # The grid renders the tools the visibility registry still offers,
+        # each carrying its param-mapping href base. The examples here have
+        # been rewritten twice as the sweeps landed — Bankruptcy Scan, then
+        # IC Packet / Counterfactual — so they are now the X-rays, which
+        # are the surfaces this product is built around and the least
+        # likely to move again.
         self.assertIn(
-            'data-rcm-deal-href-base="/screening/bankruptcy-survivor"',
-            h,
+            'data-rcm-deal-href-base="/diligence/hcris-xray"', h,
         )
         self.assertIn(
-            'data-rcm-deal-href-base="/diligence/counterfactual"', h,
+            'data-rcm-deal-href-base="/diligence/regulatory-calendar"', h,
         )
-        self.assertIn(
-            'data-rcm-deal-href-base="/diligence/ic-packet"', h,
-        )
+        # Deal-execution tools are gone from the grid entirely.
+        # /diligence/benchmarks joined them on 2026-08-17: it is Phase 2
+        # of the RCM-diligence workspace (HFMA bands over a fixture
+        # claims file), not a filing read. The grid is down to the X-ray
+        # and the rule calendar, which is what _visible_analytics()
+        # returns — the loop above walks it rather than naming rows, so
+        # this pair is the only hand-written pin left.
+        for gone in ("/screening/bankruptcy-survivor",
+                     "/diligence/ic-packet", "/diligence/counterfactual",
+                     "/diligence/benchmarks"):
+            self.assertNotIn(
+                f'data-rcm-deal-href-base="{gone}"', h, gone)
 
     def test_slug_sanitization_rejects_path_traversal(self):
         # '..' contains no a-z/0-9/- so the sanitiser strips it and
@@ -247,8 +266,13 @@ class PhaseGroupedAnalyticsTests(unittest.TestCase):
     def test_analytics_grouped_by_phase(self):
         h = self._render()
         self.assertIn("grouped by lifecycle phase", h)
-        # The Workspace phase header contains Workspace subtitle
-        self.assertIn("one-button orchestration", h)
+        # A phase header renders with its subtitle. This asserted the
+        # Workspace phase ("one-button orchestration") until 2026-08-16 —
+        # that phase held only deal-execution tools and now has no visible
+        # members, so the phase header is gone with them. Diligence is the
+        # phase the surviving X-rays group under.
+        self.assertIn("CCD + predictive analytics", h)
+        self.assertNotIn("one-button orchestration", h)
 
 
 class DealProfilePowerUITests(unittest.TestCase):
@@ -265,10 +289,15 @@ class DealProfilePowerUITests(unittest.TestCase):
         self.assertIn("<kbd", h)
         self.assertIn("for shortcuts", h)
 
-    def test_run_full_pipeline_cta_present(self):
+    def test_run_full_pipeline_cta_removed(self):
+        # The CTA ran /diligence/thesis-pipeline, a chain built on
+        # illustrative surfaces (PPAM, the bankruptcy scan). Registry-hidden
+        # on 2026-08-16, so the page's lead button went with it — the
+        # analytics grid below is the entry point now, and every tool on it
+        # runs on a sourced filing.
         h = self._render()
-        self.assertIn("Run Full Pipeline", h)
-        self.assertIn("data-rcm-run-pipeline", h)
+        self.assertNotIn("Run Full Pipeline", h)
+        self.assertNotIn("data-rcm-run-pipeline", h)
 
     def test_analytic_card_hover_transitions(self):
         h = self._render()

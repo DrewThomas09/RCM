@@ -148,7 +148,6 @@ _CORPUS_NAV = [
     {"label": "Diligence", "href": "/diligence", "key": "diligence"},
     {"label": "Library",   "href": "/best/library",   "key": "library"},
     {"label": "Research",  "href": "/best/research",   "key": "research"},
-    {"label": "Portfolio", "href": "/best/portfolio", "key": "portfolio"},
 ]
 
 # Per-section sub-nav. Surfaces the most-clicked second-level pages
@@ -157,9 +156,7 @@ _CORPUS_NAV = [
 _SUB_NAV = {
     "home": [
         {"label": "Command Center",      "href": "/app"},
-        {"label": "My Dashboard",        "href": "/my/AT"},
         {"label": "Alerts",              "href": "/alerts"},
-        {"label": "Escalations",         "href": "/escalations"},
         {"label": "Watchlist",           "href": "/watchlist"},
     ],
     # Source = target/opportunity discovery (CMS/market). Deal Sourcing anchors
@@ -170,116 +167,57 @@ _SUB_NAV = {
         {"label": "Health System Lookup", "href": "/health-system-lookup"},
         {"label": "Deal Sourcing",       "href": "/source"},
         {"label": "Geographic Intel",    "href": "/geo-intel"},
-        {"label": "Thesis Screening",    "href": "/deal-screening"},
-        {"label": "Conferences",         "href": "/conferences"},
     ],
     # Pipeline = real opportunities/deals only — the deal-workflow surfaces.
     # Market-discovery screeners live in Source (Target Screener); the
     # CMS/HCRIS screener routes (/screen, /predictive-screener) are unchanged
-    # and reached from there. PE Intelligence moved to Research.
+    # and reached from there. The scoring surfaces that used to sit here
+    # (Deal Quality / Deal Risk / Deal-Flow Heatmap) run on illustrative
+    # figures and are registry-hidden — see _surface_visibility.
     "pipeline": [
         {"label": "Deal Pipeline",       "href": "/pipeline"},
         {"label": "New Deal / Import",   "href": "/new-deal"},
-        {"label": "Deal Quality",        "href": "/deal-quality"},
-        {"label": "Deal Risk",           "href": "/deal-risk-scores"},
-        {"label": "Deal-Flow Heatmap",   "href": "/deal-flow-heatmap"},
-        {"label": "EBITDA Bridge",       "href": "/pipeline/bridge"},
-        {"label": "Roll-Up Builder",     "href": "/pipeline/rollup"},
+        # Also carried by the Home rail. Duplicated deliberately: after
+        # the EBITDA Bridge left with the transaction-modelling sweep,
+        # Pipeline had two leaves, and the watchlist is the one surface
+        # that genuinely belongs to both readings — the targets you are
+        # following ARE the pipeline. _SUB_SECTION_MAP still resolves
+        # /watchlist to home, so breadcrumbs stay unambiguous.
+        {"label": "Watchlist",           "href": "/watchlist"},
     ],
     "library": [
         {"label": "Deal Library",        "href": "/deal-library"},
-        {"label": "Deals Library",       "href": "/deals-library"},
         {"label": "Verified Deals",      "href": "/verified-deals"},
         {"label": "Methodology",         "href": "/methodology"},
         {"label": "Metric Glossary",     "href": "/metric-glossary"},
-        {"label": "Healthcare Verticals Reference","href": "/healthcare-verticals-reference"},
-        {"label": "RCM Benchmarks",      "href": "/rcm-benchmarks"},
         {"label": "Data Catalog",        "href": "/data"},
-        {"label": "Comparables",         "href": "/comparables"},
-        {"label": "Market Rates",        "href": "/market-rates"},
+        {"label": "CMS Sources",         "href": "/cms-sources"},
     ],
-    # Research — 10 analytical + catalog surfaces. Mirrors the
-    # diligence trim: rendering all ten in the sub-nav strip
-    # crowded the topbar to the point of wrapping on common
-    # laptop widths. Trimmed to the five daily-driver workbench
-    # surfaces (analyst voice + the four most-read benchmarking
-    # / momentum reads) plus an "All Research →" link to the
-    # /research index, which now surfaces every dropped item
-    # (Comparable Outcomes, Bear Cases, Reg Calendar, Corpus
-    # Backtest, Backtest) alongside the original catalog.
+    # Research — the market and regulatory backdrop to the provider
+    # universes. Three families of entry used to sit here and are now
+    # registry-hidden: the corpus narratives (Bear Cases, PE
+    # Intelligence, Sponsor Track Record), the chart builders (Further
+    # Analysis, Cross-Dataset Analysis, the graphics toolkit), and the
+    # licensed sector reports (Industry Intelligence, Healthcare
+    # Verticals, Market Intel). What is left reads CMS: what Medicare is
+    # paying this cycle, what is on the regulatory calendar, and how a
+    # geography looks before you screen it.
     "research": [
-        {"label": "Market Reports",      "href": "/market"},
-        {"label": "Industry Intelligence", "href": "/industry"},
-        {"label": "Radiology & Imaging", "href": "/radiology-imaging"},
-        {"label": "Healthcare Verticals", "href": "/healthcare-verticals"},
-        {"label": "Vertical Unit Economics", "href": "/healthcare-verticals/unit-economics"},
-        {"label": "Market Intel (Geographic)", "href": "/market-intel/geo"},
-        {"label": "Deal Dataset Analytics", "href": "/deal-corpus-analytics"},
-        {"label": "Find Comps",          "href": "/find-comps"},
-        {"label": "Sponsor Track Record","href": "/sponsor-track-record"},
-        {"label": "Payer Intelligence",  "href": "/payer-intelligence"},
-        {"label": "PE Intelligence",     "href": "/pe-intelligence"},
-        {"label": "Notes",               "href": "/notes"},
-        {"label": "Sector Momentum",     "href": "/sector-momentum"},
-        {"label": "Market Intel",        "href": "/market-intel"},
-        {"label": "Visuals (Charts)",    "href": "/visuals"},
-        {"label": "Further Analysis",    "href": "/further-analysis"},
-        {"label": "Cross-Dataset Analysis", "href": "/cross-analysis"},
-        {"label": "Public Data APIs",    "href": "/data-apis"},
-        {"label": "Connector Estate",    "href": "/connector-estate"},
+        {"label": "Rate Environment",    "href": "/rate-environment"},
+        {"label": "Regulatory Calendar", "href": "/regulatory-calendar"},
+        {"label": "MA Penetration",      "href": "/ma-penetration"},
         {"label": "Market Scan",         "href": "/market-scan"},
-        {"label": "Drug Reference (RxNorm)", "href": "/rxnorm"},
-        {"label": "Benchmark Reference", "href": "/benchmark-reference"},
-        {"label": "Excel Mapping",       "href": "/excel-mapping"},
-        {"label": "Excel Templates",     "href": "/excel-templates"},
-        {"label": "Chart Builder",       "href": "/chart-builder"},
-        {"label": "Pie Chart",           "href": "/pie-chart"},
-        {"label": "Exhibit Composer",    "href": "/exhibit"},
-        {"label": "Saved Charts",        "href": "/charts"},
-        {"label": "All Research →",      "href": "/research"},
+        {"label": "Notes",               "href": "/notes"},
+        # /research (the second research index) went with the
+        # duplicate-catalog sweep; the section catalog is the one
+        # index left, and it is what the topbar tab points at too.
+        {"label": "All Research →",      "href": "/best/research"},
     ],
-    # Portfolio = the user's actual book. "Portfolio Analytics" was a 655-deal
-    # benchmark CORPUS mislabeled as portfolio — moved to Research as
-    # "Deal Corpus Analytics" (/portfolio-analytics redirects there).
-    # Portfolio = the user's actual book only. Sponsor Track Record + Payer
-    # Intelligence are reference/corpus data (not user-specific) — moved to
-    # Research. Deal Corpus Analytics moved to Research in PR C.
-    "portfolio": [
-        {"label": "Portfolio Map",       "href": "/portfolio/map"},
-        {"label": "Heatmap",             "href": "/portfolio/heatmap"},
-        {"label": "Risk Scan",           "href": "/portfolio/risk-scan"},
-        {"label": "LP Update",           "href": "/lp-update"},
-    ],
-    # Diligence — RCM analyst playbook surfaces. The full diligence
-    # tab carries 25 pages spanning the four-phase flow (intake →
-    # analysis → risk → output); rendering all of them in the sub-nav
-    # strip created an unreadable wall of links that wrapped or
-    # overflowed in the topbar. Trimmed to the five highest-traffic
-    # workbench surfaces (covering identity → ingest → baseline →
-    # drill-down → deliverable) plus an "All Diligence →" link that
-    # routes to /diligence (the existing diligence_index_page which
-    # already grids every tab). The Cmd-K palette (_DEFAULT_PALETTE_
-    # MODULES) and the breadcrumb resolver (_SUB_SECTION_MAP) still
-    # cover the full surface; sub-nav is only the daily-driver shortcut.
     "diligence": [
-        {"label": "Deal Profile",       "href": "/diligence/deal"},
-        {"label": "CDD Hub",            "href": "/cdd"},
-        {"label": "Ingestion",          "href": "/diligence/ingest"},
-        {"label": "Benchmarks",         "href": "/diligence/benchmarks"},
-        {"label": "CMS X-Ray",          "href": "/diligence/xray"},
         {"label": "HCRIS X-Ray",        "href": "/diligence/hcris-xray"},
-        {"label": "CIM Cross-Check",    "href": "/diligence/cim-crosscheck"},
-        {"label": "QoE Memo",           "href": "/diligence/qoe-memo"},
-        {"label": "Cliff Calendar",     "href": "/diligence/cliff-calendar"},
-        {"label": "TX Infusion Market", "href": "/diligence/texas-infusion"},
-        {"label": "TX Infusion · Workforce", "href": "/diligence/texas-infusion/workforce"},
-        {"label": "TX Infusion · Revenue", "href": "/diligence/texas-infusion/revenue"},
-        {"label": "TX Infusion · J-code Bench", "href": "/diligence/texas-infusion/jcode-benchmark"},
-        {"label": "TX Infusion · Cont.", "href": "/diligence/texas-infusion-continued"},
-        {"label": "Infusion Market Scan", "href": "/diligence/infusion-markets"},
-        {"label": "J-Code Atlas",       "href": "/diligence/jcode-atlas"},
-        {"label": "PE Intel Library",   "href": "/diligence/pe-library"},
-        {"label": "Advanced Analytics", "href": "/diligence/advanced-analytics"},
+        {"label": "CMS X-Ray",          "href": "/diligence/xray"},
+        {"label": "Provider Verticals", "href": "/verticals"},
+        {"label": "Data Quality",       "href": "/data-quality"},
         {"label": "All Diligence →",    "href": "/diligence"},
     ],
 }
@@ -294,28 +232,30 @@ _SECTION_FEATURE = {
     "source": {"eyebrow": "SECTION · SOURCE", "title": "Target discovery",
                "blurb": "Find targets across every public CMS/provider universe: "
                         "the Target Screener workbench (map, table, compare, "
-                        "just-missed, saved screens) plus conferences.",
+                        "just-missed, saved screens) and the geography to "
+                        "decide where to hunt.",
                "href": "/target-screener"},
     "pipeline": {"eyebrow": "SECTION · PIPELINE", "title": "Live deals",
-                 "blurb": "Track real opportunities once promoted from Source: "
-                          "screen, score, and move deals toward IC.",
+                 "blurb": "Track real opportunities once promoted from Source, "
+                          "and keep them current as the filings move.",
                  "href": "/pipeline"},
-    "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The analyst playbook",
-                  "blurb": "Run a live deal end to end: identity, ingestion, "
-                           "benchmarks, the CMS / HCRIS X-Ray, and the IC "
-                           "packet.",
+    "diligence": {"eyebrow": "SECTION · DILIGENCE", "title": "The X-rays",
+                  "blurb": "Drill into a single provider's filings: the HCRIS "
+                           "and CMS X-Rays, and the peer bands to read them "
+                           "against.",
                   "href": "/diligence"},
-    "library": {"eyebrow": "SECTION · LIBRARY", "title": "Reference desk",
-                "blurb": "Methodology, the metric glossary, RCM benchmarks, the "
-                         "data catalog, comps, and market rates.", "href": "/library"},
-    "research": {"eyebrow": "SECTION · RESEARCH", "title": "House views",
-                 "blurb": "The analyst notebook plus sector momentum, IRR "
-                          "dispersion, hold analysis, and market intel.",
-                 "href": "/research"},
-    "portfolio": {"eyebrow": "SECTION · PORTFOLIO", "title": "The active book",
-                  "blurb": "Monitor holdings by geography and risk: map, "
-                           "heatmap, risk scan, analytics, and LP reporting.",
-                  "href": "/portfolio"},
+    "library": {"eyebrow": "SECTION · LIBRARY", "title": "The datasets",
+                "blurb": "Every public CMS / Medicare / Medicaid / hospital "
+                         "dataset loaded here, what it covers, and the filing "
+                         "each figure traces back to.",
+                # Was /library, hidden 2026-08-18 as the one visible page
+                # still rendering a populated illustrative strip.
+                "href": "/best/library"},
+    "research": {"eyebrow": "SECTION · RESEARCH", "title": "Universes & context",
+                 "blurb": "Read a whole CMS provider universe end to end, then "
+                          "the payment rates and rule calendar that move it "
+                          "from one cycle to the next.",
+                 "href": "/best/research"},
 }
 
 # Routes that appear in the ranking manifest but are NOT navigable bare-GET
@@ -324,6 +264,8 @@ _SECTION_FEATURE = {
 # surfaced instead (e.g. /new-deal, not its /new-deal/manual POST target).
 _NAV_NONNAVIGABLE = frozenset({
     "/new-deal/manual",   # manual-entry POST target → 303 on GET; use /new-deal
+    "/app/cards",         # card-layout POST target; it was front-facing the
+                          # Home bar as a "Cards" tab that 404s on click
 })
 
 # Data-honesty tiers allowed to front-face in a nav bar. Illustrative
@@ -349,30 +291,30 @@ _NAV_FLAGSHIPS = {
     # Target Screener is the flagship workbench and must lead Source (pinned
     # product decision); the rest of the bar stays score-ordered.
     "source": ["/target-screener"],
-    "pipeline": ["/pipeline", "/pipeline/bridge", "/pipeline/rollup"],
+    "pipeline": ["/pipeline", "/new-deal"],
     # The analyst playbook in workflow order: identity → ingest → baseline →
     # the CMS / HCRIS X-Ray drill-downs → the IC deliverable.
+    # HCRIS X-Ray leads: it is the deepest read of a real Medicare cost
+    # report in the product and the reason the section exists.
     "diligence": [
-        "/diligence/deal",
-        "/diligence/ingest",
-        "/diligence/benchmarks",
-        "/diligence/xray",
         "/diligence/hcris-xray",
-        "/diligence/ic-packet",
+        "/diligence/xray",
+        "/verticals",
+        "/data-quality",
     ],
-    "library": ["/deal-library", "/rcm-benchmarks", "/methodology"],
-    # House views lead with the analytical reads; the chart/export utilities
-    # (Excel Mapping, Pie Chart, Chart Builder, …) live in /best/research.
+    "library": ["/deal-library", "/data", "/cms-sources", "/methodology"],
+    # Research is the market and regulatory backdrop to the provider
+    # universes: what CMS is paying this cycle, what is on the regulatory
+    # calendar, how MA penetration sits, and a one-input brief for a
+    # geography. The chart/export utilities and the licensed narrative
+    # reports that used to lead this bar went with the 2026-08-17 sweeps.
     "research": [
-        "/market-intel",
-        "/industry",
-        "/healthcare-verticals",
+        "/rate-environment",
         "/regulatory-calendar",
-        "/comparable-outcomes",
-        "/market-intel/geo",
+        "/ma-penetration",
+        "/market-scan",
         "/notes",
     ],
-    "portfolio": ["/portfolio", "/portfolio/monitor", "/portfolio/risk-scan"],
 }
 
 # Utility/visual helper renderers — real pages, but tools rather than
@@ -419,7 +361,11 @@ def _ranked_subnav_items(sect: str):
     diligence crossover gap). Front-facing gate applies to every source —
     pins included: only green/navy/data-required tiers (illustrative/
     placeholder demoted to the ranked /best/<section> index, reachable via
-    "More →"), and utility renderers in _NAV_DEMOTED never front-face.
+    "More →"), utility renderers in _NAV_DEMOTED never front-face, and
+    registry-hidden surfaces (_surface_visibility.is_visible) never appear
+    at all. That last gate has to be applied HERE rather than assumed of
+    the pool: the ranking manifest still scores hidden surfaces, and TX
+    Infusion led the whole diligence ranking on renderer LOC.
     Curated labels/descriptions win where available (vetted copy); otherwise
     the manifest's derived label is used. Falls back to the curated rail if
     the manifest has no entry, so a bar is never empty.
@@ -452,7 +398,7 @@ def _ranked_subnav_items(sect: str):
     # links (they aren't real leaves; the mega-menu has its own all-tools CTA).
     top, seen = [], set()
 
-    from ._surface_visibility import is_internal
+    from ._surface_visibility import is_visible
 
     def _resolved_label(r: dict) -> str:
         c = cur.get(r.get("route", ""), {})
@@ -483,7 +429,7 @@ def _ranked_subnav_items(sect: str):
         key = label.lower()
         if (not label or not href or key in seen or "→" in label
                 or href in _NAV_NONNAVIGABLE or href in _NAV_DEMOTED
-                or is_internal(href)):
+                or not is_visible(href)):
             return
         seen.add(key)
         top.append({"label": label, "href": href})
@@ -526,7 +472,11 @@ def _ranked_subnav_items(sect: str):
             if len(top) >= 6:
                 break
     if not top:  # manifest + curated both empty — nothing to show
-        top = [s for s in _SUB_NAV.get(sect, []) if isinstance(s, dict)][:6]
+        # Last-resort fallback still honours the visibility ruling: a bar
+        # that goes sparse is a smaller problem than a bar that front-faces
+        # a hidden surface.
+        top = [s for s in _SUB_NAV.get(sect, [])
+               if isinstance(s, dict) and is_visible(s.get("href", ""))][:6]
     has_more = len(ranked) > len(top) or len(cur) > len(top)
     return top, has_more
 
@@ -4944,6 +4894,19 @@ def ck_tour_overlay(volumes: List[Dict[str, Any]]) -> str:
     """
     if not volumes:
         return ""
+    # A volume's "try it" CTA lands the reader in a feature, so it is a
+    # listing surface like any other: drop the CTA when its destination is
+    # registry-hidden rather than walking a new partner into a page the
+    # product no longer offers. The volume itself still renders — the
+    # narrative is the point; the button is the affordance.
+    from ._surface_visibility import is_visible as _sv_is_visible
+    volumes = [
+        ({k: v for k, v in vol.items() if k != "try_it"}
+         if (vol.get("try_it") or {}).get("href")
+         and not _sv_is_visible(str(vol["try_it"]["href"]))
+         else vol)
+        for vol in volumes
+    ]
     volumes_json = json.dumps(volumes, ensure_ascii=False)
     total = len(volumes)
     return (
@@ -5240,173 +5203,107 @@ _CK_TOUR_JS = """
 # chartis_shell can inject the tour on every page without each
 # renderer authoring its own. Each volume reads as a short research
 # note rather than SaaS onboarding copy.
+# "The Atlas" — the editorial tour, opened with T from any page. It is
+# chrome that ships everywhere, so it is a listing surface, and four hide
+# sweeps left it touring a product a reader can no longer reach: seven
+# volumes, of which four (the Risk Workbench, Financial Synthesis, the
+# Portfolio, Delivery) were entirely about machinery that is now hidden,
+# and a fifth laddered through the CCD ingestion / HFMA benchmarks /
+# denial prediction / counterfactual stack.
+#
+# Dropping only the "try it" button (see ck_tour_overlay) left the prose
+# behind, which is worse than nothing: a guided tour of pages the product
+# no longer offers. The four volumes are gone and Volume II is rewritten
+# around the X-rays. What is left tours what the product IS: find a
+# target, read its filings, read the whole program it sits in.
 _TOUR_VOLUMES: List[Dict[str, Any]] = [
     {
         "eyebrow": "Volume I",
         "title": "The <em>Pipeline</em>.",
         "body": (
             "<p>Every engagement begins at the same surface: the "
-            "deal pipeline. Hospitals enter as candidates from "
-            "screening; advance through outreach, LOI, diligence, "
-            "and IC; exit either to your portfolio or to the "
-            "watchlist for next quarter.</p>"
-            "<p>Click any deal to open its <strong>profile</strong>: "
-            "the single source of truth for every analytic on "
-            "the platform. The profile carries your deal parameters "
-            "(NPR, EBITDA, specialty, state) into every downstream "
-            "tool so you never re-type them.</p>"
-            "<p>The funnel on the left of <strong>/app</strong> "
-            "shows stage counts at a glance. The activity panel on "
-            "the right shows what changed in the last seven days.</p>"
+            "deal pipeline. Providers enter as candidates from "
+            "screening and advance through outreach, LOI and "
+            "diligence, or move to the watchlist for next "
+            "quarter.</p>"
+            "<p>Targets arrive from the <strong>Target "
+            "Screener</strong>, which filters every public CMS "
+            "provider universe — hospitals from HCRIS, and the "
+            "Care Compare files for SNF, home health, hospice, "
+            "dialysis, rehab and long-term care — on filed figures "
+            "only. Nothing on that screen is modelled.</p>"
+            "<p>The funnel on <strong>/app</strong> shows stage "
+            "counts at a glance; the activity panel shows what "
+            "changed in the last seven days.</p>"
         ),
         "try_it": {"label": "Open the pipeline", "href": "/pipeline"},
     },
     {
         "eyebrow": "Volume II",
-        "title": "<em>Diligence</em>.",
+        "title": "The <em>X-rays</em>.",
         "body": (
-            "<p>The diligence layer is where the platform earns its "
-            "keep. Six analytics ladder up to a complete RCM and PE "
-            "picture:</p>"
-            "<p><strong>CCD ingestion</strong> converts the seller's "
-            "data room into structured records. <strong>HFMA "
-            "benchmarks</strong> compare every initiative to "
-            "industry priors with conformal confidence bands. "
-            "<strong>Denial prediction</strong> projects per-payer "
-            "write-off rates against the seller's actuals.</p>"
-            "<p><strong>HCRIS Peer X-Ray</strong> surfaces what "
-            "cost-report data says about competitive position. "
-            "<strong>Counterfactual analysis</strong> answers "
-            "<em>what would EBITDA have been without this "
-            "initiative</em>. The <strong>diligence checklist</strong> "
-            "gates IC approval: items must be cleared before the "
-            "deal advances.</p>"
-            "<p>Click any tool from the deal profile and your deal "
-            "parameters pre-fill. No re-typing.</p>"
+            "<p>This is where the platform earns its keep: taking "
+            "one provider apart against what it actually filed.</p>"
+            "<p>The <strong>CMS X-Ray</strong> takes a CCN, a "
+            "provider ID or a facility name and resolves it across "
+            "every live CMS vertical it appears in, so a target "
+            "that bills under four programs shows up as one "
+            "operator. The <strong>HCRIS X-Ray</strong> is the "
+            "close read of a hospital's Medicare cost report — "
+            "peer percentiles, outlier flags, and the line items "
+            "underneath them.</p>"
+            "<p>Neither asks you to assume anything. Every figure "
+            "on both is a number a hospital filed with CMS, and "
+            "every one of them traces back to the filing it came "
+            "from.</p>"
         ),
         "try_it": {
-            "label": "Open the diligence index",
-            "href": "/diligence",
+            "label": "Open the CMS X-Ray",
+            "href": "/diligence/xray",
         },
     },
     {
         "eyebrow": "Volume III",
-        "title": "The <em>Risk</em> Workbench.",
+        "title": "The <em>datasets</em>.",
         "body": (
-            "<p>The Risk Workbench groups every risk surface into "
-            "three tiers of attention.</p>"
-            "<p><strong>Tier 1</strong>: bankruptcy survival, "
-            "covenant headroom, payer concentration. Existential "
-            "risks that kill deals at IC.</p>"
-            "<p><strong>Tier 2</strong>: physician attrition, "
-            "denial rate, regulatory exposure, cyber posture. "
-            "Material risks that erode EBITDA.</p>"
-            "<p><strong>Tier 3</strong>: management bench depth, "
-            "IT modernization debt, M&amp;A integration drag. "
-            "Slow-burn risks that show up in year three.</p>"
-            "<p>Each panel cites its source (HCRIS, CMS, public "
-            "filings) so you can audit the chain from claim to "
-            "conclusion.</p>"
+            "<p>Behind every screen and every X-ray is a public "
+            "file, and the Library says which one.</p>"
+            "<p>The <strong>data catalog</strong> lists every "
+            "source with its URL, refresh cadence, last-loaded "
+            "timestamp, row count and licence. <strong>CMS "
+            "Sources</strong> is the program-by-program registry: "
+            "dataset IDs, granularity, update cadence, key "
+            "columns. <strong>Data Quality</strong> is the one "
+            "that admits what is missing — live row counts, "
+            "vintages, null rates and a register of known "
+            "gaps.</p>"
+            "<p>The <strong>metric glossary</strong> and "
+            "<strong>methodology</strong> close the loop: what a "
+            "number means, and the formula behind it when the "
+            "platform computes rather than reads.</p>"
         ),
         "try_it": {
-            "label": "Open the risk workbench",
-            "href": "/diligence/risk-workbench",
+            "label": "Open the data catalog",
+            "href": "/data",
         },
     },
     {
         "eyebrow": "Volume IV",
-        "title": "Financial <em>Synthesis</em>.",
-        "body": (
-            "<p>Once diligence is complete, the platform synthesises "
-            "a financial story:</p>"
-            "<p>The <strong>7-lever EBITDA bridge</strong> "
-            "decomposes year-0 to year-3 EBITDA into "
-            "initiative-specific contributions. The <strong>two-"
-            "source Monte Carlo</strong> runs N=1,000+ paths "
-            "combining historical claim variance and forward-looking "
-            "initiative impact, returning P10/P50/P90 EBITDA "
-            "distributions.</p>"
-            "<p><strong>Public-market overlay</strong> pulls "
-            "EV/EBITDA bands from healthcare peers and prices your "
-            "deal against the band. <strong>Covenant headroom math</strong> "
-            "projects the post-close credit stack against bank "
-            "covenants with stress paths.</p>"
-            "<p>Every number on the synthesis pages carries a "
-            "provenance tooltip showing which inputs produced it.</p>"
-        ),
-        "try_it": {
-            "label": "Open the EBITDA bridge",
-            "href": "/pipeline/bridge",
-        },
-    },
-    {
-        "eyebrow": "Volume V",
-        "title": "The <em>Portfolio</em>.",
-        "body": (
-            "<p>After close, deals move to the portfolio surface. "
-            "<strong>Alerts</strong> fire when covenant headroom "
-            "narrows, EBITDA misses plan, or initiative variance "
-            "crosses thresholds. Acknowledge them, snooze them, or "
-            "escalate to the partner.</p>"
-            "<p><strong>Watchlists</strong> slice the portfolio by "
-            "sector, vintage, owner, or arbitrary tag. The "
-            "<strong>health score</strong> is a composite 0-100 per "
-            "deal with a trend sparkline. The "
-            "<strong>/my/&lt;owner&gt;</strong> page shows your "
-            "personal queue.</p>"
-            "<p><strong>Cohorts</strong> group deals by structural "
-            "similarity so you can ask <em>how have all my friendly "
-            "PC deals performed since 2024</em> and see the answer "
-            "in one chart.</p>"
-        ),
-        "try_it": {
-            "label": "Open the portfolio",
-            "href": "/portfolio",
-        },
-    },
-    {
-        "eyebrow": "Volume VI",
-        "title": "<em>Delivery</em>.",
-        "body": (
-            "<p>Every engagement ends in deliverables. The platform "
-            "generates IC packets, exit memos, and LP digests as "
-            "editorial HTML: partner-ready, print-friendly, "
-            "share-friendly.</p>"
-            "<p><strong>IC memos</strong> pull from the analysis "
-            "packet automatically. The <strong>bear case</strong> is "
-            "generated from the risk workbench. The "
-            "<strong>LP digest</strong> aggregates portfolio-level "
-            "performance into a quarterly narrative.</p>"
-            "<p>Exports are CSV (sanitised against Excel formula "
-            "injection), HTML, JSON, or (for the IC memo and "
-            "packet) print-PDF. Every export caps the chain of "
-            "citation so the LP can audit any number back to its "
-            "source.</p>"
-        ),
-        "try_it": {
-            "label": "Open the LP digest",
-            "href": "/lp-update",
-        },
-    },
-    {
-        "eyebrow": "Volume VII",
         "title": "Settings &amp; <em>Workflow</em>.",
         "body": (
             "<p>A handful of details that compound over time:</p>"
             "<p><strong>Cmd+K</strong> opens the command palette: "
-            "every analytic surface is one keystroke away. The "
-            "<strong>deal slug</strong> (e.g. "
-            "<em>/diligence/deal/aurora</em>) is bookmarkable and "
-            "shareable; deal parameters persist in your browser "
-            "localStorage so a refresh or returning tomorrow picks "
-            "up where you left off.</p>"
+            "every surface is one keystroke away. Typing into the "
+            "topbar search reaches the same set by name. Most "
+            "pages are bookmarkable with their filters in the "
+            "URL, so a view you built is a link you can send.</p>"
             "<p>State-changing actions <strong>flash a toast</strong> "
             "so you have confirmation. The <strong>?legacy=1</strong> "
             "query parameter falls back to the legacy dashboard if "
             "you preferred it; <strong>?v2=1</strong> the older "
             "modern view.</p>"
             "<p>You can restart this tour any time from "
-            "<strong>Settings → Platform Tutorial</strong>. "
+            "<strong>Settings &rarr; Platform Tutorial</strong>. "
             "Welcome to the platform.</p>"
         ),
         "try_it": {
@@ -7638,6 +7535,13 @@ _DEFAULT_PALETTE_MODULES = [
 
 
 def ck_command_palette(modules: Iterable[Mapping[str, str]]) -> str:
+    # The palette is a listing surface, not a back door: filter it through
+    # the same visibility ruling as the nav bars and catalogs so a search
+    # for "infusion" or "sponsor" can't hand back a hidden page. Applies to
+    # caller-supplied module lists too — a page passing its own curated
+    # palette gets the ruling for free.
+    from ._surface_visibility import visible_modules
+    modules = visible_modules(list(modules))
     items = "".join(
         f'<li data-key="{_esc(m.get("id", ""))}" data-route="{_esc(m.get("route", ""))}">'
         f'<span class="cp-title">{_esc(m.get("title", ""))}</span>'
@@ -10629,10 +10533,9 @@ _SHORTCUTS_HTML = """
         <dl>
           <dt><kbd>g</kbd> <kbd>h</kbd></dt><dd>Home</dd>
           <dt><kbd>g</kbd> <kbd>p</kbd></dt><dd>Pipeline</dd>
-          <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Diligence (deal profile)</dd>
+          <dt><kbd>g</kbd> <kbd>d</kbd></dt><dd>Diligence</dd>
           <dt><kbd>g</kbd> <kbd>l</kbd></dt><dd>Library</dd>
           <dt><kbd>g</kbd> <kbd>r</kbd></dt><dd>Research</dd>
-          <dt><kbd>g</kbd> <kbd>o</kbd></dt><dd>Portfolio</dd>
           <dt><kbd>g</kbd> <kbd>a</kbd></dt><dd>Alerts</dd>
           <dt><kbd>g</kbd> <kbd>w</kbd></dt><dd>Watchlist</dd>
           <dt><kbd>g</kbd> <kbd>m</kbd></dt><dd>My Dashboard</dd>
@@ -10674,16 +10577,25 @@ _SHORTCUTS_JS = """
  * shortcut works without relying on e.key === '?'.
  *
  * Also implements vim/Linear-style "g + letter" jump:
- *   g h → /home          g p → /pipeline       g d → /diligence/deal
- *   g l → /library       g r → /research       g o → /portfolio
+ *   g h → /home          g p → /pipeline       g d → /diligence
+ *   g l → /best/library   g r → /best/research  g m → /my/<owner>
  *   g a → /alerts        g w → /watchlist      g k → opens palette
  */
 (function(){
   /* g+letter prefix-jump table. Keep separate from shortcut dialog
-   * so future expansion (g + I = ic packet, etc.) lives in one place. */
+   * so future expansion (g + I = ic packet, etc.) lives in one place.
+   *
+   * 2026-08-17 hide sweep: `g o → /portfolio` dropped and
+   * `g d` repointed from /diligence/deal to the /diligence catalog.
+   * Both old targets are registry-hidden, and a keyboard shortcut
+   * baked into every page is an offer of the route just as much as a
+   * nav link is — "hidden everywhere" has to include the chrome you
+   * cannot see. `g m` stays: /my/<owner> is hidden from the catalog
+   * but keeps its personal entry points, the same exemption
+   * INTERNAL_ROUTES documents for /users. */
   var GO_TARGETS = {
-    h: '/home', p: '/pipeline', d: '/diligence/deal',
-    l: '/library', r: '/research', o: '/portfolio',
+    h: '/home', p: '/pipeline', d: '/diligence',
+    l: '/best/library', r: '/best/research',
     a: '/alerts', w: '/watchlist', m: '/my/AT',
   };
   var goPending = false;
@@ -11722,14 +11634,11 @@ def _topbar(active_nav: Optional[str], user_initials: str = "AT") -> str:
         f'data-mode="{_esc(current_workspace_mode())}" '
         f'title="Workspace: {_esc(_ws_mode_label)} · click to switch">'
         f'{_esc(_ws_mode_label)}</a>'
-        # Portfolio-wide diligence-questions pill. JS-hydrated from
-        # all rcm_deal_*_questions entries on DOMContentLoaded;
-        # hidden when zero open across the portfolio. Click → ledger.
-        '<a class="ck-topbar-qpill" data-ck-qpill href="/diligence/questions" '
-        'aria-label="Open diligence questions ledger" hidden>'
-        '<span class="ck-topbar-qpill-num" data-ck-qpill-num>0</span>'
-        '<span class="ck-topbar-qpill-label">open Qs</span>'
-        '</a>'
+        # The portfolio-wide diligence-questions pill used to sit here,
+        # on every page's topbar, linking to /diligence/questions. That
+        # ledger is engagement workflow rather than a data read and is
+        # registry-hidden, so the pill went with it — a hidden surface
+        # must not be reachable from global chrome.
         # Search launcher first, then Guide — matching the handoff's
         # search · Guide · +New · avatar right-zone order. Visible
         # placeholder is short so it never truncates in the 220px field;

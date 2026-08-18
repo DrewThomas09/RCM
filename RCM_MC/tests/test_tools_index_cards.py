@@ -80,12 +80,27 @@ class NoDuplicates(unittest.TestCase):
     def test_redirect_aliases_are_safe_merged_not_carded(self):
         # Pure "renamed →" redirects shouldn't appear as their own card — the
         # canonical target is the real card. (Hidden at discovery.)
+        #
+        # The alias half is the subject and holds unconditionally. The
+        # canonical half is gated on visibility: a canonical can itself be
+        # registry-hidden, in which case NEITHER route should be carded and
+        # asserting the canonical is present would assert a hidden card.
+        # Two pairs have already gone that way — /deal-corpus-analytics
+        # (the old /portfolio-analytics target) on 2026-08-16, and /library
+        # on 2026-08-18 — so the rule is written once instead of the list
+        # being pruned again on the next sweep.
+        from rcm_mc.ui._surface_visibility import is_visible
         ws, _ = _data()
         az = set(_routes_in(ws))
-        for alias, canonical in (("/portfolio-analytics", "/deal-corpus-analytics"),
+        for alias, canonical in (("/deals", "/pipeline"),
                                  ("/deals-library", "/library")):
             self.assertNotIn(alias, az, f"{alias} is a redirect — should merge")
-            self.assertIn(canonical, az, f"canonical {canonical} missing")
+            if is_visible(canonical):
+                self.assertIn(canonical, az, f"canonical {canonical} missing")
+            else:
+                self.assertNotIn(
+                    canonical, az,
+                    f"canonical {canonical} is hidden — must not be carded")
 
     def test_no_query_param_variants_as_cards(self):
         ws, _ = _data()

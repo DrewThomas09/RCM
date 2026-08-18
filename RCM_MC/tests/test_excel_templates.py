@@ -32,15 +32,24 @@ class ExcelTemplatesPageTests(unittest.TestCase):
             self.assertIn(_html.escape(spec.title), html)
             self.assertIn(f"/excel-templates/{spec.slug}.xlsx", html)
 
-    def test_registered_in_palette_and_nav(self):
+    def test_no_longer_offered_though_still_served(self):
+        # Part of the graphics toolkit ("the excel image generator"),
+        # registry-hidden in the 2026-08-17 bloat sweep: a generator you
+        # type values into rather than a read of a CMS filing. Breadcrumbs
+        # and the palette REGISTRY still carry it (that is how a page
+        # rejoins the catalog); the Research rail and the rendered palette
+        # do not. It still serves — tests/test_hidden_surfaces.py.
         from rcm_mc.ui._chartis_kit import (
             _DEFAULT_PALETTE_MODULES, _SUB_NAV, _SUB_SECTION_MAP,
+            ck_command_palette,
         )
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/excel-templates", routes)
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/excel-templates"))
         self.assertEqual(_SUB_SECTION_MAP.get("/excel-templates"), "research")
-        research_hrefs = {e["href"] for e in _SUB_NAV["research"]}
-        self.assertIn("/excel-templates", research_hrefs)
+        self.assertNotIn("/excel-templates",
+                         {e["href"] for e in _SUB_NAV["research"]})
+        self.assertNotIn("/excel-templates",
+                         ck_command_palette(_DEFAULT_PALETTE_MODULES))
 
 
 class ExcelTemplatesHttpTests(unittest.TestCase):

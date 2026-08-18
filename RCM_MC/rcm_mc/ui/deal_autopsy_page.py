@@ -880,10 +880,10 @@ def render_deal_autopsy_page(
         )
         + '</div>'
         + ck_next_section(
-            "Cross-check against named bear cases",
-            "/bear-cases",
+            "Compare against how similar deals played out",
+            "/comparable-outcomes",
             eyebrow="Up next",
-            italic_word="bear",
+            italic_word="similar",
         )
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

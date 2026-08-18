@@ -445,7 +445,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         search_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">'
-            f'<a href="/predictive-screener?{_html.escape(qs)}" '
+            f'<a href="/target-screener?{_html.escape(qs)}" '
             f'style="color:var(--cad-link);text-decoration:none;">{_html.escape(s.name)}</a></td>'
             f'<td style="font-size:11px;color:var(--cad-text2);">{_html.escape(filters_str)}</td>'
             f'<td class="num">{s.last_result_count}</td>'
@@ -456,7 +456,7 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
     if search_rows:
         search_inner = (
             '<p class="ck-section-body">'
-            '<a href="/predictive-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
+            '<a href="/target-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
             '<table class="cad-table"><thead><tr>'
             '<th>Name</th><th>Filters</th><th>Results</th><th>Last Run</th>'
             f'</tr></thead><tbody>{search_rows}</tbody></table>'
@@ -465,10 +465,10 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         search_inner = (
             '<p class="ck-section-body">'
             'No saved searches yet. Run a search in the '
-            '<a href="/predictive-screener" class="ck-link">Deal Screener</a> '
+            '<a href="/target-screener" class="ck-link">Target Screener</a> '
             'and save it.</p>'
             '<p class="ck-section-body">'
-            '<a href="/predictive-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
+            '<a href="/target-screener" class="cad-btn cad-btn-primary">New Search</a></p>'
         )
     search_section = ck_panel(
         search_inner, title=f"Saved Searches ({len(searches)})",
@@ -580,15 +580,15 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
         pipeline_table = ck_empty_state(
             "No hospitals in the pipeline yet.",
             body=(
-                "Run the Predictive Screener against your thesis "
+                "Run the Target Screener against your thesis "
                 "and click “+ PIPE” on any result row to "
                 "add a target. The funnel above shows zero counts "
                 "until you add at least one hospital."
             ),
             eyebrow="GET STARTED",
             icon="◆",
-            cta_label="Open Predictive Screener",
-            cta_href="/predictive-screener",
+            cta_label="Open Target Screener",
+            cta_href="/target-screener",
         )
 
     # ── Recent activity ──
@@ -615,11 +615,17 @@ def render_pipeline(db_path: str, selected_stage: Optional[str] = None) -> str:
             activity_items, title="Recent Activity",
         )
 
+    # Every destination on this row was hidden by the 2026-08-17 sweeps:
+    # Predictive Screener (model output over the illustrative seed
+    # corpus), Portfolio Monitor (own-book ops) and ML Insights
+    # (predicted KPIs rather than filed ones). Repointed at where a
+    # tracked target actually goes next — the screener that ranks on
+    # filed figures, and the two X-rays that read one target's filings.
     nav = ck_panel(
         '<p class="ck-section-body">'
-        '<a href="/predictive-screener" class="cad-btn cad-btn-primary">Deal Screener</a> '
-        '<a href="/portfolio/monitor" class="cad-btn">Portfolio Monitor</a> '
-        '<a href="/ml-insights" class="cad-btn">ML Insights</a>'
+        '<a href="/target-screener" class="cad-btn cad-btn-primary">Target Screener</a> '
+        '<a href="/diligence/xray" class="cad-btn">CMS X-Ray</a> '
+        '<a href="/diligence/hcris-xray" class="cad-btn">HCRIS X-Ray</a>'
         '</p>',
         title="Cross-links",
     )
@@ -654,11 +660,13 @@ border-radius:2px;transition:background 0.12s;}
 .ck-kpi-link-active{box-shadow:inset 0 -3px 0 var(--sc-teal,#155752);}
 </style>
 """
+    # /diligence/deal is the per-deal execution workbench, hidden on
+    # 2026-08-16. From a tracked target the next step is the filing.
     next_up = ck_next_section(
-        "Open a deal profile",
-        "/diligence/deal",
+        "Read the target's filings",
+        "/diligence/xray",
         eyebrow="Up next",
-        italic_word="deal",
+        italic_word="filings",
     )
     # 2026-05-28 usability lift · floating back-to-top button for the
     # long pipeline page (head + funnel + searches + activity rail +

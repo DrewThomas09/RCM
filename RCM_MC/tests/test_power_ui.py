@@ -181,15 +181,18 @@ class CounterfactualRetrofitTests(unittest.TestCase):
 
 class NavTests(unittest.TestCase):
 
-    def test_compare_link_in_sidebar(self):
-        # Editorial cutover: the legacy left-sidebar Compare-Deals link
-        # is gone; /diligence/compare is now reachable via the Cmd+K
-        # palette (route id "compare", title "Compare Deals"). Pin
-        # the palette wiring instead of a sidebar anchor.
+    def test_compare_no_longer_offered_in_shell_chrome(self):
+        # Editorial cutover moved the legacy left-sidebar Compare-Deals
+        # link into the Cmd+K palette, and this pinned the palette wiring.
+        # /diligence/compare renders illustrative figures and is
+        # registry-hidden as of 2026-08-16, so the rendered palette drops
+        # it — the shell must not offer a hidden surface on every page.
+        # The route still serves (tests/test_hidden_surfaces.py).
         from rcm_mc.ui._chartis_kit import chartis_shell
+        from rcm_mc.ui._surface_visibility import is_hidden
         rendered = chartis_shell("<p>x</p>", "Test")
-        self.assertIn('"/diligence/compare"', rendered)
-        self.assertIn("Compare Deals", rendered)
+        self.assertTrue(is_hidden("/diligence/compare"))
+        self.assertNotIn('"/diligence/compare"', rendered)
 
 
 if __name__ == "__main__":

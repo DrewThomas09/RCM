@@ -140,27 +140,41 @@ class RadiologyImagingRenderTests(unittest.TestCase):
 
 
 class RadiologyImagingWiringTests(unittest.TestCase):
-    def test_in_module_index(self):
+    def test_not_in_module_index(self):
+        # The imaging atlas is a bespoke single-sector study — organized
+        # around named sponsor-backed operators — and is registry-hidden as
+        # of 2026-08-16. Contrast the whole-CMS-program universes
+        # (/nursing-homes, /hospice, /dialysis, …), which stay listed:
+        # the line is sector breadth, not subject matter.
         from rcm_mc.data_public.module_index import compute_module_index
         routes = {m.route for m in compute_module_index().modules}
-        self.assertIn("/radiology-imaging", routes)
+        self.assertNotIn("/radiology-imaging", routes)
 
-    def test_module_index_renders_module(self):
+    def test_module_index_does_not_render_module(self):
         from rcm_mc.ui.data_public.module_index_page import render_module_index, _source_badge
         html = render_module_index({})
-        self.assertIn("/radiology-imaging", html)
-        # Tagged CMS (grounded in live CMS coverage data).
+        self.assertNotIn('href="/radiology-imaging"', html)
+        # The source badge still classifies it correctly — hiding is a
+        # browse ruling, not a reclassification.
         self.assertIn("CMS", _source_badge("/radiology-imaging"))
 
-    def test_in_command_palette(self):
-        from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES
+    def test_palette_registry_keeps_it_but_the_rendered_palette_drops_it(self):
+        # The registry entry is what the page rejoins the catalog through
+        # if the ruling is reversed; ck_command_palette applies the
+        # visibility filter at render, so a reader typing "radiology"
+        # doesn't get handed a hidden surface.
+        from rcm_mc.ui._chartis_kit import (
+            _DEFAULT_PALETTE_MODULES, ck_command_palette,
+        )
         routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
         self.assertIn("/radiology-imaging", routes)
+        self.assertNotIn("/radiology-imaging",
+                         ck_command_palette(_DEFAULT_PALETTE_MODULES))
 
-    def test_in_research_subnav(self):
+    def test_not_in_research_subnav(self):
         from rcm_mc.ui._chartis_kit import _SUB_NAV
         hrefs = {item["href"] for item in _SUB_NAV["research"]}
-        self.assertIn("/radiology-imaging", hrefs)
+        self.assertNotIn("/radiology-imaging", hrefs)
 
     def test_section_map_resolves(self):
         from rcm_mc.ui._chartis_kit import _SUB_SECTION_MAP

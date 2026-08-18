@@ -251,12 +251,18 @@ class WiringTests(unittest.TestCase):
         self.assertEqual(_resolve_sub_section("/market"), "research")
         self.assertEqual(_resolve_sub_section("/market/dialysis"), "research")
 
-    def test_market_in_palette_and_sub_nav(self):
+    def test_market_reports_are_no_longer_offered(self):
+        # The ~80 /market/<sector> writeups are sector M&A narrative
+        # (who is rolling up what) rather than a read of a public filing,
+        # and the family includes the infusion + interfacility-transport
+        # studies by name. Registry-hidden as of 2026-08-16; the reports
+        # still render for anyone holding a link.
         from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES, _SUB_NAV
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/market", routes)
-        research = {e["href"] for e in _SUB_NAV["research"]}
-        self.assertIn("/market", research)
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/market"))
+        self.assertTrue(is_hidden("/market/infusion"))
+        self.assertNotIn("/market", {e["href"] for e in _SUB_NAV["research"]})
+        self.assertTrue(_DEFAULT_PALETTE_MODULES)   # registry itself intact
 
 
 class AnalyticsTests(unittest.TestCase):

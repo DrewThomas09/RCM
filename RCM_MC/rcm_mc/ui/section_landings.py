@@ -70,192 +70,207 @@ _SECTIONS: Dict[str, Dict] = {
                  {"href": "/geo-metrics", "label": "Geo Metrics & Sources",
                   "blurb": "What every geo metric measures + coverage."},
              ]},
-            {"title": "Origination", "eyebrow": "FILL THE FUNNEL",
-             "body": "Where the next opportunities come from.",
-             "links": [
-                 {"href": "/conferences", "label": "Conferences",
-                  "blurb": "Healthcare-PE conference calendar + target lists."},
-             ]},
         ],
     },
     "pipeline": {
         "title": "Pipeline",
         "eyebrow": "LIVE DEALS",
-        "explainer_head": "The live-deal workspace at a glance.",
-        "explainer_body": "Track real opportunities once they're promoted from "
-        "Source: stage them toward IC, and rank the funnel by quality and risk.",
-        "intro_headline": "Move real deals toward IC.",
-        "intro_italic": "real",
-        "intro_body": "The opportunities you're actively working, with the "
-        "scoring to prioritize them.",
-        "next": {"label": "Take a live deal into the Diligence playbook", "href": "/diligence", "italic": "Diligence"},
+        "explainer_head": "The tracked-deal workspace at a glance.",
+        "explainer_body": "The transactions you're following, promoted from a "
+        "Source screen or entered by hand — each one linkable to the CMS "
+        "filings behind the target.",
+        "intro_headline": "Track the deals, then read the filings.",
+        "intro_italic": "filings",
+        "intro_body": "The transactions you're following, and the bridge from "
+        "a tracked target to its cost report.",
+        "next": {"label": "Take a tracked target into the X-Rays", "href": "/diligence", "italic": "X-Rays"},
         "pillars": [
             {"title": "Build the pipeline", "eyebrow": "TRACK LIVE DEALS",
              "body": "Every opportunity you're working, staged toward IC.",
              "links": [
                  {"href": "/pipeline", "label": "Deal Pipeline",
                   "blurb": "Every live opportunity, staged toward IC."},
-                 {"href": "/new-deal/manual", "label": "New Deal",
-                  "blurb": "Create a deal by hand."},
-                 {"href": "/pipeline/bridge", "label": "EBITDA Bridge",
-                  "blurb": "Entry → exit value bridge per deal."},
+                 {"href": "/new-deal", "label": "New Deal",
+                  "blurb": "Add a target by hand, or import a batch."},
+                 {"href": "/watchlist", "label": "Watchlist",
+                  "blurb": "The targets you're keeping an eye on."},
              ]},
-            {"title": "Score & prioritize", "eyebrow": "RANK THE FUNNEL",
-             "body": "Decide what to spend diligence effort on next.",
+            # The old "Score & prioritize" pillar (Deal Quality,
+            # Deal-Flow Heatmap, Deal Risk) ran entirely on the
+            # illustrative seed corpus and is registry-hidden. What
+            # replaces it is the workflow that keeps a tracked deal
+            # current — no scoring model, just what changed and what you
+            # wrote down.
+            {"title": "Keep it current", "eyebrow": "WATCH THE TARGETS",
+             "body": "What moved on a tracked target, and what you noted.",
              "links": [
-                 {"href": "/deal-quality", "label": "Deal Quality",
-                  "blurb": "Composite quality score per deal."},
-                 {"href": "/deal-flow-heatmap", "label": "Deal-Flow Heatmap",
-                  "blurb": "Where deal flow is concentrating."},
-                 {"href": "/deal-risk-scores", "label": "Deal Risk",
-                  "blurb": "Risk flags per opportunity."},
+                 {"href": "/alerts", "label": "Alerts",
+                  "blurb": "What changed on a tracked target."},
+                 {"href": "/notes", "label": "Notes",
+                  "blurb": "Search every note written against a deal."},
+                 {"href": "/diligence/xray", "label": "CMS X-Ray",
+                  "blurb": "Resolve a tracked target across every CMS "
+                  "vertical it appears in."},
              ]},
         ],
     },
     "library": {
         "title": "Library",
-        "eyebrow": "REFERENCE",
-        "explainer_head": "The reference shelf at a glance.",
-        "explainer_body": "Benchmarks, the historical deal corpus, and the data "
-        "+ methodology behind every number on the platform. Open this when you "
-        "need 'what does good look like' or 'where does this figure come from'.",
-        "intro_headline": "What good looks like, and where the numbers come from.",
-        "intro_italic": "where",
-        "intro_body": "Benchmarks and comps, the deal corpus, and the data "
-        "catalog + methodology that back the platform.",
-        "next": {"label": "Apply these benchmarks in Diligence", "href": "/diligence", "italic": "Diligence"},
+        "eyebrow": "THE DATASETS",
+        "explainer_head": "Every public dataset, and where it came from.",
+        "explainer_body": "The catalog of CMS, Medicare, Medicaid and hospital "
+        "datasets loaded here — what each one covers, how current it is, and "
+        "the filing or file it was read from. Open this to answer 'is this "
+        "number real, and where does it come from'.",
+        "intro_headline": "Every figure traces back to a public filing.",
+        "intro_italic": "traces",
+        "intro_body": "The dataset catalog and its refresh status, the source "
+        "registry behind every metric, and the methodology for anything the "
+        "platform computes rather than reads.",
+        "next": {"label": "Chart one of these datasets", "href": "/best/research", "italic": "Chart"},
         "pillars": [
-            {"title": "Benchmarks & comps", "eyebrow": "WHAT GOOD LOOKS LIKE",
-             "body": "The bands and multiples you measure a target against.",
-             "links": [
-                 {"href": "/rcm-benchmarks", "label": "RCM Benchmarks",
-                  "blurb": "RCM performance bands by segment."},
-                 {"href": "/deal-library/comps", "label": "Comps",
-                  "blurb": "Comparable transaction multiples."},
-                 {"href": "/market-rates", "label": "Market Rates",
-                  "blurb": "Base-rate MOIC distributions from the corpus."},
-             ]},
-            {"title": "Deal corpus", "eyebrow": "THE HISTORICAL RECORD",
-             "body": "The licensed universe of sponsor-backed companies.",
-             "links": [
-                 {"href": "/deal-library", "label": "Deal Library",
-                  "blurb": "Licensed sponsor-backed company universe."},
-                 {"href": "/deal-library/sponsors", "label": "Sponsors",
-                  "blurb": "Sponsor profiles + track records."},
-                 {"href": "/library", "label": "Browse the Corpus",
-                  "blurb": "Search the full deal corpus."},
-             ]},
-            {"title": "Data & methodology", "eyebrow": "HOW IT'S BUILT",
-             "body": "Every dataset and the formulas behind the models.",
+            {"title": "The dataset catalog", "eyebrow": "WHAT'S LOADED",
+             "body": "Every public dataset on the platform, with coverage "
+             "and refresh state.",
              "links": [
                  {"href": "/data", "label": "Data Catalog",
                   "blurb": "Every dataset + its refresh status."},
+                 {"href": "/cms-data-browser", "label": "CMS Data Browser",
+                  "blurb": "Browse the curated CMS datasets directly."},
+                 {"href": "/cms-sources", "label": "CMS Sources",
+                  "blurb": "Every CMS file the platform reads, by program."},
+                 {"href": "/tools/open-data", "label": "Open Data",
+                  "blurb": "The public open-data endpoints behind the loaders."},
+                 {"href": "/data-apis", "label": "Public Data APIs",
+                  "blurb": "Live API status for each upstream source."},
+                 {"href": "/data-quality", "label": "Data Quality",
+                  "blurb": "Coverage gaps and freshness per source."},
+             ]},
+            {"title": "Verify a number", "eyebrow": "TRACE IT BACK",
+             "body": "What a metric means, how it was computed, and which "
+             "filing it came from.",
+             "links": [
                  {"href": "/metric-glossary", "label": "Metric Glossary",
                   "blurb": "What each metric on the platform means."},
                  {"href": "/methodology", "label": "Methodology",
-                  "blurb": "How the models and scores work."},
+                  "blurb": "How anything computed here is computed."},
+                 {"href": "/methodology/calculations", "label": "Calculations",
+                  "blurb": "The formula behind each derived metric."},
+                 {"href": "/benchmark-reference", "label": "Benchmark Reference",
+                  "blurb": "Where each benchmark band comes from."},
+                 {"href": "/rcm-benchmarks", "label": "RCM Benchmarks",
+                  "blurb": "RCM performance bands by segment."},
                  {"href": "/market-data/map", "label": "Market-Data Map",
                   "blurb": "Geographic coverage of the public data."},
+             ]},
+            # The identity layer under every provider surface. These are
+            # download endpoints rather than pages, but they are the
+            # files a reader would want in order to check the mapping
+            # themselves — which is the point of this section — and no
+            # catalog offered them before.
+            {"title": "Provider identity files", "eyebrow": "THE CROSSWALKS",
+             "body": "The mapping files behind every facility, system and "
+             "NPI on the platform, as CSV.",
+             "links": [
+                 {"href": "/provider-crosswalk.csv", "label": "Provider Crosswalk",
+                  "blurb": "One row per CCN with system, county FIPS, CBSA, "
+                  "taxonomy, geocode and NPI — each beside its source."},
+                 {"href": "/master-npi-file.csv", "label": "Master NPI File",
+                  "blurb": "One row per NPI: identity, status history, "
+                  "taxonomy, geography, billing CCN and resolved parent."},
+                 {"href": "/npi-registry.csv", "label": "Organization NPI Registry",
+                  "blurb": "Organization NPIs from the bundled NPPES "
+                  "extracts with d/b/a names, PECOS group and taxonomy."},
+                 {"href": "/health-system-lookup.csv", "label": "System Mapping",
+                  "blurb": "Filter-aware hospital-to-system mapping, one "
+                  "row per facility keyed on CCN."},
+                 {"href": "/ownership-clusters.csv", "label": "Ownership Clusters",
+                  "blurb": "Facilities grouped by common ownership filing."},
+                 {"href": "/discovered-operators.csv", "label": "Discovered Operators",
+                  "blurb": "Multi-facility operators the system registry "
+                  "does not carry, found by grouping unmapped facilities."},
+             ]},
+            {"title": "Deal trackers", "eyebrow": "PUBLICLY REPORTED DEALS",
+             "body": "Transactions as they were publicly reported — sourced, "
+             "dated, and searchable.",
+             "links": [
+                 {"href": "/deal-library", "label": "Deal Library",
+                  "blurb": "The tracked healthcare transaction universe."},
+                 {"href": "/deal-library/sponsors", "label": "Sponsors",
+                  "blurb": "Who acquired what, by acquirer."},
+                 {"href": "/deal-library/comps", "label": "Comps",
+                  "blurb": "Reported transaction multiples."},
+                 {"href": "/verified-deals", "label": "Verified Deals",
+                  "blurb": "Deals confirmed against a public source."},
+                 {"href": "/news", "label": "Deal News",
+                  "blurb": "Newly reported transactions as they land."},
+                 {"href": "/library", "label": "Browse Everything",
+                  "blurb": "Search the full tracked universe."},
              ]},
         ],
     },
     "research": {
         "title": "Research",
-        "eyebrow": "MARKET & INDUSTRY",
-        "explainer_head": "The research desk at a glance.",
-        "explainer_body": "Read the market and the industry, learn from how "
-        "comparable deals actually played out, backtest an edge, and frame the "
-        "regulatory + thesis view before you underwrite.",
-        "intro_headline": "Read the market before you underwrite it.",
-        "intro_italic": "before",
-        "intro_body": "Market and industry intelligence, comparable outcomes, "
-        "backtesting, and the regulatory + thesis frame.",
-        "next": {"label": "Frame the thesis in the Diligence playbook", "href": "/diligence", "italic": "Diligence"},
+        "eyebrow": "PROVIDER UNIVERSES & CONTEXT",
+        "explainer_head": "Every CMS provider universe, already loaded.",
+        "explainer_body": "Read a whole Medicare program nationally — every "
+        "certified nursing home, home-health agency, hospice, dialysis "
+        "facility, rehab and long-term-care hospital — then the "
+        "reimbursement and regulatory backdrop that moves those numbers "
+        "from one cycle to the next.",
+        "intro_headline": "A large Medicare dataset, readable in seconds.",
+        "intro_italic": "seconds",
+        "intro_body": "The provider-universe reads, plus what CMS is paying "
+        "and what is on the rule calendar around them.",
+        "next": {"label": "Check where a figure came from", "href": "/best/library", "italic": "where"},
+        # The "Chart it" and "Compare & cross-cut" pillars that used to
+        # open this section were the graphics toolkit and the two
+        # build-your-own explorers (Cross-Dataset Analysis, Further
+        # Analysis). All are registry-hidden: they start empty and draw
+        # whatever the reader configures, which is a chart tool rather
+        # than a read of a filing. The universes themselves now lead.
         "pillars": [
-            {"title": "Market & industry", "eyebrow": "READ THE MARKET",
-             "body": "Demand, supply, reimbursement, and where multiples move.",
+            {"title": "Provider universes", "eyebrow": "READ ONE SECTOR",
+             "body": "Every CMS provider type, already loaded and charted.",
              "links": [
-                 {"href": "/market-intel", "label": "Market Intel",
-                  "blurb": "Demand, supply, reimbursement by market."},
-                 {"href": "/market-intel/geo", "label": "Geographic Market Intel",
-                  "blurb": "Market intel mapped to geography."},
-                 {"href": "/industry", "label": "Industry Intelligence",
-                  "blurb": "Derived facts from licensed industry reports."},
-                 {"href": "/market-intel/public-market", "label": "Public Market Intel",
-                  "blurb": "Public-market signal on healthcare names."},
-                 {"href": "/sector-momentum", "label": "Sector Momentum",
-                  "blurb": "Where sector multiples are moving."},
+                 {"href": "/verticals", "label": "All Verticals",
+                  "blurb": "Every provider universe in one index."},
+                 {"href": "/nursing-homes", "label": "Nursing Homes",
+                  "blurb": "CMS Care Compare: the SNF universe."},
+                 {"href": "/home-health", "label": "Home Health",
+                  "blurb": "CMS Care Compare: home-health agencies."},
+                 {"href": "/hospice", "label": "Hospice",
+                  "blurb": "CMS Care Compare: hospice providers."},
+                 {"href": "/dialysis", "label": "Dialysis",
+                  "blurb": "CMS Care Compare: dialysis facilities."},
+                 {"href": "/health-system-lookup", "label": "Health System Lookup",
+                  "blurb": "Find a system and its member facilities."},
+                 {"href": "/ma-penetration", "label": "MA Penetration",
+                  "blurb": "Medicare Advantage share by county."},
+                 {"href": "/inpatient-rehab", "label": "Inpatient Rehab",
+                  "blurb": "CMS measures for the IRF universe."},
+                 {"href": "/long-term-care-hospital", "label": "Long-Term Care Hospitals",
+                  "blurb": "CMS measures for the LTCH universe."},
              ]},
-            {"title": "Comparables & outcomes", "eyebrow": "LEARN FROM THE RECORD",
-             "body": "How similar deals actually played out.",
+            # "Market Intel", its geographic and public-market cuts, and
+            # Industry Intelligence all came out of hand-edited YAML or
+            # licensed third-party reports rather than a CMS file, and
+            # are registry-hidden. What is left here traces to a rule or
+            # a published CMS figure.
+            {"title": "Reimbursement & regulation", "eyebrow": "WHAT MOVES THE NUMBERS",
+             "body": "What CMS is paying this cycle, and what is coming.",
              "links": [
-                 {"href": "/comparable-outcomes", "label": "Comparable Outcomes",
-                  "blurb": "How similar deals actually played out."},
-                 {"href": "/find-comps", "label": "Find Comps",
-                  "blurb": "Find comparable deals by profile."},
-                 {"href": "/payer-intelligence", "label": "Payer Intelligence",
-                  "blurb": "Payer-mix benchmarks from the corpus."},
-                 {"href": "/sponsor-track-record", "label": "Sponsor Track Record",
-                  "blurb": "Realized returns by sponsor."},
-             ]},
-            {"title": "Backtesting & quant", "eyebrow": "TEST THE EDGE",
-             "body": "Pressure-test a rule or signal against the corpus.",
-             "links": [
-                 {"href": "/backtest", "label": "Backtest",
-                  "blurb": "Backtest a screening rule on the corpus."},
-                 {"href": "/quant-lab", "label": "Quant Lab",
-                  "blurb": "Build + test quantitative signals."},
-                 {"href": "/deal-corpus-analytics", "label": "Corpus Analytics",
-                  "blurb": "Corpus-wide return analytics."},
-                 {"href": "/analysis", "label": "Analysis Workbench",
-                  "blurb": "Per-deal analysis workbench."},
-                 {"href": "/hold-analysis", "label": "Hold Analysis",
-                  "blurb": "Hold-period return curves."},
-                 {"href": "/irr-dispersion", "label": "IRR Dispersion",
-                  "blurb": "IRR spread across the corpus."},
-             ]},
-            {"title": "Regulatory & thesis", "eyebrow": "FRAME THE VIEW",
-             "body": "The rules, the risks, and the codified partner judgment.",
-             "links": [
+                 {"href": "/rate-environment", "label": "Rate Environment",
+                  "blurb": "Setting-level CMS payment updates (IPPS, OPPS, "
+                  "PFS, ASC, SNF, HH, Hospice, IRF, ESRD) across three "
+                  "rule cycles."},
                  {"href": "/regulatory-calendar", "label": "Regulatory Calendar",
                   "blurb": "CMS rule cycles + rate events."},
-                 {"href": "/bear-cases", "label": "Bear Cases",
-                  "blurb": "Pattern library of how deals break."},
-                 {"href": "/pe-intelligence", "label": "PE Intelligence",
-                  "blurb": "The codified partner-judgment toolkit."},
+                 {"href": "/market-scan", "label": "Market Scan",
+                  "blurb": "One state or county in, a public-data brief "
+                  "out — demand, supply, spend and shortage."},
                  {"href": "/notes", "label": "Notes",
                   "blurb": "Your research notes."},
-             ]},
-        ],
-    },
-    "portfolio": {
-        "title": "Portfolio",
-        "eyebrow": "PORTFOLIO OPS",
-        "explainer_head": "The portfolio console at a glance.",
-        "explainer_body": "Operate the book (health, alerts, covenants) and "
-        "analyze what drives outcomes across every holding.",
-        "intro_headline": "Run the book and find what drives it.",
-        "intro_italic": "drives",
-        "intro_body": "Monitoring and risk for every holding, plus the "
-        "cross-portfolio analytics.",
-        "next": {"label": "Source the next add-on acquisition", "href": "/best/source", "italic": "add-on"},
-        "pillars": [
-            {"title": "Operate the book", "eyebrow": "RUN THE PORTFOLIO",
-             "body": "Daily portfolio operations.",
-             "links": [
-                 {"href": "/portfolio", "label": "Portfolio",
-                  "blurb": "Every holding, health score, and alerts."},
-                 {"href": "/portfolio/monitor", "label": "Monitor",
-                  "blurb": "Live KPI + covenant monitoring."},
-                 {"href": "/portfolio/risk-scan", "label": "Risk Scan",
-                  "blurb": "Portfolio-wide risk flags."},
-             ]},
-            {"title": "Analyze", "eyebrow": "FIND THE SIGNAL",
-             "body": "What actually drives outcomes across the book.",
-             "links": [
-                 {"href": "/portfolio/regression", "label": "Regression",
-                  "blurb": "What drives outcomes across the book "
-                  "(multicollinearity-checked)."},
              ]},
         ],
     },

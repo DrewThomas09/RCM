@@ -65,8 +65,11 @@ class TestMultiples(unittest.TestCase):
         # The empty state must link the partner to them.
         empty = PortfolioStore(os.path.join(self.tmp.name, "e.db"))
         h = render_deal_comps(empty, {})
+        # /find-comps was the third junction link until 2026-08-16; it
+        # runs on the seeded corpus and is registry-hidden, so the empty
+        # state points at the two sourced surfaces that remain.
         self.assertIn("No licensed export ingested", h)
-        self.assertIn("/find-comps", h)
+        self.assertNotIn("/find-comps", h)
         self.assertIn("/diligence/comparable-outcomes", h)
         self.assertIn("/verified-deals", h)
 

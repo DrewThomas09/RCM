@@ -47,7 +47,7 @@ import html as _html
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -82,22 +82,54 @@ CATEGORY_BOOSTS = {
 
 # Static registry of platform pages — partner can search 'data'
 # or 'model' to navigate without remembering the URL.
-PLATFORM_PAGES = [
+# Pages that are not route-backed surfaces in their own right — entry
+# points and query-string variants the page-context registry has no
+# entry for. Everything else is derived below.
+_EXTRA_PAGES = [
     ("Morning view dashboard", "Hero strip + top opportunities + alerts",
      "/?v3=1", "page"),
-    ("Data catalog", "Live SQL inventory of every public-data source",
-     "/data/catalog", "page"),
     ("Data refresh", "Background-job loaders for CMS / Census / CDC / APCD",
      "/data/refresh", "page"),
-    ("Model quality dashboard", "CV R² + MAE + CI calibration per predictor",
-     "/models/quality", "page"),
-    ("Feature importance", "Per-model SVG bar charts of |coefficient|",
-     "/models/importance", "page"),
-    ("Exports index", "Generated reports + CSVs",
-     "/exports", "page"),
-    ("Legacy dashboard", "Original Bloomberg-style layout",
-     "/", "page"),
 ]
+
+
+def _platform_pages() -> List[Tuple[str, str, str, str]]:
+    """Every visible surface, as (label, sublabel, url, category).
+
+    This was a hand-maintained list of seven entries, and by 2026-08-17
+    four of the seven were registry-hidden — so typing "hospice" or
+    "x-ray" into global search returned nothing at all, while "catalog"
+    returned a page a reader could no longer reach. A stale list is
+    worse than no list: it is the same drift the visibility registry
+    exists to prevent, one surface further out.
+
+    So the list is derived from the page-context registry, which already
+    carries a title and a one-line description for every route and is
+    covered by its own completeness test. Filtered through is_visible,
+    it tracks the rulings automatically: hide a page and it leaves
+    search in the same commit, with no second edit.
+    """
+    from ..assistant.context.page_context_registry import (
+        PAGE_CONTEXT_REGISTRY,
+    )
+    from ._surface_visibility import is_visible
+
+    pages: List[Tuple[str, str, str, str]] = []
+    for route, ctx in PAGE_CONTEXT_REGISTRY.items():
+        if not is_visible(route):
+            continue
+        title = (getattr(ctx, "title", "") or "").strip()
+        if not title:
+            continue
+        blurb = (getattr(ctx, "short_description", "") or "").strip()
+        pages.append((title, blurb, route, "page"))
+    pages.sort(key=lambda row: row[2])
+    return pages + list(_EXTRA_PAGES)
+
+
+#: Back-compat alias. Callers that imported the constant keep working;
+#: it is now computed rather than typed out.
+PLATFORM_PAGES = _platform_pages()
 
 
 @dataclass
@@ -262,9 +294,17 @@ def _metrics_source(
 def _pages_source(
     store: Any, query: str,
 ) -> List[SearchResult]:
-    """Search the static page registry."""
+    """Search the page registry."""
+    from ._surface_visibility import is_visible
     out: List[SearchResult] = []
-    for label, sub, url, category in PLATFORM_PAGES:
+    # Search is a listing surface: a hidden page must not be reachable by
+    # typing its name any more than by browsing a menu. _platform_pages()
+    # already filters, but it is called at import time — re-checking here
+    # keeps the guarantee if a ruling changes within a process, and
+    # covers the hand-written _EXTRA_PAGES rows.
+    for label, sub, url, category in _platform_pages():
+        if not is_visible(url.split("?", 1)[0] or "/"):
+            continue
         score = _score(query, label, sub, category)
         if score > 0:
             out.append(SearchResult(
@@ -625,10 +665,10 @@ def render_global_search_page(
     """
 
     body = body + ck_next_section(
-        "Open the diligence-questions ledger",
-        "/diligence/questions",
+        "Browse the dataset catalog",
+        "/data",
         eyebrow="Up next",
-        italic_word="questions",
+        italic_word="dataset",
     )
     return chartis_shell(
         body,

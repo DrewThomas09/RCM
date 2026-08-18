@@ -322,8 +322,14 @@ def deal_context_bar(
         }),
     ]
 
+    from ._surface_visibility import is_visible as _is_visible
+
     links: List[str] = []
+    # A deep-link rail is a listing: registry-hidden surfaces drop out
+    # rather than being offered pre-filled with this deal's params.
     for key, label, base, params in surfaces:
+        if not _is_visible(base):
+            continue
         # Only require one meaningful param besides deal_name
         meaningful = sum(
             1 for k, v in params.items()

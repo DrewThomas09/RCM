@@ -743,10 +743,15 @@ def editorial_sidebar(active_path: Optional[str] = None) -> str:
     to off so existing callers don't get an unexpected layout shift.
     """
     active_lower = (active_path or "").lower()
+    from ._surface_visibility import is_visible
 
     sections: List[str] = []
     last_group: Optional[str] = None
-    for label, href, group in _SIDEBAR_MODULES:
+    # The rail is a nav surface: registry-hidden modules drop out, and a
+    # group heading is only emitted once a visible module needs it (the
+    # heading is appended lazily below), so filtering can't leave a bare
+    # section label behind.
+    for label, href, group in [m for m in _SIDEBAR_MODULES if is_visible(m[1])]:
         if group != last_group:
             heading = _SIDEBAR_GROUP_LABELS.get(group, group.upper())
             sections.append(f'<div class="rail-h">{_html.escape(heading)}</div>')

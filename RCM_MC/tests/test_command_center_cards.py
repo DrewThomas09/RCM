@@ -34,14 +34,22 @@ class TestCardRegistryAndPanel(unittest.TestCase):
         from rcm_mc.ui.chartis._app_grid import (
             _CARD_ORDER, _CARD_IDS, _customize_panel,
         )
-        self.assertGreaterEqual(len(_CARD_ORDER), 10)
+        # Was >= 10. The 2026-08-17 sweep retired the nine
+        # portfolio-ops cards, leaving the tracking read. The point of
+        # this assertion is that the registry is populated and the panel
+        # renders one checkbox per card, not that it holds a particular
+        # number, so it is derived rather than re-pinned.
+        self.assertGreaterEqual(len(_CARD_ORDER), 3)
         self.assertEqual(len(_CARD_IDS), len(_CARD_ORDER))
         panel = _customize_panel(hidden={"alerts"})
         self.assertIn('action="/app/cards"', panel)
         self.assertIn("Customize cards", panel)
         # A checkbox per card; the hidden one is unchecked.
         self.assertIn('name="card" value="alerts"', panel)
-        self.assertIn('name="card" value="moic" checked', panel)
+        for cid, _label in _CARD_ORDER:
+            self.assertIn(f'name="card" value="{cid}"', panel, cid)
+            if cid != "alerts":
+                self.assertIn(f'name="card" value="{cid}" checked', panel, cid)
 
 
 class TestCardsRoute(unittest.TestCase):
@@ -87,8 +95,11 @@ class TestCardsRoute(unittest.TestCase):
 
     def test_hide_then_show_round_trip(self):
         from rcm_mc.ui.chartis._app_grid import _CARD_ORDER
-        # Hide 'deliverables' by POSTing every card EXCEPT it.
-        visible = [cid for cid, _ in _CARD_ORDER if cid != "deliverables"]
+        # Was 'deliverables', retired with the portfolio-ops sweep. The
+        # round trip is about the cookie contract, not about which card
+        # rides it, so it uses whatever the registry ends with.
+        target, target_label = _CARD_ORDER[-1]
+        visible = [cid for cid, _ in _CARD_ORDER if cid != target]
         data = "&".join(f"card={c}" for c in visible).encode()
         opener = urllib.request.build_opener(_NoRedirect)
         req = urllib.request.Request(
@@ -101,11 +112,11 @@ class TestCardsRoute(unittest.TestCase):
             code, setck = e.code, e.headers.get("Set-Cookie", "")
         self.assertIn(code, (302, 303))
         self.assertIn("ck_cards_hidden=", setck)
-        self.assertIn("deliverables", setck)
+        self.assertIn(target, setck)
         cookie = setck.split(";")[0]
-        # The grid now omits the Deliverables card.
+        # The grid now omits that card.
         _, b = self._get("/app", cookie=cookie)
-        self.assertEqual(b.count("Deliverables"), 0)
+        self.assertEqual(b.count(target_label), 0)
         # Re-add it: POST with the full set → cookie clears it from hidden.
         full = [cid for cid, _ in _CARD_ORDER]
         data2 = "&".join(f"card={c}" for c in full).encode()

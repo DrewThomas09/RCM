@@ -8211,6 +8211,117 @@ _MANUAL: List[PageContext] = [
         data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
     ),
     _ctx(
+        "/ownership-clusters.csv", "Ownership Clusters — CSV",
+        category=PageContextCategory.LIBRARY_REFERENCE,
+        short_description="Certified facilities grouped by who appears to "
+        "operate them rather than by what they are called — joined on a "
+        "shared back office, a repeat signing officer, a filed parent "
+        "organisation, or a shared legal name.",
+        primary_purpose="Reach the operators no name can find. The "
+        "strongest groups here — a shared back office, a shared signing "
+        "officer — supply no brand at all, so they can never become a "
+        "registry entry and can only be acted on by a reader who sees "
+        "them.",
+        common_questions=[
+            "Which facilities are run by the same company under "
+            "different names?",
+            "Who signs for this group of facilities?",
+            "Do these facilities file the same back office?",
+            "Why is this a cluster when the legal names differ?",
+            "Which of these joins does the health-system registry "
+            "already hold?",
+        ],
+        inputs=["min_facilities (2-500, default 2), joined_by "
+                "(mail | official | parent | legal), and a two-letter "
+                "state filter resolved through the provider crosswalk."],
+        outputs=["One row per cluster: the join type and its key, the "
+                 "facility count, the CCN state codes, whether the legal "
+                 "names differ, every member CCN, and up to eight legal "
+                 "names plus four officials, parents and mail addresses. "
+                 "Sorted largest cluster first."],
+        key_metrics=["The harvest is still being extended state by state, "
+                     "so treat the counts below as a shape rather than a "
+                     "constant — ownership_summary() recomputes them and "
+                     "is what the page itself reports.",
+                     "At 9,416 harvested facilities: 2,061 clusters "
+                     "covering 3,900 facilities — 1,211 joined on a "
+                     "signing officer, 481 on a back office, 332 on a "
+                     "legal name and 37 on a filed parent. The largest "
+                     "holds 63.",
+                     "1,404 of those clusters have members whose legal "
+                     "names differ, covering 3,197 facilities that no "
+                     "name-based grouping could have found. That ratio — "
+                     "roughly two in three clusters, and most of the "
+                     "covered facilities — is the stable finding here.",
+                     "829 addresses were refused as multi-tenant."],
+        data_sources=["rcm_mc/data/facility_ownership.csv.gz — the "
+                      "harvested CMS ownership filings, one row per "
+                      "certified facility, joined to the provider "
+                      "crosswalk for each facility's own city and street."],
+        model_logic_summary="Each facility contributes up to four keys — "
+        "its remote mailing address, its signing official, its filed "
+        "parent organisation, and its normalised legal name — and any key "
+        "shared by two or more facilities becomes a cluster. A mailing "
+        "address only counts when it is somewhere OTHER than the facility "
+        "(an independent facility mails to itself, which says nothing), "
+        "and multi-tenant addresses are removed before any facility is "
+        "placed: an address is a back office only when at least half its "
+        "facilities are signed for by someone who signs at least twice. "
+        "That threshold is settled across the whole harvest rather than "
+        "per row, so a lobby directory cannot become an operator.",
+        why_it_matters="Ninety-one percent of unmapped facilities share a "
+        "name with nothing, so name-based discovery (see "
+        "/discovered-operators.csv) cannot reach them. Ownership filings "
+        "can: two hospices with unrelated names that file the same suite "
+        "and the same signature are one company, and CMS publishes both "
+        "facts.",
+        diligence_use_cases=[
+            "Finding the operator behind facilities that share no name.",
+            "Sizing a post-acute roll-up before it has a brand.",
+            "Checking whether a target's facilities file one back office.",
+        ],
+        interpretation_guidance=[
+            "joined_by is the evidence, and the four kinds are not equal. "
+            "'official' and 'mail' are the ones the registry cannot "
+            "express; 'legal' mostly restates joins already held through "
+            "CCN_OVERRIDES.",
+            "legal_names_differ = true is the interesting case, not a "
+            "defect: it means the join survived without any help from the "
+            "name.",
+            "ccn_state_codes are CMS state codes, not USPS ones — 45 is "
+            "Texas. The ?state= filter goes through the crosswalk for "
+            "exactly this reason.",
+            "A cluster is evidence that facilities share something a "
+            "company would share. It is not a cap-table finding, and "
+            "nothing here is written to system_id.",
+        ],
+        limitations=[
+            "The back-office test is a heuristic with a measured cost: at "
+            "the half-share threshold it turns away nine addresses in "
+            "329, each checked by hand as a genuine multi-tenant "
+            "building. A large operator that rotates its signatories "
+            "looks like a suite farm and is refused with them.",
+            "Without a facility address to compare against, a mailing "
+            "address cannot be shown to be remote and is dropped — so a "
+            "facility missing from the crosswalk contributes no mail "
+            "join.",
+            "Officials are matched on a normalised name. Two unrelated "
+            "people who share a common name will join their facilities.",
+            "Coverage is the harvest, not the certified universe: 2,380 "
+            "of 6,035 harvested facilities land in any cluster, and the "
+            "harvest itself is a subset of the ~48.5k certified CCNs.",
+            "A filed parent organisation is whatever the facility wrote "
+            "down. It may be a subsidiary or a d/b/a rather than the "
+            "corporate parent, and no cap-table source is on disk to "
+            "check it against.",
+        ],
+        related_routes=["/discovered-operators.csv", "/health-system-lookup",
+                        "/provider-crosswalk.csv"],
+        data_source_ids=["cms_ffs_provider_enrollment"],
+        source_confidence=SourceConfidence.DOCUMENTED,
+        data_confidence=DataConfidence.PUBLIC_BENCHMARK_DATA,
+    ),
+    _ctx(
         "/discovered-operators.csv", "Discovered Operators — CSV",
         category=PageContextCategory.LIBRARY_REFERENCE,
         short_description="Multi-facility operators the health-system "

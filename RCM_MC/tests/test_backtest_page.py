@@ -237,11 +237,16 @@ class TestRenderBacktest(unittest.TestCase):
         html = render_backtest()
         self.assertIn("MOIC by sector", html)  # editorial data_label replaces "Sector-Level MOIC"
 
-    def test_nav_link_present(self):
+    def test_page_identity_present(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest
         html = render_backtest()
-        # Page identity check (legacy-nav self-link deprecated).
-        self.assertIn("Dataset Backtest", html)
+        # Page identity check (legacy-nav self-link deprecated). This
+        # asserted "Dataset Backtest" until 2026-08-16 — which is the
+        # Cmd-K label of a DIFFERENT page (/corpus-backtest), so the test
+        # was passing on shell chrome rather than on this page's own
+        # identity, and broke the moment the palette stopped carrying
+        # that entry. Assert this page's actual h1 + title instead.
+        self.assertIn("Model Backtest", html)
 
     def test_no_light_theme_palette(self):
         from rcm_mc.ui.data_public.backtest_page import render_backtest

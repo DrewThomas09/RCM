@@ -42,8 +42,11 @@ def render_data_explorer(
                            "revenue, expenses, bed counts, patient days, payer mix, and geographic data.",
             "fields": "~50 fields per hospital",
             "update": "Annual (12-18 month lag)",
-            "browse_url": "/market-data/map",
-            "browse_label": "Browse Heatmap",
+            # Was /market-data/map (the state-map family, hidden
+            # 2026-08-17). /screen is the filter over this exact
+            # universe.
+            "browse_url": "/screen",
+            "browse_label": "Screen the Universe",
             "status": "loaded" if hcris_count > 0 else "not_loaded",
         },
         {
@@ -68,8 +71,10 @@ def render_data_explorer(
                            "volume and revenue at each hospital.",
             "fields": "DRG-level volume, charges, payments",
             "update": "Annual",
-            "browse_url": "/market-data/map",
-            "browse_label": "Market Intelligence",
+            # Was /market-data/map. State-level reads of the same source
+            # now live on the rankings table.
+            "browse_url": "/state-rankings",
+            "browse_label": "Rank the States",
             "status": "available",
         },
         {
@@ -163,8 +168,12 @@ def render_data_explorer(
         f'for analysis. Every number in the platform traces back to one of these sources.</p>'
         f'<div style="display:flex;gap:12px;flex-wrap:wrap;">'
         f'<a href="/methodology" class="cad-btn" style="text-decoration:none;">Methodology</a>'
-        f'<a href="/portfolio/regression" class="cad-btn" style="text-decoration:none;">Regression</a>'
-        f'<a href="/market-data/map" class="cad-btn" style="text-decoration:none;">Market Heatmap</a>'
+        # Regression (/portfolio/regression) and Market Heatmap
+        # (/market-data/map) both went on 2026-08-17 — an OLS the reader
+        # configures, and the state-map family. From a source catalog the
+        # useful next steps are coverage and the CMS registry.
+        f'<a href="/data-quality" class="cad-btn" style="text-decoration:none;">Data Quality</a>'
+        f'<a href="/cms-sources" class="cad-btn" style="text-decoration:none;">CMS Sources</a>'
         f'<a href="/screen" class="cad-btn" style="text-decoration:none;">Hospital Screener</a>'
         f'</div></div>'
     )
@@ -237,14 +246,28 @@ def render_data_explorer(
         except Exception:
             status_cls = "cad-badge-muted"
             status = "Not Available"
+        # A module can be loaded and still have no surface a reader is
+        # offered — roughly a third of the rows here point at routes the
+        # 2026-08-17 sweeps hid. The row stays (the module IS loaded, and
+        # this table's job is to say so); the link does not.
+        from ._surface_visibility import is_visible
+        if is_visible(str(page_url).split("?", 1)[0]):
+            view_cell = (
+                f'<a href="{page_url}" style="color:{PALETTE["text_link"]};'
+                f'font-size:12px;">View &rarr;</a>'
+            )
+        else:
+            view_cell = (
+                f'<span style="color:{PALETTE["text_muted"]};font-size:12px;">'
+                f'&mdash;</span>'
+            )
         mod_rows += (
             f'<tr>'
             f'<td style="font-weight:500;">{html.escape(name)}</td>'
             f'<td style="font-size:11px;color:{PALETTE["text_muted"]};">'
             f'<code>{html.escape(mod_path)}</code></td>'
             f'<td><span class="cad-badge {status_cls}">{status}</span></td>'
-            f'<td><a href="{page_url}" style="color:{PALETTE["text_link"]};font-size:12px;">'
-            f'View &rarr;</a></td>'
+            f'<td>{view_cell}</td>'
             f'</tr>'
         )
 

@@ -123,10 +123,13 @@ class TestExportHttpBehavior(unittest.TestCase):
     def test_exports_landing_page(self):
         status, html = self._get("/exports")
         self.assertEqual(status, 200)
-        # Three sections: per-deal / portfolio / corpus browsers
+        # Two sections: per-deal / portfolio. The "Corpus browsers"
+        # card linked /sponsor-league, /corpus-dashboard and /deal-search —
+        # all registry-hidden as of 2026-08-16 — so the card drops rather
+        # than rendering an empty table under a heading.
         self.assertIn("Per-deal exports", html)
         self.assertIn("Portfolio-scope", html)
-        self.assertIn("Corpus browsers", html)
+        self.assertNotIn("Corpus browsers", html)
         # Format reference table entries
         self.assertIn("?format=pdf", html)
         self.assertIn("?format=xlsx", html)

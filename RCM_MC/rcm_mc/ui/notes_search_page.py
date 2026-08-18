@@ -251,10 +251,12 @@ def render_notes_search(
             f'{count:,} match{"es" if count != 1 else ""}'
             + (f' for "{q}"' if q else "")
         ),
+        # The question ledger is engagement workflow and went hidden on
+        # 2026-08-16. From a note the next step is the target it is about.
         next_section_html=ck_next_section(
-            "Open the portfolio-wide question ledger",
-            "/diligence/questions",
+            "Read the target's CMS filings",
+            "/diligence/xray",
             eyebrow="Up next",
-            italic_word="question",
+            italic_word="filings",
         ),
     )

@@ -547,8 +547,7 @@ def _verdict_card(res: CovenantStressResult) -> str:
     # bear case for the same deal — closes the analytical loop.
     actions_html = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo-gen">Open IC memo →</a>'
-        '<a href="/bear-cases">Open bear case →</a>'
+        '<a href="/diligence/ic-packet">Open IC packet →</a>'
     )
     intro = _cv_head(
         eyebrow=f"Covenant Stress · {verdict}",
@@ -1092,8 +1091,7 @@ def render_covenant_lab_page(
     # report.
     main_intro_actions = (
         '<button type="button" data-rcm-share-link>Copy share link</button>'
-        '<a href="/ic-memo-gen">Open IC memo →</a>'
-        '<a href="/bear-cases">Open bear case →</a>'
+        '<a href="/diligence/ic-packet">Open IC packet →</a>'
     )
     main_intro = _cv_head(
         eyebrow="Covenant Stress Lab",
@@ -1295,10 +1293,10 @@ def render_covenant_lab_page(
         )
         + bookmark_hint()
         + ck_next_section(
-            "Stage the bear case",
-            "/diligence/bear-case",
+            "Tie the stress back to the filings",
+            "/diligence/hcris-xray",
             eyebrow="Up next",
-            italic_word="bear",
+            italic_word="filings",
         )
         + '</div>'
     )

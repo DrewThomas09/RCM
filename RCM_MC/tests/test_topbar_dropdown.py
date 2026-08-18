@@ -26,9 +26,14 @@ class TopbarDropdownTests(unittest.TestCase):
         self.assertNotIn('class="ck-subnav-inner"', self.html)
 
     def test_each_section_item_has_a_dropdown_group_and_menu(self):
-        # Five section items (all but Home) → five hover groups + five mega menus.
-        self.assertEqual(self.html.count("ck-nav-group"), 6)  # +Source
-        self.assertEqual(self.html.count("ck-nav-mega"), 6)  # +Source
+        # Every section item except Home gets a hover group + a mega menu.
+        # Derived from _CORPUS_NAV rather than hard-coded, so dropping or
+        # adding a section (the 2026-08-17 sweep dropped Portfolio) moves
+        # this test with the nav instead of failing it.
+        from rcm_mc.ui._chartis_kit import _CORPUS_NAV
+        expected = len([n for n in _CORPUS_NAV if n["key"] != "home"])
+        self.assertEqual(self.html.count("ck-nav-group"), expected)
+        self.assertEqual(self.html.count("ck-nav-mega"), expected)
 
     def test_menu_lists_the_sections_subpages(self):
         # The mega-menu surfaces the section's TOP-RANKED surfaces (top-6 +
@@ -69,9 +74,14 @@ class TopbarDropdownTests(unittest.TestCase):
         # Home is the dashboard root — bare link, no group/caret.
         self.assertNotIn('>Home<span class="ck-nav-caret"', self.html)
 
-    def test_caret_count_unchanged(self):
-        # Fidelity guard parity: still exactly five carets (one per section).
-        self.assertEqual(self.html.count("ck-nav-caret"), 6)  # +Source
+    def test_caret_count_matches_section_count(self):
+        # One caret per section tab, Home excepted. Was hard-coded to 6
+        # while there were seven tabs; the Portfolio tab was dropped in the
+        # bloat sweep. Derived from _CORPUS_NAV so the next structural
+        # change updates it automatically instead of failing here.
+        from rcm_mc.ui._chartis_kit import _CORPUS_NAV
+        expected = len([d for d in _CORPUS_NAV if d["key"] != "home"])
+        self.assertEqual(self.html.count("ck-nav-caret"), expected)
 
 
 class TopbarCssTests(unittest.TestCase):

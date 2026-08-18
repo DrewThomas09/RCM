@@ -60,7 +60,7 @@ Empty Self-pay bucket policy (Decision C — visible at 0%):
 Empty / sparse states (unchanged from Phase 2):
   - No focused deal → "Select a deal above to see drag breakdown."
   - Focused deal with no bridge built yet → "Run the analysis pipeline
-    first" with link to /diligence/thesis-pipeline
+    first" with link to /diligence/deal
 
 # TODO(phase 4): recovery quarters + recovery sparkline. Spec §6.8
 # mentions both but Phase 3 keeps drag decomposition tight on the
@@ -301,8 +301,8 @@ def render_ebitda_drag(packet: Optional[Any]) -> str:
             )
         else:
             empty_msg = (
-                'No bridge data yet. <a href="/diligence/thesis-pipeline">'
-                'Run the analysis pipeline</a> to populate.'
+                'No bridge data yet. <a href="/pipeline/bridge">'
+                'Build the EBITDA bridge</a> to populate.'
             )
         viz_html = (
             f'<div class="app-drag-empty">{empty_msg}</div>'

@@ -598,14 +598,23 @@ class WorkbenchShellTests(unittest.TestCase):
         ])
 
     def test_next_steps_preserves_all_pre_existing_routes(self):
-        # The five cross-link routes the legacy paragraph carried
-        # must still appear so the partner doesn't lose any
-        # navigation affordance.
+        # The cross-link routes the legacy paragraph carried must still
+        # appear so the partner doesn't lose a navigation affordance.
+        # /market-intel/geo left the list on 2026-08-17 — it is licensed
+        # SimplyAnalytics material rather than a CMS read and is
+        # registry-hidden — and /state-rankings, the geography scoring
+        # the product computes from CMS, took its slot. The point of the
+        # test is that the step still offers a way to rank markets
+        # first, so it asserts the replacement is there and the hidden
+        # one is not, rather than dropping the row.
+        from rcm_mc.ui._surface_visibility import is_hidden
         h = self._render()
-        for route in ("/geo-intel", "/market-intel/geo",
+        for route in ("/geo-intel", "/state-rankings",
                       "/diligence/hcris-xray", "/diligence/xray",
                       "/pipeline"):
             self.assertIn(route, h, f"route {route} missing")
+        self.assertTrue(is_hidden("/market-intel/geo"))
+        self.assertNotIn("/market-intel/geo", h)
 
     def test_map_filter_banner_renders_when_state_selected(self):
         h = self._render(state="TX")
@@ -1514,15 +1523,15 @@ class RowCimActionTests(unittest.TestCase):
         return len(re.findall(
             r'class="ts-act" href="/diligence/cim-crosscheck\?state=', html))
 
-    def test_hospital_rows_carry_scoped_cim_action(self):
-        import re
+    def test_no_row_carries_a_cim_action_any_more(self):
+        # Hospital rows used to carry a one-click into CIM Cross-Check,
+        # pre-scoped to the row's state + CCN. That surface checks
+        # management's claims during a live transaction — deal execution —
+        # and is registry-hidden as of 2026-08-16, so the screener no
+        # longer offers it from any vertical.
         from rcm_mc.ui.target_screener_page import render_target_screener
         h = render_target_screener({"vertical": ["hospitals"], "state": ["TX"]})
-        self.assertGreater(self._row_cim_links(h), 0)
-        m = re.search(
-            r'class="ts-act" href="/diligence/cim-crosscheck\?state=([A-Z]{2})&ccn=(\d+)', h)
-        self.assertIsNotNone(m)
-        self.assertEqual(m.group(1), "TX")   # carries the row's state
+        self.assertEqual(self._row_cim_links(h), 0)
 
     def test_non_hospital_vertical_has_no_row_cim_action(self):
         from rcm_mc.ui.target_screener_page import render_target_screener

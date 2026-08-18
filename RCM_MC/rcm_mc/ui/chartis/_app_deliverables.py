@@ -29,7 +29,7 @@ See module-level conventions in _app_kpi_strip.py docstring (1-6).
 
 Empty / sparse states (per Phase 2 review):
   - Zero artifacts in either table → "No deliverables generated yet.
-    Run an analysis to populate." with link to /diligence/thesis-pipeline
+    Run an analysis to populate." with link to /diligence/deal
 """
 from __future__ import annotations
 
@@ -256,7 +256,7 @@ def render_deliverables(
             '<div class="app-deliv-grid">'
             '<div class="app-deliv-empty" style="grid-column: 1 / -1">'
             'No deliverables generated yet. '
-            '<a href="/diligence/thesis-pipeline">Run an analysis</a> '
+            '<a href="/diligence/deal">Open a deal profile</a> '
             'to populate.'
             '</div>'
             '</div>'

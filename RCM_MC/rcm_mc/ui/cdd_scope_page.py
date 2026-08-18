@@ -27,6 +27,7 @@ from ._chartis_kit import (
     ck_next_section, ck_page_actions, ck_provenance_tooltip,
     ck_section_header, ck_signal_badge, ck_source_purpose,
 )
+from ._surface_visibility import is_visible as _is_visible
 
 # Depth is intensity, not severity — a neutral ink ramp (muted →
 # deep teal → navy), never the semantic red/amber/green palette.
@@ -221,8 +222,12 @@ def _matrix_table() -> str:
             ck_data_cell(_depth_chip(depth_for(ws["key"], lv["key"])),
                          align="center")
             for lv in CDD_LEVELS)
+        # A workstream whose named surface is registry-hidden still
+        # belongs on the scope grid — the work is real — it just no
+        # longer advertises a page the platform doesn't offer.
         surface = (f'<a class="cdd-link" href="{html.escape(ws["surface"])}">'
-                   f'{html.escape(ws["surface_label"])}</a>')
+                   f'{html.escape(ws["surface_label"])}</a>'
+                   if _is_visible(ws["surface"]) else "—")
         rows += ("<tr>"
                  + ck_data_cell(html.escape(ws["label"]), weight=600)
                  + cells
@@ -247,7 +252,8 @@ def _task_panel(level_key: str) -> str:
     rows = ""
     for t in tasks:
         surface = (f'<a class="cdd-link" href="{html.escape(t["surface"])}">'
-                   f'{html.escape(t["surface_label"])}</a>')
+                   f'{html.escape(t["surface_label"])}</a>'
+                   if _is_visible(t["surface"]) else "—")
         rows += ("<tr>"
                  + ck_data_cell(html.escape(t["workstream"]), weight=600)
                  + ck_data_cell(_depth_chip(t["depth"]), align="center")

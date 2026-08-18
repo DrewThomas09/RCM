@@ -341,8 +341,6 @@ def _panel_bankruptcy_survivor(inp: WorkbenchInput) -> str:
                 _SEVERITY_COLOR.get(scan.verdict.value, P["text"]))
         + _kv_row("Patterns hit",
                   f"{scan.patterns_hit} / 12 ({scan.critical_hits} critical)")
-        + '<div class="rw-link-row"><a href="/screening/bankruptcy-survivor" '
-          'class="rw-link">Open full scan →</a></div>'
     )
     # Partner-speak explainer keyed off verdict.
     scan_explainer = {
@@ -629,10 +627,6 @@ def _panel_physician_comp(inp: WorkbenchInput) -> str:
                 peer=f"{b.confidence} confidence · "
                      f"{b.realization_probability*100:.0f}% realization",
             ))
-            rows.append(
-                '<div class="rw-link-row"><a href="/diligence/physician-attrition" '
-                'class="rw-link">Open Physician Attrition page →</a></div>'
-            )
 
     # Layer attrition into the explanation when CRITICAL/HIGH providers
     # exist — partners should see the structural recommendation.
@@ -1329,10 +1323,10 @@ def render_risk_workbench(
             + panels
             + _counterfactual_section(inp)
             + ck_next_section(
-                "Stage the bear case for IC",
-                "/diligence/bear-case",
+                "Assemble the IC packet",
+                "/diligence/ic-packet",
                 eyebrow="Up next",
-                italic_word="bear",
+                italic_word="IC",
             )
         )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

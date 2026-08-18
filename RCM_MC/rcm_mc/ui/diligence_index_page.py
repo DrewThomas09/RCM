@@ -35,24 +35,55 @@ from collections.abc import Mapping
 
 _PILLARS: list[Mapping[str, object]] = [
     {
-        "title": "Profile & Health",
+        "title": "The X-Rays",
         "slug": "profile-health",
-        "eyebrow": "START OF DILIGENCE",
+        "eyebrow": "READ THE FILING",
         "body": (
-            "First-pass reads on a target — financials, claims, "
-            "physician footprint, payer mix. Open these to build "
-            "the baseline picture before forming a thesis."
+            "Take one provider apart, line by line, against what it "
+            "actually filed with CMS. Cost report, quality and "
+            "utilization, cost structure, payer concentration — each "
+            "read against the peer band that makes the number mean "
+            "something."
+        ),
+        "links": [
+            {"href": "/diligence/hcris-xray",
+             "label": "HCRIS X-Ray",
+             "blurb": "Full filing-level cost-report drill-down."},
+            {"href": "/diligence/xray",
+             "label": "CMS X-Ray",
+             "blurb": "Provider-level CMS quality + utilization drill-down."},
+            {"href": "/diligence/benchmarks",
+             "label": "Benchmarks",
+             "blurb": "Target vs vintage / sector / size cohort."},
+            {"href": "/cost-structure",
+             "label": "Cost Structure",
+             "blurb": "Where the cost report says the dollars go."},
+            {"href": "/diligence/payer-stress",
+             "label": "Payer Stress",
+             "blurb": "Top-payer concentration → revenue at risk."},
+            {"href": "/diligence/sponsor-detail",
+             "label": "Sponsor Detail",
+             "blurb": "Single-sponsor realized-MOIC + vintage drill-down."},
+        ],
+    },
+    {
+        # Every route below is registry-hidden (deal-execution machinery
+        # and illustrative-figure surfaces), so this pillar renders as
+        # nothing today. It stays in _PILLARS because the catalog is the
+        # complete map of served /diligence/* routes — a contract pinned by
+        # tests/test_section_catalog.py — and because these are the entries
+        # that come back first if a surface earns live wiring.
+        "title": "Per-deal workbenches",
+        "slug": "deal-workbenches",
+        "eyebrow": "NOT CURRENTLY LISTED",
+        "body": (
+            "Execution surfaces for a live transaction rather than reads "
+            "of a public filing."
         ),
         "links": [
             {"href": "/diligence/deal",
              "label": "Deal Profile",
              "blurb": "Unified per-deal source of truth."},
-            {"href": "/diligence/hcris-xray",
-             "label": "HCRIS X-Ray",
-             "blurb": "Full filing-level cost-report drill-down."},
-            {"href": "/diligence/benchmarks",
-             "label": "Benchmarks",
-             "blurb": "Target vs vintage / sector / size cohort."},
             {"href": "/diligence/physician-attrition",
              "label": "Physician Attrition",
              "blurb": "MD-Compass turnover risk by specialty."},
@@ -62,12 +93,6 @@ _PILLARS: list[Mapping[str, object]] = [
             {"href": "/diligence/management",
              "label": "Management",
              "blurb": "Leadership tenure, comp, change history."},
-            {"href": "/diligence/xray",
-             "label": "CMS X-Ray",
-             "blurb": "Provider-level CMS quality + utilization drill-down."},
-            {"href": "/diligence/sponsor-detail",
-             "label": "Sponsor Detail",
-             "blurb": "Single-sponsor realized-MOIC + vintage drill-down."},
         ],
     },
     {
@@ -110,10 +135,10 @@ _PILLARS: list[Mapping[str, object]] = [
         "slug": "market-sizing-cdd",
         "eyebrow": "SIZE THE MARKET",
         "body": (
-            "Commercial-diligence surfaces: driver-tree market "
-            "sizing, infusion-market scans and rate atlases, plus "
-            "the expert-call program and engagement scoping that "
-            "shape the CDD workplan."
+            "Commercial-diligence surfaces: the expert-call program "
+            "and the engagement scoping that shape a CDD workplan. "
+            "The single-market scans that used to lead this pillar "
+            "are engagement-specific and no longer listed."
         ),
         "links": [
             {"href": "/diligence/tam-sam",
@@ -169,9 +194,6 @@ _PILLARS: list[Mapping[str, object]] = [
             {"href": "/screening/bankruptcy-survivor",
              "label": "Bankruptcy Scan",
              "blurb": "Distress signals across your watchlist."},
-            {"href": "/diligence/payer-stress",
-             "label": "Payer Stress",
-             "blurb": "Top-payer concentration → revenue at risk."},
             {"href": "/diligence/covenant-stress",
              "label": "Covenant Stress",
              "blurb": "EBITDA cushion before leverage covenant trips."},
@@ -190,14 +212,12 @@ _PILLARS: list[Mapping[str, object]] = [
         ],
     },
     {
-        "title": "Exit & Synthesis",
+        "title": "Regulatory & Outcomes",
         "slug": "exit-synthesis",
-        "eyebrow": "CONVERT TO IC OUTPUT",
+        "eyebrow": "WHAT MOVES THE FILING",
         "body": (
-            "Diligence ends when it lands on a partner's desk. "
-            "QoE memo, IC packet, exit-timing read, regulatory "
-            "calendar — plus the retrospectives that test how "
-            "underwriting held up."
+            "The CMS rule cycles and rate events that move a provider's "
+            "numbers, and how comparable facilities actually performed."
         ),
         "links": [
             {"href": "/diligence/qoe-memo",
@@ -227,14 +247,13 @@ _PILLARS: list[Mapping[str, object]] = [
         ],
     },
     {
-        "title": "PE Intelligence Toolkit",
+        "title": "Analytics & Open Questions",
         "slug": "pe-toolkit",
-        "eyebrow": "CODIFIED PARTNER JUDGMENT",
+        "eyebrow": "WHAT'S STILL UNANSWERED",
         "body": (
-            "The codified partner-judgment layer — a searchable "
-            "toolkit of analytic modules, runnable against a real "
-            "deal, plus the curated reference libraries and the "
-            "open-question ledger."
+            "The analytics marts built on top of the diligence data, "
+            "and the ledger of questions a target hasn't answered "
+            "yet."
         ),
         "links": [
             {"href": "/diligence/pe-library",
@@ -509,15 +528,15 @@ def _head(n_surfaces: int, n_pillars: int, tiers: Counter) -> str:
     explainer → source note → legend-with-counts."""
     return (
         '<header class="sc-head">'
-        '<div class="eyebrow"><span class="dash"></span>RCM PLAYBOOK</div>'
+        '<div class="eyebrow"><span class="dash"></span>CMS FILING READS</div>'
         '<h1>Diligence</h1>'
         f'<div class="meta">{n_surfaces} SURFACES · {n_pillars} PILLARS'
         '</div>'
-        '<p class="lede"><em>Where the diligence work lives.</em> '
-        'The pillars below trace the walk a partner makes — profile '
-        'the target, frame the thesis, size the market, stress the '
-        'assumptions, then synthesize for IC — with the codified '
-        'partner-judgment toolkit alongside.</p>'
+        '<p class="lede"><em>Take one provider apart, against what it '
+        'filed.</em> The X-Rays read a facility\'s Medicare cost report '
+        'and CMS quality/utilization record line by line, against the '
+        'peer band that makes each number mean something — plus the rule '
+        'cycles that move those numbers next.</p>'
         '<p class="lede roman">Each row names a surface and the one-line job '
         'it does. The status dot is derived from the surface-status '
         'registry on every render — green for live data, ink for a '
@@ -609,10 +628,31 @@ def _kpi_strip(n_surfaces: int, n_pillars: int, tiers: Counter) -> str:
     )
 
 
-def _toolbar(n_surfaces: int) -> str:
+def _visible_pillars() -> list[Mapping[str, object]]:
+    """``_PILLARS`` with every registry-hidden surface filtered out.
+
+    ``_PILLARS`` stays the complete map of served ``/diligence/*`` routes —
+    tests/test_section_catalog.py pins that, and it is genuinely the right
+    shape for the catalog's source of truth. What a reader is *offered* is
+    a narrower thing: the single-market study suites (Texas infusion, the
+    IFT/MMT transport study) and the illustrative-figure surfaces are
+    filtered here, and a pillar left with nothing visible drops rather than
+    rendering as an empty panel. Every count on the page derives from this
+    filtered list, so the masthead can't overstate the catalog.
+    """
+    from ._surface_visibility import visible_links
+    out: list[Mapping[str, object]] = []
+    for p in _PILLARS:
+        links = visible_links(p["links"])  # type: ignore[arg-type]
+        if links:
+            out.append({**p, "links": links})
+    return out
+
+
+def _toolbar(n_surfaces: int, pillars: list[Mapping[str, object]]) -> str:
     """Mono jump-row (pillar ordinals → panel anchors) + type-to-filter."""
     jumps = []
-    for i, p in enumerate(_PILLARS, start=1):
+    for i, p in enumerate(pillars, start=1):
         jumps.append(
             f'<a href="#{_html.escape(str(p["slug"]), quote=True)}">'
             f'<span class="n">{i:02d}</span>'
@@ -698,23 +738,24 @@ def render_diligence_index() -> str:
         ck_next_section,
         ck_page_actions,
     )
-    n_surfaces = sum(len(p["links"]) for p in _PILLARS)  # type: ignore[arg-type]
-    n_pillars = len(_PILLARS)
-    tiers = _tier_counts(_PILLARS)
+    pillars = _visible_pillars()
+    n_surfaces = sum(len(p["links"]) for p in pillars)  # type: ignore[arg-type]
+    n_pillars = len(pillars)
+    tiers = _tier_counts(pillars)
     panels = "".join(
-        _pillar_panel(i, p) for i, p in enumerate(_PILLARS, start=1)
+        _pillar_panel(i, p) for i, p in enumerate(pillars, start=1)
     )
     next_up = ck_next_section(
-        "Open the portfolio-wide question ledger",
-        "/diligence/questions",
+        "See which datasets these X-rays read",
+        "/data",
         eyebrow="Up next",
-        italic_word="question",
+        italic_word="datasets",
     )
     body = (
         _CSS
         + _head(n_surfaces, n_pillars, tiers)
         + _kpi_strip(n_surfaces, n_pillars, tiers)
-        + _toolbar(n_surfaces)
+        + _toolbar(n_surfaces, pillars)
         + f'<div class="dlx-catalog">{panels}</div>'
         + next_up
         + ck_page_actions()

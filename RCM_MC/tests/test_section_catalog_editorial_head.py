@@ -27,6 +27,13 @@ import unittest
 
 
 def _three_pillar_fixture():
+    """Four links, one of them registry-hidden — so 3 render.
+
+    `/portfolio` is hidden by `_surface_visibility`, and
+    `render_grouped_catalog` filters hidden links before it counts.
+    Keeping a hidden link in the fixture means the meta-line count
+    below pins the filter as well as the arithmetic.
+    """
     return [
         {
             "title": "Profile",
@@ -35,8 +42,10 @@ def _three_pillar_fixture():
             "links": [
                 {"href": "/source", "label": "Source",
                  "blurb": "Source surface."},
+                {"href": "/diligence/hcris-xray", "label": "HCRIS X-Ray",
+                 "blurb": "Cost-report surface."},
                 {"href": "/portfolio", "label": "Portfolio",
-                 "blurb": "Portfolio surface."},
+                 "blurb": "Portfolio surface — hidden, must not be counted."},
             ],
         },
         {
@@ -94,11 +103,16 @@ class CatalogHeadStrictAnatomyTests(unittest.TestCase):
         self.assertIn("<h1>Diligence</h1>", self.html)
 
     def test_meta_line_quotes_real_counts(self) -> None:
-        # 3 surfaces, 2 pillars. Renders uppercased.
+        # 4 fixture links, 1 hidden → 3 surfaces, 2 pillars. Uppercased.
         self.assertRegex(
             self.html,
             r'class="meta">\s*3 SURFACES\s*·\s*2 PILLARS',
         )
+        # And the hidden one is genuinely un-offered, not just uncounted.
+        # Matched as an href rather than a bare substring: the shell's
+        # inline JS carries prose comments naming retired routes.
+        self.assertNotIn('href="/portfolio"', self.html)
+        self.assertNotIn("Portfolio surface", self.html)
 
     def test_lede_italic_first_phrase(self) -> None:
         # intro_italic="lives" → "<em>lives</em>" in the headline.

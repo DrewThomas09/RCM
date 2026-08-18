@@ -1626,8 +1626,7 @@ def render_ebitda_bridge(
         f'<form method="POST" action="/value-tracker/{_html.escape(ccn)}/freeze" class="ic-bridge-inline-form">'
         '<button type="submit" class="cad-btn cad-btn-primary">Freeze as Value Plan</button></form> '
         f'<a href="/export/bridge/{_html.escape(ccn)}" class="cad-btn">Download Excel</a> '
-        f'<a href="/value-tracker/{_html.escape(ccn)}" class="cad-btn">Value Tracker</a> '
-        '<a href="/fund-learning" class="cad-btn">Fund Learning</a>'
+        f'<a href="/value-tracker/{_html.escape(ccn)}" class="cad-btn">Value Tracker</a>'
         '</p>'
     )
     nav = ck_panel(nav_inner, title="Bridge actions")

@@ -501,10 +501,10 @@ def render_alerts(
             + "".join(blocks)
             + q_chip_js
             + ck_next_section(
-                "Open the portfolio for context",
-                "/portfolio",
+                "Open the tracked-deal pipeline",
+                "/pipeline",
                 eyebrow="Up next",
-                italic_word="portfolio",
+                italic_word="tracked",
             )
         )
 

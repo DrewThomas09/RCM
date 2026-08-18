@@ -50,10 +50,15 @@ class RenderTests(unittest.TestCase):
 
 class RegistrationTests(unittest.TestCase):
 
-    def test_in_sub_nav(self):
+    def test_not_in_sub_nav(self):
+        # The page's own strip calls its figures an illustrative worked
+        # example, so it is registry-hidden (2026-08-16) and the diligence
+        # rail no longer carries it. It still serves — see
+        # tests/test_hidden_surfaces.py.
         from rcm_mc.ui._chartis_kit import _SUB_NAV
-        hrefs = {e["href"] for e in _SUB_NAV["diligence"]}
-        self.assertIn(_ROUTE, hrefs)
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden(_ROUTE))
+        self.assertNotIn(_ROUTE, {e["href"] for e in _SUB_NAV["diligence"]})
 
     def test_in_palette(self):
         from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES

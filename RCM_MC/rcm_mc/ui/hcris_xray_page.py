@@ -1697,14 +1697,12 @@ def render_hcris_xray_page(
     equity_str = f"{default_equity:.0f}"
     debt_str = f"{default_debt:.0f}"
     # Pass target CCN through so the Bear Case pipeline auto-runs HCRIS
-    ccn = target.ccn
     cross_link = ck_panel(
         '<p class="ck-section-body">'
         f'<a href="{_link("/diligence/deal-mc", {"deal_name": target.name, "revenue_usd": npr, "ebitda_usd": eb, "ev_usd": ev_str, "equity_usd": equity_str, "debt_usd": debt_str, "entry_multiple": f"{default_entry_multiple:.1f}"})}" class="ck-link">→ Deal MC</a> · '
         f'<a href="{_link("/diligence/payer-stress", {"target_name": target.name, "total_npr_usd": npr, "total_ebitda_usd": eb})}" class="ck-link">→ Payer Stress</a> · '
         f'<a href="{_link("/diligence/covenant-stress", {"deal_name": target.name, "ebitda_y0": eb, "total_debt_usd": debt_str})}" class="ck-link">→ Covenant Stress</a> · '
-        f'<a href="{_link("/diligence/regulatory-calendar", {"target_name": target.name, "specialty": "HOSPITAL", "revenue_usd": npr, "ebitda_usd": eb})}" class="ck-link">→ Regulatory Calendar</a> · '
-        f'<a href="{_link("/diligence/bear-case", {"deal_name": target.name, "specialty": "HOSPITAL", "revenue_year0_usd": npr, "ebitda_year0_usd": eb, "enterprise_value_usd": ev_str, "equity_check_usd": equity_str, "debt_usd": debt_str, "hcris_ccn": ccn})}" class="ck-link">→ Bear Case</a>'
+        f'<a href="{_link("/diligence/regulatory-calendar", {"target_name": target.name, "specialty": "HOSPITAL", "revenue_usd": npr, "ebitda_usd": eb})}" class="ck-link">→ Regulatory Calendar</a>'
         '</p>'
         '<p class="ck-eyebrow">'
         f'EV <code>{_fmt_money_b(default_ev)}</code> (9.0× '

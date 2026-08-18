@@ -60,9 +60,13 @@ class TestSponsorDetailPage(unittest.TestCase):
         self.assertIn('name="sponsor"', html)
         # Type-ahead datalist with sponsor names
         self.assertIn('id="sponsor-suggestions"', html)
-        # Deep-link to the league table for partners who want
-        # all sponsors at once
-        self.assertIn("/sponsor-track-record", html)
+        # Deep-link for partners who want all acquirers at once. This
+        # pointed at /sponsor-track-record until 2026-08-16 — realized
+        # returns off the seeded corpus, registry-hidden — so it now
+        # points at the deal library's sponsor view, which lists real
+        # publicly-reported transactions.
+        self.assertNotIn("/sponsor-track-record", html)
+        self.assertIn("/deal-library/sponsors", html)
 
     def test_unknown_sponsor_shows_partial_matches(self):
         """A typo or partial spelling should surface candidates,

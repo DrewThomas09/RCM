@@ -472,9 +472,13 @@ p.dash-empty-inline { margin:0; color:var(--sc-text-faint,#7a8699);
 
 def _render_analyses_section() -> str:
     from . import _web_components as _wc
+    from ._surface_visibility import is_visible
 
     rows: List[List[str]] = []
-    for a in _CURATED_ANALYSES:
+    # Curated shortcuts are a listing like any other — a saved-analysis row
+    # pointing at a registry-hidden surface would let a partner bookmark a
+    # page the platform no longer offers.
+    for a in [a for a in _CURATED_ANALYSES if is_visible(a["route"])]:
         # Save-as-template form: pre-fills the name + route from
         # this row so the partner just clicks ★ to bookmark the
         # current parametrization. Wraps to /api/saved-analyses
@@ -981,7 +985,10 @@ def _sponsor_concentration_insights(
                     "body": ("Diligence on these deals is correlated: "
                              "if the sponsor's playbook fails on one, "
                              "expect it to fail on the others."),
-                    "href": "/sponsor-league",
+                    # /sponsor-league is registry-hidden (seeded corpus
+                    # figures); the sponsor view of the real deal library
+                    # is the visible destination for this insight.
+                    "href": "/deal-library/sponsors",
                     "tone": "warn",
                     "score": 30 + 5 * len(dids),
                 })
@@ -2686,20 +2693,15 @@ def _render_recent_results_section(db_path: str) -> str:
         body = ck_empty_state(
             "No runs yet, first time here?",
             body=(
-                "Try one of the curated analyses above — the Thesis "
-                "Pipeline runs in ~170 ms on a fixture and walks you "
-                "through 19 diligence steps end-to-end. Async jobs "
-                "(data refresh, packet rebuild) appear here once "
-                "submitted, with status badges that update "
-                "automatically."
+                "Try one of the curated analyses above, or open a deal "
+                "profile to build its first packet. Async jobs (data "
+                "refresh, packet rebuild) appear here once submitted, "
+                "with status badges that update automatically."
             ),
             eyebrow="RUN HISTORY",
             icon="▸",
-            cta_label="Run the Thesis Pipeline",
-            cta_href=(
-                "/diligence/thesis-pipeline"
-                "?dataset=hospital_04_mixed_payer"
-            ),
+            cta_label="Open the deal profile",
+            cta_href="/diligence/deal",
         )
     else:
         body = _wc.sortable_table(

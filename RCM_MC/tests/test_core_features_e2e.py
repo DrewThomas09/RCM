@@ -191,11 +191,15 @@ class TestCrossSurfaceConsistency(CoreFeaturesServerMixin, unittest.TestCase):
     def test_dashboard_links_point_to_working_routes(self):
         status, html = self._get("/dashboard")
         self.assertEqual(status, 200)
-        # Dashboard links should appear in HTML; follow a few
-        # (they're the curated_analyses table)
-        self.assertIn("/diligence/thesis-pipeline", html)
+        # Dashboard links should appear in HTML; follow a few (they're
+        # the curated_analyses table). This list has shed a row at each
+        # sweep: Thesis Pipeline and Bear Case on 2026-08-16 (deal
+        # execution / illustrative), Payer Stress on 2026-08-17 (a
+        # seeded slider model, not a filing read). What is curated now is
+        # the CMS filing reads, and the table must not have gone empty.
         self.assertIn("/diligence/hcris-xray", html)
-        self.assertIn("/diligence/bear-case", html)
+        self.assertIn("/diligence/regulatory-calendar", html)
+        self.assertNotIn("/diligence/payer-stress", html)
 
 
 if __name__ == "__main__":

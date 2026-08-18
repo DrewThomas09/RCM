@@ -978,10 +978,6 @@ def _landing(qs: Optional[Dict[str, List[str]]] = None) -> str:
             source_note="Each event carries a primary-source citation; impact figures are PEdesk scenario estimates, not regulator forecasts.",
         )
         + form
-        + f'<p style="font-size:11px;color:{P["text_faint"]};margin-top:14px;">'
-        + 'Binding events can be logged as risks in the '
-        + f'<a href="/diligence/risk-workbench" style="color:{P["accent"]};'
-        + 'text-decoration:none;">Risk Workbench →</a></p>'
         + '</div>'
     )
     return chartis_shell(
@@ -1216,11 +1212,12 @@ def render_regulatory_calendar_page(
             f'<div style="font-size:13px;color:{P["text_dim"]};'
             f'line-height:1.65;">'
             f'The ${sum(o.ebitda_delta_usd for o in report.ebitda_overlay):+,.0f} '
-            f'cumulative EBITDA overlay should subtract from the Deal MC '
-            f'expected cone and from the Exit Timing IRR curve.  '
-            f'<a href="/diligence/deal-mc?{q}" '
+            f'cumulative EBITDA overlay is a rate-driven move on the '
+            f'facility\'s filed economics — read it against the cost '
+            f'report itself.  '
+            f'<a href="/diligence/hcris-xray?{q}" '
             f'style="color:{P["accent"]};text-decoration:underline;">'
-            f'Open this target in Deal MC →</a>'
+            f'Open this target in the HCRIS X-Ray →</a>'
             f'</div>'
             f'</div>'
         )
@@ -1239,8 +1236,8 @@ def render_regulatory_calendar_page(
             source="Public CMS / OIG / FTC / DOJ regulatory-calendar dates + "
             "illustrative PE-healthcare peer-exposure norms; the per-deal "
             "exposure mapping is a modeled estimate, not legal advice.",
-            next_action="Stress-test these dates against the EBITDA bridge",
-            next_href="/diligence/bridge-audit",
+            next_action="Read these dates against the facility's cost report",
+            next_href="/diligence/hcris-xray",
         )
         + market_block
         + timeline_panel
@@ -1257,10 +1254,10 @@ def render_regulatory_calendar_page(
         + bookmark_hint()
         + '</div>'
         + ck_next_section(
-            "Stress-test these dates against the bridge",
-            "/diligence/bridge-audit",
+            "Read these dates against the filed cost report",
+            "/diligence/hcris-xray",
             eyebrow="Up next",
-            italic_word="bridge",
+            italic_word="filed",
         )
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

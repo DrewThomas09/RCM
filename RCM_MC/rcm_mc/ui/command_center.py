@@ -215,7 +215,9 @@ def render_command_center(
         + ck_kpi_block(
             "Distressed", distressed_value,
             "margin &lt; -5%"
-            + _drill("/screening/bankruptcy-survivor", "scan →"))
+            # The distress KPI drills into the screening dashboard;
+            # /screening/bankruptcy-survivor is registry-hidden.
+            + _drill("/screening/dashboard", "scan →"))
         + ck_kpi_block(
             "Active Deals", f"{len(deals)}",
             "in portfolio" + _drill("/portfolio", "book →"))

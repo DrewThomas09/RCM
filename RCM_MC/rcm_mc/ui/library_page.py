@@ -243,20 +243,25 @@ def _library_section(section: Dict[str, Any]) -> str:
         }.get(item.get("badge", ""), "cad-badge-muted")
 
         # Make endpoint clickable — replace {deal_id} placeholder with analysis link
+        #
+        # The `<code>` chip above still prints the route for every entry:
+        # this is a methodology reference, and naming the endpoint a model
+        # runs behind is documentation. The BUTTON is an offer, so it is
+        # gated on visibility — several entries here (State Heatmap, OLS
+        # Regression, Scenario Builder, Pressure Test) document machinery
+        # the 2026-08-17 sweeps hid, and a reference page should say what
+        # exists without handing a reader a door to it.
+        from ._surface_visibility import is_visible
         ep = item.get("endpoint", "")
-        if ep and "{deal_id}" not in ep:
+        if ep and "{deal_id}" not in ep and is_visible(ep.split("?", 1)[0]):
             action_link = (
                 f'<a href="{html.escape(ep)}" class="cad-btn" '
                 f'style="text-decoration:none;font-size:12px;margin-top:8px;display:inline-block;">'
                 f'Open &rarr;</a>'
             )
-        elif ep:
-            action_link = (
-                f'<a href="/analysis" class="cad-btn" '
-                f'style="text-decoration:none;font-size:12px;margin-top:8px;display:inline-block;">'
-                f'Select a deal to run &rarr;</a>'
-            )
         else:
+            # Either a {deal_id} template with no per-deal hub left to
+            # point at (/analysis is registry-hidden), or a hidden route.
             action_link = ""
 
         items_html += (

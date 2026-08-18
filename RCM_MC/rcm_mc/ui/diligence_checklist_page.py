@@ -30,6 +30,7 @@ from ._chartis_kit import (
     ck_page_actions, ck_panel, ck_progress_dot_track, ck_section_header,
     ck_severity_panel, ck_signal_badge, ck_sticky_toc,
 )
+from ._surface_visibility import is_visible as _is_visible
 from .power_ui import (
     bookmark_hint, export_json_panel, provenance, sortable_table,
 )
@@ -431,7 +432,10 @@ def _gate_blocker_row(b) -> str:
         if b.auto_verifiable else
         ck_signal_badge("MANUAL ATTESTATION", tone="neutral")
     )
-    if b.evidence_url:
+    # An evidence link that lands on a registry-hidden surface would
+    # send an analyst to a page the platform no longer offers; the gate
+    # then reads as a manual workstream, which is what it now is.
+    if b.evidence_url and _is_visible(b.evidence_url):
         evidence = (
             f'<a class="dc-gate-row__evidence" '
             f'href="{html.escape(b.evidence_url, quote=True)}">'
@@ -649,7 +653,7 @@ def _phase_section(
     for s in items:
         item = s.item
         evidence = ""
-        if item.evidence_url:
+        if item.evidence_url and _is_visible(item.evidence_url):
             ev_url = html.escape(item.evidence_url, quote=True)
             evidence = (
                 f'<a href="{ev_url}" title="Opens {ev_url}" '

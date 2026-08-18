@@ -590,15 +590,17 @@ def render_physician_eu_page(
         name="physician_eu_report",
     )
 
-    # Cross-link to PPAM (flight risk) and physician comp panel
+    # PPAM (/diligence/physician-attrition) is registry-hidden — its
+    # flight-risk figures are illustrative — so this panel points at the
+    # provider roster's own sourced companion instead.
     crosslink = ck_panel(
         '<p class="ck-section-body">'
         '<strong>Related analytics: </strong>'
-        '<a href="/diligence/physician-attrition" class="ck-link">'
-        'Physician Attrition (PPAM) →</a> '
-        "tells you who's LIKELY to leave. This page tells you who "
-        'SHOULD leave. Together they form the complete physician-'
-        'portfolio optimization view.</p>',
+        '<a href="/diligence/benchmarks" class="ck-link">'
+        'Benchmarks →</a> '
+        'places this roster against its vintage, sector, and size '
+        'cohort, so a contribution number reads against a peer band '
+        'rather than in isolation.</p>',
         title="Cross-reference",
     )
 
@@ -633,10 +635,10 @@ def render_physician_eu_page(
         + '</div>'
         + bookmark_hint()
         + ck_next_section(
-            "Pressure-test attrition risk",
-            "/diligence/physician-attrition",
+            "Place the roster against its peer cohort",
+            "/diligence/benchmarks",
             eyebrow="Up next",
-            italic_word="attrition",
+            italic_word="peer",
         )
     )
     # 2026-05-28 wave-B: ck_page_actions adds Copy share link

@@ -138,17 +138,21 @@ class TestServiceLevelPage(unittest.TestCase):
 class TestToolsRegistration(unittest.TestCase):
     ROUTE = "/in-depth-ift-bls-als1-als2-cct"
 
-    def test_route_is_discovered(self):
+    def test_route_is_discovered_for_verification_not_for_browsing(self):
+        # The IFT suite is a single-operator study (MMT) and is
+        # registry-hidden as of 2026-08-16, so it is off the browse
+        # catalog. It still SERVES, so the verification sweep — the route
+        # walker — must still cover it: include_hidden=True.
         from rcm_mc.server import RCMHandler
-        self.assertIn(self.ROUTE, RCMHandler._discover_all_routes())
+        self.assertNotIn(self.ROUTE, RCMHandler._discover_all_routes())
+        self.assertIn(self.ROUTE,
+                      RCMHandler._discover_all_routes(include_hidden=True))
 
-    def test_tools_card_uses_exact_title(self):
+    def test_not_carded_on_the_tools_index(self):
         from rcm_mc.server import RCMHandler
         workspaces, _total = RCMHandler._build_tools_index_data()
         cards = {t["path"]: t for ws in workspaces for t in ws["tools"]}
-        self.assertIn(self.ROUTE, cards)
-        self.assertEqual(cards[self.ROUTE]["name"],
-                         "In-Depth IFT — BLS · ALS1 · ALS2 · CCT")
+        self.assertNotIn(self.ROUTE, cards)
 
     def test_palette_carries_the_page(self):
         from rcm_mc.ui._chartis_kit import _DEFAULT_PALETTE_MODULES

@@ -112,14 +112,12 @@ class TestDashboardWiresFilter(unittest.TestCase):
     def test_exports_page_tables_have_filters(self):
         from rcm_mc.ui.exports_index_page import render_exports_index
         html = render_exports_index(self.db)
-        # All three tables on /exports — per-deal format guide,
-        # portfolio-scope, corpus browsers — should now be filterable
-        for tbl_id in (
-            "exports-format-guide",
-            "exports-portfolio",
-            "exports-corpus",
-        ):
+        # The tables on /exports should be filterable. "exports-corpus"
+        # was the third until 2026-08-16 — every row in it pointed at a
+        # registry-hidden corpus browser, so the whole card drops now.
+        for tbl_id in ("exports-format-guide", "exports-portfolio"):
             self.assertIn(f'data-filter-for="{tbl_id}"', html)
+        self.assertNotIn('data-filter-for="exports-corpus"', html)
 
 
 class TestRowCounter(unittest.TestCase):

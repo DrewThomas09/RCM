@@ -68,12 +68,22 @@ class CliffCalendarPageTests(unittest.TestCase):
         self.assertEqual(
             classify_surface("/diligence/cliff-calendar")["tier"], "navy")
 
-    def test_in_nav_and_palette(self):
-        from rcm_mc.ui._chartis_kit import _SUB_NAV, _DEFAULT_PALETTE_MODULES
-        hrefs = {it["href"] for it in _SUB_NAV["diligence"]}
-        self.assertIn("/diligence/cliff-calendar", hrefs)
-        routes = {m["route"] for m in _DEFAULT_PALETTE_MODULES}
-        self.assertIn("/diligence/cliff-calendar", routes)
+    def test_not_offered_in_nav_or_rendered_palette(self):
+        # Illustrative-figure surface, registry-hidden 2026-08-16. The
+        # palette REGISTRY keeps its entry (that is how a page rejoins the
+        # catalog if the ruling is reversed); the rendered palette filters
+        # it out.
+        from rcm_mc.ui._chartis_kit import (
+            _SUB_NAV, _DEFAULT_PALETTE_MODULES, ck_command_palette,
+        )
+        from rcm_mc.ui._surface_visibility import is_hidden
+        self.assertTrue(is_hidden("/diligence/cliff-calendar"))
+        self.assertNotIn("/diligence/cliff-calendar",
+                         {it["href"] for it in _SUB_NAV["diligence"]})
+        self.assertIn("/diligence/cliff-calendar",
+                      {m["route"] for m in _DEFAULT_PALETTE_MODULES})
+        self.assertNotIn("/diligence/cliff-calendar",
+                         ck_command_palette(_DEFAULT_PALETTE_MODULES))
 
     def test_ranked_crossover(self):
         from rcm_mc.ui._surface_rankings import RANKINGS

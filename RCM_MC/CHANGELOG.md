@@ -1,5 +1,162 @@
 # Changelog
 
+## Unreleased (2026-08-17) — third and fourth sweeps: the bloat, and the duplicates
+
+Two sweeps against the same sentence — **healthcare-PE deal tracking on
+top of aggregated CMS data** — narrowing what the product *offers* down
+to the three things it does well: display information about hospitals,
+health systems and the other outpatient services; scan that universe;
+and track deals in the space. Nothing is deleted. All **378** routes,
+hidden and visible alike, still return 200, verified against a live
+server.
+
+**Third sweep — the named bloat.** Portfolio operations (running your own
+book, as opposed to tracking the market), the graphics toolkit (/visuals,
+Chart Builder, Pie Chart, Exhibit Composer, Saved Charts, Excel Mapping
+and Templates — generators that start empty and draw whatever you type),
+the interactive regressions (/portfolio/regression, /ml-insights), the
+state-map surfaces (/geo-map, /geo-metrics), the model plumbing, the
+deal-workflow chrome, and the HFMA revenue-cycle benchmark bands. The
+**Portfolio tab was dropped** from the topbar: every surface under it was
+own-book ops, and an empty tab is worse than no tab.
+
+**Fourth sweep — the duplicates and the near-misses.**
+
+- **Nine data catalogs became three.** /data (the canonical inventory),
+  /cms-sources (the CMS-specific registry — dataset IDs, granularity,
+  cadence, key columns) and /data-quality (the surface that admits what
+  is missing) each have a distinct job. The other six duplicated those,
+  catalogued data the product does *not* hold (/tools/nonpublic-cms
+  describes itself as an internal staging surface over the *credentialed*
+  ResDAC/CCW/LDS/RIF programs; /data-apis lists free third-party APIs it
+  "can draw on"), or inventoried connectors rather than datasets.
+- **A filing, not a model.** /payer-stress, /diligence/payer-stress and
+  /cost-structure rode the "X-rays" carve-out through three sweeps. Each
+  takes a CCN, seeds two or three real HCRIS figures, then hands the
+  reader sliders; /cost-structure's own registry entry concedes its COGS
+  / SG&A / labor split "stays illustrative-labeled". The real HCRIS opex
+  figures underneath them are on /diligence/hcris-xray, which prints what
+  the cost report says. /diligence/hcris-xray, /diligence/xray and
+  /diligence/benchmarks remain the X-rays and are pinned by test.
+- **Build-your-own analysis** joins the graphics toolkit: /cross-analysis
+  (pick an X and a Y, get a Pearson r and a least-squares trendline) and
+  /further-analysis (a Tableau-style explorer). The data behind them is
+  real; a correlation you configured yourself is not a provider report.
+- **Licensed narrative reference** — /industry (IBISWorld-derived),
+  /healthcare-verticals and its reference/unit-economics cuts,
+  /payer-system ("the four payer-economics CDD exhibits"),
+  /benchmark-reference, /market-intel and /market-intel/geo. /market-intel
+  reads as live market context and is hand-edited YAML: its own
+  public_comps.yaml says "no live API call is made", it was last reviewed
+  in April 2026, and its earnings calendar derives dates by adding 90 days
+  to the previous report. The CMS-backed /verticals index stays.
+- **/predictive-screener** was the last visible surface that
+  `classify_surface` still tiered YELLOW — an RCM EBITDA-uplift estimate
+  over the illustrative seed corpus, shaped like the screeners that rank
+  on filed figures.
+- Also hidden: /market-data (an OLS panel and a choropleth over state
+  roll-ups /state-rankings already prints, crediting FRED and Capital IQ
+  it never reads), /module-index (43 hand-maintained Module() literals
+  standing in for the live route registry /tools renders, with sparklines
+  its own docstring calls decorative), /global-search (a second results
+  page over the same entities as /search), /exports (the output shelf for
+  LP updates and IC packets, every producer of which is hidden),
+  /comparable-outcomes, /pipeline/bridge and /import.
+- **Eleven operator surfaces moved to Internal, not Hidden** — /jobs,
+  /runs, /audit, /admin/audit-chain, /admin/data-sources, /ops, /team,
+  /guide/context-debug and the three /settings routes. They are wanted
+  from the user and admin menus; they are just never carded in a catalog.
+- **The keyboard shortcuts were chrome nobody had checked.** The vim-style
+  "g + letter" jump table ships on every page and still navigated to
+  /portfolio and /diligence/deal after both were hidden. `g o` is gone and
+  `g d` points at the /diligence catalog; a test now parses the table
+  directly so a future hide cannot leave a shortcut behind.
+- Section landings and nav rails were rebuilt around what survived:
+  Pipeline gained a "Keep it current" pillar, Research became "Provider
+  universes & context" (the universes lead, then rate environment and the
+  rule calendar), and Library gained a **Provider identity files** pillar
+  — the crosswalk, master NPI, NPPES organization registry, system
+  mapping and ownership-cluster CSVs, which no catalog had ever offered.
+- Visible surface: **137 → 55**.
+
+## Unreleased (2026-08-16b) — second sweep: deal EXECUTION and single-sector studies
+
+Sharpens the framing from "public-data platform" to what it actually is:
+**healthcare-PE deal tracking on top of aggregated CMS data**, with the
+X-rays at the centre. That sentence has a seam in it, and this sweep cuts
+along it. As before, nothing is deleted — all 137 visible routes and every
+hidden one still return 200.
+
+- **Two new rationales** in `_surface_visibility`. `_DEAL_EXECUTION_ROUTES`
+  separates *tracking* a transaction (stays: /deal-library + sponsors +
+  comps, /verified-deals, /news, /market-scan, /pipeline, /portfolio) from
+  the artifacts of *running* one (hidden: IC packets, QoE memos, CDD hub +
+  scope, expert calls, CIM cross-check, counterfactuals, covenant stress,
+  deal Monte Carlo, autopsies, checklists + question ledgers, value plans,
+  roll-up models, LP reporting, /pressure). `_NAMED_ROUTES` carries
+  /conferences — a networking planner, not a dataset.
+- **Single-sector studies** join the Texas-infusion and IFT suites:
+  /radiology-imaging (an atlas organized around named sponsor-backed
+  operators) and /market plus its ~80 `/market/<sector>` M&A writeups
+  (which include the infusion and interfacility-transport reports by
+  name). The line is sector BREADTH, not subject: /nursing-homes,
+  /home-health, /hospice, /dialysis, /inpatient-rehab and
+  /long-term-care-hospital stay, because each reads a whole CMS program's
+  Care Compare universe nationally.
+- **The X-rays stay, and now lead.** /diligence is the CMS filing-read
+  section: its bar and catalog lead with the HCRIS X-Ray, and its pillars
+  became "The X-Rays" and "Regulatory & Outcomes". A test pins the X-rays
+  against every future sweep by name.
+- Fixed the topbar's global diligence-questions pill (a hidden destination
+  reachable from chrome on every page), and repointed ~20 contextual
+  "→ next step" links at the filings.
+- Visible surface: **173 → 137**.
+
+## Unreleased (2026-08-16) — surface cleanup: hide the pages that aren't public data
+
+Reframes what the platform *offers* around its actual strength: public
+CMS / Medicare / Medicaid / hospital data, verifiable to the filing and
+visualized in seconds. Pages that work against that promise are now
+hidden from every listing surface. **Nothing is deleted** — every route
+still serves, so deep links and in-page references keep working.
+
+- **The ruling now lives in one place.** `rcm_mc/ui/_surface_visibility`
+  gains `HIDDEN_ROUTES` / `HIDDEN_PREFIXES` + `is_hidden` / `is_visible`
+  / `visible_links` / `visible_modules`, alongside the existing
+  `INTERNAL_ROUTES`. Three rationales, kept as separate sets so a page's
+  reason for hiding stays legible: 172 **illustrative-figure** pages
+  (numbers from a hardcoded dataclass, not a filing), the
+  **single-study** suites (Texas infusion scan, the IFT/MMT transport
+  study — real work, legible only inside one engagement), and the
+  **sponsor-corpus / PE-narrative** tail. A hidden route hides its
+  sub-paths too. The old `server._TOOLS_ILLUSTRATIVE_ROUTES` was a
+  second copy of the first list scoped to /tools only — which is how
+  those pages stayed off the card grid while still *leading* the
+  Diligence mega-menu; it's gone, and discovery asks the registry.
+- **Applied on every listing surface**, not just /tools: the topbar
+  mega-menus and their ranked backfill, the Cmd-K palette (caller-supplied
+  module lists included), /tools, /best/<section>, every section landing,
+  /diligence, /cdd, /module-index, /research, /exports, /industry, the
+  app quick-access + deliverable widgets, the deal-profile analytics
+  grid, the editorial sidebar rail, checklist evidence links, and global
+  search. Counts derive from the filtered lists, so no masthead claims
+  surfaces its page doesn't show; a pillar left empty drops rather than
+  rendering as a bare heading.
+- **Deal trackers stay.** /deal-library, /verified-deals, /news,
+  /market-scan and /pipeline follow real, publicly-reported
+  transactions — the good version of the corpus idea — and are pinned
+  visible by test.
+- **Reframed copy** on the surfaces the cleanup emptied: Library is now
+  the dataset catalog + "trace a number back to its filing" + the deal
+  trackers; Research is now chart-it / provider-universes /
+  cross-dataset comparison. Contextual "→ next step" links that pointed
+  at newly-hidden pages were repointed at their sourced equivalents
+  (e.g. HCRIS X-Ray's "→ Bear Case" dropped; the deal profile's "Run
+  Full Pipeline" CTA removed).
+- Guarded by `tests/test_hidden_surfaces.py`, which pins both halves of
+  the ruling: nothing offers a hidden route, **and** every hidden route
+  still returns 200.
+
 ## Unreleased (2026-07-05) — UI polish loop: alert rows, chart-label fixes, dev-copy sweep
 
 Two review passes over ~60 partner-facing routes (screenshot-driven,

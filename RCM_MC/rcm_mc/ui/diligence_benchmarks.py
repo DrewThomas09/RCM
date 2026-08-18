@@ -876,10 +876,8 @@ def _denial_pareto(rows: Iterable[DenialStratRow]) -> str:
         ))
     intro = (
         '<p class="ck-section-body">'
-        'ANSI CARC categories by dollar impact. Drill-through to '
-        'underlying claim rows is available via '
-        '<a href="/diligence/root-cause" class="ck-link">'
-        'Phase 3: Root Cause</a>.</p>'
+        'ANSI CARC categories by dollar impact, straight off the '
+        'claim file.</p>'
     )
     return header + ck_panel(
         intro + fig + "".join(items),
@@ -1064,9 +1062,7 @@ def _cash_waterfall_section(report: Optional[CashWaterfallReport]) -> str:
         'Claim-level cascade from gross charges to realized cash, '
         'cohorted by date of service. Cohorts younger than '
         f'{report.realization_window_days} days are marked '
-        '<em>insufficient data</em> — never fabricated. Drill-through '
-        'to underlying claim_ids is available in '
-        '<a href="/diligence/root-cause" class="ck-link">Phase 3</a>.'
+        '<em>insufficient data</em> — never fabricated.'
         '</p>'
     )
     cascade_panel = ck_panel(

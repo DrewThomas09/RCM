@@ -36,9 +36,15 @@ class EditorialTopbarTests(unittest.TestCase):
         self.assertIn("PE<em>Desk</em>", self.html)
 
     def test_primary_nav_sections(self):
-        for label in (">Home<", ">Pipeline<", ">Diligence<",
-                      ">Library<", ">Research<", ">Portfolio<"):
-            self.assertIn(label, self.html)
+        # Derived from _CORPUS_NAV rather than hard-coded: the Portfolio
+        # tab was dropped in the 2026-08-17 bloat sweep (every surface
+        # under it was own-book ops, and an empty tab is worse than no
+        # tab), and the next structural change should move this test
+        # rather than break it.
+        from rcm_mc.ui._chartis_kit import _CORPUS_NAV
+        for item in _CORPUS_NAV:
+            self.assertIn(f'>{item["label"]}<', self.html, item["label"])
+        self.assertNotIn(">Portfolio<", self.html)
 
     def test_serif_green_active_nav(self):
         # Serif nav + green italic active underline.
@@ -99,7 +105,9 @@ class EditorialTopbarTests(unittest.TestCase):
         import re
         controls = set(re.findall(r'aria-controls="(ck-mega-[a-z]+)"', self.html))
         ids = re.findall(r'id="(ck-mega-[a-z]+)"', self.html)
-        self.assertGreaterEqual(len(controls), 6)
+        # Was >=6 while there were seven tabs; the Portfolio tab was
+        # dropped in the 2026-08-17 bloat sweep, leaving six.
+        self.assertGreaterEqual(len(controls), 5)
         self.assertEqual(controls, set(ids))         # every control resolves
         self.assertEqual(len(ids), len(set(ids)))    # ids are unique
 

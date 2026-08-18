@@ -251,10 +251,15 @@ class PhysicianEUPageTests(unittest.TestCase):
         # structural loss-maker; optimization should appear
         self.assertIn("Roster Optimization", h)
 
-    def test_crosslink_to_ppam(self):
+    def test_crosslink_points_at_a_sourced_companion(self):
+        # This asserted a cross-link to PPAM
+        # (/diligence/physician-attrition), whose flight-risk figures are
+        # illustrative — registry-hidden 2026-08-16. The cross-reference
+        # panel now points at Benchmarks, which places the roster against
+        # a real peer cohort.
         h = self._render()
-        self.assertIn("/diligence/physician-attrition", h)
-        self.assertIn("Physician Attrition", h)
+        self.assertNotIn("/diligence/physician-attrition", h)
+        self.assertIn("/diligence/benchmarks", h)
 
     def test_target_name_from_query(self):
         h = self._render(target_name="Acme Clinic Group")

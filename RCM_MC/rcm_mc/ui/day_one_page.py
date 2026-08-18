@@ -386,7 +386,7 @@ def _recent_section() -> str:
         : '<span></span>';
       return '<li class="do-recent-row">' +
         '<span class="do-recent-slug">' + esc(r.slug) + '</span>' +
-        '<a class="do-recent-name" href="/diligence/deal/' +
+        '<a class="do-recent-name" href="/deal/' +
           encodeURIComponent(r.slug) + '">' +
           esc(r.name || r.slug) + '</a>' +
         qChip +
@@ -541,11 +541,10 @@ def _journey_section() -> str:
         'style="font-style:italic;font-size:13px;'
         'color:var(--sc-teal-ink,#0e3e3a);">—</p>'
         + checklist
-        + '<a href="/diligence/questions" class="do-link" '
-        'style="margin-right:18px;">'
-        'Open the portfolio question ledger'
-        '</a>'
-        '<a href="/settings" class="do-link">'
+        # The portfolio question-ledger link used to sit alongside this
+        # one; /diligence/questions is engagement workflow and is
+        # registry-hidden.
+        + '<a href="/settings" class="do-link">'
         'Open settings for the full journey'
         '</a>'
         # Inline JS picks the contextual line. Quiet defaults when

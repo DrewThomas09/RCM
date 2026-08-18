@@ -198,6 +198,15 @@ def render_research(
         ck_provenance_tooltip,
     )
 
+    from rcm_mc.ui._surface_visibility import visible_links
+
+    # Catalog entries whose destination is registry-hidden never render —
+    # and the facet counts below are built from the same filtered list, so
+    # a topic can't advertise research the page won't show. The entries
+    # stay in RESEARCH_ENTRIES: if one of those surfaces earns live wiring
+    # it reappears here with no edit to this file.
+    entries = visible_links(RESEARCH_ENTRIES)
+
     def _matches(entry: Dict[str, str]) -> bool:
         if topic and entry["topic"] != topic:
             return False
@@ -209,13 +218,13 @@ def render_research(
             return False
         return True
 
-    filtered = [e for e in RESEARCH_ENTRIES if _matches(e)]
+    filtered = [e for e in entries if _matches(e)]
 
     # Facet options derive from the full catalog (not the filtered
     # subset) so partner can navigate back to a topic that's been
     # filtered out.
-    all_topics = sorted({e["topic"] for e in RESEARCH_ENTRIES})
-    all_kinds = sorted({e["kind"] for e in RESEARCH_ENTRIES})
+    all_topics = sorted({e["topic"] for e in entries})
+    all_kinds = sorted({e["kind"] for e in entries})
     facets = [
         {
             "title": "By topic",
@@ -280,7 +289,7 @@ def render_research(
         "Research catalog",
         f"{len(filtered):,}",
         explainer=(
-            f"Curated index of {len(RESEARCH_ENTRIES)} research "
+            f"Curated index of {len(entries)} research "
             f"notes (methodology, frameworks, deep-dives, field "
             f"notes). Topic and format facets derive from the full "
             f"catalog, not the current filter, so partner can "
@@ -307,7 +316,7 @@ def render_research(
                 "last fund raise. Filter by topic or format to narrow."
             ),
         },
-        subtitle=f"{len(filtered)} of {len(RESEARCH_ENTRIES)} research notes",
+        subtitle=f"{len(filtered)} of {len(entries)} research notes",
         next_section_html=ck_next_section(
             "Open the metric glossary",
             "/metric-glossary",

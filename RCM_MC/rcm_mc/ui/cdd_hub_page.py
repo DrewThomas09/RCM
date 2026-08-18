@@ -485,10 +485,30 @@ def _kpi_strip(n_surfaces: int, n_pillars: int, tiers: Counter) -> str:
     )
 
 
-def _toolbar(n_surfaces: int) -> str:
+def _visible_modules() -> list[tuple]:
+    """``_MODULES`` zipped with its eyebrows, minus every hidden surface.
+
+    Returns ``[(title, blurb, links, eyebrow), …]``. ``_MODULES`` and
+    ``_PILLAR_EYEBROWS`` are positional parallels, so they are zipped
+    BEFORE filtering — dropping a module from one list and not the other
+    would silently re-label every panel below it. A module left with no
+    visible links is dropped whole; the counts, the KPI strip, and the
+    jump-row all read from this list so the page can't advertise a
+    workflow step it no longer offers.
+    """
+    from ._surface_visibility import is_visible
+    out = []
+    for (title, blurb, links), eyebrow in zip(_MODULES, _PILLAR_EYEBROWS):
+        kept = [row for row in links if is_visible(row[1])]
+        if kept:
+            out.append((title, blurb, kept, eyebrow))
+    return out
+
+
+def _toolbar(n_surfaces: int, eyebrows) -> str:
     """Mono jump-row (module ordinal → panel anchor) + type-to-filter."""
     jumps = []
-    for i, eyebrow in enumerate(_PILLAR_EYEBROWS, start=1):
+    for i, eyebrow in enumerate(eyebrows, start=1):
         jumps.append(
             f'<a href="#cdd-{i:02d}">'
             f'<span class="n">{i:02d}</span>'
@@ -573,13 +593,13 @@ def render_cdd_hub() -> str:
         ck_next_section,
         ck_page_actions,
     )
-    n_surfaces = sum(len(links) for _t, _b, links in _MODULES)
-    n_pillars = len(_MODULES)
-    tiers = _tier_counts(_MODULES)
+    modules = _visible_modules()
+    n_surfaces = sum(len(links) for _t, _b, links, _e in modules)
+    n_pillars = len(modules)
+    tiers = _tier_counts([(t, b, links) for t, b, links, _e in modules])
     panels = "".join(
         _pillar_panel(i, title, eyebrow, blurb, links)
-        for i, ((title, blurb, links), eyebrow)
-        in enumerate(zip(_MODULES, _PILLAR_EYEBROWS), start=1)
+        for i, (title, blurb, links, eyebrow) in enumerate(modules, start=1)
     )
     next_up = ck_next_section(
         "Run the CDD exhibit engines",
@@ -591,7 +611,7 @@ def render_cdd_hub() -> str:
         _CSS
         + _head(n_surfaces, n_pillars, tiers)
         + _kpi_strip(n_surfaces, n_pillars, tiers)
-        + _toolbar(n_surfaces)
+        + _toolbar(n_surfaces, [e for _t, _b, _l, e in modules])
         + f'<div class="cdh-catalog">{panels}</div>'
         + next_up
         + ck_page_actions()

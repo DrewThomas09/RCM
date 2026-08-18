@@ -52,7 +52,7 @@ class HealthcareVerticalsReferencePageTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
 
-    def test_page_in_library_subnav(self) -> None:
+    def test_no_longer_in_the_library_rail_though_it_still_serves(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             server, port = self._start(tmp)
             try:
@@ -60,7 +60,17 @@ class HealthcareVerticalsReferencePageTests(unittest.TestCase):
                     f"http://127.0.0.1:{port}/healthcare-verticals-reference"
                 ) as r:
                     body = r.read().decode("utf-8")
-                self.assertIn("/healthcare-verticals-reference", body)
+                # The 2026-08-17 sweep hid this page — it is licensed
+                # narrative reference rather than a CMS read — so the
+                # library rail no longer carries it. It still serves,
+                # still renders inside the normal shell (Metric Glossary
+                # is a rail sibling that stayed), and the only mention of
+                # its own route on the page is the canonical/self link,
+                # never a rail entry.
+                from rcm_mc.ui._chartis_kit import _SUB_NAV
+                self.assertNotIn(
+                    "/healthcare-verticals-reference",
+                    {e["href"] for e in _SUB_NAV["library"]})
                 self.assertIn("Metric Glossary", body)
             finally:
                 server.shutdown()

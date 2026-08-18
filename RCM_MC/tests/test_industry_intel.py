@@ -134,11 +134,26 @@ class IndustryRouteTests(unittest.TestCase):
         # Provenance / license chip present.
         self.assertIn("Licensed report derived", b)
 
-    def test_primary_care_shows_real_and_connections(self):
+    def test_primary_care_bridges_are_all_hidden_now(self):
+        # The connection rows bridge a licensed industry report into the
+        # platform's own public-data surfaces, and the block renders only
+        # the bridges that are still visible. Primary care's every bridge
+        # has now been hidden: /physician-productivity, /cms-apm,
+        # /quality-scorecard and /provider-retention went on 2026-08-16
+        # for rendering illustrative figures, and /market-intel/geo — the
+        # last sourced one — went on 2026-08-17 as licensed
+        # SimplyAnalytics material rather than a CMS read. So the block is
+        # empty here. The page still serves, and the hospital page below
+        # still shows its block, which is what proves the block is
+        # filtered rather than broken.
+        from rcm_mc.ui._surface_visibility import is_hidden
         s, b = self._get("/industry/primary-care-doctors")
         self.assertEqual(s, 200)
-        self.assertIn("Public data connections", b)
-        self.assertIn("/physician-productivity", b)
+        for bridge in ("/physician-productivity", "/cms-apm",
+                       "/quality-scorecard", "/provider-retention",
+                       "/market-intel/geo"):
+            self.assertTrue(is_hidden(bridge), bridge)
+            self.assertNotIn(f'href="{bridge}"', b)
 
     def test_unknown_slug_safe(self):
         s, b = self._get("/industry/not-an-industry")
