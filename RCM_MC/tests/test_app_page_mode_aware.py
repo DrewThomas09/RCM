@@ -43,19 +43,29 @@ class AppPageModeAwareTests(unittest.TestCase):
         set_workspace_mode(mode)
         return render_app_page(store=self.store)
 
-    def test_partner_view_uses_fund_framing(self) -> None:
+    def test_partner_view_uses_the_default_framing(self) -> None:
+        # Was "fund framing": FUND II / PORTFOLIO & DILIGENCE /
+        # "Hold-period rollup". Two problems with that on 2026-08-18.
+        # The hold-period and covenant cards it described had left the
+        # page with the portfolio-operations sweep, so the lede named a
+        # canvas that was no longer there; and reading what a provider
+        # filed is the same work whether or not you run a fund, so the
+        # default view no longer assumes one. The MODE SPLIT is what
+        # this test is really for, and it still holds.
         html = self._render(PARTNER)
-        self.assertIn("FUND II", html)
-        self.assertIn("PORTFOLIO &amp; DILIGENCE", html)
-        self.assertIn("Hold-period rollup", html)   # lede carries hold framing
+        self.assertIn("WORKSPACE", html)
+        self.assertIn("PROVIDERS &amp; DILIGENCE", html)
+        self.assertIn("What you are tracking", html)
         self.assertNotIn("CLIENT ENGAGEMENT", html)
+        self.assertNotIn("FUND II", html)
+        self.assertNotIn("Hold-period rollup", html)
 
     def test_consulting_view_uses_engagement_framing(self) -> None:
         html = self._render(CONSULTING)
         self.assertIn("CLIENT ENGAGEMENT", html)
         self.assertIn("COMMERCIAL DILIGENCE", html)
         self.assertIn("Engagement rollup", html)   # lede carries engagement framing
-        self.assertNotIn("FUND II", html)
+        self.assertNotIn("WORKSPACE", html)
 
     def test_both_views_keep_command_center_title(self) -> None:
         # "Command center" is the product surface name, not partner

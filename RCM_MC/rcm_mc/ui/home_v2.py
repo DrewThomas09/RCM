@@ -1,7 +1,22 @@
-"""PE Desk Home Page — market-first dashboard.
+"""Home page — the market-first read.
 
-Seeking Alpha-inspired: market pulse, insights, active deals,
-data freshness. Portfolio data is one section, not the whole page.
+Market pulse, insights, tracked deals and data freshness. Whatever you
+are tracking is one section, not the whole page.
+
+2026-08-18 reframe. This page was written for one reader ("where the
+PARTNER reads the market first") and its first-run experience demoed a
+product that no longer exists: four RCM fixture hospitals behind a
+"Run Pipeline" button that chained bankruptcy scan, CCD ingest, HFMA
+benchmarks, denial prediction, physician attrition, counterfactual and
+Deal MC. Every one of those surfaces was hidden by the 2026-08
+visibility sweeps, so a first-time visitor's only call to action led
+into the retired product.
+
+The empty state now opens on real hospitals in the shipped HCRIS
+universe, pointed at the two X-rays, which is what the product actually
+does. Reading what a provider filed is the same work whether you are
+underwriting it, advising it, lending against it or checking a claim
+about it, so the copy no longer assumes which of those you are.
 """
 from __future__ import annotations
 
@@ -80,8 +95,8 @@ def _deal_row(d: Dict[str, Any]) -> str:
         f'<td class="num">{_fmt(d.get("days_in_ar"), 0)}</td>'
         f'<td class="num">{_fmt(d.get("net_revenue"), 0, scale=1e6)}M</td>'
         f'<td>'
-        f'<a href="/analysis/{did}" class="cad-badge cad-badge-blue" '
-        f'style="text-decoration:none;">Analyze</a> '
+        f'<a href="/diligence/xray?q={did}" class="cad-badge cad-badge-blue" '
+        f'style="text-decoration:none;">X-Ray</a> '
         f'<a href="/models/dcf/{did}" class="cad-badge cad-badge-muted" '
         f'style="text-decoration:none;">DCF</a> '
         f'<a href="/models/lbo/{did}" class="cad-badge cad-badge-muted" '
@@ -101,63 +116,68 @@ def _fmt(val: Any, dp: int = 1, scale: float = 1.0) -> str:
 
 
 def _quickstart_block() -> str:
-    """Empty-state quick-start — shown when no deals are in portfolio.
+    """Empty-state quick-start — shown when nothing is tracked yet.
 
-    A first-time visitor needs a visible "try the tool" path.
-    Four pre-seeded fixture cards with one-click Run Pipeline CTAs
-    and partner-speak characterization of what each fixture tests.
+    A first-time visitor needs a visible "try it" path. This used to be
+    four RCM fixture datasets behind a "Run Pipeline" CTA that chained
+    seven surfaces; all seven are now registry-hidden, so the button led
+    nowhere a reader could follow.
+
+    It is now four REAL hospitals from the shipped HCRIS universe, each
+    pointed at the two X-rays. They are chosen to show different shapes
+    of provider rather than different stages of a transaction: a large
+    academic centre, a multi-state system member, a public safety-net
+    hospital, and a mid-size community hospital. Nothing is seeded and
+    nothing is simulated — these are live reads of filed cost reports.
     """
     fixtures = [
         {
-            "id": "hospital_01_clean_acute",
-            "name": "Clean acute baseline",
-            "tagline": "Healthy reference hospital",
+            "ccn": "330101",
+            "name": "New York-Presbyterian Hospital",
+            "tagline": "Large academic medical centre &middot; NY",
             "description": (
-                "Baseline acute-care profile — denial rate ~4%, "
-                "A/R ~42 days, peer-norm operating metrics. Run "
-                "this first to see what the tool outputs against "
-                "a well-run target."
+                "The biggest bed count in the HCRIS universe. Good first "
+                "look at what a cost report holds and how peer "
+                "percentiles read at the top of the distribution."
             ),
-            "badge": "BASELINE",
+            "badge": "ACADEMIC",
             "badge_tone": "positive",
         },
         {
-            "id": "hospital_02_denial_heavy",
-            "name": "Denial-heavy outpatient",
-            "tagline": "High audit-recovery opportunity",
+            "ccn": "100007",
+            "name": "AdventHealth Orlando",
+            "tagline": "Multi-state system member &middot; FL",
             "description": (
-                "Denial rate ~20%, systematic-misses drive the "
-                "EBITDA bridge. Typical roll-up target profile — "
-                "shows denial prediction + counterfactual advisor "
-                "in action."
+                "Part of a large non-profit system. Shows the health "
+                "system lookup resolving one facility to the operator "
+                "behind it, and the rest of the beds that operator holds."
             ),
-            "badge": "OPPORTUNITY",
+            "badge": "SYSTEM",
+            "badge_tone": "positive",
+        },
+        {
+            "ccn": "100022",
+            "name": "Jackson Memorial Hospital",
+            "tagline": "Public safety-net hospital &middot; FL",
+            "description": (
+                "A county-owned safety-net hospital. Payer day mix and "
+                "operating margin read very differently here than at a "
+                "commercial peer — the reason percentile context matters."
+            ),
+            "badge": "SAFETY NET",
             "badge_tone": "warning",
         },
         {
-            "id": "hospital_07_waterfall_concordant",
-            "name": "QoR concordant",
-            "tagline": "Quality-of-Revenue low-divergence",
+            "ccn": "450388",
+            "name": "Methodist Hospital",
+            "tagline": "Large community hospital &middot; TX",
             "description": (
-                "Management revenue and claims-side accrual waterfall "
-                "agree within IMMATERIAL threshold — clean QoE target. "
-                "Good reference for a no-surprise QoR deliverable."
+                "A big Texas community hospital. Try the CMS X-Ray here "
+                "to see one operator resolved across every Medicare "
+                "program it bills under, not just the acute one."
             ),
-            "badge": "CLEAN QoR",
+            "badge": "COMMUNITY",
             "badge_tone": "positive",
-        },
-        {
-            "id": "hospital_08_waterfall_critical",
-            "name": "QoR critical divergence",
-            "tagline": "7% revenue divergence — walkaway candidate",
-            "description": (
-                "Management revenue overstates claims-side accrual "
-                "by ~7%. Triggers CRITICAL QoR finding + IC Packet "
-                "walkaway memo. Shows the tool catching a revenue "
-                "miss that spreadsheets miss."
-            ),
-            "badge": "CRITICAL",
-            "badge_tone": "negative",
         },
     ]
     tone_colors = {
@@ -165,35 +185,13 @@ def _quickstart_block() -> str:
         "warning": PALETTE["accent_amber"],
         "negative": PALETTE["negative"],
     }
-    # Default deal structure so the pipeline output has meaningful
-    # Deal MC numbers — acute-hospital typical.
-    base_qs = (
-        "&deal_name=Demo+Target"
-        "&specialty=HOSPITAL"
-        "&states=TX"
-        "&landlord=Medical+Properties+Trust"
-        "&lease_term_years=20"
-        "&lease_escalator_pct=0.035"
-        "&ebitdar_coverage=1.3"
-        "&annual_rent_usd=30000000"
-        "&revenue_year0_usd=250000000"
-        "&ebitda_year0_usd=35000000"
-        "&enterprise_value_usd=350000000"
-        "&equity_check_usd=150000000"
-        "&debt_usd=200000000"
-        "&entry_multiple=10.0"
-        "&market_category=MULTI_SITE_ACUTE_HOSPITAL"
-        "&oon_revenue_share=0.08"
-        "&ehr_vendor=EPIC"
-        "&n_runs=1000"
-    )
     cards = []
     for fx in fixtures:
         tone_color = tone_colors.get(fx["badge_tone"], PALETTE["text_muted"])
-        pipeline_url = (
-            f'/diligence/thesis-pipeline?dataset={fx["id"]}{base_qs}'
-        )
-        profile_url = f'/diligence/benchmarks?dataset={fx["id"]}'
+        # Both X-rays take ?q=<ccn>; the deep link lands on the
+        # resolved provider rather than an empty search form.
+        pipeline_url = f'/diligence/hcris-xray?q={fx["ccn"]}'
+        profile_url = f'/diligence/xray?q={fx["ccn"]}'
         cards.append(
             f'<div style="background:{PALETTE["bg_secondary"]};'
             f'border:1px solid {PALETTE["border"]};border-radius:4px;'
@@ -225,14 +223,14 @@ def _quickstart_block() -> str:
             f'background:{PALETTE["accent_amber"]};color:{PALETTE["bg"]};'
             f'border:0;font-size:10px;letter-spacing:1.3px;'
             f'text-transform:uppercase;font-weight:700;text-decoration:none;'
-            f'border-radius:3px;">▶ Run Pipeline</a>'
+            f'border-radius:3px;">Open HCRIS X-Ray</a>'
             f'<a href="{html.escape(profile_url)}" '
             f'style="display:inline-block;padding:7px 14px;'
             f'background:transparent;color:{PALETTE["text_link"]};'
             f'border:1px solid {PALETTE["border"]};font-size:10px;'
             f'letter-spacing:1.3px;text-transform:uppercase;'
             f'font-weight:600;text-decoration:none;border-radius:3px;">'
-            f'Benchmarks Only</a>'
+            f'CMS X-Ray</a>'
             f'</div>'
             f'</div>'
         )
@@ -245,21 +243,24 @@ def _quickstart_block() -> str:
         f'<div style="display:flex;justify-content:space-between;'
         f'align-items:center;margin-bottom:6px;">'
         f'<div style="display:flex;align-items:center;gap:10px;">'
-        f'<h2 style="margin:0;">Try the tool</h2>'
+        f'<h2 style="margin:0;">Start with a real hospital</h2>'
         f'<span class="cad-section-code">QSX</span></div>'
         f'<span style="font-size:10.5px;font-family:var(--cad-mono);'
         f'letter-spacing:0.06em;text-transform:uppercase;'
-        f'color:{PALETTE["text_muted"]};">no portfolio data yet</span>'
+        f'color:{PALETTE["text_muted"]};">nothing tracked yet</span>'
         f'</div>'
         f'<div style="font-size:13px;color:{PALETTE["text_muted"]};'
         f'line-height:1.6;max-width:880px;margin-bottom:14px;">'
-        f'Your portfolio is empty. Run the full diligence chain against '
-        f'one of four demo hospitals to see what the tool produces. '
+        f'Nothing is tracked yet. You do not need to add anything to '
+        f'use this — open one of four real hospitals below and read what '
+        f'it filed. '
         f'<strong style="color:{PALETTE["text_primary"]};">'
-        f'▶ Run Pipeline</strong> executes bankruptcy scan → CCD ingest '
-        f'→ HFMA benchmarks → denial prediction → physician attrition → '
-        f'counterfactual → Steward → cyber → deal autopsy → Deal MC '
-        f'and emits every headline number in ~120ms.'
+        f'HCRIS X-Ray</strong> reads a hospital\'s Medicare cost report '
+        f'line by line against its peer cohort; '
+        f'<strong style="color:{PALETTE["text_primary"]};">'
+        f'CMS X-Ray</strong> resolves the same provider across every '
+        f'Medicare program it bills under. Both are live reads of public '
+        f'filings, not demo fixtures.'
         f'</div>'
         f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));'
         f'gap:12px;">{"".join(cards)}</div>'
@@ -449,9 +450,9 @@ def render_home(
         f'{n_deals} PORTFOLIO DEAL'
         f'{"S" if n_deals != 1 else ""}</div>'
         '<p class="lede">'
-        '<em>Where the partner reads the market first.</em> '
-        'Market pulse, the analyst voice\'s latest insights, and the '
-        'live portfolio in one screen. Numbers carry hover-card '
+        '<em>The market first, then what you are tracking.</em> '
+        'Market pulse, the latest generated insights, and anything you '
+        'have in the pipeline, on one screen. Numbers carry hover-card '
         'provenance so the methodology is one click away.</p>'
         '<ul class="legend">'
         '<li><span class="dot live"></span>Live data</li>'
@@ -550,9 +551,9 @@ def render_home(
             f'<div class="cad-card">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
             f'<div style="display:flex;align-items:center;gap:10px;">'
-            f'{ck_eyebrow("Portfolio Summary")}'
+            f'{ck_eyebrow("Tracked Summary")}'
             f'<span class="cad-section-code">PFS</span></div>'
-            f'<a href="/portfolio" style="font-size:10.5px;font-family:var(--cad-mono);'
+            f'<a href="/pipeline" style="font-size:10.5px;font-family:var(--cad-mono);'
             f'letter-spacing:0.06em;text-transform:uppercase;color:{PALETTE["text_link"]};">'
             f'View All &rarr;</a></div>'
             f'<div class="ck-kpi-grid">{kpi_blocks}</div></div>'
@@ -567,10 +568,10 @@ def render_home(
     deals_section = (
         f'<div class="cad-card">'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
-        f'<h2>Your Active Deals ({len(deals)})</h2>'
+        f'<h2>Tracked targets ({len(deals)})</h2>'
         f'<div>'
         f'<a href="/api/export/portfolio.csv" class="cad-btn" style="text-decoration:none;">Export CSV</a> '
-        f'<a href="/import" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ Import Deal</a>'
+        f'<a href="/new-deal" class="cad-btn cad-btn-primary" style="text-decoration:none;">+ Add a target</a>'
         f'</div></div>'
         f'<table class="cad-table">'
         f'<thead><tr><th>Deal</th><th>Stage</th><th>Denial Rate</th>'
@@ -579,9 +580,9 @@ def render_home(
         f'</div>'
         if deal_rows else
         f'<div class="cad-card">'
-        f'<h2>Your Active Deals</h2>'
+        f'<h2>Tracked targets</h2>'
         f'<p style="color:{PALETTE["text_muted"]};">No deals yet. '
-        f'<a href="/import" style="color:{PALETTE["text_link"]};">Create your first deal</a> '
+        f'<a href="/new-deal" style="color:{PALETTE["text_link"]};">Add your first target</a> '
         f'or <a href="/screen" style="color:{PALETTE["text_link"]};">screen hospitals</a>.</p>'
         f'</div>'
     )
@@ -612,19 +613,25 @@ def render_home(
     ) if n_hospitals > 0 else ""
 
     # Quick Actions — dense terminal-style launcher grid
+    # Five of these pointed at routes the 2026-08 sweeps hid: the market
+    # heatmap and the interactive regression (state maps and a
+    # build-your-own OLS), Import Deal (a pure input form), Scenarios
+    # (model plumbing) and the Predictive Screener (model output over an
+    # illustrative corpus). Replaced with the surfaces that answer the
+    # same question from filed data.
     tiles = [
+        ("XRY", "/diligence/xray", "CMS X-Ray", "Resolve any provider"),
+        ("HCR", "/diligence/hcris-xray", "HCRIS X-Ray", "Read a cost report"),
         ("TRN", "/screen?preset=turnaround", "Turnarounds", "High denial & AR hospitals"),
         ("LRG", "/screen?preset=large_cap", "Large Platforms", "300+ beds, $300M+ NPR"),
-        ("MAP", "/market-data/map", "Market Heatmap", "National hospital map"),
-        ("REG", "/portfolio/regression", "Regression", "Margin driver analysis"),
-        ("IMP", "/import", "Import Deal", "Form or JSON upload"),
+        ("TGT", "/target-screener", "Target Screener", "Every provider universe"),
+        ("SYS", "/health-system-lookup", "Health Systems", "Who operates what"),
         ("SRC", "/source", "Source Deals", "Thesis-driven matching"),
-        ("DAT", "/data", "Data Explorer", "6 public sources"),
+        ("DAT", "/data", "Data Catalog", "Every loaded source"),
+        ("DQ", "/data-quality", "Data Quality", "Coverage and gaps"),
         ("MTH", "/methodology", "Methodology", "Calculation reference"),
-        ("VRT", "/verticals", "Verticals", "ASC · BH · MSO bridges"),
-        ("SCN", "/scenarios", "Scenarios", "Rate & volume shocks"),
-        ("SCR", "/predictive-screener", "Deal Screener", "Metric presets"),
-        ("NWS", "/news", "News & Research", "Market intelligence"),
+        ("VRT", "/verticals", "Verticals", "Seven CMS programs"),
+        ("NWS", "/news", "News & Research", "Reported transactions"),
     ]
     tile_html = "".join(
         f'<a href="{href}" class="cad-quicktile">'

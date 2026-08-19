@@ -147,26 +147,30 @@ def render_app_page(
     from rcm_mc.ui._workspace_mode import current_workspace_mode, CONSULTING
     _is_consulting = current_workspace_mode() == CONSULTING
     _cc_section_label = (
-        "COMMERCIAL DILIGENCE" if _is_consulting else "PORTFOLIO & DILIGENCE"
+        "COMMERCIAL DILIGENCE" if _is_consulting else "PROVIDERS & DILIGENCE"
     )
-    _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "FUND II"
+    _cc_kicker_label = "CLIENT ENGAGEMENT" if _is_consulting else "WORKSPACE"
+    # The non-consulting lede described a fund's hold period and its
+    # covenants. Both of those cards left this page with the 2026-08-17
+    # portfolio-operations sweep, so the copy was describing a canvas
+    # that is no longer there — and assuming one kind of reader besides.
     _cc_lede = (
         ("Engagement rollup, active diligence, and the screening flow on one "
          "canvas. The morning read: what moved overnight, where the risk sits, "
          "and what the client needs next.")
         if _is_consulting
-        else ("Hold-period rollup, active diligence, and the screening flow on "
-              "one canvas. The morning read: what moved overnight, which "
-              "covenants tightened, and where the day goes.")
+        else ("What you are tracking, what moved, and the screening flow on "
+              "one canvas. The morning read: which targets changed, what "
+              "the alerts are saying, and where the day goes.")
     )
     _cc_what_summary = (
         ("How the engagement is tracking against plan, where the diligence "
          "risk is concentrating, and which workstream has drifted far enough "
          "to need a call.")
         if _is_consulting
-        else ("How the fund is tracking against plan, which deals are "
-              "tightening against their covenants, and where an initiative has "
-              "drifted far enough to need a call.")
+        else ("What is in the pipeline, what changed on the providers you "
+              "are following, and which of them has moved far enough to "
+              "need a closer read.")
     )
 
     # ── Command Center dossier grid (default since the design-fidelity pass) ──

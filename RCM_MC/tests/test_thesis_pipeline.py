@@ -276,23 +276,39 @@ class DealMCPipelineHydrationTests(unittest.TestCase):
 
 class HomeQuickstartTests(unittest.TestCase):
 
-    def test_chartis_home_quickstart_when_portfolio_empty(self):
+    def test_chartis_home_quickstart_when_nothing_tracked(self):
+        """The home page's first-run block still offers four cards.
+
+        It used to offer four RCM fixture datasets behind a "Run
+        Pipeline" CTA into /diligence/thesis-pipeline. That surface —
+        and the six others the button chained — were hidden by the
+        2026-08 sweeps, so the only call to action on the landing page
+        led into the retired product. It now offers four REAL hospitals
+        from the shipped HCRIS universe, pointed at the two X-rays.
+
+        The shape this test guards (a first-run block exists, and it
+        offers four things to open) is unchanged; what each card points
+        at is asserted in tests/test_front_door_claims.py, which checks
+        the CCNs resolve and the targets are visible surfaces.
+        """
         from rcm_mc.ui.chartis.home_page import _try_the_tool_quickstart
         html_out = _try_the_tool_quickstart()
-        self.assertIn("Try the tool", html_out)
-        # All 4 fixtures
+        self.assertIn("Start with a real hospital", html_out)
         for fx in (
             "hospital_01_clean_acute",
             "hospital_02_denial_heavy",
             "hospital_07_waterfall_concordant",
             "hospital_08_waterfall_critical",
         ):
-            self.assertIn(fx, html_out)
-        # Four Run Pipeline CTAs (one per card) + one in the
-        # explainer paragraph that names the button.
-        self.assertGreaterEqual(html_out.count("▶ Run Pipeline"), 4)
-        # Pipeline URLs
-        self.assertIn("/diligence/thesis-pipeline?dataset=", html_out)
+            self.assertNotIn(fx, html_out, f"retired fixture: {fx}")
+        self.assertNotIn("Run Pipeline", html_out)
+        self.assertNotIn("/diligence/thesis-pipeline", html_out)
+        # Still four cards, each carrying both X-ray CTAs. Counted on
+        # the hrefs rather than the labels: the explainer paragraph
+        # above the cards names both surfaces in prose too, so a label
+        # count would be 5 and 6 rather than 4 and 4.
+        self.assertEqual(html_out.count("/diligence/hcris-xray?q="), 4)
+        self.assertEqual(html_out.count("/diligence/xray?q="), 4)
 
 
 if __name__ == "__main__":
