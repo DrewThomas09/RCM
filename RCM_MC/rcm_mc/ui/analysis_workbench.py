@@ -221,6 +221,10 @@ body.analysis-workbench {{
   display: grid; grid-template-columns: 1fr auto;
   gap: 2rem; align-items: end;
 }}
+/* min-width:0 lets both hero columns compress below their intrinsic
+   width — without it the CTA column forces horizontal page scroll on
+   narrow (390px) viewports. */
+.analysis-workbench .wb-hero-row > * {{ min-width: 0; }}
 .analysis-workbench .wb-hero-name {{
   font-family: "Source Serif 4", Georgia, serif;
   font-size: 1.85rem; font-weight: 500; line-height: 1.1;
@@ -246,7 +250,7 @@ body.analysis-workbench {{
   color: rgba(250, 247, 240, 0.30); margin: 0 .15rem;
 }}
 .analysis-workbench .wb-hero-cta {{
-  display: flex; gap: .65rem; align-items: end;
+  display: flex; gap: .65rem; align-items: end; flex-wrap: wrap;
 }}
 .analysis-workbench .wb-cta-primary {{
   background: var(--sc-teal, var(--sc-teal-deep, #155752)); color: #FFFFFF;

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_bar_row, ck_value_anchor
+from rcm_mc.ui.colors import STATUS
 
 
 def _component_chart(items):
@@ -45,7 +46,8 @@ def _waterfall_svg(components, fund_moic: float) -> str:
     n_bars = len(components) + 2    # Start + components + End
     bar_w = (inner_w - (n_bars - 1) * 8) / n_bars
 
-    colors = [P["accent"], "#1F7A75", "#a78bfa", "#b8732a", "#f97316"]
+    # Semantic info navy (rcm_mc.ui.colors) replaces the off-palette violet.
+    colors = [P["accent"], "#1F7A75", STATUS["info"], "#b8732a", "#f97316"]
 
     # Build running values
     running = 1.0

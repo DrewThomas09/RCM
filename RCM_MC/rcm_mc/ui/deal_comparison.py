@@ -14,6 +14,7 @@ from __future__ import annotations
 import html
 import math
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote as _uq
 
 from ..analysis.packet import DealAnalysisPacket
 
@@ -218,8 +219,41 @@ def _render_radar(packets: List[DealAnalysisPacket]) -> str:
     )
 
 
+def _deal_option_pairs(deal_options: Any) -> "List[tuple[str, str]]":
+    """Normalize ``deal_options`` to [(deal_id, name), …].
+
+    The /compare handler passes the deal book in whatever shape it has on
+    hand — ``store.list_deals()`` (a DataFrame), a list of dicts, or plain
+    (deal_id, name) tuples. Anything unusable is dropped silently: the
+    picker is additive UX and must never break the empty state.
+    """
+    if deal_options is None:
+        return []
+    try:
+        if hasattr(deal_options, "to_dict"):  # pandas DataFrame
+            rows = deal_options.to_dict("records")
+        else:
+            rows = list(deal_options)
+    except Exception:  # noqa: BLE001 — picker is additive, never fatal
+        return []
+    pairs: "List[tuple[str, str]]" = []
+    for r in rows:
+        try:
+            if isinstance(r, dict):
+                did = str(r.get("deal_id") or r.get("id") or "")
+                name = str(r.get("name") or "") or did
+            else:
+                did, name = str(r[0]), str(r[1])
+        except Exception:  # noqa: BLE001
+            continue
+        if did:
+            pairs.append((did, name or did))
+    return pairs
+
+
 def render_comparison(packets: List[DealAnalysisPacket],
                       peer_dists: "Dict[str, List[float]] | None" = None,
+                      deal_options: Any = None,
                       ) -> str:
     """Column-per-deal table + radar chart. Used by ``GET /compare``.
 
@@ -228,6 +262,11 @@ def render_comparison(packets: List[DealAnalysisPacket],
     side-by-side of two deals still says where each sits in the full
     portfolio. ck_peer_percentile's own honesty guard handles small books
     ("peer set too small (n=K)") — nothing is fabricated for thin data.
+
+    ``deal_options`` — the deal book (see ``_deal_option_pairs`` for the
+    accepted shapes) — turns the no-selection empty state into an inline
+    picker so a comparison can start here instead of a /portfolio
+    round-trip. Omitted → the empty state keeps its portfolio link only.
     """
     from ._chartis_kit import (
         chartis_shell, ck_kpi_block, ck_next_section, ck_panel,
@@ -253,20 +292,95 @@ def render_comparison(packets: List[DealAnalysisPacket],
         return f'<div style="display:block;margin-top:2px;">{chip}</div>'
 
     if not packets:
-        body = (
-            '<div class="cad-card">'
-            '<p style="color:var(--cad-text3);margin-bottom:12px;">No deals selected for comparison.</p>'
-            '<a href="/portfolio" class="cad-btn cad-btn-primary" '
-            'style="text-decoration:none;">Go to Portfolio to select deals</a>'
-            '</div>'
-        )
+        pairs = _deal_option_pairs(deal_options)
+        if pairs:
+            boxes = "".join(
+                '<label class="cmp-pick-row">'
+                f'<input type="checkbox" name="deals" value="{_esc(did)}"> '
+                f'<span class="cmp-pick-name">{_esc(name)}</span>'
+                f'<span class="cmp-pick-id">{_esc(did)}</span>'
+                '</label>'
+                for did, name in pairs
+            )
+            # The handler compares at most 5 packets, so "Compare all"
+            # links the first 5 of the book (newest first) — never a URL
+            # that silently drops selections.
+            all_ids = _uq(",".join(did for did, _ in pairs[:5]))
+            all_label = ("Compare all" if len(pairs) <= 5
+                         else "Compare newest 5")
+            picker = (
+                '<form method="GET" action="/compare" id="cmp-pick">'
+                f'<div class="cmp-pick-list">{boxes}</div>'
+                '<div class="cmp-pick-actions">'
+                '<button type="submit" class="cad-btn cad-btn-primary">'
+                'Compare selected &rarr;</button>'
+                f'<a href="/compare?deals={all_ids}" class="cad-btn">'
+                f'{all_label}</a>'
+                '<a href="/portfolio" class="cad-btn">Portfolio</a>'
+                '</div></form>'
+                # A GET form with N checked boxes submits repeated ?deals=
+                # params, but the handler reads a single comma-separated
+                # value — so on submit the checked ids are joined into one
+                # hidden field and the boxes drop out of the submission.
+                # No-JS fallback: the first checked deal still opens.
+                '<script>(function(){'
+                'var f=document.getElementById("cmp-pick");if(!f)return;'
+                'f.addEventListener("submit",function(){'
+                'var bs=f.querySelectorAll("input[name=deals]"),ids=[],i;'
+                'for(i=0;i<bs.length;i++){if(bs[i].checked)ids.push(bs[i].value);}'
+                'if(!ids.length)return;'
+                'for(i=0;i<bs.length;i++){bs[i].disabled=true;}'
+                'var h=document.createElement("input");h.type="hidden";'
+                'h.name="deals";h.value=ids.join(",");f.appendChild(h);'
+                '});})();</script>'
+            )
+            picker_css = (
+                '<style>'
+                '.cmp-pick-list{display:grid;'
+                'grid-template-columns:repeat(auto-fill,minmax(240px,1fr));'
+                'gap:6px;margin-top:4px;}'
+                '.cmp-pick-row{display:flex;align-items:center;gap:8px;'
+                'padding:8px 10px;border:1px solid var(--cad-border,#d6cfc0);'
+                'border-radius:5px;background:var(--cad-bg3,#faf7f0);'
+                'cursor:pointer;transition:border-color 90ms;}'
+                '.cmp-pick-row:hover{border-color:var(--sc-teal,#155752);}'
+                '.cmp-pick-row:has(input:checked){'
+                'border-color:var(--sc-teal,#155752);'
+                'background:var(--sc-teal-soft,#d4e4e2);}'
+                '.cmp-pick-name{font-weight:600;font-size:13px;'
+                'color:var(--cad-text,#1a2332);}'
+                '.cmp-pick-id{margin-left:auto;'
+                'font-family:var(--sc-mono,JetBrains Mono),monospace;'
+                'font-size:9.5px;color:var(--cad-text3,#7a8699);}'
+                '.cmp-pick-actions{display:flex;gap:8px;flex-wrap:wrap;'
+                'align-items:center;margin-top:12px;}'
+                '</style>'
+            )
+            body = (
+                picker_css
+                + '<div class="cad-card">'
+                '<p style="color:var(--cad-text3);margin-bottom:12px;">'
+                'No deals selected for comparison. Pick two or more from '
+                'the deal book (up to 5):</p>'
+                + picker + '</div>'
+            )
+        else:
+            body = (
+                '<div class="cad-card">'
+                '<p style="color:var(--cad-text3);margin-bottom:12px;">No deals selected for comparison.</p>'
+                '<a href="/portfolio" class="cad-btn cad-btn-primary" '
+                'style="text-decoration:none;">Go to Portfolio to select deals</a>'
+                '</div>'
+            )
         return chartis_shell(body, "Deal Comparison",
                         subtitle="Side-by-side deal analysis",
             editorial_intro={
                 "eyebrow": "DEAL COMPARISON",
                 "headline": "Where these deals diverge.",
                 "italic_word": "diverge",
-                "body": "Pick deals from the portfolio to compare side-by-side.",
+                "body": ("Pick deals below to compare side-by-side."
+                         if pairs else
+                         "Pick deals from the portfolio to compare side-by-side."),
             })
 
     header_cells = "".join(
@@ -454,6 +568,8 @@ letter-spacing:.02em;color:var(--sc-teal-ink,#0f3d39);background:var(--sc-teal-s
 border-radius:3px;padding:3px 8px;}
 .hs-dq{opacity:.5;cursor:help;}
 .hs-field-help{font-size:9.5px;color:var(--cad-text3,#7a8699);}
+/* State input uppercases typed text only — not its "e.g. TX" placeholder. */
+#hs-f-state::placeholder{text-transform:none;}
 """
 
 
@@ -500,26 +616,42 @@ def render_screen_page(
     # with a one-line gloss. (NPR = net patient revenue; margin = operating
     # margin.) The max-beds / max-revenue ceilings are what keep a screen from
     # returning giant systems.
+    # Per-field input attributes: real numeric inputs (type=number +
+    # inputmode) so mobile keyboards show a keypad and the browser rejects
+    # "abc" instead of submitting it silently; counts step whole, percents
+    # step 0.1, margins may be negative. State gets the 2-letter contract
+    # enforced client-side.
+    _count_attrs = 'type="number" inputmode="numeric" min="0" step="1"'
+    _money_attrs = 'type="number" inputmode="decimal" min="0" step="0.1"'
+    _pct_attrs = 'type="number" inputmode="decimal" min="0" max="100" step="0.1"'
+    _margin_attrs = 'type="number" inputmode="decimal" min="-100" max="100" step="0.1"'
+    _state_attrs = ('maxlength="2" pattern="[A-Za-z]{2}" '
+                    'title="2-letter state code, e.g. TX" '
+                    'autocapitalize="characters"')
     filter_fields = [
-        ("min_beds", "Beds (min)", filters.get("min_beds", ""), "e.g. 50", "smallest bed count"),
-        ("max_beds", "Beds (max)", filters.get("max_beds", ""), "e.g. 400", "ceiling: caps giant systems"),
-        ("min_revenue", "NPR $M (min)", filters.get("min_revenue", ""), "e.g. 25", "revenue floor"),
-        ("max_revenue", "NPR $M (max)", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling"),
-        ("min_margin", "Margin % (min)", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor"),
-        ("max_margin", "Margin % (max)", filters.get("max_margin", ""), "e.g. 3", "ceiling: low = struggling"),
-        ("max_medicaid", "Medicaid % (max)", filters.get("max_medicaid", ""), "e.g. 25", "payer-mix ceiling: high = reimbursement risk"),
-        ("min_medicare", "Medicare % (min)", filters.get("min_medicare", ""), "e.g. 30", "stable-payer floor"),
-        ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code"),
+        ("min_beds", "Beds (min)", filters.get("min_beds", ""), "e.g. 50", "smallest bed count", _count_attrs),
+        ("max_beds", "Beds (max)", filters.get("max_beds", ""), "e.g. 400", "ceiling: caps giant systems", _count_attrs),
+        ("min_revenue", "NPR $M (min)", filters.get("min_revenue", ""), "e.g. 25", "revenue floor, $ millions", _money_attrs),
+        ("max_revenue", "NPR $M (max)", filters.get("max_revenue", ""), "e.g. 500", "revenue ceiling, $ millions", _money_attrs),
+        ("min_margin", "Margin % (min)", filters.get("min_margin", ""), "e.g. 0", "operating-margin floor, in % (0 = 0%)", _margin_attrs),
+        ("max_margin", "Margin % (max)", filters.get("max_margin", ""), "e.g. 3", "ceiling in % — low = struggling", _margin_attrs),
+        ("max_medicaid", "Medicaid % (max)", filters.get("max_medicaid", ""), "e.g. 25", "payer-mix ceiling: high = reimbursement risk", _pct_attrs),
+        ("min_medicare", "Medicare % (min)", filters.get("min_medicare", ""), "e.g. 30", "stable-payer floor", _pct_attrs),
+        ("state", "State", filters.get("state", ""), "e.g. TX", "2-letter code", _state_attrs),
     ]
     filter_inputs = ""
-    for name, label, val, placeholder, helptext in filter_fields:
+    for name, label, val, placeholder, helptext, attrs in filter_fields:
+        fid = f"hs-f-{name}"
+        # State reads uppercase even when typed lowercase (matches its
+        # pattern hint); everything else keeps the shared input style.
+        extra_style = "text-transform:uppercase;" if name == "state" else ""
         filter_inputs += (
             f'<div>'
-            f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
+            f'<label for="{fid}" style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
             f'{_esc(label)}</label>'
-            f'<input name="{name}" value="{_esc(val)}" placeholder="{_esc(placeholder)}" '
+            f'<input id="{fid}" name="{name}" {attrs} value="{_esc(val)}" placeholder="{_esc(placeholder)}" '
             f'style="width:100%;padding:7px 10px;border:1px solid var(--cad-border);'
-            f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
+            f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;{extra_style}">'
             f'<div class="hs-field-help">{_esc(helptext)}</div></div>'
         )
 
@@ -537,9 +669,9 @@ def render_screen_page(
         # row when the auto-fit columns are narrow) so options like
         # "Margin (most distressed first)" render untruncated.
         f'<div style="grid-column:1/-1;min-width:220px;max-width:320px;">'
-        f'<label style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
+        f'<label for="hs-f-sort" style="font-size:11px;color:{PALETTE["text_muted"]};display:block;margin-bottom:2px;">'
         f'Sort by</label>'
-        f'<select name="sort" aria-label="Sort by" style="width:100%;min-width:220px;padding:7px 10px;border:1px solid var(--cad-border);'
+        f'<select id="hs-f-sort" name="sort" aria-label="Sort by" style="width:100%;min-width:220px;padding:7px 10px;border:1px solid var(--cad-border);'
         f'border-radius:6px;background:var(--cad-bg3);color:var(--cad-text);font-size:13px;">'
         + "".join(
             f'<option value="{v}"{" selected" if v == sort_val else ""}>{_esc(lbl)}</option>'

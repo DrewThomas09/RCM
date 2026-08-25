@@ -224,12 +224,18 @@ def _oon_benchmark_panel() -> str:
 
     border = P["border"]; tprim = P["text"]; tdim = P["text_dim"]; acc = P["accent"]
     top = df.sort_values("hospital_pct_medicare", ascending=False).head(6)
+    # Full names with CSS ellipsis (a div wrapper — max-width on a td is
+    # unreliable in auto table layout). The table is width:auto and the
+    # trailing cells carry no % width (a % width in an auto-layout table
+    # forces it to expand to the container) so county + value hug the name
+    # instead of spreading across the panel.
     rows = "".join(
         f'<tr>'
-        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">{_html.escape(str(t.organization_name)[:32])}</td>'
-        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim}">{_html.escape(str(t.county))}</td>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:11px;color:{tprim}">'
+        f'<div style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{_html.escape(str(t.organization_name))}</div></td>'
+        f'<td style="padding:3px 8px;font-family:JetBrains Mono,monospace;font-size:10px;color:{tdim};white-space:nowrap">{_html.escape(str(t.county))}</td>'
         f'<td style="padding:3px 8px;text-align:right;font-family:JetBrains Mono,monospace;font-size:11px;'
-        f'font-variant-numeric:tabular-nums;color:{tprim}">{t.hospital_pct_medicare:.2f}x</td>'
+        f'font-variant-numeric:tabular-nums;color:{tprim};white-space:nowrap">{t.hospital_pct_medicare:.2f}x</td>'
         f'</tr>'
         for t in top.itertuples() if t.hospital_pct_medicare == t.hospital_pct_medicare
     )
@@ -252,7 +258,7 @@ def _oon_benchmark_panel() -> str:
     </div>
     <div>
       <div style="font-size:9px;color:{P["text_faint"]};margin-bottom:4px">HIGHEST COMMERCIAL-%-OF-MEDICARE PROVIDERS</div>
-      <table style="width:100%;border-collapse:collapse">{rows}</table>
+      <table style="width:auto;border-collapse:collapse">{rows}</table>
     </div>
   </div>
   <div style="margin-top:8px;font-size:10px;color:{P["text_faint"]}">

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html as _html
 
 from rcm_mc.ui._chartis_kit import P, chartis_shell, ck_kpi_block, ck_data_cell, ck_page_title, ck_value_anchor, ck_illustrative_note
+from rcm_mc.ui.colors import STATUS
 
 
 def _structure_comparison_svg(structures) -> str:
@@ -66,7 +67,8 @@ def _allocation_donut_svg(alloc: dict, ev_mm: float) -> str:
     r_outer, r_inner = 80, 55
 
     bg = P["panel"]; text_dim = P["text_dim"]
-    colors = [P["accent"], "#1F7A75", "#a78bfa", P["warning"], P["positive"], P["negative"]]
+    # Semantic info navy (rcm_mc.ui.colors) replaces the off-palette violet.
+    colors = [P["accent"], "#1F7A75", STATUS["info"], P["warning"], P["positive"], P["negative"]]
 
     total = sum(alloc.values()) or 1
     segs = []

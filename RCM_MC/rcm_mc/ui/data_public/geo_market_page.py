@@ -28,14 +28,17 @@ def _markets_scatter(items):
 
 
 def _tier_distribution_svg(priority: int, watch: int, secondary: int, avoid: int) -> str:
-    w, h = 540, 80
+    """Stacked tier bar + legend row. Counts live in a legend beneath the bar
+    (the /portfolio HEALTH DISTRIBUTION idiom) — tiny white-in-segment labels
+    on amber/red failed contrast; segments keep a native <title> tooltip."""
+    w, h = 540, 60
     pad_l, pad_r, pad_t = 20, 20, 30
     inner_w = w - pad_l - pad_r
     bar_h = 28
 
     total = priority + watch + secondary + avoid or 1
 
-    bg = P["panel"]; text_dim = P["text_dim"]; text = P["text"]
+    bg = P["panel"]; text_dim = P["text_dim"]
 
     segments = [
         ("Priority", priority, P["positive"]),
@@ -51,14 +54,17 @@ def _tier_distribution_svg(priority: int, watch: int, secondary: int, avoid: int
         if seg_w < 1:
             continue
         segs.append(
-            f'<rect x="{x:.1f}" y="{pad_t}" width="{seg_w:.1f}" height="{bar_h}" fill="{color}" opacity="0.88"/>'
+            f'<rect x="{x:.1f}" y="{pad_t}" width="{seg_w:.1f}" height="{bar_h}" fill="{color}" opacity="0.88">'
+            f'<title>{label}: {count} CBSAs · {count / total * 100:.0f}%</title></rect>'
         )
-        if seg_w > 60:
-            segs.append(
-                f'<text x="{x + seg_w / 2:.1f}" y="{pad_t + bar_h / 2 + 4}" fill="{text}" font-size="10" '
-                f'text-anchor="middle" font-family="JetBrains Mono,monospace;font-weight:600">{label}: {count}</text>'
-            )
         x += seg_w
+
+    legend = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:6px;margin-right:18px">'
+        f'<span style="width:9px;height:9px;background:{color};display:inline-block"></span>'
+        f'{label.upper()} · {count} ({count / total * 100:.0f}%)</span>'
+        for label, count, color in segments
+    )
 
     return (
         f'<svg viewBox="0 0 {w} {h}" width="100%" style="max-width:{w}px" xmlns="http://www.w3.org/2000/svg">'
@@ -66,6 +72,8 @@ def _tier_distribution_svg(priority: int, watch: int, secondary: int, avoid: int
         + "".join(segs) +
         f'<text x="{pad_l}" y="18" fill="{text_dim}" font-size="10" font-family="Inter,sans-serif">Market Tier Distribution ({total} CBSAs)</text>'
         f'</svg>'
+        f'<div style="margin-top:6px;font-size:10.5px;color:{text_dim};'
+        f'font-family:JetBrains Mono,monospace">{legend}</div>'
     )
 
 

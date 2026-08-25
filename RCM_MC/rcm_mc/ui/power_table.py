@@ -26,6 +26,13 @@ All interactivity is **vanilla JS** — no dependencies, no
 client-side framework. Each component instance is namespaced by
 ``table_id`` so multiple power tables can coexist on one page.
 
+NOTE — not the house standard: no live route renders this component
+today. New pages should reach for the editorial kit's
+``ck_data_table`` (with the shell's built-in click-to-sort) or
+``power_ui.sortable_table`` instead; this module stays only as a
+self-contained column-toggle/filter reference and should be routed
+through the ck classes before any page adopts it.
+
 Public API::
 
     Column                # column-config dataclass
@@ -109,9 +116,10 @@ def _format_cell(value: Any, kind: str) -> str:
 
 
 def _color_for_kind(kind: str) -> str:
-    return ("var(--border)" if kind in
-            ("number", "money", "pct", "int")
-            else "var(--ink)")
+    # Numeric cells must wear an ink token: var(--border) resolves to
+    # the hairline-rule color (#D6CFC0 in chartis tokens) — near-
+    # invisible numerals on paper for any page adopting this table.
+    return "var(--ink)"
 
 
 # Inline JS — namespaced by table_id so multiple tables coexist.
@@ -219,14 +227,16 @@ _TABLE_JS = """
           var formatted = r["_fmt_" + c.key] != null ?
             r["_fmt_" + c.key] :
             (v == null ? "" : String(v));
+          // Numeric cells: ink (never the hairline var(--border)
+          // token, which is near-invisible on paper) + the house
+          // mono stack to match .cad-table td.num.
           html += '<td style="padding:10px 14px;' +
             'border-bottom:1px solid var(--border);' +
             'text-align:' + (c.align || "left") + ';' +
-            'color:' + (isNumeric(c.kind) ?
-              "var(--border)" : "var(--ink)") + ';' +
-            'font-variant-numeric:' +
+            'color:var(--ink);' +
             (isNumeric(c.kind) ?
-              "tabular-nums" : "normal") + ';">' +
+              'font-family:"JetBrains Mono",ui-monospace,monospace;' +
+              'font-variant-numeric:tabular-nums;' : '') + '">' +
             escapeHtml(formatted) + "</td>";
         });
         html += "</tr>";

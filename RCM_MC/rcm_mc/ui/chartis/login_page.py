@@ -184,7 +184,9 @@ def _next_qs(next_url: str, *, extra: str = "") -> str:
     return ("?" + "&".join(parts)) if parts else ""
 
 
-def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
+def _render_signin_form(
+    *, error: Optional[str], next_url: str, username_prefill: str = "",
+) -> str:
     err_html = (
         f'<div class="pd-login-error" role="alert">{_html.escape(error)}</div>'
         if error else ""
@@ -193,6 +195,16 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         f'<input type="hidden" name="next" value="{_html.escape(next_url, quote=True)}"/>'
         if next_url and next_url != "/" else ""
     )
+    # After a failed attempt the server redirects with ?u=<username> so a
+    # password typo doesn't force retyping the email. When the username is
+    # already filled in, autofocus moves to the password field — the one the
+    # partner actually needs to fix.
+    prefill_attr = (
+        f' value="{_html.escape(username_prefill, quote=True)}"'
+        if username_prefill else ""
+    )
+    email_focus = "" if username_prefill else " autofocus"
+    pw_focus = " autofocus" if username_prefill else ""
     return (
         '<div id="signInForm">'
         f'{err_html}'
@@ -205,12 +217,13 @@ def _render_signin_form(*, error: Optional[str], next_url: str) -> str:
         # keyboard helpful for the common email case.
         '<input type="text" id="login-email" name="username" '
         'placeholder="you@firm.com" required '
-        'inputmode="email" autocomplete="username" autofocus/>'
+        f'inputmode="email" autocomplete="username"{prefill_attr}{email_focus}/>'
         '</div>'
         '<div class="pd-login-field pd-login-pw">'
         '<label for="login-password">Password</label>'
         '<input type="password" id="login-password" name="password" '
-        'placeholder="••••••••••••" required autocomplete="current-password"/>'
+        'placeholder="••••••••••••" required '
+        f'autocomplete="current-password"{pw_focus}/>'
         '<button type="button" class="pd-login-show" data-pl-show '
         'aria-label="Show password" aria-pressed="false">Show</button>'
         '</div>'
@@ -286,6 +299,7 @@ def render_login_page(
     error: Optional[str] = None,
     request_success: bool = False,
     next_url: str = "/",
+    username_prefill: str = "",
 ) -> str:
     """Editorial /login — centered-card design.
 
@@ -294,11 +308,16 @@ def render_login_page(
       error: inline error block above the form when set.
       request_success: confirmation block in the request tab.
       next_url: redirect target, echoed into a hidden field for /api/login.
+      username_prefill: username echoed back (via ?u=) after a failed
+        attempt so the partner only re-enters the password.
     """
     is_request_tab = (tab == "request")
     form_html = (
         _render_request_form(success=request_success) if is_request_tab
-        else _render_signin_form(error=error, next_url=next_url)
+        else _render_signin_form(
+            error=error, next_url=next_url,
+            username_prefill=username_prefill,
+        )
     )
 
     signin_href = "/login" + _next_qs(next_url)

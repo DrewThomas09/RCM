@@ -300,14 +300,29 @@ def _render_heat_grid(
     *,
     quarters: List[str],
 ) -> str:
-    """6×8 heatmap viz."""
+    """6×N heatmap viz (N = len(quarters); 8 in the full view).
+
+    The stylesheet's ``.app-cov-heat .row`` template hardcodes 8 quarter
+    columns; when the caller trims empty leading quarters (so the grid
+    fits a half-width command-center card) each row carries an inline
+    template override sized to the actual column count.
+    """
+    n = len(quarters)
+    # minmax(0,1fr) (vs the stylesheet's plain 1fr) lets quarter cells shrink
+    # below min-content, so the Trend column stays inside a narrow embed
+    # instead of clipping past the card edge.
+    row_style = (
+        "" if n == 8
+        else (' style="grid-template-columns:200px '
+              f'repeat({n},minmax(0,1fr)) 80px"')
+    )
     # Header row
     head_cells = "".join(
         f'<div class="cell">{_html.escape(q)}</div>'
         for q in quarters
     )
     head = (
-        '<div class="row head">'
+        f'<div class="row head"{row_style}>'
         '<div class="cell first">Covenant</div>'
         f'{head_cells}'
         '<div class="cell trend">Trend</div>'
@@ -319,10 +334,10 @@ def _render_heat_grid(
     for row in rows:
         cells_html = "".join(
             f'<div class="cell {band}">{_html.escape(label)}</div>'
-            for band, label in row["cells"]
+            for band, label in row["cells"][-n:]
         )
         data_rows.append(
-            '<div class="row">'
+            f'<div class="row"{row_style}>'
             f'<div class="name">{_html.escape(row["name"])}'
             f'<span class="sub">{_html.escape(row["sub"])}</span></div>'
             f'{cells_html}'
@@ -413,6 +428,22 @@ def render_covenant_heatmap(
         for row in rows
     )
 
+    # Trim to the trailing 6 quarters when the two oldest columns carry no
+    # data anywhere in the grid. Cells pad left (empties first), so a young
+    # deal's only populated quarters sit at the RIGHT edge — in the
+    # half-width command-center embed the full 8-column grid overflowed and
+    # the scroll container opened at scrollLeft=0, hiding the one populated
+    # column and making the card look 100% dead. Slicing only ever drops
+    # all-empty columns, so the paired state-counts table is unaffected.
+    lead_empty = min(
+        (next((i for i, (band, _) in enumerate(row["cells"])
+               if band != "empty"), len(row["cells"]))
+         for row in rows),
+        default=0,
+    )
+    if lead_empty >= 2:
+        quarters = quarters[-6:]
+
     eyebrow = ""
     if all_empty:
         eyebrow = (
@@ -447,7 +478,7 @@ def render_covenant_heatmap(
 
     return pair_block(
         viz_html,
-        label="COVENANT BANDS · 6 × 8Q",
+        label=f"COVENANT BANDS · 6 × {len(quarters)}Q",
         source="deal_snapshots",
         data_table=_render_state_counts_table(rows),
     )

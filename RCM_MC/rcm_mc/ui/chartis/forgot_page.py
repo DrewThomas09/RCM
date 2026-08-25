@@ -100,7 +100,12 @@ def render_forgot_page(
             'Send recovery link →</button>'
             '</form>'
             '</div>'
+            # Both exits: back to /login for the partner who clicked
+            # "Forgot password?" by mistake (otherwise this page dead-ends),
+            # plus the existing request-access path.
             '<p class="help">'
+            '<a href="/login">← Back to sign in</a>'
+            ' · '
             "Don't have an account? "
             '<a href="/login?tab=request">Request access</a>'
             '</p>'
@@ -108,9 +113,10 @@ def render_forgot_page(
 
     inner = (
         '<div class="stage">'
-        '<div class="eyebrow"><span>ACCOUNT RECOVERY</span>'
-        '<span style="color:var(--faint);margin:0 .35rem">·</span>'
-        '<span class="slug">/reset</span></div>'
+        # No route slug here — internal jargon like "/reset" was scrubbed
+        # from partner-facing chrome everywhere else, and /login's eyebrow
+        # carries no slug either.
+        '<div class="eyebrow"><span>ACCOUNT RECOVERY</span></div>'
         '<h1>Reset your<br/><em>password</em>.</h1>'
         '<p class="lede">Enter the email associated with your partner '
         "instance. We'll send a one-time recovery link.</p>"

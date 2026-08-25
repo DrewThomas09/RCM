@@ -200,15 +200,23 @@ def render_predictive_screener(
         max_beds = max(0, min(9999, int((qs.get("max_beds") or ["9999"])[0])))
     except (ValueError, TypeError):
         max_beds = 9999
-    try:
-        max_margin = max(-2, min(2, float((qs.get("max_margin") or ["1"])[0])))
-    except (ValueError, TypeError):
-        max_margin = 1.0
-    _min_margin_raw = (qs.get("min_margin") or [""])[0]
-    try:
-        min_margin = max(-2, min(2, float(_min_margin_raw))) if _min_margin_raw else None
-    except (ValueError, TypeError):
-        min_margin = None
+    def _parse_margin(raw: str) -> Optional[float]:
+        # Margin filters accept BOTH unit styles so the form can be labeled
+        # in percent (matching /screen) without breaking old bookmarks and
+        # saved screens that carry decimal fractions: |v| > 1 is
+        # unambiguously percent ("-5" → -0.05), |v| ≤ 1 stays a fraction
+        # ("-0.05" → -0.05; "1" keeps its no-filter sentinel meaning).
+        try:
+            v = float(raw)
+        except (ValueError, TypeError):
+            return None
+        if abs(v) > 1:
+            v = v / 100.0
+        return max(-1.0, min(1.0, v))
+
+    _max_margin_parsed = _parse_margin((qs.get("max_margin") or ["1"])[0])
+    max_margin = _max_margin_parsed if _max_margin_parsed is not None else 1.0
+    min_margin = _parse_margin((qs.get("min_margin") or [""])[0])
     try:
         min_uplift = max(0, float((qs.get("min_uplift") or ["0"])[0]))
     except (ValueError, TypeError):
@@ -270,26 +278,43 @@ def render_predictive_screener(
     def _sel(opt_val, current):
         return ' selected' if opt_val == current else ''
 
+    # Margin fields are labeled and displayed in PERCENT — the same unit
+    # the sibling /screen form uses — while the internal filter value stays
+    # a fraction ({:g} trims "-5.0" → "-5"). Every field gets a for/id pair
+    # (clicking the label focuses the input) and a one-line unit gloss
+    # mirroring /screen's .hs-field-help.
+    _min_margin_val = f"{min_margin * 100:g}" if min_margin is not None else ""
+    _max_margin_val = f"{max_margin * 100:g}" if max_margin < 1 else ""
+
+    def _help(text: str) -> str:
+        return f'<div class="ps-field-help">{text}</div>'
+
     form = ck_panel(
         '<form method="GET" action="/predictive-screener" class="cad-form-row">'
         '<div class="cad-field">'
-        '<label>Region</label>'
-        f'<select name="region" class="cad-select ps-select-md" aria-label="Region">{region_opts}</select>'
+        '<label for="ps-region">Region</label>'
+        f'<select id="ps-region" name="region" class="cad-select ps-select-md">{region_opts}</select>'
         '</div>'
-        '<div class="cad-field"><label>Min Beds</label>'
-        f'<input class="cad-input ps-input-sm" type="number" name="min_beds" value="{min_beds}" min="0" aria-label="Min Beds"></div>'
-        '<div class="cad-field"><label>Max Beds</label>'
-        f'<input class="cad-input ps-input-sm" type="number" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999"></div>'
-        '<div class="cad-field"><label>Min Margin</label>'
-        f'<input class="cad-input ps-input-md" type="number" name="min_margin" value="{min_margin if min_margin is not None else ""}" step="0.01" placeholder="-0.05"></div>'
-        '<div class="cad-field"><label>Max Margin</label>'
-        f'<input class="cad-input ps-input-md" type="number" name="max_margin" value="{max_margin if max_margin < 1 else ""}" step="0.01" placeholder="0.05"></div>'
-        '<div class="cad-field"><label>State</label>'
-        f'<input class="cad-input ps-input-sm" type="text" name="state" value="{_html.escape(state_filter)}" maxlength="2" placeholder="TX"></div>'
-        '<div class="cad-field"><label>Min Uplift ($)</label>'
-        f'<input class="cad-input ps-input-lg" type="number" name="min_uplift" value="{int(min_uplift) if min_uplift > 0 else ""}" placeholder="3000000"></div>'
-        '<div class="cad-field"><label>Sort By</label>'
-        '<select name="sort" class="cad-select ps-select-md" aria-label="Sort By">'
+        '<div class="cad-field"><label for="ps-min-beds">Min Beds</label>'
+        f'<input id="ps-min-beds" class="cad-input ps-input-sm" type="number" inputmode="numeric" step="1" name="min_beds" value="{min_beds}" min="0">'
+        f'{_help("bed count floor")}</div>'
+        '<div class="cad-field"><label for="ps-max-beds">Max Beds</label>'
+        f'<input id="ps-max-beds" class="cad-input ps-input-sm" type="number" inputmode="numeric" step="1" min="0" name="max_beds" value="{max_beds if max_beds < 9999 else ""}" placeholder="9999">'
+        f'{_help("bed count ceiling")}</div>'
+        '<div class="cad-field"><label for="ps-min-margin">Min Margin (%)</label>'
+        f'<input id="ps-min-margin" class="cad-input ps-input-md" type="number" inputmode="decimal" name="min_margin" value="{_min_margin_val}" step="0.1" min="-100" max="100" placeholder="-5">'
+        f'{_help("in %: -5 = -5% margin")}</div>'
+        '<div class="cad-field"><label for="ps-max-margin">Max Margin (%)</label>'
+        f'<input id="ps-max-margin" class="cad-input ps-input-md" type="number" inputmode="decimal" name="max_margin" value="{_max_margin_val}" step="0.1" min="-100" max="100" placeholder="5">'
+        f'{_help("in %: 5 = 5% margin")}</div>'
+        '<div class="cad-field"><label for="ps-state">State</label>'
+        f'<input id="ps-state" class="cad-input ps-input-sm" type="text" name="state" value="{_html.escape(state_filter)}" maxlength="2" pattern="[A-Za-z]{{2}}" autocapitalize="characters" style="text-transform:uppercase;" placeholder="TX">'
+        f'{_help("2-letter code")}</div>'
+        '<div class="cad-field"><label for="ps-min-uplift">Min Uplift ($)</label>'
+        f'<input id="ps-min-uplift" class="cad-input ps-input-lg" type="number" inputmode="numeric" min="0" name="min_uplift" value="{int(min_uplift) if min_uplift > 0 else ""}" placeholder="3000000">'
+        f'{_help("in $: 3000000 = $3M/yr")}</div>'
+        '<div class="cad-field"><label for="ps-sort">Sort By</label>'
+        '<select id="ps-sort" name="sort" class="cad-select ps-select-md">'
         f'<option value="est_uplift"{_sel("est_uplift", sort_by)}>Est. Uplift (high&rarr;low)</option>'
         f'<option value="est_denial"{_sel("est_denial", sort_by)}>Est. Denial Rate</option>'
         f'<option value="est_ar_days"{_sel("est_ar_days", sort_by)}>Est. AR Days</option>'
@@ -529,13 +554,15 @@ def render_predictive_screener(
     )
 
     # ── Quick screens ──
+    # Margin params in percent — the unit the form is labeled in (legacy
+    # fraction links still parse; see _parse_margin).
     quick = ck_panel(
         '<p class="ck-section-body">'
-        '<a href="/predictive-screener?region=Southeast&min_beds=200&max_beds=400&max_margin=0.05&min_uplift=3000000" class="cad-btn">SE · 200-400 · &gt;$3M</a> '
+        '<a href="/predictive-screener?region=Southeast&min_beds=200&max_beds=400&max_margin=5&min_uplift=3000000" class="cad-btn">SE · 200-400 · &gt;$3M</a> '
         '<a href="/predictive-screener?min_beds=100&max_margin=0&sort=est_uplift" class="cad-btn">Neg margin · 100+</a> '
         '<a href="/predictive-screener?region=Midwest&min_beds=50&max_beds=200&sort=est_denial" class="cad-btn">Midwest · small</a> '
         '<a href="/predictive-screener?min_beds=300&sort=est_uplift" class="cad-btn">Large · max uplift</a> '
-        '<a href="/predictive-screener?max_margin=-0.05&sort=operating_margin" class="cad-btn">Distressed · &lt;-5%</a>'
+        '<a href="/predictive-screener?max_margin=-5&sort=operating_margin" class="cad-btn">Distressed · &lt;-5%</a>'
         '</p>',
         title="Quick Screens",
     )
@@ -565,6 +592,9 @@ def render_predictive_screener(
 .ps-input-sm{width:82px;}
 .ps-input-md{width:92px;}
 .ps-input-lg{width:120px;}
+/* Unit gloss under each filter — mirrors /screen's .hs-field-help so the
+   sibling screeners read the same. */
+.ps-field-help{font-size:9.5px;color:var(--cad-text3,#7a8699);margin-top:2px;}
 .ps-pipe-form{display:inline;margin:0;}
 .ps-pipe-btn{padding:2px 8px;font-size:10px;cursor:pointer;
 transition:filter 120ms ease;}

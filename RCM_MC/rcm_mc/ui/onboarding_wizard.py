@@ -255,7 +255,9 @@ def render_step1(query: str = "") -> str:
         ),
     )
     search_panel = ck_panel(
-        f'<input type="search" id="wiz-search" placeholder="e.g. Mercy Regional, CA" autocomplete="off" value="{prefill_query}"/>'
+        f'<input type="search" id="wiz-search" '
+        f'aria-label="Search hospitals by name, 6-digit CCN, or Name, ST" '
+        f'placeholder="e.g. Mercy Regional, CA" autocomplete="off" value="{prefill_query}"/>'
         '<div id="wiz-matches" class="ow-mt-12" aria-live="polite" aria-busy="false" aria-label="Search results"></div>'
         '<div class="empty-hint" id="wiz-hint" role="status" aria-live="polite" aria-atomic="true">Type at least 3 characters to search.</div>',
         title="Hospital lookup",
@@ -265,11 +267,18 @@ def render_step1(query: str = "") -> str:
         "<p class=\"ck-section-body\"><strong>Don't see your hospital?</strong></p>"
         '<div class="grid2">'
         '<label>Name<input type="text" name="name" required></label>'
-        '<label>State (2-letter)<input type="text" name="state" maxlength="2"></label>'
-        '<label>Bed count<input type="number" name="bed_count" min="1"></label>'
-        '<label>Medicare %<input type="number" step="0.01" name="medicare_pct"></label>'
-        '<label>Medicaid %<input type="number" step="0.01" name="medicaid_pct"></label>'
-        '<label>Commercial %<input type="number" step="0.01" name="commercial_pct"></label>'
+        # pattern + uppercase transform: state codes are stored uppercase;
+        # typing "ca" reads back as "CA" and non-letter input fails
+        # browser validation instead of reaching the handler.
+        '<label>State (2-letter)<input type="text" name="state" maxlength="2" '
+        'pattern="[A-Za-z]{2}" title="Two-letter state code, e.g. CA" '
+        'style="text-transform:uppercase"></label>'
+        # Bounds keep obvious typos (400% Medicare, 50,000 beds) from
+        # passing browser validation on the manual-entry path.
+        '<label>Bed count<input type="number" name="bed_count" min="1" max="5000"></label>'
+        '<label>Medicare %<input type="number" step="0.01" min="0" max="100" name="medicare_pct"></label>'
+        '<label>Medicaid %<input type="number" step="0.01" min="0" max="100" name="medicaid_pct"></label>'
+        '<label>Commercial %<input type="number" step="0.01" min="0" max="100" name="commercial_pct"></label>'
         '</div>'
         '<p class="ck-section-body">'
         '<button class="btn secondary" type="submit">Continue with manual entry →</button>'
@@ -308,7 +317,20 @@ def render_step1(query: str = "") -> str:
           const input = document.createElement('input');
           input.type = 'hidden'; input.name = 'ccn'; input.value = ccn;
           form.appendChild(input);
-          document.body.appendChild(form); form.submit();
+          // Programmatic form.submit() skips the 'submit' event, so the
+          // kit's CSRF injector (_chartis_kit._CSRF_JS) never adds
+          // csrf_token and the server 403s. Read the rcm_csrf cookie
+          // here (same convention as the injector), then requestSubmit()
+          // so the injector still runs where supported.
+          const m = document.cookie.match(/(?:^|; )rcm_csrf=([^;]*)/);
+          if (m) {{
+            const tok = document.createElement('input');
+            tok.type = 'hidden'; tok.name = 'csrf_token';
+            tok.value = decodeURIComponent(m[1]);
+            form.appendChild(tok);
+          }}
+          document.body.appendChild(form);
+          if (form.requestSubmit) form.requestSubmit(); else form.submit();
         }}
         function search() {{
           const q = input.value.trim();

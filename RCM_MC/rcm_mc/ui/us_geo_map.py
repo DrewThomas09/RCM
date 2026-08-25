@@ -61,7 +61,11 @@ _CSS = """
  text-transform:uppercase;}}
 #{cid} .usgeo-legend .it{{display:inline-flex;align-items:center;gap:6px;}}
 #{cid} .usgeo-legend .sw{{width:14px;height:14px;border:1px solid var(--sc-rule,#c9c1ac);}}
-#{cid} .usgeo-legend .sw.grad{{background:linear-gradient(90deg,rgb(214,232,223),rgb(24,87,63));width:48px;}}
+#{cid} .usgeo-legend .sw.grad{{background:linear-gradient(90deg,rgb(214,232,223),rgb(24,87,63));width:72px;}}
+#{cid} .usgeo-legend .gv{{font-family:var(--sc-mono,monospace);font-size:10px;
+ color:var(--sc-text-dim,#465366);letter-spacing:0;text-transform:none;}}
+#{cid} .usgeo-legend .gradcol{{display:inline-flex;flex-direction:column;
+ align-items:center;gap:1px;}}
 #{cid} .usgeo-legend .sw.con{{background:transparent;border:2px solid {ac};}}
 #{cid} .usgeo-legend .sw.sel{{background:transparent;border:2px solid var(--sc-navy,#0b2341);}}
 #{cid} .usgeo-caveat{{font-family:var(--sc-serif,Georgia,serif);font-style:italic;
@@ -180,10 +184,29 @@ def render_us_geo_map(
         + "".join(paths) + inset_labels + "</svg>"
     )
 
+    # Numeric anchors on the gradient: an unlabeled LOW → HIGH swatch is
+    # uninterpretable — on a signed metric (operating margin spanning
+    # -15% … +3%) the darkest shade can be the *worst* states, so the
+    # formatted lo / midpoint / hi endpoints are load-bearing, not
+    # decoration. Only rendered when there is data to anchor.
+    if has_data:
+        mid = (lo + hi) / 2.0
+        grad_item = (
+            '<span class="it">'
+            f'<span class="gv">{_esc(fmt(lo))}</span>'
+            '<span class="gradcol"><span class="sw grad"></span>'
+            f'<span class="gv">{_esc(fmt(mid))}</span></span>'
+            f'<span class="gv">{_esc(fmt(hi))}</span>'
+            f'&nbsp;{exposure_label}</span>'
+        )
+    else:
+        grad_item = (
+            f'<span class="it"><span class="sw grad"></span>{exposure_label}</span>'
+        )
     legend = (
         '<div class="usgeo-legend">'
         f'<span class="it"><span class="sw" style="background:{_NODATA}"></span>No data</span>'
-        f'<span class="it"><span class="sw grad"></span>{exposure_label}</span>'
+        + grad_item +
         f'<span class="it"><span class="sw con"></span>{_esc(accent_label)}</span>'
         '<span class="it"><span class="sw sel"></span>Selected state</span>'
         '</div>'

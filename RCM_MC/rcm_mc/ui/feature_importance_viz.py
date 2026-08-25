@@ -69,7 +69,7 @@ def render_importance_bar_chart(
     if not importances:
         return (
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#465366);'
+            'border:1px solid var(--sc-rule,#d6cfc0);'
             'border-radius:8px;padding:1.5rem;text-align:center;'
             'color:var(--muted,#9b9382);font-size:.85rem;">'
             'No feature importance data.</div>')
@@ -99,14 +99,31 @@ def render_importance_bar_chart(
     for i, imp in enumerate(items):
         y = 30 + i * (bar_height + bar_gap)
         bar_len = abs(imp.raw_value) / max_abs * half_chart
+        val_text = (f"{imp.raw_value:+.3f} · "
+                    f"{imp.relative:.0%}")
+        # ~6px/char at 10px monospace — used to detect captions that
+        # would run off the chart or into the feature-name column.
+        est_w = 6.0 * len(val_text)
         if imp.direction == "negative":
             x_start = center_x - bar_len
             x_text = center_x - bar_len - 4
             text_anchor = "end"
+            # A near-full-length negative bar pushes the caption into
+            # the right-aligned feature-name column and both overprint.
+            # The opposite half of the row is always empty (one signed
+            # bar per row), so park the caption just right of the axis.
+            if x_text - est_w < label_col_w + 4:
+                x_text = center_x + 6
+                text_anchor = "start"
         else:
             x_start = center_x
             x_text = center_x + bar_len + 4
             text_anchor = "start"
+            # Mirrored rule: a near-full-length positive bar would run
+            # the caption past the SVG's right edge and clip.
+            if x_text + est_w > width - 4:
+                x_text = center_x - 6
+                text_anchor = "end"
         color = _bar_color(imp.direction)
         # Label (left)
         label = _html.escape(imp.feature[:30])
@@ -122,8 +139,6 @@ def render_importance_bar_chart(
             f'width="{bar_len}" height="{bar_height}" '
             f'fill="{color}" rx="2" />')
         # Value text
-        val_text = (f"{imp.raw_value:+.3f} · "
-                    f"{imp.relative:.0%}")
         rows.append(
             f'<text x="{x_text}" y="{y + 14}" '
             f'fill="#7a8699" font-size="10" '
@@ -137,12 +152,17 @@ def render_importance_bar_chart(
         f'x2="{center_x}" y2="{height - 8}" '
         f'stroke="{_AXIS_COLOR}" stroke-width="1" />')
 
+    # width=100% + viewBox (not a fixed pixel width) so the chart
+    # scales down inside narrow wells instead of overflowing; the
+    # max-width keeps it at nominal size on wide viewports.
     return (
         '<div style="background:var(--paper,#F2EDE3);'
-        'border:1px solid var(--border,#465366);'
+        'border:1px solid var(--sc-rule,#d6cfc0);'
         'border-radius:8px;padding:.9rem;margin-bottom:.9rem;">'
         f'<svg viewBox="0 0 {width} {height}" '
-        f'width="{width}" height="{height}">'
+        f'width="100%" style="max-width:{width}px;display:block" '
+        f'preserveAspectRatio="xMidYMid meet" '
+        f'role="img" aria-label="{_html.escape(title or "Feature importance")}">'
         f'{title_html}{axis}'
         f'{"".join(rows)}</svg></div>')
 
@@ -179,7 +199,7 @@ def render_feature_importance_page(
     if not model_importances:
         catalog_body = (
             '<div style="background:var(--paper,#F2EDE3);'
-            'border:1px solid var(--border,#465366);'
+            'border:1px solid var(--sc-rule,#d6cfc0);'
             'border-radius:8px;padding:2.5rem;text-align:center;'
             'color:var(--muted,#9b9382);">'
             'No model importance data — train models and build '
