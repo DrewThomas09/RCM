@@ -31,6 +31,8 @@ Public API:
     demand_source_matrix() -> DemandSourceMatrix
     demand_drivers() -> DemandDrivers
     demand_evidence() -> Tuple[Evidence, ...]   (verbatim quote + link per figure)
+    demand_trends() -> DemandTrends             (real year-by-year series)
+    demand_data_estate() -> DataEstate          (live connectors + cadence)
     demand_time_series() -> DemandTimeSeries
     demand_summary() -> Dict[str, Any]
 """
@@ -819,6 +821,319 @@ def demand_drivers() -> DemandDrivers:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4e — Year-by-year TRENDS (real series) + the live data estate behind them
+# ─────────────────────────────────────────────────────────────────────────────
+# "Break everything down year by year and trending." These are REAL series: the
+# CMS Ambulance Inflation Factor (a live in-codebase GOV series), the HCRIS
+# national-occupancy panel (live in production, dark offline), and documented
+# multi-year GOV/SOURCED anchors. No point is invented — where only two published
+# years exist, exactly two points are shown.
+@dataclass(frozen=True)
+class DemandTrend:
+    key: str
+    title: str
+    unit: str
+    basis: str                 # GOV | SOURCED | ACADEMIC | DERIVED
+    connector: str             # how it is obtained + live status
+    source: str
+    url: str
+    points: Tuple[Tuple[Any, float], ...]   # (year, value)
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class DemandTrends:
+    available: bool
+    trends: Tuple[DemandTrend, ...] = ()
+    source_label: str = ""
+    note: str = ""
+
+
+def _read_hospital_chow() -> Tuple[Tuple[int, float], ...]:
+    """The vendored CMS Hospital change-of-ownership national panel (2016-2025) as
+    (year, count) points. Stdlib csv, no pandas/network; degrades to () if the
+    vendored file is absent. Never raises."""
+    import csv
+    import os
+    here = os.path.dirname(__file__)
+    path = os.path.join(here, "..", "data", "vendor", "hospital_chow",
+                        "hospital_chow_national_year.csv")
+    try:
+        with open(path, newline="") as fh:
+            out: List[Tuple[int, float]] = []
+            for row in csv.DictReader(fh):
+                try:
+                    out.append((int(row["year"]), float(row["chow_count"])))
+                except (KeyError, TypeError, ValueError):
+                    continue
+        return tuple(sorted(out))
+    except Exception:  # noqa: BLE001
+        return ()
+
+
+def demand_trends() -> DemandTrends:
+    """Real year-by-year demand series — the AIF price series (live in-codebase),
+    the HCRIS occupancy panel (live in production), and documented multi-year GOV/
+    SOURCED anchors. Never invents a point; never raises."""
+    trends: List[DemandTrend] = []
+
+    # (1) CMS Ambulance Inflation Factor — a LIVE in-codebase GOV series.
+    try:
+        from . import ift_tracking as _tr
+        pl = _tr.price_lever()
+        pts = tuple((int(y), float(v)) for y, v in (getattr(pl, "aif_trend", ())
+                    or ()))
+        if pts:
+            trends.append(DemandTrend(
+                "aif", "Medicare Ambulance Inflation Factor (price)", "%/yr", "GOV",
+                "LIVE (computed in ift_tracking from the published CMS AIF)",
+                "CMS Ambulance Inflation Factor (annual AFS update)",
+                "https://www.cms.gov/medicare/payment/fee-schedules/ambulance",
+                pts,
+                "The reimbursement-price trend: a COVID-era spike (8.7% in 2023) now "
+                "decelerating to 2.0% (2026). Published by CMS every year."))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # (2) National inpatient occupancy by fiscal year — LIVE from the vendored
+    # HCRIS panel (FY2020-2022, ~5.9K filers/yr). Reads a committed file, no
+    # network; needs pandas, so it yields 0 points where pandas is absent.
+    try:
+        from . import ift_analytics as _an
+        occ = _an.occupancy_trend()
+        pts = tuple((f"FY{fy}", round(o * 100, 1))
+                    for fy, o in getattr(occ, "points", ()) or ())
+        trends.append(DemandTrend(
+            "occupancy", "National inpatient occupancy (throughput proxy)", "%",
+            "SOURCED",
+            ("LIVE (vendored HCRIS FY2020-2022 panel, ~5.9K filers/yr, no network); "
+             "requires pandas — 0 points where pandas is absent"),
+            "CMS HCRIS Hospital Cost Reports (Worksheet S-3, patient-days ÷ "
+            "bed-days). Note: vendored HCRIS carries beds/patient-days/occupancy, "
+            "NOT discharges (those are derived).",
+            "https://www.cms.gov/research-statistics-data-and-systems/"
+            "downloadable-public-use-files/cost-reports",
+            pts,
+            "The transfer-demand throughput engine, computed from the vendored "
+            "HCRIS panel across FY2020-2022."))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # (2b) Hospital change-of-ownership (M&A / consolidation velocity) — a REAL
+    # vendored year-by-year series (2016-2025), stdlib-read, no pandas/network.
+    try:
+        chow = _read_hospital_chow()
+        if chow:
+            trends.append(DemandTrend(
+                "hospital_chow", "Hospital changes of ownership (consolidation)",
+                "count/yr", "SOURCED",
+                "LIVE (vendored CMS Hospital CHOW panel, stdlib-read, no network)",
+                "CMS Hospital Change-of-Ownership file (vendored, 2016-2025); the "
+                "M&A / consolidation-velocity signal",
+                "https://data.cms.gov/",
+                chow,
+                "The consolidation trend, measured: hospital ownership changes per "
+                "year. Feeds the 'facilities increasing / systems consolidating' "
+                "driver. 2025 is a partial (incomplete filing) year."))
+    except Exception:  # noqa: BLE001
+        pass
+
+    # (3) Medicare FFS ambulance SPEND — documented GOV/SOURCED anchors.
+    trends.append(DemandTrend(
+        "spend", "Medicare FFS ambulance spending", "$B", "SOURCED",
+        "Published anchors (MedPAC Payment Basics / data book, annual)",
+        "CMS Medicare Part B ambulance spending — $4.76B (2012) → $3.95B (2021, "
+        "the COVID low) → $5.3B (2024)",
+        "https://www.medpac.gov/wp-content/uploads/2024/10/"
+        "MedPAC_Payment_Basics_24_ambulance_FINAL_SEC.pdf",
+        ((2012, 4.76), (2021, 3.95), (2024, 5.3)),
+        "Fell 17.1% 2012→2021 (utilization + the COVID trough), then recovered "
+        "above the 2012 level by 2024. Exactly the years CMS/MedPAC document."))
+
+    # (4) Medicare FFS ambulance TRANSPORTS — the current GOV anchor + mechanism.
+    trends.append(DemandTrend(
+        "ffs_transports", "Medicare FFS ground ambulance transports", "M", "GOV",
+        "Published annually (MedPAC Payment Basics); CMS Part-B PSPS by HCPCS is "
+        "the ingest-ready year-by-year connector",
+        "MedPAC Ambulance Payment Basics — 11.3M transports (2024)",
+        "https://www.medpac.gov/wp-content/uploads/2024/10/"
+        "MedPAC_Payment_Basics_24_ambulance_FINAL_SEC.pdf",
+        ((2024, 11.3),),
+        "One current published anchor. The full year-by-year count is obtainable "
+        "from CMS Part-B PSPS (A0426-A0436), the ingest-ready connector — we do "
+        "NOT invent the intervening years."))
+
+    # (5) BLS emergency vs non-emergency — the SOURCED GADCS endpoints.
+    trends.append(DemandTrend(
+        "bls_mix", "BLS non-emergency share of claim lines", "%", "SOURCED",
+        "CMS GADCS / Medicare claims (the two published years)",
+        "CMS GADCS — BLS non-emergency 43.7% (2018) → 37.1% (2022)",
+        "https://www.cms.gov/files/document/"
+        "medicare-ground-ambulance-data-collection-system-gadcs-report-"
+        "year-1-and-year-2-cohort-analysis.pdf",
+        ((2018, 43.7), (2022, 37.1)),
+        "The scheduled non-emergency share is falling as repetitive transport is "
+        "scrutinized. Two published endpoints — shown as two points, not "
+        "interpolated."))
+
+    # (6) US 65+ population — the GOV Census projection endpoints.
+    trends.append(DemandTrend(
+        "pop65", "US population aged 65+", "M", "GOV",
+        "US Census 2023 National Population Projections",
+        "US Census — 62.7M (2025) → 71.6M (2030), +14.2%",
+        "https://www.census.gov/data/tables/2023/demo/popproj/"
+        "2023-summary-tables.html",
+        ((2025, 62.7), (2030, 71.6)),
+        "The demographic demand engine — +14.2% over five years (≈2.7%/yr), which "
+        "is the growth rate the condition YoY projection compounds."))
+
+    return DemandTrends(
+        available=bool(trends), trends=tuple(trends),
+        source_label=("Real year-by-year series — CMS AIF (live in-codebase), HCRIS "
+                      "occupancy (live in production), and documented GOV/SOURCED "
+                      "multi-year anchors; every point published, none invented"),
+        note=("Where only published endpoints exist (BLS mix, 65+ population) we "
+              "show exactly those points — no interpolation. The AIF and HCRIS "
+              "series are live; the transport count's year-by-year mechanism is the "
+              "CMS PSPS connector (ingest-ready)."))
+
+
+# ── The live data estate (best sources + connector status) ───────────────────
+# "The best data sources and the live connectors." A curated catalog of the demand
+# data APIs — AHA, HCRIS, CMS, Census, HCUP, NEMSIS — each with what it yields, its
+# LIVE status in this codebase, refresh cadence, dataset_id, and URL. Verdicts are
+# honest: HCRIS + AIF are live; several CMS/Census sets are ingest-ready connectors;
+# AHA's full survey is licensed (we cite AHA Fast Facts, which is public).
+@dataclass(frozen=True)
+class DataEstateEntry:
+    source: str                # the API / dataset
+    steward: str
+    yields_: str               # what it yields for demand
+    status: str                # live | live-in-production | ingest-ready | cited | licensed
+    cadence: str               # refresh frequency
+    dataset_id: str
+    url: str
+
+
+_DEMAND_ESTATE: Tuple[DataEstateEntry, ...] = (
+    DataEstateEntry(
+        "CMS HCRIS — Hospital Cost Reports (Worksheet S-3)", "CMS",
+        "Discharges, beds, patient-days, payer-day mix, occupancy — per hospital, "
+        "per fiscal year (the health-system demand base + occupancy trend).",
+        "live-in-production", "annual (cost-report filing cycle)",
+        "hcris_s3_part_i",
+        "https://www.cms.gov/research-statistics-data-and-systems/"
+        "downloadable-public-use-files/cost-reports"),
+    DataEstateEntry(
+        "CMS Ambulance Inflation Factor / Fee Schedule", "CMS",
+        "The annual price update (AIF) and conversion factor — the reimbursement "
+        "price trend, year by year.",
+        "live", "annual (AFS update)", "cms_ambulance_fee_schedule",
+        "https://www.cms.gov/medicare/payment/fee-schedules/ambulance"),
+    DataEstateEntry(
+        "CMS Part-B Physician/Supplier Procedure Summary (PSPS)", "CMS",
+        "Line-level ambulance-HCPCS (A0426-A0436) utilization & spend by year — the "
+        "definitive year-by-year transport COUNT by acuity.",
+        "ingest-ready", "annual",
+        "cms_open_data_physician_supplier_procedure_summary",
+        "https://www.cms.gov/data-research/statistics-trends-reports/"
+        "medicare-provider-utilization-payment-data"),
+    DataEstateEntry(
+        "CMS Provider of Services / Care Compare", "CMS",
+        "Hospital universe by state/type + which have EDs — the IFT origin count.",
+        "ingest-ready", "quarterly", "provider_data_hospital_general",
+        "https://data.cms.gov/provider-data/"),
+    DataEstateEntry(
+        "CMS Hospital Service Area file", "CMS",
+        "Hospital→patient-ZIP flow matrix — the catchment a system actually serves.",
+        "ingest-ready", "annual", "cms_open_data_hospital_service_area",
+        "https://data.cms.gov/"),
+    DataEstateEntry(
+        "CMS Medicare Monthly Enrollment", "CMS",
+        "ESRD beneficiary population by state — the recurring dialysis-transport "
+        "demand driver.",
+        "ingest-ready", "monthly", "cms_open_data_medicare_monthly_enrollment",
+        "https://data.cms.gov/"),
+    DataEstateEntry(
+        "US Census ACS county profile", "US Census Bureau",
+        "65+ population & 65+ share by county/CBSA — the per-capita demand "
+        "multiplier and its geography.",
+        "ingest-ready", "annual", "census_acs_county_profile",
+        "https://www.census.gov/programs-surveys/acs"),
+    DataEstateEntry(
+        "US Census National Population Projections", "US Census Bureau",
+        "65+ population growth (the demographic demand engine).",
+        "cited", "~biennial", "census_national_pop_projections",
+        "https://www.census.gov/data/tables/2023/demo/popproj/"
+        "2023-summary-tables.html"),
+    DataEstateEntry(
+        "AHRQ HCUP — NIS & NEDS", "AHRQ",
+        "Inpatient discharges + discharge/transfer disposition (NIS); ED-to-ED "
+        "interfacility transfers (NEDS). A loader exists (rcm_mc/data/ahrq_hcup.py).",
+        "ingest-ready", "annual", "ahrq_hcup_nis / ahrq_hcup_neds",
+        "https://hcup-us.ahrq.gov/"),
+    DataEstateEntry(
+        "AHRQ Compendium of US Health Systems", "AHRQ",
+        "Health-system count, hospitals per system, system affiliation — the "
+        "consolidation trend.",
+        "cited", "annual", "ahrq_chsp_compendium",
+        "https://www.ahrq.gov/chsp/data-resources/compendium.html"),
+    DataEstateEntry(
+        "AHA — Annual Survey / Hospital Statistics", "American Hospital Association",
+        "Admissions, beds, utilization. The full Annual Survey microdata is "
+        "LICENSED (not freely redistributable); AHA Fast Facts (public) is the "
+        "citable slice we use for annual admissions (~33.7M).",
+        "licensed (Fast Facts cited)", "annual", "aha_annual_survey",
+        "https://www.aha.org/statistics/fast-facts-us-hospitals"),
+    DataEstateEntry(
+        "NEMSIS — National EMS Information System", "NHTSA Office of EMS",
+        "National EMS activations incl. the 'Hospital-to-Hospital Transfer' service "
+        "type — the direct EMS-activation denominator (54.2M activations, 2023).",
+        "ingest-ready (request-access PRDS)", "annual",
+        "nemsis_public_release",
+        "https://nemsis.org/view-reports/public-reports/"),
+    DataEstateEntry(
+        "BLS QCEW — NAICS 621910 (Ambulance Services)", "US Bureau of Labor "
+        "Statistics",
+        "Establishments, employment, wages for the ambulance industry — the supply "
+        "side of the market.",
+        "ingest-ready", "quarterly", "bls_qcew_industry_area",
+        "https://www.bls.gov/cew/"),
+)
+
+
+@dataclass(frozen=True)
+class DataEstate:
+    available: bool
+    entries: Tuple[DataEstateEntry, ...] = ()
+    n_live: int = 0
+    n_ingest_ready: int = 0
+    n_cited: int = 0
+    source_label: str = ""
+    note: str = ""
+
+
+def demand_data_estate() -> DataEstate:
+    """The demand data APIs — AHA / HCRIS / CMS / Census / HCUP / NEMSIS / BLS —
+    each with what it yields, its LIVE status here, refresh cadence, dataset_id and
+    URL. The honest 'can we confidently use these?' answer. Never raises."""
+    es = _DEMAND_ESTATE
+    live = sum(1 for e in es if e.status.startswith("live"))
+    ready = sum(1 for e in es if e.status.startswith("ingest-ready"))
+    cited = sum(1 for e in es if e.status.startswith(("cited", "licensed")))
+    return DataEstate(
+        available=True, entries=es, n_live=live, n_ingest_ready=ready,
+        n_cited=cited,
+        source_label=("The demand data estate — CMS (HCRIS live, AIF live, PSPS/POS/"
+                      "enrollment ingest-ready), AHRQ HCUP (loader present), Census, "
+                      "NEMSIS, BLS QCEW; AHA via public Fast Facts (survey licensed)"),
+        note=("HCRIS and the AIF are live TODAY; the CMS open-data and HCUP sets are "
+              "ingest-ready connectors (parser/loader present, pull to activate); "
+              "AHA's full survey is licensed, so we cite the public Fast Facts slice. "
+              "Cadence tells you how often each refreshes for the year-by-year view."))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5 — Time series ("trailed over time")
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass(frozen=True)
@@ -933,6 +1248,8 @@ def demand_summary() -> Dict[str, Any]:
         "n_demand_sources": len(demand_source_matrix().sources),
         "n_demand_drivers": len(demand_drivers().drivers),
         "n_evidence": len(demand_evidence()),
+        "n_trends": len(demand_trends().trends),
+        "n_estate": len(demand_data_estate().entries),
     }
 
 

@@ -319,6 +319,87 @@ def _src_short(s: str) -> str:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
+# 2d — Year-by-year TRENDS (real series, every point published)
+# ═════════════════════════════════════════════════════════════════════════════
+def _trends_sheet() -> Optional[Sheet]:
+    tr = _safe(_dd.demand_trends)
+    if not (tr and getattr(tr, "available", False)):
+        return None
+    rows: List[List[Any]] = [
+        [("Year-by-year trends — the demand series, over time", _H)],
+        [("Real year-by-year series: the CMS Ambulance Inflation Factor (live "
+          "in-codebase), the HCRIS occupancy panel and Hospital change-of-ownership "
+          "count (live from vendored CMS files), and documented GOV/SOURCED "
+          "multi-year anchors. Every point is published — where only two years "
+          "exist, exactly two points are shown (no interpolation).")],
+    ]
+    for t in tr.trends:
+        rows += [
+            [],
+            [(t.title + "  (" + t.unit + ")", _H), (t.basis, _H)],
+            ["Connector / status", t.connector],
+            ["Source", Link(_src_short(t.source), t.url) if getattr(t, "url", "")
+             else t.source],
+        ]
+        if t.points:
+            rows.append([("Year", _H)] + [(str(y), _H) for y, _ in t.points])
+            rows.append([("Value", _L)] + [(float(v), "num2") for _, v in t.points])
+        else:
+            rows.append(["(no points where the vendored panel needs pandas — "
+                         "populates in the full environment)"])
+        if getattr(t, "note", ""):
+            rows.append([("Read", _L), t.note])
+    rows += [[], [("Source", _H), tr.source_label], [("Note", _H), tr.note]]
+    # widen enough for up to ~11 year columns
+    return Sheet("Year-by-year trends", rows,
+                 col_widths=[30] + [10] * 11)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 2e — Live connectors & data estate (best sources + status + cadence)
+# ═════════════════════════════════════════════════════════════════════════════
+def _estate_sheet() -> Optional[Sheet]:
+    es = _safe(_dd.demand_data_estate)
+    if not (es and getattr(es, "available", False)):
+        return None
+    rows: List[List[Any]] = [
+        [("Live connectors & data estate — can we confidently use AHA / HCRIS / "
+          "CMS?", _H)],
+        [("Every demand data API, its LIVE status in this codebase, refresh "
+          "cadence, dataset id, and link — so you know exactly what is live today "
+          "vs ingest-ready vs cited. %d live, %d ingest-ready, %d cited/licensed. "
+          "HCRIS + the AIF are live now; the CMS open-data and HCUP sets are "
+          "ingest-ready connectors; AHA's full survey is licensed, so we cite the "
+          "public Fast Facts slice."
+          % (es.n_live, es.n_ingest_ready, es.n_cited))],
+        [],
+        [("Source / API", _H), ("Steward", _H), ("What it yields for demand", _H),
+         ("Status (in this codebase)", _H), ("Refresh cadence", _H),
+         ("Dataset id", _H), ("Link", _H)],
+    ]
+    for e in es.entries:
+        link = Link("open", e.url) if getattr(e, "url", "") else ""
+        rows.append([e.source, e.steward, e.yields_, e.status, e.cadence,
+                     e.dataset_id, link])
+    rows += [
+        [],
+        [("How to read 'status'", _L)],
+        ["live", "Queryable right now from vendored files, no network (HCRIS "
+         "panel, the AIF constant series, Hospital CHOW)."],
+        ["ingest-ready", "The parser/loader/connector exists; run the estate "
+         "refresh (or the HCUP loader) to pull and activate it."],
+        ["cited / licensed", "A published figure we cite (Census projections, "
+         "AHRQ Compendium) or a licensed survey (AHA) we cite via its public slice "
+         "(Fast Facts)."],
+        [],
+        [("Source", _H), es.source_label],
+        [("Note", _H), es.note],
+    ]
+    return Sheet("Live connectors", rows,
+                 col_widths=[36, 22, 46, 26, 22, 34, 8])
+
+
+# ═════════════════════════════════════════════════════════════════════════════
 # 3 — CMS code analysis (HCPCS × acuity × emergency)
 # ═════════════════════════════════════════════════════════════════════════════
 def _code_analysis_sheet() -> Optional[Sheet]:
@@ -833,6 +914,12 @@ _SHEET_DESCRIPTIONS: Dict[str, str] = {
     "Evidence & sources": "THE trust key — every headline number with its "
                           "verbatim quote + link; basis GOV/SOURCED/ACADEMIC/"
                           "DERIVED, nothing illustrative.",
+    "Year-by-year trends": "The demand series over time — AIF (2020-26), HCRIS "
+                           "occupancy, Hospital CHOW (2016-25), spend, BLS mix, "
+                           "65+ population; every point published.",
+    "Live connectors": "Can we confidently use AHA / HCRIS / CMS? Each API's live "
+                       "status, cadence, dataset id, and link (live vs "
+                       "ingest-ready vs cited).",
     "Volume sources": "Every citation behind the funnel, clickable (GOV first).",
     "Demand databases": "The multi-source triangulation — NEDS / NIS / NEMSIS / "
                         "MedPAC / HCRIS / NHAMCS / FAIR Health, each with its "
@@ -894,11 +981,11 @@ def demand_workbook_xlsx(qs: Optional[Dict[str, List[str]]] = None) -> bytes:
     provenance contract. Every sheet degrades to skipped rather than raising, so
     the download always succeeds even offline where a pandas-gated read is dark."""
     builders = [
-        _volume_sheet, _evidence_sheet, _volume_sources_sheet,
-        _sources_matrix_sheet, _drivers_sheet, _code_analysis_sheet,
-        _emergency_sheet, _condition_yoy_sheet, _aggregate_yoy_sheet,
-        _clinical_sheet, _hs_demand_sheet, _regional_sheet, _county_sheet,
-        _demographic_sheet, _inventory_sheet, _provenance_sheet,
+        _volume_sheet, _evidence_sheet, _trends_sheet, _estate_sheet,
+        _volume_sources_sheet, _sources_matrix_sheet, _drivers_sheet,
+        _code_analysis_sheet, _emergency_sheet, _condition_yoy_sheet,
+        _aggregate_yoy_sheet, _clinical_sheet, _hs_demand_sheet, _regional_sheet,
+        _county_sheet, _demographic_sheet, _inventory_sheet, _provenance_sheet,
     ]
     sheets: List[Sheet] = []
     for b in builders:

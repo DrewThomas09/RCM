@@ -203,6 +203,68 @@ class DemandDriversTests(unittest.TestCase):
         self.assertNotIn("grand view", blob)
 
 
+class DemandTrendsTests(unittest.TestCase):
+    """Real year-by-year series — every point published, none invented."""
+
+    def setUp(self):
+        self.tr = d.demand_trends()
+
+    def test_carries_real_multiyear_series(self):
+        self.assertTrue(self.tr.available)
+        by = {t.key: t for t in self.tr.trends}
+        # the AIF is a live 7-point GOV series (2020-2026)
+        self.assertIn("aif", by)
+        self.assertGreaterEqual(len(by["aif"].points), 7)
+        self.assertEqual(by["aif"].basis, "GOV")
+        # the vendored Hospital-CHOW consolidation panel is a real 2016-2025 series
+        self.assertIn("hospital_chow", by)
+        self.assertGreaterEqual(len(by["hospital_chow"].points), 8)
+        years = [y for y, _ in by["hospital_chow"].points]
+        self.assertIn(2016, years)
+        self.assertIn(2024, years)
+
+    def test_every_trend_is_sourced_never_illustrative(self):
+        for t in self.tr.trends:
+            self.assertIn(t.basis, ("GOV", "SOURCED", "ACADEMIC", "DERIVED"))
+            self.assertTrue(t.connector, f"{t.key}: no connector/status")
+            self.assertTrue(t.source, f"{t.key}: no source")
+
+    def test_two_point_series_are_not_interpolated(self):
+        by = {t.key: t for t in self.tr.trends}
+        # the 65+ series is exactly its two published Census endpoints
+        self.assertEqual([y for y, _ in by["pop65"].points], [2025, 2030])
+        # the BLS mix is exactly its two published GADCS endpoints
+        self.assertEqual([y for y, _ in by["bls_mix"].points], [2018, 2022])
+
+
+class DataEstateTests(unittest.TestCase):
+    """The live-connector catalog — can we confidently use AHA / HCRIS / CMS?"""
+
+    def setUp(self):
+        self.es = d.demand_data_estate()
+
+    def test_catalogs_aha_hcris_cms_and_more(self):
+        self.assertTrue(self.es.available)
+        self.assertGreaterEqual(len(self.es.entries), 10)
+        srcs = " ".join(e.source for e in self.es.entries)
+        for name in ("HCRIS", "AHA", "Census", "HCUP", "NEMSIS"):
+            self.assertIn(name, srcs, f"missing data source: {name}")
+        self.assertTrue(any("CMS" in e.steward or "CMS" in e.source
+                            for e in self.es.entries))
+
+    def test_status_is_honest_hcris_live_aha_licensed(self):
+        by = {e.source: e for e in self.es.entries}
+        hcris = [e for e in self.es.entries if "HCRIS" in e.source][0]
+        self.assertTrue(hcris.status.startswith("live"))
+        aha = [e for e in self.es.entries if e.source.startswith("AHA")][0]
+        self.assertIn("licensed", aha.status.lower())
+        # every entry has a cadence, dataset id, and url
+        for e in self.es.entries:
+            self.assertTrue(e.cadence, f"{e.source}: no cadence")
+            self.assertTrue(e.dataset_id, f"{e.source}: no dataset id")
+            self.assertTrue(e.url.startswith("http"), f"{e.source}: no url")
+
+
 class DemandWorkbookTests(unittest.TestCase):
     def setUp(self):
         self.data = demand_workbook_xlsx()
@@ -224,12 +286,24 @@ class DemandWorkbookTests(unittest.TestCase):
     def test_carries_the_demand_spine(self):
         names = self._sheet_names()
         for expected in ("Contents", "National volume", "Evidence & sources",
-                         "Volume sources", "Demand databases", "Demand drivers",
-                         "CMS code analysis", "Emergency mix",
-                         "Demand by condition YoY", "Aggregate demand YoY",
-                         "Clinical demand engine", "Regional demand",
-                         "Demographic engine", "Provenance"):
+                         "Year-by-year trends", "Live connectors", "Volume sources",
+                         "Demand databases", "Demand drivers", "CMS code analysis",
+                         "Emergency mix", "Demand by condition YoY",
+                         "Aggregate demand YoY", "Clinical demand engine",
+                         "Regional demand", "Demographic engine", "Provenance"):
             self.assertIn(expected, names, f"missing sheet: {expected}")
+
+    def test_trends_and_connectors_sheets_carry_real_series_and_status(self):
+        text = _content_text(self.data)
+        low = text.lower()
+        # a real vendored multi-year point (Hospital CHOW 2019 = 127) travels in
+        self.assertIn("127", text)
+        self.assertIn("hospital change", low)
+        # the AIF COVID spike (8.7% in 2023) is present
+        self.assertIn("8.7", text)
+        # the connector estate names the live/ingest-ready statuses + AHA licensing
+        self.assertIn("ingest-ready", low)
+        self.assertIn("fast facts", low)
 
     def test_no_cell_is_labeled_illustrative(self):
         # The load-bearing guarantee the user asked for: nothing illustrative.
@@ -364,6 +438,16 @@ class DemandWorkbookWiringTests(unittest.TestCase):
         self.assertIn("census.gov", html)           # a clickable source link
         # no figure carries the amber illustrative chip anymore
         self.assertNotIn('class="ifd-chip ifd-chip-illustrative"', html)
+
+    def test_trends_and_connectors_sections_on_page(self):
+        from rcm_mc.ui.ift_demand_page import render_ift_demand
+        html = render_ift_demand()
+        self.assertIn("Year-by-year trends", html)
+        self.assertIn("Ambulance Inflation Factor", html)
+        self.assertIn("Hospital change-of-ownership", html)
+        self.assertIn("Live connectors", html)
+        self.assertIn("can we confidently use", html)
+        self.assertIn("ingest-ready", html)
 
 
 if __name__ == "__main__":
