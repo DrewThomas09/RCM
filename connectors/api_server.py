@@ -14,6 +14,8 @@ connector-specific:
     /v1/status                              → fetch state per connector (rows + vintage)
     /v1/query/{dataset}                     → dispatched to the owning connector
     /v1/query/{dataset}/aggregate           → dispatched to the owning connector
+    /v1/catalog/search?q=&limit=&connector= → keyword search across EVERY synced
+                                              open-data catalog at once
     /v1/lookup/{noun}/{id}                  → delegated to the owning connector
     /v1/validate/npi/{npi}                  → delegated (NPI connector)
     /v1/search/{code_type}?q=&limit=        → delegated (ICD-10 connector)
@@ -171,10 +173,36 @@ def build_handler(stores: Dict[str, Any],
             # /v1/query/{dataset}[/aggregate] → owning connector
             if len(parts) >= 3 and parts[0] == "v1" and parts[1] == "query":
                 return self._route_query(parts, qs)
+            if parts == ["v1", "catalog", "search"]:
+                return self._route_catalog_search(qs)
             # everything else (lookups / validate / search) → delegate
             if self._route_lookup(parts, qs):
                 return
             self._send(404, {"error": f"no route for /{'/'.join(parts)}"})
+
+        def _route_catalog_search(self, qs: Dict[str, List[str]]) -> None:
+            """Fan a keyword out across every synced open-data catalog.
+
+            An absent or blank ``q`` is a 400, not an empty 200: silently
+            answering "0 results" to a malformed query is exactly how a
+            caller concludes the catalogs are empty when they are not.
+            ``connector=`` may be repeated or comma-joined to narrow the
+            fan-out.
+            """
+            q = (qs.get("q") or [""])[0].strip()
+            if not q:
+                return self._send(400, {
+                    "error": "catalog search requires a non-empty q"})
+            wanted: List[str] = []
+            for raw in qs.get("connector") or []:
+                wanted.extend(part.strip() for part in raw.split(",")
+                              if part.strip())
+            res = estate.catalog_search_all(
+                stores, q,
+                limit=(qs.get("limit") or [50])[0],
+                per_connector_limit=(qs.get("per_connector_limit") or [50])[0],
+                connectors=wanted or None)
+            self._send(200, res)
 
         def _route_query(self, parts: List[str], qs: Dict[str, List[str]]) -> None:
             dataset = parts[2]
